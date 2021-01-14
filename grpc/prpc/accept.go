@@ -17,6 +17,7 @@ package prpc
 import (
 	"fmt"
 	"mime"
+	"net/http"
 	"strconv"
 	"strings"
 	"unicode"
@@ -151,4 +152,15 @@ func (s acceptFormatSlice) Less(i, j int) bool {
 
 func (s acceptFormatSlice) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
+}
+
+// mayGZipResponse returns true if the server response body may be encoded
+// with GZIP.
+func mayGZipResponse(header http.Header) bool {
+	for _, v := range header.Values("Accept-Encoding") {
+		if v == "gzip" {
+			return true
+		}
+	}
+	return false
 }

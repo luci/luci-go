@@ -55,6 +55,11 @@ var (
 	//
 	// Use it with Server.Authenticator or RegisterDefaultAuth.
 	NoAuthentication Authenticator = nullAuthenticator{}
+
+	// gzipThreshold is the threshold to compress response message.
+	// It is derived from
+	// https://webmasters.stackexchange.com/questions/31750/what-is-recommended-minimum-object-size-for-gzip-performance-benefits
+	gzipThreshold = 1024
 )
 
 // AllowOriginAll returns true unconditionally.
@@ -107,6 +112,10 @@ type Server struct {
 	// a unary RPC on the server. It is the responsibility of the interceptor to
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
+
+	// EnableCompression tells the Server to respect "Accept-Encoding: gzip"
+	// request header. If false (default), responses are never compressed.
+	EnableCompression bool
 
 	mu        sync.RWMutex
 	services  map[string]*service
@@ -258,7 +267,8 @@ func (s *Server) handlePOST(c *router.Context) {
 		writeError(c.Context, c.Writer, res.err, res.fmt)
 		return
 	}
-	writeMessage(c.Context, c.Writer, res.out, res.fmt)
+
+	writeMessage(c.Context, c.Writer, res.out, res.fmt, s.EnableCompression && mayGZipResponse(c.Request.Header))
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {

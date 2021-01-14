@@ -98,7 +98,7 @@ func TestEncoding(t *testing.T) {
 		test := func(f Format, body []byte, contentType string) {
 			Convey(contentType, func() {
 				rec := httptest.NewRecorder()
-				writeMessage(c, rec, msg, f)
+				writeMessage(c, rec, msg, f, false)
 				So(rec.Code, ShouldEqual, http.StatusOK)
 				So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 				So(rec.Header().Get(headerContentType), ShouldEqual, contentType)
@@ -112,6 +112,15 @@ func TestEncoding(t *testing.T) {
 		test(FormatBinary, msgBytes, mtPRPCBinary)
 		test(FormatJSONPB, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
 		test(FormatText, []byte("message: \"Hi\"\n"), mtPRPCText)
+
+		Convey("compression", func() {
+			rec := httptest.NewRecorder()
+			msg := &HelloReply{Message: strings.Repeat("A", 1024)}
+			writeMessage(c, rec, msg, FormatText, true)
+			So(rec.Code, ShouldEqual, http.StatusOK)
+			So(rec.Header().Get("Content-Encoding"), ShouldEqual, "gzip")
+			So(rec.Body.Len(), ShouldBeLessThan, 1024)
+		})
 	})
 
 	Convey("writeError", t, func() {

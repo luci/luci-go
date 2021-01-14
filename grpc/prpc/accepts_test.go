@@ -15,6 +15,7 @@
 package prpc
 
 import (
+	"net/http"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -182,5 +183,26 @@ func TestAccept(t *testing.T) {
 		test("a/b;c=q", "a/b;c=q", "", "")
 		test("a/b;mtp1=1;  q", "a/b;mtp1=1;  q", "", "")
 		test("a/b;mtp1=1;  q=", "a/b;mtp1=1;  q=", "", "")
+	})
+}
+
+func TestAcceptContentEncoding(t *testing.T) {
+	t.Parallel()
+	Convey("Accept-Encoding", t, func() {
+		h := http.Header{}
+		Convey(`Empty`, func() {
+			So(mayGZipResponse(h), ShouldBeFalse)
+		})
+
+		Convey(`gzip`, func() {
+			h.Set("Accept-Encoding", "gzip")
+			So(mayGZipResponse(h), ShouldBeTrue)
+		})
+
+		Convey(`multiple values`, func() {
+			h.Add("Accept-Encoding", "foo")
+			h.Add("Accept-Encoding", "gzip")
+			So(mayGZipResponse(h), ShouldBeTrue)
+		})
 	})
 }
