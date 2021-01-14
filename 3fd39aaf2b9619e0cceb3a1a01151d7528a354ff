@@ -1,0 +1,250 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "586e65ef_2f728d9c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "2 main comments: terminate should delete entity \u0026\u0026 need a way to apply within transaction (see looooooong comment on L93). The rest are nits.\n\nTests are good!",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ed4fc72_9cbf3cd9",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "nit-nit: i think \"resource\" is more appropriate here since \"asset\" usually implies something of value (disclaimer: I have financial bias)",
+      "range": {
+        "startLine": 15,
+        "startChar": 54,
+        "endLine": 15,
+        "endChar": 59
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "306af2c6_97a0c576",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "I think we can use CV\u0027s CL ID instead, and then we don\u0027t need to bring gerrit here at all.\nSo, i propose\nfunc CLAssetID(id common.CLID)",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 1
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9125d3d5_55e4623e",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "Thinking out loud: here `Lease` struct serves 3 purposes:\n  input for desired lease\n  actual datastore entity\n  lease handle for users (essentially tuple of (AssetID,Number) for Terminate call\n\nAs a user, I don\u0027t like this because it\u0027s not clear what I should set for Apply to work w/o reading Apply() code, especially why is there \"duration\" arg alongside ExpirationTime.\nAs a user, I\u0027d prefer:\n\n    // Each arg is required here, no need to read the docs or code.\n    // Luckily, each arg has different type, so callsites won\u0027t be ambiguous.\n    //   If it wasn\u0027t the case, a new input args, would have been ideal.\n    //\n    // *Lease is returned on both success and errConflict\n    func Apply(ctx, asset, leasee, payload, duration) (*Lease, error)\n    type Lease struct {\n      AssetID, Leasee, ...\n      // possibly other private fields only to support 2 funcs below\n    }\n    func (*Lease) Terminate(ctx) error\n    func (*Lease) Extend(ctx, duration) error // if necessary\n\n\nFor non-internal package, I\u0027d probably even create a separate `leaseDS` struct which takes care of ds put/get in order to avoid committing to a specific DS layout due to public Lease struct. \n\nHowever, we have an additional need: Apply must work as part of a bigger transaction.\n\nIn fact, it\u0027d be nice to batch reading existing Lease with other reads at the beginning of a transaction, and similarly writing new lease entity together with other written entities. So, having ds entity Lease{} public is actually good for us.\n\n\u003d\u003d\u003d end of thinking \u003d\u003d\u003d\n\n\nSo, the main AI is support Apply within transaction.\n\n\nOne of possible approaches: split off half of Apply into \n  // TODO: shorter name\n  // Just returns a Lease to datastore.Put at caller\u0027s discretion.\n  func ApplyISwearExistingLeaseExpireOrNotExists(transCtx, \u003cnormal apply arguments\u003e) *Lease\n  \nThen RunManager/ProjectManager code would then need to write some boilerplate, but so far I don\u0027t know how to avoid it:\n\nl :\u003d \u0026lease.Lease{AssetID: aid1}\n\nerr :\u003d ds.runInTransasaction(ctx, func(ctx) error {\n  ..\n  dsBatcher.register(l, func(err) error {\n    // copy-paste switch from inside Apply() func 😞\n    switch{\n    case err\u003d\u003ddatastore.ErrNoSuchEntity: \n      l \u003d nil\n    case err !\u003dnil:\n      return annotate....\n    }\n    return nil\n  })\n  ...\n  err :\u003d dsBatcher.Get(ctx)\n  ...\n  \n  if l \u003d\u003d nil || l.Expired() { // can acquire lease\n    l \u003d lease.ApplyISwearExistingLeaseExpiredOrNotExists(ctx, aid1, \"mine!\", ...)\n    dsBatcher.register(l, func (err) error {\n      l \u003d nil\n      return errors.Annotate(err, \"failed to put new Lease for asset %s\", aid1).Tag(transient.Tag).Err()\n    })\n  }\n  return ds.Put(ctx)\n})\nif err !\u003d nil { ... // trans failed }\n\nif l !\u003d nil {\n  // I got a lease on asset1 until l.ExpirationTime.\n}",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00f347e9_03c17cb2",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "nit-nit: I\u0027m used to `lessee` in contract. But for extreme clarity, \"Holder\" might be clearer.",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 7
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d9a34d0_2ea512ed",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "nit: don\u0027t we use \u003cVerb\u003e + Time, e.g. \"ExpireTime\"?",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 15
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eab6aa2f_0a801aed",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "this only serves the purpose of checking if existing lease is in fact owned by current caller during the Terminate call, right?\nIf so, then I think more robust would be just be 16 random bytes assigned in Apply().",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 30
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9639709e_039c2899",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "It\u0027d be very useful to get the current lease expiration, too, so as to know when to retry. Maybe return a tuple (time.Time, error)?",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "100a6421_b573cb82",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "did you mean to call l.validate() instead?",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 85,
+        "endChar": 2
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ac27eaad_61ba7f0e",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "fwiw: it may be easiest to implement \"Extend\" implicitly by checking that curLease.Leasee \u003d\u003d l.Leasee",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 30
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e000602_87e0f589",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "should fallthrough\n\nIt\u0027s fine to terminate expired lease, so long as it wasn\u0027t leased by someone else which is checked above via .Number. See also below.",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "def7b218_538f082b",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T12:23:51Z",
+      "side": 1,
+      "message": "datastore.Delete\nI don\u0027t see benefits of keeping tombstones, do you?\nI do see upside in delete, as it makes it easy to wipe out old data from Datastore.",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
