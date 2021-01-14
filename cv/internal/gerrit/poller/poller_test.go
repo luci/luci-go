@@ -277,7 +277,7 @@ func TestPoller(t *testing.T) {
 					So(getCL(gHost, 33), ShouldBeNil)
 					So(getCL(gHost, 34), ShouldBeNil)
 
-					Convey("and full polls every fullPollInterval", func() {
+					Convey("and full polls every fullPollInterval and force notifies PM", func() {
 						So(fullPollInterval, ShouldBeGreaterThan, 2*pollInterval)
 						ct.Clock.Add(fullPollInterval - 2*pollInterval)
 						// Update 2 changes in the mean time.
@@ -296,12 +296,20 @@ func TestPoller(t *testing.T) {
 							OrProjects:   []string{gRepo},
 							LastFullTime: timestamppb.New(ct.Clock.Now()),
 						}})
-						// 1 for the future poll + 3 for CL for 33 and 34 and again 32.
-						So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 4)
+						// 1 task for the future poll + 1 task per CL due to forceNotifyPM,
+						// which disables de-duplication.
+						So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+4)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 						So(getCL(gHost, 33), ShouldNotBeNil)
 						So(getCL(gHost, 34), ShouldNotBeNil)
 						So(getCL(gHost, 32).EVersion, ShouldEqual, 2) // was updated.
+
+						Convey("next full poll tasks must not be de-duped", func() {
+							ct.Clock.Add(fullPollInterval)
+							ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
+							So(mustGetState(lProject).SubPollers.GetSubPollers()[0].GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
+							So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+4)
+						})
 					})
 				})
 			})
