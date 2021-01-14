@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ff21e36_4f206200",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-14T19:43:00Z",
+      "side": 1,
+      "message": "Thank you! Replies to the two major concerns for now. Will work on other comments after we address the major ones.",
+      "parentUuid": "586e65ef_2f728d9c",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4ed4fc72_9cbf3cd9",
@@ -77,6 +95,24 @@
       "writtenOn": "2021-01-14T12:23:51Z",
       "side": 1,
       "message": "Thinking out loud: here `Lease` struct serves 3 purposes:\n  input for desired lease\n  actual datastore entity\n  lease handle for users (essentially tuple of (AssetID,Number) for Terminate call\n\nAs a user, I don\u0027t like this because it\u0027s not clear what I should set for Apply to work w/o reading Apply() code, especially why is there \"duration\" arg alongside ExpirationTime.\nAs a user, I\u0027d prefer:\n\n    // Each arg is required here, no need to read the docs or code.\n    // Luckily, each arg has different type, so callsites won\u0027t be ambiguous.\n    //   If it wasn\u0027t the case, a new input args, would have been ideal.\n    //\n    // *Lease is returned on both success and errConflict\n    func Apply(ctx, asset, leasee, payload, duration) (*Lease, error)\n    type Lease struct {\n      AssetID, Leasee, ...\n      // possibly other private fields only to support 2 funcs below\n    }\n    func (*Lease) Terminate(ctx) error\n    func (*Lease) Extend(ctx, duration) error // if necessary\n\n\nFor non-internal package, I\u0027d probably even create a separate `leaseDS` struct which takes care of ds put/get in order to avoid committing to a specific DS layout due to public Lease struct. \n\nHowever, we have an additional need: Apply must work as part of a bigger transaction.\n\nIn fact, it\u0027d be nice to batch reading existing Lease with other reads at the beginning of a transaction, and similarly writing new lease entity together with other written entities. So, having ds entity Lease{} public is actually good for us.\n\n\u003d\u003d\u003d end of thinking \u003d\u003d\u003d\n\n\nSo, the main AI is support Apply within transaction.\n\n\nOne of possible approaches: split off half of Apply into \n  // TODO: shorter name\n  // Just returns a Lease to datastore.Put at caller\u0027s discretion.\n  func ApplyISwearExistingLeaseExpireOrNotExists(transCtx, \u003cnormal apply arguments\u003e) *Lease\n  \nThen RunManager/ProjectManager code would then need to write some boilerplate, but so far I don\u0027t know how to avoid it:\n\nl :\u003d \u0026lease.Lease{AssetID: aid1}\n\nerr :\u003d ds.runInTransasaction(ctx, func(ctx) error {\n  ..\n  dsBatcher.register(l, func(err) error {\n    // copy-paste switch from inside Apply() func 😞\n    switch{\n    case err\u003d\u003ddatastore.ErrNoSuchEntity: \n      l \u003d nil\n    case err !\u003dnil:\n      return annotate....\n    }\n    return nil\n  })\n  ...\n  err :\u003d dsBatcher.Get(ctx)\n  ...\n  \n  if l \u003d\u003d nil || l.Expired() { // can acquire lease\n    l \u003d lease.ApplyISwearExistingLeaseExpiredOrNotExists(ctx, aid1, \"mine!\", ...)\n    dsBatcher.register(l, func (err) error {\n      l \u003d nil\n      return errors.Annotate(err, \"failed to put new Lease for asset %s\", aid1).Tag(transient.Tag).Err()\n    })\n  }\n  return ds.Put(ctx)\n})\nif err !\u003d nil { ... // trans failed }\n\nif l !\u003d nil {\n  // I got a lease on asset1 until l.ExpirationTime.\n}",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8bbd96f8_5875e680",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-14T19:43:00Z",
+      "side": 1,
+      "message": "\u003e Thinking out loud: here `Lease` struct serves 3 purposes:\n\u003e   input for desired lease\n\u003e   actual datastore entity\n\u003e   lease handle for users (essentially tuple of (AssetID,Number) for Terminate call\n\u003e \n\u003e As a user, I don\u0027t like this because it\u0027s not clear what I should set for Apply to work w/o reading Apply() code, especially why is there \"duration\" arg alongside ExpirationTime.\n\u003e As a user, I\u0027d prefer:\n\u003e \n\u003e     // Each arg is required here, no need to read the docs or code.\n\u003e     // Luckily, each arg has different type, so callsites won\u0027t be ambiguous.\n\u003e     //   If it wasn\u0027t the case, a new input args, would have been ideal.\n\u003e     //\n\u003e     // *Lease is returned on both success and errConflict\n\u003e     func Apply(ctx, asset, leasee, payload, duration) (*Lease, error)\n\u003e     type Lease struct {\n\u003e       AssetID, Leasee, ...\n\u003e       // possibly other private fields only to support 2 funcs below\n\u003e     }\n\u003e     func (*Lease) Terminate(ctx) error\n\u003e     func (*Lease) Extend(ctx, duration) error // if necessary\n\u003e\n\nSo, the evolvement of Apply API is \n\nv1: pretty much what you\u0027ve suggested `func Apply(ctx, asset, leasee, payload, duration) (*Lease, error)`\nCons: function signatures are too long and may get even longer if we need more fields.\nv2: Everything else is what it is in the CL except `ExpirationTime` and `Number` are private so user only need to supply exported fields.\nCons: later on, when I am testing, I realize that ds lib can\u0027t store unexported fields 😞\nv3: Today\u0027s version, making ExpirationTime and Number exported but didn\u0027t care the value supplied.\nCons: like you said, confusing user re what needs to be set.\n\nMaybe I should still go back to v1 and define a `LeaseInput` like struct and hold all input fields?\n\nFor `Terminate`, it was a receiver function before, but then I realized I only need AssetID and Number and anyway I will need to load the current lease from datastore because the expirationTime in the supplied lease is not trustworthy (Exported :(). So I made it a regular function.\n \n\n\u003e \n\u003e For non-internal package, I\u0027d probably even create a separate `leaseDS` struct which takes care of ds put/get in order to avoid committing to a specific DS layout due to public Lease struct. \n\u003e \n\nNoted. I thought of that actually. But abandon the idea due to the reason you\u0027ve mentioned under (might need raw DS entity in a bigger transaction outside).\n\n\n\u003e However, we have an additional need: Apply must work as part of a bigger transaction.\n\u003e \n\u003e In fact, it\u0027d be nice to batch reading existing Lease with other reads at the beginning of a transaction, and similarly writing new lease entity together with other written entities. So, having ds entity Lease{} public is actually good for us.\n\u003e \n\u003e \u003d\u003d\u003d end of thinking \u003d\u003d\u003d\n\u003e \n\u003e \n\u003e So, the main AI is support Apply within transaction.\n\u003e \n\u003e \n\u003e One of possible approaches: split off half of Apply into \n\u003e   // TODO: shorter name\n\u003e   // Just returns a Lease to datastore.Put at caller\u0027s discretion.\n\u003e   func ApplyISwearExistingLeaseExpireOrNotExists(transCtx, \u003cnormal apply arguments\u003e) *Lease\n\u003e   \n\u003e Then RunManager/ProjectManager code would then need to write some boilerplate, but so far I don\u0027t know how to avoid it:\n\u003e \n\u003e l :\u003d \u0026lease.Lease{AssetID: aid1}\n\u003e \n\u003e err :\u003d ds.runInTransasaction(ctx, func(ctx) error {\n\u003e   ..\n\u003e   dsBatcher.register(l, func(err) error {\n\u003e     // copy-paste switch from inside Apply() func 😞\n\u003e     switch{\n\u003e     case err\u003d\u003ddatastore.ErrNoSuchEntity: \n\u003e       l \u003d nil\n\u003e     case err !\u003dnil:\n\u003e       return annotate....\n\u003e     }\n\u003e     return nil\n\u003e   })\n\u003e   ...\n\u003e   err :\u003d dsBatcher.Get(ctx)\n\u003e   ...\n\u003e   \n\u003e   if l \u003d\u003d nil || l.Expired() { // can acquire lease\n\u003e     l \u003d lease.ApplyISwearExistingLeaseExpiredOrNotExists(ctx, aid1, \"mine!\", ...)\n\u003e     dsBatcher.register(l, func (err) error {\n\u003e       l \u003d nil\n\u003e       return errors.Annotate(err, \"failed to put new Lease for asset %s\", aid1).Tag(transient.Tag).Err()\n\u003e     })\n\u003e   }\n\u003e   return ds.Put(ctx)\n\u003e })\n\u003e if err !\u003d nil { ... // trans failed }\n\u003e \n\u003e if l !\u003d nil {\n\u003e   // I got a lease on asset1 until l.ExpirationTime.\n\u003e }\n\nI\u0027m not sure if there\u0027s a need to read at the beginning of a transaction and write at the end. Maybe I\u0027ll get a better idea after I reviewed all PM CLs. For now, I think what you\u0027ve proposed is okay. Alternatively, I think if it doesn\u0027t need to work with dsbatcher. lease can have API like\n  \n    lease.LoadMulti(...)\n    lease.ApplyMulti(...)",
+      "parentUuid": "9125d3d5_55e4623e",
       "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -243,6 +279,24 @@
       "writtenOn": "2021-01-14T12:23:51Z",
       "side": 1,
       "message": "datastore.Delete\nI don\u0027t see benefits of keeping tombstones, do you?\nI do see upside in delete, as it makes it easy to wipe out old data from Datastore.",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66592726_b5254e5d",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-14T19:43:00Z",
+      "side": 1,
+      "message": "\u003e I do see upside in delete, as it makes it easy to wipe out old data from Datastore.\n\nTrue, it does make things easier. I think the reason I choose write empty and lazy deletion in the future over immediate deletion is to follow this best practice for deletion[1] (i.e. Avoid deleting large numbers of entities across a small range of keys.) because CV is likely create/delete lease on a small range of AssetID (change number is monotonically increasing). But I\u0027m not sure if it is large enough concern to choose not to delete.\n\n[1]: https://cloud.google.com/datastore/docs/best-practices",
+      "parentUuid": "def7b218_538f082b",
       "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
