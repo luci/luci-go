@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
@@ -43,7 +43,7 @@ const (
 type MintProjectTokenRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// MintAccessToken produces an OAuth token for a service account.
@@ -57,7 +57,9 @@ type MintProjectTokenRPC struct {
 	ProjectIdentities func(context.Context) projectidentity.Storage
 
 	// LogToken is mocked in tests.
-	LogToken func(context.Context, *MintedTokenInfo) error
+	//
+	// In prod it is produced by NewTokenLogger.
+	LogToken TokenLogger
 }
 
 // MintProjectToken mints a project-scoped service account OAuth2 token.
@@ -153,7 +155,7 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 			Expiration:   resp.Expiry,
 			PeerIP:       state.PeerIP(),
 			PeerIdentity: state.PeerIdentity(),
-			RequestID:    info.RequestID(c),
+			RequestID:    trace.SpanContext(c),
 			AuthDBRev:    authdb.Revision(state.DB()),
 		}
 		if logErr := r.LogToken(c, &tokInfo); logErr != nil {

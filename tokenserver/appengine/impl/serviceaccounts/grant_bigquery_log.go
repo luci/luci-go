@@ -21,6 +21,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"cloud.google.com/go/bigquery"
+
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
@@ -75,14 +77,23 @@ func (i *MintedGrantInfo) toBigQueryMessage() *bqpb.OAuthTokenGrant {
 	}
 }
 
-// LogGrant records information about the OAuth token grant in the BigQuery.
+// GrantLogger records info about the OAuth token grant to BigQuery.
+type GrantLogger func(context.Context, *MintedGrantInfo) error
+
+// NewGrantLogger returns a callback that records info about OAuth token grants
+// to BigQuery.
 //
-// The grant itself is not logged. Only first 16 bytes of its SHA256 hash
-// (aka 'fingerprint') is. It is used only to identify this particular token in
-// logs.
+// Grants themselves are not logged. Only first 16 bytes of their SHA256 hashes
+// (aka 'fingerprint') are. They are used only to identify grants in logs.
 //
-// On dev server, logs to the GAE log only, not to BigQuery (to avoid
-// accidentally pushing fake data to real BigQuery dataset).
-func LogGrant(c context.Context, i *MintedGrantInfo) error {
-	return bq.InsertFromGAEv1(c, "tokens", "oauth_token_grants", i.toBigQueryMessage())
+// When dryRun is true, logs to the local text log only, not to BigQuery
+// (to avoid accidentally pushing fake data to real BigQuery dataset).
+func NewGrantLogger(client *bigquery.Client, dryRun bool) GrantLogger {
+	inserter := bq.Inserter{
+		Table:  client.Dataset("tokens").Table("oauth_token_grants"),
+		DryRun: dryRun,
+	}
+	return func(ctx context.Context, i *MintedGrantInfo) error {
+		return inserter.Insert(ctx, i.toBigQueryMessage())
+	}
 }
