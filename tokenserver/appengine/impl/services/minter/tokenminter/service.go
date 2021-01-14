@@ -18,8 +18,10 @@
 package tokenminter
 
 import (
-	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	"cloud.google.com/go/bigquery"
+
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/signing"
 
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certchecker"
@@ -46,41 +48,41 @@ type serverImpl struct {
 // NewServer returns prod TokenMinterServer implementation.
 //
 // It does all authorization checks inside.
-func NewServer() minter.TokenMinterServer {
+func NewServer(signer signing.Signer, bq *bigquery.Client, prod bool) minter.TokenMinterServer {
 	return &serverImpl{
 		MintMachineTokenRPC: machinetoken.MintMachineTokenRPC{
-			Signer:           gaesigner.Signer{},
+			Signer:           signer,
 			CheckCertificate: certchecker.CheckCertificate,
-			LogToken:         machinetoken.LogToken,
+			LogToken:         machinetoken.NewTokenLogger(bq, !prod),
 		},
 		MintDelegationTokenRPC: delegation.MintDelegationTokenRPC{
-			Signer:   gaesigner.Signer{},
+			Signer:   signer,
 			Rules:    delegation.GlobalRulesCache.Rules,
-			LogToken: delegation.LogToken,
+			LogToken: delegation.NewTokenLogger(bq, !prod),
 		},
 		MintOAuthTokenGrantRPC: serviceaccounts.MintOAuthTokenGrantRPC{
-			Signer:   gaesigner.Signer{},
+			Signer:   signer,
 			Rules:    serviceaccounts.GlobalRulesCache.Rules,
-			LogGrant: serviceaccounts.LogGrant,
+			LogGrant: serviceaccounts.NewGrantLogger(bq, !prod),
 		},
 		MintOAuthTokenViaGrantRPC: serviceaccounts.MintOAuthTokenViaGrantRPC{
-			Signer:          gaesigner.Signer{},
+			Signer:          signer,
 			Rules:           serviceaccounts.GlobalRulesCache.Rules,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,
-			LogOAuthToken:   serviceaccounts.LogOAuthToken,
+			LogOAuthToken:   serviceaccounts.NewOAuthTokenLogger(bq, !prod),
 		},
 		MintProjectTokenRPC: projectscope.MintProjectTokenRPC{
-			Signer:            gaesigner.Signer{},
+			Signer:            signer,
 			MintAccessToken:   auth.MintAccessTokenForServiceAccount,
 			ProjectIdentities: projectidentity.ProjectIdentities,
-			LogToken:          projectscope.LogToken,
+			LogToken:          projectscope.NewTokenLogger(bq, !prod),
 		},
 		MintServiceAccountTokenRPC: serviceaccountsv2.MintServiceAccountTokenRPC{
-			Signer:          gaesigner.Signer{},
+			Signer:          signer,
 			Mapping:         serviceaccountsv2.GlobalMappingCache.Mapping,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,
 			MintIDToken:     auth.MintIDTokenForServiceAccount,
-			LogToken:        serviceaccountsv2.LogToken,
+			LogToken:        serviceaccountsv2.NewTokenLogger(bq, !prod),
 		},
 	}
 }

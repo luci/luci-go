@@ -101,17 +101,14 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 
 		// LogOAuthToken called.
 		So(loggedInfo.GrantBody, ShouldResembleProto, grantBody)
-		loggedInfo.GrantBody = nil
-		So(loggedInfo, ShouldResemble, &MintedOAuthTokenInfo{
-			RequestedAt: testclock.TestTimeUTC,
-			Request:     req,
-			Response:    resp,
-			ConfigRev:   "fake-revision",
-			Rule:        rules.rulesPerAcc["serviceaccount@robots.com"].Rule,
-			PeerIP:      net.ParseIP("127.10.10.10"),
-			RequestID:   "gae-request-id",
-			AuthDBRev:   1234,
-		})
+		So(loggedInfo.Request, ShouldResembleProto, req)
+		So(loggedInfo.Response, ShouldResembleProto, resp)
+		So(loggedInfo.RequestedAt, ShouldEqual, testclock.TestTimeUTC)
+		So(loggedInfo.ConfigRev, ShouldEndWith, "fake-revision")
+		So(loggedInfo.Rule, ShouldEqual, rules.rulesPerAcc["serviceaccount@robots.com"].Rule)
+		So(loggedInfo.PeerIP, ShouldResemble, net.ParseIP("127.10.10.10"))
+		So(loggedInfo.RequestID, ShouldEqual, "gae-request-id")
+		So(loggedInfo.AuthDBRev, ShouldEqual, 1234)
 	})
 
 	Convey("Negative validity duration", t, func() {

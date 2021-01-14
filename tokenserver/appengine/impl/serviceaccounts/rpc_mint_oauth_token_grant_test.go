@@ -20,8 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
@@ -29,23 +27,28 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/trace/tracetest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func init() {
+	tracetest.Enable()
+}
+
 func testingContext(caller identity.Identity) context.Context {
 	ctx := gaetesting.TestingContext()
 	ctx = logging.SetLevel(ctx, logging.Debug)
-	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
+	ctx = tracetest.WithSpanContext(ctx, "gae-request-id")
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity:       caller,
 		PeerIPOverride: net.ParseIP("127.10.10.10"),
@@ -127,16 +130,14 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 			})
 
 			// LogGrant called.
-			So(loggedInfo, ShouldResemble, &MintedGrantInfo{
-				Request:   req,
-				Response:  resp,
-				GrantBody: lastBody,
-				ConfigRev: cfg.revision,
-				Rule:      cfg.rulesPerAcc["account@robots.com"].Rule,
-				PeerIP:    net.ParseIP("127.10.10.10"),
-				RequestID: "gae-request-id",
-				AuthDBRev: 1234,
-			})
+			So(loggedInfo.Request, ShouldResembleProto, req)
+			So(loggedInfo.Response, ShouldResembleProto, resp)
+			So(loggedInfo.GrantBody, ShouldResembleProto, lastBody)
+			So(loggedInfo.ConfigRev, ShouldEqual, cfg.revision)
+			So(loggedInfo.Rule, ShouldEqual, cfg.rulesPerAcc["account@robots.com"].Rule)
+			So(loggedInfo.PeerIP, ShouldResemble, net.ParseIP("127.10.10.10"))
+			So(loggedInfo.RequestID, ShouldEqual, "gae-request-id")
+			So(loggedInfo.AuthDBRev, ShouldEqual, 1234)
 		})
 
 		Convey("Empty service account", func() {

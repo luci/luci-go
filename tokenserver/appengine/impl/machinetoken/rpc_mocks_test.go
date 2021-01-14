@@ -32,8 +32,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/trace/tracetest"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
@@ -152,9 +152,13 @@ var testingCA = certconfig.CA{
 	UpdatedRev: "cfg-updated-rev",
 }
 
+func init() {
+	tracetest.Enable()
+}
+
 func testingContext(ca certconfig.CA) context.Context {
 	ctx := gaetesting.TestingContext()
-	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
+	ctx = tracetest.WithSpanContext(ctx, "gae-request-id")
 	ctx, _ = testclock.UseTime(ctx, testingTime)
 
 	// Put mocked CA config in the datastore.

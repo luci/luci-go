@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/common/trace/tracetest"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
@@ -41,6 +41,10 @@ var (
 	authorizedGroups = []string{projectActorsGroup}
 )
 
+func init() {
+	tracetest.Enable()
+}
+
 func testMintAccessToken(ctx context.Context, params auth.MintAccessTokenParams) (*auth.Token, error) {
 	return &auth.Token{
 		Token:  "",
@@ -51,7 +55,7 @@ func testMintAccessToken(ctx context.Context, params auth.MintAccessTokenParams)
 func testingContext(caller identity.Identity) context.Context {
 	ctx := gaetesting.TestingContext()
 	ctx = logging.SetLevel(ctx, logging.Debug)
-	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
+	ctx = tracetest.WithSpanContext(ctx, "gae-request-id")
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity:       caller,

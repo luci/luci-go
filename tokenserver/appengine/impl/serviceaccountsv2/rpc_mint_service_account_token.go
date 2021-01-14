@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
@@ -50,7 +50,7 @@ var (
 type MintServiceAccountTokenRPC struct {
 	// Signer is used only for its ServiceInfo.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// Mapping returns project<->account mapping to use for the request.
@@ -70,8 +70,8 @@ type MintServiceAccountTokenRPC struct {
 
 	// LogToken is mocked in tests.
 	//
-	// In prod it is LogToken from bigquery_log.go.
-	LogToken func(context.Context, *MintedTokenInfo) error
+	// In prod it is produced by NewTokenLogger.
+	LogToken TokenLogger
 }
 
 // validatedRequest is extracted from MintServiceAccountTokenRequest.
@@ -197,7 +197,7 @@ func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context
 			PeerIdentity:    env.peer,
 			ConfigRev:       env.mapping.ConfigRevision(),
 			PeerIP:          env.state.PeerIP(),
-			RequestID:       info.RequestID(ctx),
+			RequestID:       trace.SpanContext(ctx),
 			AuthDBRev:       authdb.Revision(state.DB()),
 		}
 		// Errors during logging are considered not fatal. We have a monitoring

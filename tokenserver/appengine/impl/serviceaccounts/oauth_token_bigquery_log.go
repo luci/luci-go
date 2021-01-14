@@ -19,6 +19,8 @@ import (
 	"net"
 	"time"
 
+	"cloud.google.com/go/bigquery"
+
 	"go.chromium.org/luci/common/proto/google"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
@@ -77,14 +79,23 @@ func (i *MintedOAuthTokenInfo) toBigQueryMessage() *bqpb.OAuthToken {
 	}
 }
 
-// LogOAuthToken records information about the OAuth token in the BigQuery.
+// GrantLogger records info about the OAuth token grant to BigQuery.
+type OAuthTokenLogger func(context.Context, *MintedOAuthTokenInfo) error
+
+// NewOAuthTokenLogger returns a callback that records info about OAuth tokens
+// to BigQuery.
 //
-// The token itself is not logged. Only first 16 bytes of its SHA256 hash
-// (aka 'fingerprint') is. It is used only to identify this particular token in
-// logs.
+// Tokens themselves are not logged. Only first 16 bytes of their SHA256 hashes
+// (aka 'fingerprint') are. They are used only to identify tokens in logs.
 //
-// On dev server, logs to the GAE log only, not to BigQuery (to avoid
-// accidentally pushing fake data to real BigQuery dataset).
-func LogOAuthToken(c context.Context, i *MintedOAuthTokenInfo) error {
-	return bq.InsertFromGAEv1(c, "tokens", "oauth_tokens", i.toBigQueryMessage())
+// When dryRun is true, logs to the local text log only, not to BigQuery
+// (to avoid accidentally pushing fake data to real BigQuery dataset).
+func NewOAuthTokenLogger(client *bigquery.Client, dryRun bool) OAuthTokenLogger {
+	inserter := bq.Inserter{
+		Table:  client.Dataset("tokens").Table("oauth_tokens"),
+		DryRun: dryRun,
+	}
+	return func(ctx context.Context, i *MintedOAuthTokenInfo) error {
+		return inserter.Insert(ctx, i.toBigQueryMessage())
+	}
 }

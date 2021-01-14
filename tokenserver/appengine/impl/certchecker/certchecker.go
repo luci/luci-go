@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/retry/transient"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
@@ -159,7 +158,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 		}
 		return &CertChecker{
 			CN:  cn,
-			CRL: certconfig.NewCRLChecker(cn, certconfig.CRLShardCount, refetchCRLPeriod(c)),
+			CRL: certconfig.NewCRLChecker(cn, certconfig.CRLShardCount, RefetchCRLPeriod),
 		}, 0, nil
 	})
 	if err != nil {
@@ -173,7 +172,7 @@ func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
 	value, err := ch.ca.Get(c, func(interface{}) (ca interface{}, exp time.Duration, err error) {
 		ca, err = ch.refetchCA(c)
 		if err == nil {
-			exp = refetchCAPeriod(c)
+			exp = RefetchCAPeriod
 		}
 		return
 	})
@@ -252,26 +251,6 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 	}
 
 	return ca, nil
-}
-
-// refetchCAPeriod returns for how long to cache the CA in memory by default.
-//
-// On dev server we cache for a very short duration to simplify local testing.
-func refetchCAPeriod(c context.Context) time.Duration {
-	if info.IsDevAppServer(c) {
-		return 100 * time.Millisecond
-	}
-	return RefetchCAPeriod
-}
-
-// refetchCRLPeriod returns for how long to cache the CRL in memory by default.
-//
-// On dev server we cache for a very short duration to simplify local testing.
-func refetchCRLPeriod(c context.Context) time.Duration {
-	if info.IsDevAppServer(c) {
-		return 100 * time.Millisecond
-	}
-	return RefetchCRLPeriod
 }
 
 // refetchCA is called lazily whenever we need to fetch the CA entity.

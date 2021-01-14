@@ -1,5 +1,8 @@
 # The token server <-> client semi-manual integration test
 
+**TODO: this test is broken since GAEv1 => GAEv2 migration: there's no local
+devserver and no local Datastore anymore.**
+
 This test sets up and configures local instance of the token server and tests
 that clients are able to use it.
 
