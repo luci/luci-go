@@ -231,6 +231,24 @@
       "parentUuid": "f9dcdc11_cc200256",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2afe475_72e70a93",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-01-14T23:49:03Z",
+      "side": 1,
+      "message": "Once artifacts export to BQ works; if people analyze logs via BQ, they already look at mangled data.\n\nI don\u0027t think people will analyze artifacts directly via streaming data back. I see your point though.\n\nI\u0027m fine either way, I just want the system to be opinionated and set clear expectations.",
+      "parentUuid": "69b08bf8_1db9b6a5",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
