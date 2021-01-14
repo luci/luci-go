@@ -141,6 +141,24 @@
       "parentUuid": "39f27b2d_f840c5ce",
       "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d03e63bf_bc3ab39c",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T02:00:14Z",
+      "side": 1,
+      "message": "but what if there are two different text/plain encodings, and the user wants a specific one. If we ignore everything after \";\", then the client would be getting not what they asked for.\n\nWhy not keep it dead simple for now? i.e. exact match",
+      "parentUuid": "9b4ab437_d99f3b57",
+      "revId": "34f7e25a721735c9f30a7d0645abceabbba755cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
