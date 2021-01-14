@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "69b4f5ad_c742bf61",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-14T00:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3c96a0f_2309bed9",
+      "range": {
+        "startLine": 91,
+        "startChar": 50,
+        "endLine": 91,
+        "endChar": 70
+      },
+      "revId": "0cc49399a980e39d9f9fee8c461d3045cdb3d77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b8fc8e0_40970e07",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-01-13T23:09:45Z",
       "side": 1,
       "message": "Nits: loadedAllVariants (plural)",
+      "range": {
+        "startLine": 59,
+        "startChar": 16,
+        "endLine": 59,
+        "endChar": 32
+      },
+      "revId": "0cc49399a980e39d9f9fee8c461d3045cdb3d77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be0a7edb_95435c4e",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-14T00:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b8fc8e0_40970e07",
       "range": {
         "startLine": 59,
         "startChar": 16,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f08b7a31_41e98f5e",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-14T00:25:40Z",
+      "side": 1,
+      "message": "my bad. forgot to add that after enabling unexpected filter.",
+      "parentUuid": "de76ca60_4215c01c",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 64,
+        "endChar": 46
+      },
+      "revId": "0cc49399a980e39d9f9fee8c461d3045cdb3d77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d131d508_4976e3d6",
@@ -100,6 +172,24 @@
       "writtenOn": "2021-01-13T23:09:45Z",
       "side": 1,
       "message": "At the beginning when you go to the page, there will be 2 Loading bars, it is quite confusing (I thought we are loading 2 sections but then I realised that it is the top and bottom \"Load more\"). Could we hide one until there is some results displayed?",
+      "revId": "0cc49399a980e39d9f9fee8c461d3045cdb3d77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89e703ca_9f24be3f",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-14T00:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d131d508_4976e3d6",
       "revId": "0cc49399a980e39d9f9fee8c461d3045cdb3d77a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
