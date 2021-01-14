@@ -341,5 +341,23 @@ func TestQuery(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 			})
 		})
+
+		Convey(`ContentTypes`, func() {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "", "a0", map[string]interface{}{"ContentType": "text/plain; encoding=utf-8"}),
+				insert.Artifact("inv1", "tr/t/r", "a0", map[string]interface{}{"ContentType": "text/plain"}),
+				insert.Artifact("inv1", "tr/t/r", "a1", nil),
+				insert.Artifact("inv1", "tr/t/r", "a2", map[string]interface{}{"ContentType": "text/plain;encoding=ascii"}),
+				insert.Artifact("inv1", "tr/t/r", "a3", map[string]interface{}{"ContentType": "image/jpg"}),
+				insert.Artifact("inv1", "tr/t/r", "a4", map[string]interface{}{"ContentType": "text/plain;encoding=utf-8"}),
+			)
+			q.ContentTypes = []string{"text/plain", "text/plain; encoding=utf-8"}
+
+			actual := mustFetchNames(q)
+			So(actual, ShouldResemble, []string{
+				"invocations/inv1/artifacts/a0",
+				"invocations/inv1/tests/t/results/r/artifacts/a0",
+			})
+		})
 	})
 }
