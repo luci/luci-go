@@ -347,11 +347,9 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv1", "", "a0", map[string]interface{}{"ContentType": "text/plain; encoding=utf-8"}),
 				insert.Artifact("inv1", "tr/t/r", "a0", map[string]interface{}{"ContentType": "text/plain"}),
 				insert.Artifact("inv1", "tr/t/r", "a1", nil),
-				insert.Artifact("inv1", "tr/t/r", "a2", map[string]interface{}{"ContentType": "text/plain;encoding=ascii"}),
 				insert.Artifact("inv1", "tr/t/r", "a3", map[string]interface{}{"ContentType": "image/jpg"}),
-				insert.Artifact("inv1", "tr/t/r", "a4", map[string]interface{}{"ContentType": "text/plain;encoding=utf-8"}),
 			)
-			q.ContentTypes = []string{"text/plain", "text/plain; encoding=utf-8"}
+			q.ContentTypesRegexp = "text/.+"
 
 			actual := mustFetchNames(q)
 			So(actual, ShouldResemble, []string{
