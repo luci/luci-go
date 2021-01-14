@@ -16,6 +16,57 @@
       "message": "It is ready.",
       "revId": "7b1d7eb882986422ad5a744464811dd865c52bc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65ca2d36_ee95d40c",
+        "filename": "common/trace/tracetest/tracetest.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T01:41:05Z",
+      "side": 1,
+      "message": "nit: The following property holds",
+      "revId": "7b1d7eb882986422ad5a744464811dd865c52bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b456d890_7125ddc9",
+        "filename": "tokenserver/appengine/impl/delegation/rpc_mint_delegation_token_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T01:41:05Z",
+      "side": 1,
+      "message": "dumb question: why is this important? are you asserting somewhere specific traces are set?\nFigured it out below.",
+      "revId": "7b1d7eb882986422ad5a744464811dd865c52bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03152154_40168a2c",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-14T01:41:05Z",
+      "side": 1,
+      "message": "ah, i see!",
+      "revId": "7b1d7eb882986422ad5a744464811dd865c52bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
