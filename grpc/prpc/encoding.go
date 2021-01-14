@@ -25,10 +25,12 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"sync"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	anypb "github.com/golang/protobuf/ptypes/any"
+	"github.com/klauspost/compress/gzip"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -41,6 +43,20 @@ import (
 const (
 	headerAccept = "Accept"
 )
+
+var gzippers sync.Pool
+
+func getGZipper(w io.Writer) *gzip.Writer {
+	if gw, _ := gzippers.Get().(*gzip.Writer); gw != nil {
+		gw.Reset(w)
+		return gw
+	}
+	return gzip.NewWriter(w)
+}
+
+func returnGzipper(gw *gzip.Writer) {
+	gzippers.Put(gw)
+}
 
 // responseFormat returns the format to be used in a response.
 // Can return only FormatBinary (preferred), FormatJSONPB or FormatText.
@@ -119,7 +135,7 @@ func marshalMessage(msg proto.Message, format Format, wrap bool) ([]byte, error)
 // writeMessage writes msg to w in the specified format.
 // c is used to log errors.
 // panics if msg is nil.
-func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, format Format) {
+func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, format Format, allowGZip bool) {
 	if msg == nil {
 		panic("msg is nil")
 	}
@@ -132,8 +148,24 @@ func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, f
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
 	w.Header().Set(headerContentType, format.MediaType())
-	if _, err := w.Write(body); err != nil {
-		logging.WithError(err).Errorf(c, "prpc: failed to write response body")
+	if allowGZip && len(body) > gzipThreshold {
+		w.Header().Set("Content-Encoding", "gzip")
+
+		gz := getGZipper(w)
+		defer returnGzipper(gz)
+		if _, err := gz.Write(body); err != nil {
+			logging.WithError(err).Errorf(c, "prpc: failed to write or compress the response body")
+			return
+		}
+		if err := gz.Close(); err != nil {
+			logging.WithError(err).Errorf(c, "prpc: failed to close gzip.Writer")
+			return
+		}
+	} else {
+		if _, err := w.Write(body); err != nil {
+			logging.WithError(err).Errorf(c, "prpc: failed to write response body")
+			return
+		}
 	}
 }
 
