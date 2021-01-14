@@ -20,6 +20,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"cloud.google.com/go/bigquery"
+
 	"go.chromium.org/luci/auth/identity"
 
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
@@ -62,14 +64,22 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.ProjectToken {
 	}
 }
 
-// LogToken records information about the token in the BigQuery.
+// TokenLogger records info about the token to BigQuery.
+type TokenLogger func(context.Context, *MintedTokenInfo) error
+
+// NewTokenLogger returns a callback that records info about tokens to BigQuery.
 //
-// The signed token itself is not logged. Only first 16 bytes of its SHA256 hash
-// (aka 'fingerprint') is. It is used only to identify this particular token in
-// logs.
+// Tokens themselves are not logged. Only first 16 bytes of their SHA256 hashes
+// (aka 'fingerprint') are. They are used only to identify tokens in logs.
 //
-// On dev server, logs to the GAE log only, not to BigQuery (to avoid
-// accidentally pushing fake data to real BigQuery dataset).
-func LogToken(c context.Context, i *MintedTokenInfo) error {
-	return bq.InsertFromGAEv1(c, "tokens", "project_tokens", i.toBigQueryMessage())
+// When dryRun is true, logs to the local text log only, not to BigQuery
+// (to avoid accidentally pushing fake data to real BigQuery dataset).
+func NewTokenLogger(client *bigquery.Client, dryRun bool) TokenLogger {
+	inserter := bq.Inserter{
+		Table:  client.Dataset("tokens").Table("project_tokens"),
+		DryRun: dryRun,
+	}
+	return func(ctx context.Context, i *MintedTokenInfo) error {
+		return inserter.Insert(ctx, i.toBigQueryMessage())
+	}
 }
