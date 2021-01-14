@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f39d7ad0_325824ee",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T21:42:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b38b5f0_cf6ce93c",
+      "range": {
+        "startLine": 21,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 15
+      },
+      "revId": "4fb4314c6ee93c75c0ff9db29e92f5d2859da534",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "23109643_9a5a2bed",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-14T20:58:32Z",
       "side": 1,
       "message": "Please reuse writers via sync.Pool. It will reduce GC pressure. See also http://blog.klauspost.com/gzip-performance-for-go-webservers/",
+      "range": {
+        "startLine": 138,
+        "startChar": 2,
+        "endLine": 138,
+        "endChar": 25
+      },
+      "revId": "4fb4314c6ee93c75c0ff9db29e92f5d2859da534",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09b79fa0_557e0154",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T21:42:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23109643_9a5a2bed",
       "range": {
         "startLine": 138,
         "startChar": 2,
