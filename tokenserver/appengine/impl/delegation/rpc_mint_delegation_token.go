@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/delegation/messages"
@@ -51,7 +51,7 @@ const tokenIDSequenceKind = "delegationTokenID"
 type MintDelegationTokenRPC struct {
 	// Signer is mocked in tests.
 	//
-	// In prod it is gaesigner.Signer.
+	// In prod it is the default server signer that uses server's service account.
 	Signer signing.Signer
 
 	// Rules returns delegation rules to use for the request.
@@ -61,8 +61,8 @@ type MintDelegationTokenRPC struct {
 
 	// LogToken is mocked in tests.
 	//
-	// In prod it is LogDelegationToken from bigquery_log.go.
-	LogToken func(context.Context, *MintedTokenInfo) error
+	// In prod it is produced by NewTokenLogger.
+	LogToken TokenLogger
 
 	// mintMock call is used in tests.
 	//
@@ -196,7 +196,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 			ConfigRev: rules.ConfigRevision(),
 			Rule:      rule,
 			PeerIP:    state.PeerIP(),
-			RequestID: info.RequestID(c),
+			RequestID: trace.SpanContext(c),
 			AuthDBRev: authdb.Revision(state.DB()),
 		}
 		if logErr := r.LogToken(c, &tokInfo); logErr != nil {

@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/common/trace/tracetest"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing"
@@ -55,9 +55,13 @@ const (
 	testRequestID  = "gae-request-id"
 )
 
+func init() {
+	tracetest.Enable()
+}
+
 func TestMintServiceAccountToken(t *testing.T) {
 	ctx := gaetesting.TestingContext()
-	ctx = info.GetTestable(ctx).SetRequestID(testRequestID)
+	ctx = tracetest.WithSpanContext(ctx, "gae-request-id")
 	ctx = logging.SetLevel(ctx, logging.Debug) // coverage for logRequest
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
