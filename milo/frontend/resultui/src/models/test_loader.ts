@@ -40,7 +40,7 @@ export const enum LoadingStage {
  * request.
  */
 export class TestLoader {
-  @computed get isLoading() { return this.stage !== LoadingStage.Done && this.loadingReqCount !== 0; }
+  @computed get isLoading() { return !this.loadedAllVariants && this.loadingReqCount !== 0; }
   @observable.ref private loadingReqCount = 0;
 
   /**
@@ -55,6 +55,12 @@ export class TestLoader {
   @observable.shallow readonly flakyTestVariants: TestVariant[] = [];
   @observable.shallow readonly exoneratedTestVariants: TestVariant[] = [];
   @observable.shallow readonly expectedTestVariants: TestVariant[] = [];
+
+  @computed get loadedAllVariants() { return this.stage === LoadingStage.Done; }
+  @computed get loadedAllUnexpectedVariants() { return this.stage > LoadingStage.LoadingUnexpected; }
+  @computed get loadedAllFlakyVariants() { return this.stage > LoadingStage.LoadingFlaky; }
+  @computed get loadedAllExoneratedVariants() { return this.stage > LoadingStage.LoadingExonerated; }
+  @computed get loadedAllExpectedVariants() { return this.stage > LoadingStage.LoadingExpected; }
 
   // undefined means the end has been reached.
   // empty string is the token for the first page.

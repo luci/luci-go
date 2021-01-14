@@ -64,10 +64,16 @@ export class TestFilterElement extends MobxLitElement {
     return html`
       Show:
       <div class="filter">
-        <input type="checkbox" id="unexpected" disabled checked>
-        <label for="unexpected" style="color: var(--failure-color);">
-          Unexpected (${this.unexpectedVariantCount})
-        </label>
+        <input
+          type="checkbox"
+          id="unexpected"
+          @change=${(v: MouseEvent) => {
+            this.testFilters.showUnexpectedVariant = (v.target as HTMLInputElement).checked;
+            this.configsStore.save();
+          }}
+          ?checked=${this.testFilters.showUnexpectedVariant}
+        >
+        <label for="unexpected" style="color: var(--failure-color);">Unexpected (${this.unexpectedVariantCount})</label>
       </div class="filter">
       <div class="filter">
         <input
