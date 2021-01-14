@@ -16,6 +16,52 @@
       "message": "PTAL",
       "revId": "497ec14b6e992727bb669520f90c8f634100d4d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11c05180_732b47a7",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T01:51:11Z",
+      "side": 1,
+      "message": "nit: q.SpecificContentTypes \u003d len(q.ContentTypes) \u003e 0\n\nalternatively, combine with if statement below? so that the related logic is one place.",
+      "range": {
+        "startLine": 121,
+        "startChar": 1,
+        "endLine": 123,
+        "endChar": 2
+      },
+      "revId": "497ec14b6e992727bb669520f90c8f634100d4d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c82ea57_09bf45e4",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T01:51:11Z",
+      "side": 1,
+      "message": "i don\u0027t know about this.\nthe code is trying to be smart, and makes an impression that it intelligently matches media types, but in reality it covers a rather rare edge case (\"text/plain; encoding\u003dutf-8\" vs \"text/plain;encoding\u003dutf-8\"), while not handling a more realistic use case (\"text/plain\" vs \"text/plain; encoding\u003dutf-8\").\n\nI think it would be simpler not to do this and require the user to specify the exact match. Like the proto says.",
+      "range": {
+        "startLine": 134,
+        "startChar": 30,
+        "endLine": 134,
+        "endChar": 47
+      },
+      "revId": "497ec14b6e992727bb669520f90c8f634100d4d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
