@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b38b5f0_cf6ce93c",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-14T20:58:32Z",
+      "side": 1,
+      "message": "Let\u0027s use https://godoc.org/github.com/klauspost/compress/gzip instead. The author claims it is 1.6x faster.\nWe already use this library (not gzip though) in a bunch of places.\nMake sure to update https://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/check_deps.allowlist when rolling.",
+      "range": {
+        "startLine": 21,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 15
+      },
+      "revId": "4fb4314c6ee93c75c0ff9db29e92f5d2859da534",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23109643_9a5a2bed",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-14T20:58:32Z",
+      "side": 1,
+      "message": "Please reuse writers via sync.Pool. It will reduce GC pressure. See also http://blog.klauspost.com/gzip-performance-for-go-webservers/",
+      "range": {
+        "startLine": 138,
+        "startChar": 2,
+        "endLine": 138,
+        "endChar": 25
+      },
+      "revId": "4fb4314c6ee93c75c0ff9db29e92f5d2859da534",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d800c93d_070414ea",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-14T20:58:32Z",
+      "side": 1,
+      "message": "I think we need an option here to enable compression and keep it off by default, or at least keep it off for JSON responses by default: on GAE gzip compression is done by Appengine itself. It will be unwise to do it on our side (will be paying for CPU $$$): https://cloud.google.com/appengine/docs/standard/go111/how-requests-are-handled#response_compression\n\nI verified it by looking at cr-buildbucket response headers for SearchBuild RPC, they have \"content-encoding: gzip\".\n\nluci/server.Server can set it to true when it detects it is not on GAE.",
+      "range": {
+        "startLine": 85,
+        "startChar": 5,
+        "endLine": 85,
+        "endChar": 11
+      },
+      "revId": "4fb4314c6ee93c75c0ff9db29e92f5d2859da534",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
