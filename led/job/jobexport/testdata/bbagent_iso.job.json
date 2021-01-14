@@ -98,7 +98,7 @@
         },
         "exe": {
           "cipd_package": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py",
-          "cipd_version": "refs/heads/master",
+          "cipd_version": "HEAD",
           "cmd": [
             "luciexe"
           ]

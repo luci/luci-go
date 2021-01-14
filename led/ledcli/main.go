@@ -119,10 +119,10 @@ edit subcommand to set the swarming envvar $CHROME_HEADLESS=1, and then launches
 the edited task back to swarming.
 
 The source for led lives at:
-  https://chromium.googlesource.com/infra/infra/+/master/go/src/infra/tools/led
+  https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tools/led
 
 The spec (as it is) for JobDefinition is at:
-  https://chromium.googlesource.com/infra/infra/+/master/go/src/infra/tools/led/job_def.go
+  https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/led/job/job.proto
 `,
 
 		Context: func(ctx context.Context) context.Context {
