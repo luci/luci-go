@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a4435d4_c6c8663d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-14T21:02:24Z",
+      "side": 1,
+      "message": "missing \n\n   tag :\u003d tag\n   ents :\u003d ents\n\nhere\n\nhttps://github.com/golang/go/wiki/CommonMistakes#using-goroutines-on-loop-iterator-variables",
+      "revId": "9d6d651afa3ec47c37dbe48b845edbb6adde81e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
