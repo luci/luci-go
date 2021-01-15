@@ -62,13 +62,6 @@ func main() {
 			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 		})
 
-		// Blackhole PubSubs from the Auth service. They are not needed when using
-		// luci/server. Keeping the route simplifies the migration (the pubsub
-		// subscription can be deleted whenever convenient).
-		srv.Routes.POST("/auth/pubsub/authdb:push", router.MiddlewareChain{}, func(c *router.Context) {
-			// nothing
-		})
-
 		return nil
 	})
 }
