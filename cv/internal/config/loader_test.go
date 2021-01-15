@@ -79,6 +79,7 @@ func TestLoadingConfigs(t *testing.T) {
 			},
 		}
 		tc.Create(ctx, project, cfg)
+
 		Convey("Enabled project", func() {
 			tc.MustExist(ctx, project)
 			m, err := GetLatestMeta(ctx, project)
@@ -86,12 +87,17 @@ func TestLoadingConfigs(t *testing.T) {
 			So(m.Exists(), ShouldBeTrue)
 			So(m.Status, ShouldEqual, StatusEnabled)
 			So(m.EVersion, ShouldEqual, 1)
+			So(m.ConfigGroupNames, ShouldResemble, []string{"branch_m100", "index#1"})
 			h := m.Hash()
 			So(h, ShouldStartWith, "sha256:")
 			So(m.ConfigGroupIDs, ShouldResemble, []ConfigGroupID{
 				ConfigGroupID(h + "/branch_m100"),
 				ConfigGroupID(h + "/index#1"),
 			})
+
+			m2, err := GetHashMeta(ctx, project, h)
+			So(m2, ShouldResemble, m)
+
 			cgs, err := m.GetConfigGroups(ctx)
 			So(err, ShouldBeNil)
 			So(len(cgs), ShouldEqual, 2)
