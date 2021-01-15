@@ -27,6 +27,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
@@ -78,7 +79,12 @@ type State struct {
 	strictParse bool
 
 	reservedInputProperties map[string]proto.Message
-	topLevelProperties      proto.Message
+	topLevelInputProperties proto.Message
+
+	// Note that outputProperties is statically allocated at Start time; No keys
+	// are added/removed for the duration of the Build.
+	outputProperties map[string]*outputPropertyState
+	topLevelOutput   *outputPropertyState
 
 	stepsMu   sync.Mutex
 	stepNames nameTracker
@@ -118,9 +124,15 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 		Input:  &bbpb.Build_Input{},
 	})
 
+	outputReservationKeys := propModifierReservations.locs.snap()
+
 	ret := &State{
-		buildPb:    initial,
-		logClosers: map[string]func() error{},
+		buildPb:          initial,
+		logClosers:       map[string]func() error{},
+		outputProperties: make(map[string]*outputPropertyState, len(outputReservationKeys)),
+	}
+	for ns := range outputReservationKeys {
+		ret.outputProperties[ns] = &outputPropertyState{}
 	}
 	ret.ctx, ret.ctxCloser = context.WithCancel(ctx)
 
@@ -133,9 +145,26 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 	if err != nil {
 		return nil, ctx, err
 	}
-	if ret.topLevelProperties != nil {
-		if err := parseTopLevelProperties(ret.buildPb.Input.Properties, ret.strictParse, ret.topLevelProperties); err != nil {
+	if ret.topLevelInputProperties != nil {
+		if err := parseTopLevelProperties(ret.buildPb.Input.Properties, ret.strictParse, ret.topLevelInputProperties); err != nil {
 			return nil, ctx, errors.Annotate(err, "parsing top-level properties").Err()
+		}
+	}
+
+	if tlo := ret.topLevelOutput; tlo != nil {
+		fields := tlo.msg.ProtoReflect().Descriptor().Fields()
+		topLevelOutputKeys := stringset.New(fields.Len())
+		for i := 0; i < fields.Len(); i++ {
+			f := fields.Get(i)
+			topLevelOutputKeys.Add(f.TextName())
+			topLevelOutputKeys.Add(f.JSONName())
+		}
+		for reserved := range ret.outputProperties {
+			if topLevelOutputKeys.Has(reserved) {
+				return nil, ctx, errors.Reason(
+					"output property %q conflicts with field in top-level output properties: reserved at %s",
+					reserved, propModifierReservations.locs.get(reserved)).Err()
+			}
 		}
 	}
 

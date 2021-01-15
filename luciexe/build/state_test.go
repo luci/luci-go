@@ -131,34 +131,46 @@ func TestStateLogging(t *testing.T) {
 	})
 }
 
+type buildWaiter struct {
+	b  *bbpb.Build
+	ch chan int64
+}
+
+func newBuildWaiter() *buildWaiter {
+	// 100 depth is cheap way to queue all changes
+	return &buildWaiter{nil, make(chan int64, 100)}
+}
+
+func (b *buildWaiter) waitFor(target int64) {
+	var last int64
+	for {
+		select {
+		case cur := <-b.ch:
+			last = cur
+			if cur >= target {
+				return
+			}
+
+		case <-time.After(50 * time.Millisecond):
+			panic(fmt.Sprintf("buildWaiter.waitFor timed out: last version %d", last))
+		}
+	}
+}
+
+func (b *buildWaiter) sendFn(vers int64, build *bbpb.Build) {
+	b.b = build
+	b.ch <- vers
+}
+
 func TestStateSend(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Test that OptSend works`, t, func() {
-		var lastBuild *bbpb.Build
-		lastBuildVers := make(chan int64, 100) // cheap way to queue all changes
-		waitForVersion := func(target int64) {
-			var last int64
-			for {
-				select {
-				case cur := <-lastBuildVers:
-					last = cur
-					if cur >= target {
-						return
-					}
-
-				case <-time.After(50 * time.Millisecond):
-					panic(fmt.Sprintf("waitForVersion timed out: last version %d", last))
-				}
-			}
-		}
+		lastBuildVers := newBuildWaiter()
 
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ts := timestamppb.New(testclock.TestRecentTimeUTC)
-		st, ctx, err := Start(ctx, nil, OptSend(rate.Inf, func(vers int64, build *bbpb.Build) {
-			lastBuild = build
-			lastBuildVers <- vers
-		}))
+		st, ctx, err := Start(ctx, nil, OptSend(rate.Inf, lastBuildVers.sendFn))
 		So(err, ShouldBeNil)
 		defer func() {
 			if st != nil {
@@ -167,13 +179,13 @@ func TestStateSend(t *testing.T) {
 		}()
 
 		Convey(`startup causes no send`, func() {
-			So(lastBuild, ShouldBeNil)
+			So(lastBuildVers.b, ShouldBeNil)
 		})
 
 		Convey(`adding a step sends`, func() {
 			step, _ := StartStep(ctx, "something")
-			waitForVersion(2)
-			So(lastBuild, ShouldResembleProto, &bbpb.Build{
+			lastBuildVers.waitFor(2)
+			So(lastBuildVers.b, ShouldResembleProto, &bbpb.Build{
 				Status:    bbpb.Status_STARTED,
 				StartTime: ts,
 				Input:     &bbpb.Build_Input{},
@@ -189,8 +201,8 @@ func TestStateSend(t *testing.T) {
 
 			Convey(`closing a step sends`, func() {
 				step.End(nil)
-				waitForVersion(3)
-				So(lastBuild, ShouldResembleProto, &bbpb.Build{
+				lastBuildVers.waitFor(3)
+				So(lastBuildVers.b, ShouldResembleProto, &bbpb.Build{
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
 					Input:     &bbpb.Build_Input{},
@@ -208,8 +220,8 @@ func TestStateSend(t *testing.T) {
 
 			Convey(`manipulating a step sends`, func() {
 				step.SetSummaryMarkdown("hey")
-				waitForVersion(3)
-				So(lastBuild, ShouldResembleProto, &bbpb.Build{
+				lastBuildVers.waitFor(3)
+				So(lastBuildVers.b, ShouldResembleProto, &bbpb.Build{
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
 					Input:     &bbpb.Build_Input{},
@@ -229,8 +241,8 @@ func TestStateSend(t *testing.T) {
 		Convey(`ending build sends`, func() {
 			st.End(nil)
 			st = nil
-			waitForVersion(1)
-			So(lastBuild, ShouldResembleProto, &bbpb.Build{
+			lastBuildVers.waitFor(1)
+			So(lastBuildVers.b, ShouldResembleProto, &bbpb.Build{
 				Status:    bbpb.Status_SUCCESS,
 				StartTime: ts,
 				EndTime:   ts,

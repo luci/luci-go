@@ -49,13 +49,13 @@ import (
 //
 //    func main() {
 //      input := *MyInputProps{}
-//      var writeOutputProps func(context.Context, *MyOutputProps)
-//      var mergeOutputProps func(context.Context, *MyOutputProps)
+//      var writeOutputProps func(*MyOutputProps)
+//      var mergeOutputProps func(*MyOutputProps)
 //
 //      Main(input, &writeOutputProps, &mergeOutputProps, func(ctx context.Context, args []string, st *build.State) error {
 //        // actual build code here, build is already Start'd
 //        // input was parsed from build.Input.Properties
-//        writeOutputProps(ctx, &MyOutputProps{...})
+//        writeOutputProps(&MyOutputProps{...})
 //        return nil // will mark the Build as SUCCESS
 //      })
 //    }
