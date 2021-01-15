@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f09caf9_99b6233b",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-15T19:32:17Z",
+      "side": 1,
+      "message": "mention order too?\nmaybe refer to Fetch(), or move that paragraph from Fetch to here, and refer from Fetch to Run.",
+      "revId": "84efaa7e9fb98df60833a279b77361123e7f82a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "141367ab_1306367f",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-15T19:32:17Z",
+      "side": 1,
+      "message": "!\u003d",
+      "range": {
+        "startLine": 171,
+        "startChar": 15,
+        "endLine": 171,
+        "endChar": 16
+      },
+      "revId": "84efaa7e9fb98df60833a279b77361123e7f82a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
