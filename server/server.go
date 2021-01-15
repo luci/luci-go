@@ -1858,6 +1858,10 @@ func (s *Server) initMainPort() error {
 				},
 			},
 		},
+		// Allow compression when not running on GAE. On GAE compression for text
+		// responses is done by GAE itself and doing it in our code would be
+		// wasteful.
+		EnableCompression: !s.Options.GAE,
 	}
 	discovery.Enable(s.PRPC)
 	s.PRPC.InstallHandlers(s.Routes, router.MiddlewareChain{})
