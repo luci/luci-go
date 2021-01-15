@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "993d60ad_7f32ad61",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-15T21:41:21Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "0cb4f165cd743ad24dffbbf8a2f7329b688cfa0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4124108c_db029281",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-15T21:41:21Z",
+      "side": 1,
+      "message": "Below is the code for exporting test result rows, moved from bqexporter.",
+      "revId": "0cb4f165cd743ad24dffbbf8a2f7329b688cfa0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
