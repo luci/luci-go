@@ -52,6 +52,24 @@
       "parentUuid": "8e808e37_485ce4f0",
       "revId": "a403ec5693919e7acc0a5852ecb3aa774953ea96",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8a4b4bd_807e1fdf",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-15T03:30:18Z",
+      "side": 1,
+      "message": "\u003e it\u0027s more important to say why than to say what\n\nYes, thank you, done.",
+      "parentUuid": "8078bd9f_9cc195da",
+      "revId": "a403ec5693919e7acc0a5852ecb3aa774953ea96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
