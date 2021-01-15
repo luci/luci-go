@@ -119,6 +119,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "59f70ca4_1b45f94f",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-15T02:28:09Z",
+      "side": 1,
+      "message": "thanks for the history of evolution of apply func 😊 I\u0027m glad we think of similar problems. So, I won\u0027t bring it up again.\n\nIndeed, LeaseArgs is a typical recommended Go approach, but I think of it as annoying copy-pasta (I\u0027d much rather get Pythons\u0027 kwargs, but I\u0027m used to be disappointed with Go).\n\n\u003e I\u0027m not sure if there\u0027s a need to read at the beginning of a transaction and write at the end\n\nThe need is to minimize the transaction duration to reduce conflicts and hence retries, ultimately leading to a faster and cheaper app.\n\nI do like lease.LoadMulti, it would help the PM, which would do smth like:\n\ndef trans:\n  ds.Get(Project{})\n  side_effect1{ ds.Put(Run.Event) }\n  side_effect2{\n     lease.LoadMulti\n     lease.ApplyMulti\n  }\n  ds.Put(Project{})\n\nIn terms of RPCs to Datastore, trans does:\n  Get(), Put(), Get(), Put(),  Put()\nwhich meaning ~5*40ms \u003d 200ms latency.\n\nIn theory, it could still be condensed to just \u003c100ms:\n  Get(project,leases)\n  Put(project, Run.event, leases)\n\nIn practice, this may lead to more complicated code.\nIdea: we might be able to improve it by splitting each sideEffect into read(entities) and write(entities) phases. \n*WARNING* we shouldn\u0027t do this yet, since 200ms isn\u0027t bad.\n\n\n\nSo, to conclude with concrete AIs, WDYT:\n1. Create LeaseArgs. Move docs of each field to there.\n2. Keep Lease{} as DS entity. No need to document its fields.\n3. Add\nfunc CanLease(justLoadedFromDS *Lease, want LeaseArgs) (Lease, error){\n  // if there is no existing lease (e.g. datastore.NoSuchEntity), justLoadedFromDS should be nil\n}\n4. Keep standalone Apply(LeaseArgs) -\u003e Lease\n   It should call CanLease inside its guts.\n   Worst case, we\u0027ll delete it if unused later",
+      "parentUuid": "8bbd96f8_5875e680",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "00f347e9_03c17cb2",
         "filename": "cv/internal/lease/lease.go",
         "patchSetId": 6
@@ -297,6 +315,24 @@
       "side": 1,
       "message": "\u003e I do see upside in delete, as it makes it easy to wipe out old data from Datastore.\n\nTrue, it does make things easier. I think the reason I choose write empty and lazy deletion in the future over immediate deletion is to follow this best practice for deletion[1] (i.e. Avoid deleting large numbers of entities across a small range of keys.) because CV is likely create/delete lease on a small range of AssetID (change number is monotonically increasing). But I\u0027m not sure if it is large enough concern to choose not to delete.\n\n[1]: https://cloud.google.com/datastore/docs/best-practices",
       "parentUuid": "def7b218_538f082b",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0c889810_b1e0fecc",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-15T02:28:09Z",
+      "side": 1,
+      "message": "ah, good thinking!\nBut this is where CL.ID really helps: it\u0027s actually distributed (see https://pantheon.corp.google.com/datastore/entities;kind\u003dCL;ns\u003d__$DEFAULT$__/query/kind?serviceId\u003ddefault\u0026project\u003dluci-change-verifier-dev)\n\nAlso, iff your ID isn\u0027t well distributed, typical approach is to use crypto-hash of it instead, which should be well distributed.",
+      "parentUuid": "66592726_b5254e5d",
       "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
