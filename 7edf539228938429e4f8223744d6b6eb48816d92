@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "451b981e_a6615950",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-15T05:48:25Z",
+      "side": 1,
+      "message": "yes but I look at it \"poller implicitly assumes that forceNotifyPM tasks won\u0027t be de-duped with prior tasks for the same CL\"",
+      "parentUuid": "ba44e9a5_ca74f23f",
+      "range": {
+        "startLine": 87,
+        "startChar": 45,
+        "endLine": 87,
+        "endChar": 69
+      },
+      "revId": "7edf539228938429e4f8223744d6b6eb48816d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2ab5a28a_a789dd65",
         "filename": "cv/internal/gerrit/updater/updater.go",
         "patchSetId": 5
