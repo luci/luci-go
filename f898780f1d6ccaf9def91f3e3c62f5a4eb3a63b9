@@ -33,6 +33,24 @@
       "message": "unfinished sentence",
       "revId": "f898780f1d6ccaf9def91f3e3c62f5a4eb3a63b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5aec199_16e64b38",
+        "filename": "cv/internal/prjmanager/impl/state/side_effect.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-15T02:43:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55d5a2ce_729b2d61",
+      "revId": "f898780f1d6ccaf9def91f3e3c62f5a4eb3a63b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
