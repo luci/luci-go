@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e890fb88_61ec7f31",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:08:24Z",
+      "side": 1,
+      "message": "nit: I would just hide all the complexity in one function (e.g. populateApplicableConfigGroup/setApplicableConfigGroup).",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 0
+      },
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e59a352d_a209586c",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:08:24Z",
+      "side": 1,
+      "message": "oops",
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52219c89_2123d80e",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:08:24Z",
+      "side": 1,
+      "message": "move to the correct block",
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d594d3ed_096b4eea",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:08:24Z",
+      "side": 1,
+      "message": "space for consistency",
+      "range": {
+        "startLine": 72,
+        "startChar": 19,
+        "endLine": 72,
+        "endChar": 28
+      },
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56e36313_3b3eb0f7",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:08:24Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 28
+      },
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ccd2150_b39ff892",
+        "filename": "cv/internal/prjmanager/impl/state/util.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:08:24Z",
+      "side": 1,
+      "message": "why?",
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
