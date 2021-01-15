@@ -129,13 +129,17 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 		UpdateTime: clock.Now(ctx).UTC(),
 		State:      s.PB,
 	}
-	if s.ConfigHash != pm.stateOffload.ConfigHash || s.Status != pm.stateOffload.Status {
+	if s.PB.GetConfigHash() != pm.stateOffload.ConfigHash || s.Status != pm.stateOffload.Status {
 		entities = append(entities, &prjmanager.ProjectStateOffload{
 			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
 			Status:     s.Status,
-			ConfigHash: s.ConfigHash,
+			ConfigHash: s.PB.GetConfigHash(),
 		})
 	}
+	// Erase s.PB fields which are already stored as top level entities to avoid
+	// storing the same data twice.
+	s.PB.ConfigHash = ""
+	s.PB.LuciProject = ""
 	if err := datastore.Put(ctx, entities...); err != nil {
 		return errors.Annotate(err, "failed to put Project").Tag(transient.Tag).Err()
 	}
