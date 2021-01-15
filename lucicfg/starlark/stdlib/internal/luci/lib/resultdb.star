@@ -22,7 +22,7 @@ load(
     "resultdb_pb",
 )
 
-def _settings(*, enable = False, bq_exports = None):
+def _settings(*, enable = False, bq_exports = None, history_options = None):
     """Specifies how buildbucket should integrate with ResultDB.
 
     Args:
@@ -30,6 +30,9 @@ def _settings(*, enable = False, bq_exports = None):
       bq_exports: list of resultdb_pb.BigQueryExport() protos, configurations
         for exporting specific subsets of test results to a designated BigQuery
         table, use resultdb.export_test_results(...) to create these.
+      history_options: Configuration for indexing test results from this
+        builder's builds for history queries, use resultdb.history_options(...)
+        to create this value.
 
     Returns:
       A populated buildbucket_pb.Builder.ResultDB() proto.
@@ -37,6 +40,22 @@ def _settings(*, enable = False, bq_exports = None):
     return buildbucket_pb.Builder.ResultDB(
         enable = validate.bool("enable", enable, default = False, required = False),
         bq_exports = bq_exports or [],
+        history_options = history_options,
+    )
+
+def _history_options(*, by_timestamp = False):
+    """Defines a history indexing configuration.
+
+    Args:
+      by_timestamp: bool, indicates whether the build's test results will be
+        indexed by their creation timestamp for the purposes of retrieving the
+        history of a given set of tests/variants.
+
+    Returns:
+      A populated resultdb_pb.HistoryOptions() proto.
+    """
+    return resultdb_pb.HistoryOptions(
+        use_invocation_timestamp = by_timestamp,
     )
 
 def _export_test_results(
@@ -154,4 +173,5 @@ resultdb = struct(
     export_test_results = _export_test_results,
     test_result_predicate = _test_result_predicate,
     validate_settings = _validate_settings,
+    history_options = _history_options,
 )

@@ -2553,7 +2553,7 @@ acl.entry object, should be treated as opaque.
 ### resultdb.settings {#resultdb.settings}
 
 ```python
-resultdb.settings(enable = None, bq_exports = None)
+resultdb.settings(enable = None, bq_exports = None, history_options = None)
 ```
 
 
@@ -2564,6 +2564,7 @@ Specifies how buildbucket should integrate with ResultDB.
 
 * **enable**: boolean, whether to enable ResultDB:Buildbucket integration.
 * **bq_exports**: list of resultdb_pb.BigQueryExport() protos, configurations for exporting specific subsets of test results to a designated BigQuery table, use [resultdb.export_test_results(...)](#resultdb.export_test_results) to create these.
+* **history_options**: Configuration for indexing test results from this builder's builds for history queries, use [resultdb.history_options(...)](#resultdb.history_options) to create this value.
 
 
 #### Returns  {#resultdb.settings-returns}
@@ -2643,6 +2644,27 @@ Validates the type of a ResultDB settings proto.
 #### Returns  {#resultdb.validate_settings-returns}
 
 A validated proto, if it's the correct type.
+
+
+
+### resultdb.history_options {#resultdb.history_options}
+
+```python
+resultdb.history_options(by_timestamp = None)
+```
+
+
+
+Defines a history indexing configuration.
+
+#### Arguments {#resultdb.history_options-args}
+
+* **by_timestamp**: bool, indicates whether the build's test results will be indexed by their creation timestamp for the purposes of retrieving the history of a given set of tests/variants.
+
+
+#### Returns  {#resultdb.history_options-returns}
+
+A populated resultdb_pb.HistoryOptions() proto.
 
 
 
