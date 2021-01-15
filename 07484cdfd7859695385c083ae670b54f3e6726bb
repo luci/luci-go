@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5173a342_c1aebc7b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-15T04:53:39Z",
+      "side": 1,
+      "message": "Hi, can you help to review it? thanks. \nI\u0027ve tested it in Dev and it works.",
+      "revId": "07484cdfd7859695385c083ae670b54f3e6726bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a15338f_3bdc4d16",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-15T04:53:39Z",
+      "side": 1,
+      "message": "Share the same ctx. So when the Go rpc exceeds 60s, this will also be aborted.",
+      "range": {
+        "startLine": 85,
+        "startChar": 33,
+        "endLine": 85,
+        "endChar": 36
+      },
+      "revId": "07484cdfd7859695385c083ae670b54f3e6726bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
