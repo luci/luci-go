@@ -349,6 +349,9 @@ type TaskClassRef interface {
 	//
 	// Panics if the class has already a handler attached.
 	AttachHandler(h Handler)
+
+	// Definition returns the original task class definition.
+	Definition() TaskClass
 }
 
 // Task contains task body and metadata.
@@ -521,6 +524,13 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 	}
 	d.clsByID[cls.ID] = impl
 	d.clsByTyp[typ] = impl
+	return impl
+}
+
+// TaskClassRef returns a task class reference given its ID or nil if no such
+// task class is registered.
+func (d *Dispatcher) TaskClassRef(id string) TaskClassRef {
+	impl, _, _ := d.classByID(id)
 	return impl
 }
 
@@ -1210,6 +1220,11 @@ func (cls *taskClassImpl) AttachHandler(h Handler) {
 		panic("The task class has a handler attached already")
 	}
 	cls.Handler = h
+}
+
+// Definition implements TaskClassRef interface.
+func (cls *taskClassImpl) Definition() TaskClass {
+	return cls.TaskClass
 }
 
 // taskName returns a short ID for the task to use to dedup it.
