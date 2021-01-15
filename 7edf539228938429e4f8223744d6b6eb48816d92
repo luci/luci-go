@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ac34c87_60f45c3f",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:09:09Z",
+      "side": 1,
+      "message": "Why deduplication can\u0027t be used if forceNotifyPm bit is set?",
+      "range": {
+        "startLine": 87,
+        "startChar": 45,
+        "endLine": 87,
+        "endChar": 69
+      },
+      "revId": "7edf539228938429e4f8223744d6b6eb48816d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ab5a28a_a789dd65",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:09:09Z",
+      "side": 1,
+      "message": "Can we delete this or this is indeed for illustration purpose?",
+      "range": {
+        "startLine": 210,
+        "startChar": 3,
+        "endLine": 212,
+        "endChar": 3
+      },
+      "revId": "7edf539228938429e4f8223744d6b6eb48816d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
