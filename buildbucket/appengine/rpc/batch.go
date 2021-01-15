@@ -16,7 +16,10 @@ package rpc
 
 import (
 	"context"
+	"net/http"
 
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -27,6 +30,20 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+// Tests can put mock builds client here, prod code will ignore this.
+var mockBuildsClient *pb.MockBuildsClient
+
+// searchResponseBundle captures the BatchResponse from Py service.
+type pyBatchResponse struct {
+	res *pb.BatchResponse
+	err error
+}
+
+// pyBBClient is a python buildbucket service client.
+type pyBBClient struct {
+	client pb.BuildsClient
+}
 
 // Batch handles a batch request. Implements pb.BuildsServer.
 func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
@@ -55,7 +72,21 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 			return nil, appstatus.BadRequest(errors.New("request includes an unsupported type"))
 		}
 	}
-	// TODO(yuanjunh): call Py service for schedule and cancel requests.
+	// TODO(crbug.com/1144958): remove calling py after ScheduleBuild and CancelBuild are done.
+	pyResC := make(chan *pyBatchResponse)
+	if len(pyBatchReq.Requests) != 0 {
+		go func() {
+			pyClient, err := newPyBBClient(ctx)
+			if err != nil {
+				pyResC <- &pyBatchResponse{res: nil, err: err}
+				return
+			}
+			logging.Debugf(ctx, "Batch: calling python service")
+			res, err := (*pyClient).Batch(ctx, pyBatchReq)
+			pyResC <- &pyBatchResponse{res: res, err: err}
+		}()
+	}
+
 	err := parallel.WorkPool(64, func(c chan<- func() error) {
 		for i, r := range goBatchReq {
 			i, r := i, r
@@ -85,6 +116,25 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	if err != nil {
 		return nil, err
 	}
+
+	if len(pyBatchReq.Requests) == 0 {
+		return res, nil
+	}
+
+	pyRes := <-pyResC
+	if pyRes.err != nil {
+		logging.Errorf(ctx, "Error from Python service: %s", err)
+		for _, idx := range pyIndices {
+			res.Responses[idx] = &pb.BatchResponse_Response{
+				Response: &pb.BatchResponse_Response_Error{Error: status.New(codes.Internal, "Internal server error").Proto()},
+			}
+		}
+	} else {
+		for i, idx := range pyIndices {
+			res.Responses[idx] = pyRes.res.Responses[i]
+		}
+	}
+
 	return res, nil
 }
 
@@ -96,4 +146,26 @@ func toBatchResponseError(ctx context.Context, err error) *pb.BatchResponse_Resp
 		return &pb.BatchResponse_Response_Error{Error: status.New(codes.Internal, "Internal server error").Proto()}
 	}
 	return &pb.BatchResponse_Response_Error{Error: st.Proto()}
+}
+
+// newPyBBClient constructs a BuildBucket python client.
+func newPyBBClient(ctx context.Context) (*pb.BuildsClient, error) {
+	if mockBuildsClient != nil {
+		c := pb.BuildsClient(mockBuildsClient)
+		return &c, nil
+	}
+	pyHost := "default-dot-cr-buildbucket.appspot.com"
+	if ctx.Value("env") == "Dev" {
+		pyHost = "default-dot-cr-buildbucket-dev.appspot.com"
+	}
+
+	t, err := auth.GetRPCTransport(ctx, auth.AsCredentialsForwarder)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get RPC transport to python BB service").Err()
+	}
+	pyClient := pb.NewBuildsPRPCClient(&prpc.Client{
+		C:    &http.Client{Transport: t},
+		Host: pyHost,
+	})
+	return &pyClient, nil
 }
