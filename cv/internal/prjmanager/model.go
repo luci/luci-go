@@ -42,9 +42,6 @@ type Project struct {
 	// It's not indexed to avoid hot areas in the index.
 	UpdateTime time.Time `gae:",noindex"`
 
-	// IncompleteRuns are sorted IDs of Runs which aren't yet complete.
-	// ProjectManager is responsible for notifying these Runs of config change.
-	IncompleteRuns common.RunIDs `gae:",noindex"`
 	// State serializes internal Project Manager state.
 	//
 	// The following fields aren't set, as they duplicate state already stored in
@@ -75,4 +72,9 @@ type ProjectStateOffload struct {
 	Status Status `gae:",noindex"`
 	// ConfigHash is the latest processed Project Config hash.
 	ConfigHash string `gae:",noindex"`
+}
+
+// IncompleteRuns are IDs of Runs which aren't yet completed.
+func (p *Project) IncompleteRuns() (ids common.RunIDs) {
+	return p.State.IncompleteRuns()
 }
