@@ -189,6 +189,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a6f40ef_2754dd62",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-15T14:47:07Z",
+      "side": 1,
+      "message": "Done, thanks!",
+      "parentUuid": "43506b53_60b87889",
+      "range": {
+        "startLine": 59,
+        "startChar": 14,
+        "endLine": 59,
+        "endChar": 47
+      },
+      "revId": "2442ac3f53820bf569491ea72600fea2129de038",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "53b2d4df_cf6428a1",
