@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -125,6 +126,27 @@ func main() {
 				return
 			}
 			fmt.Fprintf(c.Writer, "Key: %s\nSig: %s\n", key, base64.RawStdEncoding.EncodeToString(sig))
+		})
+
+		// Shared http.Client with monitoring instrumentation.
+		tr, err := auth.GetRPCTransport(srv.Context, auth.NoAuth)
+		if err != nil {
+			return err
+		}
+		client := &http.Client{Transport: tr}
+
+		srv.Routes.GET("/example.com", router.MiddlewareChain{}, func(c *router.Context) {
+			var blob []byte
+			resp, err := client.Get("http://example.com")
+			if err == nil {
+				defer resp.Body.Close()
+				blob, err = ioutil.ReadAll(resp.Body)
+			}
+			if err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+				return
+			}
+			c.Writer.Write(blob)
 		})
 
 		return nil

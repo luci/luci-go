@@ -124,6 +124,13 @@ const (
 	flushInitialRetry = 5 * time.Second
 )
 
+// Activate updates the tsmon state in the context to use this config.
+//
+// Not needed if metrics are updated only from inside the middleware.
+func (s *State) Activate(c context.Context) {
+	s.checkSettings(c)
+}
+
 // Middleware is a middleware that collects request metrics and triggers metric
 // flushes.
 func (s *State) Middleware(c *router.Context, next router.Handler) {
