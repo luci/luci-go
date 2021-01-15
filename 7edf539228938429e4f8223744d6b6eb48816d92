@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ba44e9a5_ca74f23f",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:46:43Z",
+      "side": 1,
+      "message": "so are we implicitly assumes `forceNotifyPm \u003d\u003d true` means Full Poll?",
+      "parentUuid": "6597698c_a958b914",
+      "range": {
+        "startLine": 87,
+        "startChar": 45,
+        "endLine": 87,
+        "endChar": 69
+      },
+      "revId": "7edf539228938429e4f8223744d6b6eb48816d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2ab5a28a_a789dd65",
         "filename": "cv/internal/gerrit/updater/updater.go",
         "patchSetId": 5
@@ -85,6 +109,30 @@
       "side": 1,
       "message": "it\u0027s more for clarity as to which clause actually results in skipping update, because I struggled to find it yesterday 😞\nbetter ideas?",
       "parentUuid": "2ab5a28a_a789dd65",
+      "range": {
+        "startLine": 210,
+        "startChar": 3,
+        "endLine": 212,
+        "endChar": 3
+      },
+      "revId": "7edf539228938429e4f8223744d6b6eb48816d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "44bebbb1_9efffc81",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:46:43Z",
+      "side": 1,
+      "message": "I think it\u0027s alright. just want to make sure it\u0027s intentional :)",
+      "parentUuid": "2287310f_b486eac9",
       "range": {
         "startLine": 210,
         "startChar": 3,
