@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -31,7 +32,6 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/minter/tokenminter"
-	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
 
 // Services carries concrete implementation of all Token Server RPC services.
@@ -47,16 +47,12 @@ func Main(init func(srv *server.Server, services *Services) error) {
 		cfgmodule.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
 		warmup.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		signer := auth.GetSigner(srv.Context)
-
-		bqClient, err := bq.NewClient(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return err
-		}
 
 		adminSrv := adminsrv.NewServer(signer)
 		adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
@@ -68,7 +64,7 @@ func Main(init func(srv *server.Server, services *Services) error) {
 		return init(srv, &Services{
 			Admin:  adminSrv,
 			Certs:  certauthorities.NewServer(),
-			Minter: tokenminter.NewServer(signer, bqClient, srv.Options.Prod),
+			Minter: tokenminter.NewServer(signer, srv.Options.Prod),
 		})
 	})
 }

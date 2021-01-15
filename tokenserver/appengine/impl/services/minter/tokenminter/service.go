@@ -18,8 +18,6 @@
 package tokenminter
 
 import (
-	"cloud.google.com/go/bigquery"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 
@@ -48,41 +46,41 @@ type serverImpl struct {
 // NewServer returns prod TokenMinterServer implementation.
 //
 // It does all authorization checks inside.
-func NewServer(signer signing.Signer, bq *bigquery.Client, prod bool) minter.TokenMinterServer {
+func NewServer(signer signing.Signer, prod bool) minter.TokenMinterServer {
 	return &serverImpl{
 		MintMachineTokenRPC: machinetoken.MintMachineTokenRPC{
 			Signer:           signer,
 			CheckCertificate: certchecker.CheckCertificate,
-			LogToken:         machinetoken.NewTokenLogger(bq, !prod),
+			LogToken:         machinetoken.NewTokenLogger(!prod),
 		},
 		MintDelegationTokenRPC: delegation.MintDelegationTokenRPC{
 			Signer:   signer,
 			Rules:    delegation.GlobalRulesCache.Rules,
-			LogToken: delegation.NewTokenLogger(bq, !prod),
+			LogToken: delegation.NewTokenLogger(!prod),
 		},
 		MintOAuthTokenGrantRPC: serviceaccounts.MintOAuthTokenGrantRPC{
 			Signer:   signer,
 			Rules:    serviceaccounts.GlobalRulesCache.Rules,
-			LogGrant: serviceaccounts.NewGrantLogger(bq, !prod),
+			LogGrant: serviceaccounts.NewGrantLogger(!prod),
 		},
 		MintOAuthTokenViaGrantRPC: serviceaccounts.MintOAuthTokenViaGrantRPC{
 			Signer:          signer,
 			Rules:           serviceaccounts.GlobalRulesCache.Rules,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,
-			LogOAuthToken:   serviceaccounts.NewOAuthTokenLogger(bq, !prod),
+			LogOAuthToken:   serviceaccounts.NewOAuthTokenLogger(!prod),
 		},
 		MintProjectTokenRPC: projectscope.MintProjectTokenRPC{
 			Signer:            signer,
 			MintAccessToken:   auth.MintAccessTokenForServiceAccount,
 			ProjectIdentities: projectidentity.ProjectIdentities,
-			LogToken:          projectscope.NewTokenLogger(bq, !prod),
+			LogToken:          projectscope.NewTokenLogger(!prod),
 		},
 		MintServiceAccountTokenRPC: serviceaccountsv2.MintServiceAccountTokenRPC{
 			Signer:          signer,
 			Mapping:         serviceaccountsv2.GlobalMappingCache.Mapping,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,
 			MintIDToken:     auth.MintIDTokenForServiceAccount,
-			LogToken:        serviceaccountsv2.NewTokenLogger(bq, !prod),
+			LogToken:        serviceaccountsv2.NewTokenLogger(!prod),
 		},
 	}
 }

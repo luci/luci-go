@@ -17,26 +17,27 @@ package bq
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
-	"sync"
-	"sync/atomic"
-	"time"
 
 	"cloud.google.com/go/bigquery"
 	protov1 "github.com/golang/protobuf/proto"
+
 	"google.golang.org/api/option"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
-	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/tq"
 )
 
 var (
@@ -48,52 +49,103 @@ var (
 		field.String("outcome")) // "ok, "bad_row", "deadline", "error"
 )
 
-// NewClient constructs an instance of BigQuery API client with proper auth.
-func NewClient(ctx context.Context, projectID string) (*bigquery.Client, error) {
+// RegisterTokenKind registers a TQ class to log a particular token kind into
+// a particular BigQuery table.
+func RegisterTokenKind(table string, prototype proto.Message) {
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        table,
+		Prototype: prototype,
+		Topic:     "bigquery-log",
+		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(m)
+			if err != nil {
+				return nil, err
+			}
+			return &tq.CustomPayload{
+				Meta: map[string]string{"table": table},
+				Body: blob,
+			}, nil
+		},
+	})
+}
+
+// LogToken emits a PubSub task to record the token to the BigQuery log.
+//
+// If `dryRun` is true, will just log the token to the local text log.
+func LogToken(ctx context.Context, tok proto.Message, dryRun bool) error {
+	if logging.IsLogging(ctx, logging.Debug) {
+		blob, err := (prototext.MarshalOptions{Indent: "\t"}).Marshal(tok)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to marshal the row to proto text: %s", err)
+		} else {
+			logging.Debugf(ctx, "BigQuery row:\n%s", blob)
+		}
+	}
+	if dryRun {
+		return nil
+	}
+	return tq.AddTask(ctx, &tq.Task{Payload: tok})
+}
+
+// Inserter receives PubSub push messages and converts them to BQ inserts.
+type Inserter struct {
+	bq *bigquery.Client
+}
+
+// NewInserter constructs an instance of Inserter.
+func NewInserter(ctx context.Context, projectID string) (*Inserter, error) {
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, err
 	}
-	return bigquery.NewClient(ctx, projectID, option.WithHTTPClient(&http.Client{Transport: tr}))
+	bq, err := bigquery.NewClient(ctx, projectID, option.WithHTTPClient(&http.Client{Transport: tr}))
+	if err != nil {
+		return nil, err
+	}
+	return &Inserter{bq: bq}, nil
 }
 
-// Inserter can insert BQ rows into some particular BigQuery table.
-type Inserter struct {
-	Table  *bigquery.Table // the table to upload rows to
-	DryRun bool            // if true, only log rows locally, do not upload them
-
-	// Insert ID generation.
-	initID sync.Once
-	nextID int64
-	prefix string
-}
-
-var marshalOpts = prototext.MarshalOptions{
-	Indent:       " ",
-	AllowPartial: true,
-}
-
-// Insert inserts a single row into the table.
-func (ins *Inserter) Insert(ctx context.Context, row proto.Message) error {
-	if logging.IsLogging(ctx, logging.Debug) {
-		blob, err := marshalOpts.Marshal(row)
-		if err != nil {
-			logging.Errorf(ctx, "Failed to marshal the row to proto text: %s", err)
-		} else {
-			logging.Debugf(ctx, "BigQuery row for %s/%s:\n%s", ins.Table.DatasetID, ins.Table.TableID, blob)
-		}
+// HandlePubSubPush handles incoming PubSub push request.
+func (ins *Inserter) HandlePubSubPush(ctx context.Context, body io.Reader) error {
+	blob, err := ioutil.ReadAll(body)
+	if err != nil {
+		return errors.Annotate(err, "failed to read the request body").Err()
 	}
 
-	if ins.DryRun {
-		return nil
+	// See https://cloud.google.com/pubsub/docs/push#receiving_messages
+	var msg struct {
+		Message struct {
+			Attributes map[string]string `json:"attributes"`
+			Data       []byte            `json:"data"`
+			MessageID  string            `json:"messageId"`
+		} `json:"message"`
+	}
+	if json.Unmarshal(blob, &msg); err != nil {
+		return errors.Annotate(err, "failed to unmarshal PubSub message").Err()
 	}
 
-	ctx, cancel := clock.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
+	// "table" metadata defines both the destination table and the TQ task class
+	// used to push this message, see RegisterTokenKind.
+	table := msg.Message.Attributes["table"]
 
-	err := ins.Table.Inserter().Put(ctx, &bq.Row{
+	// Deserialize the row into a corresponding proto type.
+	cls := tq.Default.TaskClassRef(table)
+	if cls == nil {
+		return errors.Annotate(err, "unrecognized task class %q", table).Err()
+	}
+	row := cls.Definition().Prototype.ProtoReflect().New().Interface()
+	if err := protojson.Unmarshal(msg.Message.Data, row); err != nil {
+		return errors.Annotate(err, "failed to unmarshal the row for %q", table).Err()
+	}
+	return ins.insert(ctx, table, row, msg.Message.MessageID)
+}
+
+func (ins *Inserter) insert(ctx context.Context, table string, row proto.Message, messageID string) error {
+	tab := ins.bq.Dataset("tokens").Table(table)
+
+	err := tab.Inserter().Put(ctx, &bq.Row{
 		Message:  protov1.MessageV1(row),
-		InsertID: ins.nextInsertID(), // for dedup when retrying on transient errors
+		InsertID: fmt.Sprintf("v1:%s", messageID),
 	})
 
 	var outcome string
@@ -108,20 +160,8 @@ func (ins *Inserter) Insert(ctx context.Context, row proto.Message) error {
 	}
 
 	bigQueryInserts.Add(ctx, 1,
-		fmt.Sprintf("%s/%s/%s", ins.Table.ProjectID, ins.Table.DatasetID, ins.Table.TableID),
+		fmt.Sprintf("%s/%s/%s", tab.ProjectID, tab.DatasetID, tab.TableID),
 		outcome)
 
 	return err
-}
-
-// nextInsertID returns a unique insert ID.
-func (ins *Inserter) nextInsertID() string {
-	ins.initID.Do(func() {
-		buf := make([]byte, 16)
-		if _, err := rand.Read(buf); err != nil {
-			panic(fmt.Errorf("failed to read from crypto/rand: %s", err))
-		}
-		ins.prefix = base64.RawStdEncoding.EncodeToString(buf)
-	})
-	return fmt.Sprintf("%s:%d", ins.prefix, atomic.AddInt64(&ins.nextID, 1))
 }

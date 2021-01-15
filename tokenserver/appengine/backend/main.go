@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -26,17 +27,27 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
 
 func main() {
 	impl.Main(func(srv *server.Server, services *impl.Services) error {
+		bqInserter, err := bq.NewInserter(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return err
+		}
+
+		// GAE crons.
 		cronMW := router.NewMiddlewareChain(gaemiddleware.RequireCron)
 		srv.Routes.GET("/internal/cron/read-config", cronMW, func(c *router.Context) {
 			readConfigCron(c, services.Admin)
@@ -44,6 +55,28 @@ func main() {
 		srv.Routes.GET("/internal/cron/fetch-crl", cronMW, func(c *router.Context) {
 			fetchCRLCron(c, services.Certs)
 		})
+
+		// PubSub push handler processing messages produced by impl/utils/bq.
+		oidcMW := router.NewMiddlewareChain(
+			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
+				AudienceCheck: openid.AudienceMatchesHost,
+			}),
+		)
+		// bigquery-log-pubsub@ is a part of the PubSub Push subscription config.
+		pusherID := identity.Identity(fmt.Sprintf("user:bigquery-log-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
+		srv.Routes.POST("/internal/pubsub/bigquery-log", oidcMW, func(c *router.Context) {
+			if got := auth.CurrentIdentity(c.Context); got != pusherID {
+				logging.Errorf(c.Context, "Expecting ID token of %q, got %q", pusherID, got)
+				c.Writer.WriteHeader(403)
+			} else {
+				err := bqInserter.HandlePubSubPush(c.Context, c.Request.Body)
+				if err != nil {
+					logging.Errorf(c.Context, "Failed to process the message: %s", err)
+					c.Writer.WriteHeader(500)
+				}
+			}
+		})
+
 		return nil
 	})
 }

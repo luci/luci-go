@@ -21,8 +21,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"cloud.google.com/go/bigquery"
-
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
@@ -31,6 +29,10 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
+
+func init() {
+	bq.RegisterTokenKind("oauth_token_grants", (*bqpb.OAuthTokenGrant)(nil))
+}
 
 // MintedGrantInfo is passed to LogGrant.
 //
@@ -88,12 +90,8 @@ type GrantLogger func(context.Context, *MintedGrantInfo) error
 //
 // When dryRun is true, logs to the local text log only, not to BigQuery
 // (to avoid accidentally pushing fake data to real BigQuery dataset).
-func NewGrantLogger(client *bigquery.Client, dryRun bool) GrantLogger {
-	inserter := bq.Inserter{
-		Table:  client.Dataset("tokens").Table("oauth_token_grants"),
-		DryRun: dryRun,
-	}
+func NewGrantLogger(dryRun bool) GrantLogger {
 	return func(ctx context.Context, i *MintedGrantInfo) error {
-		return inserter.Insert(ctx, i.toBigQueryMessage())
+		return bq.LogToken(ctx, i.toBigQueryMessage(), dryRun)
 	}
 }
