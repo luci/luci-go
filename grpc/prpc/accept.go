@@ -157,7 +157,7 @@ func (s acceptFormatSlice) Swap(i, j int) {
 // mayGZipResponse returns true if the server response body may be encoded
 // with GZIP.
 func mayGZipResponse(header http.Header) bool {
-	for _, v := range header.Values("Accept-Encoding") {
+	for _, v := range header["Accept-Encoding"] {
 		if v == "gzip" {
 			return true
 		}
