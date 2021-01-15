@@ -31,4 +31,7 @@ message RefreshGerritCL {
   // Optional fields.
   google.protobuf.Timestamp updated_hint = 4;
   int64 clid_hint = 5;
+  // force_notify_pm forces notifying of the Project Manager even if there are
+  // no updates to the CL.
+  bool force_notify_pm = 6;
 }

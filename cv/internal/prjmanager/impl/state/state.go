@@ -239,6 +239,13 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
+	if s.Status != prjmanager.Status_STARTED {
+		// Ignore all incoming CL events. If PM is re-enabled,
+		// then first full poll will force re-sending of OnCLsUpdated event for all
+		// still interesting CLs.
+		return s, nil, nil
+	}
+
 	// TODO(tandrii): implement.
 	return s, nil, nil
 }
