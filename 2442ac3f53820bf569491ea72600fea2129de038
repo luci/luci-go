@@ -167,6 +167,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "43506b53_60b87889",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:12:20Z",
+      "side": 1,
+      "message": "ah got it. I thought per-CL error is referring to the returned errors.MultiError. How about\n\n// Returns slice of CLs, error.MultiError slice corresponding to\n// per-CL errors *(always exists and has same length as CLs)*, and a\n// top level error if it can\u0027t be attributed to any CL.\n//\n// *each error in per-CL errors* is not annotated and is nil if CL was loaded\n// successfully",
+      "parentUuid": "e2225e4f_c79cfd2d",
+      "range": {
+        "startLine": 59,
+        "startChar": 14,
+        "endLine": 59,
+        "endChar": 47
+      },
+      "revId": "2442ac3f53820bf569491ea72600fea2129de038",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "53b2d4df_cf6428a1",
         "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
         "patchSetId": 1
@@ -202,6 +226,30 @@
       "side": 1,
       "message": "LoadMulti aims to have same semantics as ds.Get, so annotating error would break that.",
       "parentUuid": "53b2d4df_cf6428a1",
+      "range": {
+        "startLine": 63,
+        "startChar": 19,
+        "endLine": 63,
+        "endChar": 99
+      },
+      "revId": "2442ac3f53820bf569491ea72600fea2129de038",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aaf94422_f4ac04c6",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:12:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f2bc3e25_22a82f78",
       "range": {
         "startLine": 63,
         "startChar": 19,
