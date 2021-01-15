@@ -1,0 +1,163 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cv.prjmanager.internal;
+
+option go_package = "go.chromium.org/luci/cv/internal/prjmanager/internal;internal";
+
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
+import "go.chromium.org/luci/cv/internal/run/storage.proto";
+
+
+// This file keeps serializable state of PM (Project Manager).
+//
+// For clarity in Project Manager's code itself, a few message names start with
+// "P", e.g. "PCL" instead of "CL".
+//
+// It's mutated in ../impl/state package and ultimately stored as Project's
+// datastore entity. Logically, this proto is part of the impl of the
+// ../impl/state, but it's a separate package to resolve import cycle
+// because ../impl/state is importing prjmanager/ package.
+
+// PState is the PM state of a specific LUCI project.
+//
+// Semantically, it's a collection of CLs somehow grouped into components (see
+// Component message below), each of which may have several active (a.k.a.
+// Incomplete) Runs valid at a specific project's config version.
+//
+// Most CLs are watched by the LUCI project, but to assist with error reporting,
+// it also tracks unwatched CLs if they are dependencies of some actually
+// watched CLs.
+message PState {
+
+  // Name of LUCI project.
+  string luci_project = 1;
+  // Config hash pins specific project config version.
+  string config_hash = 3;
+  // Config group names intern the names referenced in PCL entities to reduce
+  // memory and at-rest footprint.
+  //
+  // See also https://en.wikipedia.org/wiki/String_interning.
+  repeated string config_group_names = 4;
+
+  // PCLs are currently tracked CLs.
+  //
+  // Includes deps which are of not yet known kind (because CL doesn't yet have
+  // a snapshot) or unwatched.
+  //
+  // Sorted by CL ID.
+  repeated PCL pcls = 11;
+  // Components are a partition of CLs in the list above.
+  //
+  // A watched CL may belong to at most 1 component, while unwatched dep may be
+  // referenced by several.
+  repeated Component components = 12;
+
+  // If true, components partition must be redone as soon as possible.
+  bool dirty_components = 21;
+}
+
+// PCL is a tracked CL.
+message PCL {
+  int64 clid = 1;
+  int64 eversion = 2;
+
+  enum Status {
+    option allow_alias = true;
+    PCL_STATUS_UNSPECIFIED = 0;
+    // OK means CL metadata below is correct and CL is watched by this project.
+    //
+    // Value 0 is chosen such that it's not serialized, since this is the most
+    // common state.
+    OK = 0;
+    // UNKNOWN means Datastore CL entity doesn't have the info yet.
+    UNKNOWN = 1;
+    // UNWATCHED means CL isn't watched by this LUCI project.
+    UNWATCHED = 2;
+    // DELETED means CL's Datastore entity got deleted.
+    //
+    // This is used to temporary mark a PCL before deleting it entirely from
+    // PState to avoid dangling references from components.
+    DELETED = 3;
+  }
+  Status status = 3;
+
+  // Indexes in PState.config_group_names identifying ConfigGroup which watches
+  // this CL.
+  //
+  // Normally, contains exactly 1 index.
+  // May have > 1 index, which means 2+ non-fallback config groups watch this
+  // CL, which is not allowed and will be signalled to CV users.
+  repeated int32 config_group_indexes = 4;
+
+  // Deps refers to CLs in PState.PCLs which are dependencies of the PCL.
+  repeated changelist.Dep deps = 11;
+
+  // Trigger is CQDaemon-compatible record of who/when triggered CQ on this CL.
+  //
+  // It may be nil, if CL is not triggered but nevertheless tracked as either:
+  //  * a dependency of another CL.
+  //  * previously triggered member of an incomplete Run, which is probably
+  //    being finalized right now by its Run Manager.
+  //
+  // TODO(tandrii): don't store potentially long user's email,
+  // which isn't necessary for PM decision making. It should be (re)-computed
+  // based on CL snapshots at the time only when actual Run is actually being
+  // created.
+  cv.run.Trigger trigger = 12;
+}
+
+// PRun is an incomplete Run on which CV is currently working.
+//
+// It is referenced by at most 1 component.
+message PRun {
+  // CV's Run ID.
+  string id = 1;
+
+  // IDs of CLs involved. Sorted.
+  //
+  // Actual Run may orders its CLs in different way.
+  //
+  // Must be a subset of clids of the Component to which Run belongs.
+  repeated int64 clids = 2;
+}
+
+// Component is a set of CLs related to each other.
+message Component {
+  // CL IDs of the tracked CLs in this component. Sorted.
+  //
+  // Each referenced CL must be in PState.PCLs list.
+  // Each referenced CL may have deps not in this list if they are either
+  // PCL.Status.UNKNOWN or PCL.Status.UNWATCHED.
+  repeated int64 clids = 1;
+
+  // Decision time is the earliest time when this component should be
+  // re-evaluated.
+  //
+  // Can be set to far future meaning no need for re-evaluation without an
+  // external event (e.g., CLUpdated or RunFinished).
+  google.protobuf.Timestamp decision_time = 2;
+
+  // Incomplete Runs working on CLs from this component.
+  //
+  // Sorted by Run's ID.
+  repeated PRun pruns = 3;
+
+  // If true, this component must be re-evaluated as soon as possible.
+  bool dirty = 11;
+}

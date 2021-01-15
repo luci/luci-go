@@ -37,12 +37,16 @@ type State struct {
 	Status         prjmanager.Status
 	ConfigHash     string
 	IncompleteRuns common.RunIDs
+
+	// TODO(tandrii): move luciProject, ConfigHash and IncompleteRuns here.
+	PB *internal.PState
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
 func NewInitial(luciProject string) *State {
 	return &State{
 		LUCIProject: luciProject,
+		PB:          &internal.PState{},
 	}
 }
 
@@ -62,8 +66,8 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn
 		s.ConfigHash = meta.Hash()
 		// NOTE: we may be in STOPPING phase, and some Runs are now finalizing
 		// themselves, while others haven't yet even noticed the stopping.
-		// The former will eventually be removed from s.IncompleteRuns,
-		// while the latter will continue running.
+		// The former will eventually be removed from PState, while the latter will
+		// continue running.
 		s.Status = prjmanager.Status_STARTED
 
 		if err := poller.Poke(ctx, s.LUCIProject); err != nil {

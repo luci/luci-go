@@ -17,8 +17,10 @@ package prjmanager
 import (
 	"time"
 
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
 // ProjectKind is the Datastore entity kind for Project.
@@ -43,6 +45,14 @@ type Project struct {
 	// IncompleteRuns are sorted IDs of Runs which aren't yet complete.
 	// ProjectManager is responsible for notifying these Runs of config change.
 	IncompleteRuns common.RunIDs `gae:",noindex"`
+	// State serializes internal Project Manager state.
+	//
+	// The following fields aren't set, as they duplicate state already stored in
+	// ProjectStateOffload.
+	// * LuciProject
+	// * ConfigHash
+	// TODO(tandrii): store IncompleteRuns here.
+	State *internal.PState
 }
 
 // ProjectStateOffload stores rarely-changed project state, offloaded from the
