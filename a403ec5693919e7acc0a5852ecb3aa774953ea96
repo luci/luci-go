@@ -34,6 +34,24 @@
       "parentUuid": "d78d613c_b5b35a89",
       "revId": "a403ec5693919e7acc0a5852ecb3aa774953ea96",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8078bd9f_9cc195da",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-15T02:51:58Z",
+      "side": 1,
+      "message": "Got it; optionally you could note the reasoning with the comment (it\u0027s more important to say why than to say what).",
+      "parentUuid": "8e808e37_485ce4f0",
+      "revId": "a403ec5693919e7acc0a5852ecb3aa774953ea96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
