@@ -110,6 +110,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "933c368d_ea5301a6",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-15T22:55:19Z",
+      "side": 1,
+      "message": "Alternately you could expect to use a pb.BuildsClient from context, then tests can install a mock client as needed, and buildbucket/appengine/frontend can install a client for prod or dev as appropriate.",
+      "revId": "07484cdfd7859695385c083ae670b54f3e6726bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "aa9d4218_85b890a5",
