@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
@@ -57,7 +56,7 @@ func NewExisting(status prjmanager.Status, pb *internal.PState) *State {
 }
 
 // UpdateConfig updates PM to latest config version.
-func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn, error) {
+func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 	meta, err := config.GetLatestMeta(ctx, s.PB.GetLuciProject())
 	if err != nil {
 		return nil, nil, err
@@ -80,7 +79,12 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn
 			return nil, nil, err
 		}
 		// TODO(tandrii): re-evaluate pending CLs.
-		return s, s.updateRunsConfigFactory(meta), nil
+		u := &UpdateIncompleteRunsConfig{
+			EVersion: meta.EVersion,
+			Hash:     meta.Hash(),
+			RunIDs:   s.PB.IncompleteRuns(),
+		}
+		return s, u, nil
 
 	case config.StatusDisabled, config.StatusNotExists:
 		// NOTE: we are intentionally not catching up with new ConfigHash (if any),
@@ -96,7 +100,6 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn
 			s.Status = prjmanager.Status_STOPPING
 			fallthrough
 		case prjmanager.Status_STOPPING:
-			// TODO(tandrii): pass these Runs to cancelRuns.
 			runs := s.PB.IncompleteRuns()
 			if len(runs) == 0 {
 				s = s.cloneShallow()
@@ -105,7 +108,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn
 			if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 				return nil, nil, err
 			}
-			return s, s.cancelRuns, nil
+			return s, &CancelIncompleteRuns{RunIDs: s.PB.IncompleteRuns()}, nil
 		default:
 			panic(fmt.Errorf("unexpected project status: %d", s.Status))
 		}
@@ -117,7 +120,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, eventbox.SideEffectFn
 // Poke checks PM & world state and acts if necessary.
 //
 // For example, multi-CL Runs can be created if stabilization delay has passed.
-func (s *State) Poke(ctx context.Context) (*State, eventbox.SideEffectFn, error) {
+func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 	// First, check if UpdateConfig if necessary.
 	switch newState, sideEffect, err := s.UpdateConfig(ctx); {
 	case err != nil:
@@ -139,7 +142,7 @@ func (s *State) Poke(ctx context.Context) (*State, eventbox.SideEffectFn, error)
 }
 
 // OnRunsCreated updates state after new Runs were created.
-func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*State, eventbox.SideEffectFn, error) {
+func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*State, SideEffect, error) {
 	existing := s.PB.IncompleteRuns()
 	mutated := false
 	for _, id := range created {
@@ -169,7 +172,7 @@ func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*Stat
 }
 
 // OnRunsCreated updates state after Runs were finished.
-func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*State, eventbox.SideEffectFn, error) {
+func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*State, SideEffect, error) {
 	existing := s.PB.IncompleteRuns()
 	remaining := existing.WithoutSorted(finished)
 	if len(remaining) == len(existing) {
@@ -187,7 +190,7 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 }
 
 // OnCLsUpdated updates state as a result of new changes to CLs.
-func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*State, eventbox.SideEffectFn, error) {
+func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*State, SideEffect, error) {
 	// TODO(tandrii): implement.
 	return s, nil, nil
 }
