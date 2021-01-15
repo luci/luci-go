@@ -19,8 +19,6 @@ import (
 	"net"
 	"time"
 
-	"cloud.google.com/go/bigquery"
-
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto/google"
 
@@ -29,6 +27,10 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
+
+func init() {
+	bq.RegisterTokenKind("service_account_tokens", (*bqpb.ServiceAccountToken)(nil))
+}
 
 // MintedTokenInfo is passed to LogToken.
 //
@@ -79,12 +81,8 @@ type TokenLogger func(context.Context, *MintedTokenInfo) error
 //
 // When dryRun is true, logs to the local text log only, not to BigQuery
 // (to avoid accidentally pushing fake data to real BigQuery dataset).
-func NewTokenLogger(client *bigquery.Client, dryRun bool) TokenLogger {
-	inserter := bq.Inserter{
-		Table:  client.Dataset("tokens").Table("service_account_tokens"),
-		DryRun: dryRun,
-	}
+func NewTokenLogger(dryRun bool) TokenLogger {
 	return func(ctx context.Context, i *MintedTokenInfo) error {
-		return inserter.Insert(ctx, i.toBigQueryMessage())
+		return bq.LogToken(ctx, i.toBigQueryMessage(), dryRun)
 	}
 }
