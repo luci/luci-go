@@ -29,5 +29,13 @@ func (s *State) cloneShallow() *State {
 		Components:       s.PB.GetComponents(),
 		DirtyComponents:  s.PB.GetDirtyComponents(),
 	}
+
+	s.alreadyCloned = true
 	return ret
+}
+
+func (s *State) ensureNotYetCloned() {
+	if s.alreadyCloned {
+		panic("Incorrect use. This State object has already been cloned. See State doc")
+	}
 }
