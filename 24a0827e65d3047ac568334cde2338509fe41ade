@@ -22,6 +22,30 @@
       },
       "revId": "24a0827e65d3047ac568334cde2338509fe41ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca3b736d_bb978b5f",
+        "filename": "cv/internal/prjmanager/impl/state/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-15T02:54:34Z",
+      "side": 1,
+      "message": "so, i admit this is confusing, please help me clarify this.\n\nWhat I\u0027m trying to say is this:\n  \n  s0 :\u003d NewExisting(...)\n  s1, _, err :\u003d s0.MutateFunc1()\n  if err !\u003d nil { \n    // ... :\u003d s0.MutateFunc2()       // NOT OK, 2nd call on s0.\n    return err                       // OK\n  }\n  //  ... :\u003d s0.MutateFunc2()        // NOT OK, 2nd call on s0..\n  s2, _, err :\u003d s1.MutateFunc2()     // OK because either s1 \u003d\u003d s0, so mutation1 was noop OR s1 differs from s0.\n\nDoes this help?",
+      "parentUuid": "873b22cf_71122209",
+      "range": {
+        "startLine": 32,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 66
+      },
+      "revId": "24a0827e65d3047ac568334cde2338509fe41ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
