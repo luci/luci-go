@@ -91,23 +91,19 @@ WHERE art.InvocationId IN UNNEST(@invIDs)
 		AND art.ContentType IN UNNEST(@contentTypes)
 	{{ end }}
 ORDER BY InvocationId, ParentId, ArtifactId
-LIMIT @limit
+{{ if .WithLimit }} LIMIT @limit {{ end }}
 `))
 
-// Fetch returns a page of artifacts matching q.
-//
-// Returned artifacts are ordered by level (invocation or test result).
-// Test result artifacts are sorted by parent invocation ID, test ID and
-// artifact ID.
-func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken string, err error) {
-	if q.PageSize <= 0 {
-		panic("PageSize <= 0")
+func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error) {
+	if q.PageSize < 0 {
+		panic("PageSize < 0")
 	}
 
 	var input struct {
 		JoinWithTestResults    bool
 		InterestingTestResults bool
 		SpecificContentTypes   bool
+		WithLimit              bool
 	}
 	// If we need to filter artifacts by attributes of test results, then
 	// join with test results table.
@@ -119,6 +115,7 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 		}
 	}
 	input.SpecificContentTypes = len(q.ContentTypes) > 0
+	input.WithLimit = q.PageSize > 0
 
 	sql := &bytes.Buffer{}
 	if err = tmplQueryArtifacts.Execute(sql, input); err != nil {
@@ -142,7 +139,7 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 	testresults.PopulateVariantParams(st.Params, q.TestResultPredicate.GetVariant())
 
 	var b spanutil.Buffer
-	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
+	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		var parentID string
 		var contentType spanner.NullString
@@ -165,6 +162,31 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 		a.ContentType = contentType.StringVal
 		a.SizeBytes = size.Int64
 
+		return f(a)
+	})
+}
+
+// Run calls f for artifacts matching the query.
+//
+// Refer to Fetch() for the ordering of returned artifacts.
+func (q *Query) Run(ctx context.Context, f func(*pb.Artifact) error) error {
+	if q.PageSize != 0 {
+		panic("PageSize is specified when Query.Run")
+	}
+	return q.run(ctx, f)
+}
+
+// Fetch returns a page of artifacts matching q.
+//
+// Returned artifacts are ordered by level (invocation or test result).
+// Test result artifacts are sorted by parent invocation ID, test ID and
+// artifact ID.
+func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken string, err error) {
+	if q.PageSize <= 0 {
+		panic("PageSize <= 0")
+	}
+
+	err = q.run(ctx, func(a *pb.Artifact) error {
 		arts = append(arts, a)
 		return nil
 	})
