@@ -96,6 +96,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "db81b62c_72bfefaa",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-15T05:58:12Z",
+      "side": 1,
+      "message": "Ack. Makes sense",
+      "parentUuid": "451b981e_a6615950",
+      "range": {
+        "startLine": 87,
+        "startChar": 45,
+        "endLine": 87,
+        "endChar": 69
+      },
+      "revId": "7edf539228938429e4f8223744d6b6eb48816d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2ab5a28a_a789dd65",
