@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/pbutil"
+	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -29,7 +30,7 @@ func TestGenerateBQRow(t *testing.T) {
 	t.Parallel()
 
 	Convey("GenerateBQRow", t, func() {
-		input := &rowInput{
+		input := &testResultRowInput{
 			exported: &pb.Invocation{
 				Name:       "invocations/exported",
 				CreateTime: pbutil.MustTimestampProto(testclock.TestRecentTimeUTC),
@@ -49,7 +50,10 @@ func TestGenerateBQRow(t *testing.T) {
 					Line:     54,
 				},
 			}
-			actual := input.row()
+			rows := input.rows()
+			So(len(rows), ShouldEqual, 1)
+			actual, ok := rows[0].Message.(*bqpb.TestResultRow)
+			So(ok, ShouldBeTrue)
 			So(actual.TestLocation, ShouldResemble, input.tr.TestLocation)
 		})
 	})
