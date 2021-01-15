@@ -196,6 +196,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 }
 
 func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state.State) (ret []eventbox.Transition, err error) {
+	var se state.SideEffect
 	// Visit all non-empty fields of triageResult and emit Transitions.
 	// The order of visit matters.
 
@@ -203,56 +204,61 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	// so process created first.
 	if len(tr.runsCreated.runs) > 0 {
 		sort.Sort(tr.runsCreated.runs)
-		t := eventbox.Transition{Events: tr.runsCreated.events}
-		s, t.SideEffectFn, err = s.OnRunsCreated(ctx, tr.runsCreated.runs)
-		if err != nil {
+		if s, se, err = s.OnRunsCreated(ctx, tr.runsCreated.runs); err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
-		ret = append(ret, t)
+		ret = append(ret, eventbox.Transition{
+			Events:       tr.runsCreated.events,
+			SideEffectFn: state.SideEffectFn(se),
+			TransitionTo: s,
+		})
 	}
 	if len(tr.runsFinished.runs) > 0 {
 		sort.Sort(tr.runsFinished.runs)
-		t := eventbox.Transition{Events: tr.runsFinished.events}
-		s, t.SideEffectFn, err = s.OnRunsFinished(ctx, tr.runsFinished.runs)
-		if err != nil {
+		if s, se, err = s.OnRunsFinished(ctx, tr.runsFinished.runs); err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
-		ret = append(ret, t)
+		ret = append(ret, eventbox.Transition{
+			Events:       tr.runsFinished.events,
+			SideEffectFn: state.SideEffectFn(se),
+			TransitionTo: s,
+		})
 	}
 
 	// UpdateConfig event may result in stopping the PM, which requires notifying
 	// each of the incomplete Runs to stop. Thus, runsCreated must be processed
 	// before to ensure no Run will be missed.
 	if len(tr.newConfig) > 0 {
-		t := eventbox.Transition{Events: tr.newConfig}
-		s, t.SideEffectFn, err = s.UpdateConfig(ctx)
-		if err != nil {
+		if s, se, err = s.UpdateConfig(ctx); err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
-		ret = append(ret, t)
+		ret = append(ret, eventbox.Transition{
+			Events:       tr.newConfig,
+			SideEffectFn: state.SideEffectFn(se),
+			TransitionTo: s,
+		})
 	}
 
 	if len(tr.poke) > 0 {
-		t := eventbox.Transition{Events: tr.poke}
-		s, t.SideEffectFn, err = s.Poke(ctx)
-		if err != nil {
+		if s, se, err = s.Poke(ctx); err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
-		ret = append(ret, t)
+		ret = append(ret, eventbox.Transition{
+			Events:       tr.poke,
+			SideEffectFn: state.SideEffectFn(se),
+			TransitionTo: s,
+		})
 	}
 
 	if len(tr.clsUpdated.cls) > 0 {
-		t := eventbox.Transition{Events: tr.clsUpdated.events}
-		s, t.SideEffectFn, err = s.OnCLsUpdated(ctx, tr.clsUpdated.cls)
-		if err != nil {
+		if s, se, err = s.OnCLsUpdated(ctx, tr.clsUpdated.cls); err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
-		ret = append(ret, t)
+		ret = append(ret, eventbox.Transition{
+			Events:       tr.clsUpdated.events,
+			SideEffectFn: state.SideEffectFn(se),
+			TransitionTo: s,
+		})
 	}
 	return
 }
