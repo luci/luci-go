@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "55c7103e_b035bccb",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-15T00:30:48Z",
+      "side": 1,
+      "message": "\u003e Make sure to update https://chromium.googlesource.com/infra/infra/+/refs/heads/master/go/check_deps.allowlist when rolling.\n\nPing. The roller is stuck.",
+      "parentUuid": "f39d7ad0_325824ee",
+      "range": {
+        "startLine": 21,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 15
+      },
+      "revId": "4fb4314c6ee93c75c0ff9db29e92f5d2859da534",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "23109643_9a5a2bed",
