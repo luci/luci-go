@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package state
+package internal
 
-import "go.chromium.org/luci/cv/internal/prjmanager/internal"
+import (
+	"sort"
 
-func (s *State) cloneShallow() *State {
-	ret := &State{}
-	*ret = *s
-	// s.PB is guaranteed not nil by NewInitial and NewExisting.
-	// Don't use proto.merge to avoid deep copy.
-	ret.PB = &internal.PState{
-		LuciProject:      s.PB.GetLuciProject(),
-		ConfigHash:       s.PB.GetConfigHash(),
-		ConfigGroupNames: s.PB.GetConfigGroupNames(),
-		Pcls:             s.PB.GetPcls(),
-		Components:       s.PB.GetComponents(),
-		DirtyComponents:  s.PB.GetDirtyComponents(),
+	"go.chromium.org/luci/cv/internal/common"
+)
+
+// IncompleteRuns are IDs of Runs which aren't yet completed.
+func (s *PState) IncompleteRuns() (ids common.RunIDs) {
+	for _, c := range s.GetComponents() {
+		for _, r := range c.GetPruns() {
+			ids = append(ids, common.RunID(r.GetId()))
+		}
 	}
-	return ret
+	sort.Sort(ids)
+	return ids
 }

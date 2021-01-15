@@ -74,13 +74,15 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
 	default:
-		s := &state.State{
-			LUCIProject: pm.luciProject,
-
-			Status:         pm.stateOffload.Status,
-			ConfigHash:     pm.stateOffload.ConfigHash,
-			IncompleteRuns: p.IncompleteRuns,
+		// TODO(tandrii): remove this temporary code after all Project entities are
+		// rewritten, as it's only necessary for entities w/o a "State" field.
+		if p.State == nil {
+			p.State = &internal.PState{}
 		}
+
+		p.State.LuciProject = pm.luciProject
+		p.State.ConfigHash = pm.stateOffload.ConfigHash
+		s := state.NewExisting(pm.stateOffload.Status, p.State)
 		return s, eventbox.EVersion(p.EVersion), nil
 	}
 }
@@ -122,10 +124,10 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 	s := st.(*state.State)
 	entities := make([]interface{}, 1, 2)
 	entities[0] = &prjmanager.Project{
-		ID:             pm.luciProject,
-		EVersion:       int(ev),
-		UpdateTime:     clock.Now(ctx).UTC(),
-		IncompleteRuns: s.IncompleteRuns,
+		ID:         pm.luciProject,
+		EVersion:   int(ev),
+		UpdateTime: clock.Now(ctx).UTC(),
+		State:      s.PB,
 	}
 	if s.ConfigHash != pm.stateOffload.ConfigHash || s.Status != pm.stateOffload.Status {
 		entities = append(entities, &prjmanager.ProjectStateOffload{
@@ -217,8 +219,8 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	}
 
 	// UpdateConfig event may result in stopping the PM, which requires notifying
-	// each of IncompleteRuns to stop. Thus, runsCreated must be processed before
-	// to ensure no Run will be missed.
+	// each of the incomplete Runs to stop. Thus, runsCreated must be processed
+	// before to ensure no Run will be missed.
 	if len(tr.newConfig) > 0 {
 		t := eventbox.Transition{Events: tr.newConfig}
 		s, t.SideEffectFn, err = s.UpdateConfig(ctx)

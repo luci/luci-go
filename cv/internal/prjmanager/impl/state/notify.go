@@ -43,7 +43,7 @@ func (s *State) updateRunsConfigFactory(meta config.Meta) eventbox.SideEffectFn 
 	hash := meta.Hash()
 	return func(ctx context.Context) error {
 		err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
-			for _, id := range s.IncompleteRuns {
+			for _, id := range s.PB.IncompleteRuns() {
 				id := id
 				work <- func() error {
 					return run.UpdateConfig(ctx, id, hash, meta.EVersion)
@@ -59,7 +59,7 @@ func (s *State) updateRunsConfigFactory(meta config.Meta) eventbox.SideEffectFn 
 // Expects to be called in a transaction as a eventbox.SideEffectFn.
 func (s *State) cancelRuns(ctx context.Context) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
-		for _, id := range s.IncompleteRuns {
+		for _, id := range s.PB.IncompleteRuns() {
 			id := id
 			work <- func() error {
 				// TODO(tandrii): pass "Project disabled" as a reason.
@@ -75,7 +75,7 @@ func (s *State) cancelRuns(ctx context.Context) error {
 // Doesn't have to be called in a transaction.
 func (s *State) pokeRuns(ctx context.Context) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
-		for _, id := range s.IncompleteRuns {
+		for _, id := range s.PB.IncompleteRuns() {
 			id := id
 			work <- func() error {
 				return run.Poke(ctx, id)
