@@ -70,6 +70,30 @@
       },
       "revId": "24a0827e65d3047ac568334cde2338509fe41ade",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d70b64b4_8f17b854",
+        "filename": "cv/internal/prjmanager/impl/state/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-15T03:56:25Z",
+      "side": 1,
+      "message": "Added my usage example to doc for illustration. Better than nothing.",
+      "parentUuid": "1ecc0ecf_630d2221",
+      "range": {
+        "startLine": 32,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 66
+      },
+      "revId": "24a0827e65d3047ac568334cde2338509fe41ade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
