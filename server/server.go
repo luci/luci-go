@@ -545,6 +545,8 @@ type Server struct {
 	tsmon   *tsmon.State    // manages flushing of tsmon metrics
 	sampler octrace.Sampler // trace sampler to use for top level spans
 
+	signer *signerImpl // the signer used by the auth system
+
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
 	authDB       atomic.Value          // last known good authdb.DB instance
@@ -689,11 +691,14 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	// Configure base server subsystems by injecting them into the root context
 	// inherited later by all requests.
 	srv.Context = caching.WithProcessCacheData(srv.Context, caching.NewProcessCacheData())
-	if err := srv.initAuth(); err != nil {
+	if err := srv.initAuthStart(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize auth").Err()
 	}
 	if err := srv.initTSMon(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tsmon").Err()
+	}
+	if err := srv.initAuthFinish(); err != nil {
+		return srv, errors.Annotate(err, "failed to finish auth initialization").Err()
 	}
 	if err := srv.initTracing(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tracing").Err()
@@ -1353,10 +1358,14 @@ func (s *Server) initLogging() {
 	s.Context = logging.SetLevel(s.Context, logging.Debug)
 }
 
-// initAuth initializes auth system by preparing the context, pre-warming caches
+// initAuthStart initializes the core auth system by preparing the context
 // and verifying auth tokens can actually be minted (i.e. supplied credentials
 // are valid).
-func (s *Server) initAuth() error {
+//
+// It is called before the tsmon monitoring is initialized: tsmon needs auth.
+// The rest of the auth initialization (the part that needs tsmon) happens in
+// initAuthFinish after tsmon is initialized.
+func (s *Server) initAuthStart() error {
 	// Make a transport that appends information about the server as User-Agent.
 	ua := s.Options.userAgent()
 	rootTransport := clientauth.NewModifyingTransport(http.DefaultTransport, func(req *http.Request) error {
@@ -1369,8 +1378,9 @@ func (s *Server) initAuth() error {
 	})
 
 	// Prepare partially initialized signer for the auth.Config. It will be fully
-	// initialized below once we have a working auth context that can call IAM.
-	signer := &signerImpl{srv: s}
+	// initialized in initAuthFinish once we have a working auth context that can
+	// call IAM.
+	s.signer = &signerImpl{srv: s}
 
 	// Initialize the state in the context.
 	s.Context = auth.Initialize(s.Context, &auth.Config{
@@ -1378,7 +1388,7 @@ func (s *Server) initAuth() error {
 			db, _ := s.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
 			return db, nil
 		},
-		Signer:              signer,
+		Signer:              s.signer,
 		AccessTokenProvider: s.getAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
 		FrontendClientID:    func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
@@ -1428,13 +1438,20 @@ func (s *Server) initAuth() error {
 		return errors.Annotate(err, "failed to check the service account email").Err()
 	}
 
+	return nil
+}
+
+// initAuthFinish finishes auth system initialization.
+//
+// It is called after tsmon is initialized.
+func (s *Server) initAuthFinish() error {
 	// We should be able to make authenticated requests now and can construct
 	// an IAM client used by SignBytes implementation.
 	asSelf, err := auth.GetRPCTransport(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return errors.Annotate(err, "failed to construct RPC transport").Err()
 	}
-	signer.iamClient = &iam.Client{Client: &http.Client{Transport: asSelf}}
+	s.signer.iamClient = &iam.Client{Client: &http.Client{Transport: asSelf}}
 
 	// Now initialize the AuthDB (a database with groups and auth config) and
 	// start a goroutine to periodically refresh it.
@@ -1489,6 +1506,10 @@ func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 	// ability to customize various aspects of token generation.
 	opts := s.Options.ClientAuth
 	opts.Scopes = scopes
+
+	// We aren't going to use the transport (and thus its monitoring), only the
+	// token source. DisableMonitoring == true removes some log spam.
+	opts.DisableMonitoring = true
 
 	// GAE v2 is very aggressive in caching the token internally (in the metadata
 	// server) and refreshing it only when it is very close to its expiration. We
@@ -1679,6 +1700,10 @@ func (s *Server) initTSMon() error {
 		tsmon.PortalPage.SetReadOnlySettings(s.tsmon.Settings,
 			"Settings are controlled through -ts-mon-* command line flags.")
 	}
+
+	// Enable this configuration in s.Context so all transports created during
+	// the server startup have tsmon instrumentation.
+	s.tsmon.Activate(s.Context)
 
 	// Report our image version as a metric, useful to monitor rollouts.
 	tsmoncommon.RegisterCallbackIn(s.Context, func(ctx context.Context) {
