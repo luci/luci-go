@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "262d6a4c_c45e7dbc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-15T02:33:09Z",
+      "side": 1,
+      "message": "PTAL\n\nDiscovered by noticing that GAEv2 version of Token Server stopped reporting bigquery HTTP request metrics.",
+      "revId": "eff79556f42a952acd7b2c8e0c792798fdcc94da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
