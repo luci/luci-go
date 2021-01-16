@@ -42,7 +42,7 @@ type Query struct {
 	ParentIDRegexp      string
 	FollowEdges         *pb.ArtifactPredicate_EdgeTypeSet
 	TestResultPredicate *pb.TestResultPredicate
-	ContentTypes        []string
+	ContentTypesRegexp  string
 	PageSize            int // must be positive
 	PageToken           string
 }
@@ -88,7 +88,7 @@ WHERE art.InvocationId IN UNNEST(@invIDs)
 	AND REGEXP_CONTAINS(art.ParentId, @ParentIdRegexp)
 	{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
 	{{ if .SpecificContentTypes }}
-		AND art.ContentType IN UNNEST(@contentTypes)
+		AND REGEXP_CONTAINS(IFNULL(art.ContentType, ""), @contentTypeRegexp)
 	{{ end }}
 ORDER BY InvocationId, ParentId, ArtifactId
 {{ if .WithLimit }} LIMIT @limit {{ end }}
@@ -114,7 +114,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error)
 			input.InterestingTestResults = true
 		}
 	}
-	input.SpecificContentTypes = len(q.ContentTypes) > 0
+	input.SpecificContentTypes = q.ContentTypesRegexp != "" && q.ContentTypesRegexp != ".*"
 	input.WithLimit = q.PageSize > 0
 
 	sql := &bytes.Buffer{}
@@ -125,7 +125,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error)
 	st := spanner.NewStatement(sql.String())
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
-	st.Params["contentTypes"] = q.ContentTypes
+	st.Params["contentTypeRegexp"] = fmt.Sprintf("^%s$", q.ContentTypesRegexp)
 	err = invocations.TokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterParentId", "afterArtifactId")
 	if err != nil {
 		return
