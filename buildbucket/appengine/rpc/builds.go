@@ -88,6 +88,8 @@ func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Mes
 
 // Builds implements pb.BuildsServer.
 type Builds struct {
+	// Tests can initiate a mock client. Prod code should ignore it.
+	testPyBuildsClient pb.BuildsClient
 }
 
 // Ensure Builds implements projects.ProjectsServer.
