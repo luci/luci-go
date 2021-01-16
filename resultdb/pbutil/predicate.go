@@ -103,5 +103,11 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 // ValidateArtifactPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateArtifactPredicate(p *pb.ArtifactPredicate) error {
-	return ValidateTestResultPredicate(p.GetTestResultPredicate())
+	if err := ValidateTestResultPredicate(p.GetTestResultPredicate()); err != nil {
+		return errors.Annotate(err, "text_result_predicate").Err()
+	}
+	if err := validateRegexp(p.GetContentTypeRegexp()); err != nil {
+		return errors.Annotate(err, "content_type_regexp").Err()
+	}
+	return nil
 }

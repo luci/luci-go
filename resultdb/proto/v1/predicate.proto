@@ -115,7 +115,8 @@ message ArtifactPredicate {
   // To exclude them from the response, use follow_edges.
   TestResultPredicate test_result_predicate = 2;
 
-  // Specifies the content type(s) the artifact should satisfy.
-  // If not empty, the artifact content must be any of these, with an exact match.
-  repeated string content_types = 3;
+  // An artifact must have a content type matching this regular expression
+  // entirely, i.e. the expression is implicitly wrapped with ^ and $.
+  // Defaults to ".*".
+  string content_type_regexp = 3;
 }

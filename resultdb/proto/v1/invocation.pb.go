@@ -515,6 +515,8 @@ type BigQueryExport_TextArtifacts struct {
 
 	// Use predicate to query artifacts that should be exported to
 	// BigQuery table.
+	//
+	// Sub-field predicate.content_type_regexp defaults to "text/.*".
 	Predicate *ArtifactPredicate `protobuf:"bytes,1,opt,name=predicate,proto3" json:"predicate,omitempty"`
 }
 
