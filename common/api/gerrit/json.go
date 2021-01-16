@@ -84,7 +84,8 @@ type changeInfo struct {
 	Submittable bool      `json:"submittable,omitempty"`
 	IsPrivate   bool      `json:"is_private,omitempty"`
 
-	RevertOf int64 `json:"revert_of,omitempty"`
+	RevertOf           int64 `json:"revert_of,omitempty"`
+	CherryPickOfChange int64 `json:"cherry_pick_of_change,omitempty"`
 
 	// MoreChanges may be set on the last change in a response to a query for
 	// changes, but this is not a property of the change itself and is not
@@ -94,17 +95,18 @@ type changeInfo struct {
 
 func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 	ret := &gerritpb.ChangeInfo{
-		Number:          ci.Number,
-		Owner:           ci.Owner,
-		Project:         ci.Project,
-		Ref:             branchToRef(ci.Branch),
-		Status:          gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[ci.Status]),
-		CurrentRevision: ci.CurrentRevision,
-		Submittable:     ci.Submittable,
-		IsPrivate:       ci.IsPrivate,
-		Created:         timestamppb.New(ci.Created.Time),
-		Updated:         timestamppb.New(ci.Updated.Time),
-		RevertOf:        ci.RevertOf,
+		Number:             ci.Number,
+		Owner:              ci.Owner,
+		Project:            ci.Project,
+		Ref:                branchToRef(ci.Branch),
+		Status:             gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[ci.Status]),
+		CurrentRevision:    ci.CurrentRevision,
+		Submittable:        ci.Submittable,
+		IsPrivate:          ci.IsPrivate,
+		Created:            timestamppb.New(ci.Created.Time),
+		Updated:            timestamppb.New(ci.Updated.Time),
+		RevertOf:           ci.RevertOf,
+		CherryPickOfChange: ci.CherryPickOfChange,
 	}
 	if ci.Revisions != nil {
 		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
