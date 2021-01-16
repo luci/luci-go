@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e75c48ea_97167aef",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-16T02:48:35Z",
+      "side": 1,
+      "message": "Nice idea, thanks",
+      "parentUuid": "c20e05fa_ab1d8030",
+      "range": {
+        "startLine": 35,
+        "startChar": 4,
+        "endLine": 35,
+        "endChar": 20
+      },
+      "revId": "07484cdfd7859695385c083ae670b54f3e6726bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "9a15338f_3bdc4d16",
         "filename": "buildbucket/appengine/rpc/batch.go",
         "patchSetId": 2
@@ -87,6 +111,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e9c5327_3cfa5e2e",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-16T02:48:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d845c168_f30d963a",
+      "range": {
+        "startLine": 85,
+        "startChar": 15,
+        "endLine": 85,
+        "endChar": 26
+      },
+      "revId": "07484cdfd7859695385c083ae670b54f3e6726bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0ca3bbbb_425f1891",
@@ -100,6 +148,30 @@
       "writtenOn": "2021-01-15T05:25:49Z",
       "side": 1,
       "message": "pyRes.err",
+      "range": {
+        "startLine": 126,
+        "startChar": 55,
+        "endLine": 126,
+        "endChar": 58
+      },
+      "revId": "07484cdfd7859695385c083ae670b54f3e6726bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "65d3ff44_12041baf",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-16T02:48:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ca3bbbb_425f1891",
       "range": {
         "startLine": 126,
         "startChar": 55,
@@ -129,6 +201,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b262086e_d3a1ae3b",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-16T02:48:35Z",
+      "side": 1,
+      "message": "Thanks for the suggestion. This might be slightly slower. It causes every req creates a py BB client at the beginning. The req with only read operations doesn\u0027t need to call Py service. I\u0027ll use Nodir\u0027s idea to have a Builds.testPyBuildsClient field.",
+      "parentUuid": "933c368d_ea5301a6",
+      "revId": "07484cdfd7859695385c083ae670b54f3e6726bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "aa9d4218_85b890a5",
         "filename": "buildbucket/appengine/rpc/batch_test.go",
         "patchSetId": 2
@@ -140,6 +230,30 @@
       "writtenOn": "2021-01-15T05:25:49Z",
       "side": 1,
       "message": "optional: consider a helper function that accepts a batch request in JSON format, and returns a message struct.\nwith such a function, this code would be much shorter:\n\n  req :\u003d parseBatchReq(`{\n    \"requests\": [\n      {\"scheduleBuild\": {}},\n      {\"cancelBuild\": {}},\n     }\n  `})",
+      "range": {
+        "startLine": 246,
+        "startChar": 0,
+        "endLine": 255,
+        "endChar": 4
+      },
+      "revId": "07484cdfd7859695385c083ae670b54f3e6726bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c35e40fa_6261f113",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-16T02:48:35Z",
+      "side": 1,
+      "message": "done. slightly shorter.",
+      "parentUuid": "aa9d4218_85b890a5",
       "range": {
         "startLine": 246,
         "startChar": 0,
