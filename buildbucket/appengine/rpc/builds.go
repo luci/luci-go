@@ -88,6 +88,7 @@ func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Mes
 
 // Builds implements pb.BuildsServer.
 type Builds struct {
+	testPyBuildsClient pb.BuildsClient
 }
 
 // Ensure Builds implements projects.ProjectsServer.
