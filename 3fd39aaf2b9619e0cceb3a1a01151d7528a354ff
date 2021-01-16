@@ -59,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ad50174_762966af",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ed4fc72_9cbf3cd9",
+      "range": {
+        "startLine": 15,
+        "startChar": 54,
+        "endLine": 15,
+        "endChar": 59
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "306af2c6_97a0c576",
@@ -72,6 +96,30 @@
       "writtenOn": "2021-01-14T12:23:51Z",
       "side": 1,
       "message": "I think we can use CV\u0027s CL ID instead, and then we don\u0027t need to bring gerrit here at all.\nSo, i propose\nfunc CLAssetID(id common.CLID)",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 1
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "034fe737_7d981477",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "306af2c6_97a0c576",
       "range": {
         "startLine": 39,
         "startChar": 0,
@@ -135,6 +183,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae8704e3_3f45348b",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Makes sense. Done!",
+      "parentUuid": "59f70ca4_1b45f94f",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "00f347e9_03c17cb2",
@@ -148,6 +214,30 @@
       "writtenOn": "2021-01-14T12:23:51Z",
       "side": 1,
       "message": "nit-nit: I\u0027m used to `lessee` in contract. But for extreme clarity, \"Holder\" might be clearer.",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 7
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "202d44ca_ceab375d",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "00f347e9_03c17cb2",
       "range": {
         "startLine": 57,
         "startChar": 1,
@@ -181,6 +271,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c387cb7_fe9baed8",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d9a34d0_2ea512ed",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 15
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "eab6aa2f_0a801aed",
@@ -194,6 +308,30 @@
       "writtenOn": "2021-01-14T12:23:51Z",
       "side": 1,
       "message": "this only serves the purpose of checking if existing lease is in fact owned by current caller during the Terminate call, right?\nIf so, then I think more robust would be just be 16 random bytes assigned in Apply().",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 30
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad076fd3_fe15008a",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "That\u0027s indeed better!",
+      "parentUuid": "eab6aa2f_0a801aed",
       "range": {
         "startLine": 63,
         "startChar": 0,
@@ -221,6 +359,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "11f888a9_71135932",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Lease is returned in the new API. so ExpirationTime can be get directly from the return value.",
+      "parentUuid": "9639709e_039c2899",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "100a6421_b573cb82",
@@ -234,6 +390,30 @@
       "writtenOn": "2021-01-14T12:23:51Z",
       "side": 1,
       "message": "did you mean to call l.validate() instead?",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 85,
+        "endChar": 2
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f9228b30_47b02148",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "100a6421_b573cb82",
       "range": {
         "startLine": 76,
         "startChar": 0,
@@ -267,6 +447,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1031c095_4c40c09c",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "I could do that, but I think it\u0027s better to be explicit. Implemented Extend in the latest revision.",
+      "parentUuid": "ac27eaad_61ba7f0e",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 30
+      },
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2e000602_87e0f589",
@@ -280,6 +484,24 @@
       "writtenOn": "2021-01-14T12:23:51Z",
       "side": 1,
       "message": "should fallthrough\n\nIt\u0027s fine to terminate expired lease, so long as it wasn\u0027t leased by someone else which is checked above via .Number. See also below.",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f017c04d_bce3e264",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e000602_87e0f589",
       "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -333,6 +555,24 @@
       "side": 1,
       "message": "ah, good thinking!\nBut this is where CL.ID really helps: it\u0027s actually distributed (see https://pantheon.corp.google.com/datastore/entities;kind\u003dCL;ns\u003d__$DEFAULT$__/query/kind?serviceId\u003ddefault\u0026project\u003dluci-change-verifier-dev)\n\nAlso, iff your ID isn\u0027t well distributed, typical approach is to use crypto-hash of it instead, which should be well distributed.",
       "parentUuid": "66592726_b5254e5d",
+      "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "344d6282_18604f52",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T07:40:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c889810_b1e0fecc",
       "revId": "3fd39aaf2b9619e0cceb3a1a01151d7528a354ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
