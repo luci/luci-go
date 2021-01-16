@@ -16,6 +16,373 @@
       "message": "PTAL. unexpected errand to run this afternoon. Sorry for the delay.",
       "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37ca671c_80d142e6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "👍 % annotate datastore.RunInTransaction errors.",
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a4e299e4_8bfe8467",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "time.",
+      "range": {
+        "startLine": 70,
+        "startChar": 43,
+        "endLine": 70,
+        "endChar": 52
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "64f76304_4adbdbf8",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "be",
+      "range": {
+        "startLine": 70,
+        "startChar": 18,
+        "endLine": 70,
+        "endChar": 19
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a1fc3de2_4a9740be",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "nit: L\n\nand . at the end.",
+      "range": {
+        "startLine": 111,
+        "startChar": 9,
+        "endLine": 111,
+        "endChar": 10
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f44e18e7_58b651d8",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "ed",
+      "range": {
+        "startLine": 125,
+        "startChar": 30,
+        "endLine": 125,
+        "endChar": 31
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81d2d20b_f2c4bcea",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "or just errors.New(..)",
+      "range": {
+        "startLine": 127,
+        "startChar": 9,
+        "endLine": 127,
+        "endChar": 61
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d556b2bc_fe4ba1be",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "this can also return its own errors. We should tag them with transient, too, but not if it\u0027s one of our own errors from inside inner func().\n\nOne generic approach is https://play.golang.com/p/SgQQmD1kZWp, but feel free to use whichever you want.",
+      "range": {
+        "startLine": 129,
+        "startChar": 8,
+        "endLine": 129,
+        "endChar": 34
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86d71258_6d208dc6",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "see L210, applies here too.",
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c18da412_faba733b",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "please annotate.",
+      "range": {
+        "startLine": 141,
+        "startChar": 3,
+        "endLine": 141,
+        "endChar": 13
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c1946fe_344a28aa",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "same as L129:",
+      "range": {
+        "startLine": 154,
+        "startChar": 1,
+        "endLine": 154,
+        "endChar": 35
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89b8cfb8_1c2e687f",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "nit-nit: i\u0027d move to the top or right above the first usage in Extend",
+      "range": {
+        "startLine": 169,
+        "startChar": 0,
+        "endLine": 171,
+        "endChar": 62
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea43cd8f_27d703f1",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "be",
+      "range": {
+        "startLine": 173,
+        "startChar": 43,
+        "endLine": 173,
+        "endChar": 44
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c363aae_70babeeb",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "if",
+      "range": {
+        "startLine": 175,
+        "startChar": 21,
+        "endLine": 175,
+        "endChar": 24
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aef2dec8_595ffcd1",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "fail",
+      "range": {
+        "startLine": 191,
+        "startChar": 53,
+        "endLine": 191,
+        "endChar": 54
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a58e02a_03e0b3a9",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "Strictly speaking, we should round it towards the future. In prod, it doesn\u0027t matter, since clocks aren\u0027t 1us synchronized anyways. But it may matter in tests if fake time has ns component.\ne.g. TestRecentTimeUTC which has 7ns would lead to:\n  tryApply( Application{  now + minute } ) \u003d\u003e Lease{ now + minute - 7s}",
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2eac466_e351e734",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "ditto as L129",
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15798c0e_96e19cac",
+        "filename": "cv/internal/lease/lease_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T09:22:03Z",
+      "side": 1,
+      "message": "here and elsewhere `ShouldEqual` must be used to test against ErrConflict\nbecause actual usage would be:\n  if err \u003d\u003d lease.ErrConflict {",
+      "range": {
+        "startLine": 118,
+        "startChar": 24,
+        "endLine": 118,
+        "endChar": 37
+      },
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
