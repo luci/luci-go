@@ -687,6 +687,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "618fc864_7e71c438",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-16T23:32:57Z",
+      "side": 1,
+      "message": "\u003e May I ask why?\n\nYou should! Even if you suspect you are wrong, still worth asking. And here you are exactly right!\n\n\u003e I feel like truncating to the precision which a system can support is generally what people do instead of rounding up.\n\nI believe you, but I don\u0027t have any sense of what\u0027s typical.\n\nNow, the reason I advocate*D* for rounding up is because I was imagining a test which \"waits\" (on fake time) exactly the intended lease duration and then fails because lease is still **current**.\nOf course, I was wrong. With truncation, lease would in fact be already expired, and it\u0027s my suggestion of rounding up that would actually lead to **current** lease.\n\nSorry for time waste \u0026\u0026 thanks for pushback.",
+      "parentUuid": "d5878864_b8351fb9",
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e2eac466_e351e734",
