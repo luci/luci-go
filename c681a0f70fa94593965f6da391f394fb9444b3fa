@@ -16,6 +16,24 @@
       "message": "friendly ping.",
       "revId": "c681a0f70fa94593965f6da391f394fb9444b3fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f56ba89_ae85b3e9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-16T19:33:17Z",
+      "side": 1,
+      "message": "Missed the stamp. Sorry.",
+      "parentUuid": "62dc468a_befccd27",
+      "revId": "c681a0f70fa94593965f6da391f394fb9444b3fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
