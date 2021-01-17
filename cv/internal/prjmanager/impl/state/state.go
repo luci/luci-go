@@ -28,15 +28,38 @@ import (
 )
 
 // State is a state of Project Manager.
+//
+// The state object must not be re-used except for serializing public state
+// after its public methods returned a modified State or an error.
+// This allows for efficient evolution of cached helper datastructures which
+// would other have to be copied, too.
+//
+// To illustrate correct and incorrect usages:
+//     s0 := NewExisting(...)
+//     s1, _, err := s0.Mut1()
+//     if err != nil {
+//       // ... := s0.Mut2()             // NOT OK, 2nd call on s0
+//       return proto.Marshal(s0.PB)     // OK
+//     }
+//     //  ... := s0.Mut2()              // NOT OK, 2nd call on s0
+//     s2, _, err := s1.Mut2()           // OK, s1 may be s0 if Mut1() was noop
+//     if err != nil {
+//       // return proto.Marshal(s0.PB)  // OK
+//       return proto.Marshal(s0.PB)     // OK
+//     }
 type State struct {
 
-	// Serializable state.
+	// Serializable part mutated using copy-on-write approach
+	// https://en.wikipedia.org/wiki/Copy-on-write
 
 	Status prjmanager.Status
 	PB     *internal.PState
 
-	// Helper fields used during mutations.
-	// TODO(tandrii): add them here.
+	// Helper private fields used during mutations.
+
+	// alreadyCloned is set to true after state is cloned to prevent incorrect
+	// usage.
+	alreadyCloned bool
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
@@ -57,6 +80,8 @@ func NewExisting(status prjmanager.Status, pb *internal.PState) *State {
 
 // UpdateConfig updates PM to latest config version.
 func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
+	s.ensureNotYetCloned()
+
 	meta, err := config.GetLatestMeta(ctx, s.PB.GetLuciProject())
 	if err != nil {
 		return nil, nil, err
@@ -121,6 +146,8 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 //
 // For example, multi-CL Runs can be created if stabilization delay has passed.
 func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
+	s.ensureNotYetCloned()
+
 	// First, check if UpdateConfig if necessary.
 	switch newState, sideEffect, err := s.UpdateConfig(ctx); {
 	case err != nil:
@@ -143,6 +170,8 @@ func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 
 // OnRunsCreated updates state after new Runs were created.
 func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*State, SideEffect, error) {
+	s.ensureNotYetCloned()
+
 	existing := s.PB.IncompleteRuns()
 	mutated := false
 	for _, id := range created {
@@ -173,6 +202,8 @@ func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*Stat
 
 // OnRunsCreated updates state after Runs were finished.
 func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*State, SideEffect, error) {
+	s.ensureNotYetCloned()
+
 	existing := s.PB.IncompleteRuns()
 	remaining := existing.WithoutSorted(finished)
 	if len(remaining) == len(existing) {
@@ -191,6 +222,8 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 
 // OnCLsUpdated updates state as a result of new changes to CLs.
 func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*State, SideEffect, error) {
+	s.ensureNotYetCloned()
+
 	// TODO(tandrii): implement.
 	return s, nil, nil
 }
