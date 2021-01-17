@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "41ab5b35_edc60b4f",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-17T12:37:37Z",
+      "side": 1,
+      "message": "Good idea. Moved this into existing s.setApplicableConfigGroups",
+      "parentUuid": "e890fb88_61ec7f31",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 0
+      },
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e59a352d_a209586c",
@@ -41,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "75707420_705714d6",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-17T12:37:37Z",
+      "side": 1,
+      "message": "Done, sorry 😊",
+      "parentUuid": "e59a352d_a209586c",
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "52219c89_2123d80e",
@@ -54,6 +96,24 @@
       "writtenOn": "2021-01-15T05:08:24Z",
       "side": 1,
       "message": "move to the correct block",
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "17d86ef2_aace4904",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-17T12:37:37Z",
+      "side": 1,
+      "message": "good catch. It should have been modern proto instead. fixed.",
+      "parentUuid": "52219c89_2123d80e",
       "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -76,6 +136,53 @@
         "startChar": 19,
         "endLine": 72,
         "endChar": 28
+      },
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4364b90f_ffdb1e75",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-17T12:37:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d594d3ed_096b4eea",
+      "range": {
+        "startLine": 72,
+        "startChar": 19,
+        "endLine": 72,
+        "endChar": 28
+      },
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ec6cb6e_4c0e6871",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-17T12:37:37Z",
+      "side": 1,
+      "message": "oops, also fixed.",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 2
       },
       "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -104,6 +211,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "af027477_71051516",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-17T12:37:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "56e36313_3b3eb0f7",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 28
+      },
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2ccd2150_b39ff892",
@@ -117,6 +248,24 @@
       "writtenOn": "2021-01-15T05:08:24Z",
       "side": 1,
       "message": "why?",
+      "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be178379_c3acd314",
+        "filename": "cv/internal/prjmanager/impl/state/util.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-17T12:37:37Z",
+      "side": 1,
+      "message": "Just feels wasteful, which I admit is premature optimization 😊\n\nOnce I get to test this with 1000 CLs, I\u0027ll see if it\u0027s fine to keep it.",
+      "parentUuid": "2ccd2150_b39ff892",
       "revId": "881149bbe047766496ff59faaabeaf54d0677a69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
