@@ -112,6 +112,74 @@ func TestCL(t *testing.T) {
 	})
 }
 
+func TestLoadMulti(t *testing.T) {
+	t.Parallel()
+
+	Convey("LoadMulti works", t, func() {
+		ctx := memory.Use(context.Background())
+		epoch := datastore.RoundTime(testclock.TestRecentTimeUTC)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+
+		saveCL := func(id int) *CL {
+			eid, err := GobID("x-review.example.com", int64(id))
+			So(err, ShouldBeNil)
+			snap := makeSnapshot(epoch.Add(time.Second * time.Duration(id)))
+			cl, err := eid.GetOrInsert(ctx, func(cl *CL) { cl.Snapshot = snap })
+			So(err, ShouldBeNil)
+			return cl
+		}
+
+		cls := make([]*CL, 1500)
+		usedIDs := make(map[common.CLID]struct{}, len(cls))
+		for i := range cls {
+			cls[i] = saveCL(i + 1)
+			cls[i].Snapshot = nil
+			usedIDs[cls[i].ID] = struct{}{}
+		}
+
+		err := LoadMulti(ctx, cls)
+		So(err, ShouldBeNil)
+		for i, cl := range cls {
+			t := cl.Snapshot.GetExternalUpdateTime()
+			So(t, ShouldNotBeNil)
+			So(t.AsTime(), ShouldResemble, epoch.Add(time.Second*time.Duration(i+1)))
+		}
+
+		Convey("Simulate not found error for every 13th", func() {
+			lastUsed := common.CLID(0)
+			nextUnused := func() common.CLID {
+				for {
+					lastUsed++
+					if _, ok := usedIDs[lastUsed]; !ok {
+						return lastUsed
+					}
+				}
+			}
+			for i, cl := range cls {
+				cl.Snapshot = nil
+				if i%13 == 0 {
+					cl.ID = nextUnused()
+				}
+			}
+			err := LoadMulti(ctx, cls)
+			So(err, ShouldNotBeNil)
+			merr, _ := err.(errors.MultiError)
+			So(merr, ShouldNotBeNil)
+			So(merr, ShouldHaveLength, len(cls))
+			for i, cl := range cls {
+				if i%13 == 0 {
+					So(merr[i], ShouldEqual, datastore.ErrNoSuchEntity)
+				} else {
+					So(merr[i], ShouldBeNil)
+					t := cl.Snapshot.GetExternalUpdateTime()
+					So(t, ShouldNotBeNil)
+					So(t.AsTime(), ShouldResemble, epoch.Add(time.Second*time.Duration(i+1)))
+				}
+			}
+		})
+	})
+}
+
 func TestExternalID(t *testing.T) {
 	t.Parallel()
 
@@ -347,7 +415,7 @@ func TestConcurrentUpdate(t *testing.T) {
 		)
 		cl, err := eid.Get(ctx)
 		So(err, ShouldBeNil)
-		// Since all workers have succeeded, the latest snapshot
+		// Since all workers have succeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)
 		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(latestTS))

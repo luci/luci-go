@@ -50,7 +50,12 @@ type Meta struct {
 	// Larger values means later config.
 	// If StatusNotExists, the value is 0.
 	EVersion int64
-	// ConfigGroupIDs are the names of all ConfigGroups in this version.
+	// ConfigGroupNames are the names part of all ConfigGroups in this version.
+	//
+	// If project doesn't exist, empty.
+	// Otherwise, contains at least one group.
+	ConfigGroupNames []string
+	// ConfigGroupIDs are the standalone IDs of all ConfigGroups in this version.
 	//
 	// If project doesn't exist, empty.
 	// Otherwise, contains at least one group.
@@ -94,9 +99,10 @@ func GetLatestMeta(ctx context.Context, project string) (Meta, error) {
 		m.Status = StatusDisabled
 	}
 	m.EVersion = p.EVersion
+	m.ConfigGroupNames = p.ConfigGroupNames
 	m.ConfigGroupIDs = make([]ConfigGroupID, len(p.ConfigGroupNames))
 	for i, name := range p.ConfigGroupNames {
-		m.ConfigGroupIDs[i] = makeConfigGroupID(p.Hash, name, -1 /* not required */)
+		m.ConfigGroupIDs[i] = MakeConfigGroupID(p.Hash, name)
 	}
 	m.hashLen = len(p.Hash)
 	return m, nil
@@ -118,11 +124,12 @@ func GetHashMeta(ctx context.Context, project, hash string) (Meta, error) {
 		return Meta{}, errors.Annotate(err, "failed to get ConfigHashInfo(project=%q @ %q)", project, hash).Err()
 	}
 	m := Meta{
-		Project:        project,
-		EVersion:       h.ProjectEVersion,
-		Status:         StatusEnabled,
-		ConfigGroupIDs: make([]ConfigGroupID, len(h.ConfigGroupNames)),
-		hashLen:        len(hash),
+		Project:          project,
+		EVersion:         h.ProjectEVersion,
+		Status:           StatusEnabled,
+		ConfigGroupNames: h.ConfigGroupNames,
+		ConfigGroupIDs:   make([]ConfigGroupID, len(h.ConfigGroupNames)),
+		hashLen:          len(hash),
 	}
 	for i, name := range h.ConfigGroupNames {
 		m.ConfigGroupIDs[i] = MakeConfigGroupID(hash, name)
