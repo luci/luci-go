@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -59,4 +60,24 @@ func (s *State) indexOfConfigGroup(id config.ConfigGroupID) int32 {
 		}
 	}
 	panic(fmt.Errorf("%s doesn't match any in known %s ConfigGroupNames", id, names))
+}
+
+// ensurePCLMap construst pclMap if necessary.
+func (s *State) ensurePCLMap() {
+	if s.pclMap != nil {
+		return
+	}
+	s.pclMap = make(map[common.CLID]struct {
+		pcl   *internal.PCL
+		index int
+	}, len(s.PB.GetPcls()))
+	for i, pcl := range s.PB.GetPcls() {
+		s.pclMap[common.CLID(pcl.GetClid())] = struct {
+			pcl   *internal.PCL
+			index int
+		}{
+			pcl:   pcl,
+			index: i,
+		}
+	}
 }
