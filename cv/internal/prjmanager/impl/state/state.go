@@ -92,28 +92,35 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 		if s.Status == prjmanager.Status_STARTED && meta.Hash() == s.PB.GetConfigHash() {
 			return s, nil, nil // already up-to-date.
 		}
-		s = s.cloneShallow()
-		s.PB.ConfigHash = meta.Hash()
-		// NOTE: we may be in STOPPING phase, and some Runs are now finalizing
-		// themselves, while others haven't yet even noticed the stopping.
-		// The former will eventually be removed from PState, while the latter will
-		// continue running.
-		s.Status = prjmanager.Status_STARTED
 
+		// Tell poller to update ASAP. It doesn't need to wait for a transaction as
+		// it's OK for poller to be temporarily more up-to-date than PM.
 		if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 			return nil, nil, err
 		}
-		// TODO(tandrii): re-evaluate pending CLs.
-		u := &UpdateIncompleteRunsConfig{
+
+		s = s.cloneShallow()
+		s.Status = prjmanager.Status_STARTED
+		s.PB.ConfigHash = meta.Hash()
+		s.PB.ConfigGroupNames = meta.ConfigGroupNames
+		if err = s.reevalPCLs(ctx); err != nil {
+			return nil, nil, err
+		}
+
+		// We may have been in STOPPING phase, in which case incomplete runs may
+		// still be finalizing themselves after receiving Cancel event from us.
+		// It's harmless to send them UpdateConfig message, too. Eventually, they'll
+		// complete finalization, send us OnRunFinished event and then we'll remove
+		// them from the state anyway.
+		return s, &UpdateIncompleteRunsConfig{
 			EVersion: meta.EVersion,
 			Hash:     meta.Hash(),
 			RunIDs:   s.PB.IncompleteRuns(),
-		}
-		return s, u, nil
+		}, err
 
 	case config.StatusDisabled, config.StatusNotExists:
-		// NOTE: we are intentionally not catching up with new ConfigHash (if any),
-		// since it's not actionable.
+		// Intentionally not catching up with new ConfigHash (if any),
+		// since it's not actionable and also simpler.
 		switch s.Status {
 		case prjmanager.Status_STATUS_UNSPECIFIED:
 			// Project entity doesn't exist. No need to create it.
