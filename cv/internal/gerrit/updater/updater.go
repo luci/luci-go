@@ -59,54 +59,42 @@ func init() {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
-
-			var updatedHint time.Time
-			if u := t.GetUpdatedHint(); u != nil {
-				updatedHint = u.AsTime()
-			}
-
-			err := refreshExternal(ctx, t.GetLuciProject(), t.GetHost(), t.GetChange(),
-				updatedHint, common.CLID(t.GetClidHint()))
-
+			err := refresh(ctx, t)
 			return common.TQifyError(ctx, err)
 		},
 	})
 }
 
 // Schedule enqueues a TQ task to refresh a Gerrit CL.
-func Schedule(ctx context.Context, luciProject, host string, change int64,
-	updatedHint time.Time, clidHint common.CLID) error {
-	payload := &RefreshGerritCL{
-		LuciProject: luciProject,
-		Host:        host,
-		Change:      change,
-	}
+//
+// It should be used instead of direct tq.AddTask for consistent deduplication
+// and ease of debugging.
+func Schedule(ctx context.Context, p *RefreshGerritCL) error {
 	task := &tq.Task{
-		Payload: payload,
-		Title:   fmt.Sprintf("%s/%s/%d", luciProject, host, change),
+		Payload: p,
+		Title:   fmt.Sprintf("%s/%s/%d", p.GetLuciProject(), p.GetHost(), p.GetChange()),
 	}
-
-	if clidHint != 0 {
-		task.Title += fmt.Sprintf("/clid-%d", clidHint)
-		payload.ClidHint = int64(clidHint)
+	if clid := p.GetClidHint(); clid != 0 {
+		task.Title += fmt.Sprintf("/clid-%d", clid)
 	}
-	if !updatedHint.IsZero() {
-		payload.UpdatedHint = timestamppb.New(updatedHint)
-		task.Title += fmt.Sprintf("/u-%s", updatedHint.UTC().Format(time.RFC3339))
+	var updatedHint time.Time
+	if t := p.GetUpdatedHint(); t != nil {
+		updatedHint = t.AsTime().UTC()
+		task.Title += fmt.Sprintf("/u-%s", updatedHint.Format(time.RFC3339))
 	}
 
 	// If done within transaction, can't use de-dup.
-	if datastore.CurrentTransaction(ctx) == nil {
+	if datastore.CurrentTransaction(ctx) == nil && !p.GetForceNotifyPm() {
 		ts := updatedHint
 		if updatedHint.IsZero() {
 			ts = clock.Now(ctx).Truncate(blindRefreshInterval).Add(blindRefreshInterval)
 		}
 		task.DeduplicationKey = strings.Join([]string{
 			"v0",
-			luciProject,
-			host, strconv.FormatInt(change, 16),
-			strconv.FormatInt(ts.Unix(), 16)},
-			"\n")
+			p.GetLuciProject(),
+			p.GetHost(), strconv.FormatInt(p.GetChange(), 16),
+			strconv.FormatInt(ts.Unix(), 16),
+		}, "\n")
 	}
 	return tq.AddTask(ctx, task)
 }
@@ -116,25 +104,28 @@ func Schedule(ctx context.Context, luciProject, host string, change int64,
 // Doesn't affect refreshes with updatedHint specified.
 const blindRefreshInterval = time.Minute
 
-// refreshExternal fetches latest info from Gerrit.
+// refresh fetches latest info from Gerrit.
 //
 // If datastore already contains snapshot with Gerrit-reported update time equal
 // to or after updatedHint, then no updating or querying will be performed.
-// To force an update, provide as time.Time{} as updatedHint.
-func refreshExternal(ctx context.Context, luciProject, host string, change int64, updatedHint time.Time, clidHint common.CLID) (err error) {
+func refresh(ctx context.Context, r *RefreshGerritCL) error {
 	fetcher := fetcher{
-		luciProject: luciProject,
-		host:        host,
-		change:      change,
-		updatedHint: updatedHint,
+		luciProject:   r.GetLuciProject(),
+		host:          r.GetHost(),
+		change:        r.GetChange(),
+		forceNotifyPM: r.GetForceNotifyPm(),
 	}
-	if fetcher.externalID, err = changelist.GobID(host, change); err != nil {
+	if u := r.GetUpdatedHint(); u != nil {
+		fetcher.updatedHint = u.AsTime()
+	}
+	var err error
+	if fetcher.externalID, err = changelist.GobID(fetcher.host, fetcher.change); err != nil {
 		return err
 	}
 	if fetcher.g, err = gerrit.CurrentClient(ctx, fetcher.host, fetcher.luciProject); err != nil {
 		return err
 	}
-	return fetcher.update(ctx, clidHint)
+	return fetcher.update(ctx, common.CLID(r.GetClidHint()))
 }
 
 // fetcher efficiently computes new snapshot by fetching data from Gerrit.
@@ -145,10 +136,11 @@ func refreshExternal(ctx context.Context, luciProject, host string, change int64
 //
 // The prior Snapshot, if given, can reduce RPCs made to Gerrit.
 type fetcher struct {
-	luciProject string
-	host        string
-	change      int64
-	updatedHint time.Time
+	luciProject   string
+	host          string
+	change        int64
+	updatedHint   time.Time
+	forceNotifyPM bool
 
 	g gerrit.CLReaderClient
 
@@ -208,14 +200,15 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			// since timestamp is almost guaranteed to be newer.
 			f.toUpdate.ApplicableConfig = acfg
 		}
-		if acfg.HasOnlyProject(f.luciProject) &&
-			f.priorCL.Snapshot.GetLuciProject() != f.luciProject {
+		if acfg.HasOnlyProject(f.luciProject) && f.priorCL.Snapshot.GetLuciProject() != f.luciProject {
 			// Snapshot cosnidered up-to-date, but fethed in the context of a wrong project.
 			// Must re-fetch. It's OK to re-use prior snapshot so long read access to
 			// Gerrit is verified.
 			logging.Warningf(ctx, "%s switches from %q to %q LUCI project",
 				f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
 			err = f.fetchExisting(ctx)
+		} else {
+			// Can indeed skip the update.
 		}
 	}
 
@@ -223,6 +216,12 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 	case err != nil:
 		return err
 	case f.toUpdate.IsEmpty():
+		if f.priorCL == nil {
+			panic("update can be skipped iff priorCL is set")
+		}
+		if f.forceNotifyPM {
+			return prjmanager.NotifyCLUpdated(ctx, f.luciProject, f.priorCL.ID, f.priorCL.EVersion)
+		}
 		return nil
 	default:
 		return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate,
@@ -616,7 +615,12 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 			if err != nil {
 				panic("impossible: by construction, all deps are Gerrit, too")
 			}
-			return Schedule(ctx, f.luciProject, depHost, depChange, time.Time{}, depCL.ID)
+			return Schedule(ctx, &RefreshGerritCL{
+				LuciProject: f.luciProject,
+				Host:        depHost,
+				Change:      depChange,
+				ClidHint:    int64(depCL.ID),
+			})
 		}
 		return nil
 	}
