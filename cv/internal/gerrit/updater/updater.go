@@ -24,6 +24,11 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -34,10 +39,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/tq"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -47,11 +48,14 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 )
 
+const TaskClassID = "refresh-gerrit-cl"
+
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "refresh-gerrit-cl",
+		ID:        TaskClassID,
 		Prototype: &RefreshGerritCL{},
 		Queue:     "refresh-gerrit-cl",
+		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)

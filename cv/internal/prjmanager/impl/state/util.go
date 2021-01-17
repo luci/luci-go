@@ -16,10 +16,12 @@ package state
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -36,4 +38,25 @@ func (s *State) pokeRuns(ctx context.Context) error {
 		}
 	})
 	return common.MostSevereError(err)
+}
+
+// indexOfConfigGroup returns index of the externed Config Group name, which
+// must exist.
+func (s *State) indexOfConfigGroup(id config.ConfigGroupID) int32 {
+	if id.Hash() != s.PB.GetConfigHash() {
+		// TODO(tandrii): remove quick sanity check, extra string comparison is
+		// wasteful.
+		panic(fmt.Errorf("given %s != expected hash %s", id, s.PB.GetConfigHash()))
+	}
+	want := id.Name()
+	// This can be optimized by lazily creating and caching a map from
+	// ConfigGroupID to its index, but most projects have <10 groups,
+	// so iterating a slice is faster & good enough.
+	names := s.PB.GetConfigGroupNames()
+	for i, name := range names {
+		if name == want {
+			return int32(i)
+		}
+	}
+	panic(fmt.Errorf("%s doesn't match any in known %s ConfigGroupNames", id, names))
 }

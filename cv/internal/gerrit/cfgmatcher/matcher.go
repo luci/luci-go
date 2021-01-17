@@ -42,6 +42,11 @@ func LoadMatcher(ctx context.Context, luciProject, configHash string) (*Matcher,
 	if err != nil {
 		return nil, err
 	}
+	return LoadMatcherFrom(ctx, meta)
+}
+
+// LoadMatcherFrom instantiates Matcher from the given config.Meta.
+func LoadMatcherFrom(ctx context.Context, meta config.Meta) (*Matcher, error) {
 	configGroups, err := meta.GetConfigGroups(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +56,7 @@ func LoadMatcher(ctx context.Context, luciProject, configHash string) (*Matcher,
 			// 1-2 Gerrit hosts is typical as of 2020.
 			Hosts:            make(map[string]*MatcherState_Projects, 2),
 			ConfigGroupNames: make([]string, len(configGroups)),
-			ConfigHash:       configHash,
+			ConfigHash:       meta.Hash(),
 		},
 		cachedConfigGroupIDs: meta.ConfigGroupIDs,
 	}
