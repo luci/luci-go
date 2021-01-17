@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a63bb8f8_a1393d18",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-01-17T01:43:01Z",
+      "side": 1,
+      "message": "Thanks! and sorry for sending you down a rabbit hole. I think a regexp is a good idea, it\u0027ll be useful on the long term.",
+      "revId": "38491e7da21a54d8a9d690d2e9a43fd7f10beb45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
