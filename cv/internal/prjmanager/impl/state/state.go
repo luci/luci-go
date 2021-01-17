@@ -64,6 +64,12 @@ type State struct {
 
 	// cfgMatcher is lazily created, cached, and passed on to State clones.
 	cfgMatcher *cfgmatcher.Matcher
+
+	// pclMap provides O(1) access to PCLs.
+	pclMap map[common.CLID]struct {
+		pcl   *internal.PCL
+		index int
+	}
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
@@ -236,7 +242,9 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 }
 
 // OnCLsUpdated updates state as a result of new changes to CLs.
-func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*State, SideEffect, error) {
+//
+// Mutates incoming events slice.
+func (s *State) OnCLsUpdated(ctx context.Context, events []*internal.CLUpdated) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
 	if s.Status != prjmanager.Status_STARTED {
@@ -246,7 +254,24 @@ func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*S
 		return s, nil, nil
 	}
 
-	// TODO(tandrii): implement.
+	// Avoid doing anything in cases where all CL updates sent due to recent full
+	// poll iff we already know about each CL based on its EVersion.
+	events = s.filterOutUpToDate(events)
+	if len(events) == 0 {
+		return s, nil, nil
+	}
+
+	// Most likely there will be changes to state.
+	s = s.cloneShallow()
+	if s.cfgMatcher == nil {
+		var err error
+		if s.cfgMatcher, err = cfgmatcher.LoadMatcher(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash()); err != nil {
+			return nil, nil, err
+		}
+	}
+	if err := s.evalUpdatedCLs(ctx, events); err != nil {
+		return nil, nil, err
+	}
 	return s, nil, nil
 }
 

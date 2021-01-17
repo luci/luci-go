@@ -39,28 +39,129 @@ func (s *State) reevalPCLs(ctx context.Context) error {
 	}
 	newPCLs := make([]*internal.PCL, len(cls))
 	for i, cl := range cls {
-		switch err := errs[i]; {
-		case err == datastore.ErrNoSuchEntity:
-			// Must not happen outside of extremely rare un-deletion of a project
-			// whose PM state references long ago wiped out CLs.
-			logging.Errorf(ctx, "CL %d no longer in Datastore", cl.ID)
-			old := s.PB.GetPcls()[i]
-			newPCLs[i] = &internal.PCL{
-				Clid:     old.GetClid(),
-				Eversion: old.GetEversion(),
-				Status:   internal.PCL_DELETED,
-			}
+		old := s.PB.GetPcls()[i]
+		switch pcl, err := s.makePCLFromDS(ctx, cl, errs[i], old); {
 		case err != nil:
-			return errors.Annotate(err, "failed to load CL %d", cl.ID).Tag(transient.Tag).Err()
+			return err
+		case pcl == nil:
+			panic("makePCLFromDS is wrong")
 		default:
 			// TODO(tandrii): avoid updating components if the new PCL is exact same
-			// as old one.
-			newPCLs[i] = s.makePCL(ctx, cls[i])
+			// as the old one.
+			newPCLs[i] = pcl
 		}
 	}
 	s.PB.Pcls = newPCLs
 	s.PB.DirtyComponents = true
+	s.pclMap = nil
 	return nil
+}
+
+// evalUpdatedCLs updates/inserts PCLs based on incoming CLUpdated events.
+//
+// Keeps pclMap up to date.
+func (s *State) evalUpdatedCLs(ctx context.Context, events []*internal.CLUpdated) error {
+	if s.pclMap == nil {
+		panic("expected non-nil pclMap")
+	}
+	cls := make([]*changelist.CL, len(events))
+	for i, e := range events {
+		cls[i] = &changelist.CL{ID: common.CLID(e.GetClid())}
+	}
+	// Sort new/updated CLs in the way as PCLs already are, namely by CL ID. Do it
+	// before loading from Datastore beacuse `errs` must correspond to `cls`.
+	changelist.Sort(cls)
+	cls, errs, err := loadCLs(ctx, cls)
+	if err != nil {
+		return err
+	}
+
+	// Now, while copying old PCLs slice into new PCLs slice,
+	// insert new PCL objects for new CLs and replace PCL objects for updated CLs.
+	// This preserves the property of PCLs being sorted.
+	// Since we have to re-create PCLs slice anyways, it's fastest to merge two
+	// sorted in the same way PCLs and CLs slices in  O(len(PCLs) + len(cls)).
+	oldPCLs := s.PB.GetPcls()
+	newPCLs := make([]*internal.PCL, 0, len(oldPCLs)+len(cls))
+	changed := false
+	for i, cl := range cls {
+		// Copy all old PCLs before this CL.
+		for len(oldPCLs) > 0 && common.CLID(oldPCLs[0].GetClid()) < cl.ID {
+			newPCLs = append(newPCLs, oldPCLs[0])
+			oldPCLs = oldPCLs[1:]
+		}
+		// If CL is updated, pop oldPCL.
+		var oldPCL *internal.PCL
+		if len(oldPCLs) > 0 && common.CLID(oldPCLs[0].GetClid()) == cl.ID {
+			oldPCL = oldPCLs[0]
+			oldPCLs = oldPCLs[1:]
+		}
+		// Compute new PCL.
+		switch pcl, err := s.makePCLFromDS(ctx, cl, errs[i], oldPCL); {
+		case err != nil:
+			return err
+		case pcl == nil && oldPCL != nil:
+			panic("makePCLFromDS is wrong")
+		case pcl == nil:
+			// New CL, but not in datastore. Don't add anything to newPCLs.
+			// This weird case was logged by makePCLFromDS already.
+		default:
+			// TODO(tandrii): avoid updating components if the new PCL is exact same
+			// as the old one.
+			newPCLs = append(newPCLs, pcl)
+			changed = true
+		}
+	}
+	if !changed {
+		return nil
+	}
+	// Copy remaining oldPCLs.
+	for len(oldPCLs) > 0 {
+		newPCLs = append(newPCLs, oldPCLs[0])
+		oldPCLs = oldPCLs[1:]
+	}
+	s.PB.Pcls = newPCLs
+	s.PB.DirtyComponents = true
+	s.forceUpdatePCLMap()
+	return nil
+}
+
+// filterOutUpToDate returns only events for which PCL either doesn't exist or
+// is out of date.
+//
+// Mutates incoming events slice to avoid allocating new slice.
+func (s *State) filterOutUpToDate(events []*internal.CLUpdated) []*internal.CLUpdated {
+	s.ensurePCLMap()
+	ret := events[:0]
+	for _, e := range events {
+		v, exists := s.pclMap[common.CLID(e.GetClid())]
+		if !exists || v.pcl.GetEversion() < e.GetEversion() {
+			ret = append(ret, e)
+		}
+	}
+	return ret
+}
+
+func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error, old *internal.PCL) (*internal.PCL, error) {
+	switch {
+	case err == datastore.ErrNoSuchEntity && old == nil:
+		logging.Errorf(ctx, "New CL %d not in Datastore", cl.ID)
+		return nil, nil
+	case err == datastore.ErrNoSuchEntity:
+		// Must not happen outside of extremely rare un-deletion of a project
+		// whose PM state references long ago wiped out CLs.
+		logging.Errorf(ctx, "Old CL %d no longer in Datastore", cl.ID)
+		return &internal.PCL{
+			Clid:     old.GetClid(),
+			Eversion: old.GetEversion(),
+			Status:   internal.PCL_DELETED,
+		}, nil
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to load CL %d", cl.ID).Tag(transient.Tag).Err()
+	default:
+		// TODO(tandrii): return pointer to oldPCL if pcl has the same contents.
+		return s.makePCL(ctx, cl), nil
+	}
 }
 
 // makePCL creates new PCL based on Datastore CL entity and current config.
@@ -175,7 +276,10 @@ func (s *State) loadCLsForPCLs(ctx context.Context) ([]*changelist.CL, errors.Mu
 	for i, pcl := range s.PB.GetPcls() {
 		cls[i] = &changelist.CL{ID: common.CLID(pcl.GetClid())}
 	}
+	return loadCLs(ctx, cls)
+}
 
+func loadCLs(ctx context.Context, cls []*changelist.CL) ([]*changelist.CL, errors.MultiError, error) {
 	// At 0.007 KiB (serialized) per CL as of Jan 2021, this should scale 2000 CLs
 	// with reasonable RAM footprint and well within 10s because
 	// changelist.LoadMulti splits it into concurrently queried batches.
