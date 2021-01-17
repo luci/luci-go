@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
@@ -60,6 +61,9 @@ type State struct {
 	// alreadyCloned is set to true after state is cloned to prevent incorrect
 	// usage.
 	alreadyCloned bool
+
+	// cfgMatcher is lazily created, cached, and passed on to State clones.
+	cfgMatcher *cfgmatcher.Matcher
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
@@ -103,6 +107,9 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 		s.Status = prjmanager.Status_STARTED
 		s.PB.ConfigHash = meta.Hash()
 		s.PB.ConfigGroupNames = meta.ConfigGroupNames
+		if s.cfgMatcher, err = cfgmatcher.LoadMatcherFrom(ctx, meta); err != nil {
+			return nil, nil, err
+		}
 		if err = s.reevalPCLs(ctx); err != nil {
 			return nil, nil, err
 		}
@@ -132,13 +139,14 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 			s.Status = prjmanager.Status_STOPPING
 			fallthrough
 		case prjmanager.Status_STOPPING:
+			if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
+				return nil, nil, err
+			}
 			runs := s.PB.IncompleteRuns()
 			if len(runs) == 0 {
 				s = s.cloneShallow()
 				s.Status = prjmanager.Status_STOPPED
-			}
-			if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
-				return nil, nil, err
+				return s, nil, nil
 			}
 			return s, &CancelIncompleteRuns{RunIDs: s.PB.IncompleteRuns()}, nil
 		default:
