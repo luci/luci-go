@@ -46,7 +46,7 @@ func Run(ctx context.Context, stdin io.ReadCloser, run RunLoop) error {
 
 	// Receives the handshake message once it is read from the stdin.
 	type handshakeAndErr struct {
-		*protocol.Handshake
+		PB *protocol.Handshake
 		error
 	}
 	handshakeCh := make(chan handshakeAndErr, 1)
@@ -89,10 +89,10 @@ func Run(ctx context.Context, stdin io.ReadCloser, run RunLoop) error {
 		return errors.Annotate(handshake.error, "failed to read the handshake message").Err()
 	}
 	conn, err := grpc.DialContext(ctx,
-		fmt.Sprintf("127.0.0.1:%d", handshake.Port),
+		fmt.Sprintf("127.0.0.1:%d", handshake.PB.Port),
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
-		grpc.WithPerRPCCredentials(&pluginPerRPCCredentials{handshake.Handshake.Ticket}),
+		grpc.WithPerRPCCredentials(&pluginPerRPCCredentials{handshake.PB.Ticket}),
 	)
 	if err != nil {
 		return errors.Annotate(err, "failed to connect to the plugin host").Err()
