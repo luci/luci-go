@@ -16,6 +16,52 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/23354/test-results?expected\u003dfalse\u0026exonerated\u003dtrue\u0026flaky\u003dtrue\n",
       "revId": "b77bd597b7b7cf611dc6cb2325fb5ae095010ee9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9da90b3_cbc7a7e3",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-18T23:16:37Z",
+      "side": 1,
+      "message": "Suggest colouring this text too, like below?",
+      "range": {
+        "startLine": 231,
+        "startChar": 10,
+        "endLine": 231,
+        "endChar": 47
+      },
+      "revId": "b77bd597b7b7cf611dc6cb2325fb5ae095010ee9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b279c31f_35d9ad5e",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-18T23:16:37Z",
+      "side": 1,
+      "message": "Should clicking this should also check the filter checkbox at the top of the page?",
+      "range": {
+        "startLine": 239,
+        "startChar": 49,
+        "endLine": 239,
+        "endChar": 62
+      },
+      "revId": "b77bd597b7b7cf611dc6cb2325fb5ae095010ee9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
