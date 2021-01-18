@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5baf3750_f00d046c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-18T20:08:48Z",
+      "side": 1,
+      "message": "The index_test.ts was moved to ./src in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2545916 to fix karma running tests in node_modules.\nThis fix will not regress that because we now require \"src\" instead of \".\" in index_test.ts.\n",
+      "revId": "a36a89e007662b6eeb39133752c54a76ef7f8b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
