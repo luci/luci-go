@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7215124_06e6a9a9",
+        "filename": "cv/internal/prjmanager/impl/state/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-18T18:54:58Z",
+      "side": 1,
+      "message": "finally, it\u0027s getting interesting 😊",
+      "range": {
+        "startLine": 267,
+        "startChar": 55,
+        "endLine": 267,
+        "endChar": 77
+      },
+      "revId": "e2e9956b1ce072b71730e136fc2da536a08df2a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
