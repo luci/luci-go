@@ -164,6 +164,15 @@ func (ids RunIDs) Equal(other RunIDs) bool {
 	return true
 }
 
+// Set returns a new set of run IDs.
+func (ids RunIDs) Set() map[RunID]struct{} {
+	r := make(map[RunID]struct{}, len(ids))
+	for _, id := range ids {
+		r[id] = struct{}{}
+	}
+	return r
+}
+
 // MakeRunIDs returns RunIDs from list of strings.
 func MakeRunIDs(ids ...string) RunIDs {
 	ret := make(RunIDs, len(ids))
