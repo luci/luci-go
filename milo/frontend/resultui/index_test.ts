@@ -23,6 +23,6 @@
 
 // require all modules ending in "_test" from the
 // src directory and all subdirectories
-const testsContext = require.context('.', true, /_test$/);
+const testsContext = require.context('./src', true, /_test$/);
 
 testsContext.keys().forEach(testsContext);
