@@ -216,7 +216,7 @@ func statusDetailsToHeaderValues(details []*anypb.Any, format Format) ([]string,
 }
 
 // writeError writes err to w and logs it.
-func writeError(c context.Context, w http.ResponseWriter, err error, format Format) {
+func writeError(ctx context.Context, w http.ResponseWriter, err error, format Format) {
 	st, httpStatus := errorStatus(err)
 
 	// use st.Proto instead of st.Details to avoid unnecessary unmarshaling of
@@ -231,21 +231,21 @@ func writeError(c context.Context, w http.ResponseWriter, err error, format Form
 
 	body := st.Message()
 	if httpStatus < 500 {
-		logging.Warningf(c, "prpc: responding with %s error: %s", st.Code(), st.Message())
+		logging.Warningf(ctx, "prpc: responding with %s error: %s", st.Code(), st.Message())
 	} else {
 		// Hide potential implementation details from the user.
 		body = http.StatusText(httpStatus)
 
 		// Log everything about the error.
-		logging.Errorf(c, "prpc: responding with %s error: %s", st.Code(), st.Message())
-		errors.Log(c, err)
+		logging.Errorf(ctx, "prpc: responding with %s error: %s", st.Code(), st.Message())
+		errors.Log(ctx, err)
 	}
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(st.Code())))
 	w.Header().Set(headerContentType, "text/plain")
 	w.WriteHeader(httpStatus)
 	if _, err := io.WriteString(w, body); err != nil {
-		logging.WithError(err).Errorf(c, "prpc: failed to write response body")
+		logging.WithError(err).Errorf(ctx, "prpc: failed to write response body")
 		// The header is already written. There is nothing more we can do.
 		return
 	}

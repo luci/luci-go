@@ -62,7 +62,7 @@ func admissionHandler(ctx context.Context, adm *protocol.Admission, info admissi
 	visited := 0
 	found := false
 	err := info.VisitMetadata(ctx, []string{"allowed-sha256"}, 0, func(md *api.InstanceMetadata) bool {
-		visited += 1
+		visited++
 		found = string(md.Value) == adm.Instance.HexDigest
 		return !found
 	})
