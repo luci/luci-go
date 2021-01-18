@@ -220,6 +220,7 @@ func Delete(ctx context.Context, id common.CLID) error {
 // within Datatstore limits even for large number of CLs.
 //
 // TODO(tandrii): generalize it via reflection or once Go finally gets Generics.
+// The same code also exists in run package.
 func LoadMulti(ctx context.Context, cls []*CL) (err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/changelist/LoadMulti")
 	defer func() { span.End(err) }()
