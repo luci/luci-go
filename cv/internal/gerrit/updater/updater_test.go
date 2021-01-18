@@ -184,6 +184,11 @@ func TestUpdateCLWorks(t *testing.T) {
 		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 		gobmap.Update(ctx, lProject)
 
+		task := &RefreshGerritCL{
+			LuciProject: lProject,
+			Host:        gHost,
+		}
+
 		Convey("No access or permission denied", func() {
 			assertDependentMetaOnly := func(change int) {
 				cl := getCL(ctx, gHost, change)
@@ -192,9 +197,11 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(cl.DependentMeta.GetByProject()[lProject].GetUpdateTime().AsTime(),
 					ShouldResemble, ct.Clock.Now().UTC())
 			}
-			So(refreshExternal(ctx, lProject, gHost, 404, time.Time{}, 0), ShouldBeNil)
+			task.Change = 404
+			So(refresh(ctx, task), ShouldBeNil)
 			assertDependentMetaOnly(404)
-			So(refreshExternal(ctx, lProject, gHost, 403, time.Time{}, 0), ShouldBeNil)
+			task.Change = 403
+			So(refresh(ctx, task), ShouldBeNil)
 			assertDependentMetaOnly(403)
 		})
 
@@ -202,22 +209,25 @@ func TestUpdateCLWorks(t *testing.T) {
 			ci500 := gf.CI(500, gf.Project(gRepo), gf.Ref("refs/heads/main"))
 			Convey("fail to fetch change details", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, err5xx, ci500))
-				So(refreshExternal(ctx, lProject, gHost, 500, time.Time{}, 0), ShouldErrLike, "boo")
+				task.Change = 500
+				So(refresh(ctx, task), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
 
 			Convey("fail to get filelist", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, okThenErr5xx(), ci500))
-				So(refreshExternal(ctx, lProject, gHost, 500, time.Time{}, 0), ShouldErrLike, "boo")
+				task.Change = 500
+				So(refresh(ctx, task), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
 		})
 
 		Convey("CL hint must actually exist", func() {
-			So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 848484881),
-				ShouldErrLike, "clidHint 848484881 doesn't refer to an existing CL")
+			task.Change = 123
+			task.ClidHint = 848484881
+			So(refresh(ctx, task), ShouldErrLike, "clidHint 848484881 doesn't refer to an existing CL")
 		})
 
 		Convey("Fetch for the first time", func() {
@@ -229,7 +239,8 @@ func TestUpdateCLWorks(t *testing.T) {
 			ct.GFake.SetDependsOn(gHost, ci, ciParent)
 			ct.GFake.SetDependsOn(gHost, ciParent, ciGrandpa)
 
-			So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 0), ShouldBeNil)
+			task.Change = 123
+			So(refresh(ctx, task), ShouldBeNil)
 			cl := getCL(ctx, gHost, 123)
 			So(cl.ApplicableConfig.GetUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 			So(cl.ApplicableConfig.HasOnlyProject(lProject), ShouldBeTrue)
@@ -291,17 +302,27 @@ func TestUpdateCLWorks(t *testing.T) {
 				c.Info.Updated.Seconds++
 			})
 
-			Convey("skips update with updatedHint", func() {
-				updatedHint := cl.Snapshot.GetExternalUpdateTime().AsTime()
-				So(refreshExternal(ctx, lProject, gHost, 123, updatedHint, 0), ShouldBeNil)
+			Convey("Skips update with updatedHint", func() {
+				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
+				So(refresh(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
 				So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+
+				Convey("But notifies PM if explicitly asked to do so", func() {
+					task.ForceNotifyPm = true
+					So(refresh(ctx, task), ShouldBeNil)
+					So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion) // not touched
+					pmNotifications = append(pmNotifications, lProject)
+					So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications) // notified
+				})
 			})
 
 			Convey("Don't update iff fetched less recent than updatedHint ", func() {
 				// Set expectation that Gerrit serves change with >=+1m timestamp.
-				updatedHint := cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Minute)
-				err := refreshExternal(ctx, lProject, gHost, 123, updatedHint, 0)
+				task.UpdatedHint = timestamppb.New(
+					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Minute),
+				)
+				err := refresh(ctx, task)
 				So(err, ShouldErrLike, "stale Gerrit data")
 				So(transient.Tag.In(err), ShouldBeTrue)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
@@ -310,13 +331,15 @@ func TestUpdateCLWorks(t *testing.T) {
 
 			Convey("Heeds updatedHint and updates the CL", func() {
 				// Set expectation that Gerrit serves change with >=+1ms timestamp.
-				updatedHint := cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Millisecond)
+				task.UpdatedHint = timestamppb.New(
+					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Millisecond),
+				)
 				ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 					// Only ChangeInfo but not ListFiles and GetRelatedChanges RPCs should
 					// be called. So, ensure 2+ RPCs return 5xx.
 					c.ACLs = okThenErr5xx()
 				})
-				So(refreshExternal(ctx, lProject, gHost, 123, updatedHint, 0), ShouldBeNil)
+				So(refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				So(cl2.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble,
@@ -338,7 +361,8 @@ func TestUpdateCLWorks(t *testing.T) {
 						gf.Updated(ct.Clock.Now())(c.Info)
 					})
 
-					So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 0), ShouldBeNil)
+					task.UpdatedHint = nil
+					So(refresh(ctx, task), ShouldBeNil)
 					cl3 := getCL(ctx, gHost, 123)
 					So(cl3.EVersion, ShouldEqual, cl2.EVersion+1)
 					So(cl3.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
@@ -368,7 +392,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				ct.Clock.Add(time.Second)
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
 				gobmap.Update(ctx, lProject)
-				So(refreshExternal(ctx, lProject, gHost, 123, time.Time{}, 0), ShouldBeNil)
+				So(refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				// Snapshot is preserved (handy, if this is temporal misconfiguration).
@@ -390,10 +414,11 @@ func TestUpdateCLWorks(t *testing.T) {
 				gobmap.Update(ctx, lProject2)
 
 				// Use a hint that'd normally prevent an update.
-				updateHint := cl.Snapshot.GetExternalUpdateTime().AsTime()
+				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
+				task.LuciProject = lProject2
 
 				Convey("with access", func() {
-					So(refreshExternal(ctx, lProject2, gHost, 123, updateHint, 0), ShouldBeNil)
+					So(refresh(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					So(cl2.Snapshot.GetLuciProject(), ShouldEqual, lProject2)
@@ -409,7 +434,7 @@ func TestUpdateCLWorks(t *testing.T) {
 					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 						c.ACLs = gf.ACLRestricted("not-lProject2")
 					})
-					So(refreshExternal(ctx, lProject2, gHost, 123, updateHint, 0), ShouldBeNil)
+					So(refresh(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					// Snapshot is kept as is, including its ExternalUpdateTime.
@@ -432,7 +457,9 @@ func TestUpdateCLWorks(t *testing.T) {
 
 			ci := gf.CI(101, gf.Project(gRepo), gf.Ref("refs/heads/main"))
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
-			So(refreshExternal(ctx, lProject, gHost, 101, time.Time{}, cl.ID), ShouldBeNil)
+			task.Change = 101
+			task.ClidHint = int64(cl.ID)
+			So(refresh(ctx, task), ShouldBeNil)
 
 			cl2 := getCL(ctx, gHost, 101)
 			So(cl2.EVersion, ShouldEqual, 2)
