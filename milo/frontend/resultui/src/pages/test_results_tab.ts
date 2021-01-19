@@ -166,7 +166,7 @@ export class TestResultsTabElement extends MobxLitElement {
         this.invocationState.filteredExoneratedVariants,
         this.configsStore.userConfigs.tests.showExoneratedVariant,
         (display) => this.configsStore.userConfigs.tests.showExoneratedVariant = display,
-        this.invocationState.testLoader?.loadedAllFlakyVariants || false,
+        this.invocationState.testLoader?.loadedAllExoneratedVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXPECTED,
