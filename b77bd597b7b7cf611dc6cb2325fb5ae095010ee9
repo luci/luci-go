@@ -67,6 +67,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b6b48246_9e31a729",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-19T02:15:28Z",
+      "side": 1,
+      "message": "Hmm. I think the reason I brought it up is that it just adds some unexpected inconsistency to an already confusing UI. Not blocking this CL, but I think we need to have a think about the UX before we push the next version of Milo. See: http://screen/9brzauzDsGSZ2AR.png\n\nI find this UI quite confusing. For example: why do we show \"Showing 0 tests. Load More\" twice? What\u0027s the difference between \"Show\" and \"Load more\"? Why does it say there are no exonerated test results, but doesn\u0027t mention expected results at all? Why are \"unexpected\" and \"flaky\" coloured but \"exonerated\" isn\u0027t?\n\n(Note: I know the answers to these questions, but I don\u0027t think users will).\n\nI set up a meeting this afternoon to see if we can figure out how to make it clearer.\n\nFor this CL, I\u0027m OK if you want to add the colour or not, though my slight preference is to colour it for consistency.",
+      "parentUuid": "e444af7e_b2967a89",
+      "range": {
+        "startLine": 231,
+        "startChar": 10,
+        "endLine": 231,
+        "endChar": 47
+      },
+      "revId": "b77bd597b7b7cf611dc6cb2325fb5ae095010ee9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b279c31f_35d9ad5e",
         "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
         "patchSetId": 5
