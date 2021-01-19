@@ -133,16 +133,16 @@ func marshalMessage(msg proto.Message, format Format, wrap bool) ([]byte, error)
 }
 
 // writeMessage writes msg to w in the specified format.
-// c is used to log errors.
+// ctx is used to log errors.
 // panics if msg is nil.
-func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, format Format, allowGZip bool) {
+func writeMessage(ctx context.Context, w http.ResponseWriter, msg proto.Message, format Format, allowGZip bool) {
 	if msg == nil {
 		panic("msg is nil")
 	}
 
 	body, err := marshalMessage(msg, format, true)
 	if err != nil {
-		writeError(c, w, withCode(err, codes.Internal), format)
+		writeError(ctx, w, withCode(err, codes.Internal), format)
 		return
 	}
 
@@ -154,16 +154,16 @@ func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, f
 		gz := getGZipper(w)
 		defer returnGzipper(gz)
 		if _, err := gz.Write(body); err != nil {
-			logging.WithError(err).Errorf(c, "prpc: failed to write or compress the response body")
+			logging.WithError(err).Errorf(ctx, "prpc: failed to write or compress the response body")
 			return
 		}
 		if err := gz.Close(); err != nil {
-			logging.WithError(err).Errorf(c, "prpc: failed to close gzip.Writer")
+			logging.WithError(err).Errorf(ctx, "prpc: failed to close gzip.Writer")
 			return
 		}
 	} else {
 		if _, err := w.Write(body); err != nil {
-			logging.WithError(err).Errorf(c, "prpc: failed to write response body")
+			logging.WithError(err).Errorf(ctx, "prpc: failed to write response body")
 			return
 		}
 	}
