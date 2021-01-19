@@ -705,6 +705,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "28c62214_36c5211f",
+        "filename": "cv/internal/lease/lease.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T18:58:38Z",
+      "side": 1,
+      "message": "Done! Changed to truncate to millisecond in the latest revision",
+      "parentUuid": "618fc864_7e71c438",
+      "revId": "838b2b48686314aaf53bd906cb79641b31a01774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e2eac466_e351e734",
