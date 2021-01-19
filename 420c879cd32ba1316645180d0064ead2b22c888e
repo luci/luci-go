@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a12847bb_395bc50d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-19T22:12:50Z",
+      "side": 1,
+      "message": "Yup, I can look into it today. This is just the progress I was able to make last night.",
+      "parentUuid": "82f13df8_512f5c5d",
+      "range": {
+        "startLine": 13,
+        "startChar": 9,
+        "endLine": 13,
+        "endChar": 68
+      },
+      "revId": "420c879cd32ba1316645180d0064ead2b22c888e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1d01385f_8ca66791",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-19T22:01:54Z",
       "side": 1,
       "message": "Would you please reminding me what is the \"nesting problem\"?",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 26
+      },
+      "revId": "420c879cd32ba1316645180d0064ead2b22c888e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ba582cc_c9304697",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-19T22:12:50Z",
+      "side": 1,
+      "message": "The problem is that the test results tab already has a very deep nesting structure, which creates some noise on the page and doesn\u0027t visually differentiate between semantic levels very well (e.g. the expando arrows, text formatting etc look similar at every nesting depth). I\u0027d like the top-level section headers to be clearly visually distinct, and ideally not indent everything by yet another level.",
+      "parentUuid": "1d01385f_8ca66791",
       "range": {
         "startLine": 15,
         "startChar": 11,
