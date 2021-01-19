@@ -29,7 +29,7 @@ import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
-import { VARIANT_STATUS_DISPLAY_MAP } from '../libs/constants';
+import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP } from '../libs/constants';
 import { TestNode } from '../models/test_node';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
@@ -53,27 +53,6 @@ export class TestResultsTabElement extends MobxLitElement {
         bubbles: true,
       }));
     }
-  }
-
-  @computed get loadedAllTests() {
-    if (!this.invocationState.testLoader) {
-      return true;
-    }
-    const filters = this.configsStore.userConfigs.tests;
-    const testLoader = this.invocationState.testLoader;
-    if (filters.showFlakyVariant && !testLoader.loadedAllUnexpectedVariants) {
-      return false;
-    }
-    if (filters.showFlakyVariant && !testLoader.loadedAllFlakyVariants) {
-      return false;
-    }
-    if (filters.showExoneratedVariant && !testLoader.loadedAllExoneratedVariants) {
-      return false;
-    }
-    if (filters.showExpectedVariant && !testLoader.loadedAllExpectedVariants) {
-      return false;
-    }
-    return true;
   }
 
   @computed
@@ -165,14 +144,13 @@ export class TestResultsTabElement extends MobxLitElement {
   private renderAllVariants() {
     return html`
       ${this.renderIntegrationHint()}
-      ${this.totalDisplayedVariantCount > 0 ? html`
       ${this.renderLoadMore()}
       <hr class="divider">
-      ` : ''}
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTED,
         this.invocationState.filteredUnexpectedVariants,
         this.configsStore.userConfigs.tests.showUnexpectedVariant,
+        (display) => this.configsStore.userConfigs.tests.showUnexpectedVariant = display,
         this.invocationState.testLoader?.loadedAllUnexpectedVariants || false,
         true,
       )}
@@ -180,18 +158,21 @@ export class TestResultsTabElement extends MobxLitElement {
         TestVariantStatus.FLAKY,
         this.invocationState.filteredFlakyVariants,
         this.configsStore.userConfigs.tests.showFlakyVariant,
+        (display) => this.configsStore.userConfigs.tests.showFlakyVariant = display,
         this.invocationState.testLoader?.loadedAllFlakyVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXONERATED,
         this.invocationState.filteredExoneratedVariants,
         this.configsStore.userConfigs.tests.showExoneratedVariant,
+        (display) => this.configsStore.userConfigs.tests.showExoneratedVariant = display,
         this.invocationState.testLoader?.loadedAllFlakyVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXPECTED,
         this.invocationState.filteredExpectedVariants,
         this.configsStore.userConfigs.tests.showExpectedVariant,
+        (display) => this.configsStore.userConfigs.tests.showExpectedVariant = display,
         this.invocationState.testLoader?.loadedAllExpectedVariants || false,
       )}
       ${this.renderLoadMore()}
@@ -207,7 +188,7 @@ export class TestResultsTabElement extends MobxLitElement {
         Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
         </p>
         Known issues:
-        <ul id="knownissues">
+        <ul id="known-issues">
           <li>Test result tab is currently slow: <a href="https://crbug.com/1114935">crbug.com/1114935</a>.</li>
         </ul>
         <span
@@ -226,6 +207,7 @@ export class TestResultsTabElement extends MobxLitElement {
     status: TestVariantStatus,
     variants: TestVariant[],
     display: boolean,
+    toggleDisplay: (display: boolean) => void,
     fullyLoaded: boolean,
     expandFirst = false,
   ) {
@@ -245,11 +227,24 @@ export class TestResultsTabElement extends MobxLitElement {
       `)}
       <div
         class="list-entry"
-        style=${styleMap({'display': display && variants.length === 0 && fullyLoaded ? '' : 'none'})}
-      >No ${VARIANT_STATUS_DISPLAY_MAP[status]} test results.</div>
+        style=${styleMap({'display': variants.length === 0 && fullyLoaded ? '' : 'none'})}
+      >
+        No
+        <span class=${VARIANT_STATUS_CLASS_MAP[status]}>${VARIANT_STATUS_DISPLAY_MAP[status]}</span>
+        test results.
+      </div>
+      <div
+        class="list-entry"
+        style=${styleMap({'display': !display && variants.length !== 0 ? '' : 'none'})}
+      >
+        ${variants.length} hidden
+        <span class=${VARIANT_STATUS_CLASS_MAP[status]}>${VARIANT_STATUS_DISPLAY_MAP[status]}</span>
+        test results.
+        <span class="active-text" @click=${() => toggleDisplay(!display)}>Show</span>
+      </div>
       <hr
         class="divider"
-        style=${styleMap({'display': display && (variants.length !== 0 || fullyLoaded) ? '' : 'none'})}
+        style=${styleMap({'display': variants.length !== 0 || fullyLoaded ? '' : 'none'})}
       >
     `;
   }
@@ -257,22 +252,19 @@ export class TestResultsTabElement extends MobxLitElement {
   private renderLoadMore() {
     const state = this.invocationState;
     return html`
-      <div id="loadmore" class="list-entry">
+      <div class="list-entry">
         <span>Showing ${this.totalDisplayedVariantCount} tests.</span>
         <span
-          id="load"
-          style=${styleMap({'display': this.loadedAllTests ? 'none' : ''})}
+          class="active-text"
+          style=${styleMap({'display': this.invocationState.testLoader?.loadedAllVariants ? 'none' : ''})}
         >
           <span
-            id="load-more"
             style=${styleMap({'display': state.testLoader?.isLoading ? 'none' : ''})}
             @click=${this.loadNextPage}
           >
             Load More
           </span>
-          <span
-            style=${styleMap({'display': state.testLoader?.isLoading ? '' : 'none'})}
-          >
+          <span style=${styleMap({'display': state.testLoader?.isLoading ? '' : 'none'})}>
             Loading <milo-dot-spinner></milo-dot-spinner>
           </span>
         </span>
@@ -348,10 +340,6 @@ export class TestResultsTabElement extends MobxLitElement {
       padding: 5px 10px 3px 10px;
     }
 
-    #loadmore {
-      padding-bottom: 5px;
-    }
-
     milo-test-filter {
       margin: 5px;
       margin-bottom: 0px;
@@ -371,7 +359,7 @@ export class TestResultsTabElement extends MobxLitElement {
       padding-top: 5px;
       outline: none;
     }
-    #test-result-view>* {
+    milo-variant-entry {
       margin-bottom: 2px;
     }
 
@@ -384,14 +372,23 @@ export class TestResultsTabElement extends MobxLitElement {
       overflow: hidden;
     }
 
+    .exonerated {
+      color: var(--exonerated-color);
+    }
+    .expected {
+      color: var(--success-color);
+    }
+    .unexpected {
+      color: var(--failure-color);
+    }
+    .flaky {
+      color: var(--warning-color);
+    }
+
     .list-entry {
-      margin-left: 5px;
-      margin-top: 5px;
+      margin: 5px;
     }
-    #load {
-      color: var(--active-text-color);
-    }
-    #load-more {
+    .active-text {
       color: var(--active-text-color);
       cursor: pointer;
     }
@@ -404,7 +401,7 @@ export class TestResultsTabElement extends MobxLitElement {
       color: var(--active-text-color);
       cursor: pointer;
     }
-    #knownissues{
+    #known-issues{
       margin-top: 3px;
       margin-bottom: 3px;
     }
