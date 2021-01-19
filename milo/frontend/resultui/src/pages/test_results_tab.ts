@@ -29,7 +29,7 @@ import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
-import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP } from '../libs/constants';
+import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE } from '../libs/constants';
 import { TestNode } from '../models/test_node';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
@@ -144,8 +144,6 @@ export class TestResultsTabElement extends MobxLitElement {
   private renderAllVariants() {
     return html`
       ${this.renderIntegrationHint()}
-      ${this.renderLoadMore()}
-      <hr class="divider">
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTED,
         this.invocationState.filteredUnexpectedVariants,
@@ -175,7 +173,6 @@ export class TestResultsTabElement extends MobxLitElement {
         (display) => this.configsStore.userConfigs.tests.showExpectedVariant = display,
         this.invocationState.testLoader?.loadedAllExpectedVariants || false,
       )}
-      ${this.renderLoadMore()}
     `;
   }
 
@@ -212,6 +209,14 @@ export class TestResultsTabElement extends MobxLitElement {
     expandFirst = false,
   ) {
     return html`
+      <div class="section-header">
+        ${VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE[status]} (${variants.length})
+        <span
+          class="load-more active-text"
+          style=${styleMap({'display': fullyLoaded ? 'none' : ''})}>
+          ${this.renderLoadMore()}
+        </span>
+      </div>
       ${repeat(
         (display ? variants : []).map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [TestVariant | undefined, TestVariant, TestVariant | undefined]),
         ([_, v]) => `${v.testId} ${v.variantHash}`,
@@ -242,33 +247,22 @@ export class TestResultsTabElement extends MobxLitElement {
         test results.
         <span class="active-text" @click=${() => toggleDisplay(!display)}>Show</span>
       </div>
-      <hr
-        class="divider"
-        style=${styleMap({'display': variants.length !== 0 || fullyLoaded ? '' : 'none'})}
-      >
+      <hr class="divider">
     `;
   }
 
   private renderLoadMore() {
     const state = this.invocationState;
     return html`
-      <div class="list-entry">
-        <span>Showing ${this.totalDisplayedVariantCount} tests.</span>
-        <span
-          class="active-text"
-          style=${styleMap({'display': this.invocationState.testLoader?.loadedAllVariants ? 'none' : ''})}
-        >
-          <span
-            style=${styleMap({'display': state.testLoader?.isLoading ? 'none' : ''})}
-            @click=${this.loadNextPage}
-          >
-            Load More
-          </span>
-          <span style=${styleMap({'display': state.testLoader?.isLoading ? '' : 'none'})}>
-            Loading <milo-dot-spinner></milo-dot-spinner>
-          </span>
-        </span>
-      </div>
+      <span
+        style=${styleMap({'display': state.testLoader?.isLoading ? 'none' : ''})}
+        @click=${this.loadNextPage}
+      >
+        [load more]
+      </span>
+      <span style=${styleMap({'display': state.testLoader?.isLoading ? '' : 'none'})}>
+        loading <milo-dot-spinner></milo-dot-spinner>
+      </span>
     `;
   }
 
@@ -300,7 +294,7 @@ export class TestResultsTabElement extends MobxLitElement {
         style="display: none;"
         .handler=${() => this.shadowRoot!.getElementById('test-result-view')!.focus()}
       ></milo-hotkey>
-      <milo-lazy-list id="test-result-view" .growth=${300} tabindex="-1">
+      <milo-lazy-list id="test-result-view" .growth=${300} tabindex="-1" style=${styleMap({'display': state.testLoader?.firstRequestSent ? '' : 'none'})}>
         ${this.renderAllVariants()}
       </milo-lazy-list>
     `;
@@ -361,6 +355,17 @@ export class TestResultsTabElement extends MobxLitElement {
     }
     milo-variant-entry {
       margin-bottom: 2px;
+    }
+
+    .section-header {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 5px 5px 10px;
+    }
+
+    .load-more {
+      font-size: 14px;
+      font-weight: normal;
     }
 
     .divider {
