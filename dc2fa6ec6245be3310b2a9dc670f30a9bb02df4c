@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c5d5381_ef30d10e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T22:49:42Z",
+      "side": 1,
+      "message": "lgtm % few nits",
+      "revId": "dc2fa6ec6245be3310b2a9dc670f30a9bb02df4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e6a83c4_36c57618",
+        "filename": "luciexe/build/internal/testpb/gen.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T22:49:42Z",
+      "side": 1,
+      "message": "2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "dc2fa6ec6245be3310b2a9dc670f30a9bb02df4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e8c5b99_5ffc0fb4",
+        "filename": "luciexe/build/internal/testpb/gen.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T22:49:42Z",
+      "side": 1,
+      "message": "Del? I don\u0027t think you need this so far",
+      "range": {
+        "startLine": 17,
+        "startChar": 62,
+        "endLine": 17,
+        "endChar": 98
+      },
+      "revId": "dc2fa6ec6245be3310b2a9dc670f30a9bb02df4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dddd8bc0_cbd13e6b",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T22:49:42Z",
+      "side": 1,
+      "message": "This seems to be a magic number. I\u0027m not sure if future contributor will be able to make sure to increment this when adding another new layer in call frames. WDYT adding a `skip` parameter in the reserve method for `resLocations`, `inputPropertyReservations` and `outputPropertyReservations`. `inputPropertyReservations` and `outputPropertyReservations` can pass `skip + 1` to `resLocations`.",
+      "range": {
+        "startLine": 64,
+        "startChar": 40,
+        "endLine": 64,
+        "endChar": 41
+      },
+      "revId": "dc2fa6ec6245be3310b2a9dc670f30a9bb02df4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45b7acdc_15b01172",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T22:49:42Z",
+      "side": 1,
+      "message": "nit: Should we differentiate between nil and empty proto message since they may be semantically different for user? i.e. if a field doesn\u0027t exist in props, then it shouldn\u0027t be in the return value.",
+      "revId": "dc2fa6ec6245be3310b2a9dc670f30a9bb02df4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52e8a1a1_20c75856",
+        "filename": "luciexe/build/properties.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T22:49:42Z",
+      "side": 1,
+      "message": "deserializing",
+      "range": {
+        "startLine": 216,
+        "startChar": 45,
+        "endLine": 216,
+        "endChar": 56
+      },
+      "revId": "dc2fa6ec6245be3310b2a9dc670f30a9bb02df4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
