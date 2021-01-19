@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
@@ -129,6 +130,28 @@ func IndexedTags(tags strpair.Map) []string {
 		}
 	}
 	return set.ToSortedSlice()
+}
+
+// UpdateTagIndex updates the tag index for the given builds.
+func UpdateTagIndex(ctx context.Context, builds []*model.Build) error {
+	// tag -> entries
+	idx := make(map[string][]model.TagIndexEntry)
+	for _, b := range builds {
+		for _, t := range IndexedTags(strpair.ParseMap(b.Tags)) {
+			idx[t] = append(idx[t], model.TagIndexEntry{
+				BuildID:  b.ID,
+				BucketID: b.BucketID,
+			})
+		}
+	}
+	return parallel.WorkPool(64, func(work chan<- func() error) {
+		for tag, ents := range idx {
+			tag := tag
+			ents := ents
+			work <- func() error { return model.UpdateTagIndex(ctx, tag, ents) }
+		}
+	})
+	return nil
 }
 
 // Fetch performs main build search logic.
