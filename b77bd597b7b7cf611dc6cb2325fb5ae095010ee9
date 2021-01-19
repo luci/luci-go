@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e444af7e_b2967a89",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-19T01:30:01Z",
+      "side": 1,
+      "message": "If we apply the color here, when user glance over the list, they will see a red (which suggests bad) \"unexpected\" even though there\u0027s no unexpected test variant.\nThat being said, we also have requests to make the \"no unexpected tests\" entry more visible.\nWDYT?",
+      "parentUuid": "a9da90b3_cbc7a7e3",
+      "range": {
+        "startLine": 231,
+        "startChar": 10,
+        "endLine": 231,
+        "endChar": 47
+      },
+      "revId": "b77bd597b7b7cf611dc6cb2325fb5ae095010ee9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b279c31f_35d9ad5e",
         "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
         "patchSetId": 5
@@ -54,6 +78,30 @@
       "writtenOn": "2021-01-18T23:16:37Z",
       "side": 1,
       "message": "Should clicking this should also check the filter checkbox at the top of the page?",
+      "range": {
+        "startLine": 239,
+        "startChar": 49,
+        "endLine": 239,
+        "endChar": 62
+      },
+      "revId": "b77bd597b7b7cf611dc6cb2325fb5ae095010ee9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cffbc492_0fab0306",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-19T01:30:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b279c31f_35d9ad5e",
       "range": {
         "startLine": 239,
         "startChar": 49,
