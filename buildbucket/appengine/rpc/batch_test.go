@@ -18,8 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/jsonpb"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 
+	"go.chromium.org/luci/common/testing/mock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -36,7 +39,8 @@ func TestBatch(t *testing.T) {
 	t.Parallel()
 
 	Convey("Batch", t, func() {
-		srv := &Builds{}
+		mockPyBBClient := pb.NewMockBuildsClient(gomock.NewController(t))
+		srv := &Builds{testPyBuildsClient: mockPyBBClient}
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -90,6 +94,7 @@ func TestBatch(t *testing.T) {
 			req = &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{{}},
 			}
+			mockPyBBClient.EXPECT().Batch(ctx, gomock.Any()).Times(0)
 			res, err = srv.Batch(ctx, req)
 			So(err, ShouldNotBeNil)
 			So(res, ShouldBeNil)
@@ -200,6 +205,7 @@ func TestBatch(t *testing.T) {
 					}},
 				},
 			}
+			mockPyBBClient.EXPECT().Batch(ctx, gomock.Any()).Times(0)
 			res, err := srv.Batch(ctx, req)
 			build1 := &pb.Build{
 				Id: 1,
@@ -236,6 +242,96 @@ func TestBatch(t *testing.T) {
 			}
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, expectedRes)
+		})
+
+		Convey("schedule and cancel in req", func() {
+			req := &pb.BatchRequest{}
+			err := jsonpb.UnmarshalString(`{
+				"requests": [
+					{"scheduleBuild": {}},
+					{"cancelBuild": {}}
+				]
+			}`, req)
+			So(err, ShouldBeNil)
+			mockRes := &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_ScheduleBuild{
+						ScheduleBuild: &pb.Build{Id: 1},
+					}},
+					{Response: &pb.BatchResponse_Response_CancelBuild{
+						CancelBuild: &pb.Build{Id: 2},
+					}},
+				},
+			}
+			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(mockRes, nil)
+			actualRes, err := srv.Batch(ctx, req)
+			So(err, ShouldBeNil)
+			So(actualRes, ShouldResembleProto, mockRes)
+		})
+
+		Convey("get, schedule, search and cancel in req", func() {
+			req := &pb.BatchRequest{}
+			err := jsonpb.UnmarshalString(`{
+				"requests": [
+					{"getBuild": {"id": "1"}},
+					{"scheduleBuild": {}},
+					{"searchBuilds": {}},
+					{"cancelBuild": {}}
+				]}`, req)
+			So(err, ShouldBeNil)
+			expectedPyReq := &pb.BatchRequest{}
+			err = jsonpb.UnmarshalString(`{
+				"requests": [
+					{"scheduleBuild": {}},
+					{"cancelBuild": {}}
+				]}`, expectedPyReq)
+			So(err, ShouldBeNil)
+			mockRes := &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_ScheduleBuild{
+						ScheduleBuild: &pb.Build{Id: 1},
+					}},
+					{Response: &pb.BatchResponse_Response_CancelBuild{
+						CancelBuild: &pb.Build{Id: 2},
+					}},
+				},
+			}
+			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(expectedPyReq)).Return(mockRes, nil)
+			actualRes, err := srv.Batch(ctx, req)
+			build1 := &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder1",
+				},
+				Input: &pb.Build_Input{},
+			}
+			build2 := &pb.Build{
+				Id: 2,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder2",
+				},
+				Input: &pb.Build_Input{},
+			}
+			expectedRes := &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_GetBuild{
+						GetBuild: build1,
+					}},
+					mockRes.Responses[0],
+					{Response: &pb.BatchResponse_Response_SearchBuilds{
+						SearchBuilds: &pb.SearchBuildsResponse{
+							Builds: []*pb.Build{build1, build2},
+						},
+					}},
+					mockRes.Responses[1],
+				},
+			}
+			So(err, ShouldBeNil)
+			So(actualRes, ShouldResembleProto, expectedRes)
 		})
 	})
 }
