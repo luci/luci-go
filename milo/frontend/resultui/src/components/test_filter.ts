@@ -71,7 +71,7 @@ export class TestFilterElement extends MobxLitElement {
             this.testFilters.showUnexpectedVariant = (v.target as HTMLInputElement).checked;
             this.configsStore.save();
           }}
-          ?checked=${this.testFilters.showUnexpectedVariant}
+          .checked=${this.testFilters.showUnexpectedVariant}
         >
         <label for="unexpected" style="color: var(--failure-color);">Unexpected (${this.unexpectedVariantCount})</label>
       </div class="filter">
@@ -83,7 +83,7 @@ export class TestFilterElement extends MobxLitElement {
             this.testFilters.showFlakyVariant = (v.target as HTMLInputElement).checked;
             this.configsStore.save();
           }}
-          ?checked=${this.testFilters.showFlakyVariant}
+          .checked=${this.testFilters.showFlakyVariant}
         >
         <label for="flaky" style="color: var(--warning-color);">Flaky (${this.flakyVariantCount})</label>
       </div class="filter">
@@ -95,7 +95,7 @@ export class TestFilterElement extends MobxLitElement {
             this.testFilters.showExoneratedVariant = (v.target as HTMLInputElement).checked;
             this.configsStore.save();
           }}
-          ?checked=${this.testFilters.showExoneratedVariant}
+          .checked=${this.testFilters.showExoneratedVariant}
         >
         <label for="exonerated" style="color: var(--exonerated-color);">Exonerated (${this.exoneratedVariantCount})</label>
       </div class="filter">
@@ -107,7 +107,7 @@ export class TestFilterElement extends MobxLitElement {
             this.testFilters.showExpectedVariant = (v.target as HTMLInputElement).checked;
             this.configsStore.save();
           }}
-          ?checked=${this.testFilters.showExpectedVariant}
+          .checked=${this.testFilters.showExpectedVariant}
         >
       <label for="expected" style="color: var(--success-color);">Expected (${this.expectedVariantCount})</label>
       </div class="filter">
