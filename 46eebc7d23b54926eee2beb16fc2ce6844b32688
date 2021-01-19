@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2d492b9_0257af0e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T23:44:26Z",
+      "side": 1,
+      "message": "+1",
+      "range": {
+        "startLine": 12,
+        "startChar": 56,
+        "endLine": 15,
+        "endChar": 0
+      },
+      "revId": "46eebc7d23b54926eee2beb16fc2ce6844b32688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e76e5dbf_9e1e894d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T23:44:26Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "46eebc7d23b54926eee2beb16fc2ce6844b32688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1b7a085_276571e3",
+        "filename": "luciexe/build/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-19T23:44:26Z",
+      "side": 1,
+      "message": "nit: use proto package from v2 api",
+      "revId": "46eebc7d23b54926eee2beb16fc2ce6844b32688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
