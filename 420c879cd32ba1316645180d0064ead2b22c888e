@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5dbad48c_98c30ef6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-19T10:24:10Z",
+      "side": 1,
+      "message": "PTAL and comment on the demo (feel free to ignore the code for now): https://jsca-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/23354/test-results",
+      "revId": "420c879cd32ba1316645180d0064ead2b22c888e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
