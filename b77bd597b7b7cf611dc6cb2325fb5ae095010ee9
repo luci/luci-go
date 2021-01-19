@@ -91,6 +91,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c8ef429f_4b61a10b",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-19T04:29:23Z",
+      "side": 1,
+      "message": "Fixed the colour. Other UX issues will be fixed in following CLs.",
+      "parentUuid": "b6b48246_9e31a729",
+      "range": {
+        "startLine": 231,
+        "startChar": 10,
+        "endLine": 231,
+        "endChar": 47
+      },
+      "revId": "b77bd597b7b7cf611dc6cb2325fb5ae095010ee9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b279c31f_35d9ad5e",
         "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
         "patchSetId": 5
