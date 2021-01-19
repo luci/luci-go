@@ -197,5 +197,11 @@ describe('test_loader', () => {
       assert.deepEqual(stub.getCall(1).args[0], {...req, pageToken: 'page2'});
       assert.deepEqual(stub.getCall(2).args[0], {...req, pageToken: 'page3'});
     });
+
+    it('should correctly set firstRequestSent', async () => {
+      assert.isFalse(testLoader.firstRequestSent);
+      testLoader.loadNextPage();
+      assert.isTrue(testLoader.firstRequestSent);
+    });
   });
 });
