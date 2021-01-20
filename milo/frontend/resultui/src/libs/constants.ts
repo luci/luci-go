@@ -31,6 +31,14 @@ export const VARIANT_STATUS_DISPLAY_MAP = Object.freeze({
   [TestVariantStatus.FLAKY]: 'flaky',
 });
 
+export const VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE = Object.freeze({
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'Unspecified',
+  [TestVariantStatus.EXONERATED]: 'Exonerated',
+  [TestVariantStatus.EXPECTED]: 'Expected',
+  [TestVariantStatus.UNEXPECTED]: 'Unexpected',
+  [TestVariantStatus.FLAKY]: 'Flaky',
+});
+
 // Just so happens to be the same as VARIANT_STATUS_DISPLAY_MAP.
 export const VARIANT_STATUS_CLASS_MAP = Object.freeze({
   [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
