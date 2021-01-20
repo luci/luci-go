@@ -105,12 +105,13 @@ export class TestLoader {
       .queryTestVariants({...this.req, pageToken: this.nextPageToken});
     this.nextPageToken = res.nextPageToken;
 
-    this.processTestVariants(res.testVariants || []);
+    const testVariants = res.testVariants || [];
+    this.processTestVariants(testVariants);
     if (this.nextPageToken === undefined) {
       this._stage = LoadingStage.Done;
       return;
     }
-    if (res.testVariants.length < (this.req.pageSize || 1000)) {
+    if (testVariants.length < (this.req.pageSize || 1000)) {
       // When the service returns an incomplete page and nextPageToken is not
       // undefined, the following pages must be expected test variants.
       this._stage = LoadingStage.LoadingExpected;
