@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89485d59_7e156535",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T06:10:56Z",
+      "side": 1,
+      "message": "rest lgtm ",
+      "revId": "d022874abc9b009a085d05072ef2f2e548e3a9fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f8a22774_f54cc12b",
+        "filename": "cv/internal/prjmanager/impl/state/state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T06:10:56Z",
+      "side": 1,
+      "message": "Is it possible that events contain multiple events for the same CL? I think evalUpdatedCLs may end up creating duplicate CLs in such scenario?",
+      "range": {
+        "startLine": 246,
+        "startChar": 50,
+        "endLine": 246,
+        "endChar": 78
+      },
+      "revId": "d022874abc9b009a085d05072ef2f2e548e3a9fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
