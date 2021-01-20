@@ -566,6 +566,188 @@ func TestOnCLsUpdated(t *testing.T) {
 	})
 }
 
+func TestRunsCreatedAndFinished(t *testing.T) {
+	t.Parallel()
+
+	Convey("OnRunsCreated and OnRunsFinished works", t, func() {
+		ct := ctest{
+			lProject: "test",
+			gHost:    "c-review.example.com",
+		}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		cfg1 := &cfgpb.Config{}
+		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+		ct.Cfg.Create(ctx, ct.lProject, cfg1)
+		meta := ct.Cfg.MustExist(ctx, ct.lProject)
+
+		run1 := &run.Run{ID: common.RunID(ct.lProject + "/101-aaa"), CLs: []common.CLID{101}}
+		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: []common.CLID{709, 707, 708}}
+		So(datastore.Put(ctx, run1, run789), ShouldBeNil)
+
+		s1 := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+			LuciProject:      ct.lProject,
+			ConfigHash:       meta.Hash(),
+			ConfigGroupNames: []string{"g0", "g1"},
+			// For OnRunsFinished / OnRunsCreated PCLs don't matter, so omit them from
+			// the test for brevity, even though valid State must have PCLs covering
+			// all components.
+			Pcls: nil,
+			Components: []*internal.Component{
+				{
+					Clids: []int64{101},
+					Pruns: []*internal.PRun{{Id: ct.lProject + "/101-aaa", Clids: []int64{1}}},
+				},
+				{
+					Clids: []int64{202, 203, 204},
+				},
+			},
+			CreatedPruns: []*internal.PRun{
+				{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}},
+			},
+		})
+		pb1 := backupPB(s1)
+
+		Convey("Noops", func() {
+			Convey("OnRunsFinished on not tracked Run", func() {
+				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.MakeRunIDs(ct.lProject+"/999-zzz"))
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				// although s2 is cloned, it must be exact same as s1.
+				So(s2.Status, ShouldEqual, s1.Status)
+				So(s2.PB, ShouldResembleProto, pb1)
+			})
+			Convey("OnRunsCreated on already tracked Run", func() {
+				s2, sideEffect, err := s1.OnRunsCreated(ctx, common.MakeRunIDs(ct.lProject+"/101-aaa"))
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				So(s2, ShouldEqual, s1)
+				So(pb1, ShouldResembleProto, s1.PB)
+			})
+			Convey("OnRunsCreated on somehow already deleted run", func() {
+				s2, sideEffect, err := s1.OnRunsCreated(ctx, common.MakeRunIDs(ct.lProject+"/404-nnn"))
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				// although s2 is cloned, it must be exact same as s1.
+				So(s2.Status, ShouldEqual, s1.Status)
+				So(s2.PB, ShouldResembleProto, pb1)
+			})
+		})
+
+		Convey("OnRunsCreated", func() {
+			runX := &run.Run{ // Run involving all of CLs and more.
+				ID: common.RunID(ct.lProject + "/000-xxx"),
+				// The order doesn't have to and is intentionally not sorted here.
+				CLs: []common.CLID{404, 101, 202, 204, 203},
+			}
+			run2 := &run.Run{ID: common.RunID(ct.lProject + "/202-bbb"), CLs: []common.CLID{202}}
+			run3 := &run.Run{ID: common.RunID(ct.lProject + "/203-ccc"), CLs: []common.CLID{203}}
+			run23 := &run.Run{ID: common.RunID(ct.lProject + "/232-bcb"), CLs: []common.CLID{203, 202}}
+			run234 := &run.Run{ID: common.RunID(ct.lProject + "/234-bcd"), CLs: []common.CLID{203, 204, 202}}
+			So(datastore.Put(ctx, run2, run3, run23, run234, runX), ShouldBeNil)
+
+			s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{
+				run2.ID, run3.ID, run23.ID, run234.ID, runX.ID,
+				// non-existing Run shouldn't derail others.
+				common.RunID(ct.lProject + "/404-nnn"),
+			})
+			So(err, ShouldBeNil)
+			So(pb1, ShouldResembleProto, s1.PB)
+			So(sideEffect, ShouldBeNil)
+			So(s2.PB, ShouldResembleProto, &internal.PState{
+				LuciProject:      ct.lProject,
+				ConfigHash:       meta.Hash(),
+				ConfigGroupNames: []string{"g0", "g1"},
+				Components: []*internal.Component{
+					s1.PB.GetComponents()[0], // 101 is unchanged
+					{
+						Clids: []int64{202, 203, 204},
+						Pruns: []*internal.PRun{
+							// Runs & CLs must be sorted by their respective IDs.
+							{Id: string(run2.ID), Clids: []int64{202}},
+							{Id: string(run3.ID), Clids: []int64{203}},
+							{Id: string(run23.ID), Clids: []int64{202, 203}},
+							{Id: string(run234.ID), Clids: []int64{202, 203, 204}},
+						},
+						Dirty: true,
+					},
+				},
+				CreatedPruns: []*internal.PRun{
+					{Id: string(runX.ID), Clids: []int64{101, 202, 203, 204, 404}},
+					{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}}, // unchanged
+				},
+			})
+		})
+
+		Convey("OnRunsFinished", func() {
+			s1.Status = prjmanager.Status_STOPPING
+			pb1 := backupPB(s1)
+
+			Convey("deletes from Components", func() {
+				pb1 := backupPB(s1)
+				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.MakeRunIDs(ct.lProject+"/101-aaa"))
+				So(err, ShouldBeNil)
+				So(pb1, ShouldResembleProto, s1.PB)
+				So(sideEffect, ShouldBeNil)
+				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPING)
+				So(s2.PB, ShouldResembleProto, &internal.PState{
+					LuciProject:      ct.lProject,
+					ConfigHash:       meta.Hash(),
+					ConfigGroupNames: []string{"g0", "g1"},
+					Components: []*internal.Component{
+						{
+							Clids: []int64{101},
+							Pruns: nil,  // removed
+							Dirty: true, // marked dirty
+						},
+						s1.PB.GetComponents()[1], // unchanged
+					},
+					CreatedPruns: s1.PB.GetCreatedPruns(), // unchanged
+				})
+			})
+
+			Convey("deletes from CreatedPruns", func() {
+				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.MakeRunIDs(ct.lProject+"/789-efg"))
+				So(err, ShouldBeNil)
+				So(pb1, ShouldResembleProto, s1.PB)
+				So(sideEffect, ShouldBeNil)
+				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPING)
+				So(s2.PB, ShouldResembleProto, &internal.PState{
+					LuciProject:      ct.lProject,
+					ConfigHash:       meta.Hash(),
+					ConfigGroupNames: []string{"g0", "g1"},
+					Components:       s1.PB.Components, // unchanged
+					CreatedPruns:     nil,              // removed
+				})
+			})
+
+			Convey("stops PM iff all runs finished", func() {
+				s2, sideEffect, err := s1.OnRunsFinished(ctx, common.MakeRunIDs(
+					ct.lProject+"/101-aaa",
+					ct.lProject+"/789-efg",
+				))
+				So(err, ShouldBeNil)
+				So(pb1, ShouldResembleProto, s1.PB)
+				So(sideEffect, ShouldBeNil)
+				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPED)
+				So(s2.PB, ShouldResembleProto, &internal.PState{
+					LuciProject:      ct.lProject,
+					ConfigHash:       meta.Hash(),
+					ConfigGroupNames: []string{"g0", "g1"},
+					Pcls:             s1.PB.GetPcls(),
+					Components: []*internal.Component{
+						{Clids: []int64{101}, Dirty: true},
+						s1.PB.GetComponents()[1], // unchanged.
+					},
+					CreatedPruns: nil, // removed
+				})
+			})
+		})
+
+	})
+}
+
 // backupPB returns a deep copy of State.PB for future assertion that State
 // wasn't modified.
 func backupPB(s *State) *internal.PState {

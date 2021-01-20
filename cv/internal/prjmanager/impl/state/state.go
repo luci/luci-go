@@ -189,54 +189,50 @@ func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 }
 
 // OnRunsCreated updates state after new Runs were created.
+//
+// For Runs created by PM itself, this should typically be a noop, since adding
+// newly created Run to its component should have been done right after Run
+// creation, unless PM couldn't save its state (e.g. crashed or collided with
+// concurrent PM invocation).
 func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
-	existing := s.PB.IncompleteRuns()
-	mutated := false
-	for _, id := range created {
-		if !mutated {
-			if existing.ContainsSorted(id) {
-				continue
-			}
-			mutated = true
-			s = s.cloneShallow()
-			cpy := make(common.RunIDs, len(existing), len(existing)+1)
-			copy(cpy, existing)
-			existing = cpy
+	// First, check if any action is necessary.
+	remaining := created.Set()
+	s.PB.IterIncompleteRuns(func(r *internal.PRun, _ *internal.Component) (stop bool) {
+		id := common.RunID(r.GetId())
+		if _, ok := remaining[id]; ok {
+			delete(remaining, id)
 		}
-		existing.InsertSorted(id)
-	}
-	if !mutated {
+		return len(remaining) == 0 // stop if nothing left
+	})
+	if len(remaining) == 0 {
 		return s, nil, nil
 	}
-	s.tempSetIncompleteRuns(existing)
+
 	if s.Status == prjmanager.Status_STOPPED {
 		// This must not happen. Log, but do nothing.
 		logging.Errorf(ctx, "CRITICAL: RunCreated %s events on STOPPED Project Manager", created)
 		return s, nil, nil
 	}
-	// TODO(tandrii): re-evaluate pending CLs.
+	s = s.cloneShallow()
+	if err := s.addCreatedRuns(ctx, remaining); err != nil {
+		return nil, nil, err
+	}
 	return s, nil, nil
 }
 
-// OnRunsCreated updates state after Runs were finished.
+// OnRunsFinished updates state after Runs were finished.
 func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
-	existing := s.PB.IncompleteRuns()
-	remaining := existing.WithoutSorted(finished)
-	if len(remaining) == len(existing) {
-		return s, nil, nil // no change
-	}
+	// This is rarely a noop, so assume state is modified for simplicity.
 	s = s.cloneShallow()
-	s.tempSetIncompleteRuns(remaining)
-
-	if s.Status == prjmanager.Status_STOPPING && len(remaining) == 0 {
+	incompleteRunsCount := s.removeFinishedRuns(finished.Set())
+	if s.Status == prjmanager.Status_STOPPING && incompleteRunsCount == 0 {
 		s.Status = prjmanager.Status_STOPPED
 		return s, nil, nil
 	}
-	// TODO(tandrii): re-evaluate pending CLs.
 	return s, nil, nil
 }
 
@@ -266,13 +262,4 @@ func (s *State) OnCLsUpdated(ctx context.Context, events []*internal.CLUpdated) 
 		return nil, nil, err
 	}
 	return s, nil, nil
-}
-
-func (s *State) tempSetIncompleteRuns(ids common.RunIDs) {
-	// TODO(tandrii): implement this properly. This is done only to pass tests.
-	pruns := make([]*internal.PRun, len(ids))
-	for i, id := range ids {
-		pruns[i] = &internal.PRun{Id: string(id)}
-	}
-	s.PB.Components = []*internal.Component{{Pruns: pruns}}
 }

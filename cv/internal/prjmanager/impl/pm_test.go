@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -68,6 +69,12 @@ func TestProjectLifeCycle(t *testing.T) {
 			ct.Clock.Add(time.Hour)
 
 			Convey("update config with incomplete runs", func() {
+				err := datastore.Put(
+					ctx,
+					&run.Run{ID: common.RunID(lProject + "/111-beef"), CLs: []common.CLID{111}},
+					&run.Run{ID: common.RunID(lProject + "/222-cafe"), CLs: []common.CLID{222}},
+				)
+				So(err, ShouldBeNil)
 				// This is what prjmanager.notifyRunCreated func does,
 				// but because it's private, it can't be called from this package.
 				simulateRunCreated := func(suffix string) {
