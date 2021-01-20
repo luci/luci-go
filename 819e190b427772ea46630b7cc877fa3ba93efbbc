@@ -16,6 +16,29 @@
       "message": "Regression test added, PTAL. The test file diff is mostly indentation -- I wrapped all the existing tests in another describe() call, and added one new test at the end.",
       "revId": "819e190b427772ea46630b7cc877fa3ba93efbbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "969e4a05_1685eb40",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-01-20T01:10:35Z",
+      "side": 1,
+      "message": "Nits: should it be singular?",
+      "range": {
+        "startLine": 222,
+        "startChar": 59,
+        "endLine": 222,
+        "endChar": 60
+      },
+      "revId": "819e190b427772ea46630b7cc877fa3ba93efbbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
