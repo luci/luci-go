@@ -16,9 +16,6 @@ package authctx
 
 import (
 	"os"
-	"os/exec"
-	"regexp"
-	"strconv"
 	"text/template"
 )
 
@@ -72,10 +69,6 @@ var gitConfigTempl = template.Must(template.New(".gitconfig").Parse(`# Autogener
 [url "https://{{.}}/a/"]
   insteadOf = https://{{.}}/a/
   insteadOf = https://{{.}}/
-{{end}}
-{{- if .GitProtocolVersion}}
-[protocol]
-  version = {{.GitProtocolVersion}}
 {{end -}}
 `))
 
@@ -92,35 +85,6 @@ type gitConfig struct {
 	UserName            string   // value of user.name
 	UseCredentialHelper bool     // if true, use git-credential-luci helper for auth
 	KnownGerritHosts    []string // hosts to use '/a/' paths on to force auth
-	GitProtocolVersion  int      // protocol.version config if positive.
-}
-
-var gitVersionRe = regexp.MustCompile(`^git version (\d+)\.(\d+)`)
-
-func parseGitVersion(version []byte) (int, int) {
-	m := gitVersionRe.FindSubmatch(version)
-	if len(m) < 3 {
-		return 0, 0
-	}
-	major, err := strconv.Atoi(string(m[1]))
-	if err != nil {
-		return 0, 0
-	}
-	minor, err := strconv.Atoi(string(m[2]))
-	if err != nil {
-		return 0, 0
-	}
-	return major, minor
-}
-
-func shouldEnableGitProtocolV2() bool {
-	out, err := exec.Command("git", "version").Output()
-	if err != nil {
-		return false
-	}
-
-	major, minor := parseGitVersion(out)
-	return major >= 3 || (major >= 2 && minor >= 18)
 }
 
 // Write actually writes the config to 'path'.
