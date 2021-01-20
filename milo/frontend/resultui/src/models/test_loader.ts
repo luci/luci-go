@@ -43,6 +43,9 @@ export class TestLoader {
   @computed get isLoading() { return !this.loadedAllVariants && this.loadingReqCount !== 0; }
   @observable.ref private loadingReqCount = 0;
 
+  @computed get firstRequestSent() { return this._firstRequestSent; }
+  @observable.ref private _firstRequestSent = false;
+
   /**
    * The queryTestVariants RPC sorted the variant by status. We can use this to
    * tell the possible status of the next test variants and therefore avoid
@@ -78,6 +81,7 @@ export class TestLoader {
    * Loads the next batch of tests from the iterator to the node.
    */
   loadNextPage() {
+    this._firstRequestSent = true;
     if (this.stage === LoadingStage.Done) {
       return this.loadPromise;
     }

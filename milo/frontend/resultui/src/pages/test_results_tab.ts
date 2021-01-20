@@ -300,7 +300,7 @@ export class TestResultsTabElement extends MobxLitElement {
         style="display: none;"
         .handler=${() => this.shadowRoot!.getElementById('test-result-view')!.focus()}
       ></milo-hotkey>
-      <milo-lazy-list id="test-result-view" .growth=${300} tabindex="-1">
+      <milo-lazy-list id="test-result-view" .growth=${300} tabindex="-1" style=${styleMap({'display': state.testLoader?.firstRequestSent ? '' : 'none'})}>
         ${this.renderAllVariants()}
       </milo-lazy-list>
     `;
