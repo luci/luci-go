@@ -19,3 +19,12 @@ package common
 // It's just 8 bytes long and is thus much shorter than ExternalID,
 // which reduces CPU & RAM & storage costs of CL graphs for multi-CL Runs.
 type CLID int64
+
+// CLIDsAsInt64s returns proto representation of CLIDs.
+func CLIDsAsInt64s(ids []CLID) []int64 {
+	r := make([]int64, len(ids))
+	for i, id := range ids {
+		r[i] = int64(id)
+	}
+	return r
+}

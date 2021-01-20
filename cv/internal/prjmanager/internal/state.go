@@ -21,12 +21,31 @@ import (
 )
 
 // IncompleteRuns are IDs of Runs which aren't yet completed.
-func (s *PState) IncompleteRuns() (ids common.RunIDs) {
-	for _, c := range s.GetComponents() {
-		for _, r := range c.GetPruns() {
-			ids = append(ids, common.RunID(r.GetId()))
-		}
-	}
+func (p *PState) IncompleteRuns() (ids common.RunIDs) {
+	p.IterIncompleteRuns(func(r *PRun, _ *Component) bool {
+		ids = append(ids, common.RunID(r.GetId()))
+		return false
+	})
 	sort.Sort(ids)
 	return ids
+}
+
+// IterIncompleteRuns executes callback on each tracked Run.
+//
+// Callback is given a Component if Run is assigned to a component, or a nil
+// Component if Run is part of `.CreatedRuns` not yet assigned to any component.
+// Stops iteration if callback returns true.
+func (p *PState) IterIncompleteRuns(callback func(r *PRun, c *Component) (stop bool)) {
+	for _, c := range p.GetComponents() {
+		for _, r := range c.GetPruns() {
+			if callback(r, c) {
+				return
+			}
+		}
+	}
+	for _, r := range p.GetCreatedPruns() {
+		if callback(r, nil) {
+			return
+		}
+	}
 }

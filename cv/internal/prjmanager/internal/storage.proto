@@ -70,6 +70,18 @@ message PState {
 
   // If true, components partition must be redone as soon as possible.
   bool dirty_components = 21;
+  // PRuns which can't yet be added to any component but should be. Sorted by
+  // Run ID.
+  //
+  // In response to OnRunCreated event, PM may append to this list new Runs if
+  // either:
+  //   * not all Run's CLs are already known to PM;
+  //   * Run's CLs are currently partitioned into different components.
+  //
+  // Thus,
+  //   * CLs referenced by these PRuns may not be tracked;
+  //   * If this field is not empty, re-partioning may be required.
+  repeated PRun created_pruns = 22;
 }
 
 // PCL is a tracked CL.
@@ -132,8 +144,6 @@ message PRun {
   // IDs of CLs involved. Sorted.
   //
   // Actual Run may orders its CLs in different way.
-  //
-  // Must be a subset of clids of the Component to which Run belongs.
   repeated int64 clids = 2;
 }
 
