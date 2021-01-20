@@ -17,7 +17,6 @@ package impl
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"google.golang.org/protobuf/proto"
 
@@ -198,12 +197,11 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state.State) (ret []eventbox.Transition, err error) {
 	var se state.SideEffect
 	// Visit all non-empty fields of triageResult and emit Transitions.
-	// The order of visit matters.
+	// The order of visits matters.
 
 	// It's possible that the same Run will be in both runCreated & runFinished,
 	// so process created first.
 	if len(tr.runsCreated.runs) > 0 {
-		sort.Sort(tr.runsCreated.runs)
 		if s, se, err = s.OnRunsCreated(ctx, tr.runsCreated.runs); err != nil {
 			return nil, err
 		}
@@ -214,7 +212,6 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 		})
 	}
 	if len(tr.runsFinished.runs) > 0 {
-		sort.Sort(tr.runsFinished.runs)
 		if s, se, err = s.OnRunsFinished(ctx, tr.runsFinished.runs); err != nil {
 			return nil, err
 		}
