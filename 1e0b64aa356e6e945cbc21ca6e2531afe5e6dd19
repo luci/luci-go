@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "de55e302_03db2180",
+        "filename": "cv/internal/prjmanager/impl/state/runs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-20T20:25:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2bb1a3e6_b4f12cf0",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 39
+      },
+      "revId": "1e0b64aa356e6e945cbc21ca6e2531afe5e6dd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "9bf370ca_51d50bea",
         "filename": "cv/internal/prjmanager/impl/state/runs.go",
         "patchSetId": 2
@@ -61,6 +85,30 @@
       "side": 1,
       "message": "exactly right. Let me add a comment.",
       "parentUuid": "9bf370ca_51d50bea",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 3
+      },
+      "revId": "1e0b64aa356e6e945cbc21ca6e2531afe5e6dd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f683620_494e612f",
+        "filename": "cv/internal/prjmanager/impl/state/runs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-20T20:25:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6059b78_4e14a8f5",
       "range": {
         "startLine": 71,
         "startChar": 0,
