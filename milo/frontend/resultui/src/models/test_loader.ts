@@ -35,6 +35,14 @@ export const enum LoadingStage {
   Done = 4,
 }
 
+export const VARIANT_STATUS_LOADING_STAGE_MAP = Object.freeze({
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: LoadingStage.LoadingUnexpected,
+  [TestVariantStatus.UNEXPECTED]: LoadingStage.LoadingUnexpected,
+  [TestVariantStatus.FLAKY]: LoadingStage.LoadingFlaky,
+  [TestVariantStatus.EXONERATED]: LoadingStage.LoadingExonerated,
+  [TestVariantStatus.EXPECTED]: LoadingStage.LoadingExpected,
+});
+
 /**
  * Keeps the progress of the iterator and loads tests into the test node on
  * request.
