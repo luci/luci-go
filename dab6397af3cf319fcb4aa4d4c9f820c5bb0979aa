@@ -39,6 +39,30 @@
       },
       "revId": "dab6397af3cf319fcb4aa4d4c9f820c5bb0979aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b93648a5_8f1b3ad8",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-20T23:00:32Z",
+      "side": 1,
+      "message": "Hmm... Thought I removed this... Now it\u0027s really removed.",
+      "parentUuid": "3d069c2a_c3d1398f",
+      "range": {
+        "startLine": 308,
+        "startChar": 0,
+        "endLine": 311,
+        "endChar": 2
+      },
+      "revId": "dab6397af3cf319fcb4aa4d4c9f820c5bb0979aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
