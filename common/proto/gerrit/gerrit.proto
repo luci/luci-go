@@ -351,7 +351,7 @@ message AccountInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 16.
+// Next tag: 17.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -412,6 +412,9 @@ message ChangeInfo {
 
   // The numeric Change-Id of the change that this change reverts.
   int64 revert_of = 15;
+
+  // The numeric Change-Id of the change that this change was cherry-picked from.
+  int64 cherry_pick_of_change = 16;
 }
 
 enum ChangeStatus {
