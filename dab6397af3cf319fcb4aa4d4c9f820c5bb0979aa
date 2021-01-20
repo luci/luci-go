@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "dab6397af3cf319fcb4aa4d4c9f820c5bb0979aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d069c2a_c3d1398f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-20T21:57:25Z",
+      "side": 1,
+      "message": "redundant with L314?",
+      "range": {
+        "startLine": 308,
+        "startChar": 0,
+        "endLine": 311,
+        "endChar": 2
+      },
+      "revId": "dab6397af3cf319fcb4aa4d4c9f820c5bb0979aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
