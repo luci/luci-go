@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c635fc12_9f87f9d2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-01-20T00:35:41Z",
+      "side": 1,
+      "message": "I don\u0027t have a demo of the fix, but here\u0027s a demo of the bug on dev: https://luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6269/test-results?expected\u003dfalse\u0026exonerated\u003dfalse\u0026flaky\u003dtrue\n\nI\u0027ve verified locally that this CL fixes it.",
+      "revId": "e113ff1ef9af5832dd695f5b7efaa7d126b5f7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
