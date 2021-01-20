@@ -64,6 +64,11 @@ type State struct {
 
 	// cfgMatcher is lazily created, cached, and passed on to State clones.
 	cfgMatcher *cfgmatcher.Matcher
+
+	// pclIndex provides O(1) check if PCL exists for a CL.
+	//
+	// lazily created, see ensurePCLIndex().
+	pclIndex pclIndex // CLID => index.
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
@@ -236,7 +241,9 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 }
 
 // OnCLsUpdated updates state as a result of new changes to CLs.
-func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*State, SideEffect, error) {
+//
+// Mutates incoming events slice.
+func (s *State) OnCLsUpdated(ctx context.Context, events []*internal.CLUpdated) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
 	if s.Status != prjmanager.Status_STARTED {
@@ -246,7 +253,18 @@ func (s *State) OnCLsUpdated(ctx context.Context, cls []*internal.CLUpdated) (*S
 		return s, nil, nil
 	}
 
-	// TODO(tandrii): implement.
+	// Avoid doing anything in cases where all CL updates sent due to recent full
+	// poll iff we already know about each CL based on its EVersion.
+	updated := s.filterOutUpToDate(events)
+	if len(updated) == 0 {
+		return s, nil, nil
+	}
+
+	// Most likely there will be changes to state.
+	s = s.cloneShallow()
+	if err := s.evalUpdatedCLs(ctx, updated); err != nil {
+		return nil, nil, err
+	}
 	return s, nil, nil
 }
 
