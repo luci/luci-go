@@ -16,6 +16,7 @@ package state
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -23,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -373,10 +375,209 @@ func TestUpdateConfig(t *testing.T) {
 	})
 }
 
+func TestOnCLsUpdated(t *testing.T) {
+	t.Parallel()
+
+	Convey("OnCLsUpdated works", t, func() {
+		ct := ctest{
+			lProject: "test",
+			gHost:    "c-review.example.com",
+		}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		cfg1 := &cfgpb.Config{}
+		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+
+		ct.Cfg.Create(ctx, ct.lProject, cfg1)
+		meta := ct.Cfg.MustExist(ctx, ct.lProject)
+		So(gobmap.Update(ctx, ct.lProject), ShouldBeNil)
+
+		// Add 3 CLs: 101 standalone and 202<-203 as a stack.
+		ci101 := gf.CI(
+			101, gf.PS(1), gf.Ref("refs/heads/main"), gf.Project("repo/a"),
+			gf.CQ(+2, ct.Clock.Now(), gf.U("user-1")), gf.Updated(ct.Clock.Now()),
+		)
+		ci202 := gf.CI(
+			202, gf.PS(3), gf.Ref("refs/heads/other"), gf.Project("repo/a"), gf.AllRevs(),
+			gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")), gf.Updated(ct.Clock.Now()),
+		)
+		ci203 := gf.CI(
+			203, gf.PS(3), gf.Ref("refs/heads/other"), gf.Project("repo/a"), gf.AllRevs(),
+			gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")), gf.Updated(ct.Clock.Now()),
+		)
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci101})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci202})
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci203})
+		ct.GFake.SetDependsOn(ct.gHost, "203_3" /* child */, "202_2" /*parent*/)
+		cl101 := ct.runCLUpdater(ctx, 101)
+		cl202 := ct.runCLUpdater(ctx, 202)
+		cl203 := ct.runCLUpdater(ctx, 203)
+
+		s0 := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+			LuciProject:      ct.lProject,
+			ConfigHash:       meta.Hash(),
+			ConfigGroupNames: []string{"g0", "g1"},
+		})
+		pb0 := backupPB(s0)
+
+		// NOTE: conversion of individual CL to PCL is in TestUpdateConfig.
+
+		Convey("One simple CL", func() {
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*internal.CLUpdated{
+				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
+			})
+			So(err, ShouldBeNil)
+			So(s0.PB, ShouldResembleProto, pb0)
+			So(sideEffect, ShouldBeNil)
+			So(s1.PB, ShouldResembleProto, &internal.PState{
+				LuciProject:      ct.lProject,
+				ConfigHash:       meta.Hash(),
+				ConfigGroupNames: []string{"g0", "g1"},
+				Pcls: []*internal.PCL{
+					{
+						Clid:               int64(cl101.ID),
+						Eversion:           1,
+						ConfigGroupIndexes: []int32{0}, // g0
+						Status:             internal.PCL_OK,
+						Trigger:            trigger.Find(ci101),
+					},
+				},
+				DirtyComponents: true,
+			})
+			Convey("Noop based on EVersion", func() {
+				s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*internal.CLUpdated{
+					{Clid: int64(cl101.ID), Eversion: 1}, // already known
+				})
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				So(s1, ShouldEqual, s2) // pointer comparison only.
+			})
+
+			Convey("Removes duplicates", func() {
+				pb := backupPB(s1)
+				bumpEVersion(ctx, cl101, 10)
+				s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*internal.CLUpdated{
+					{Clid: int64(cl101.ID), Eversion: 5},
+					{Clid: int64(cl101.ID), Eversion: 7},
+				})
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				So(s1.PB, ShouldResembleProto, pb)
+				pb.GetPcls()[0].Eversion = int64(cl101.EVersion)
+				So(s2.PB, ShouldResembleProto, pb)
+			})
+		})
+
+		Convey("One CL with a yet unknown dep", func() {
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*internal.CLUpdated{
+				{Clid: int64(cl203.ID), Eversion: 1},
+			})
+			So(err, ShouldBeNil)
+			So(s0.PB, ShouldResembleProto, pb0)
+			So(sideEffect, ShouldBeNil)
+			So(s1.PB, ShouldResembleProto, &internal.PState{
+				LuciProject:      ct.lProject,
+				ConfigHash:       meta.Hash(),
+				ConfigGroupNames: []string{"g0", "g1"},
+				Pcls: []*internal.PCL{
+					{
+						Clid:               int64(cl203.ID),
+						Eversion:           1,
+						ConfigGroupIndexes: []int32{1}, // g1
+						Status:             internal.PCL_OK,
+						Trigger:            trigger.Find(ci203),
+						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
+					},
+				},
+				DirtyComponents: true,
+			})
+		})
+
+		Convey("PCLs must remain sorted", func() {
+			s1 := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+				LuciProject:      ct.lProject,
+				ConfigHash:       meta.Hash(),
+				ConfigGroupNames: []string{"g0", "g1"},
+				Pcls: []*internal.PCL{
+					{
+						Clid:               int64(cl101.ID),
+						Eversion:           1,
+						ConfigGroupIndexes: []int32{0}, // g0
+						Status:             internal.PCL_OK,
+						Trigger:            trigger.Find(ci101),
+					},
+					{
+						Clid:               int64(cl203.ID),
+						Eversion:           1,
+						ConfigGroupIndexes: []int32{1}, // g1
+						Status:             internal.PCL_OK,
+						Trigger:            trigger.Find(ci203),
+						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
+					},
+				},
+			})
+			pb1 := backupPB(s1)
+			bumpEVersion(ctx, cl203, 3)
+			s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*internal.CLUpdated{
+				{Clid: 404, Eversion: 404},                               // doesn't even exist
+				{Clid: int64(cl202.ID), Eversion: int64(cl202.EVersion)}, // new
+				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)}, // unchanged
+				{Clid: int64(cl203.ID), Eversion: 3},                     // updated
+			})
+			So(err, ShouldBeNil)
+			So(s1.PB, ShouldResembleProto, pb1)
+			So(sideEffect, ShouldBeNil)
+			So(s2.PB, ShouldResembleProto, &internal.PState{
+				LuciProject:      ct.lProject,
+				ConfigHash:       meta.Hash(),
+				ConfigGroupNames: []string{"g0", "g1"},
+				Pcls: []*internal.PCL{
+					s1.PB.GetPcls()[0], // 101 is unchanged
+					{ // new & inserted at the right spot
+						Clid:               int64(cl202.ID),
+						Eversion:           1,
+						ConfigGroupIndexes: []int32{1}, // g1
+						Status:             internal.PCL_OK,
+						Trigger:            trigger.Find(ci202),
+					},
+					{ // updated
+						Clid:               int64(cl203.ID),
+						Eversion:           3,
+						ConfigGroupIndexes: []int32{1}, // g1
+						Status:             internal.PCL_OK,
+						Trigger:            trigger.Find(ci203),
+						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
+					},
+				},
+				DirtyComponents: true,
+			})
+		})
+
+		Convey("non-STARTED project ignores all CL events", func() {
+			s0.Status = prjmanager.Status_STOPPING
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*internal.CLUpdated{
+				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
+			})
+			So(err, ShouldBeNil)
+			So(sideEffect, ShouldBeNil)
+			So(s0, ShouldEqual, s1) // pointer comparison only.
+		})
+	})
+}
+
 // backupPB returns a deep copy of State.PB for future assertion that State
 // wasn't modified.
 func backupPB(s *State) *internal.PState {
 	ret := &internal.PState{}
 	proto.Merge(ret, s.PB)
 	return ret
+}
+
+func bumpEVersion(ctx context.Context, cl *changelist.CL, desired int) {
+	if cl.EVersion >= desired {
+		panic(fmt.Errorf("can't go %d to %d", cl.EVersion, desired))
+	}
+	cl.EVersion = desired
+	So(datastore.Put(ctx, cl), ShouldBeNil)
 }
