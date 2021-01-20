@@ -99,8 +99,8 @@ describe('test_loader', () => {
         addTestSpy = sinon.spy();
         stub = sinon.stub();
         stub.onCall(0).resolves({testVariants: [variant1, variant2, variant3, variant4], nextPageToken: 'page2'});
-        stub.onCall(1).resolves({testVariants: [variant5, variant6, variant7, variant8], nextPageToken: 'page3'});
-        stub.onCall(2).resolves({testVariants: [variant9], nextPageToken: undefined});
+        stub.onCall(1).resolves({testVariants: [variant5, variant6, variant7], nextPageToken: 'page3'});
+        stub.onCall(2).resolves({testVariants: [variant8, variant9], nextPageToken: undefined});
         testLoader = new TestLoader(
           {addTestId: addTestSpy} as Partial<TestNode> as TestNode,
           req,
@@ -137,17 +137,17 @@ describe('test_loader', () => {
         assert.deepEqual(stub.getCall(0).args[0], {...req, pageToken: ''});
 
         await testLoader.loadNextPage();
-        assert.strictEqual(addTestSpy.callCount, 8);
+        assert.strictEqual(addTestSpy.callCount, 7);
         assert.strictEqual(addTestSpy.getCall(4).args[0], variant5.testId);
         assert.strictEqual(addTestSpy.getCall(5).args[0], variant6.testId);
         assert.strictEqual(addTestSpy.getCall(6).args[0], variant7.testId);
-        assert.strictEqual(addTestSpy.getCall(7).args[0], variant8.testId);
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
         assert.strictEqual(stub.callCount, 2);
         assert.deepEqual(stub.getCall(1).args[0], {...req, pageToken: 'page2'});
 
         await testLoader.loadNextPage();
         assert.strictEqual(addTestSpy.callCount, 9);
+        assert.strictEqual(addTestSpy.getCall(7).args[0], variant8.testId);
         assert.strictEqual(addTestSpy.getCall(8).args[0], variant9.testId);
         assert.strictEqual(testLoader.stage, LoadingStage.Done);
         assert.strictEqual(stub.callCount, 3);
@@ -177,7 +177,7 @@ describe('test_loader', () => {
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingFlaky);
 
         await loadReq2;
-        assert.strictEqual(addTestSpy.callCount, 8);
+        assert.strictEqual(addTestSpy.callCount, 7);
         // loadReq3 has not finished loading yet.
         assert.isTrue(testLoader.isLoading);
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
