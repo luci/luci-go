@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be4caedd_188d3353",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T04:48:38Z",
+      "side": 1,
+      "message": "error_test_test is failing.",
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27b8ada3_21604fdb",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T04:48:38Z",
+      "side": 1,
+      "message": "Del? I think you are trying to deprecate this behavior.",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23a0e8e4_ebac0a98",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T04:48:38Z",
+      "side": 1,
+      "message": "1",
+      "range": {
+        "startLine": 96,
+        "startChar": 33,
+        "endLine": 96,
+        "endChar": 34
+      },
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26dcc16d_804831d1",
+        "filename": "luciexe/build/output_properties.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T04:48:38Z",
+      "side": 1,
+      "message": "Del. It\u0027s a duplicate of L193 and I think this comment is more relevant there.",
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2b8ac46_8ae518bf",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T04:48:38Z",
+      "side": 1,
+      "message": "Is this output intentional?",
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
