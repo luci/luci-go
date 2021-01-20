@@ -45,6 +45,30 @@
       },
       "revId": "1e0b64aa356e6e945cbc21ca6e2531afe5e6dd19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6059b78_4e14a8f5",
+        "filename": "cv/internal/prjmanager/impl/state/runs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-20T20:16:34Z",
+      "side": 1,
+      "message": "exactly right. Let me add a comment.",
+      "parentUuid": "9bf370ca_51d50bea",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 3
+      },
+      "revId": "1e0b64aa356e6e945cbc21ca6e2531afe5e6dd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
