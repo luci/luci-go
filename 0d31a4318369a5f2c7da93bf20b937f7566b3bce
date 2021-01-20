@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "abbec7f6_13e6494a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T21:06:38Z",
+      "side": 1,
+      "message": "Code lgtm! having question regarding why choose this route instead of directly upgrading go version on GAE.",
+      "revId": "0d31a4318369a5f2c7da93bf20b937f7566b3bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc8cb7aa_aea583c7",
+        "filename": "cv/internal/prjmanager/internal/copyonwrite/cow.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T21:06:38Z",
+      "side": 1,
+      "message": "What if we do the upgrade right now since CV hasn\u0027t launched yet or do we know if the effort is non-trivial?",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 69
+      },
+      "revId": "0d31a4318369a5f2c7da93bf20b937f7566b3bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
