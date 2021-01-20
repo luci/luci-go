@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2bb1a3e6_b4f12cf0",
+        "filename": "cv/internal/prjmanager/impl/state/runs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T19:55:53Z",
+      "side": 1,
+      "message": "nit: move to a different block",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 39
+      },
+      "revId": "1e0b64aa356e6e945cbc21ca6e2531afe5e6dd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bf370ca_51d50bea",
+        "filename": "cv/internal/prjmanager/impl/state/runs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-20T19:55:53Z",
+      "side": 1,
+      "message": "Just to make sure I don\u0027t get it wrong, This is essentially saying a run can be added to this component iff ALL CLs in this Run are present in the CLs in the component?",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 3
+      },
+      "revId": "1e0b64aa356e6e945cbc21ca6e2531afe5e6dd19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
