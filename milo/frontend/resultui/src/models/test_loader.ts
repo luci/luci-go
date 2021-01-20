@@ -35,6 +35,14 @@ export const enum LoadingStage {
   Done = 4,
 }
 
+const VARIANT_STATUS_LOADING_STAGE_MAP = Object.freeze({
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: LoadingStage.LoadingUnexpected,
+  [TestVariantStatus.UNEXPECTED]: LoadingStage.LoadingUnexpected,
+  [TestVariantStatus.FLAKY]: LoadingStage.LoadingFlaky,
+  [TestVariantStatus.EXONERATED]: LoadingStage.LoadingExonerated,
+  [TestVariantStatus.EXPECTED]: LoadingStage.LoadingExpected,
+});
+
 /**
  * Keeps the progress of the iterator and loads tests into the test node on
  * request.
@@ -91,6 +99,31 @@ export class TestLoader {
   }
 
   /**
+   * Loads pages repeatedly until we receive some variants with the given variant status.
+   *
+   * Will always load at least one page.
+   */
+  async loadPagesUntilStatus(status: TestVariantStatus) {
+    if (this.stage === VARIANT_STATUS_LOADING_STAGE_MAP[status]) {
+      // If we expect the next batch to be at least the status we want, load one page only.
+      await this.loadNextPage();
+      return;
+    }
+
+    // Load pages until the next expected status is at least the one we're after.
+    do {
+      await this.loadNextPage();
+    } while (this.stage < VARIANT_STATUS_LOADING_STAGE_MAP[status]);
+
+    // If we wanted to load up to Expected, and none have arrived yet
+    // (i.e. we're at the point where ResultDB has just returned the final
+    // non-expected variants to us), load one more page.
+    if (status === TestVariantStatus.EXPECTED && this.expectedTestVariants.length === 0) {
+      await this.loadNextPage();
+    }
+  }
+
+  /**
    * Loads the next batch of tests from the iterator to the node.
    *
    * @precondition there should not exist a running instance of
@@ -114,6 +147,8 @@ export class TestLoader {
     if (testVariants.length < (this.req.pageSize || 1000)) {
       // When the service returns an incomplete page and nextPageToken is not
       // undefined, the following pages must be expected test variants.
+      // Without this special case, the UI may incorrectly indicate that not all
+      // variants have been loaded for statuses worse than Expected.
       this._stage = LoadingStage.LoadingExpected;
       return;
     }
