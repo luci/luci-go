@@ -18,7 +18,6 @@ import { computed, observable } from 'mobx';
 
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
-import { LoadingStage } from '../models/test_loader';
 
 export interface TestFilter {
   showExpected: boolean;
@@ -39,24 +38,17 @@ export class TestFilterElement extends MobxLitElement {
   @observable.ref invocationState!: InvocationState;
 
   @computed private get testFilters() { return this.configsStore.userConfigs.tests; }
-  @computed private get loadingStage() {
-    return this.invocationState.testLoader?.stage ?? LoadingStage.LoadingUnexpected;
-  }
   @computed private get unexpectedVariantCount() {
-    const count = this.invocationState.testLoader?.unexpectedTestVariants.length || 0;
-    return `${count}${this.loadingStage <= LoadingStage.LoadingUnexpected ? '+' : ''}`;
+    return this.invocationState.testLoader?.unexpectedVariantCount || '0+';
   }
   @computed private get flakyVariantCount() {
-    const count = this.invocationState.testLoader?.flakyTestVariants.length || 0;
-    return `${count}${this.loadingStage <= LoadingStage.LoadingFlaky ? '+' : ''}`;
+    return this.invocationState.testLoader?.flakyVariantCount || '0+';
   }
   @computed private get exoneratedVariantCount() {
-    const count = this.invocationState.testLoader?.exoneratedTestVariants.length || 0;
-    return `${count}${this.loadingStage <= LoadingStage.LoadingExonerated ? '+' : ''}`;
+    return this.invocationState.testLoader?.exoneratedVariantCount || '0+';
   }
   @computed private get expectedVariantCount() {
-    const count = this.invocationState.testLoader?.expectedTestVariants.length || 0;
-    return `${count}${this.loadingStage <= LoadingStage.LoadingExpected ? '+' : ''}`;
+    return this.invocationState.testLoader?.expectedVariantCount || '0+';
   }
 
 
