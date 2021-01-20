@@ -35,6 +35,14 @@ export const enum LoadingStage {
   Done = 4,
 }
 
+const VARIANT_STATUS_LOADING_STAGE_MAP = Object.freeze({
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: LoadingStage.LoadingUnexpected,
+  [TestVariantStatus.UNEXPECTED]: LoadingStage.LoadingUnexpected,
+  [TestVariantStatus.FLAKY]: LoadingStage.LoadingFlaky,
+  [TestVariantStatus.EXONERATED]: LoadingStage.LoadingExonerated,
+  [TestVariantStatus.EXPECTED]: LoadingStage.LoadingExpected,
+});
+
 /**
  * Keeps the progress of the iterator and loads tests into the test node on
  * request.
@@ -51,8 +59,11 @@ export class TestLoader {
    * tell the possible status of the next test variants and therefore avoid
    * unnecessary loading.
    */
-  @computed get stage() { return this._stage; }
-  @observable.ref private _stage = LoadingStage.LoadingUnexpected;
+  @computed get stage() {
+    return this._allNonExpectedStatusesLoaded ? LoadingStage.LoadingExpected : this._lastLoadedStatus;
+  }
+  @observable.ref private _lastLoadedStatus = LoadingStage.LoadingUnexpected;
+  @observable.ref private _allNonExpectedStatusesLoaded = false;
 
   @observable.shallow readonly unexpectedTestVariants: TestVariant[] = [];
   @observable.shallow readonly flakyTestVariants: TestVariant[] = [];
@@ -91,6 +102,17 @@ export class TestLoader {
   }
 
   /**
+   * Loads pages repeatedly until we receive some variants with the given variant status.
+   *
+   * Will always load at least one page.
+   */
+  async loadPagesUntilStatus(status: TestVariantStatus) {
+    do {
+      await this.loadNextPage();
+    } while (this._lastLoadedStatus < VARIANT_STATUS_LOADING_STAGE_MAP[status]);
+  }
+
+  /**
    * Loads the next batch of tests from the iterator to the node.
    *
    * @precondition there should not exist a running instance of
@@ -108,13 +130,15 @@ export class TestLoader {
     const testVariants = res.testVariants || [];
     this.processTestVariants(testVariants);
     if (this.nextPageToken === undefined) {
-      this._stage = LoadingStage.Done;
+      this._lastLoadedStatus = LoadingStage.Done;
       return;
     }
     if (testVariants.length < (this.req.pageSize || 1000)) {
       // When the service returns an incomplete page and nextPageToken is not
       // undefined, the following pages must be expected test variants.
-      this._stage = LoadingStage.LoadingExpected;
+      // Without this special case, the UI may incorrectly indicate that not all
+      // variants have been loaded for statuses worse than Expected.
+      this._allNonExpectedStatusesLoaded = true;
       return;
     }
   }
@@ -124,19 +148,19 @@ export class TestLoader {
     for (const testVariant of testVariants) {
       switch (testVariant.status) {
         case TestVariantStatus.UNEXPECTED:
-          this._stage = LoadingStage.LoadingUnexpected;
+          this._lastLoadedStatus = LoadingStage.LoadingUnexpected;
           this.unexpectedTestVariants.push(testVariant);
           break;
         case TestVariantStatus.FLAKY:
-          this._stage = LoadingStage.LoadingFlaky;
+          this._lastLoadedStatus = LoadingStage.LoadingFlaky;
           this.flakyTestVariants.push(testVariant);
           break;
         case TestVariantStatus.EXONERATED:
-          this._stage = LoadingStage.LoadingExonerated;
+          this._lastLoadedStatus = LoadingStage.LoadingExonerated;
           this.exoneratedTestVariants.push(testVariant);
           break;
         case TestVariantStatus.EXPECTED:
-          this._stage = LoadingStage.LoadingExpected;
+          this._lastLoadedStatus = LoadingStage.LoadingExpected;
           this.expectedTestVariants.push(testVariant);
           break;
         default:
