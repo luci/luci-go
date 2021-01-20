@@ -263,7 +263,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	locationTags, err := r.getLocationTags()
+	locationTags, err := r.getLocationTags(ctx)
 	if err != nil {
 		return errors.Annotate(err, "get location tags").Err()
 	}
@@ -301,12 +301,16 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	})
 }
 
-func (r *streamRun) getLocationTags() (*sinkpb.LocationTags, error) {
+func (r *streamRun) getLocationTags(ctx context.Context) (*sinkpb.LocationTags, error) {
 	if r.locTagsFile == "" {
 		return nil, nil
 	}
 	f, err := ioutil.ReadFile(r.locTagsFile)
-	if err != nil {
+	switch {
+	case os.IsNotExist(err):
+		logging.Warningf(ctx, "rdb-stream: %s doesn not exist", r.locTagsFile)
+		return nil, nil
+	case err != nil:
 		return nil, err
 	}
 	locationTags := &sinkpb.LocationTags{}
