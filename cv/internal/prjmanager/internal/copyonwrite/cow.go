@@ -31,7 +31,15 @@ type Slice interface {
 
 // SortedSlice is a sorted Slice.
 type SortedSlice interface {
-	Slice
+	// TODO(tandrii): use just Slice once we upgrade to new GAE version.
+	// Till then, using Slice + sort.Interface results in conflicting Len()
+	// method. So, more copy-pasta from above:
+	At(index int) interface{}
+	Append(v interface{}) Slice
+	// CloneShallow returns new slice of the given capacity with elements copied
+	// from [:length] of this slice.
+	CloneShallow(length, capacity int) Slice
+
 	sort.Interface
 	// LessElements returns true if element `a` must be before `b`.
 	//
