@@ -263,3 +263,31 @@ func (s *State) OnCLsUpdated(ctx context.Context, events []*internal.CLUpdated) 
 	}
 	return s, nil, nil
 }
+
+// ExecDeferred performs previously postponed actions, notably creating Runs.
+func (s *State) ExecDeferred(ctx context.Context) (*State, SideEffect, error) {
+	mutated := false
+	if s.PB.GetDirtyComponents() || len(s.PB.GetCreatedPruns()) > 0 {
+		s = s.cloneShallow()
+		mutated = true
+		cat := s.categorizeCLs()
+		if err := s.loadActiveIntoPCLs(ctx, cat); err != nil {
+			return nil, nil, err
+		}
+		s.repartition(cat)
+	}
+	switch actions, err := s.prepareComponentActions(ctx); {
+	case err != nil:
+		return nil, nil, err
+	case len(actions) == 0:
+		return s, nil, nil
+	case !mutated:
+		s = s.cloneShallow()
+		fallthrough
+	default:
+		if err = s.execComponentActions(ctx, actions); err != nil {
+			return nil, nil, err
+		}
+		return s, nil, nil
+	}
+}

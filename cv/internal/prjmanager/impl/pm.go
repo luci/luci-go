@@ -194,8 +194,11 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	}
 }
 
-func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state.State) (ret []eventbox.Transition, err error) {
+func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state.State) ([]eventbox.Transition, error) {
+	var err error
 	var se state.SideEffect
+	ret := make([]eventbox.Transition, 0, 6)
+
 	// Visit all non-empty fields of triageResult and emit Transitions.
 	// The order of visits matters.
 
@@ -257,5 +260,12 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 			TransitionTo: s,
 		})
 	}
-	return
+
+	if s, se, err = s.ExecDeferred(ctx); err != nil {
+		return nil, err
+	}
+	return append(ret, eventbox.Transition{
+		SideEffectFn: state.SideEffectFn(se),
+		TransitionTo: s,
+	}), nil
 }
