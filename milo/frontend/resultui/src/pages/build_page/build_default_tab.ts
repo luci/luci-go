@@ -29,10 +29,14 @@ export class BuildDefaultTabElement extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    Router.go(router.urlForName(this.configsStore.userConfigs.defaultBuildPageTabName, {
+    const newUrl = router.urlForName(this.configsStore.userConfigs.defaultBuildPageTabName, {
       ...this.buildState.builder!,
       build_num_or_id: this.buildState.buildNumOrId!,
-    }));
+    });
+
+    // Prevent the router from pushing the history state.
+    window.history.replaceState({path: newUrl}, '', newUrl);
+    Router.go(newUrl);
   }
 
   protected render() {
