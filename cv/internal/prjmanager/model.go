@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
 // ProjectKind is the Datastore entity kind for Project.
@@ -49,7 +49,7 @@ type Project struct {
 	// * LuciProject
 	// * ConfigHash
 	// TODO(tandrii): store IncompleteRuns here.
-	State *internal.PState
+	State *prjpb.PState
 }
 
 // ProjectStateOffload stores rarely-changed project state, offloaded from the
