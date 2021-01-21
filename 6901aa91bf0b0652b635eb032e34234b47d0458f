@@ -16,6 +16,24 @@
       "message": "lgtm (though I would note that this isn\u0027t really restricted to \"dev\")",
       "revId": "6901aa91bf0b0652b635eb032e34234b47d0458f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18381db8_c0fd03da",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-21T21:31:46Z",
+      "side": 1,
+      "message": "Well, it\u0027s restricted to our dev naming scheme (see main.go L48 and L87).",
+      "parentUuid": "0589308f_c800a327",
+      "revId": "6901aa91bf0b0652b635eb032e34234b47d0458f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
