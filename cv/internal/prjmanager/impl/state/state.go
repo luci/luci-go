@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
 // State is a state of Project Manager.
@@ -54,7 +54,7 @@ type State struct {
 	// https://en.wikipedia.org/wiki/Copy-on-write
 
 	Status prjmanager.Status
-	PB     *internal.PState
+	PB     *prjpb.PState
 
 	// Helper private fields used during mutations.
 
@@ -75,12 +75,12 @@ type State struct {
 func NewInitial(luciProject string) *State {
 	return &State{
 		Status: prjmanager.Status_STATUS_UNSPECIFIED,
-		PB:     &internal.PState{LuciProject: luciProject},
+		PB:     &prjpb.PState{LuciProject: luciProject},
 	}
 }
 
 // NewExisting returns state from its parts.
-func NewExisting(status prjmanager.Status, pb *internal.PState) *State {
+func NewExisting(status prjmanager.Status, pb *prjpb.PState) *State {
 	return &State{
 		Status: status,
 		PB:     pb,
@@ -199,7 +199,7 @@ func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*Stat
 
 	// First, check if any action is necessary.
 	remaining := created.Set()
-	s.PB.IterIncompleteRuns(func(r *internal.PRun, _ *internal.Component) (stop bool) {
+	s.PB.IterIncompleteRuns(func(r *prjpb.PRun, _ *prjpb.Component) (stop bool) {
 		id := common.RunID(r.GetId())
 		if _, ok := remaining[id]; ok {
 			delete(remaining, id)
@@ -239,7 +239,7 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 // OnCLsUpdated updates state as a result of new changes to CLs.
 //
 // Mutates incoming events slice.
-func (s *State) OnCLsUpdated(ctx context.Context, events []*internal.CLUpdated) (*State, SideEffect, error) {
+func (s *State) OnCLsUpdated(ctx context.Context, events []*prjpb.CLUpdated) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
 	if s.Status != prjmanager.Status_STARTED {

@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package internal.prjmanager.internal;
+package internal.prjmanager.prjpb;
 
-option go_package = "go.chromium.org/luci/cv/internal/prjmanager/internal;internal";
+option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
 
 // Event is a container for all kinds of events a project manager can receive.
