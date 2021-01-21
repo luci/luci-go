@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -92,22 +91,14 @@ func (p *Project) ConfigHash() string {
 // Load loads LUCI project state from Datastore.
 //
 // If project doesn't exist in Datastore, returns nil, nil, nil.
-//
-// TODO(crbug/1169206): fix this code to load just Project.
-func Load(ctx context.Context, luciProject string) (*Project, *ProjectStateOffload, error) {
+func Load(ctx context.Context, luciProject string) (*Project, error) {
 	p := &Project{ID: luciProject}
-	po := &ProjectStateOffload{Project: datastore.MakeKey(ctx, ProjectKind, luciProject)}
-	err := datastore.Get(ctx, p, po)
-	if err == nil {
-		return p, po, nil
-	}
-	switch errs, ok := err.(errors.MultiError); {
-	case !ok:
-		return nil, nil, errors.Annotate(err, "failed to load Project state").Tag(transient.Tag).Err()
-	case errs[0] == datastore.ErrNoSuchEntity && errs[1] == datastore.ErrNoSuchEntity:
-		return nil, nil, nil
+	switch err := datastore.Get(ctx, p); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to load Project state").Tag(transient.Tag).Err()
 	default:
-		logging.Errorf(ctx, "LUCI project %q state is inconsistent: %s %s", luciProject, errs[0], errs[1])
-		return nil, nil, errors.Annotate(err, "failed to load Project state: inconsistent state").Err()
+		return p, nil
 	}
 }
