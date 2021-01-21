@@ -58,13 +58,24 @@ func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion
 	})
 }
 
-// Cancel tells RunManager to cancel the given run.
+// Cancel tells RunManager to cancel the given Run.
 //
 // TODO(yiwzhang,tandrii): support reason.
 func Cancel(ctx context.Context, runID common.RunID) error {
 	return send(ctx, runID, &internal.Event{
 		Event: &internal.Event_Cancel{
 			Cancel: &internal.Cancel{},
+		},
+	})
+}
+
+// NotifyFinished tells RunManager that Run has finished in CQDaemon.
+//
+// TODO(crbug/1141880): Remove this event after migration.
+func NotifyFinished(ctx context.Context, runID common.RunID) error {
+	return send(ctx, runID, &internal.Event{
+		Event: &internal.Event_Finished{
+			Finished: &internal.Finished{},
 		},
 	})
 }
