@@ -35,6 +35,103 @@ import (
 func TestScheduleBuild(t *testing.T) {
 	t.Parallel()
 
+	Convey("fetchBuilderConfigs", t, func() {
+		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		So(datastore.Put(ctx, &model.Builder{
+			Parent: model.BucketKey(ctx, "project", "bucket 1"),
+			ID:     "builder 1",
+			Config: pb.Builder{
+				Name: "builder 1",
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Builder{
+			Parent: model.BucketKey(ctx, "project", "bucket 1"),
+			ID:     "builder 2",
+			Config: pb.Builder{
+				Name: "builder 2",
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Builder{
+			Parent: model.BucketKey(ctx, "project", "bucket 2"),
+			ID:     "builder 1",
+			Config: pb.Builder{
+				Name: "builder 1",
+			},
+		}), ShouldBeNil)
+
+		Convey("not found", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+			}
+			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			So(err, ShouldErrLike, "no such entity")
+			So(bldrs, ShouldBeNil)
+		})
+
+		Convey("one", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket 1",
+						Builder: "builder 1",
+					},
+				},
+			}
+			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			So(err, ShouldBeNil)
+			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.Builder{
+				Name: "builder 1",
+			})
+		})
+
+		Convey("many", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket 1",
+						Builder: "builder 1",
+					},
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket 1",
+						Builder: "builder 2",
+					},
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket 2",
+						Builder: "builder 1",
+					},
+				},
+			}
+			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			So(err, ShouldBeNil)
+			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.Builder{
+				Name: "builder 1",
+			})
+			So(bldrs["project/bucket 1"]["builder 2"], ShouldResembleProto, &pb.Builder{
+				Name: "builder 2",
+			})
+			So(bldrs["project/bucket 2"]["builder 1"], ShouldResembleProto, &pb.Builder{
+				Name: "builder 1",
+			})
+		})
+	})
+
 	Convey("scheduleRequestFromTemplate", t, func() {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -986,9 +1083,23 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				}
-				rsp, err := srv.ScheduleBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldBeNil)
+
+				Convey("not found", func() {
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldErrLike, "error fetching builders")
+					So(rsp, ShouldBeNil)
+				})
+
+				Convey("ok", func() {
+					So(datastore.Put(ctx, &model.Builder{
+						Parent: model.BucketKey(ctx, "project", "bucket"),
+						ID:     "builder",
+					}), ShouldBeNil)
+
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldBeNil)
+				})
 			})
 		})
 
@@ -1047,9 +1158,23 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
-				rsp, err := srv.ScheduleBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldBeNil)
+
+				Convey("not found", func() {
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldErrLike, "error fetching builders")
+					So(rsp, ShouldBeNil)
+				})
+
+				Convey("ok", func() {
+					So(datastore.Put(ctx, &model.Builder{
+						Parent: model.BucketKey(ctx, "project", "bucket"),
+						ID:     "builder",
+					}), ShouldBeNil)
+
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldBeNil)
+				})
 			})
 		})
 	})
