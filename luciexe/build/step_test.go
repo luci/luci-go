@@ -35,12 +35,12 @@ import (
 )
 
 func TestStepNoop(t *testing.T) {
-	Convey("Step no-op mode", t, func() {
+	Convey(`Step no-op mode`, t, func() {
 		ctx := memlogger.Use(context.Background())
 		logs := logging.Get(ctx).(*memlogger.MemLogger)
 
-		Convey("Step creation", func() {
-			Convey("ScheduleStep", func() {
+		Convey(`Step creation`, func() {
+			Convey(`ScheduleStep`, func() {
 				step, ctx := ScheduleStep(ctx, "some step")
 				defer func() { step.End(nil) }()
 
@@ -52,11 +52,13 @@ func TestStepNoop(t *testing.T) {
 
 				So(step.Start, ShouldNotPanic)
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: STARTED")
+				So(logs.Messages(), ShouldHaveLength, 2)
 
-				So(step.Start, ShouldPanicLike, "cannot start step")
+				So(step.Start, ShouldNotPanic) // noop
+				So(logs.Messages(), ShouldHaveLength, 2)
 			})
 
-			Convey("StartStep", func() {
+			Convey(`StartStep`, func() {
 				step, ctx := StartStep(ctx, "some step")
 				defer func() { step.End(nil) }()
 
@@ -65,35 +67,37 @@ func TestStepNoop(t *testing.T) {
 
 				So(step, ShouldNotBeNil)
 				So(getState(ctx).stepNamePrefix(), ShouldResemble, "some step|")
+				So(logs.Messages(), ShouldHaveLength, 2)
 
-				So(step.Start, ShouldPanicLike, "cannot start step")
+				So(step.Start, ShouldNotPanic) // noop
+				So(logs.Messages(), ShouldHaveLength, 2)
 			})
 
-			Convey("Bad step name", func() {
+			Convey(`Bad step name`, func() {
 				So(func() {
 					StartStep(ctx, "bad | step")
 				}, ShouldPanicLike, "reserved character")
 			})
 		})
 
-		Convey("Step closure", func() {
-			Convey("SUCCESS", func() {
+		Convey(`Step closure`, func() {
+			Convey(`SUCCESS`, func() {
 				step, ctx := StartStep(ctx, "some step")
 				step.End(nil)
 				So(step.stepPb.Status, ShouldResemble, bbpb.Status_SUCCESS)
 
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: SUCCESS")
 
-				Convey("cannot double-close", func() {
+				Convey(`cannot double-close`, func() {
 					So(func() { step.End(nil) }, ShouldPanicLike, "cannot mutate ended step")
 				})
 
-				Convey("cancels context as well", func() {
+				Convey(`cancels context as well`, func() {
 					So(ctx.Err(), ShouldResemble, context.Canceled)
 				})
 			})
 
-			Convey("error", func() {
+			Convey(`error`, func() {
 				step, _ := StartStep(ctx, "some step")
 				step.End(errors.New("bad stuff"))
 				So(step.stepPb.Status, ShouldResemble, bbpb.Status_FAILURE)
@@ -101,7 +105,7 @@ func TestStepNoop(t *testing.T) {
 				So(logs, memlogger.ShouldHaveLog, logging.Error, "set status: FAILURE: bad stuff")
 			})
 
-			Convey("CANCELED", func() {
+			Convey(`CANCELED`, func() {
 				step, _ := StartStep(ctx, "some step")
 				step.End(context.Canceled)
 				So(step.stepPb.Status, ShouldResemble, bbpb.Status_CANCELED)
@@ -109,7 +113,7 @@ func TestStepNoop(t *testing.T) {
 				So(logs, memlogger.ShouldHaveLog, logging.Warning, "set status: CANCELED: context canceled")
 			})
 
-			Convey("panic", func() {
+			Convey(`panic`, func() {
 				step, _ := StartStep(ctx, "some step")
 				func() {
 					defer func() {
@@ -122,14 +126,21 @@ func TestStepNoop(t *testing.T) {
 				So(logs, memlogger.ShouldHaveLog, logging.Error, "set status: INFRA_FAILURE: PANIC")
 			})
 
-			Convey("with SummaryMarkdown", func() {
+			Convey(`with SummaryMarkdown`, func() {
 				step, _ := StartStep(ctx, "some step")
 				step.SetSummaryMarkdown("cool story!")
 				step.End(nil)
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: SUCCESS\n  with SummaryMarkdown:\ncool story!")
 			})
 
-			Convey("closure of un-started step", func() {
+			Convey(`modify starts step`, func() {
+				step, _ := ScheduleStep(ctx, "some step")
+				defer func() { step.End(nil) }()
+				step.SetSummaryMarkdown("cool story!")
+				So(step.stepPb.Status, ShouldResemble, bbpb.Status_STARTED)
+			})
+
+			Convey(`closure of un-started step`, func() {
 				step, ctx := ScheduleStep(ctx, "some step")
 				So(func() { step.End(nil) }, ShouldNotPanic)
 				So(step.stepPb.Status, ShouldResemble, bbpb.Status_SUCCESS)
@@ -138,8 +149,8 @@ func TestStepNoop(t *testing.T) {
 			})
 		})
 
-		Convey("Recursive steps", func() {
-			Convey("basic", func() {
+		Convey(`Recursive steps`, func() {
+			Convey(`basic`, func() {
 				parent, ctx := StartStep(ctx, "parent")
 				defer func() { parent.End(nil) }()
 
@@ -150,7 +161,7 @@ func TestStepNoop(t *testing.T) {
 				So(child.name, ShouldResemble, "parent|child")
 			})
 
-			Convey("creating child step starts parent", func() {
+			Convey(`creating child step starts parent`, func() {
 				parent, ctx := ScheduleStep(ctx, "parent")
 				defer func() { parent.End(nil) }()
 
@@ -164,7 +175,7 @@ func TestStepNoop(t *testing.T) {
 			})
 		})
 
-		Convey("Step logs", func() {
+		Convey(`Step logs`, func() {
 			ctx := memlogger.Use(ctx)
 			logs := logging.Get(ctx).(*memlogger.MemLogger)
 			step, _ := StartStep(ctx, "some step")
