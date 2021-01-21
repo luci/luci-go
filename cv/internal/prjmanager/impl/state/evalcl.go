@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
 // reevalPCLs re-evaluates PCLs after a project config change.
@@ -38,7 +38,7 @@ func (s *State) reevalPCLs(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	newPCLs := make([]*internal.PCL, len(cls))
+	newPCLs := make([]*prjpb.PCL, len(cls))
 	for i, cl := range cls {
 		old := s.PB.GetPcls()[i]
 		switch pcl, err := s.makePCLFromDS(ctx, cl, errs[i], old); {
@@ -93,7 +93,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	// Since we have to re-create PCLs slice anyways, it's fastest to merge two
 	// sorted in the same way PCLs and CLs slices in  O(len(PCLs) + len(cls)).
 	oldPCLs := s.PB.GetPcls()
-	newPCLs := make([]*internal.PCL, 0, len(oldPCLs)+len(cls))
+	newPCLs := make([]*prjpb.PCL, 0, len(oldPCLs)+len(cls))
 	changed := false
 	for i, cl := range cls {
 		// Copy all old PCLs before this CL.
@@ -102,7 +102,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 			oldPCLs = oldPCLs[1:]
 		}
 		// If CL is updated, pop oldPCL.
-		var oldPCL *internal.PCL
+		var oldPCL *prjpb.PCL
 		if len(oldPCLs) > 0 && common.CLID(oldPCLs[0].GetClid()) == cl.ID {
 			oldPCL = oldPCLs[0]
 			oldPCLs = oldPCLs[1:]
@@ -139,7 +139,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 
 // filterOutUpToDate returns map[clid]eversion for which PCL is out of date or
 // doens't exist.
-func (s *State) filterOutUpToDate(events []*internal.CLUpdated) map[common.CLID]int64 {
+func (s *State) filterOutUpToDate(events []*prjpb.CLUpdated) map[common.CLID]int64 {
 	res := make(map[common.CLID]int64, len(events))
 	for _, e := range events {
 		id := common.CLID(e.GetClid())
@@ -159,7 +159,7 @@ func (s *State) filterOutUpToDate(events []*internal.CLUpdated) map[common.CLID]
 	return res
 }
 
-func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error, old *internal.PCL) (*internal.PCL, error) {
+func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error, old *prjpb.PCL) (*prjpb.PCL, error) {
 	switch {
 	case err == datastore.ErrNoSuchEntity:
 		oldEversion := int64(0)
@@ -171,10 +171,10 @@ func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error,
 			logging.Errorf(ctx, "Old CL %d no longer in Datastore", cl.ID)
 			oldEversion = old.GetEversion()
 		}
-		return &internal.PCL{
+		return &prjpb.PCL{
 			Clid:     int64(cl.ID),
 			Eversion: oldEversion,
-			Status:   internal.PCL_DELETED,
+			Status:   prjpb.PCL_DELETED,
 		}, nil
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to load CL %d", cl.ID).Tag(transient.Tag).Err()
@@ -185,14 +185,14 @@ func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error,
 }
 
 // makePCL creates new PCL based on Datastore CL entity and current config.
-func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *internal.PCL {
+func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	if s.cfgMatcher == nil {
 		panic("cfgMather must be initialized")
 	}
-	pcl := &internal.PCL{
+	pcl := &prjpb.PCL{
 		Clid:     int64(cl.ID),
 		Eversion: int64(cl.EVersion),
-		Status:   internal.PCL_UNKNOWN,
+		Status:   prjpb.PCL_UNKNOWN,
 	}
 	if cl.Snapshot == nil {
 		return pcl
@@ -214,11 +214,11 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *internal.PCL {
 	switch t := cl.ApplicableConfig.GetUpdateTime().AsTime(); {
 	case ap == nil:
 		logging.Warningf(ctx, "CL(%d) is not watched by us as of %s", cl.ID, t)
-		pcl.Status = internal.PCL_UNWATCHED
+		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl
 	case len(cl.ApplicableConfig.GetProjects()) > 1:
 		logging.Warningf(ctx, "CL(%d) is watched by more than 1 project as of %s", cl.ID, t)
-		pcl.Status = internal.PCL_UNWATCHED
+		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl
 	}
 
@@ -231,7 +231,7 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *internal.PCL {
 		return pcl
 	}
 
-	pcl.Status = internal.PCL_OK
+	pcl.Status = prjpb.PCL_OK
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
 	pcl.Deps = cl.Snapshot.GetDeps()
 	// TODO(tandrii): stop storing triggering user's email
@@ -247,7 +247,7 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *internal.PCL {
 // Expects s.cfgMatcher to be set.
 //
 // Modifies the passed PCL.
-func (s *State) setApplicableConfigGroups(ap *changelist.ApplicableConfig_Project, snapshot *changelist.Snapshot, pcl *internal.PCL) {
+func (s *State) setApplicableConfigGroups(ap *changelist.ApplicableConfig_Project, snapshot *changelist.Snapshot, pcl *prjpb.PCL) {
 	// Most likely, ApplicableConfig stored in a CL entity is still up-to-date.
 	if uptodate := s.tryUsingApplicableConfigGroups(ap, pcl); uptodate {
 		return
@@ -267,7 +267,7 @@ func (s *State) setApplicableConfigGroups(ap *changelist.ApplicableConfig_Projec
 //
 // Modifies the passed PCL.
 // Returns whether config hash matched.
-func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_Project, pcl *internal.PCL) bool {
+func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_Project, pcl *prjpb.PCL) bool {
 	expectedConfigHash := s.PB.GetConfigHash()
 	// At least 1 ID is guaranteed in ApplicableConfig_Project by gerrit.gobmap.
 	for _, id := range ap.GetConfigGroupIds() {

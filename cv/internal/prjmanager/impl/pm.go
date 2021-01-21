@@ -30,13 +30,13 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
 func init() {
-	internal.PokePMTaskRef.AttachHandler(
+	prjpb.PokePMTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*internal.PokePMTask)
+			task := payload.(*prjpb.PokePMTask)
 			err := pokePMTask(ctx, task.GetLuciProject())
 			// TODO(tandrii): avoid retries iff we know a new task was already
 			// scheduled for the next second.
@@ -76,7 +76,7 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 		// TODO(tandrii): remove this temporary code after all Project entities are
 		// rewritten, as it's only necessary for entities w/o a "State" field.
 		if p.State == nil {
-			p.State = &internal.PState{}
+			p.State = &prjpb.PState{}
 		}
 
 		p.State.LuciProject = pm.luciProject
@@ -153,7 +153,7 @@ type triageResult struct {
 	clsUpdated struct {
 		// i-th event corresponds to i-th cl.
 		events eventbox.Events
-		cls    []*internal.CLUpdated
+		cls    []*prjpb.CLUpdated
 	}
 	runsCreated struct {
 		// events and runs are in random order.
@@ -168,7 +168,7 @@ type triageResult struct {
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
-	e := &internal.Event{}
+	e := &prjpb.Event{}
 	if err := proto.Unmarshal(item.Value, e); err != nil {
 		// This is a bug in code or data corruption.
 		// There is no way to recover on its own.
@@ -176,17 +176,17 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		panic(err)
 	}
 	switch v := e.GetEvent().(type) {
-	case *internal.Event_NewConfig:
+	case *prjpb.Event_NewConfig:
 		tr.newConfig = append(tr.newConfig, item)
-	case *internal.Event_Poke:
+	case *prjpb.Event_Poke:
 		tr.poke = append(tr.poke, item)
-	case *internal.Event_ClUpdated:
+	case *prjpb.Event_ClUpdated:
 		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
 		tr.clsUpdated.cls = append(tr.clsUpdated.cls, v.ClUpdated)
-	case *internal.Event_RunCreated:
+	case *prjpb.Event_RunCreated:
 		tr.runsCreated.events = append(tr.runsCreated.events, item)
 		tr.runsCreated.runs = append(tr.runsCreated.runs, common.RunID(v.RunCreated.GetRunId()))
-	case *internal.Event_RunFinished:
+	case *prjpb.Event_RunFinished:
 		tr.runsFinished.events = append(tr.runsFinished.events, item)
 		tr.runsFinished.runs = append(tr.runsFinished.runs, common.RunID(v.RunFinished.GetRunId()))
 	default:
