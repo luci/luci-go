@@ -140,6 +140,30 @@
       },
       "revId": "cc05fad5675f8591bf0666329e148d12d74b9c2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f08761eb_8239f9de",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T07:09:30Z",
+      "side": 1,
+      "message": "Ack. lgtm",
+      "parentUuid": "0fface58_e766114f",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 0
+      },
+      "revId": "cc05fad5675f8591bf0666329e148d12d74b9c2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
