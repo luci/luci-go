@@ -15,10 +15,12 @@
 package build
 
 import (
+	"reflect"
 	"sync/atomic"
 
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/sync/dispatcher"
@@ -95,7 +97,25 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 					return nil, 0
 				}
 				s.buildPbVersSent = vers
-				return proto.Clone(s.buildPb).(*bbpb.Build), vers
+
+				build := proto.Clone(s.buildPb).(*bbpb.Build)
+
+				// now we populate Output.Properties
+				if s.topLevelOutput != nil || len(s.outputProperties) != 0 {
+					build.Output.Properties = s.topLevelOutput.getStructClone()
+					for ns, child := range s.outputProperties {
+						st := child.getStructClone()
+						if st == nil {
+							continue
+						}
+						if build.Output.Properties == nil {
+							build.Output.Properties, _ = structpb.NewStruct(nil)
+						}
+						build.Output.Properties.Fields[ns] = structpb.NewStructValue(st)
+					}
+				}
+
+				return build, vers
 			}()
 			if buildPb == nil {
 				return nil
@@ -131,7 +151,7 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 //   # `msg` has been populated from inputBuild.InputProperties
 func OptParseProperties(msg proto.Message) StartOption {
 	return func(s *State) {
-		s.topLevelProperties = msg
+		s.topLevelInputProperties = msg
 	}
 }
 
@@ -148,25 +168,45 @@ func OptStrictInputProperties() StartOption {
 // top-level output properties of the build.
 //
 // The registered message must not have any fields which conflict with
-// a namespace reserved with MakePropertyModifier, or this will panic.
+// a namespace reserved with MakePropertyModifier, or this panics.
 //
 // This works like MakePropertyModifier, except that it works at the top level
-// (i.e. no namespace).
+// (i.e. no namespace) and the functions operate directly on the State (i.e.
+// they do not take a context).
 //
-// Usage:
+// Usage
 //
-//   var writer func(context.Context, *MyMessage)
-//   var merger func(context.Context, *MyMessage)
+//   var writer func(*MyMessage)
+//   var merger func(*MyMessage)
 //
 //   // one function may be nil and will be skipped
 //   ... = Start(, ..., OptOutputProperties(&writer, &merger))
 //
-// in go2 this will be:
-//   type PropertyManipulator[T proto.Message] interface {
-//     Write func(context.Context, *T)
-//     Merge func(context.Context, *T)
-//   }
-//   func OptOutputProperties[T proto.Message]() (StartOption, PropertyManipulator[T])
+// in go2 this can be improved (possibly by making State a generic type):
 func OptOutputProperties(writeFnptr, mergeFnptr interface{}) StartOption {
-	panic("implement")
+	writer, merger, msgT := getWriteMergerFnValues(false, writeFnptr, mergeFnptr)
+
+	return func(s *State) {
+		s.topLevelOutput = &outputPropertyState{msg: msgT.New().Interface()}
+
+		if writer.Kind() == reflect.Func {
+			writer.Set(reflect.MakeFunc(writer.Type(), func(args []reflect.Value) []reflect.Value {
+				s.mutate(func() bool {
+					s.topLevelOutput.set(args[0].Interface().(proto.Message))
+					return true
+				})
+				return nil
+			}))
+		}
+
+		if merger.Kind() == reflect.Func {
+			merger.Set(reflect.MakeFunc(merger.Type(), func(args []reflect.Value) []reflect.Value {
+				s.mutate(func() bool {
+					s.topLevelOutput.merge(args[0].Interface().(proto.Message))
+					return true
+				})
+				return nil
+			}))
+		}
+	}
 }
