@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package prjinternal
 
 import (
 	"sort"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal/copyonwrite"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjinternal/copyonwrite"
 	"go.chromium.org/luci/cv/internal/run"
 )
 

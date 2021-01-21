@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjinternal"
 )
 
 type categorizedCLs struct {
@@ -56,8 +56,8 @@ type categorizedCLs struct {
 // isActiveStandalonePCL returns true if PCL is active on its own.
 //
 // See categorizedCLs.active spec.
-func isActiveStandalonePCL(pcl *internal.PCL) bool {
-	return pcl.GetStatus() == internal.PCL_OK && pcl.GetTrigger() != nil
+func isActiveStandalonePCL(pcl *prjinternal.PCL) bool {
+	return pcl.GetStatus() == prjinternal.PCL_OK && pcl.GetTrigger() != nil
 }
 
 // categorizeCLs computes categorizedCLs based on current State.

@@ -16,18 +16,17 @@
 package pmtest
 
 import (
+	"go.chromium.org/luci/cv/internal/prjmanager/prjinternal"
 	"go.chromium.org/luci/server/tq/tqtesting"
-
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 )
 
 // Projects returns list of projects from tasks for PM.
 func Projects(in tqtesting.TaskList) (projects []string) {
 	for _, t := range in.SortByETA() {
 		switch v := t.Payload.(type) {
-		case *internal.PokePMTask:
+		case *prjinternal.PokePMTask:
 			projects = append(projects, v.GetLuciProject())
-		case *internal.KickPokePMTask:
+		case *prjinternal.KickPokePMTask:
 			projects = append(projects, v.GetLuciProject())
 		}
 	}

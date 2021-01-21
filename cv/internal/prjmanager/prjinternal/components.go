@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package prjinternal
 
 import (
-	"go.chromium.org/luci/cv/internal/prjmanager/internal/copyonwrite"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjinternal/copyonwrite"
 )
 
 // COWComponents copy-on-write modifies components.
