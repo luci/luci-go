@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "77d889f7_a625e682",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-21T05:42:25Z",
+      "side": 1,
+      "message": "This is still accurate.",
+      "parentUuid": "df038a03_2b227879",
+      "range": {
+        "startLine": 117,
+        "startChar": 11,
+        "endLine": 118,
+        "endChar": 40
+      },
+      "revId": "b361dfbf5940e378bb8fbb0ad0198b9efa7c42d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "33d0a8ea_b53f1ac6",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-01-21T04:47:53Z",
       "side": 1,
       "message": "nits: 2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "b361dfbf5940e378bb8fbb0ad0198b9efa7c42d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8cac173_f0864ba5",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_test.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-01-21T05:42:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33d0a8ea_b53f1ac6",
       "range": {
         "startLine": 1,
         "startChar": 13,
