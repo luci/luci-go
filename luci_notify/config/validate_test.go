@@ -41,7 +41,7 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(ctx, cfg)
 				err = ctx.Finalize()
 				if expectFormat == "" {
-					So(err, assertions.ShouldErrLike)
+					So(err, ShouldBeNil)
 					return
 				}
 				expect := fmt.Sprintf(expectFormat, expectArgs...)
@@ -234,7 +234,7 @@ func TestValidation(t *testing.T) {
 				validateSettings(ctx, cfg)
 				err = ctx.Finalize()
 				if expectFormat == "" {
-					So(err, assertions.ShouldErrLike)
+					So(err, ShouldBeNil)
 					return
 				}
 				expect := fmt.Sprintf(expectFormat, expectArgs...)

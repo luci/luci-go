@@ -70,31 +70,39 @@ func ShouldContainErr(actual interface{}, expected ...interface{}) string {
 	return fmt.Sprintf("expected MultiError to contain %q", expected[0])
 }
 
-// ShouldErrLike compares an `error` or `string` on the left side, to an `error`
-// or `string` on the right side.
+// ShouldErrLike compares an `error` or `string` on the left side, to `error`s
+// or `string`s on the right side.
 //
-// If the righthand side is omitted, this expects `actual` to be nil.
+// If multiple errors/strings are provided on the righthand side, they must all
+// be contained in the stringified error on the lefthand side.
 //
-// If a singular righthand side is provided, this expects the stringified
-// `actual` to contain the stringified `expected[0]` to be a substring of it.
+// If the righthand side is the singluar `nil`, this expects the error to be
+// nil.
 //
 // Example:
 //   // Usage                          Equivalent To
 //   So(err, ShouldErrLike, "custom")    // `err.Error()` ShouldContainSubstring "custom"
 //   So(err, ShouldErrLike, io.EOF)      // `err.Error()` ShouldContainSubstring io.EOF.Error()
 //   So(err, ShouldErrLike, "EOF")       // `err.Error()` ShouldContainSubstring "EOF"
-//   So(nilErr, ShouldErrLike)           // nilErr ShouldBeNil
+//   So(err, ShouldErrLike,
+//      "thing", "other", "etc.")        // `err.Error()` contains all of these substrings.
 //   So(nilErr, ShouldErrLike, nil)      // nilErr ShouldBeNil
 //   So(nonNilErr, ShouldErrLike, "")    // nonNilErr ShouldNotBeNil
 func ShouldErrLike(actual interface{}, expected ...interface{}) string {
 	if len(expected) == 0 {
-		return assertions.ShouldBeNil(actual)
-	}
-	if len(expected) != 1 {
-		return fmt.Sprintf("ShouldErrLike requires 0 or 1 expected value, got %d", len(expected))
+		return "ShouldErrLike requires 1 or more expected values, got 0"
 	}
 
-	if expected[0] == nil {
+	// If we have multiple expected arguments, they must all be non-nil
+	if len(expected) > 1 {
+		for _, e := range expected {
+			if e == nil {
+				return "ShouldErrLike only accepts `nil` on the right hand side as the sole argument."
+			}
+		}
+	}
+
+	if expected[0] == nil { // this can only happen if len(expected) == 1
 		return assertions.ShouldBeNil(actual)
 	} else if actual == nil {
 		return assertions.ShouldNotBeNil(actual)
@@ -105,13 +113,22 @@ func ShouldErrLike(actual interface{}, expected ...interface{}) string {
 		return assertions.ShouldImplement(actual, (*error)(nil))
 	}
 
-	switch x := expected[0].(type) {
-	case string:
-		return assertions.ShouldContainSubstring(ae.Error(), x)
-	case error:
-		return assertions.ShouldContainSubstring(ae.Error(), x.Error())
+	for _, expect := range expected {
+		switch x := expect.(type) {
+		case string:
+			if ret := assertions.ShouldContainSubstring(ae.Error(), x); ret != "" {
+				return ret
+			}
+		case error:
+			if ret := assertions.ShouldContainSubstring(ae.Error(), x.Error()); ret != "" {
+				return ret
+			}
+		default:
+			return fmt.Sprintf("unexpected argument type %T, expected string or error", expect)
+		}
 	}
-	return fmt.Sprintf("unexpected argument type %T, expected string or error", expected[0])
+
+	return ""
 }
 
 // ShouldPanicLike is the same as ShouldErrLike, but with the exception that it
