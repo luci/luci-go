@@ -23,7 +23,7 @@ load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
 load("@stdlib//internal/luci/rules/realm.star", "realm")
 
-def _bucket(ctx, *, name = None, acls = None, bindings = None):
+def _bucket(ctx, *, name = None, acls = None, extends = None, bindings = None):
     """Defines a bucket: a container for LUCI builds.
 
     This rule also implicitly defines the realm to use for the builds in this
@@ -34,6 +34,8 @@ def _bucket(ctx, *, name = None, acls = None, bindings = None):
       ctx: the implicit rule context, see lucicfg.rule(...).
       name: name of the bucket, e.g. `ci` or `try`. Required.
       acls: list of acl.entry(...) objects.
+      extends: a reference or a list of references to realms to inherit
+        permission from. Optional. Default (and implicit) is `@root`.
       bindings: a list of luci.binding(...) to add to the bucket's realm.
         Experimental. Will eventually replace `acls`.
     """
@@ -55,7 +57,7 @@ def _bucket(ctx, *, name = None, acls = None, bindings = None):
         bindings.extend([binding(**d) for d in aclimpl.binding_dicts(acls)])
 
         # Add all bindings to the bucket realm.
-        realm(name = name, bindings = bindings)
+        realm(name = name, extends = extends, bindings = bindings)
 
     return graph.keyset(key)
 

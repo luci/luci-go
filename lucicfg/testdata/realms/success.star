@@ -39,6 +39,17 @@ luci.realm(
     ],
 )
 
+luci.bucket(
+    name = "bucket2",
+    extends = "realm1",
+    bindings = [
+        luci.binding(
+            roles = "role/a",
+            groups = "bucket",
+        ),
+    ],
+)
+
 luci.binding(
     realm = ["realm1", "realm2"],
     roles = ["role/a", "role/b"],
@@ -129,6 +140,9 @@ luci.realm(
 # buckets {
 #   name: "bucket"
 # }
+# buckets {
+#   name: "bucket2"
+# }
 # ===
 #
 # === project.cfg
@@ -153,6 +167,14 @@ luci.realm(
 # }
 # realms {
 #   name: "bucket"
+#   bindings {
+#     role: "role/a"
+#     principals: "group:bucket"
+#   }
+# }
+# realms {
+#   name: "bucket2"
+#   extends: "realm1"
 #   bindings {
 #     role: "role/a"
 #     principals: "group:bucket"
