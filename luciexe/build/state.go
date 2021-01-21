@@ -86,15 +86,14 @@ type State struct {
 
 var _ Loggable = (*State)(nil)
 
-// Start is the entrypoint to this library.
+// Start is the 'inner' entrypoint to this library.
+//
+// If you're writing a standalone luciexe binary, see `Main` and
+// `MainWithOutput`.
 //
 // This function clones `initial` as the basis of all state updates (see
 // OptSend) and MakePropertyReader declarations. This also initializes the build
 // State in `ctx` and returns the manipulable State object.
-//
-// Start may print information and exit the program immediately if various
-// command-line options, such as `--help`, are passed. Use OptSuppressExit() to
-// avoid this.
 //
 // You must End the returned State. To automatically map errors and panics to
 // their correct visual representation, End the State like:
