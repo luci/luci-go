@@ -175,6 +175,30 @@
       },
       "revId": "690ebc8941156173cbf21b803c77602903611851",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45e052a8_339689b6",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:58:20Z",
+      "side": 1,
+      "message": "oh sorry. I misread. I thought it is cat.deps.addI64(id)",
+      "parentUuid": "5efcffe7_84d58f0f",
+      "range": {
+        "startLine": 198,
+        "startChar": 4,
+        "endLine": 198,
+        "endChar": 23
+      },
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
