@@ -191,6 +191,17 @@ type TestResult struct {
 	// Metadata for this test result.
 	// It might describe this particular execution or the test case.
 	// A key can be repeated.
+	//
+	// Well-known tags.
+	//
+	// Tags "disabled_test:true" and "disabled_test:false" indicate whether the
+	// test is configured not to run. The status of such a test should be SKIPPED.
+	// Notes:
+	// - A test can be skipped for other reasons than disablement, for example
+	//   if the test happened to be scheduled on a device does not have the
+	//   hardware required by the test. This necessitates an explicit tag.
+	// - A test can be disabled globally, or on a particular build/test
+	//   configuration.
 	Tags []*StringPair `protobuf:"bytes,10,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Where the test is defined, e.g. the file name.
 	// Deprecated. In favor of test_metadata.
