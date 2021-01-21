@@ -75,6 +75,11 @@ type State struct {
 	logNames   nameTracker
 	logClosers map[string]func() error
 
+	strictParse bool
+
+	reservedInputProperties map[string]proto.Message
+	topLevelProperties      proto.Message
+
 	stepsMu   sync.Mutex
 	stepNames nameTracker
 }
@@ -103,13 +108,19 @@ var _ Loggable = (*State)(nil)
 // NOTE: A panic will still crash the program as usual. This does NOT
 // `recover()` the panic. Please use conventional Go error handling and control
 // flow mechanisms.
-func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*State, context.Context) {
+func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*State, context.Context, error) {
 	if initial == nil {
 		initial = &bbpb.Build{}
 	}
+	initial = proto.Clone(initial).(*bbpb.Build)
+	// initialize proto sections which other code in this module assumes exist.
+	proto.Merge(initial, &bbpb.Build{
+		Output: &bbpb.Build_Output{},
+		Input:  &bbpb.Build_Input{},
+	})
 
 	ret := &State{
-		buildPb:    proto.Clone(initial).(*bbpb.Build),
+		buildPb:    initial,
 		logClosers: map[string]func() error{},
 	}
 	ret.ctx, ret.ctxCloser = context.WithCancel(ctx)
@@ -118,10 +129,16 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 		opt(ret)
 	}
 
-	// initialize proto sections which other code in this module assumes exist.
-	proto.Merge(ret.buildPb, &bbpb.Build{
-		Output: &bbpb.Build_Output{},
-	})
+	var err error
+	ret.reservedInputProperties, err = parseReservedInputProperties(initial.Input.Properties, ret.strictParse)
+	if err != nil {
+		return nil, ctx, err
+	}
+	if ret.topLevelProperties != nil {
+		if err := parseTopLevelProperties(ret.buildPb.Input.Properties, ret.strictParse, ret.topLevelProperties); err != nil {
+			return nil, ctx, errors.Annotate(err, "parsing top-level properties").Err()
+		}
+	}
 
 	// in case our buildPb is unstarted, start it now.
 	if ret.buildPb.StartTime == nil {
@@ -136,7 +153,7 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 		ret.logNames.resolveName(l.Name)
 	}
 
-	return ret, setState(ctx, ctxState{ret, nil})
+	return ret, setState(ctx, ctxState{ret, nil}), nil
 }
 
 // End sets the build's final status, according to `err` (See ExtractStatus).

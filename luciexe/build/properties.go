@@ -23,53 +23,119 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
-type namespaceReservations struct {
-	mu           sync.Mutex
-	reservations map[string]string
+type resLocations struct {
+	mu sync.Mutex
+	// locations maps reserved namespace to the source location where they were
+	// first reserved.
+	locations map[string]string
 }
 
-var reservations = map[string]*namespaceReservations{
-	"PropertyReader":   {reservations: map[string]string{}},
-	"PropertyModifier": {reservations: map[string]string{}},
+func (r *resLocations) snap() map[string]string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	ret := make(map[string]string, len(r.locations))
+	for k, v := range r.locations {
+		ret[k] = v
+	}
+	return ret
 }
 
-var (
-	ctxType          = reflect.TypeOf((*context.Context)(nil)).Elem()
-	protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
-	errorType        = reflect.TypeOf((*error)(nil)).Elem()
-)
-
-func reserveNamespace(ns string, kind string) {
+// skip is the number of frames to skip from your callsite.
+//
+// skip=1 means "your caller"
+func (r *resLocations) reserve(ns string, kind string, skip int) {
 	if ns == "" {
 		panic(errors.New("empty namespace not allowed"))
-	}
-
-	r, ok := reservations[kind]
-	if !ok {
-		panic(errors.New("invalid reservation pool"))
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if current, ok := r.reservations[ns]; ok {
+	if current, ok := r.locations[ns]; ok {
 		panic(
 			errors.Reason("cannot reserve %s namespace %q: already reserved by %s",
 				kind, ns, current).Err())
 	}
 
 	reservationLocation := "<unknown>"
-	if _, file, line, ok := runtime.Caller(1); ok {
+	if _, file, line, ok := runtime.Caller(skip + 1); ok {
 		reservationLocation = fmt.Sprintf("\"%s:%d\"", file, line)
 	}
 
-	r.reservations[ns] = reservationLocation
+	if r.locations == nil {
+		r.locations = map[string]string{}
+	}
+	r.locations[ns] = reservationLocation
 }
+
+func (r *resLocations) each(cb func(ns string)) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for ns := range r.locations {
+		cb(ns)
+	}
+}
+
+func (r *resLocations) clear(cb func()) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.locations = nil
+	if cb != nil {
+		cb()
+	}
+}
+
+type inputPropertyReservations struct {
+	locs         resLocations
+	msgFactories map[string]func() proto.Message
+}
+
+func (i *inputPropertyReservations) reserve(ns string, mkMsg func() proto.Message, skip int) {
+	i.locs.reserve(ns, "PropertyReader", skip+1)
+	if i.msgFactories == nil {
+		i.msgFactories = map[string]func() proto.Message{}
+	}
+	i.msgFactories[ns] = mkMsg
+}
+
+func (i *inputPropertyReservations) each(cb func(ns string, mkMsg func() proto.Message)) {
+	i.locs.each(func(ns string) {
+		cb(ns, i.msgFactories[ns])
+	})
+}
+
+func (i *inputPropertyReservations) clear() {
+	i.locs.clear(func() {
+		i.msgFactories = nil
+	})
+}
+
+type outputPropertyReservations struct {
+	locs resLocations
+}
+
+func (o *outputPropertyReservations) reserve(ns string, skip int) {
+	o.locs.reserve(ns, "PropertyModifier", skip+1)
+}
+
+func (o *outputPropertyReservations) clear() {
+	o.locs.clear(nil)
+}
+
+var (
+	propReaderReservations   = inputPropertyReservations{}
+	propModifierReservations = outputPropertyReservations{}
+
+	ctxType          = reflect.TypeOf((*context.Context)(nil)).Elem()
+	protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
+	errorType        = reflect.TypeOf((*error)(nil)).Elem()
+)
 
 func cmpArgsProtoT(perr error, expected []reflect.Type, actual func(int) reflect.Type) (ret reflect.Type) {
 	for i, ex := range expected {
@@ -86,7 +152,7 @@ func cmpArgsProtoT(perr error, expected []reflect.Type, actual func(int) reflect
 	return
 }
 
-func derefFnPtr(perr error, fnptr interface{}, in, out []reflect.Type) (fn reflect.Value, msgFn func() proto.Message) {
+func derefFnPtr(perr error, fnptr interface{}, in, out []reflect.Type) (fn reflect.Value, mkMsg func() proto.Message) {
 	val := reflect.ValueOf(fnptr)
 	if val.Kind() != reflect.Ptr {
 		panic(perr)
@@ -124,18 +190,75 @@ func derefFnPtr(perr error, fnptr interface{}, in, out []reflect.Type) (fn refle
 // concrete proto.Message return type.
 func getReaderFnValue(fnptr interface{}) (reflect.Value, func() proto.Message) {
 	return derefFnPtr(
-		errors.New("fnptr is not `func[T proto.Message](context.Context) (T, error)`"),
+		errors.New("fnptr is not `func[T proto.Message](context.Context) T`"),
 		fnptr,
 		[]reflect.Type{ctxType},
-		[]reflect.Type{protoMessageType, errorType},
+		[]reflect.Type{protoMessageType},
 	)
 }
 
-func errorValue(err error) reflect.Value {
-	if err == nil {
-		return reflect.Zero(errorType)
+func parseReservedInputProperties(props *structpb.Struct, strict bool) (map[string]proto.Message, error) {
+	ret := map[string]proto.Message{}
+	merr := errors.MultiError{}
+
+	propReaderReservations.each(func(ns string, mkMsg func() proto.Message) {
+		propVal := props.GetFields()[ns]
+		if propVal == nil {
+			return
+		}
+
+		json, err := protojson.Marshal(propVal)
+		if err != nil {
+			panic(err) // this should be impossible
+		}
+
+		msg := mkMsg()
+		unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: !strict}
+		if err = unmarshaler.Unmarshal(json, msg); err != nil {
+			merr = append(merr, errors.Annotate(err, "deserializing input property %q", ns).Err())
+			return
+		}
+
+		ret[ns] = msg
+	})
+
+	var err error
+	if len(merr) > 0 {
+		err = merr
 	}
-	return reflect.ValueOf(err)
+
+	return ret, err
+}
+
+func parseTopLevelProperties(props *structpb.Struct, strict bool, dst proto.Message) error {
+	dstR := dst.ProtoReflect()
+	reservedLocs := propReaderReservations.locs.snap()
+
+	// first check if `reserved` overlaps with the fields in `dst`
+	fields := dstR.Descriptor().Fields()
+	for i := 0; i < fields.Len(); i++ {
+		field := fields.Get(i)
+		for _, conflict := range []string{field.TextName(), field.JSONName()} {
+			if loc := reservedLocs[conflict]; loc != "" {
+				return errors.Reason(
+					"use of top-level property message %T conflicts with MakePropertyReader(ns=%q) reserved at: %s",
+					dst, conflict, loc).Err()
+			}
+		}
+	}
+
+	// next, clone `props` and remove all fields which have been parsed
+	props = proto.Clone(props).(*structpb.Struct)
+	for ns := range reservedLocs {
+		delete(props.GetFields(), ns)
+	}
+
+	json, err := protojson.Marshal(props)
+	if err != nil {
+		panic(err) // this should be impossible
+	}
+
+	return protojson.UnmarshalOptions{DiscardUnknown: !strict}.Unmarshal(json, dst)
 }
 
 // MakePropertyReader allows your library/module to reserve a section of the
@@ -150,30 +273,28 @@ func errorValue(err error) reflect.Value {
 // Using the generated function will parse the relevant input property namespace
 // as JSONPB, returning the parsed message (and an error, if any).
 //
-//   var myPropertyReader func(context.Context) (*MyPropertyMsg, error)
+//   var myPropertyReader func(context.Context) *MyPropertyMsg
 //   func init() {
 //     MakePropertyReader("$some/namespace", &myPropertyReader)
 //   }
 //
 // In Go2 this will be less weird:
-//   type PropertyReader[T proto.Message] func(context.Context) (T, error)
-//   MakePropertyReader[T proto.Message](ns string) PropertyReader[T]
+//   MakePropertyReader[T proto.Message](ns string) func(context.Context) T
 func MakePropertyReader(ns string, fnptr interface{}) {
-	reserveNamespace(ns, "PropertyReader")
+	fn, mkMsg := getReaderFnValue(fnptr)
+	propReaderReservations.reserve(ns, mkMsg, 1)
 
-	fn, msgFn := getReaderFnValue(fnptr)
 	fn.Set(reflect.MakeFunc(fn.Type(), func(args []reflect.Value) []reflect.Value {
 		cstate := getState(args[0].Interface().(context.Context))
-		msg := msgFn()
-		var err error
+		var msg proto.Message
 
-		if cstate.state == nil {
-			// noop mode, return empty message and nil error
+		if st := cstate.state; st != nil && st.reservedInputProperties[ns] != nil {
+			msg = proto.Clone(st.reservedInputProperties[ns])
 		} else {
-			panic("implement")
+			msg = mkMsg().ProtoReflect().Type().Zero().Interface()
 		}
 
-		return []reflect.Value{reflect.ValueOf(msg), errorValue(err)}
+		return []reflect.Value{reflect.ValueOf(msg)}
 	}))
 }
 
@@ -232,8 +353,9 @@ func getWriteMergerFnValues(writeFnptr, mergeFnptr interface{}) (writer, merger 
 //   }
 //   func MakePropertyModifier[T proto.Message](ns string) PropertyModifier[T]
 func MakePropertyModifier(ns string, writeFnptr, mergeFnptr interface{}) {
-	reserveNamespace(ns, "PropertyModifier")
+	propModifierReservations.reserve(ns, 1)
 	writer, merger := getWriteMergerFnValues(writeFnptr, mergeFnptr)
+
 	if writer.Kind() == reflect.Func {
 		writer.Set(reflect.MakeFunc(writer.Type(), func(args []reflect.Value) []reflect.Value {
 			ctx := args[0].Interface().(context.Context)
