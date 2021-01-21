@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8a6931c_eaa43b5f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-21T01:12:03Z",
+      "side": 1,
+      "message": "mask too?",
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b83630c9_7dfcaee9",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-21T01:12:03Z",
+      "side": 1,
+      "message": "maybe bucket id, since it includes project id",
+      "range": {
+        "startLine": 149,
+        "startChar": 24,
+        "endLine": 149,
+        "endChar": 35
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f283ecd7_9bd9bdc0",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-21T01:12:03Z",
+      "side": 1,
+      "message": "if a ScheduleBuild request refers to a non-existing builder, the response should be InvalidArgument with a nice error message. I think this turns into an INTERNAL error.\n\nA TODO in this CL would do.",
+      "range": {
+        "startLine": 168,
+        "startChar": 14,
+        "endLine": 168,
+        "endChar": 17
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66aa0040_ddaed0a9",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-21T01:12:03Z",
+      "side": 1,
+      "message": "wouldn\u0027t need this loop if L161 assigned \u0026b.Config allocated in L162",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 2
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3bcd1bf_8b851112",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-21T01:12:03Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 185,
+        "startChar": 1,
+        "endLine": 185,
+        "endChar": 14
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86d366da_9f1d248b",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-21T01:12:03Z",
+      "side": 1,
+      "message": "i assume you intend to use the parsed mask in a later CL.\notherwise this code should be inside validateSchedule?",
+      "range": {
+        "startLine": 205,
+        "startChar": 0,
+        "endLine": 208,
+        "endChar": 2
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
