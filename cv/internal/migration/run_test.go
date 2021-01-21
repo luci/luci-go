@@ -22,14 +22,13 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -219,76 +218,66 @@ func TestFetchActiveRuns(t *testing.T) {
 	})
 }
 
-func TestFinalizeRun(t *testing.T) {
-	Convey("FetchActiveRuns", t, func() {
+func TestSaveFinishedRun(t *testing.T) {
+	Convey("SaveFinishedRun", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
 		Convey("Error if migration run reports non-ended status", func() {
-			err := finalizeRun(ctx, &migrationpb.Run{
+			err := saveFinishedRun(ctx, &migrationpb.Run{
 				Attempt: &cvbqpb.Attempt{
 					Status: cvbqpb.AttemptStatus_STARTED,
 				},
 			})
-			So(err, ShouldErrLike, "expected terminal status for attempt")
+			So(err, ShouldErrLike, "expected terminal status for Attempt")
 		})
-		Convey("Noop if Run has already ended", func() {
-			t := clock.Now(ctx).UTC()
-			err := datastore.Put(ctx, &run.Run{
-				ID:         common.RunID("chromium/111-2-deadbeef"),
-				Status:     run.Status_FAILED,
-				EVersion:   3,
-				UpdateTime: t,
+		Convey("Noop if FinishedRun entity already exists", func() {
+			t := clock.Now(ctx).UTC().Truncate(time.Minute)
+			err := datastore.Put(ctx, &FinishedRun{
+				ID:      common.RunID("chromium/111-2-deadbeef"),
+				Status:  run.Status_FAILED,
+				EndTime: t,
 			})
 			So(err, ShouldBeNil)
 
-			ct.Clock.Add(1 * time.Hour)
-			err = finalizeRun(ctx, &migrationpb.Run{
+			err = saveFinishedRun(ctx, &migrationpb.Run{
+				// Intentionally pass not-matching reported run to verify the
+				// operation is a noop. This should not happen in prod.
 				Attempt: &cvbqpb.Attempt{
-					Status: cvbqpb.AttemptStatus_SUCCESS,
+					Status:  cvbqpb.AttemptStatus_SUCCESS,
+					EndTime: timestamppb.New(t.Add(1 * time.Minute)),
 				},
 				Id: "chromium/111-2-deadbeef",
 			})
 			So(err, ShouldBeNil)
 
-			r := run.Run{ID: common.RunID("chromium/111-2-deadbeef")}
-			So(datastore.Get(ctx, &r), ShouldBeNil)
-			So(r, ShouldResemble, run.Run{
-				ID:         common.RunID("chromium/111-2-deadbeef"),
-				Status:     run.Status_FAILED,
-				EVersion:   3,
-				UpdateTime: t,
+			fr := FinishedRun{ID: common.RunID("chromium/111-2-deadbeef")}
+			So(datastore.Get(ctx, &fr), ShouldBeNil)
+			So(fr, ShouldResemble, FinishedRun{
+				ID:      common.RunID("chromium/111-2-deadbeef"),
+				Status:  run.Status_FAILED,
+				EndTime: t,
 			})
 		})
-		Convey("Set Run Status to terminal", func() {
-			err := datastore.Put(ctx, &run.Run{
-				ID:         common.RunID("chromium/111-2-deadbeef"),
-				Status:     run.Status_RUNNING,
-				EVersion:   3,
-				UpdateTime: clock.Now(ctx).UTC(),
-			})
-			So(err, ShouldBeNil)
-
-			ct.Clock.Add(1 * time.Hour)
-			now := clock.Now(ctx).UTC()
-			err = finalizeRun(ctx, &migrationpb.Run{
+		Convey("Works", func() {
+			t := clock.Now(ctx).UTC().Truncate(time.Minute)
+			err := saveFinishedRun(ctx, &migrationpb.Run{
 				Attempt: &cvbqpb.Attempt{
-					Status: cvbqpb.AttemptStatus_SUCCESS,
+					Status:  cvbqpb.AttemptStatus_SUCCESS,
+					EndTime: timestamppb.New(t),
 				},
 				Id: "chromium/111-2-deadbeef",
 			})
 			So(err, ShouldBeNil)
 
-			r := run.Run{ID: common.RunID("chromium/111-2-deadbeef")}
-			So(datastore.Get(ctx, &r), ShouldBeNil)
-			So(r, ShouldResemble, run.Run{
-				ID:         common.RunID("chromium/111-2-deadbeef"),
-				Status:     run.Status_SUCCEEDED,
-				EVersion:   4,
-				UpdateTime: now,
+			fr := FinishedRun{ID: common.RunID("chromium/111-2-deadbeef")}
+			So(datastore.Get(ctx, &fr), ShouldBeNil)
+			So(fr, ShouldResemble, FinishedRun{
+				ID:      common.RunID("chromium/111-2-deadbeef"),
+				Status:  run.Status_SUCCEEDED,
+				EndTime: t,
 			})
-			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{"chromium"})
 		})
 	})
 }
