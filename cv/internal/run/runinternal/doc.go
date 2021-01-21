@@ -12,6 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
-
-//go:generate cproto
+// Package runinternal stores protos for event processing of RunManager.
+package runinternal
