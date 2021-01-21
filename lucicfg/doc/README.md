@@ -1275,7 +1275,15 @@ Usually required for any non-trivial project.
 ### luci.bucket {#luci.bucket}
 
 ```python
-luci.bucket(name, acls = None, bindings = None)
+luci.bucket(
+    # Required arguments.
+    name,
+
+    # Optional arguments.
+    acls = None,
+    extends = None,
+    bindings = None,
+)
 ```
 
 
@@ -1290,6 +1298,7 @@ this bucket and all resources these builds produce. See [luci.realm(...)](#luci.
 
 * **name**: name of the bucket, e.g. `ci` or `try`. Required.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects.
+* **extends**: a reference or a list of references to realms to inherit permission from. Note that buckets themselves are realms for this purpose. Optional. Default (and implicit) is `@root`.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the bucket's realm. Experimental. Will eventually replace `acls`.
 
 
