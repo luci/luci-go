@@ -60,6 +60,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "23c6f60a_27baf91c",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-21T20:25:15Z",
+      "side": 1,
+      "message": "explicit \u003e\u003e implicit\n\nif a test result doesn\u0027t have `disabled_test:false` explicitly, then it is possible that test framework wasn\u0027t updated to emit this tag for disabled tests.\n\nbut I don\u0027t feel strongly about this. I was also a bit of a fence whether this should go into TestMetadata message as a first-class-citizen.",
+      "parentUuid": "b768ad21_73e4ed44",
+      "range": {
+        "startLine": 120,
+        "startChar": 35,
+        "endLine": 120,
+        "endChar": 56
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "006ec5c6_b32aa4cc",
         "filename": "resultdb/proto/v1/test_result.proto",
         "patchSetId": 1
