@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -23,6 +24,7 @@ import (
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -143,16 +145,74 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 	return ret, nil
 }
 
+// fetchBuilderConfigs returns the Builder configs referenced by the given
+// requests in a map of Bucket ID -> Builder name -> *pb.Builder.
+func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]map[string]*pb.Builder, error) {
+	cfgs := map[string]map[string]*pb.Builder{}
+	var bldrs []*model.Builder
+	for _, req := range reqs {
+		bucket := fmt.Sprintf("%s/%s", req.Builder.Project, req.Builder.Bucket)
+		if _, ok := cfgs[bucket]; !ok {
+			cfgs[bucket] = make(map[string]*pb.Builder)
+		}
+		if _, ok := cfgs[bucket][req.Builder.Builder]; ok {
+			continue
+		}
+		b := &model.Builder{
+			Parent: model.BucketKey(ctx, req.Builder.Project, req.Builder.Bucket),
+			ID:     req.Builder.Builder,
+		}
+		cfgs[bucket][req.Builder.Builder] = &b.Config
+		bldrs = append(bldrs, b)
+	}
+	if err := datastore.Get(ctx, bldrs); err != nil {
+		// TODO(crbug/1042991): Return InvalidArgument if the error is "not found".
+		return nil, err
+	}
+	return cfgs, nil
+}
+
+// scheduleBuilds handles requests to schedule builds. Requests must be
+// validated and authorized.
+func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
+	// Bucket -> Builder -> *pb.Builder.
+	_, err := fetchBuilderConfigs(ctx, reqs)
+	if err != nil {
+		return nil, errors.Annotate(err, "error fetching builders").Err()
+	}
+
+	// TODO(crbug/1150607): Create ResultDB invocations.
+	// TODO(crbug/1042991): Deduplicate the build by request ID.
+	// TODO(crbug/1042991): Generate build IDs.
+	// TODO(crbug/1042991): Generate build numbers.
+	// TODO(crbug/1042991): Update Builders in the datastore to point to the latest build.
+	// TODO(crbug/1042991): Create Builds in the datastore.
+	// TODO(crbug/1042991): Enqueue taskqueue task to create Swarming task.
+	// TODO(crbug/1042991): Update build creation metric.
+
+	return nil, nil
+}
+
 // ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
 func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
 	var err error
 	if err = validateSchedule(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
+	_, err = getFieldMask(req.Fields)
+	if err != nil {
+		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
+	}
+
 	if req, err = scheduleRequestFromTemplate(ctx, req); err != nil {
 		return nil, err
 	}
 	if err = perm.HasInBucket(ctx, perm.BuildsAdd, req.Builder.Project, req.Builder.Bucket); err != nil {
+		return nil, err
+	}
+
+	_, err = scheduleBuilds(ctx, req)
+	if err != nil {
 		return nil, err
 	}
 
