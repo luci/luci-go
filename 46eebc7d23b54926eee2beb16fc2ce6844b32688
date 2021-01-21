@@ -56,6 +56,24 @@
       "message": "nit: use proto package from v2 api",
       "revId": "46eebc7d23b54926eee2beb16fc2ce6844b32688",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "25a21657_87a5c43c",
+        "filename": "luciexe/build/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T01:51:39Z",
+      "side": 1,
+      "message": "bah goimports keeps goofing this up and I keep not noticing.",
+      "parentUuid": "b1b7a085_276571e3",
+      "revId": "46eebc7d23b54926eee2beb16fc2ce6844b32688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
