@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "525497b7_e0584c07",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-21T16:51:09Z",
+      "side": 1,
+      "message": "why not pass all this as event proto to Run Manager directly? I\u0027d also reduce latency.",
+      "range": {
+        "startLine": 116,
+        "startChar": 0,
+        "endLine": 128,
+        "endChar": 1
+      },
+      "revId": "b18d8d3fc3f8384656bb8e5842c2a5a62285006b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ac4ed1e_f46afdd7",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-21T16:51:09Z",
+      "side": 1,
+      "message": "is this the reason for new entity?\nIf so, this check can be made inside Run Manager itself based on its own status and if necessary new fields.",
+      "revId": "b18d8d3fc3f8384656bb8e5842c2a5a62285006b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1d0a03de_748ccfc8",
+        "filename": "cv/internal/run/internal/events.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-21T16:51:09Z",
+      "side": 1,
+      "message": "(cont. of above comment): I think we can embed ReportRunFInishedRequest proto into here for simplicity.",
+      "revId": "b18d8d3fc3f8384656bb8e5842c2a5a62285006b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
