@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "83f5fb32_89d7a490",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T02:34:07Z",
+      "side": 1,
+      "message": "FYI, split out ShouldErrLike changes into separate CL.",
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "27b8ada3_21604fdb",
@@ -41,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a18f54d0_c4e78613",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T02:34:07Z",
+      "side": 1,
+      "message": "Heh oops.",
+      "parentUuid": "27b8ada3_21604fdb",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "23a0e8e4_ebac0a98",
@@ -54,6 +95,30 @@
       "writtenOn": "2021-01-20T04:48:38Z",
       "side": 1,
       "message": "1",
+      "range": {
+        "startLine": 96,
+        "startChar": 33,
+        "endLine": 96,
+        "endChar": 34
+      },
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d01323f9_813925bf",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T02:34:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23a0e8e4_ebac0a98",
       "range": {
         "startLine": 96,
         "startChar": 33,
@@ -94,6 +159,24 @@
       "writtenOn": "2021-01-20T04:48:38Z",
       "side": 1,
       "message": "Is this output intentional?",
+      "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9da5791_ec9d61fb",
+        "filename": "luciexe/build/start_options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T02:34:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2b8ac46_8ae518bf",
       "revId": "f895317732739bb8e25e7d9791f0973b6358a53c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
