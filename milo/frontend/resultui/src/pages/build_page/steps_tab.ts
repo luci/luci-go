@@ -58,7 +58,7 @@ export class StepsTabElement extends MobxLitElement {
       },
       (newQueryStr) => {
         const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?${newQueryStr}`;
-        window.history.pushState({path: newUrl}, '', newUrl);
+        window.history.replaceState({path: newUrl}, '', newUrl);
       },
       {fireImmediately: true},
     );
