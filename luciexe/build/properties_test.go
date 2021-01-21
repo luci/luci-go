@@ -18,50 +18,46 @@ import (
 	"context"
 	"testing"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/luciexe/build/internal/testpb"
 )
 
 func TestPropertiesNoop(t *testing.T) {
-	// NOTE: We use bbpb.Build as our "properties" message to avoid having to have
-	// a special 'testing' message. The actual contents of the message doesn't
-	// matter, just that it's a proto.Message
+	// Intentionally forgo t.Parallel() due to global reservation structures.
 
 	Convey(`Properties Noop`, t, func() {
 		// reset `reservations` after each test
-		defer func() {
-			for _, v := range reservations {
-				v.mu.Lock()
-				v.reservations = map[string]string{}
-				v.mu.Unlock()
-			}
-		}()
+		defer propReaderReservations.clear()
+		defer propModifierReservations.clear()
 
 		Convey(`MakePropertyReader`, func() {
 			Convey(`simple`, func() {
-				var fn func(context.Context) (*bbpb.Build, error)
+				var fn func(context.Context) *testpb.Module
 				MakePropertyReader("ns", &fn)
 
 				So(fn, ShouldNotBeNil)
 
-				msg, err := fn(context.Background())
-				So(err, ShouldBeNil)
-				So(msg, ShouldResembleProto, &bbpb.Build{})
+				msg := fn(context.Background())
+				So(msg, ShouldBeNil)
 			})
 
 			Convey(`bad args`, func() {
 				Convey(`empty ns`, func() {
+					var fn func(context.Context) *testpb.Module
 					So(func() {
-						MakePropertyReader("", nil)
+						MakePropertyReader("", &fn)
 					}, ShouldPanicLike, "empty namespace not allowed")
 				})
 
 				Convey(`duplicate namespace`, func() {
-					var fn func(context.Context) (*bbpb.Build, error)
+					var fn func(context.Context) *testpb.Module
 					MakePropertyReader("ns", &fn)
 
 					So(func() {
@@ -70,7 +66,7 @@ func TestPropertiesNoop(t *testing.T) {
 				})
 
 				Convey(`not pointer`, func() {
-					var fn func(context.Context) (*bbpb.Build, error)
+					var fn func(context.Context) *testpb.Module
 					So(func() {
 						MakePropertyReader("ns", fn)
 					}, ShouldPanicLike, "fnptr is not")
@@ -105,8 +101,8 @@ func TestPropertiesNoop(t *testing.T) {
 				})
 
 				Convey(`bad proto type`, func() {
-					// bbpb.Build doesn't implement proto.Message (missing *)
-					var fn func(context.Context) (bbpb.Build, error)
+					// testpb.Module doesn't implement proto.Message (missing *)
+					var fn func(context.Context) testpb.Module
 					So(func() {
 						MakePropertyReader("ns", &fn)
 					}, ShouldPanicLike, "fnptr is not")
@@ -119,8 +115,8 @@ func TestPropertiesNoop(t *testing.T) {
 			logs := logging.Get(ctx).(*memlogger.MemLogger)
 
 			Convey(`working`, func() {
-				var writer func(context.Context, *bbpb.Build)
-				var merger func(context.Context, *bbpb.Build)
+				var writer func(context.Context, *testpb.Module)
+				var merger func(context.Context, *testpb.Module)
 				So(func() {
 					MakePropertyModifier("ns", &writer, &merger)
 				}, ShouldNotPanic)
@@ -136,16 +132,151 @@ func TestPropertiesNoop(t *testing.T) {
 				})
 
 				Convey(`write msg`, func() {
-					writer(ctx, &bbpb.Build{SummaryMarkdown: "hidey-ho"})
+					writer(ctx, &testpb.Module{Field: "hidey-ho"})
 					So(logs, memlogger.ShouldHaveLog, logging.Info,
-						"writing output property \"ns\": \"{\\\"summaryMarkdown\\\":\\\"hidey-ho\\\"}\"")
+						"writing output property \"ns\": \"{\\\"field\\\":\\\"hidey-ho\\\"}\"")
 				})
 
 				Convey(`merge msg`, func() {
-					merger(ctx, &bbpb.Build{SummaryMarkdown: "hidey-ho"})
+					merger(ctx, &testpb.Module{Field: "hidey-ho"})
 					So(logs, memlogger.ShouldHaveLog, logging.Info, "merging output property \"ns\"")
 				})
 			})
 		})
+	})
+}
+
+func buildWithInput(json string) *bbpb.Build {
+	ret := &bbpb.Build{
+		Input: &bbpb.Build_Input{
+			Properties: &structpb.Struct{},
+		},
+	}
+	if err := protojson.Unmarshal([]byte(json), ret.Input.Properties); err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func TestInputProperties(t *testing.T) {
+	// Intentionally forgo t.Parallel() due to global reservation structures.
+
+	Convey(`Properties Input`, t, func() {
+		// reset `reservations` after each test
+		defer propReaderReservations.clear()
+		defer propModifierReservations.clear()
+
+		Convey(`reserved input properties`, func() {
+			var reader func(context.Context) *testpb.Module
+			MakePropertyReader("ns", &reader)
+
+			Convey(`empty input`, func() {
+				build, ctx, err := Start(context.Background(), nil)
+				So(err, ShouldBeNil)
+				defer func() { build.End(nil) }()
+
+				data := reader(ctx)
+				So(data, ShouldBeNil)
+			})
+
+			Convey(`populated input`, func() {
+				build, ctx, err := Start(context.Background(), buildWithInput(`{
+          "arbitrary": "stuff",
+			    "ns": {
+						"field": "hello",
+						"$cool": "there"
+					}
+				}`))
+				So(err, ShouldBeNil)
+				defer func() { build.End(nil) }()
+
+				data := reader(ctx)
+				So(data, ShouldResembleProto, &testpb.Module{
+					Field:         "hello",
+					JsonNameField: "there",
+				})
+			})
+
+			Convey(`top level properties`, func() {
+				props := &testpb.TopLevel{}
+				build, _, err := Start(context.Background(), buildWithInput(`{
+          "arbitrary": "stuff",
+
+					"field": "hello",
+					"$cool": "there",
+
+			    "sub": {
+						"ignore": "yes"
+					}
+				}`), OptParseProperties(props))
+				So(err, ShouldBeNil)
+				defer func() { build.End(nil) }()
+
+				So(props, ShouldResembleProto, &testpb.TopLevel{
+					Field:         "hello",
+					JsonNameField: "there",
+				})
+			})
+
+			Convey(`top and module properties`, func() {
+				props := &testpb.TopLevel{}
+				_, _, err := Start(context.Background(), buildWithInput(`{
+          "arbitrary": "stuff",
+
+					"field": "hello",
+					"$cool": "there",
+
+			    "ns": {
+						"field": "general",
+						"$cool": "kenobi..."
+					}
+				}`), OptParseProperties(props), OptStrictInputProperties())
+				So(err, ShouldErrLike, `parsing top-level properties`)
+				So(err, ShouldErrLike, `unknown field "arbitrary"`)
+
+				build, ctx, err := Start(context.Background(), buildWithInput(`{
+					"field": "hello",
+					"$cool": "there",
+
+			    "ns": {
+						"field": "general",
+						"$cool": "kenobi..."
+					}
+				}`), OptParseProperties(props), OptStrictInputProperties())
+				So(err, ShouldBeNil)
+				defer func() { build.End(nil) }()
+
+				So(props, ShouldResembleProto, &testpb.TopLevel{
+					Field:         "hello",
+					JsonNameField: "there",
+				})
+
+				So(reader(ctx), ShouldResembleProto, &testpb.Module{
+					Field:         "general",
+					JsonNameField: "kenobi...",
+				})
+
+			})
+
+			Convey(`conflict with top properties`, func() {
+				var conflict func(context.Context) *testpb.Module
+				MakePropertyReader("$cool", &conflict)
+
+				props := &testpb.TopLevel{}
+				_, _, err := Start(context.Background(), buildWithInput(`{
+          "arbitrary": "stuff",
+
+					"field": "hello",
+					"$cool": {
+					}
+				}`), OptParseProperties(props), OptStrictInputProperties())
+				So(err, ShouldErrLike, `parsing top-level properties`)
+				So(err, ShouldErrLike, `use of top-level property message *testpb.TopLevel`)
+				So(err, ShouldErrLike, `conflicts with MakePropertyReader(ns="$cool")`)
+				So(err, ShouldErrLike, `reserved at`)
+				So(err, ShouldErrLike, `luciexe/build/properties_test.go`)
+			})
+		})
+
 	})
 }

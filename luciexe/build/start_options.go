@@ -137,15 +137,19 @@ func OptSuppressExit() StartOption {
 //   msg := &MyOutputMessage{}
 //   state, ctx := Start(ctx, inputBuild, OptParseProperties(msg))
 //   # `msg` has been populated from inputBuild.InputProperties
-func OptParseProperties(proto.Message) StartOption {
-	panic("implement")
+func OptParseProperties(msg proto.Message) StartOption {
+	return func(s *State) {
+		s.topLevelProperties = msg
+	}
 }
 
 // OptStrictInputProperties will cause the build to report an error if data is
 // passed via Input.Properties which wasn't parsed into OptParseProperties or
 // MakePropertyReader.
 func OptStrictInputProperties() StartOption {
-	panic("implement")
+	return func(s *State) {
+		s.strictParse = true
+	}
 }
 
 // OptOutputProperties allows you to register a property writer for the
