@@ -117,7 +117,7 @@ export class TestResultsTabElement extends MobxLitElement {
         // The previous instance of the test results tab could've triggered
         // the loading operation already. In that case we don't want to load
         // more test results.
-        if (this.totalDisplayedVariantCount === 0 && !testLoader.isLoading) {
+        if (!testLoader.firstRequestSent) {
           this.loadNextPage();
         }
       },
@@ -279,7 +279,7 @@ export class TestResultsTabElement extends MobxLitElement {
     return html`
       <span
         style=${styleMap({'display': state.testLoader?.isLoading ? 'none' : ''})}
-        @click=${() => {this.loadPagesUntilStatus(status)}}
+        @click=${() => this.loadPagesUntilStatus(status)}
       >
         [load more]
       </span>
