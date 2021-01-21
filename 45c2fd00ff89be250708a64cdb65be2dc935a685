@@ -84,6 +84,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3164e8a3_ac006b32",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-21T20:59:26Z",
+      "side": 1,
+      "message": "Ah, so this tag should only attached to test results that are expected and with SKIP status, right? If so LGTM.\n\nAnd then this tag is related to the specific test results so maybe it\u0027s better to keep it here.",
+      "parentUuid": "23c6f60a_27baf91c",
+      "range": {
+        "startLine": 120,
+        "startChar": 35,
+        "endLine": 120,
+        "endChar": 56
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "006ec5c6_b32aa4cc",
         "filename": "resultdb/proto/v1/test_result.proto",
         "patchSetId": 1
