@@ -5862,7 +5862,7 @@ type GerritClient interface {
 	GetChange(ctx context.Context, in *GetChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error)
 	// Gets Mergeable status for a change.
 	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-mergeable
 	GetMergeable(ctx context.Context, in *GetMergeableRequest, opts ...grpc.CallOption) (*MergeableInfo, error)
 	// Lists the files that were modified, added or deleted in a revision.
 	//
@@ -6309,7 +6309,7 @@ type GerritServer interface {
 	GetChange(context.Context, *GetChangeRequest) (*ChangeInfo, error)
 	// Gets Mergeable status for a change.
 	//
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-mergeable
 	GetMergeable(context.Context, *GetMergeableRequest) (*MergeableInfo, error)
 	// Lists the files that were modified, added or deleted in a revision.
 	//
