@@ -56,6 +56,30 @@
       },
       "revId": "3518aaa80685c6a5bf7eb1d5d72805ae60fd738a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb4056d3_bceff131",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 1284,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-21T01:17:04Z",
+      "side": 1,
+      "message": "My reasoning is that luci.bucket is a subclass of luci.realm (it is a realm plus some additional thing). `extends` and `bindings` are both properties of luci.realm, thus luci.bucket inherits and exposes them too.\n\nAlso you can totally say:\n\n  luci.bucket(name \u003d \"a\")\n  luci.bucket(name \u003d \"b\", extends \u003d \"a\")\n\nBecause a bucket is a realm. I felt that renaming `extends` into something else will be more confusing than not.\n\nRe `acls`: they\u0027ll go away eventually (will be replaced by `bindings`).",
+      "parentUuid": "00feba75_e95ab3e3",
+      "range": {
+        "startLine": 1284,
+        "startChar": 4,
+        "endLine": 1284,
+        "endChar": 11
+      },
+      "revId": "3518aaa80685c6a5bf7eb1d5d72805ae60fd738a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
