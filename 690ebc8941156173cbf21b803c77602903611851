@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f73dbf93_9fdd21df",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-21T23:38:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04eebea3_63cd6c49",
+      "range": {
+        "startLine": 41,
+        "startChar": 59,
+        "endLine": 41,
+        "endChar": 61
+      },
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "833742e1_574880c6",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-01-21T23:30:54Z",
       "side": 1,
       "message": "empty line. Del",
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "02528666_ea880b60",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-21T23:38:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "833742e1_574880c6",
       "revId": "690ebc8941156173cbf21b803c77602903611851",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a23d94a4_c5d807dc",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-21T23:38:44Z",
+      "side": 1,
+      "message": "True. Done.",
+      "parentUuid": "dc08cc2b_450395ef",
+      "range": {
+        "startLine": 101,
+        "startChar": 32,
+        "endLine": 101,
+        "endChar": 58
+      },
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "34fd6611_ad1df6d6",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-01-21T23:30:54Z",
       "side": 1,
       "message": "This seems wrong. Del.",
+      "range": {
+        "startLine": 198,
+        "startChar": 4,
+        "endLine": 198,
+        "endChar": 23
+      },
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5efcffe7_84d58f0f",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-21T23:38:44Z",
+      "side": 1,
+      "message": "Why do you think so?\n\nMy logic is:\n \n  cl was a dep and didn\u0027t have PCL entry\n    \u003d\u003e so it was in cat.deps and cat.unloaded\n  evalCLsFromDS()\n  now CL is activ\n    \u003d\u003e must remove from cat.deps and add to cat.active.",
+      "parentUuid": "34fd6611_ad1df6d6",
       "range": {
         "startLine": 198,
         "startChar": 4,
