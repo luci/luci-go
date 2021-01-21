@@ -56,6 +56,29 @@
       },
       "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "006ec5c6_b32aa4cc",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1212214
+      },
+      "writtenOn": "2021-01-21T20:25:07Z",
+      "side": 1,
+      "message": "How does \u0027a particular build/test configuration\u0027 differ from \u0027a device [that] does not have the hardware required by the test\u0027? The latter is also a \u0027particular configuration\u0027 for the test - it is the configuration of \u0027we are running on a device that does not have the hardware required by the test\u0027.\n\nIt seems like the definition ResultsDB really wants is very \u0027intentionality\u0027 based - should I expect a given test on a given configuration to be skipped or not. (But notions of intentionality are very fuzzy! In order to produce a SKIP result, a test runner has to look at the test and make a decision to not run it, so can any skip ever not be intentional?)\n\nOne way to resolve this might be to think about what ResultsDB is going to do with this flag - is there a design doc or other documentation on that?\n\nPS: I apologize for being overly pedantic, and I\u0027m ok to just skip this problem if we want. It\u0027s not a huge deal, I just suspect there will be future confusion and bugs due to misunderstandings about what disabled means.",
+      "range": {
+        "startLine": 126,
+        "startChar": 46,
+        "endLine": 127,
+        "endChar": 20
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
