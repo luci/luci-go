@@ -75,12 +75,12 @@ func TestShouldErrLike(t *testing.T) {
 
 	Convey("Test ShouldErrLike", t, func() {
 		Convey("too many params", func() {
-			So(ShouldErrLike(nil, nil, nil), ShouldContainSubstring, "requires 0 or 1")
+			So(ShouldErrLike(nil, nil, nil), ShouldContainSubstring, "only accepts `nil` on the right hand side")
 		})
 		Convey("no expectation", func() {
-			So(ShouldErrLike(nil), ShouldEqual, "")
-			So(ShouldErrLike(e), ShouldContainSubstring, "Expected: nil")
-			So(ShouldErrLike(ce), ShouldContainSubstring, "Expected: nil")
+			So(ShouldErrLike(nil), ShouldEqual, "ShouldErrLike requires 1 or more expected values, got 0")
+			So(ShouldErrLike(e), ShouldEqual, "ShouldErrLike requires 1 or more expected values, got 0")
+			So(ShouldErrLike(ce), ShouldEqual, "ShouldErrLike requires 1 or more expected values, got 0")
 		})
 		Convey("nil expectation", func() {
 			So(ShouldErrLike(nil, nil), ShouldEqual, "")
