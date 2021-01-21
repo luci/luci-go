@@ -104,6 +104,30 @@
       },
       "revId": "3518aaa80685c6a5bf7eb1d5d72805ae60fd738a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ef23e93_44023288",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 1284,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-21T01:54:00Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "5e2a14a2_ebf4729d",
+      "range": {
+        "startLine": 1284,
+        "startChar": 4,
+        "endLine": 1284,
+        "endChar": 11
+      },
+      "revId": "3518aaa80685c6a5bf7eb1d5d72805ae60fd738a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
