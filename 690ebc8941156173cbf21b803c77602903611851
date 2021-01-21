@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04eebea3_63cd6c49",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:30:54Z",
+      "side": 1,
+      "message": "Del",
+      "range": {
+        "startLine": 41,
+        "startChar": 59,
+        "endLine": 41,
+        "endChar": 61
+      },
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "833742e1_574880c6",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:30:54Z",
+      "side": 1,
+      "message": "empty line. Del",
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc08cc2b_450395ef",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:30:54Z",
+      "side": 1,
+      "message": "Seems redundant as res.active is a set",
+      "range": {
+        "startLine": 101,
+        "startChar": 32,
+        "endLine": 101,
+        "endChar": 58
+      },
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34fd6611_ad1df6d6",
+        "filename": "cv/internal/prjmanager/impl/state/categorize_cls.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:30:54Z",
+      "side": 1,
+      "message": "This seems wrong. Del.",
+      "range": {
+        "startLine": 198,
+        "startChar": 4,
+        "endLine": 198,
+        "endChar": 23
+      },
+      "revId": "690ebc8941156173cbf21b803c77602903611851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
