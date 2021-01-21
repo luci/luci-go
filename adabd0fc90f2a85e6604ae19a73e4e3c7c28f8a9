@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0daca51b_1506d3cf",
+        "filename": "cv/internal/run/runinternal/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T19:05:02Z",
+      "side": 1,
+      "message": "naming nit: Maybe we should just call this package `event` or `eventpb` to make it more specific unless we plan to add something unrelate to event in the future.",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 22
+      },
+      "revId": "adabd0fc90f2a85e6604ae19a73e4e3c7c28f8a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
