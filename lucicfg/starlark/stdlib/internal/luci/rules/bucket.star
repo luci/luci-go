@@ -17,13 +17,13 @@
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
-load("@stdlib//internal/luci/common.star", "keys")
+load("@stdlib//internal/luci/common.star", "keys", "kinds")
 load("@stdlib//internal/luci/lib/acl.star", "aclimpl")
 load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
 load("@stdlib//internal/luci/rules/realm.star", "realm")
 
-def _bucket(ctx, *, name = None, acls = None, bindings = None):
+def _bucket(ctx, *, name = None, acls = None, extends = None, bindings = None):
     """Defines a bucket: a container for LUCI builds.
 
     This rule also implicitly defines the realm to use for the builds in this
@@ -34,6 +34,9 @@ def _bucket(ctx, *, name = None, acls = None, bindings = None):
       ctx: the implicit rule context, see lucicfg.rule(...).
       name: name of the bucket, e.g. `ci` or `try`. Required.
       acls: list of acl.entry(...) objects.
+      extends: a reference or a list of references to realms to inherit
+        permission from. Note that buckets themselves are realms for this
+        purpose. Optional. Default (and implicit) is `@root`.
       bindings: a list of luci.binding(...) to add to the bucket's realm.
         Experimental. Will eventually replace `acls`.
     """
@@ -54,8 +57,16 @@ def _bucket(ctx, *, name = None, acls = None, bindings = None):
         bindings = bindings[:] if bindings else []
         bindings.extend([binding(**d) for d in aclimpl.binding_dicts(acls)])
 
-        # Add all bindings to the bucket realm.
-        realm(name = name, bindings = bindings)
+        # Define the realm and grab its keyset.
+        realm_ref = realm(
+            name = name,
+            extends = extends,
+            bindings = bindings,
+        )
+
+        # Return both the bucket and the realm keys, so callers can pick the one
+        # they need based on its kind.
+        return graph.keyset(key, realm_ref.get(kinds.REALM))
 
     return graph.keyset(key)
 
