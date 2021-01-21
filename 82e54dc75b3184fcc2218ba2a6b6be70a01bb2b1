@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54f84267_9dba43ca",
+        "filename": "cv/api/diagnostic/diagnostic.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:40:41Z",
+      "side": 1,
+      "message": "oneof",
+      "range": {
+        "startLine": 59,
+        "startChar": 15,
+        "endLine": 59,
+        "endChar": 21
+      },
+      "revId": "82e54dc75b3184fcc2218ba2a6b6be70a01bb2b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea274488_84cb50dd",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:40:41Z",
+      "side": 1,
+      "message": "m[1]\n\nTechnically, it is already handled by L166",
+      "range": {
+        "startLine": 174,
+        "startChar": 65,
+        "endLine": 174,
+        "endChar": 69
+      },
+      "revId": "82e54dc75b3184fcc2218ba2a6b6be70a01bb2b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b696b273_fa74136e",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:40:41Z",
+      "side": 1,
+      "message": "m[2]",
+      "range": {
+        "startLine": 177,
+        "startChar": 72,
+        "endLine": 177,
+        "endChar": 76
+      },
+      "revId": "82e54dc75b3184fcc2218ba2a6b6be70a01bb2b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ef806dc_2792cf3d",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:40:41Z",
+      "side": 1,
+      "message": "m[6]",
+      "range": {
+        "startLine": 186,
+        "startChar": 72,
+        "endLine": 186,
+        "endChar": 76
+      },
+      "revId": "82e54dc75b3184fcc2218ba2a6b6be70a01bb2b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
