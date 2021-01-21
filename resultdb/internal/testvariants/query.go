@@ -151,13 +151,12 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	})
 }
 
-func (q *Query) queryTestResults(ctx context.Context, f func(*pb.TestResult) error) (err error) {
+func (q *Query) queryTestResults(ctx context.Context, limit int, f func(*pb.TestResult) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
 	st := spanner.Statement{SQL: allTestResultsSQL, Params: q.params}
-	// TODO(crbug.com/1157349): Tune the page size.
-	st.Params["limit"] = q.PageSize
+	st.Params["limit"] = limit
 
 	var b spanutil.Buffer
 	var summaryHTML spanutil.Compressed
@@ -201,7 +200,12 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	// it has unexpected results.
 	var current *uipb.TestVariant
 	var currentOnlyExpected bool
-	err = q.queryTestResults(ctx, func(tr *pb.TestResult) error {
+	// Query q.PageSize+1 test results for test variants with
+	// only expected results, so that in the case of all test results are
+	// expected in that page, we will return q.PageSize test variants instead of
+	// q.PageSize-1.
+	pageSize := q.PageSize + 1
+	err = q.queryTestResults(ctx, pageSize, func(tr *pb.TestResult) error {
 		trLen++
 		if current != nil {
 			if current.TestId == tr.TestId && current.VariantHash == tr.VariantHash {
@@ -242,14 +246,14 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	switch {
 	case err != nil:
 		tvs = nil
-	case trLen < q.PageSize && currentOnlyExpected:
+	case trLen < pageSize && currentOnlyExpected:
 		// We have exhausted the test results, add current to tvs.
 		tvs = append(tvs, current)
-	case trLen == q.PageSize && !currentOnlyExpected:
+	case trLen == pageSize && !currentOnlyExpected:
 		// Got page size of test results, need to return the next page token.
 		// And current has unexpected results, skip it in the next page.
 		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), current.TestId, current.VariantHash)
-	case trLen == q.PageSize:
+	case trLen == pageSize:
 		// In this page current only has expected results, but we're not sure if
 		// we have exhausted its test results or not. Calculate the token using lastProcessedTV.
 		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), lastProcessedTV.TestId, lastProcessedTV.VariantHash)
