@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package internal.prjmanager.prjinternal;
+package cv.prjmanager.prjinternal;
 
 option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjinternal;prjinternal";
 
