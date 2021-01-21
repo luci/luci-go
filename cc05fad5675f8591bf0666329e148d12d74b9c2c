@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e171facd_a2648194",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T05:59:02Z",
+      "side": 1,
+      "message": "lol yeah this is actually just wrong... see new patchset for what I actually meant.",
+      "parentUuid": "ebb347e2_58bc94b1",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 3
+      },
+      "revId": "cc05fad5675f8591bf0666329e148d12d74b9c2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0b66b905_d40b516a",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "884fbbd9_9733d83d",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T05:59:02Z",
+      "side": 1,
+      "message": "yeah, but I want an explicit explanation of this to help the user debug",
+      "parentUuid": "0b66b905_d40b516a",
+      "range": {
+        "startLine": 103,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 3
+      },
+      "revId": "cc05fad5675f8591bf0666329e148d12d74b9c2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "56faa1b1_f57aaf95",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-01-21T05:34:30Z",
       "side": 1,
       "message": "Del",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 0
+      },
+      "revId": "cc05fad5675f8591bf0666329e148d12d74b9c2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fface58_e766114f",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T05:59:02Z",
+      "side": 1,
+      "message": "See new ps",
+      "parentUuid": "56faa1b1_f57aaf95",
       "range": {
         "startLine": 108,
         "startChar": 0,
