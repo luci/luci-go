@@ -19,6 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 type DiagnosticClient interface {
 	// GetProject returns current Project state.
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
+	// GetCL returns current CL state.
+	GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error)
 }
 
 type diagnosticClient struct {
@@ -38,12 +40,23 @@ func (c *diagnosticClient) GetProject(ctx context.Context, in *GetProjectRequest
 	return out, nil
 }
 
+func (c *diagnosticClient) GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error) {
+	out := new(GetCLResponse)
+	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/GetCL", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DiagnosticServer is the server API for Diagnostic service.
 // All implementations must embed UnimplementedDiagnosticServer
 // for forward compatibility
 type DiagnosticServer interface {
 	// GetProject returns current Project state.
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
+	// GetCL returns current CL state.
+	GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error)
 	mustEmbedUnimplementedDiagnosticServer()
 }
 
@@ -53,6 +66,9 @@ type UnimplementedDiagnosticServer struct {
 
 func (UnimplementedDiagnosticServer) GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProject not implemented")
+}
+func (UnimplementedDiagnosticServer) GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCL not implemented")
 }
 func (UnimplementedDiagnosticServer) mustEmbedUnimplementedDiagnosticServer() {}
 
@@ -85,6 +101,24 @@ func _Diagnostic_GetProject_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Diagnostic_GetCL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DiagnosticServer).GetCL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/diagnostic.Diagnostic/GetCL",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiagnosticServer).GetCL(ctx, req.(*GetCLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Diagnostic_ServiceDesc is the grpc.ServiceDesc for Diagnostic service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -95,6 +129,10 @@ var Diagnostic_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProject",
 			Handler:    _Diagnostic_GetProject_Handler,
+		},
+		{
+			MethodName: "GetCL",
+			Handler:    _Diagnostic_GetCL_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
