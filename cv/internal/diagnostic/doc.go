@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
-
-package cv.prjmanager;
-
-option go_package = "go.chromium.org/luci/cv/internal/prjmanager;prjmanager";
-
-
-enum Status {
-  STATUS_UNSPECIFIED = 0;
-  STARTED = 1;
-  STOPPING = 2;
-  STOPPED = 3;
-}
+// Package diagnostic implements diagnostic API.
+package diagnostic
