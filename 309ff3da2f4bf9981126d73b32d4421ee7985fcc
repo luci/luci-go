@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a52d7810_8e50e418",
+        "filename": "cv/internal/prjmanager/impl/state/partition.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:31:10Z",
+      "side": 1,
+      "message": "Cls in a Run",
+      "range": {
+        "startLine": 60,
+        "startChar": 4,
+        "endLine": 60,
+        "endChar": 8
+      },
+      "revId": "309ff3da2f4bf9981126d73b32d4421ee7985fcc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b925cc6_f2f109cc",
+        "filename": "cv/internal/prjmanager/impl/state/partition.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:31:10Z",
+      "side": 1,
+      "message": "Not sure if it is possible, but some CLs in the existing component may be missing in the new pclIndex. So should we also check for such use case and return -1 if that has happened?",
+      "range": {
+        "startLine": 86,
+        "startChar": 18,
+        "endLine": 86,
+        "endChar": 51
+      },
+      "revId": "309ff3da2f4bf9981126d73b32d4421ee7985fcc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "690c9fea_772773e9",
+        "filename": "cv/internal/prjmanager/impl/state/partition.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T23:31:10Z",
+      "side": 1,
+      "message": "nit: root\n\nSave duplicate effort of root finding.",
+      "range": {
+        "startLine": 126,
+        "startChar": 20,
+        "endLine": 126,
+        "endChar": 25
+      },
+      "revId": "309ff3da2f4bf9981126d73b32d4421ee7985fcc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
