@@ -46,6 +46,30 @@
       },
       "revId": "adabd0fc90f2a85e6604ae19a73e4e3c7c28f8a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c06cc04b_657f8523",
+        "filename": "cv/internal/run/runinternal/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-21T19:13:28Z",
+      "side": 1,
+      "message": "Yup! Gonna raise the same comment for PM but then I saw PState.",
+      "parentUuid": "fa1be343_4ece39ab",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 22
+      },
+      "revId": "adabd0fc90f2a85e6604ae19a73e4e3c7c28f8a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
