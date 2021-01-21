@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0589308f_c800a327",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T18:52:20Z",
+      "side": 1,
+      "message": "lgtm (though I would note that this isn\u0027t really restricted to \"dev\")",
+      "revId": "6901aa91bf0b0652b635eb032e34234b47d0458f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
