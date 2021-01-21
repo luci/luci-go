@@ -16,6 +16,46 @@
       "message": "PTAL. I think it will be useful in \"chromeos\" configs. They have kind of 3 subprojects there, all declaring a bunch of buckets. Using `extends` would allow to extract some common ACLs into per-subproject parent realms.",
       "revId": "3518aaa80685c6a5bf7eb1d5d72805ae60fd738a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "81dbc46c_a8fff5e8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T00:59:15Z",
+      "side": 1,
+      "message": "concept lgtm, naming has questions",
+      "revId": "3518aaa80685c6a5bf7eb1d5d72805ae60fd738a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00feba75_e95ab3e3",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 1284,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-21T00:59:15Z",
+      "side": 1,
+      "message": "why not `inherit_realms` or something like that? `extends` implies to me that it would be object(s) of the same type (in this case, buckets). acls and bindings are clearer (they correspond to `acl.entry` and `luci.binding`)",
+      "range": {
+        "startLine": 1284,
+        "startChar": 4,
+        "endLine": 1284,
+        "endChar": 11
+      },
+      "revId": "3518aaa80685c6a5bf7eb1d5d72805ae60fd738a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
