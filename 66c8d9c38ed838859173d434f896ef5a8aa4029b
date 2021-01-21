@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "915da43e_16d0f7a3",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-21T21:35:29Z",
+      "side": 1,
+      "message": "This matches e.g. GetBuild layout. Otherwise validate needs to return a mask which seems odd since it validates everything, not just the mask.",
+      "parentUuid": "a8a6931c_eaa43b5f",
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b83630c9_7dfcaee9",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-01-21T01:12:03Z",
       "side": 1,
       "message": "maybe bucket id, since it includes project id",
+      "range": {
+        "startLine": 149,
+        "startChar": 24,
+        "endLine": 149,
+        "endChar": 35
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "037b0989_9bf0ef8e",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-21T21:35:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b83630c9_7dfcaee9",
       "range": {
         "startLine": 149,
         "startChar": 24,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "89ac1bb9_3feb5354",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-21T21:35:29Z",
+      "side": 1,
+      "message": "Added TODO for now.",
+      "parentUuid": "f283ecd7_9bd9bdc0",
+      "range": {
+        "startLine": 168,
+        "startChar": 14,
+        "endLine": 168,
+        "endChar": 17
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66aa0040_ddaed0a9",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-01-21T01:12:03Z",
       "side": 1,
       "message": "wouldn\u0027t need this loop if L161 assigned \u0026b.Config allocated in L162",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 2
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b0c411d_f8ce7677",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-21T21:35:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66aa0040_ddaed0a9",
       "range": {
         "startLine": 170,
         "startChar": 0,
@@ -112,6 +202,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "bdbb540c_db694de4",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-21T21:35:29Z",
+      "side": 1,
+      "message": "Avoiding \"unused variable\" since it will become used in a future CL, but changed variable name to _ above for consistency.",
+      "parentUuid": "c3bcd1bf_8b851112",
+      "range": {
+        "startLine": 185,
+        "startChar": 1,
+        "endLine": 185,
+        "endChar": 14
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "86d366da_9f1d248b",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
@@ -123,6 +237,30 @@
       "writtenOn": "2021-01-21T01:12:03Z",
       "side": 1,
       "message": "i assume you intend to use the parsed mask in a later CL.\notherwise this code should be inside validateSchedule?",
+      "range": {
+        "startLine": 205,
+        "startChar": 0,
+        "endLine": 208,
+        "endChar": 2
+      },
+      "revId": "66c8d9c38ed838859173d434f896ef5a8aa4029b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1baff12_78d7ecad",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-21T21:35:29Z",
+      "side": 1,
+      "message": "Yes, I will mask the returned build from scheduleBuilds (once it returns something).",
+      "parentUuid": "86d366da_9f1d248b",
       "range": {
         "startLine": 205,
         "startChar": 0,
