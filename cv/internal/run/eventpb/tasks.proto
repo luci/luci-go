@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package cv.run.internal;
+package cv.run.eventpb;
 
-option go_package = "go.chromium.org/luci/cv/internal/run/internal;internal";
+option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 
 import "google/protobuf/timestamp.proto";
 

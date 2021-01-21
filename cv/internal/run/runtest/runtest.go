@@ -21,16 +21,16 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/run/internal"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
 // Runs returns list of runs from tasks for Run Manager.
 func Runs(in tqtesting.TaskList) (runs common.RunIDs) {
 	for _, t := range in.SortByETA() {
 		switch v := t.Payload.(type) {
-		case *internal.PokeRunTask:
+		case *eventpb.PokeRunTask:
 			runs = append(runs, common.RunID(v.GetRunId()))
-		case *internal.KickPokeRunTask:
+		case *eventpb.KickPokeRunTask:
 			runs = append(runs, common.RunID(v.GetRunId()))
 		}
 	}
