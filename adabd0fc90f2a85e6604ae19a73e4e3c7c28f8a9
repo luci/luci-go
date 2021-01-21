@@ -22,6 +22,30 @@
       },
       "revId": "adabd0fc90f2a85e6604ae19a73e4e3c7c28f8a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa1be343_4ece39ab",
+        "filename": "cv/internal/run/runinternal/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-21T19:07:21Z",
+      "side": 1,
+      "message": "so, i didn\u0027t call it eventpb, because in PM it would be incorrect.\nBut here it\u0027s actually fine. I\u0027ll rename.",
+      "parentUuid": "0daca51b_1506d3cf",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 22
+      },
+      "revId": "adabd0fc90f2a85e6604ae19a73e4e3c7c28f8a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
