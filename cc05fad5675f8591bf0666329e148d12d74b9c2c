@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ebb347e2_58bc94b1",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-21T02:57:23Z",
+      "side": 1,
+      "message": "duplicate of L108-L112?",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 3
+      },
+      "revId": "cc05fad5675f8591bf0666329e148d12d74b9c2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b66b905_d40b516a",
+        "filename": "common/testing/assertions/error_tests.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-21T02:57:23Z",
+      "side": 1,
+      "message": "I feel this can be covered by L129?",
+      "range": {
+        "startLine": 103,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 3
+      },
+      "revId": "cc05fad5675f8591bf0666329e148d12d74b9c2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
