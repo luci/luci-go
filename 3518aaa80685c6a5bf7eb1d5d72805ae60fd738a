@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72bc1bca_524bd2da",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-21T00:29:50Z",
+      "side": 1,
+      "message": "PTAL. I think it will be useful in \"chromeos\" configs. They have kind of 3 subprojects there, all declaring a bunch of buckets. Using `extends` would allow to extract some common ACLs into per-subproject parent realms.",
+      "revId": "3518aaa80685c6a5bf7eb1d5d72805ae60fd738a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
