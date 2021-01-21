@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -52,9 +51,7 @@ type State struct {
 
 	// Serializable part mutated using copy-on-write approach
 	// https://en.wikipedia.org/wiki/Copy-on-write
-
-	Status prjmanager.Status
-	PB     *prjpb.PState
+	PB *prjpb.PState
 
 	// Helper private fields used during mutations.
 
@@ -74,17 +71,13 @@ type State struct {
 // NewInitial returns initial state at the start of PM's lifetime.
 func NewInitial(luciProject string) *State {
 	return &State{
-		Status: prjmanager.Status_STATUS_UNSPECIFIED,
-		PB:     &prjpb.PState{LuciProject: luciProject},
+		PB: &prjpb.PState{LuciProject: luciProject},
 	}
 }
 
 // NewExisting returns state from its parts.
-func NewExisting(status prjmanager.Status, pb *prjpb.PState) *State {
-	return &State{
-		Status: status,
-		PB:     pb,
-	}
+func NewExisting(pb *prjpb.PState) *State {
+	return &State{PB: pb}
 }
 
 // UpdateConfig updates PM to latest config version.
@@ -98,7 +91,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 
 	switch meta.Status {
 	case config.StatusEnabled:
-		if s.Status == prjmanager.Status_STARTED && meta.Hash() == s.PB.GetConfigHash() {
+		if s.PB.GetStatus() == prjpb.Status_STARTED && meta.Hash() == s.PB.GetConfigHash() {
 			return s, nil, nil // already up-to-date.
 		}
 
@@ -109,7 +102,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 		}
 
 		s = s.cloneShallow()
-		s.Status = prjmanager.Status_STARTED
+		s.PB.Status = prjpb.Status_STARTED
 		s.PB.ConfigHash = meta.Hash()
 		s.PB.ConfigGroupNames = meta.ConfigGroupNames
 		if s.cfgMatcher, err = cfgmatcher.LoadMatcherFrom(ctx, meta); err != nil {
@@ -133,29 +126,29 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 	case config.StatusDisabled, config.StatusNotExists:
 		// Intentionally not catching up with new ConfigHash (if any),
 		// since it's not actionable and also simpler.
-		switch s.Status {
-		case prjmanager.Status_STATUS_UNSPECIFIED:
+		switch s.PB.GetStatus() {
+		case prjpb.Status_STATUS_UNSPECIFIED:
 			// Project entity doesn't exist. No need to create it.
 			return s, nil, nil
-		case prjmanager.Status_STOPPED:
+		case prjpb.Status_STOPPED:
 			return s, nil, nil
-		case prjmanager.Status_STARTED:
+		case prjpb.Status_STARTED:
 			s = s.cloneShallow()
-			s.Status = prjmanager.Status_STOPPING
+			s.PB.Status = prjpb.Status_STOPPING
 			fallthrough
-		case prjmanager.Status_STOPPING:
+		case prjpb.Status_STOPPING:
 			if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 				return nil, nil, err
 			}
 			runs := s.PB.IncompleteRuns()
 			if len(runs) == 0 {
 				s = s.cloneShallow()
-				s.Status = prjmanager.Status_STOPPED
+				s.PB.Status = prjpb.Status_STOPPED
 				return s, nil, nil
 			}
 			return s, &CancelIncompleteRuns{RunIDs: s.PB.IncompleteRuns()}, nil
 		default:
-			panic(fmt.Errorf("unexpected project status: %d", s.Status))
+			panic(fmt.Errorf("unexpected project status: %d", s.PB.GetStatus()))
 		}
 	default:
 		panic(fmt.Errorf("unexpected config status: %d", meta.Status))
@@ -210,7 +203,7 @@ func (s *State) OnRunsCreated(ctx context.Context, created common.RunIDs) (*Stat
 		return s, nil, nil
 	}
 
-	if s.Status == prjmanager.Status_STOPPED {
+	if s.PB.GetStatus() == prjpb.Status_STOPPED {
 		// This must not happen. Log, but do nothing.
 		logging.Errorf(ctx, "CRITICAL: RunCreated %s events on STOPPED Project Manager", created)
 		return s, nil, nil
@@ -229,8 +222,8 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 	// This is rarely a noop, so assume state is modified for simplicity.
 	s = s.cloneShallow()
 	incompleteRunsCount := s.removeFinishedRuns(finished.Set())
-	if s.Status == prjmanager.Status_STOPPING && incompleteRunsCount == 0 {
-		s.Status = prjmanager.Status_STOPPED
+	if s.PB.GetStatus() == prjpb.Status_STOPPING && incompleteRunsCount == 0 {
+		s.PB.Status = prjpb.Status_STOPPED
 		return s, nil, nil
 	}
 	return s, nil, nil
@@ -242,7 +235,7 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 func (s *State) OnCLsUpdated(ctx context.Context, events []*prjpb.CLUpdated) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
-	if s.Status != prjmanager.Status_STARTED {
+	if s.PB.GetStatus() != prjpb.Status_STARTED {
 		// Ignore all incoming CL events. If PM is re-enabled,
 		// then first full poll will force re-sending of OnCLsUpdated event for all
 		// still interesting CLs.

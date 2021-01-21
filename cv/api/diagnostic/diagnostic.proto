@@ -20,7 +20,6 @@ package diagnostic;
 option go_package = "go.chromium.org/luci/cv/api/diagnostic;diagnosticpb";
 
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
-import "go.chromium.org/luci/cv/internal/prjmanager/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/events.proto";
 
@@ -47,11 +46,8 @@ message GetProjectRequest {
 // and each event comes from its own entity and depends on yet another tombstone
 // entity.
 message GetProjectResponse {
-  cv.prjmanager.Status status = 1;
-  string config_hash = 2;
-  // PState's config_hash is not set.
-  cv.prjmanager.prjpb.PState pstate = 3;
-  repeated cv.prjmanager.prjpb.Event events = 4;
+  cv.prjmanager.prjpb.PState state = 1;
+  repeated cv.prjmanager.prjpb.Event events = 2;
 }
 
 message GetCLRequest{
