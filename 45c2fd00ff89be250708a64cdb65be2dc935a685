@@ -127,6 +127,30 @@
       },
       "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f2cdbf2_c067f3c1",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003232
+      },
+      "writtenOn": "2021-01-21T21:42:42Z",
+      "side": 1,
+      "message": "It is intentionality-based, and you are right that intentionality here is fuzzy.\n\nThe primary intent (I believe) is that a \"disabled\" test is only temporarily disabled and we are aiming to (re-)enable it.\n\nThis is different from a test that we never expect to pass or explicitly never want to run (e.g., what we used to call NeverFixTests in the web tests).",
+      "parentUuid": "006ec5c6_b32aa4cc",
+      "range": {
+        "startLine": 126,
+        "startChar": 46,
+        "endLine": 127,
+        "endChar": 20
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
