@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
 // UpdateConfig tells ProjectManager to read and update to newest ProjectConfig
@@ -33,9 +33,9 @@ import (
 //
 // Results in stopping ProjectManager if ProjectConfig got disabled or deleted.
 func UpdateConfig(ctx context.Context, luciProject string) error {
-	return send(ctx, luciProject, &internal.Event{
-		Event: &internal.Event_NewConfig{
-			NewConfig: &internal.NewConfig{},
+	return send(ctx, luciProject, &prjpb.Event{
+		Event: &prjpb.Event_NewConfig{
+			NewConfig: &prjpb.NewConfig{},
 		},
 	})
 }
@@ -43,18 +43,18 @@ func UpdateConfig(ctx context.Context, luciProject string) error {
 // Poke tells ProjectManager to poke all downstream actors and check its own
 // state.
 func Poke(ctx context.Context, luciProject string) error {
-	return send(ctx, luciProject, &internal.Event{
-		Event: &internal.Event_Poke{
-			Poke: &internal.Poke{},
+	return send(ctx, luciProject, &prjpb.Event{
+		Event: &prjpb.Event_Poke{
+			Poke: &prjpb.Poke{},
 		},
 	})
 }
 
 // NotifyCLUpdated tells ProjectManager to check latest version of a given CL.
 func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
-	return send(ctx, luciProject, &internal.Event{
-		Event: &internal.Event_ClUpdated{
-			ClUpdated: &internal.CLUpdated{
+	return send(ctx, luciProject, &prjpb.Event{
+		Event: &prjpb.Event_ClUpdated{
+			ClUpdated: &prjpb.CLUpdated{
 				Clid:     int64(clid),
 				Eversion: int64(eversion),
 			},
@@ -79,9 +79,9 @@ func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, 
 //     RunCreation, then the existing TQ task running ProjectManager will be
 //     retried. So once again there is no need to create a TQ task.
 func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
-	return sendWithoutDispatch(ctx, runID.LUCIProject(), &internal.Event{
-		Event: &internal.Event_RunCreated{
-			RunCreated: &internal.RunCreated{
+	return sendWithoutDispatch(ctx, runID.LUCIProject(), &prjpb.Event{
+		Event: &prjpb.Event_RunCreated{
+			RunCreated: &prjpb.RunCreated{
 				RunId: string(runID),
 			},
 		},
@@ -90,23 +90,23 @@ func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
 
 // NotifyRunFinished tells ProjectManager that a run has finalized its state.
 func NotifyRunFinished(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID.LUCIProject(), &internal.Event{
-		Event: &internal.Event_RunFinished{
-			RunFinished: &internal.RunFinished{
+	return send(ctx, runID.LUCIProject(), &prjpb.Event{
+		Event: &prjpb.Event_RunFinished{
+			RunFinished: &prjpb.RunFinished{
 				RunId: string(runID),
 			},
 		},
 	})
 }
 
-func send(ctx context.Context, luciProject string, e *internal.Event) error {
+func send(ctx context.Context, luciProject string, e *prjpb.Event) error {
 	if err := sendWithoutDispatch(ctx, luciProject, e); err != nil {
 		return err
 	}
-	return internal.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
+	return prjpb.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
 }
 
-func sendWithoutDispatch(ctx context.Context, luciProject string, e *internal.Event) error {
+func sendWithoutDispatch(ctx context.Context, luciProject string, e *prjpb.Event) error {
 	value, err := proto.Marshal(e)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()

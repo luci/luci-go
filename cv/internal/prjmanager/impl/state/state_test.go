@@ -40,7 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -138,7 +138,7 @@ func TestUpdateConfig(t *testing.T) {
 				RunIDs:   nil,
 			})
 			So(s1.Status, ShouldEqual, prjmanager.Status_STARTED)
-			So(s1.PB, ShouldResembleProto, &internal.PState{
+			So(s1.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
@@ -169,38 +169,38 @@ func TestUpdateConfig(t *testing.T) {
 		cl202 := ct.runCLUpdater(ctx, 202)
 		cl203 := ct.runCLUpdater(ctx, 203)
 
-		s1 := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+		s1 := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
 			LuciProject:      ct.lProject,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
-			Pcls: []*internal.PCL{
+			Pcls: []*prjpb.PCL{
 				{
 					Clid:               int64(cl101.ID),
 					Eversion:           1,
 					ConfigGroupIndexes: []int32{0}, // g0
-					Status:             internal.PCL_OK,
+					Status:             prjpb.PCL_OK,
 					Trigger:            trigger.Find(ci101),
 				},
 				{
 					Clid:               int64(cl202.ID),
 					Eversion:           1,
 					ConfigGroupIndexes: []int32{1}, // g1
-					Status:             internal.PCL_OK,
+					Status:             prjpb.PCL_OK,
 					Trigger:            trigger.Find(ci202),
 				},
 				{
 					Clid:               int64(cl203.ID),
 					Eversion:           1,
 					ConfigGroupIndexes: []int32{1}, // g1
-					Status:             internal.PCL_OK,
+					Status:             prjpb.PCL_OK,
 					Trigger:            trigger.Find(ci203),
 					Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 				},
 			},
-			Components: []*internal.Component{
+			Components: []*prjpb.Component{
 				{
 					Clids: []int64{int64(cl101.ID)},
-					Pruns: []*internal.PRun{
+					Pruns: []*prjpb.PRun{
 						{
 							Id:    ct.lProject + "/" + "1111-v1-beef",
 							Clids: []int64{int64(cl101.ID)},
@@ -232,16 +232,16 @@ func TestUpdateConfig(t *testing.T) {
 				RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
 			})
 			So(s2.Status, ShouldEqual, prjmanager.Status_STARTED)
-			So(s2.PB, ShouldResembleProto, &internal.PState{
+			So(s2.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
 				ConfigHash:       meta2.Hash(), // changed
 				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*internal.PCL{
+				Pcls: []*prjpb.PCL{
 					{
 						Clid:               int64(cl101.ID),
 						Eversion:           1,
 						ConfigGroupIndexes: []int32{0, 1}, // +g1, because g1 is no longer "fallback: YES"
-						Status:             internal.PCL_OK,
+						Status:             prjpb.PCL_OK,
 						Trigger:            trigger.Find(ci101),
 					},
 					pb1.Pcls[1], // #202 didn't change.
@@ -270,15 +270,15 @@ func TestUpdateConfig(t *testing.T) {
 				// No runs to notify.
 			})
 			So(s2.Status, ShouldEqual, prjmanager.Status_STARTED)
-			So(s2.PB, ShouldResembleProto, &internal.PState{
+			So(s2.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
 				ConfigHash:       meta2.Hash(), // changed
 				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*internal.PCL{
+				Pcls: []*prjpb.PCL{
 					{
 						Clid:     int64(cl101.ID),
 						Eversion: 1,
-						Status:   internal.PCL_DELETED,
+						Status:   prjpb.PCL_DELETED,
 					},
 					pb1.Pcls[1], // #202 didn't change.
 					pb1.Pcls[2], // #203 didn't change.
@@ -321,7 +321,7 @@ func TestUpdateConfig(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Status == OK", func() {
-				expected := &internal.PCL{
+				expected := &prjpb.PCL{
 					Clid:               int64(cl101.ID),
 					Eversion:           int64(cl101.EVersion),
 					ConfigGroupIndexes: []int32{0}, // g0
@@ -348,19 +348,19 @@ func TestUpdateConfig(t *testing.T) {
 
 			Convey("snapshot from diff project requires waiting", func() {
 				cl101.Snapshot.LuciProject = "another"
-				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &internal.PCL{
+				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
 					Clid:     int64(cl101.ID),
 					Eversion: int64(cl101.EVersion),
-					Status:   internal.PCL_UNKNOWN,
+					Status:   prjpb.PCL_UNKNOWN,
 				})
 			})
 
 			Convey("CL from diff project is unwatched", func() {
 				s1.PB.LuciProject = "another"
-				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &internal.PCL{
+				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
 					Clid:     int64(cl101.ID),
 					Eversion: int64(cl101.EVersion),
-					Status:   internal.PCL_UNWATCHED,
+					Status:   prjpb.PCL_UNWATCHED,
 				})
 			})
 
@@ -371,10 +371,10 @@ func TestUpdateConfig(t *testing.T) {
 						ConfigGroupIds: []string{"g"},
 						Name:           "another",
 					})
-				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &internal.PCL{
+				So(s1.makePCL(ctx, cl101), ShouldResembleProto, &prjpb.PCL{
 					Clid:     int64(cl101.ID),
 					Eversion: int64(cl101.EVersion),
-					Status:   internal.PCL_UNWATCHED,
+					Status:   prjpb.PCL_UNWATCHED,
 				})
 			})
 		})
@@ -420,7 +420,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		cl202 := ct.runCLUpdater(ctx, 202)
 		cl203 := ct.runCLUpdater(ctx, 203)
 
-		s0 := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+		s0 := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
 			LuciProject:      ct.lProject,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
@@ -430,29 +430,29 @@ func TestOnCLsUpdated(t *testing.T) {
 		// NOTE: conversion of individual CL to PCL is in TestUpdateConfig.
 
 		Convey("One simple CL", func() {
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*internal.CLUpdated{
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
 				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
 			})
 			So(err, ShouldBeNil)
 			So(s0.PB, ShouldResembleProto, pb0)
 			So(sideEffect, ShouldBeNil)
-			So(s1.PB, ShouldResembleProto, &internal.PState{
+			So(s1.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*internal.PCL{
+				Pcls: []*prjpb.PCL{
 					{
 						Clid:               int64(cl101.ID),
 						Eversion:           1,
 						ConfigGroupIndexes: []int32{0}, // g0
-						Status:             internal.PCL_OK,
+						Status:             prjpb.PCL_OK,
 						Trigger:            trigger.Find(ci101),
 					},
 				},
 				DirtyComponents: true,
 			})
 			Convey("Noop based on EVersion", func() {
-				s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*internal.CLUpdated{
+				s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
 					{Clid: int64(cl101.ID), Eversion: 1}, // already known
 				})
 				So(err, ShouldBeNil)
@@ -463,7 +463,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			Convey("Removes duplicates", func() {
 				pb := backupPB(s1)
 				bumpEVersion(ctx, cl101, 10)
-				s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*internal.CLUpdated{
+				s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
 					{Clid: int64(cl101.ID), Eversion: 5},
 					{Clid: int64(cl101.ID), Eversion: 7},
 				})
@@ -476,22 +476,22 @@ func TestOnCLsUpdated(t *testing.T) {
 		})
 
 		Convey("One CL with a yet unknown dep", func() {
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*internal.CLUpdated{
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
 				{Clid: int64(cl203.ID), Eversion: 1},
 			})
 			So(err, ShouldBeNil)
 			So(s0.PB, ShouldResembleProto, pb0)
 			So(sideEffect, ShouldBeNil)
-			So(s1.PB, ShouldResembleProto, &internal.PState{
+			So(s1.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*internal.PCL{
+				Pcls: []*prjpb.PCL{
 					{
 						Clid:               int64(cl203.ID),
 						Eversion:           1,
 						ConfigGroupIndexes: []int32{1}, // g1
-						Status:             internal.PCL_OK,
+						Status:             prjpb.PCL_OK,
 						Trigger:            trigger.Find(ci203),
 						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
@@ -501,23 +501,23 @@ func TestOnCLsUpdated(t *testing.T) {
 		})
 
 		Convey("PCLs must remain sorted", func() {
-			s1 := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+			s1 := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
 				LuciProject:      ct.lProject,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*internal.PCL{
+				Pcls: []*prjpb.PCL{
 					{
 						Clid:               int64(cl101.ID),
 						Eversion:           1,
 						ConfigGroupIndexes: []int32{0}, // g0
-						Status:             internal.PCL_OK,
+						Status:             prjpb.PCL_OK,
 						Trigger:            trigger.Find(ci101),
 					},
 					{
 						Clid:               int64(cl203.ID),
 						Eversion:           1,
 						ConfigGroupIndexes: []int32{1}, // g1
-						Status:             internal.PCL_OK,
+						Status:             prjpb.PCL_OK,
 						Trigger:            trigger.Find(ci203),
 						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
@@ -525,7 +525,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			})
 			pb1 := backupPB(s1)
 			bumpEVersion(ctx, cl203, 3)
-			s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*internal.CLUpdated{
+			s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
 				{Clid: 404, Eversion: 404},                               // doesn't even exist
 				{Clid: int64(cl202.ID), Eversion: int64(cl202.EVersion)}, // new
 				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)}, // unchanged
@@ -534,31 +534,31 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(s1.PB, ShouldResembleProto, pb1)
 			So(sideEffect, ShouldBeNil)
-			So(s2.PB, ShouldResembleProto, &internal.PState{
+			So(s2.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*internal.PCL{
+				Pcls: []*prjpb.PCL{
 					s1.PB.GetPcls()[0], // 101 is unchanged
 					{ // new & inserted at the right spot
 						Clid:               int64(cl202.ID),
 						Eversion:           1,
 						ConfigGroupIndexes: []int32{1}, // g1
-						Status:             internal.PCL_OK,
+						Status:             prjpb.PCL_OK,
 						Trigger:            trigger.Find(ci202),
 					},
 					{ // updated
 						Clid:               int64(cl203.ID),
 						Eversion:           3,
 						ConfigGroupIndexes: []int32{1}, // g1
-						Status:             internal.PCL_OK,
+						Status:             prjpb.PCL_OK,
 						Trigger:            trigger.Find(ci203),
 						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 					{
 						Clid:     404,
 						Eversion: 0,
-						Status:   internal.PCL_DELETED,
+						Status:   prjpb.PCL_DELETED,
 					},
 				},
 				DirtyComponents: true,
@@ -567,7 +567,7 @@ func TestOnCLsUpdated(t *testing.T) {
 
 		Convey("non-STARTED project ignores all CL events", func() {
 			s0.Status = prjmanager.Status_STOPPING
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*internal.CLUpdated{
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
 				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
 			})
 			So(err, ShouldBeNil)
@@ -597,7 +597,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: []common.CLID{709, 707, 708}}
 		So(datastore.Put(ctx, run1, run789), ShouldBeNil)
 
-		s1 := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+		s1 := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
 			LuciProject:      ct.lProject,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
@@ -605,16 +605,16 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			// the test for brevity, even though valid State must have PCLs covering
 			// all components.
 			Pcls: nil,
-			Components: []*internal.Component{
+			Components: []*prjpb.Component{
 				{
 					Clids: []int64{101},
-					Pruns: []*internal.PRun{{Id: ct.lProject + "/101-aaa", Clids: []int64{1}}},
+					Pruns: []*prjpb.PRun{{Id: ct.lProject + "/101-aaa", Clids: []int64{1}}},
 				},
 				{
 					Clids: []int64{202, 203, 204},
 				},
 			},
-			CreatedPruns: []*internal.PRun{
+			CreatedPruns: []*prjpb.PRun{
 				{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}},
 			},
 		})
@@ -666,15 +666,15 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pb1, ShouldResembleProto, s1.PB)
 			So(sideEffect, ShouldBeNil)
-			So(s2.PB, ShouldResembleProto, &internal.PState{
+			So(s2.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
-				Components: []*internal.Component{
+				Components: []*prjpb.Component{
 					s1.PB.GetComponents()[0], // 101 is unchanged
 					{
 						Clids: []int64{202, 203, 204},
-						Pruns: []*internal.PRun{
+						Pruns: []*prjpb.PRun{
 							// Runs & CLs must be sorted by their respective IDs.
 							{Id: string(run2.ID), Clids: []int64{202}},
 							{Id: string(run3.ID), Clids: []int64{203}},
@@ -684,7 +684,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						Dirty: true,
 					},
 				},
-				CreatedPruns: []*internal.PRun{
+				CreatedPruns: []*prjpb.PRun{
 					{Id: string(runX.ID), Clids: []int64{101, 202, 203, 204, 404}},
 					{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}}, // unchanged
 				},
@@ -702,11 +702,11 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
 				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPING)
-				So(s2.PB, ShouldResembleProto, &internal.PState{
+				So(s2.PB, ShouldResembleProto, &prjpb.PState{
 					LuciProject:      ct.lProject,
 					ConfigHash:       meta.Hash(),
 					ConfigGroupNames: []string{"g0", "g1"},
-					Components: []*internal.Component{
+					Components: []*prjpb.Component{
 						{
 							Clids: []int64{101},
 							Pruns: nil,  // removed
@@ -724,7 +724,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
 				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPING)
-				So(s2.PB, ShouldResembleProto, &internal.PState{
+				So(s2.PB, ShouldResembleProto, &prjpb.PState{
 					LuciProject:      ct.lProject,
 					ConfigHash:       meta.Hash(),
 					ConfigGroupNames: []string{"g0", "g1"},
@@ -742,12 +742,12 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
 				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPED)
-				So(s2.PB, ShouldResembleProto, &internal.PState{
+				So(s2.PB, ShouldResembleProto, &prjpb.PState{
 					LuciProject:      ct.lProject,
 					ConfigHash:       meta.Hash(),
 					ConfigGroupNames: []string{"g0", "g1"},
 					Pcls:             s1.PB.GetPcls(),
-					Components: []*internal.Component{
+					Components: []*prjpb.Component{
 						{Clids: []int64{101}, Dirty: true},
 						s1.PB.GetComponents()[1], // unchanged.
 					},
@@ -863,7 +863,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		}
 		So(datastore.Put(ctx, run4, run56, run789), ShouldBeNil)
 
-		state := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+		state := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
 			LuciProject:      ct.lProject,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
@@ -871,25 +871,25 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		})
 
 		Convey("just categorization", func() {
-			state.PB.Pcls = sortPCLs([]*internal.PCL{
+			state.PB.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[5]),
 				defaultPCL(cls[6]),
 				defaultPCL(cls[7]),
 				defaultPCL(cls[8]),
 				defaultPCL(cls[9]),
-				{Clid: 12, Eversion: 1, Status: internal.PCL_UNKNOWN},
+				{Clid: 12, Eversion: 1, Status: prjpb.PCL_UNKNOWN},
 			})
-			state.PB.Components = []*internal.Component{
+			state.PB.Components = []*prjpb.Component{
 				{
 					Clids: i64sorted(cls[5].ID, cls[6].ID),
-					Pruns: []*internal.PRun{internal.MakePRun(run56)},
+					Pruns: []*prjpb.PRun{prjpb.MakePRun(run56)},
 				},
 				// Simulate 9 previously not depending on 7, 8.
 				{Clids: i64sorted(cls[7].ID, cls[8].ID)},
 				{Clids: i64s(cls[9].ID)},
 			}
 			// 789 doesn't match any 1 component, even though 7,8,9 CLs are in PCLs.
-			state.PB.CreatedPruns = []*internal.PRun{internal.MakePRun(run789)}
+			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(run789)}
 			pbBefore := backupPB(state)
 
 			cat := state.categorizeCLs()
@@ -904,10 +904,10 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		})
 
 		Convey("loads unloaded dependencies and active CLs without recursion", func() {
-			state.PB.Pcls = []*internal.PCL{
+			state.PB.Pcls = []*prjpb.PCL{
 				defaultPCL(cls[3]), // depends on 2, which in turns depends on 1.
 			}
-			state.PB.CreatedPruns = []*internal.PRun{internal.MakePRun(run56)}
+			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(run56)}
 			pb := backupPB(state)
 
 			cat := state.categorizeCLs()
@@ -924,7 +924,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 				unused:   clidsSet{},
 				unloaded: mkClidsSet(cls[1]),
 			})
-			pb.Pcls = sortPCLs([]*internal.PCL{
+			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[2]),
 				defaultPCL(cls[3]),
 				defaultPCL(cls[5]),
@@ -944,7 +944,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 				CLs: []common.CLID{cls[13].ID, cls[11].ID},
 			}
 			So(datastore.Put(ctx, runStale), ShouldBeNil)
-			state.PB.CreatedPruns = []*internal.PRun{internal.MakePRun(runStale)}
+			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
 			pb := backupPB(state)
 
 			cat := state.categorizeCLs()
@@ -962,12 +962,12 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 				unused:   clidsSet{},
 				unloaded: mkClidsSet(cls[12]),
 			})
-			pb.Pcls = sortPCLs([]*internal.PCL{
+			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[13]),
 				{
 					Clid:     int64(cls[11].ID),
 					Eversion: int64(cls[11].EVersion),
-					Status:   internal.PCL_UNWATCHED,
+					Status:   prjpb.PCL_UNWATCHED,
 					Deps:     nil, // not visible to this project
 					Trigger:  nil, // not visible to this project
 				},
@@ -984,7 +984,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 				CLs: []common.CLID{cls[4].ID, 404},
 			}
 			So(datastore.Put(ctx, runStale), ShouldBeNil)
-			state.PB.CreatedPruns = []*internal.PRun{internal.MakePRun(runStale)}
+			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
 			pb := backupPB(state)
 
 			cat := state.categorizeCLs()
@@ -1001,12 +1001,12 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 				unused:   clidsSet{},
 				unloaded: clidsSet{},
 			})
-			pb.Pcls = sortPCLs([]*internal.PCL{
+			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[4]),
 				{
 					Clid:     404,
 					Eversion: 0,
-					Status:   internal.PCL_DELETED,
+					Status:   prjpb.PCL_DELETED,
 				},
 			})
 			So(state.PB, ShouldResembleProto, pb)
@@ -1029,7 +1029,7 @@ func TestRepartition(t *testing.T) {
 	t.Parallel()
 
 	Convey("repartition works", t, func() {
-		state := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+		state := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
 			DirtyComponents: true,
 		})
 		cat := &categorizedCLs{
@@ -1052,12 +1052,12 @@ func TestRepartition(t *testing.T) {
 		Convey("nothing to do, except resetting DirtyComponents", func() {
 			Convey("totally empty", func() {
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &internal.PState{})
+				So(state.PB, ShouldResembleProto, &prjpb.PState{})
 			})
 			Convey("1 active CL in 1 component", func() {
 				cat.active.resetI64(1)
-				state.PB.Components = []*internal.Component{{Clids: []int64{1}}}
-				state.PB.Pcls = []*internal.PCL{{Clid: 1}}
+				state.PB.Components = []*prjpb.Component{{Clids: []int64{1}}}
+				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 				pb := backupPB(state)
 
 				state.repartition(cat)
@@ -1066,12 +1066,12 @@ func TestRepartition(t *testing.T) {
 			})
 			Convey("1 active CL in 1 dirty component with 1 Run", func() {
 				cat.active.resetI64(1)
-				state.PB.Components = []*internal.Component{{
+				state.PB.Components = []*prjpb.Component{{
 					Clids: []int64{1},
-					Pruns: []*internal.PRun{{Clids: []int64{1}, Id: "id"}},
+					Pruns: []*prjpb.PRun{{Clids: []int64{1}, Id: "id"}},
 					Dirty: true,
 				}}
-				state.PB.Pcls = []*internal.PCL{{Clid: 1}}
+				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 				pb := backupPB(state)
 
 				state.repartition(cat)
@@ -1083,19 +1083,19 @@ func TestRepartition(t *testing.T) {
 		Convey("Compacts out unused PCLs", func() {
 			cat.active.resetI64(1, 3)
 			cat.unused.resetI64(2)
-			state.PB.Pcls = []*internal.PCL{
+			state.PB.Pcls = []*prjpb.PCL{
 				{Clid: 1},
 				{Clid: 2},
 				{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
 			}
 
 			state.repartition(cat)
-			So(state.PB, ShouldResembleProto, &internal.PState{
-				Pcls: []*internal.PCL{
+			So(state.PB, ShouldResembleProto, &prjpb.PState{
+				Pcls: []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
 				},
-				Components: []*internal.Component{{
+				Components: []*prjpb.Component{{
 					Clids: []int64{1, 3},
 					Dirty: true,
 				}},
@@ -1105,12 +1105,12 @@ func TestRepartition(t *testing.T) {
 		Convey("Creates new components", func() {
 			Convey("1 active CL converted into 1 new dirty component", func() {
 				cat.active.resetI64(1)
-				state.PB.Pcls = []*internal.PCL{{Clid: 1}}
+				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &internal.PState{
-					Pcls: []*internal.PCL{{Clid: 1}},
-					Components: []*internal.Component{{
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
+					Pcls: []*prjpb.PCL{{Clid: 1}},
+					Components: []*prjpb.Component{{
 						Clids: []int64{1},
 						Dirty: true,
 					}},
@@ -1118,7 +1118,7 @@ func TestRepartition(t *testing.T) {
 			})
 			Convey("Deps respected during conversion", func() {
 				cat.active.resetI64(1, 2, 3)
-				state.PB.Pcls = []*internal.PCL{
+				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
 					{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
@@ -1127,9 +1127,9 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				So(state.PB, ShouldResembleProto, &internal.PState{
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
 					Pcls: orig.Pcls,
-					Components: []*internal.Component{
+					Components: []*prjpb.Component{
 						{
 							Clids: []int64{1, 3},
 							Dirty: true,
@@ -1146,13 +1146,13 @@ func TestRepartition(t *testing.T) {
 		Convey("Components splitting works", func() {
 			Convey("Crossing-over 12, 34 => 13, 24", func() {
 				cat.active.resetI64(1, 2, 3, 4)
-				state.PB.Pcls = []*internal.PCL{
+				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
 					{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
 					{Clid: 4, Deps: []*changelist.Dep{{Clid: 2}}},
 				}
-				state.PB.Components = []*internal.Component{
+				state.PB.Components = []*prjpb.Component{
 					{Clids: []int64{1, 2}},
 					{Clids: []int64{3, 4}},
 				}
@@ -1160,9 +1160,9 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				So(state.PB, ShouldResembleProto, &internal.PState{
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
 					Pcls: orig.Pcls,
-					Components: []*internal.Component{
+					Components: []*prjpb.Component{
 						{Clids: []int64{1, 3}, Dirty: true},
 						{Clids: []int64{2, 4}, Dirty: true},
 					},
@@ -1172,7 +1172,7 @@ func TestRepartition(t *testing.T) {
 				cat.active.resetI64(1, 2, 3)
 				cat.deps.resetI64(4, 5)
 				cat.unloaded.resetI64(5)
-				state.PB.Pcls = []*internal.PCL{
+				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1, Deps: []*changelist.Dep{{Clid: 3}, {Clid: 4}, {Clid: 5}}},
 					{Clid: 2, Deps: []*changelist.Dep{{Clid: 4}, {Clid: 5}}},
 					{Clid: 3},
@@ -1182,9 +1182,9 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				So(state.PB, ShouldResembleProto, &internal.PState{
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
 					Pcls: orig.Pcls,
-					Components: []*internal.Component{
+					Components: []*prjpb.Component{
 						{Clids: []int64{1, 3}, Dirty: true},
 						{Clids: []int64{2}, Dirty: true},
 					},
@@ -1195,21 +1195,21 @@ func TestRepartition(t *testing.T) {
 		Convey("CreatedRuns are moved into components", func() {
 			Convey("Simple", func() {
 				cat.active.resetI64(1, 2)
-				state.PB.Pcls = []*internal.PCL{
+				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
 				}
-				state.PB.CreatedPruns = []*internal.PRun{{Clids: []int64{1, 2}, Id: "id"}}
+				state.PB.CreatedPruns = []*prjpb.PRun{{Clids: []int64{1, 2}, Id: "id"}}
 				orig := backupPB(state)
 
 				state.repartition(cat)
-				So(state.PB, ShouldResembleProto, &internal.PState{
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
 					CreatedPruns: nil,
 					Pcls:         orig.Pcls,
-					Components: []*internal.Component{
+					Components: []*prjpb.Component{
 						{
 							Clids: []int64{1, 2},
-							Pruns: []*internal.PRun{{Clids: []int64{1, 2}, Id: "id"}},
+							Pruns: []*prjpb.PRun{{Clids: []int64{1, 2}, Id: "id"}},
 							Dirty: true,
 						},
 					},
@@ -1217,26 +1217,26 @@ func TestRepartition(t *testing.T) {
 			})
 			Convey("Force-merge 2 existing components", func() {
 				cat.active.resetI64(1, 2)
-				state.PB.Pcls = []*internal.PCL{
+				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2},
 				}
-				state.PB.Components = []*internal.Component{
-					{Clids: []int64{1}, Pruns: []*internal.PRun{{Clids: []int64{1}, Id: "1"}}},
-					{Clids: []int64{2}, Pruns: []*internal.PRun{{Clids: []int64{2}, Id: "2"}}},
+				state.PB.Components = []*prjpb.Component{
+					{Clids: []int64{1}, Pruns: []*prjpb.PRun{{Clids: []int64{1}, Id: "1"}}},
+					{Clids: []int64{2}, Pruns: []*prjpb.PRun{{Clids: []int64{2}, Id: "2"}}},
 				}
-				state.PB.CreatedPruns = []*internal.PRun{{Clids: []int64{1, 2}, Id: "12"}}
+				state.PB.CreatedPruns = []*prjpb.PRun{{Clids: []int64{1, 2}, Id: "12"}}
 				orig := backupPB(state)
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				So(state.PB, ShouldResembleProto, &internal.PState{
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
 					CreatedPruns: nil,
 					Pcls:         orig.Pcls,
-					Components: []*internal.Component{
+					Components: []*prjpb.Component{
 						{
 							Clids: []int64{1, 2},
-							Pruns: []*internal.PRun{ // must be sorted by ID
+							Pruns: []*prjpb.PRun{ // must be sorted by ID
 								{Clids: []int64{1}, Id: "1"},
 								{Clids: []int64{1, 2}, Id: "12"},
 								{Clids: []int64{2}, Id: "2"},
@@ -1256,7 +1256,7 @@ func TestRepartition(t *testing.T) {
 			cat.deps.resetI64(7)
 			cat.unused.resetI64(3)
 			cat.unloaded.resetI64(7)
-			state.PB.Pcls = []*internal.PCL{
+			state.PB.Pcls = []*prjpb.PCL{
 				{Clid: 1},
 				{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
 				{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}, {Clid: 2}}}, // but unused
@@ -1264,20 +1264,20 @@ func TestRepartition(t *testing.T) {
 				{Clid: 5, Deps: []*changelist.Dep{{Clid: 4}}},
 				{Clid: 6, Deps: []*changelist.Dep{{Clid: 7}}},
 			}
-			state.PB.Components = []*internal.Component{
-				{Clids: []int64{1, 2, 3}, Pruns: []*internal.PRun{{Clids: []int64{1}, Id: "1"}}},
-				{Clids: []int64{4}, Pruns: []*internal.PRun{{Clids: []int64{4}, Id: "4"}}},
-				{Clids: []int64{5}, Pruns: []*internal.PRun{{Clids: []int64{5}, Id: "5"}}},
+			state.PB.Components = []*prjpb.Component{
+				{Clids: []int64{1, 2, 3}, Pruns: []*prjpb.PRun{{Clids: []int64{1}, Id: "1"}}},
+				{Clids: []int64{4}, Pruns: []*prjpb.PRun{{Clids: []int64{4}, Id: "4"}}},
+				{Clids: []int64{5}, Pruns: []*prjpb.PRun{{Clids: []int64{5}, Id: "5"}}},
 			}
-			state.PB.CreatedPruns = []*internal.PRun{
+			state.PB.CreatedPruns = []*prjpb.PRun{
 				{Clids: []int64{4, 5}, Id: "45"}, // so, merge component with {4}, {5}.
 				{Clids: []int64{6}, Id: "6"},
 			}
 
 			state.repartition(cat)
 			sortByFirstCL(state.PB.Components)
-			So(state.PB, ShouldResembleProto, &internal.PState{
-				Pcls: []*internal.PCL{
+			So(state.PB, ShouldResembleProto, &prjpb.PState{
+				Pcls: []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
 					// 3 was deleted
@@ -1285,14 +1285,14 @@ func TestRepartition(t *testing.T) {
 					{Clid: 5, Deps: []*changelist.Dep{{Clid: 4}}},
 					{Clid: 6, Deps: []*changelist.Dep{{Clid: 7}}},
 				},
-				Components: []*internal.Component{
-					{Clids: []int64{1, 2}, Dirty: true, Pruns: []*internal.PRun{{Clids: []int64{1}, Id: "1"}}},
-					{Clids: []int64{4, 5}, Dirty: true, Pruns: []*internal.PRun{
+				Components: []*prjpb.Component{
+					{Clids: []int64{1, 2}, Dirty: true, Pruns: []*prjpb.PRun{{Clids: []int64{1}, Id: "1"}}},
+					{Clids: []int64{4, 5}, Dirty: true, Pruns: []*prjpb.PRun{
 						{Clids: []int64{4}, Id: "4"},
 						{Clids: []int64{4, 5}, Id: "45"},
 						{Clids: []int64{5}, Id: "5"},
 					}},
-					{Clids: []int64{6}, Dirty: true, Pruns: []*internal.PRun{{Clids: []int64{6}, Id: "6"}}},
+					{Clids: []int64{6}, Dirty: true, Pruns: []*prjpb.PRun{{Clids: []int64{6}, Id: "6"}}},
 				},
 			})
 		})
@@ -1301,8 +1301,8 @@ func TestRepartition(t *testing.T) {
 
 // backupPB returns a deep copy of State.PB for future assertion that State
 // wasn't modified.
-func backupPB(s *State) *internal.PState {
-	ret := &internal.PState{}
+func backupPB(s *State) *prjpb.PState {
+	ret := &prjpb.PState{}
 	proto.Merge(ret, s.PB)
 	return ret
 }
@@ -1315,12 +1315,12 @@ func bumpEVersion(ctx context.Context, cl *changelist.CL, desired int) {
 	So(datastore.Put(ctx, cl), ShouldBeNil)
 }
 
-func defaultPCL(cl *changelist.CL) *internal.PCL {
-	p := &internal.PCL{
+func defaultPCL(cl *changelist.CL) *prjpb.PCL {
+	p := &prjpb.PCL{
 		Clid:               int64(cl.ID),
 		Eversion:           int64(cl.EVersion),
 		ConfigGroupIndexes: []int32{0},
-		Status:             internal.PCL_OK,
+		Status:             prjpb.PCL_OK,
 		Deps:               cl.Snapshot.GetDeps(),
 	}
 	ci := cl.Snapshot.GetGerrit().GetInfo()
@@ -1330,7 +1330,7 @@ func defaultPCL(cl *changelist.CL) *internal.PCL {
 	return p
 }
 
-func customPCL(cl *changelist.CL, override *internal.PCL) *internal.PCL {
+func customPCL(cl *changelist.CL, override *prjpb.PCL) *prjpb.PCL {
 	p := defaultPCL(cl)
 	proto.Merge(p, override)
 	return p
@@ -1359,7 +1359,7 @@ func i64sorted(vs ...interface{}) []int64 {
 	return res
 }
 
-func sortPCLs(vs []*internal.PCL) []*internal.PCL {
+func sortPCLs(vs []*prjpb.PCL) []*prjpb.PCL {
 	sort.Slice(vs, func(i, j int) bool { return vs[i].GetClid() < vs[j].GetClid() })
 	return vs
 }
@@ -1372,7 +1372,7 @@ func mkClidsSet(cls ...*changelist.CL) clidsSet {
 	return res
 }
 
-func sortByFirstCL(cs []*internal.Component) []*internal.Component {
+func sortByFirstCL(cs []*prjpb.Component) []*prjpb.Component {
 	sort.Slice(cs, func(i, j int) bool { return cs[i].GetClids()[0] < cs[j].GetClids()[0] })
 	return cs
 }

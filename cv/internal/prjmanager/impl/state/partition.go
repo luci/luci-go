@@ -19,7 +19,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/disjointset"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
 // repartition updates components.
@@ -38,7 +38,7 @@ func (s *State) repartition(cat *categorizedCLs) {
 
 	// Remove unused PCLs while updating pclIndex. This can be done only after
 	// components are updated to ensure components don't reference any unused CLs.
-	pcls := make([]*internal.PCL, 0, len(s.PB.GetPcls())-len(cat.unused))
+	pcls := make([]*prjpb.PCL, 0, len(s.PB.GetPcls())-len(cat.unused))
 	for _, pcl := range s.PB.GetPcls() {
 		id := common.CLID(pcl.GetClid())
 		if cat.unused.has(id) {
@@ -59,7 +59,8 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 	d := disjointset.New(len(s.PB.GetPcls())) // operates on indexes of PCLs
 
 	// CLs of a Run must be in the same set.
-	s.PB.IterIncompleteRuns(func(r *internal.PRun, _ *internal.Component) (stop bool) {
+	// Runs must be in the same set.
+	s.PB.IterIncompleteRuns(func(r *prjpb.PRun, _ *prjpb.Component) (stop bool) {
 		clids := r.GetClids()
 		first := s.pclIndex[common.CLID(clids[0])]
 		for _, id := range clids[1:] {
@@ -84,7 +85,7 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 // execPartition returns components according to partition plan.
 //
 // Expects pclIndex to be same used by planPartition.
-func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []*internal.Component {
+func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []*prjpb.Component {
 	exactSet := func(clids []int64) (root int) {
 		root = d.RootOf(s.pclIndex[common.CLID(clids[0])])
 		if d.SizeOf(root) != len(clids) {
@@ -99,8 +100,8 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 	}
 	// First, try to re-use existing components whenever possible.
 	// Typically, this should cover most components.
-	reused := make(map[int]*internal.Component, d.Count())
-	var leftComponents []*internal.Component
+	reused := make(map[int]*prjpb.Component, d.Count())
+	var leftComponents []*prjpb.Component
 	for _, c := range s.PB.GetComponents() {
 		root := exactSet(c.GetClids())
 		if root == -1 {
@@ -111,7 +112,7 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 	}
 
 	// Now create new components.
-	created := make(map[int]*internal.Component, d.Count()-len(reused))
+	created := make(map[int]*prjpb.Component, d.Count()-len(reused))
 	for index, pcl := range s.PB.GetPcls() {
 		id := pcl.GetClid()
 		if !cat.active.hasI64(id) {
@@ -127,7 +128,7 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 		c, exists := created[root]
 		if !exists {
 			size := d.SizeOf(root)
-			c = &internal.Component{
+			c = &prjpb.Component{
 				Clids: make([]int64, 0, size),
 				Dirty: true, // new components always dirty.
 			}
@@ -137,7 +138,7 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 	}
 
 	// And fill them with Incomplete runs.
-	addPRuns := func(pruns []*internal.PRun) {
+	addPRuns := func(pruns []*prjpb.PRun) {
 		for _, r := range pruns {
 			index := s.pclIndex[common.CLID(r.GetClids()[0])]
 			c := created[d.RootOf(index)]
@@ -149,12 +150,12 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 		addPRuns(c.GetPruns())
 	}
 
-	out := make([]*internal.Component, 0, len(reused)+len(created))
+	out := make([]*prjpb.Component, 0, len(reused)+len(created))
 	for _, c := range reused {
 		out = append(out, c)
 	}
 	for _, c := range created {
-		internal.SortPRuns(c.Pruns)
+		prjpb.SortPRuns(c.Pruns)
 		out = append(out, c)
 	}
 	return out

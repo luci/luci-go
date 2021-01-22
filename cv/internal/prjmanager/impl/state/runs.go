@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -68,7 +68,7 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 	}
 
 	// Add Runs of type (1) to existing components.
-	s.PB.Components, _ = s.PB.COWComponents(func(c *internal.Component) *internal.Component {
+	s.PB.Components, _ = s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
 		// Count CLs in this component which match a Run's index in `runs`.
 		matchedRunIdx := make(map[int]int, len(c.GetClids()))
 		for _, clid := range c.GetClids() {
@@ -77,18 +77,18 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 			}
 		}
 		// Add runs to the component iff run's all CLs were matched.
-		var toAdd []*internal.PRun
+		var toAdd []*prjpb.PRun
 		for idx, count := range matchedRunIdx {
 			if count == len(runs[idx].CLs) {
 				added[idx] = true
-				toAdd = append(toAdd, internal.MakePRun(runs[idx]))
+				toAdd = append(toAdd, prjpb.MakePRun(runs[idx]))
 			}
 		}
 		if len(toAdd) == 0 {
 			return c
 		}
 		if pruns, modified := c.COWPRuns(nil, toAdd); modified {
-			return &internal.Component{
+			return &prjpb.Component{
 				Clids:        c.GetClids(),
 				DecisionTime: c.GetDecisionTime(),
 				Pruns:        pruns,
@@ -99,10 +99,10 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 	}, nil)
 
 	// Add remaining Runs are of type (2) to CreatedPruns for later processing.
-	var toAdd []*internal.PRun
+	var toAdd []*prjpb.PRun
 	for i, r := range runs {
 		if !added[i] {
-			toAdd = append(toAdd, internal.MakePRun(r))
+			toAdd = append(toAdd, prjpb.MakePRun(r))
 		}
 	}
 	s.PB.CreatedPruns, _ = s.PB.COWCreatedRuns(nil, toAdd)
@@ -112,7 +112,7 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 // removeFinishedRuns removes known runs and returns number of the still tracked
 // runs.
 func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
-	delIfFinished := func(r *internal.PRun) *internal.PRun {
+	delIfFinished := func(r *prjpb.PRun) *prjpb.PRun {
 		id := common.RunID(r.GetId())
 		if _, ok := ids[id]; ok {
 			delete(ids, id)
@@ -121,12 +121,12 @@ func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
 		return r
 	}
 
-	removeFromComponent := func(c *internal.Component) *internal.Component {
+	removeFromComponent := func(c *prjpb.Component) *prjpb.Component {
 		if len(ids) == 0 {
 			return c
 		}
 		if pruns, modified := c.COWPRuns(delIfFinished, nil); modified {
-			return &internal.Component{
+			return &prjpb.Component{
 				Pruns:        pruns,
 				Clids:        c.GetClids(),
 				DecisionTime: c.GetDecisionTime(),
@@ -138,7 +138,7 @@ func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
 
 	s.PB.CreatedPruns, _ = s.PB.COWCreatedRuns(delIfFinished, nil)
 	stillTrackedRuns := len(s.PB.GetCreatedPruns())
-	s.PB.Components, _ = s.PB.COWComponents(func(c *internal.Component) *internal.Component {
+	s.PB.Components, _ = s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
 		c = removeFromComponent(c)
 		stillTrackedRuns += len(c.GetPruns())
 		return c

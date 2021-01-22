@@ -31,8 +31,8 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/prjmanager/internal"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
@@ -56,7 +56,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			// Second event is noop, but should still be consumed at once.
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 			events, err := eventbox.List(ctx, lProjectKey)
 			So(err, ShouldBeNil)
 			So(events, ShouldHaveLength, 0)
@@ -78,8 +78,8 @@ func TestProjectLifeCycle(t *testing.T) {
 				// This is what prjmanager.notifyRunCreated func does,
 				// but because it's private, it can't be called from this package.
 				simulateRunCreated := func(suffix string) {
-					e := &internal.Event{Event: &internal.Event_RunCreated{
-						RunCreated: &internal.RunCreated{
+					e := &prjpb.Event{Event: &prjpb.Event_RunCreated{
+						RunCreated: &prjpb.RunCreated{
 							RunId: lProject + "/" + suffix,
 						},
 					}}
@@ -93,7 +93,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 				p, _ = loadProjectEntities(ctx, lProject)
 				So(p.IncompleteRuns(), ShouldEqual, common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe"))
@@ -105,7 +105,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				Convey("disable project with incomplete runs", func() {
 					ct.Cfg.Disable(ctx, lProject)
 					So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
-					ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 					p, ps := loadProjectEntities(ctx, lProject)
 					So(p.EVersion, ShouldEqual, 3)
@@ -120,13 +120,13 @@ func TestProjectLifeCycle(t *testing.T) {
 
 					Convey("wait for all IncompleteRuns to finish", func() {
 						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
-						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 						p, ps := loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPING)
 						So(p.IncompleteRuns(), ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
 
 						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
-						ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 						p, ps = loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPED)
 						So(p.IncompleteRuns(), ShouldBeEmpty)
@@ -139,7 +139,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				p.State.Components = nil
 				ct.Cfg.Delete(ctx, lProject)
 				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(internal.ManageProjectTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 				p, ps := loadProjectEntities(ctx, lProject)
 				So(p.EVersion, ShouldEqual, 2)
