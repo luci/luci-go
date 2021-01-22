@@ -151,6 +151,30 @@
       },
       "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4956fb1d_1cb61697",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1212214
+      },
+      "writtenOn": "2021-01-22T17:18:55Z",
+      "side": 1,
+      "message": "\u003e The primary intent (I believe) is that a \"disabled\" test is only temporarily disabled and we are aiming to (re-)enable it.\n\nOk, that makes sense to me[0] as a description. If we could document that intentionality I would be happy with this. \n\nFYI we\u0027re probably going to get it wrong currently for web_tests, because I believe there\u0027s nothing on the code side that separates SKIPS coming from TestExpectations/etc from SKIPS coming from NeverFixTests. Not too hard to fix though[1]!\n\n[0]: Well, actually, its the inverse of how my brain wants to use the term. But the important thing is that it makes reasonably distinct sense as a concept, even if my brain needs to flip a bit :D.\n\n[1]: There are some rough edges, i.e. the programmatic skipping of idlharness tests on ASAN/MSAN likely don\u0027t fall under \u0027disabled\u0027 then because we effectively-never aim to re-enable them.",
+      "parentUuid": "3f2cdbf2_c067f3c1",
+      "range": {
+        "startLine": 126,
+        "startChar": 46,
+        "endLine": 127,
+        "endChar": 20
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
