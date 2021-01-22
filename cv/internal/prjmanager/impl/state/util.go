@@ -34,7 +34,7 @@ func (s *State) pokeRuns(ctx context.Context) error {
 		for _, id := range s.PB.IncompleteRuns() {
 			id := id
 			work <- func() error {
-				return run.Poke(ctx, id)
+				return run.PokeNow(ctx, id)
 			}
 		}
 	})
