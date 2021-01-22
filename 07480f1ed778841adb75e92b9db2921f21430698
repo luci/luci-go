@@ -16,6 +16,24 @@
       "message": "tbh, I didn\u0027t grasp why this is *necessary* -- can you tell me?\n\nbut I like the end result anyway, so lgtm.",
       "revId": "07480f1ed778841adb75e92b9db2921f21430698",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "586cf755_7c727105",
+        "filename": "cipd/client/cipd/plugin/host/main_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-22T02:10:43Z",
+      "side": 1,
+      "message": "Tests in *_test.go are all assembled into a single test binary that has only one TestMain function. I need a way to \"route\" calls to an appropriate pluginMain implementation depending on what tests spawned the subprocess (from host_test.go or from admission_test.go). This is now communicated via PLUGIN_BASIC and PLUGIN_ADMISSION command line args.\n\nIf you are asking why a map specifically: to make host_test.go and admission_test.go a bit more self-contained.",
+      "parentUuid": "bff7326a_f7eb06c8",
+      "revId": "07480f1ed778841adb75e92b9db2921f21430698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
