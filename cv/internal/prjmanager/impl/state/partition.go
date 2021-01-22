@@ -14,6 +14,14 @@
 
 package state
 
+import (
+	"fmt"
+
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/disjointset"
+	"go.chromium.org/luci/cv/internal/prjmanager/internal"
+)
+
 // repartition updates components.
 //
 // On success, guarantees the following:
@@ -22,6 +30,132 @@ package state
 //   * .Pcls doesn't contain any CLs not in components.
 //   * .CreatedRuns is nil,
 //   * .DirtyComponents is false.
+//   * pclIndex is up-to-date.
 func (s *State) repartition(cat *categorizedCLs) {
-	// TODO(tandrii): implement.
+	s.ensurePCLIndex()
+	plan := s.planPartition(cat)
+	s.PB.Components = s.execPartition(cat, plan)
+
+	// Remove unused PCLs while updating pclIndex. This can be done only after
+	// components are updated to ensure components don't reference any unused CLs.
+	pcls := make([]*internal.PCL, 0, len(s.PB.GetPcls())-len(cat.unused))
+	for _, pcl := range s.PB.GetPcls() {
+		id := common.CLID(pcl.GetClid())
+		if cat.unused.has(id) {
+			delete(s.pclIndex, id)
+		} else {
+			s.pclIndex[id] = len(pcls)
+			pcls = append(pcls, pcl)
+		}
+	}
+	s.PB.Pcls = pcls
+	s.PB.CreatedPruns = nil
+	s.PB.DirtyComponents = false
+}
+
+// planPartition returns a DisjointSet representing a partition of PCLs.
+func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
+	s.ensurePCLIndex()
+	d := disjointset.New(len(s.PB.GetPcls())) // operates on indexes of PCLs
+
+	// CLs of a Run must be in the same set.
+	s.PB.IterIncompleteRuns(func(r *internal.PRun, _ *internal.Component) (stop bool) {
+		clids := r.GetClids()
+		first := s.pclIndex[common.CLID(clids[0])]
+		for _, id := range clids[1:] {
+			d.Merge(first, s.pclIndex[common.CLID(id)])
+		}
+		return
+	})
+	// Active deps of an active CL must be in the same set as the CL.
+	for i, pcl := range s.PB.GetPcls() {
+		if cat.active.hasI64(pcl.GetClid()) {
+			for _, dep := range pcl.GetDeps() {
+				id := dep.GetClid()
+				if j, exists := s.pclIndex[common.CLID(id)]; exists && cat.active.hasI64(id) {
+					d.Merge(i, j)
+				}
+			}
+		}
+	}
+	return d
+}
+
+// execPartition returns components according to partition plan.
+//
+// Expects pclIndex to be same used by planPartition.
+func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []*internal.Component {
+	exactSet := func(clids []int64) (root int) {
+		root = d.RootOf(s.pclIndex[common.CLID(clids[0])])
+		if d.SizeOf(root) != len(clids) {
+			return -1
+		}
+		for _, id := range clids[1:] {
+			if root != d.RootOf(s.pclIndex[common.CLID(id)]) {
+				return -1
+			}
+		}
+		return root
+	}
+	// First, try to re-use existing components whenever possible.
+	// Typically, this should cover most components.
+	reused := make(map[int]*internal.Component, d.Count())
+	var leftComponents []*internal.Component
+	for _, c := range s.PB.GetComponents() {
+		root := exactSet(c.GetClids())
+		if root == -1 {
+			leftComponents = append(leftComponents, c)
+			continue
+		}
+		reused[root] = c
+	}
+
+	// Now create new components.
+	created := make(map[int]*internal.Component, d.Count()-len(reused))
+	for index, pcl := range s.PB.GetPcls() {
+		id := pcl.GetClid()
+		if !cat.active.hasI64(id) {
+			if size := d.SizeOf(index); size != 1 {
+				panic(fmt.Errorf("inactive CLs must end up in a disjoint set of their own: %d => %d", id, size))
+			}
+			continue // no component for inactive CLs.
+		}
+		root := d.RootOf(index)
+		if _, ok := reused[root]; ok {
+			continue
+		}
+		c, exists := created[root]
+		if !exists {
+			size := d.SizeOf(root)
+			c = &internal.Component{
+				Clids: make([]int64, 0, size),
+				Dirty: true, // new components always dirty.
+			}
+			created[root] = c
+		}
+		c.Clids = append(c.GetClids(), id)
+	}
+
+	// And fill them with Incomplete runs.
+	addPRuns := func(pruns []*internal.PRun) {
+		for _, r := range pruns {
+			index := s.pclIndex[common.CLID(r.GetClids()[0])]
+			c := created[d.RootOf(index)]
+			c.Pruns = append(c.GetPruns(), r) // not yet sorted order.
+		}
+	}
+	addPRuns(s.PB.GetCreatedPruns())
+	for _, c := range leftComponents {
+		addPRuns(c.GetPruns())
+	}
+
+	out := make([]*internal.Component, 0, len(reused)+len(created))
+	for _, c := range reused {
+		out = append(out, c)
+	}
+	for _, c := range created {
+		internal.SortPRuns(c.Pruns)
+		out = append(out, c)
+	}
+	return out
 }
