@@ -240,7 +240,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.Var(&c.namedCache, "named-cache", "This takes a parameter of `name=cachedir`.")
 	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
 	c.Flags.Var(&c.optionalDimension, "optional-dimension", "Format: <key>=<value>:<expiration>. See -expiration for the requirement.")
-	c.Flags.StringVar(&c.relativeCwd, "relative-cwd", "", "Use this flag instead of the isolated 'relative_cwd'; requires -raw-cmd.")
+	c.Flags.StringVar(&c.relativeCwd, "relative-cwd", "", "Use this flag instead of the isolated 'relative_cwd'.")
 	c.Flags.StringVar(&c.serviceAccount, "service-account", "",
 		`Email of a service account to run the task as, or literal "bot" string to indicate that the task should use the same account the bot itself is using to authenticate to Swarming. Don't use task service accounts if not given (default).`)
 
@@ -254,8 +254,6 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.realm, "realm", "", "Realm name for this task.")
 
 	// Other.
-	var rawCmd bool
-	c.Flags.BoolVar(&rawCmd, "raw-cmd", true, "DEPRECATED. Please always specify a '--' with a following command. The command will be run on the bot.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
 }
 
