@@ -1025,6 +1025,280 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 	})
 }
 
+func TestRepartition(t *testing.T) {
+	t.Parallel()
+
+	Convey("repartition works", t, func() {
+		state := NewExisting(prjmanager.Status_STARTED, &internal.PState{
+			DirtyComponents: true,
+		})
+		cat := &categorizedCLs{
+			active:   clidsSet{},
+			deps:     clidsSet{},
+			unused:   clidsSet{},
+			unloaded: clidsSet{},
+		}
+
+		defer func() {
+			// Assert guarantees of repartition()
+			So(state.PB.GetDirtyComponents(), ShouldBeFalse)
+			So(state.PB.GetCreatedPruns(), ShouldBeNil)
+			actual := state.pclIndex
+			state.pclIndex = nil
+			state.ensurePCLIndex()
+			So(actual, ShouldResemble, state.pclIndex)
+		}()
+
+		Convey("nothing to do, except resetting DirtyComponents", func() {
+			Convey("totally empty", func() {
+				state.repartition(cat)
+				So(state.PB, ShouldResembleProto, &internal.PState{})
+			})
+			Convey("1 active CL in 1 component", func() {
+				cat.active.resetI64(1)
+				state.PB.Components = []*internal.Component{{Clids: []int64{1}}}
+				state.PB.Pcls = []*internal.PCL{{Clid: 1}}
+				pb := backupPB(state)
+
+				state.repartition(cat)
+				pb.DirtyComponents = false
+				So(state.PB, ShouldResembleProto, pb)
+			})
+			Convey("1 active CL in 1 dirty component with 1 Run", func() {
+				cat.active.resetI64(1)
+				state.PB.Components = []*internal.Component{{
+					Clids: []int64{1},
+					Pruns: []*internal.PRun{{Clids: []int64{1}, Id: "id"}},
+					Dirty: true,
+				}}
+				state.PB.Pcls = []*internal.PCL{{Clid: 1}}
+				pb := backupPB(state)
+
+				state.repartition(cat)
+				pb.DirtyComponents = false
+				So(state.PB, ShouldResembleProto, pb)
+			})
+		})
+
+		Convey("Compacts out unused PCLs", func() {
+			cat.active.resetI64(1, 3)
+			cat.unused.resetI64(2)
+			state.PB.Pcls = []*internal.PCL{
+				{Clid: 1},
+				{Clid: 2},
+				{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
+			}
+
+			state.repartition(cat)
+			So(state.PB, ShouldResembleProto, &internal.PState{
+				Pcls: []*internal.PCL{
+					{Clid: 1},
+					{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
+				},
+				Components: []*internal.Component{{
+					Clids: []int64{1, 3},
+					Dirty: true,
+				}},
+			})
+		})
+
+		Convey("Creates new components", func() {
+			Convey("1 active CL converted into 1 new dirty component", func() {
+				cat.active.resetI64(1)
+				state.PB.Pcls = []*internal.PCL{{Clid: 1}}
+
+				state.repartition(cat)
+				So(state.PB, ShouldResembleProto, &internal.PState{
+					Pcls: []*internal.PCL{{Clid: 1}},
+					Components: []*internal.Component{{
+						Clids: []int64{1},
+						Dirty: true,
+					}},
+				})
+			})
+			Convey("Deps respected during conversion", func() {
+				cat.active.resetI64(1, 2, 3)
+				state.PB.Pcls = []*internal.PCL{
+					{Clid: 1},
+					{Clid: 2},
+					{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
+				}
+				orig := backupPB(state)
+
+				state.repartition(cat)
+				sortByFirstCL(state.PB.Components)
+				So(state.PB, ShouldResembleProto, &internal.PState{
+					Pcls: orig.Pcls,
+					Components: []*internal.Component{
+						{
+							Clids: []int64{1, 3},
+							Dirty: true,
+						},
+						{
+							Clids: []int64{2},
+							Dirty: true,
+						},
+					},
+				})
+			})
+		})
+
+		Convey("Components splitting works", func() {
+			Convey("Crossing-over 12, 34 => 13, 24", func() {
+				cat.active.resetI64(1, 2, 3, 4)
+				state.PB.Pcls = []*internal.PCL{
+					{Clid: 1},
+					{Clid: 2},
+					{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
+					{Clid: 4, Deps: []*changelist.Dep{{Clid: 2}}},
+				}
+				state.PB.Components = []*internal.Component{
+					{Clids: []int64{1, 2}},
+					{Clids: []int64{3, 4}},
+				}
+				orig := backupPB(state)
+
+				state.repartition(cat)
+				sortByFirstCL(state.PB.Components)
+				So(state.PB, ShouldResembleProto, &internal.PState{
+					Pcls: orig.Pcls,
+					Components: []*internal.Component{
+						{Clids: []int64{1, 3}, Dirty: true},
+						{Clids: []int64{2, 4}, Dirty: true},
+					},
+				})
+			})
+			Convey("Loaded and unloaded deps can be shared by several components", func() {
+				cat.active.resetI64(1, 2, 3)
+				cat.deps.resetI64(4, 5)
+				cat.unloaded.resetI64(5)
+				state.PB.Pcls = []*internal.PCL{
+					{Clid: 1, Deps: []*changelist.Dep{{Clid: 3}, {Clid: 4}, {Clid: 5}}},
+					{Clid: 2, Deps: []*changelist.Dep{{Clid: 4}, {Clid: 5}}},
+					{Clid: 3},
+					{Clid: 4},
+				}
+				orig := backupPB(state)
+
+				state.repartition(cat)
+				sortByFirstCL(state.PB.Components)
+				So(state.PB, ShouldResembleProto, &internal.PState{
+					Pcls: orig.Pcls,
+					Components: []*internal.Component{
+						{Clids: []int64{1, 3}, Dirty: true},
+						{Clids: []int64{2}, Dirty: true},
+					},
+				})
+			})
+		})
+
+		Convey("CreatedRuns are moved into components", func() {
+			Convey("Simple", func() {
+				cat.active.resetI64(1, 2)
+				state.PB.Pcls = []*internal.PCL{
+					{Clid: 1},
+					{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
+				}
+				state.PB.CreatedPruns = []*internal.PRun{{Clids: []int64{1, 2}, Id: "id"}}
+				orig := backupPB(state)
+
+				state.repartition(cat)
+				So(state.PB, ShouldResembleProto, &internal.PState{
+					CreatedPruns: nil,
+					Pcls:         orig.Pcls,
+					Components: []*internal.Component{
+						{
+							Clids: []int64{1, 2},
+							Pruns: []*internal.PRun{{Clids: []int64{1, 2}, Id: "id"}},
+							Dirty: true,
+						},
+					},
+				})
+			})
+			Convey("Force-merge 2 existing components", func() {
+				cat.active.resetI64(1, 2)
+				state.PB.Pcls = []*internal.PCL{
+					{Clid: 1},
+					{Clid: 2},
+				}
+				state.PB.Components = []*internal.Component{
+					{Clids: []int64{1}, Pruns: []*internal.PRun{{Clids: []int64{1}, Id: "1"}}},
+					{Clids: []int64{2}, Pruns: []*internal.PRun{{Clids: []int64{2}, Id: "2"}}},
+				}
+				state.PB.CreatedPruns = []*internal.PRun{{Clids: []int64{1, 2}, Id: "12"}}
+				orig := backupPB(state)
+
+				state.repartition(cat)
+				sortByFirstCL(state.PB.Components)
+				So(state.PB, ShouldResembleProto, &internal.PState{
+					CreatedPruns: nil,
+					Pcls:         orig.Pcls,
+					Components: []*internal.Component{
+						{
+							Clids: []int64{1, 2},
+							Pruns: []*internal.PRun{ // must be sorted by ID
+								{Clids: []int64{1}, Id: "1"},
+								{Clids: []int64{1, 2}, Id: "12"},
+								{Clids: []int64{2}, Id: "2"},
+							},
+							Dirty: true,
+						},
+					},
+				})
+			})
+		})
+
+		Convey("Does all at once", func() {
+			// This test adds more test coverage for a busy project where components
+			// are created, split, merged, and CreatedRuns are incorporated during
+			// repartition(), especially likely after a config update.
+			cat.active.resetI64(1, 2, 4, 5, 6)
+			cat.deps.resetI64(7)
+			cat.unused.resetI64(3)
+			cat.unloaded.resetI64(7)
+			state.PB.Pcls = []*internal.PCL{
+				{Clid: 1},
+				{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
+				{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}, {Clid: 2}}}, // but unused
+				{Clid: 4},
+				{Clid: 5, Deps: []*changelist.Dep{{Clid: 4}}},
+				{Clid: 6, Deps: []*changelist.Dep{{Clid: 7}}},
+			}
+			state.PB.Components = []*internal.Component{
+				{Clids: []int64{1, 2, 3}, Pruns: []*internal.PRun{{Clids: []int64{1}, Id: "1"}}},
+				{Clids: []int64{4}, Pruns: []*internal.PRun{{Clids: []int64{4}, Id: "4"}}},
+				{Clids: []int64{5}, Pruns: []*internal.PRun{{Clids: []int64{5}, Id: "5"}}},
+			}
+			state.PB.CreatedPruns = []*internal.PRun{
+				{Clids: []int64{4, 5}, Id: "45"}, // so, merge component with {4}, {5}.
+				{Clids: []int64{6}, Id: "6"},
+			}
+
+			state.repartition(cat)
+			sortByFirstCL(state.PB.Components)
+			So(state.PB, ShouldResembleProto, &internal.PState{
+				Pcls: []*internal.PCL{
+					{Clid: 1},
+					{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
+					// 3 was deleted
+					{Clid: 4},
+					{Clid: 5, Deps: []*changelist.Dep{{Clid: 4}}},
+					{Clid: 6, Deps: []*changelist.Dep{{Clid: 7}}},
+				},
+				Components: []*internal.Component{
+					{Clids: []int64{1, 2}, Dirty: true, Pruns: []*internal.PRun{{Clids: []int64{1}, Id: "1"}}},
+					{Clids: []int64{4, 5}, Dirty: true, Pruns: []*internal.PRun{
+						{Clids: []int64{4}, Id: "4"},
+						{Clids: []int64{4, 5}, Id: "45"},
+						{Clids: []int64{5}, Id: "5"},
+					}},
+					{Clids: []int64{6}, Dirty: true, Pruns: []*internal.PRun{{Clids: []int64{6}, Id: "6"}}},
+				},
+			})
+		})
+	})
+}
+
 // backupPB returns a deep copy of State.PB for future assertion that State
 // wasn't modified.
 func backupPB(s *State) *internal.PState {

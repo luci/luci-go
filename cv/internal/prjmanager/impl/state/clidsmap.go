@@ -28,3 +28,13 @@ func (c clidsSet) has(clid common.CLID) bool {
 	return exists
 }
 func (c clidsSet) delI64(id int64) { delete(c, common.CLID(id)) }
+
+// reset resets the amp to contains just given IDs. Used in tests only.
+func (c clidsSet) resetI64(ids ...int64) {
+	for id := range c {
+		delete(c, common.CLID(id))
+	}
+	for _, id := range ids {
+		c.addI64(id)
+	}
+}

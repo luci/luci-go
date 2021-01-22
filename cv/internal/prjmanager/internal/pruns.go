@@ -94,6 +94,10 @@ func runModifier(f func(*PRun) *PRun) copyonwrite.Modifier {
 	}
 }
 
+func SortPRuns(pruns []*PRun) {
+	sort.Sort(cowPRuns(pruns))
+}
+
 type cowPRuns []*PRun
 
 // It's important that PRuns are always sorted.
