@@ -16,6 +16,234 @@
       "message": "PTAL (test WIP)",
       "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2db8813f_accca067",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "approach SGTM % missing transaction  + test.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1ba9acdc_ff148203",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "nit: del",
+      "range": {
+        "startLine": 40,
+        "startChar": 28,
+        "endLine": 40,
+        "endChar": 29
+      },
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f83df7a7_ba54a029",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "I think we should be defensive here:\n\n  if !run.IsEnded(mfr.Status){ \n    run.Stauts \u003d run.STATUS_\u003csmth final\u003e\n  }",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bca99fb4_2e5c1675",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "this must be ran in a transaction (see comment for the func definition itself).\nSo, doing it as a effect it easiest.\n\nHowever, updating Run itself doesn\u0027t need to be done atomically with updating CLs.INcompleteRUns,\nso we\u0027d reduce contention iff we create \u0026 execute transaction right here.\n\nMore food for thought:\nStrictly speaking, we can update each individual CL independently, so we can do 1 transaction per CL,\nbut this would reduce # of DS RPCs.\nSo, **if** we observe frequent contention failures when committing\ntransaction with s.removeRunFromCLs, then we split Run\u0027s CLs into batches of 5 and do a transaction per 5.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52699d15_ccf1549b",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "common.MostSevereError(...)\n\nif Cloud Tasks or DS has a bad day, we N errors aren\u0027t helpful.",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 7
+      },
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "73688f92_32cd1b35",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "i\u0027d load these in 1 RPC before parallelizing via workpool, but for throwaway code, this is fine.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07c71fde_89b7df68",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 75,
+        "startChar": 31,
+        "endLine": 75,
+        "endChar": 32
+      },
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a1c5d11_c413e47d",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "ah, i see why you asked for ExternalID index 😊\nFWIW, iff this code had to live long term, I think better design would have been to let gobupdater able to accept just CLID and figure out the rest on its own.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02a2b217_37cb39b1",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "imo, annotation isn\u0027t necessary:\n  * the error is already annotated by .Schedule, so we get stack trace\n  * .Schedule also guarantees transient.Tag iff it\u0027s indeed transient. No need to overrule here.\n  * additional info isn\u0027t particularly helpful for debug here -- the cause of failure is 99% likely to be cloud tasks and not specificity of a CL in question\nbut this isn\u0027t harmful.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34bcdc84_e7ff8b9e",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "panic if called outside of transaction",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "efb9a8f2_1d218276",
+        "filename": "cv/internal/run/impl/finalize_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "fwiw, i\u0027m much less worried about this small func correctness than onFinished overall. \nBut it\u0027s fine to keep this test as is.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8aa0769_8e7353cf",
+        "filename": "cv/internal/run/impl/finalize_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:52:22Z",
+      "side": 1,
+      "message": "ah, so here you are using it correctly 😊",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 10
+      },
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
