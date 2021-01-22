@@ -19,7 +19,7 @@ package diagnostic;
 
 option go_package = "go.chromium.org/luci/cv/api/diagnostic;diagnosticpb";
 
-
+import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/events.proto";
@@ -32,6 +32,9 @@ service Diagnostic {
 
   // GetProject returns current Project state.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+
+  // GetCL returns current CL state.
+  rpc GetCL(GetCLRequest) returns (GetCLResponse);
 }
 
 message GetProjectRequest {
@@ -49,4 +52,28 @@ message GetProjectResponse {
   // PState's config_hash is not set.
   cv.prjmanager.prjpb.PState pstate = 3;
   repeated cv.prjmanager.prjpb.Event events = 4;
+}
+
+message GetCLRequest{
+  // One of the following.
+  // Not using oneof because it's more congitive load to type for something
+  // meant as a debug API only.
+
+  int64 id = 1;
+  string external_id = 2;
+  string gerrit_url = 3;
+}
+
+// GetProjectResponse provides non-atomic snapshot of a project state.
+//
+// The config hash and status come from different DS entity than PState,
+// and each event comes from its own entity and depends on yet another tombstone
+// entity.
+message GetCLResponse {
+  int64 id = 1;
+  string external_id = 2;
+  cv.changelist.Snapshot snapshot = 3;
+  cv.changelist.ApplicableConfig applicable_config = 4;
+  cv.changelist.DependentMeta dependent_meta = 5;
+  repeated string incomplete_runs = 6;
 }

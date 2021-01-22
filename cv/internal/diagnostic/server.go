@@ -16,6 +16,9 @@ package diagnostic
 
 import (
 	"context"
+	"net/url"
+	"regexp"
+	"strconv"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -28,6 +31,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -90,6 +95,50 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 	}
 }
 
+func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLRequest) (resp *diagnosticpb.GetCLResponse, err error) {
+	var cl *changelist.CL
+	var eid changelist.ExternalID
+	switch {
+	case req.GetId() != 0:
+		cl.ID = common.CLID(req.GetId())
+		err = datastore.Get(ctx, cl)
+	case req.GetExternalId() != "":
+		eid = changelist.ExternalID(req.GetExternalId())
+		cl, err = eid.Get(ctx)
+	case req.GetGerritUrl() != "":
+		eid, err = parseGerritURL(req.GetExternalId())
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid Gerrit URL %q: %s", req.GetGerritUrl(), err)
+		}
+		cl, err = eid.Get(ctx)
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "id or external_id or gerrit_url is required")
+	}
+
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		if req.GetId() == 0 {
+			return nil, status.Errorf(codes.NotFound, "CL %d not found", req.GetId())
+		}
+		return nil, status.Errorf(codes.NotFound, "CL %s not found", eid)
+	case err != nil:
+		return nil, err
+	}
+	runs := make([]string, len(cl.IncompleteRuns))
+	for i, id := range cl.IncompleteRuns {
+		runs[i] = string(id)
+	}
+	resp = &diagnosticpb.GetCLResponse{
+		Id:               int64(cl.ID),
+		ExternalId:       string(cl.ExternalID),
+		Snapshot:         cl.Snapshot,
+		ApplicableConfig: cl.ApplicableConfig,
+		DependentMeta:    cl.DependentMeta,
+		IncompleteRuns:   runs,
+	}
+	return resp, nil
+}
+
 func (_ *DiagnosticServer) checkAllowed(ctx context.Context) error {
 	switch yes, err := auth.IsMember(ctx, allowGroup); {
 	case err != nil:
@@ -99,4 +148,43 @@ func (_ *DiagnosticServer) checkAllowed(ctx context.Context) error {
 	default:
 		return nil
 	}
+}
+
+var regexCrRevPath = regexp.MustCompile(`/([ci])/(\d+)(/(\d+))?`)
+var regexGoB = regexp.MustCompile(`(\w+-)+review\.googlesource\.com/(#/)?(c/)?(([^\+]+)/\+/)?(\d+)(/(\d+)?)?`)
+
+func parseGerritURL(s string) (changelist.ExternalID, error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		return "", err
+	}
+	var host string
+	var change int64
+	if u.Host == "crrev.com" {
+		m := regexCrRevPath.FindStringSubmatch(u.Path)
+		if m == nil {
+			return "", errors.New("invalid crrev.com URL")
+		}
+		switch m[1] {
+		case "c":
+			host = "chromium-review.googlesource.com"
+		case "i":
+			host = "chrome-internal-review.googlesource.com"
+		default:
+			panic("impossible")
+		}
+		if change, err = strconv.ParseInt(m[2], 10, 64); err != nil {
+			return "", errors.Reason("invalid crrev.com URL change number /%s/", m[2]).Err()
+		}
+	} else {
+		m := regexGoB.FindStringSubmatch(s)
+		if m == nil {
+			return "", errors.New("invalid Gerrit URL")
+		}
+		host = u.Host
+		if change, err = strconv.ParseInt(m[6], 10, 64); err != nil {
+			return "", errors.Reason("invalid crrev.com URL change number /%s/", m[6]).Err()
+		}
+	}
+	return changelist.GobID(host, change)
 }
