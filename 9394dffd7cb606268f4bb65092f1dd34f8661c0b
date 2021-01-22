@@ -16,6 +16,40 @@
       "message": "Robbie, another look would be appreciated.",
       "revId": "9394dffd7cb606268f4bb65092f1dd34f8661c0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd70294e_c468f0fb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-22T21:22:07Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "9394dffd7cb606268f4bb65092f1dd34f8661c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a444f03_72cc2285",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-22T21:22:07Z",
+      "side": 1,
+      "message": "I guess I would have just dumped the full chunk even though it was the middle of the line",
+      "revId": "9394dffd7cb606268f4bb65092f1dd34f8661c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
