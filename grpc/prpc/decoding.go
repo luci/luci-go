@@ -41,7 +41,7 @@ const headerContentType = "Content-Type"
 // https://github.com/golang/protobuf/issues/745 for requests with FormatJSONPB.
 // TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) *protocolError {
-	format, err := FormatFromContentType(r.Header.Get(headerContentType))
+	format, err := FormatFromMediaType(r.Header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
 		return errorf(http.StatusUnsupportedMediaType, "Content-Type header: %s", err)
