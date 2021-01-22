@@ -16,6 +16,23 @@
       "message": "PTAL (test WIP)",
       "revId": "f72ca36a1bd53871910b0e4010666eb5d2e978dc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8618ef1d_d88ea372",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T12:22:16Z",
+      "side": 1,
+      "message": "LGTM % tests, for which I\u0027d just test that initial RunCreated results in forever chain of pokes.",
+      "revId": "f72ca36a1bd53871910b0e4010666eb5d2e978dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
