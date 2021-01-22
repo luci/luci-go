@@ -39,6 +39,30 @@
       },
       "revId": "78a0b35f32f0d6be4cfe0ede336d6b8bd1f6dde3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3946fcc0_1267a7c0",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T18:28:19Z",
+      "side": 1,
+      "message": "Because more work and the current state is still an improvement CPU-cycle-wise vs prior state. So I originally resisted.\n\nBut yeah, your suggestion is superb -- done. Amazingly test passed on first try (almost never happens to my sloppy coding)",
+      "parentUuid": "a16c4100_1e91d89b",
+      "range": {
+        "startLine": 252,
+        "startChar": 5,
+        "endLine": 252,
+        "endChar": 6
+      },
+      "revId": "78a0b35f32f0d6be4cfe0ede336d6b8bd1f6dde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
