@@ -242,7 +242,6 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 			"-server", "http://localhost:9050",
 			"-dimension", "os=Ubuntu",
 			"-isolated", "0123456789012345678901234567890123456789",
-			"-raw-cmd",
 		})
 
 		err = c.Parse([]string(nil))
@@ -251,7 +250,7 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 }
 
 func TestTriggerParse_RawArgs(t *testing.T) {
-	Convey(`Make sure that Parse allows both -raw-cmd and -isolated`, t, func() {
+	Convey(`Make sure that Parse allows both raw-cmd and -isolated`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
 
@@ -259,7 +258,6 @@ func TestTriggerParse_RawArgs(t *testing.T) {
 			"-server", "http://localhost:9050",
 			"-dimension", "os=Ubuntu",
 			"-isolated", "0123456789012345678901234567890123456789",
-			"-raw-cmd",
 		})
 
 		err = c.Parse([]string{"arg1", "arg2"})
