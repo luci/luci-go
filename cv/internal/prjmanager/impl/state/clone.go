@@ -14,14 +14,14 @@
 
 package state
 
-import "go.chromium.org/luci/cv/internal/prjmanager/internal"
+import "go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 
 func (s *State) cloneShallow() *State {
 	ret := &State{}
 	*ret = *s
 	// s.PB is guaranteed not nil by NewInitial and NewExisting.
 	// Don't use proto.merge to avoid deep copy.
-	ret.PB = &internal.PState{
+	ret.PB = &prjpb.PState{
 		LuciProject:      s.PB.GetLuciProject(),
 		ConfigHash:       s.PB.GetConfigHash(),
 		ConfigGroupNames: s.PB.GetConfigGroupNames(),
