@@ -19,16 +19,20 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
-// RemoveRunFromCLs removes the Run from the IncompleteRuns list of all
+func onFinished(ctx context.Context, s *state) (eventbox.SideEffectFn, *state, error) {
+	panic("implement")
+}
+
+// removeRunFromCLs removes the Run from the IncompleteRuns list of all
 // CL entities associated with this Run.
-//
-// TODO(yiwzhang): Stop exporting after CV is able to finalize Runs itself.
-func RemoveRunFromCLs(ctx context.Context, r *run.Run) error {
+func removeRunFromCLs(ctx context.Context, r *run.Run) error {
 	cls := make([]*changelist.CL, len(r.CLs))
 	for i, clid := range r.CLs {
 		cls[i] = &changelist.CL{ID: clid}

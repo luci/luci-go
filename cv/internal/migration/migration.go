@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -32,7 +31,9 @@ import (
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
@@ -75,10 +76,17 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 		return
 	}
 
-	if err = finalizeRun(ctx, req.GetRun()); err != nil {
-		err = errors.Annotate(err, "failed to finalize Run %q", req.GetRun().GetId()).Err()
+	if req.GetRun().GetId() == "" {
+		err = status.Error(codes.InvalidArgument, "empty RunID")
 		return
 	}
+	if err = saveFinishedRun(ctx, req.GetRun()); err != nil {
+		return
+	}
+	if err = run.NotifyFinished(ctx, common.RunID(req.GetRun().GetId())); err != nil {
+		return
+	}
+
 	resp = &empty.Empty{}
 	return
 }
