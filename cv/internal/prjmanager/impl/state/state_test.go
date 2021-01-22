@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -137,9 +136,9 @@ func TestUpdateConfig(t *testing.T) {
 				EVersion: meta.EVersion,
 				RunIDs:   nil,
 			})
-			So(s1.Status, ShouldEqual, prjmanager.Status_STARTED)
 			So(s1.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
 				Components:       nil,
@@ -169,8 +168,9 @@ func TestUpdateConfig(t *testing.T) {
 		cl202 := ct.runCLUpdater(ctx, 202)
 		cl203 := ct.runCLUpdater(ctx, 203)
 
-		s1 := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
+		s1 := NewExisting(&prjpb.PState{
 			LuciProject:      ct.lProject,
+			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
 			Pcls: []*prjpb.PCL{
@@ -231,9 +231,9 @@ func TestUpdateConfig(t *testing.T) {
 				EVersion: meta2.EVersion,
 				RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
 			})
-			So(s2.Status, ShouldEqual, prjmanager.Status_STARTED)
 			So(s2.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta2.Hash(), // changed
 				ConfigGroupNames: []string{"g0", "g1"},
 				Pcls: []*prjpb.PCL{
@@ -253,7 +253,7 @@ func TestUpdateConfig(t *testing.T) {
 		})
 
 		Convey("disabled project updated with long ago deleted CL", func() {
-			s1.Status = prjmanager.Status_STOPPED
+			s1.PB.Status = prjpb.Status_STOPPED
 			for _, c := range s1.PB.GetComponents() {
 				c.Pruns = nil // disabled projects don't have incomplete runs.
 			}
@@ -269,9 +269,9 @@ func TestUpdateConfig(t *testing.T) {
 				EVersion: meta2.EVersion,
 				// No runs to notify.
 			})
-			So(s2.Status, ShouldEqual, prjmanager.Status_STARTED)
 			So(s2.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta2.Hash(), // changed
 				ConfigGroupNames: []string{"g0", "g1"},
 				Pcls: []*prjpb.PCL{
@@ -292,12 +292,12 @@ func TestUpdateConfig(t *testing.T) {
 			ct.Cfg.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := s1.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
-			So(s2.Status, ShouldEqual, prjmanager.Status_STOPPING)
-			So(s2.PB, ShouldResembleProto, s1.PB)
+			pb := backupPB(s1)
+			pb.Status = prjpb.Status_STOPPING
+			So(s2.PB, ShouldResembleProto, pb)
 			So(sideEffect, ShouldResemble, &CancelIncompleteRuns{
 				RunIDs: common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
 			})
-
 		})
 
 		Convey("disabled project stops iff there are no incomplete Runs", func() {
@@ -307,9 +307,10 @@ func TestUpdateConfig(t *testing.T) {
 			ct.Cfg.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := s1.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
-			So(s2.Status, ShouldEqual, prjmanager.Status_STOPPED)
-			So(s2.PB, ShouldResembleProto, s1.PB)
 			So(sideEffect, ShouldBeNil)
+			pb := backupPB(s1)
+			pb.Status = prjpb.Status_STOPPED
+			So(s2.PB, ShouldResembleProto, pb)
 		})
 
 		// The rest of the test coverage of UpdateConfig is achieved by testing code
@@ -420,8 +421,9 @@ func TestOnCLsUpdated(t *testing.T) {
 		cl202 := ct.runCLUpdater(ctx, 202)
 		cl203 := ct.runCLUpdater(ctx, 203)
 
-		s0 := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
+		s0 := NewExisting(&prjpb.PState{
 			LuciProject:      ct.lProject,
+			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
 		})
@@ -438,6 +440,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(sideEffect, ShouldBeNil)
 			So(s1.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
 				Pcls: []*prjpb.PCL{
@@ -484,6 +487,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(sideEffect, ShouldBeNil)
 			So(s1.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
 				Pcls: []*prjpb.PCL{
@@ -501,8 +505,9 @@ func TestOnCLsUpdated(t *testing.T) {
 		})
 
 		Convey("PCLs must remain sorted", func() {
-			s1 := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
+			s1 := NewExisting(&prjpb.PState{
 				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
 				Pcls: []*prjpb.PCL{
@@ -536,6 +541,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(sideEffect, ShouldBeNil)
 			So(s2.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
 				Pcls: []*prjpb.PCL{
@@ -566,7 +572,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		})
 
 		Convey("non-STARTED project ignores all CL events", func() {
-			s0.Status = prjmanager.Status_STOPPING
+			s0.PB.Status = prjpb.Status_STOPPING
 			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
 				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
 			})
@@ -597,8 +603,9 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: []common.CLID{709, 707, 708}}
 		So(datastore.Put(ctx, run1, run789), ShouldBeNil)
 
-		s1 := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
+		s1 := NewExisting(&prjpb.PState{
 			LuciProject:      ct.lProject,
+			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
 			// For OnRunsFinished / OnRunsCreated PCLs don't matter, so omit them from
@@ -626,7 +633,6 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// although s2 is cloned, it must be exact same as s1.
-				So(s2.Status, ShouldEqual, s1.Status)
 				So(s2.PB, ShouldResembleProto, pb1)
 			})
 			Convey("OnRunsCreated on already tracked Run", func() {
@@ -641,7 +647,6 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				// although s2 is cloned, it must be exact same as s1.
-				So(s2.Status, ShouldEqual, s1.Status)
 				So(s2.PB, ShouldResembleProto, pb1)
 			})
 		})
@@ -668,6 +673,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			So(sideEffect, ShouldBeNil)
 			So(s2.PB, ShouldResembleProto, &prjpb.PState{
 				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
 				Components: []*prjpb.Component{
@@ -692,7 +698,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		})
 
 		Convey("OnRunsFinished", func() {
-			s1.Status = prjmanager.Status_STOPPING
+			s1.PB.Status = prjpb.Status_STOPPING
 			pb1 := backupPB(s1)
 
 			Convey("deletes from Components", func() {
@@ -701,9 +707,9 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
-				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPING)
 				So(s2.PB, ShouldResembleProto, &prjpb.PState{
 					LuciProject:      ct.lProject,
+					Status:           prjpb.Status_STOPPING,
 					ConfigHash:       meta.Hash(),
 					ConfigGroupNames: []string{"g0", "g1"},
 					Components: []*prjpb.Component{
@@ -723,9 +729,9 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
-				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPING)
 				So(s2.PB, ShouldResembleProto, &prjpb.PState{
 					LuciProject:      ct.lProject,
+					Status:           prjpb.Status_STOPPING,
 					ConfigHash:       meta.Hash(),
 					ConfigGroupNames: []string{"g0", "g1"},
 					Components:       s1.PB.Components, // unchanged
@@ -741,9 +747,9 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(pb1, ShouldResembleProto, s1.PB)
 				So(sideEffect, ShouldBeNil)
-				So(s2.Status, ShouldEqual, prjmanager.Status_STOPPED)
 				So(s2.PB, ShouldResembleProto, &prjpb.PState{
 					LuciProject:      ct.lProject,
+					Status:           prjpb.Status_STOPPED,
 					ConfigHash:       meta.Hash(),
 					ConfigGroupNames: []string{"g0", "g1"},
 					Pcls:             s1.PB.GetPcls(),
@@ -863,8 +869,9 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		}
 		So(datastore.Put(ctx, run4, run56, run789), ShouldBeNil)
 
-		state := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
+		state := NewExisting(&prjpb.PState{
 			LuciProject:      ct.lProject,
+			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
 			DirtyComponents:  true,
@@ -1029,7 +1036,7 @@ func TestRepartition(t *testing.T) {
 	t.Parallel()
 
 	Convey("repartition works", t, func() {
-		state := NewExisting(prjmanager.Status_STARTED, &prjpb.PState{
+		state := NewExisting(&prjpb.PState{
 			DirtyComponents: true,
 		})
 		cat := &categorizedCLs{
