@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "33b6d526_97902e23",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-22T21:41:41Z",
+      "side": 1,
+      "message": "I have a feeling we may need to convert this to a callback in the future. A prpc.Client can be reused when calling multiple different servers, some supporting compression some not.",
+      "range": {
+        "startLine": 127,
+        "startChar": 1,
+        "endLine": 127,
+        "endChar": 25
+      },
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d0286407_3dede663",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 628,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-22T21:41:41Z",
+      "side": 1,
+      "message": "nit: this should be converted to status.Errorf. All errors returned by Call(...) should be grpc status errors. This is a part of grpc.ClientConnInterface interface.",
+      "range": {
+        "startLine": 628,
+        "startChar": 15,
+        "endLine": 628,
+        "endChar": 18
+      },
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "72fd0967_5740bd92",
+        "filename": "grpc/prpc/compression.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-22T21:41:41Z",
+      "side": 1,
+      "message": "2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2baa2677_5c148102",
+        "filename": "grpc/prpc/compression.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-22T21:41:41Z",
+      "side": 1,
+      "message": "is it used from non-test code? If it is used only from tests, better to move it to _test.go. Also sync.Pool is not needed there.",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 18
+      },
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9d5e827f_83395d91",
+        "filename": "grpc/prpc/compression.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-22T21:41:41Z",
+      "side": 1,
+      "message": "nit: del to be consistent with getGZipWriter",
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
