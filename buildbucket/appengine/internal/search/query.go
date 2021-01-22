@@ -151,7 +151,6 @@ func UpdateTagIndex(ctx context.Context, builds []*model.Build) error {
 			work <- func() error { return model.UpdateTagIndex(ctx, tag, ents) }
 		}
 	})
-	return nil
 }
 
 // Fetch performs main build search logic.
