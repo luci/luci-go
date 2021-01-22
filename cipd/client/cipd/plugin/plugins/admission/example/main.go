@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/client/cipd/plugin/admission"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins/admission"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/version"
 )
@@ -42,7 +42,7 @@ func init() {
 
 func main() {
 	ctx := gologger.StdConfig.Use(context.Background())
-	err := admission.RunPlugin(ctx, os.Stdin, pluginVersion, admissionHandler)
+	err := admission.Run(ctx, os.Stdin, pluginVersion, admissionHandler)
 	if err != nil {
 		errors.Log(ctx, err)
 		os.Exit(1)

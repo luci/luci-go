@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package admission
+package host
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/cipd/client/cipd/plugin"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins/admission"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -40,13 +40,13 @@ import (
 // ErrAborted is returned by CheckAdmission promise when the plugin terminates.
 var ErrAborted = errors.Reason("the admission plugin is terminating").Err()
 
-// Plugin launches and communicates with an admission plugin.
+// AdmissionPlugin launches and communicates with an admission plugin.
 //
 // It is instantiated by the CIPD client if it detects there's an admission
 // plugin configured.
-type Plugin struct {
+type AdmissionPlugin struct {
 	ctx             context.Context // for logging from the plugin
-	host            *plugin.Host    // the plugin.Host to run the plugin in
+	host            *Host           // the Host to run the plugin in
 	args            []string        // plugin's command line
 	salt            int             // randomization for generated admission IDs
 	protocolVersion int32           // the expected protocol version
@@ -59,7 +59,7 @@ type Plugin struct {
 	m         sync.Mutex          // protects everything below
 	err       error               // if non-nil, denies all CheckAdmission calls
 	launching bool                // true if we attempted to launch the plugin
-	proc      *plugin.Process     // the running process, if started successfully
+	proc      *PluginProcess      // the running process, if started successfully
 	closing   chan struct{}       // closed in Close
 	closed    bool                // true if Close was called
 	checks    map[string]*Promise // pending and finished checks
@@ -110,21 +110,21 @@ func (p *Promise) resolved() bool {
 	return atomic.LoadInt32(&p.resolves) != 0
 }
 
-// NewPlugin returns a host-side representation of an admission plugin.
+// NewAdmissionPlugin returns a host-side representation of an admission plugin.
 //
-// The returned *Plugin can be used right away to enqueue admission checks.
-// The plugin subprocess will lazily be started on the first CheckAdmission
-// call. All enqueued checks will eventually be processed by the plugin or
-// rejected if the plugin fails to start.
+// The returned *AdmissionPlugin can be used right away to enqueue admission
+// checks. The plugin subprocess will lazily be started on the first
+// CheckAdmission call. All enqueued checks will eventually be processed by
+// the plugin or rejected if the plugin fails to start.
 //
 // The context is used for logging from the plugin.
-func NewPlugin(ctx context.Context, host *plugin.Host, args []string) *Plugin {
-	return &Plugin{
+func NewAdmissionPlugin(ctx context.Context, host *Host, args []string) *AdmissionPlugin {
+	return &AdmissionPlugin{
 		ctx:             ctx,
 		host:            host,
 		args:            append([]string(nil), args...),
 		salt:            os.Getpid(), // note: predictability is fine
-		protocolVersion: protocolVersion,
+		protocolVersion: admission.ProtocolVersion,
 		timeout:         30 * time.Second, // see launchPlugin
 		connected:       make(chan struct{}),
 		closing:         make(chan struct{}),
@@ -142,7 +142,7 @@ func NewPlugin(ctx context.Context, host *plugin.Host, args []string) *Plugin {
 // Note that calling Close is not necessary if the plugin host itself
 // terminates. The plugin subprocess will be terminated by the host in this
 // case.
-func (p *Plugin) Close(ctx context.Context) {
+func (p *AdmissionPlugin) Close(ctx context.Context) {
 	defer p.wg.Wait() // don't leak launchPlugin goroutine past Plugin's lifetime
 
 	p.m.Lock()
@@ -168,7 +168,7 @@ func (p *Plugin) Close(ctx context.Context) {
 // Returns a promise which is resolved when the result is available. If such
 // check is already pending (or has been done before), returns an existing
 // (perhaps already resolved) promise.
-func (p *Plugin) CheckAdmission(pin common.Pin) *Promise {
+func (p *AdmissionPlugin) CheckAdmission(pin common.Pin) *Promise {
 	admission, err := p.makeAdmission(pin)
 	if err != nil {
 		return newPromise(nil).resolve(err)
@@ -202,7 +202,7 @@ func (p *Plugin) CheckAdmission(pin common.Pin) *Promise {
 }
 
 // ClearCache drops all resolved promises to free up some memory.
-func (p *Plugin) ClearCache() {
+func (p *AdmissionPlugin) ClearCache() {
 	p.m.Lock()
 	defer p.m.Unlock()
 	for id, promise := range p.checks {
@@ -217,7 +217,7 @@ func (p *Plugin) ClearCache() {
 // It hashes the request to make sure plugins do not rely on a particular format
 // of the ID. It also randomizes it with some salt, to make sure plugins do not
 // try to use it as a key in some persistent cache. Admission IDs are ephemeral.
-func (p *Plugin) makeAdmission(pin common.Pin) (*protocol.Admission, error) {
+func (p *AdmissionPlugin) makeAdmission(pin common.Pin) (*protocol.Admission, error) {
 	admission := &protocol.Admission{
 		ServiceUrl: p.host.ServiceURL,
 		Package:    pin.PackageName,
@@ -243,7 +243,7 @@ func (p *Plugin) makeAdmission(pin common.Pin) (*protocol.Admission, error) {
 // rejectAllLocked rejects all pending and future admission checks.
 //
 // Must be called with p.m locked.
-func (p *Plugin) rejectAllLocked(err error) {
+func (p *AdmissionPlugin) rejectAllLocked(err error) {
 	if p.err == nil {
 		p.err = err
 		for _, promise := range p.checks {
@@ -258,10 +258,10 @@ func (p *Plugin) rejectAllLocked(err error) {
 // launchPlugin launches the plugin subprocess and waits for it to connect.
 //
 // It is called from a background goroutine on a first CheckAdmission call.
-func (p *Plugin) launchPlugin() {
+func (p *AdmissionPlugin) launchPlugin() {
 	defer p.wg.Done()
 
-	proc, err := p.host.LaunchPlugin(p.ctx, p.args, &plugin.Controller{
+	proc, err := p.host.LaunchPlugin(p.ctx, p.args, &Controller{
 		Admissions: &admissionsServer{plugin: p},
 	})
 
@@ -304,7 +304,7 @@ func (p *Plugin) launchPlugin() {
 }
 
 // onConnected is called when the plugin makes ListAdmissions RPC.
-func (p *Plugin) onConnected(req *protocol.ListAdmissionsRequest) error {
+func (p *AdmissionPlugin) onConnected(req *protocol.ListAdmissionsRequest) error {
 	// At most one ListAdmissions call per plugin's life cycle is allowed, since
 	// we use its completion as a signal that the plugin has disconnected (e.g.
 	// unexpectedly died). There's no sudden unexpected disconnects on localhost.
@@ -330,7 +330,7 @@ func (p *Plugin) onConnected(req *protocol.ListAdmissionsRequest) error {
 //
 // Note that it can potentially happen even before launchPlugin completes, if
 // the plugin crashed particularly fast.
-func (p *Plugin) onDisconnected() {
+func (p *AdmissionPlugin) onDisconnected() {
 	p.m.Lock()
 	defer p.m.Unlock()
 
@@ -343,7 +343,7 @@ func (p *Plugin) onDisconnected() {
 		select {
 		case <-time.After(50 * time.Millisecond):
 		case <-p.proc.Done():
-			if p.proc.Err() != plugin.ErrTerminated {
+			if p.proc.Err() != ErrTerminated {
 				logging.Warningf(p.ctx, "The admission plugin has crashed: %s", p.proc.Err())
 			}
 			err = errors.Annotate(p.proc.Err(), "the admission plugin terminated").Err()
@@ -356,7 +356,7 @@ func (p *Plugin) onDisconnected() {
 // dequeue blocks until there's an unprocessed admission request available.
 //
 // Respects context's expiration.
-func (p *Plugin) dequeue(ctx context.Context) (*protocol.Admission, error) {
+func (p *AdmissionPlugin) dequeue(ctx context.Context) (*protocol.Admission, error) {
 	for {
 		select {
 		case promise := <-p.pending:
@@ -389,7 +389,7 @@ func (p *Plugin) dequeue(ctx context.Context) (*protocol.Admission, error) {
 }
 
 // resolve is called when an admission request is resolved by the plugin.
-func (p *Plugin) resolve(id string, err error) {
+func (p *AdmissionPlugin) resolve(id string, err error) {
 	p.m.Lock()
 	promise, _ := p.checks[id]
 	p.m.Unlock()
@@ -403,7 +403,7 @@ func (p *Plugin) resolve(id string, err error) {
 // admissionsServer receives RPCs from some single admission plugin.
 type admissionsServer struct {
 	protocol.UnimplementedAdmissionsServer
-	plugin *Plugin
+	plugin *AdmissionPlugin
 }
 
 func (s *admissionsServer) ListAdmissions(req *protocol.ListAdmissionsRequest, stream protocol.Admissions_ListAdmissionsServer) error {

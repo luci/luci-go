@@ -74,8 +74,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
-	"go.chromium.org/luci/cipd/client/cipd/plugin"
-	"go.chromium.org/luci/cipd/client/cipd/plugin/admission"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/host"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
@@ -485,14 +484,14 @@ func NewClient(opts ClientOptions) (Client, error) {
 		repo:          repo,
 		storage:       s,
 		deployer:      deployer.New(opts.Root),
-		pluginsHost: plugin.Host{
+		pluginsHost: host.Host{
 			ServiceURL: opts.ServiceURL,
 			Repository: repo,
 		},
 	}
 
 	if len(opts.AdmissionPlugin) != 0 {
-		client.pluginsAdmission = admission.NewPlugin(
+		client.pluginsAdmission = host.NewAdmissionPlugin(
 			opts.PluginsContext,
 			&client.pluginsHost,
 			opts.AdmissionPlugin,
@@ -568,8 +567,8 @@ type clientImpl struct {
 	instanceCacheInit sync.Once
 
 	// Plugins system.
-	pluginsHost      plugin.Host
-	pluginsAdmission *admission.Plugin // nil if disabled
+	pluginsHost      host.Host
+	pluginsAdmission *host.AdmissionPlugin // nil if disabled
 }
 
 type batchAwareOp int

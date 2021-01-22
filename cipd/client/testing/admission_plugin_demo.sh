@@ -55,7 +55,7 @@ function build_fake_package {
 banner "Building go code"
 mkdir $STAGING/bin
 go build -v -o "$STAGING/bin/cipd" go.chromium.org/luci/cipd/client/cmd/cipd
-go build -v -o "$STAGING/bin/example" go.chromium.org/luci/cipd/client/cipd/plugin/admission/example
+go build -v -o "$STAGING/bin/example" go.chromium.org/luci/cipd/client/cipd/plugin/plugins/admission/example
 export PATH="$STAGING/bin":$PATH
 
 
