@@ -25,32 +25,32 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
-	"go.chromium.org/luci/cv/internal/run/internal"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
 // Start tells RunManager to start the given run.
 func Start(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID, &internal.Event{
-		Event: &internal.Event_Start{
-			Start: &internal.Start{},
+	return send(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_Start{
+			Start: &eventpb.Start{},
 		},
 	})
 }
 
 // Poke tells RunManager to check its own state.
 func Poke(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID, &internal.Event{
-		Event: &internal.Event_Poke{
-			Poke: &internal.Poke{},
+	return send(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_Poke{
+			Poke: &eventpb.Poke{},
 		},
 	})
 }
 
 // UpdateConfig tells RunManager to update the given Run to new config.
 func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
-	return send(ctx, runID, &internal.Event{
-		Event: &internal.Event_UpdateConfig{
-			UpdateConfig: &internal.UpdateConfig{
+	return send(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_UpdateConfig{
+			UpdateConfig: &eventpb.UpdateConfig{
 				Hash:     hash,
 				Eversion: eversion,
 			},
@@ -62,14 +62,14 @@ func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion
 //
 // TODO(yiwzhang,tandrii): support reason.
 func Cancel(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID, &internal.Event{
-		Event: &internal.Event_Cancel{
-			Cancel: &internal.Cancel{},
+	return send(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_Cancel{
+			Cancel: &eventpb.Cancel{},
 		},
 	})
 }
 
-func send(ctx context.Context, runID common.RunID, evt *internal.Event) error {
+func send(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
 	value, err := proto.Marshal(evt)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
@@ -79,5 +79,5 @@ func send(ctx context.Context, runID common.RunID, evt *internal.Event) error {
 	if err := eventbox.Emit(ctx, value, to); err != nil {
 		return err
 	}
-	return internal.Dispatch(ctx, rid, time.Time{} /*asap*/)
+	return eventpb.Dispatch(ctx, rid, time.Time{} /*asap*/)
 }

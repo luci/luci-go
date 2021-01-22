@@ -29,13 +29,13 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/internal"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
 func init() {
-	internal.PokeRunTaskRef.AttachHandler(
+	eventpb.PokeRunTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*internal.PokeRunTask)
+			task := payload.(*eventpb.PokeRunTask)
 			err := pokeRunTask(ctx, common.RunID(task.GetRunId()))
 			// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
 			// already scheduled for the next second.
@@ -163,7 +163,7 @@ type triageResult struct {
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
-	e := &internal.Event{}
+	e := &eventpb.Event{}
 	if err := proto.Unmarshal(item.Value, e); err != nil {
 		// This is a bug in code or data corruption.
 		// There is no way to recover on its own.
@@ -171,13 +171,13 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		panic(err)
 	}
 	switch e.GetEvent().(type) {
-	case *internal.Event_Start:
+	case *eventpb.Event_Start:
 		tr.starts = append(tr.starts, item)
-	case *internal.Event_Cancel:
+	case *eventpb.Event_Cancel:
 		tr.cancels = append(tr.cancels, item)
-	case *internal.Event_Poke:
+	case *eventpb.Event_Poke:
 		tr.pokes = append(tr.pokes, item)
-	case *internal.Event_UpdateConfig:
+	case *eventpb.Event_UpdateConfig:
 		tr.updateConfigs = append(tr.updateConfigs, item)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
