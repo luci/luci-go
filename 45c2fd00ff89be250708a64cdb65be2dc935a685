@@ -175,6 +175,30 @@
       },
       "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28faf261_bd014140",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003232
+      },
+      "writtenOn": "2021-01-22T23:45:22Z",
+      "side": 1,
+      "message": "I thought we had talked about changing the blinkpy code at one point to track whether something was coming from NeverFixTests or not and changing how we reported the result to ResultDB accordingly.\n\nddoman / nodir, does that ring any bells?",
+      "parentUuid": "4956fb1d_1cb61697",
+      "range": {
+        "startLine": 126,
+        "startChar": 46,
+        "endLine": 127,
+        "endChar": 20
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
