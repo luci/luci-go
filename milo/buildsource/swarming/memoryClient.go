@@ -51,8 +51,8 @@ type annotationParser struct {
 	stream map[string]streamclient.FakeStreamData
 }
 
-func parseAnnotations(c streamclient.FakeClient) (*rawpresentation.Streams, error) {
-	fakeData := c.GetFakeData()
+func parseAnnotations(scFake streamclient.Fake) (*rawpresentation.Streams, error) {
+	fakeData := scFake.Data()
 
 	var parser annotationParser
 	parser.stream = make(map[string]streamclient.FakeStreamData, len(fakeData))
