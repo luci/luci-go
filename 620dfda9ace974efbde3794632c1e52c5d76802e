@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06bd77fe_20f2452f",
+        "filename": "cv/internal/prjmanager/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-22T20:58:52Z",
+      "side": 1,
+      "message": "Del",
+      "range": {
+        "startLine": 93,
+        "startChar": 60,
+        "endLine": 93,
+        "endChar": 63
+      },
+      "revId": "620dfda9ace974efbde3794632c1e52c5d76802e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
