@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "661d1ba7_c69b2fea",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-22T06:08:23Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "78a0b35f32f0d6be4cfe0ede336d6b8bd1f6dde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a16c4100_1e91d89b",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-22T06:08:23Z",
+      "side": 1,
+      "message": "this seems _unnecessarily_ inefficient though; why not:\n  * preamble :\u003d \"\"\n  * for\n    * cut buffer at maxLogEntrySize - len(preamble)\n    * scan backwards with TrimRightFunc until \"\\n\"\n    * print preamble + chunk\n    * if buffer is covered, return\n    * preamble \u003d \"(continuation of error log)\\n\"\n?\n\nThen the \u0027multipart\u0027 and \u0027singlepart\u0027 logic are the same logic",
+      "range": {
+        "startLine": 252,
+        "startChar": 5,
+        "endLine": 252,
+        "endChar": 6
+      },
+      "revId": "78a0b35f32f0d6be4cfe0ede336d6b8bd1f6dde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
