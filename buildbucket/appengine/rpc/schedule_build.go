@@ -24,10 +24,12 @@ import (
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
+	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -175,22 +177,41 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 // scheduleBuilds handles requests to schedule builds. Requests must be
 // validated and authorized.
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
+	// TODO(crbug/1042991): Deduplicate request IDs.
+
 	// Bucket -> Builder -> *pb.Builder.
 	_, err := fetchBuilderConfigs(ctx, reqs)
 	if err != nil {
 		return nil, errors.Annotate(err, "error fetching builders").Err()
 	}
 
+	blds := make([]*model.Build, len(reqs))
+	for i := range blds {
+		// TODO(crbug/1042991): Generate build IDs.
+		// TODO(crbug/1042991): Actually create builds from the requests.
+		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
+		blds[i] = &model.Build{
+			Proto: pb.Build{
+				Id: int64(i + 1),
+			},
+		}
+	}
+
 	// TODO(crbug/1150607): Create ResultDB invocations.
-	// TODO(crbug/1042991): Deduplicate the build by request ID.
-	// TODO(crbug/1042991): Generate build IDs.
 	// TODO(crbug/1042991): Generate build numbers.
 	// TODO(crbug/1042991): Update Builders in the datastore to point to the latest build.
 	// TODO(crbug/1042991): Create Builds in the datastore.
 	// TODO(crbug/1042991): Enqueue taskqueue task to create Swarming task.
 	// TODO(crbug/1042991): Update build creation metric.
 
-	return nil, nil
+	err = parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return blds, nil
 }
 
 // ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
@@ -199,7 +220,7 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 	if err = validateSchedule(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	_, err = getFieldMask(req.Fields)
+	m, err := getFieldMask(req.Fields)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
@@ -211,10 +232,9 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 		return nil, err
 	}
 
-	_, err = scheduleBuilds(ctx, req)
+	blds, err := scheduleBuilds(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-
-	return nil, nil
+	return blds[0].ToProto(ctx, m)
 }

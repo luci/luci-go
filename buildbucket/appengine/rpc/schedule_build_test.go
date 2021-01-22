@@ -1098,7 +1098,10 @@ func TestScheduleBuild(t *testing.T) {
 
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldBeNil)
-					So(rsp, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Id:    1,
+						Input: &pb.Build_Input{},
+					})
 				})
 			})
 		})
@@ -1173,7 +1176,10 @@ func TestScheduleBuild(t *testing.T) {
 
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldBeNil)
-					So(rsp, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Id:    1,
+						Input: &pb.Build_Input{},
+					})
 				})
 			})
 		})
