@@ -616,9 +616,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			st.convertMethod = convertProto
 			st.idxSetting = NoIndex
 			switch opts {
-			case "": // default.
-				st.protoOption = protoOption("nocompress")
-			case "zstd", "nocompress", "legacy":
+			case "zstd", "nocompress", "legacy", "":
 				st.protoOption = protoOption(opts)
 			// This package historically ignored unsupported options. However, it is
 			// expected that some variations of compression algo will be added in the
