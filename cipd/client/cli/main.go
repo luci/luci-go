@@ -53,6 +53,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/host"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
@@ -364,7 +365,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 		Versions:            opts.versions,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
-		PluginsContext:      ctx,
+		PluginHost:          &host.Host{PluginsContext: ctx},
 		LoginInstructions:   "run `cipd auth-login` to login or relogin",
 	}
 	if err := realOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {

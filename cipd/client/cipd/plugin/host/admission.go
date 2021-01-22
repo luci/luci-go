@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins/admission"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/common"
@@ -44,6 +45,8 @@ var ErrAborted = errors.Reason("the admission plugin is terminating").Err()
 //
 // It is instantiated by the CIPD client if it detects there's an admission
 // plugin configured.
+//
+// Implements plugin.AdmissionPlugin interface.
 type AdmissionPlugin struct {
 	ctx             context.Context // for logging from the plugin
 	host            *Host           // the Host to run the plugin in
@@ -67,6 +70,8 @@ type AdmissionPlugin struct {
 }
 
 // Promise is a pending or finished result of an admission check.
+//
+// Implements plugin.Promise interface.
 type Promise struct {
 	check    *protocol.Admission
 	resolves int32         // how many times resolve(...) was called
@@ -168,7 +173,7 @@ func (p *AdmissionPlugin) Close(ctx context.Context) {
 // Returns a promise which is resolved when the result is available. If such
 // check is already pending (or has been done before), returns an existing
 // (perhaps already resolved) promise.
-func (p *AdmissionPlugin) CheckAdmission(pin common.Pin) *Promise {
+func (p *AdmissionPlugin) CheckAdmission(pin common.Pin) plugin.Promise {
 	admission, err := p.makeAdmission(pin)
 	if err != nil {
 		return newPromise(nil).resolve(err)
@@ -219,7 +224,7 @@ func (p *AdmissionPlugin) ClearCache() {
 // try to use it as a key in some persistent cache. Admission IDs are ephemeral.
 func (p *AdmissionPlugin) makeAdmission(pin common.Pin) (*protocol.Admission, error) {
 	admission := &protocol.Admission{
-		ServiceUrl: p.host.ServiceURL,
+		ServiceUrl: p.host.Config().ServiceURL,
 		Package:    pin.PackageName,
 		Instance:   common.InstanceIDToObjectRef(pin.InstanceID),
 	}

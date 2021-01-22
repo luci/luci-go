@@ -74,7 +74,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
-	"go.chromium.org/luci/cipd/client/cipd/plugin/host"
+	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
@@ -372,10 +372,10 @@ type ClientOptions struct {
 	// LoginInstructions is appended to "permission denied" error messages.
 	LoginInstructions string
 
-	// PluginsContext is used for asynchronous logging from plugins.
+	// PluginHost is a plugin system implementation to use.
 	//
-	// If not set, all logs from plugins will be ignored.
-	PluginsContext context.Context
+	// If not set, all plugin functionality will be ignored.
+	PluginHost plugin.Host
 
 	// AdmissionPlugin is the deployment admission plugin command line (if any).
 	//
@@ -406,7 +406,7 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 			opts.UserAgent = fmt.Sprintf("%s/%s", v, UserAgent)
 		}
 	}
-	if len(opts.AdmissionPlugin) == 0 {
+	if opts.PluginHost != nil && len(opts.AdmissionPlugin) == 0 {
 		if v := getEnv(EnvAdmissionPlugin); v != "" {
 			if err := json.Unmarshal([]byte(v), &opts.AdmissionPlugin); err != nil {
 				return fmt.Errorf("bad %s: not a valid JSON - %q", EnvAdmissionPlugin, v)
@@ -426,9 +426,6 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	if opts.UserAgent == "" {
 		opts.UserAgent = UserAgent
-	}
-	if opts.PluginsContext == nil {
-		opts.PluginsContext = context.Background()
 	}
 
 	// Validate and normalize service URL.
@@ -478,24 +475,33 @@ func NewClient(opts ClientOptions) (Client, error) {
 		}
 	}
 
+	if opts.PluginHost != nil {
+		err := opts.PluginHost.Initialize(plugin.Config{
+			ServiceURL: opts.ServiceURL,
+			Repository: repo,
+		})
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to initialize the plugin host").Err()
+		}
+	}
+
 	client := &clientImpl{
 		ClientOptions: opts,
 		cas:           cas,
 		repo:          repo,
 		storage:       s,
 		deployer:      deployer.New(opts.Root),
-		pluginsHost: host.Host{
-			ServiceURL: opts.ServiceURL,
-			Repository: repo,
-		},
+		pluginHost:    opts.PluginHost,
 	}
 
 	if len(opts.AdmissionPlugin) != 0 {
-		client.pluginsAdmission = host.NewAdmissionPlugin(
-			opts.PluginsContext,
-			&client.pluginsHost,
-			opts.AdmissionPlugin,
-		)
+		if client.pluginHost == nil {
+			return nil, errors.Reason("using admission plugins requires configuring the plugin system").Err()
+		}
+		client.pluginAdmission, err = client.pluginHost.NewAdmissionPlugin(opts.AdmissionPlugin)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to initialize the admission plugin").Err()
+		}
 	}
 
 	return client, nil
@@ -566,9 +572,9 @@ type clientImpl struct {
 	instanceCache     *internal.InstanceCache
 	instanceCacheInit sync.Once
 
-	// Plugins system.
-	pluginsHost      host.Host
-	pluginsAdmission *host.AdmissionPlugin // nil if disabled
+	// Plugin system.
+	pluginHost      plugin.Host            // nil if disabled
+	pluginAdmission plugin.AdmissionPlugin // nil if disabled
 }
 
 type batchAwareOp int
@@ -599,8 +605,8 @@ func (client *clientImpl) cleanupTrash(ctx context.Context) {
 }
 
 func (client *clientImpl) clearAdmissionCache(ctx context.Context) {
-	if client.pluginsAdmission != nil {
-		client.pluginsAdmission.ClearCache()
+	if client.pluginAdmission != nil {
+		client.pluginAdmission.ClearCache()
 	}
 }
 
@@ -643,10 +649,12 @@ func (client *clientImpl) getInstanceCache(ctx context.Context) *internal.Instan
 }
 
 func (client *clientImpl) Close(ctx context.Context) {
-	if client.pluginsAdmission != nil {
-		client.pluginsAdmission.Close(ctx)
+	if client.pluginAdmission != nil {
+		client.pluginAdmission.Close(ctx)
 	}
-	client.pluginsHost.Close(ctx)
+	if client.pluginHost != nil {
+		client.pluginHost.Close(ctx)
+	}
 }
 
 func (client *clientImpl) BeginBatch(ctx context.Context) {
@@ -1584,9 +1592,9 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		return err
 	}
 
-	if client.pluginsAdmission != nil {
+	if client.pluginAdmission != nil {
 		defer client.doBatchAwareOp(ctx, batchAwareOpClearAdmissionCache)
-		err := client.pluginsAdmission.CheckAdmission(pin).Wait(ctx)
+		err := client.pluginAdmission.CheckAdmission(pin).Wait(ctx)
 		if err != nil {
 			return errors.Annotate(err, "not admitted for deployment").Err()
 		}
@@ -1642,17 +1650,17 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 	// Enqueue deployment admission checks if have the plugin enabled. They will
 	// be consulted later in FetchAndDeployInstance. This is just an optimization
 	// to do checks in parallel with fetching and installing.
-	if client.pluginsAdmission != nil {
+	if client.pluginAdmission != nil {
 		aMap.LoopOrdered(func(subdir string, actions *Actions) {
 			for _, p := range actions.ToInstall {
-				client.pluginsAdmission.CheckAdmission(p)
+				client.pluginAdmission.CheckAdmission(p)
 			}
 			for _, pair := range actions.ToUpdate {
-				client.pluginsAdmission.CheckAdmission(pair.To)
+				client.pluginAdmission.CheckAdmission(pair.To)
 			}
 			for _, broken := range actions.ToRepair {
 				if broken.RepairPlan.NeedsReinstall {
-					client.pluginsAdmission.CheckAdmission(broken.Pin)
+					client.pluginAdmission.CheckAdmission(broken.Pin)
 				}
 			}
 		})
