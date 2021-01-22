@@ -68,22 +68,33 @@ const (
 	protoBinOptZSTD       = (2 << 3) | 4
 )
 
+// compressionThreshold is the number of bytes of serialized proto value after which
+// compression kicks in.
+const compressionThreshold = 16 * 1024
+
 var errInvalidProtoPrefix = fmt.Errorf("invalid gae proto serialization or unrecognized compression scheme")
 
 func protoToProperty(pb proto.Message, opt protoOption) (prop Property, err error) {
-	blob := make([]byte, 1, 16)
 	// proto can't marshall to io.Writer, so might as well serialize it now,
 	// but leave first byte free for "nocompress" case.
+	blob := make([]byte, 1, 16)
 	if blob, err = (proto.MarshalOptions{}).MarshalAppend(blob, pb); err != nil {
 		return
 	}
 	pbblob := blob[1:]
 
+	if opt == "" /*default*/ {
+		opt = "nocompress"
+		if len(pbblob) > compressionThreshold {
+			opt = "zstd"
+		}
+	}
+
 	switch opt {
 	case "legacy":
 		prop = MkPropertyNI(pbblob)
 		return
-	case "" /*default*/, "nocompress":
+	case "nocompress":
 		write1ByteProtoOpt(blob, protoBinOptNoCompress)
 		prop = MkPropertyNI(blob)
 		return

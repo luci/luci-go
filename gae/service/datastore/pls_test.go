@@ -1718,7 +1718,7 @@ var testCases = []testCase{
 		want: &B2{B: myBlob("rawr")},
 	},
 	{
-		desc: "protos encoding: default is nocompression",
+		desc: "protos encoding: default is nocompression until 16KiB",
 		src:  &WithProtoDefault{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
 		want: PropertyMap{
 			"Msg": mpNI([]byte{
@@ -1729,13 +1729,29 @@ var testCases = []testCase{
 		},
 	},
 	{
-		desc: "protos encoding: default is nocompression: save/load",
+		desc: "protos encoding: default is nocompression until 16KiB: save/load",
 		src: &WithProtoDefault{
 			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
 		},
 		want: &WithProtoDefault{
 			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
 		},
+	},
+	{
+		desc: "protos encoding: default is compression after 16KiB",
+		src:  &WithProtoDefault{Msg: &testprotos.Msg{Str: strings.Repeat("a", 16*1024)}},
+		want: PropertyMap{
+			"Msg": mpNI([]byte{
+				protoBinOptZSTD,
+				// compressed data
+				40, 181, 47, 253, 100, 4, 63, 109, 0, 0, 40, 10, 128, 128, 1, 97, 1, 84, 5, 2, 49, 252, 159, 133, 80, 47, 43,
+			}),
+		},
+	},
+	{
+		desc: "protos encoding: default is compression after 16KiB: save/load",
+		src:  &WithProtoDefault{Msg: &testprotos.Msg{Str: strings.Repeat("a", 16*1024)}},
+		want: &WithProtoDefault{Msg: &testprotos.Msg{Str: strings.Repeat("a", 16*1024)}},
 	},
 	{
 		desc: "protos encoding: compression",
