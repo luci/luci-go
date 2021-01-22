@@ -62,18 +62,18 @@ func FormatFromContentType(v string) (Format, error) {
 	if v == "" {
 		return FormatBinary, nil
 	}
-	mediaType, mediaTypeParams, err := mime.ParseMediaType(v)
-	if err != nil {
-		return 0, err
-	}
-	return FormatFromMediaType(mediaType, mediaTypeParams)
+	return FormatFromMediaType(v)
 }
 
 // FormatFromMediaType converts a media type ContentType and its parameters
 // into a pRPC Format.
 // Can return only FormatBinary, FormatJSONPB or FormatText.
 // In case of an error, format is undefined.
-func FormatFromMediaType(mt string, params map[string]string) (Format, error) {
+func FormatFromMediaType(mediaType string) (Format, error) {
+	mt, params, err := mime.ParseMediaType(mediaType)
+	if err != nil {
+		return 0, err
+	}
 	switch mt {
 	case ContentTypePRPC:
 		for k := range params {
