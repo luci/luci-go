@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a979a4c5_77eb3887",
+        "filename": "cv/internal/prjmanager/impl/state/partition.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-22T00:32:50Z",
+      "side": 1,
+      "message": "\u003e  this is precisely why removal only ever happens right as part of repartition and only after components are updated\n\nah right. forgot this part!\n\n\u003e Any other place whether it\u0027s worth adding a doc?\n\nNo. I think they are good enough!",
+      "parentUuid": "0f67b00b_6c9b7bea",
+      "range": {
+        "startLine": 86,
+        "startChar": 18,
+        "endLine": 86,
+        "endChar": 51
+      },
+      "revId": "309ff3da2f4bf9981126d73b32d4421ee7985fcc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "690c9fea_772773e9",
