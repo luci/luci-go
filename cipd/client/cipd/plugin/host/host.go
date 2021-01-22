@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 )
 
@@ -47,9 +48,15 @@ import (
 var ErrTerminated = errors.Reason("terminated with 0 exit code").Err()
 
 // Host launches plugin subprocesses and accepts connections from them.
+//
+// Implements plugin.Host interface.
 type Host struct {
-	ServiceURL string           // URL of the CIPD repository ("https://...") used by the client
-	Repository RepositoryClient // a subset of api.RepositoryClient available to plugins
+	// PluginsContext is used for asynchronous logging from plugins.
+	//
+	// If not set, all logs from plugins will be ignored.
+	PluginsContext context.Context
+
+	cfg atomic.Value // plugin.Config set in Initialize
 
 	m       sync.Mutex                // protects all fields below
 	plugins map[string]*PluginProcess // all launched plugins, per their RPC ticket
@@ -60,12 +67,6 @@ type Host struct {
 	testServeErr error // non-nil in tests to simulate srv.Serve error
 }
 
-// RepositoryClient is a subset of api.RepositoryClient available to plugins.
-type RepositoryClient interface {
-	// Lists metadata entries attached to an instance.
-	ListMetadata(ctx context.Context, in *api.ListMetadataRequest, opts ...grpc.CallOption) (*api.ListMetadataResponse, error)
-}
-
 // Controller lives in the host process and manages communication with a plugin.
 //
 // Each instance of a plugin has a Controller associated with it. The controller
@@ -74,6 +75,31 @@ type RepositoryClient interface {
 // different services to them.
 type Controller struct {
 	Admissions protocol.AdmissionsServer // non-nil for deployment admission plugins
+}
+
+// Initialize is called when the CIPD client starts before any other call.
+//
+// It is a part of plugin.Host interface.
+func (h *Host) Initialize(cfg plugin.Config) error {
+	h.cfg.Store(cfg)
+	return nil
+}
+
+// Config returns the config passed to Initialize or a default one.
+func (h *Host) Config() plugin.Config {
+	cfg, _ := h.cfg.Load().(plugin.Config)
+	return cfg
+}
+
+// NewAdmissionPlugin returns a handle to an admission plugin.
+//
+// It is a part of plugin.Host interface.
+func (h *Host) NewAdmissionPlugin(cmdLine []string) (plugin.AdmissionPlugin, error) {
+	ctx := h.PluginsContext
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return NewAdmissionPlugin(ctx, h, cmdLine), nil
 }
 
 // LaunchPlugin launches a plugin subprocesses.
@@ -143,6 +169,8 @@ func (h *Host) LaunchPlugin(ctx context.Context, args []string, ctrl *Controller
 //
 // Waits for the plugins to terminate gracefully. On context deadline kills them
 // with SIGKILL.
+//
+// It is a part of plugin.Host interface.
 func (h *Host) Close(ctx context.Context) {
 	wg := sync.WaitGroup{}
 	defer wg.Wait()
@@ -277,15 +305,17 @@ func (h *Host) pluginForRPC(ctx context.Context) (*PluginProcess, error) {
 
 // listMetadata implements Host.ListMetadata RPC.
 func (h *Host) listMetadata(ctx context.Context, req *protocol.ListMetadataRequest) (*protocol.ListMetadataResponse, error) {
-	switch {
-	case h.Repository == nil:
-		return nil, status.Errorf(codes.Unimplemented, "the RepositoryClient implementation is not provided")
-	case req.ServiceUrl != h.ServiceURL:
+	switch cfg, ok := h.cfg.Load().(plugin.Config); {
+	case !ok:
+		return nil, status.Errorf(codes.Internal, "the plugin host is not configured")
+	case cfg.Repository == nil:
+		return nil, status.Errorf(codes.Unimplemented, "a RepositoryClient implementation is not provided")
+	case req.ServiceUrl != cfg.ServiceURL:
 		// Don't allow to switch the repository. It can be implemented if necessary,
 		// but it likely won't be necessary, and the implementation is not trivial.
-		return nil, status.Errorf(codes.PermissionDenied, "can query only the CIPD repository the client is using (%q)", h.ServiceURL)
+		return nil, status.Errorf(codes.PermissionDenied, "can query only the CIPD repository the client is using (%q)", cfg.ServiceURL)
 	default:
-		resp, err := h.Repository.ListMetadata(ctx, &api.ListMetadataRequest{
+		resp, err := cfg.Repository.ListMetadata(ctx, &api.ListMetadataRequest{
 			Package:   req.Package,
 			Instance:  req.Instance,
 			Keys:      req.Keys,
