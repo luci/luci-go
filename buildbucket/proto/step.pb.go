@@ -62,21 +62,13 @@ type Step struct {
 	// MUST NOT be specified, if status is SCHEDULED.
 	// MUST be specified, if status is STARTED, SUCCESS, FAILURE, or INFRA_FAILURE
 	// MAY be specified, if status is CANCELED.
-	//
-	// MUST be specified, if specified in any of its children.
-	// MUST be in range [parent.start_time, parent.end_time].
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The timestamp when the step ended.
 	// Present iff status is terminal.
 	// MUST NOT be before start_time.
-	// MUST be in range [parent.start_time, parent.end_time], or unspecified.
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Status of the step.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.
-	//
-	// If the step has children
-	//   status MUST NOT be SCHEDULED.
-	//   status MUST be STARTED if status of any child is not terminal.
 	Status Status `protobuf:"varint,4,opt,name=status,proto3,enum=buildbucket.v2.Status" json:"status,omitempty"`
 	// Logs produced by the step.
 	// Log order is up to the step.

@@ -273,67 +273,6 @@ func TestValidateStep(t *testing.T) {
 				So(validateStep(step, nil, bStatus), ShouldErrLike, `logs[1].name: duplicate: "name"`)
 			})
 		})
-
-		Convey("with a parent step", func() {
-			parent := &pb.Step{Name: "step1"}
-			setST := func(s, ps pb.Status) { step.Status, parent.Status = s, ps }
-			setTS := func(s, e, ps, pe *timestamppb.Timestamp) {
-				step.StartTime, step.EndTime = s, e
-				parent.StartTime, parent.EndTime = ps, pe
-			}
-
-			Convey("parent status is SCHEDULED", func() {
-				setST(pb.Status_STARTED, pb.Status_SCHEDULED)
-				setTS(t, nil, t, nil)
-				So(validateStep(step, parent, bStatus), ShouldErrLike, `parent "step1" must be at least STARTED`)
-			})
-
-			Convey("child status is STARTED, but parent status is not", func() {
-				setST(pb.Status_STARTED, pb.Status_SUCCESS)
-				setTS(t, nil, t, t)
-				So(validateStep(step, parent, bStatus), ShouldErrLike, "the parent status must be STARTED")
-			})
-
-			Convey("child status is better", func() {
-				setST(pb.Status_SUCCESS, pb.Status_FAILURE)
-				setTS(t, t, t, t)
-				So(validateStep(step, parent, bStatus), ShouldBeNil)
-			})
-
-			Convey("with start_time", func() {
-				Convey("parent missing start_time", func() {
-					setST(pb.Status_SUCCESS, pb.Status_INFRA_FAILURE)
-					setTS(t, t, nil, t)
-					So(validateStep(step, parent, bStatus), ShouldErrLike, "parent's start_time not specified")
-				})
-
-				Convey("preceding to parent.start_time", func() {
-					setST(pb.Status_STARTED, pb.Status_STARTED)
-					setTS(t, nil, addTS(t, time.Second), nil)
-					So(validateStep(step, parent, bStatus), ShouldErrLike, "cannot precede parent's")
-				})
-
-				Convey("following parent.end_time", func() {
-					setST(pb.Status_FAILURE, pb.Status_CANCELED)
-					setTS(addTS(t, time.Minute), addTS(t, time.Hour), t, addTS(t, time.Second))
-					So(validateStep(step, parent, bStatus), ShouldErrLike, "cannot follow parent's")
-				})
-			})
-
-			Convey("with end_time", func() {
-				Convey("preceding to parent.start_time", func() {
-					setST(pb.Status_SUCCESS, pb.Status_FAILURE)
-					setTS(addTS(t, -time.Hour), addTS(t, -time.Minute), t, t)
-					So(validateStep(step, parent, bStatus), ShouldErrLike, "cannot precede parent's")
-				})
-
-				Convey("following parent.end_time", func() {
-					setST(pb.Status_SUCCESS, pb.Status_FAILURE)
-					setTS(t, addTS(t, time.Hour), t, t)
-					So(validateStep(step, parent, bStatus), ShouldErrLike, "cannot follow parent's")
-				})
-			})
-		})
 	})
 }
 

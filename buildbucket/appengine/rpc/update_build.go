@@ -220,40 +220,16 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 		}
 	}
 
-	// check for the status and timing consistency
-	if parent != nil {
-		switch {
-		case parent.Status == pb.Status_SCHEDULED:
-			return errors.Reason("status: parent %q must be at least STARTED", parent.Name).Err()
-		case !protoutil.IsEnded(step.Status) && parent.Status != pb.Status_STARTED:
-			return errors.Reason("status: for non-terminal status %q, the parent status must be STARTED, but %q", step.Status, parent.Status).Err()
-		}
-
-		// The parent's start_time and end_time have been validated already
-		// when it was the current step.
-		pst, _ := ptypes.Timestamp(parent.StartTime)
-		pet, _ := ptypes.Timestamp(parent.EndTime)
-
-		if step.StartTime != nil {
-			switch {
-			case parent.StartTime == nil:
-				return errors.New("start_time: cannot be specified, if parent's start_time not specified")
-			case st.Before(pst):
-				return errors.New("start_time: cannot precede parent's start_time")
-			case parent.EndTime != nil && st.After(pet):
-				return errors.New("start_time: cannot follow parent's end_time")
-			}
-		}
-
-		if step.EndTime != nil && parent.EndTime != nil {
-			switch {
-			case et.Before(pst):
-				return errors.New("end_time: cannot precede parent's start_time")
-			case et.After(pet):
-				return errors.New("end_time: cannot follow parent's end_time")
-			}
-		}
-	}
+	// NOTE: We used to validate consistency of timestamps and status between
+	// parent and child. However with client-side protocols such as luciexe, the
+	// parent and child steps may actually belong to separate processes on the
+	// machine, and can race each other in `bbagent`.
+	//
+	// Additionally, there's no way to guarantee that these two processes would
+	// have a consistent monotonic clock state that's shared between them (this is
+	// possible, but would take a fair amount of work) and events such as Daylight
+	// Savings Time shifts could lead to up to an hour of inconsistency between
+	// step timestamps.
 
 	return nil
 }
