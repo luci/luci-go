@@ -161,16 +161,19 @@ func (s *State) filterOutUpToDate(events []*internal.CLUpdated) map[common.CLID]
 
 func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error, old *internal.PCL) (*internal.PCL, error) {
 	switch {
-	case err == datastore.ErrNoSuchEntity && old == nil:
-		logging.Errorf(ctx, "New CL %d not in Datastore", cl.ID)
-		return nil, nil
 	case err == datastore.ErrNoSuchEntity:
-		// Must not happen outside of extremely rare un-deletion of a project
-		// whose PM state references long ago wiped out CLs.
-		logging.Errorf(ctx, "Old CL %d no longer in Datastore", cl.ID)
+		oldEversion := int64(0)
+		if old == nil {
+			logging.Errorf(ctx, "New CL %d not in Datastore", cl.ID)
+		} else {
+			// Must not happen outside of extremely rare un-deletion of a project
+			// whose PM state references long ago wiped out CLs.
+			logging.Errorf(ctx, "Old CL %d no longer in Datastore", cl.ID)
+			oldEversion = old.GetEversion()
+		}
 		return &internal.PCL{
-			Clid:     old.GetClid(),
-			Eversion: old.GetEversion(),
+			Clid:     int64(cl.ID),
+			Eversion: oldEversion,
 			Status:   internal.PCL_DELETED,
 		}, nil
 	case err != nil:

@@ -134,8 +134,9 @@ type PState struct {
 	Pcls []*PCL `protobuf:"bytes,11,rep,name=pcls,proto3" json:"pcls,omitempty"`
 	// Components are a partition of CLs in the list above.
 	//
-	// A watched CL may belong to at most 1 component, while unwatched dep may be
-	// referenced by several.
+	// An active CL (watched or used to be watched and still member of a Run) may
+	// belong to at most 1 component, while unwatched dep may be referenced by
+	// several.
 	Components []*Component `protobuf:"bytes,12,rep,name=components,proto3" json:"components,omitempty"`
 	// If true, components partition must be redone as soon as possible.
 	DirtyComponents bool `protobuf:"varint,21,opt,name=dirty_components,json=dirtyComponents,proto3" json:"dirty_components,omitempty"`
@@ -352,7 +353,7 @@ type PRun struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// IDs of CLs involved. Sorted.
 	//
-	// Actual Run may orders its CLs in different way.
+	// Actual Run may orders its CLs in a different way.
 	Clids []int64 `protobuf:"varint,2,rep,packed,name=clids,proto3" json:"clids,omitempty"`
 }
 
@@ -413,6 +414,11 @@ type Component struct {
 	// Each referenced CL must be in PState.PCLs list.
 	// Each referenced CL may have deps not in this list if they are either
 	// PCL.Status.UNKNOWN or PCL.Status.UNWATCHED.
+	//
+	// A referenced CL is normally watched by this LUCI project. In rare cases,
+	// referenced CL is no longer watched by this LUCI project but is still kept
+	// in a component becaues the CL is still a member of an incomplete Run in
+	// this component. In this case, the CL's deps are no longer tracked.
 	Clids []int64 `protobuf:"varint,1,rep,packed,name=clids,proto3" json:"clids,omitempty"`
 	// Decision time is the earliest time when this component should be
 	// re-evaluated.
