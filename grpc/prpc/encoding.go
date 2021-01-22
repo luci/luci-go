@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
 	"strconv"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -52,27 +51,22 @@ func responseFormat(acceptHeader string) (Format, *protocolError) {
 	if err != nil {
 		return FormatBinary, errorf(http.StatusBadRequest, "Accept header: %s", err)
 	}
-	formats := make(acceptFormatSlice, 0, len(parsed))
 	for _, at := range parsed {
-		f, err := FormatFromMediaType(at.MediaType, at.MediaTypeParams)
+		f, err := FormatFromMediaType(at.Value)
 		if err != nil {
 			// Ignore invalid format. Check further.
 			continue
 		}
-		formats = append(formats, acceptFormat{f, at.QualityFactor})
+		return f, nil
 	}
-	if len(formats) == 0 {
-		return FormatBinary, errorf(
-			http.StatusNotAcceptable,
-			"Accept header: specified media types are not not supported. Supported types: %q, %q, %q, %q.",
-			FormatBinary.MediaType(),
-			FormatJSONPB.MediaType(),
-			FormatText.MediaType(),
-			ContentTypeJSON,
-		)
-	}
-	sort.Sort(formats) // order by quality factor and format preference.
-	return formats[0].Format, nil
+	return FormatBinary, errorf(
+		http.StatusNotAcceptable,
+		"Accept header: specified media types are not not supported. Supported types: %q, %q, %q, %q.",
+		FormatBinary.MediaType(),
+		FormatJSONPB.MediaType(),
+		FormatText.MediaType(),
+		ContentTypeJSON,
+	)
 }
 
 // marshalMessage marshals msg in the given format.

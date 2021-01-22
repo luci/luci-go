@@ -25,7 +25,7 @@ func TestFormat(t *testing.T) {
 	Convey("requestFormat", t, func() {
 		test := func(contentType string, expectedFormat Format, expectedErr interface{}) {
 			Convey("Content-Type: "+contentType, func() {
-				actualFormat, err := FormatFromContentType(contentType)
+				actualFormat, err := FormatFromMediaType(contentType)
 				So(err, ShouldErrLike, expectedErr)
 				if err == nil {
 					So(actualFormat, ShouldEqual, expectedFormat)

@@ -298,7 +298,7 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 
 	// Parse the response content type, verify it is what we expect.
 	if err == nil {
-		switch f, formatErr := FormatFromContentType(contentType); {
+		switch f, formatErr := FormatFromMediaType(contentType); {
 		case formatErr != nil:
 			err = status.Errorf(codes.Internal, "prpc: bad response content type %q: %s", contentType, formatErr)
 		case f != options.outFormat:
