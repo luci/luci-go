@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bff7326a_f7eb06c8",
+        "filename": "cipd/client/cipd/plugin/host/main_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T01:55:02Z",
+      "side": 1,
+      "message": "tbh, I didn\u0027t grasp why this is *necessary* -- can you tell me?\n\nbut I like the end result anyway, so lgtm.",
+      "revId": "07480f1ed778841adb75e92b9db2921f21430698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
