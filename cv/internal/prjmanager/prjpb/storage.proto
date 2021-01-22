@@ -142,6 +142,11 @@ message PCL {
   // based on CL snapshots at the time only when actual Run is actually being
   // created.
   cv.run.Trigger trigger = 12;
+
+  // Submitted means CV isn't going to work on a CL, but CL is still tracked as
+  // a dep of another CL or as a member of an incomplete Run (though the other
+  // Run will probably finish soon).
+  bool submitted = 13;
 }
 
 // PRun is an incomplete Run on which CV is currently working.

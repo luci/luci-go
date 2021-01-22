@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -234,8 +235,13 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	pcl.Status = prjpb.PCL_OK
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
 	pcl.Deps = cl.Snapshot.GetDeps()
-	// TODO(tandrii): stop storing triggering user's email
-	pcl.Trigger = trigger.Find(cl.Snapshot.GetGerrit().GetInfo())
+	ci := cl.Snapshot.GetGerrit().GetInfo()
+	if ci.GetStatus() == gerritpb.ChangeStatus_MERGED {
+		pcl.Submitted = true
+	} else {
+		// TODO(tandrii): stop storing triggering user's email
+		pcl.Trigger = trigger.Find(cl.Snapshot.GetGerrit().GetInfo())
+	}
 	return pcl
 }
 
