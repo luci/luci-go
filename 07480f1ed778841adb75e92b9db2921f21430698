@@ -34,6 +34,24 @@
       "parentUuid": "bff7326a_f7eb06c8",
       "revId": "07480f1ed778841adb75e92b9db2921f21430698",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "372e79d5_d15ba822",
+        "filename": "cipd/client/cipd/plugin/host/main_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-22T02:46:54Z",
+      "side": 1,
+      "message": "got it -- i didn\u0027t capture two _test files in the same package.",
+      "parentUuid": "586cf755_7c727105",
+      "revId": "07480f1ed778841adb75e92b9db2921f21430698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
