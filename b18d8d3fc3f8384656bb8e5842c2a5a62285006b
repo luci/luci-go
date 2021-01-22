@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "41e98952_4d5a04af",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-22T07:40:47Z",
+      "side": 1,
+      "message": "Discussed during our sync.\n\nI think the reason I use an extra datastore entity is that RunManager may not need this data immediately \n (i.e. it needs to send the request to refresh CLs which can be done without this data) so that it saves one extra load. Though it\u0027s a premature optimization.\n\nSince this is a throw-away code. So I\u0027ll stick with this implementation for now as I don\u0027t see major drawback with this approach and I already had code that consuming that. We can easily change in the future.",
+      "parentUuid": "525497b7_e0584c07",
+      "range": {
+        "startLine": 116,
+        "startChar": 0,
+        "endLine": 128,
+        "endChar": 1
+      },
+      "revId": "b18d8d3fc3f8384656bb8e5842c2a5a62285006b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4ac4ed1e_f46afdd7",
         "filename": "cv/internal/migration/run.go",
         "patchSetId": 4
@@ -37,6 +61,24 @@
       "writtenOn": "2021-01-21T16:51:09Z",
       "side": 1,
       "message": "is this the reason for new entity?\nIf so, this check can be made inside Run Manager itself based on its own status and if necessary new fields.",
+      "revId": "b18d8d3fc3f8384656bb8e5842c2a5a62285006b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57900576_ac2d7021",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-22T07:40:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4ac4ed1e_f46afdd7",
       "revId": "b18d8d3fc3f8384656bb8e5842c2a5a62285006b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -54,6 +96,24 @@
       "writtenOn": "2021-01-21T16:51:09Z",
       "side": 1,
       "message": "(cont. of above comment): I think we can embed ReportRunFInishedRequest proto into here for simplicity.",
+      "revId": "b18d8d3fc3f8384656bb8e5842c2a5a62285006b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "210dd488_7f0af397",
+        "filename": "cv/internal/run/internal/events.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-22T07:40:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "1d0a03de_748ccfc8",
       "revId": "b18d8d3fc3f8384656bb8e5842c2a5a62285006b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
