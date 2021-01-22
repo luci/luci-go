@@ -88,7 +88,7 @@ func TestEncoding(t *testing.T) {
 		test("x", 0, err406)
 		test("x,y", 0, err406)
 
-		test("x//y", 0, "pRPC: Accept header: expected token after slash")
+		test("x//y", 0, "pRPC: Accept header: specified media types are not not supported")
 	})
 
 	Convey("writeMessage", t, func() {
