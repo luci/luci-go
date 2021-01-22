@@ -1,0 +1,52 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+syntax = "proto3";
+
+package diagnostic;
+
+option go_package = "go.chromium.org/luci/cv/api/diagnostic;diagnosticpb";
+
+
+import "go.chromium.org/luci/cv/internal/prjmanager/storage.proto";
+import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
+import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/events.proto";
+
+
+// Diagnostic service is CV maintainers only.
+//
+// CAN AND WILL CHANGE WITHOUT NOTICE IN BACKWARDS INCOMPATIBLE WAY.
+service Diagnostic {
+
+  // GetProject returns current Project state.
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+}
+
+message GetProjectRequest {
+  string project = 1;
+}
+
+// GetProjectResponse provides non-atomic snapshot of a project state.
+//
+// The config hash and status come from different DS entity than PState,
+// and each event comes from its own entity and depends on yet another tombstone
+// entity.
+message GetProjectResponse {
+  cv.prjmanager.Status status = 1;
+  string config_hash = 2;
+  // PState's config_hash is not set.
+  cv.prjmanager.prjpb.PState pstate = 3;
+  repeated cv.prjmanager.prjpb.Event events = 4;
+}

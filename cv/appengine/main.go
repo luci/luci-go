@@ -30,8 +30,10 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
+	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/config/configcron"
+	"go.chromium.org/luci/cv/internal/diagnostic"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/servicecfg"
@@ -54,6 +56,7 @@ func main() {
 	server.Main(nil, modules, func(srv *server.Server) error {
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
+		diagnosticpb.RegisterDiagnosticServer(srv.PRPC, &diagnostic.DiagnosticServer{})
 		srv.Context = gerrit.UseProd(srv.Context)
 
 		isDev := srv.Options.CloudProject == "luci-change-verifier-dev"

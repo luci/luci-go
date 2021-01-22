@@ -15,8 +15,12 @@
 package prjmanager
 
 import (
+	"context"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -77,4 +81,25 @@ type ProjectStateOffload struct {
 // IncompleteRuns are IDs of Runs which aren't yet completed.
 func (p *Project) IncompleteRuns() (ids common.RunIDs) {
 	return p.State.IncompleteRuns()
+}
+
+// Load loads LUCI project state from Datastore.
+//
+// If project doesn't exist in Datastore, returns nil, nil, nil.
+func Load(ctx context.Context, luciProject string) (*Project, *ProjectStateOffload, error) {
+	p := &Project{ID: luciProject}
+	po := &ProjectStateOffload{Project: datastore.MakeKey(ctx, ProjectKind, luciProject)}
+	err := datastore.Get(ctx, p, po)
+	if err == nil {
+		return p, po, nil
+	}
+	switch errs, ok := err.(errors.MultiError); {
+	case !ok:
+		return nil, nil, errors.Annotate(err, "failed to load Project state").Tag(transient.Tag).Err()
+	case errs[0] == datastore.ErrNoSuchEntity && errs[1] == datastore.ErrNoSuchEntity:
+		return nil, nil, nil
+	default:
+		logging.Errorf(ctx, "LUCI project %q state is inconsistent: %s %s", luciProject, errs[0], errs[1])
+		return nil, nil, errors.Annotate(err, "failed to load Project state: inconsistent state").Err()
+	}
 }
