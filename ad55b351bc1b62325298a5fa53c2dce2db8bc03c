@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb490c14_db55ae68",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-22T21:00:47Z",
+      "side": 1,
+      "message": "Done, and yes, several of the the TODOs above probably go in here.",
+      "parentUuid": "b4b93e55_ed5dff3c",
+      "revId": "ad55b351bc1b62325298a5fa53c2dce2db8bc03c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "aef90cae_75bc9bba",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-01-21T23:36:38Z",
       "side": 1,
       "message": "same thing as \n\n  return blds[0].ToProto(ctx, m)",
+      "range": {
+        "startLine": 238,
+        "startChar": 1,
+        "endLine": 242,
+        "endChar": 14
+      },
+      "revId": "ad55b351bc1b62325298a5fa53c2dce2db8bc03c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "65a5663b_1314a59f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-01-22T21:00:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aef90cae_75bc9bba",
       "range": {
         "startLine": 238,
         "startChar": 1,
