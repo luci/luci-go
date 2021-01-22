@@ -62,7 +62,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			So(events, ShouldHaveLength, 0)
 			p, ps := loadProjectEntities(ctx, lProject)
 			So(p.EVersion, ShouldEqual, 1)
-			So(ps.Status, ShouldEqual, prjmanager.Status_STARTED)
+			So(ps.Status, ShouldEqual, prjpb.Status_STARTED)
 			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 			// Ensure first poller task gets executed.
@@ -109,7 +109,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 					p, ps := loadProjectEntities(ctx, lProject)
 					So(p.EVersion, ShouldEqual, 3)
-					So(ps.Status, ShouldEqual, prjmanager.Status_STOPPING)
+					So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
 					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 					// Must schedule a task per Run for cancelation on top of already
@@ -122,13 +122,13 @@ func TestProjectLifeCycle(t *testing.T) {
 						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 						p, ps := loadProjectEntities(ctx, lProject)
-						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPING)
+						So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
 						So(p.IncompleteRuns(), ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
 
 						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 						p, ps = loadProjectEntities(ctx, lProject)
-						So(ps.Status, ShouldEqual, prjmanager.Status_STOPPED)
+						So(ps.Status, ShouldEqual, prjpb.Status_STOPPED)
 						So(p.IncompleteRuns(), ShouldBeEmpty)
 					})
 				})
@@ -143,7 +143,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 				p, ps := loadProjectEntities(ctx, lProject)
 				So(p.EVersion, ShouldEqual, 2)
-				So(ps.Status, ShouldEqual, prjmanager.Status_STOPPED)
+				So(ps.Status, ShouldEqual, prjpb.Status_STOPPED)
 				So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			})
 		})

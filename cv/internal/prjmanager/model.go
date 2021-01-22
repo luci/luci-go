@@ -48,20 +48,16 @@ type Project struct {
 
 	// State serializes internal Project Manager state.
 	//
-	// The following fields aren't set, as they duplicate state already stored in
-	// ProjectStateOffload.
-	// * LuciProject
-	// * ConfigHash
-	// TODO(tandrii): store IncompleteRuns here.
+	// The `LuciProject` field isn't set as it duplicates Project.ID.
 	State *prjpb.PState
 }
 
-// ProjectStateOffload stores rarely-changed project state, offloaded from the
+// ProjectStateOffload stores rarely-changed project state duplicated from the
 // main Project entity for use in transactions creating Runs.
 //
-// Although this state could be stored in the main Project entity, doing so
-// would result in retries of Run creation transactions, since Project entity
-// is frequently modified in busy projects.
+// Although this is already stored in the main Project entity, doing so would
+// result in retries of Run creation transactions, since Project entity is
+// frequently modified in busy projects.
 //
 // On the other hand, ProjectStateOffload is highly likely to remain unchanged
 // by the time Run creation transaction commits, thus avoiding needless
@@ -73,7 +69,7 @@ type ProjectStateOffload struct {
 	Project *datastore.Key `gae:"$parent"`
 
 	// Status of project manager {STARTED, STOPPING, STOPPED (disabled)}.
-	Status Status `gae:",noindex"`
+	Status prjpb.Status `gae:",noindex"`
 	// ConfigHash is the latest processed Project Config hash.
 	ConfigHash string `gae:",noindex"`
 }
@@ -83,9 +79,21 @@ func (p *Project) IncompleteRuns() (ids common.RunIDs) {
 	return p.State.IncompleteRuns()
 }
 
+// Status returns Project Manager status.
+func (p *Project) Status() prjpb.Status {
+	return p.State.GetStatus()
+}
+
+// ConfigHash returns Project's Config hash.
+func (p *Project) ConfigHash() string {
+	return p.State.GetConfigHash()
+}
+
 // Load loads LUCI project state from Datastore.
 //
 // If project doesn't exist in Datastore, returns nil, nil, nil.
+//
+// TODO(crbug/1169206): fix this code to load just Project.
 func Load(ctx context.Context, luciProject string) (*Project, *ProjectStateOffload, error) {
 	p := &Project{ID: luciProject}
 	po := &ProjectStateOffload{Project: datastore.MakeKey(ctx, ProjectKind, luciProject)}

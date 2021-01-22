@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -159,7 +160,7 @@ func TestRunBuilder(t *testing.T) {
 		projectStateOffload := &ProjectStateOffload{
 			Project:    datastore.MakeKey(ctx, ProjectKind, rb.LUCIProject),
 			ConfigHash: "sha256:cafe",
-			Status:     Status_STARTED,
+			Status:     prjpb.Status_STARTED,
 		}
 		So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
 
@@ -173,7 +174,7 @@ func TestRunBuilder(t *testing.T) {
 			})
 
 			Convey("Mismatched project status", func() {
-				projectStateOffload.Status = Status_STOPPING
+				projectStateOffload.Status = prjpb.Status_STOPPING
 				So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
 				_, err := rb.Create(ctx)
 				So(err, ShouldErrLike, "status is STOPPING, expected STARTED")

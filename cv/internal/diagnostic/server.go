@@ -87,10 +87,10 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 	case p == nil:
 		return nil, status.Errorf(codes.NotFound, "project not found")
 	default:
-		resp.Status = po.Status
-		resp.ConfigHash = po.ConfigHash
-		resp.Pstate = p.State
-		resp.Pstate.LuciProject = req.GetProject()
+		resp.State = p.State
+		resp.State.LuciProject = req.GetProject()
+		resp.State.Status = po.Status
+		resp.State.ConfigHash = po.ConfigHash
 		return resp, nil
 	}
 }

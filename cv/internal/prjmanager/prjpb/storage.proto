@@ -47,6 +47,8 @@ message PState {
 
   // Name of LUCI project.
   string luci_project = 1;
+  // Status of the Project.
+  Status status = 2;
   // Config hash pins specific project config version.
   string config_hash = 3;
   // Config group names intern the names referenced in PCL entities to reduce
@@ -83,6 +85,13 @@ message PState {
   //   * CLs referenced by these PRuns may not be tracked;
   //   * If this field is not empty, re-partioning may be required.
   repeated PRun created_pruns = 22;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STARTED = 1;
+  STOPPING = 2;
+  STOPPED = 3;
 }
 
 // PCL is a tracked CL.
