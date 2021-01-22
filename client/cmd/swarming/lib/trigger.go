@@ -254,8 +254,6 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.realm, "realm", "", "Realm name for this task.")
 
 	// Other.
-	var rawCmd bool
-	c.Flags.BoolVar(&rawCmd, "raw-cmd", true, "DEPRECATED. Please always specify a '--' with a following command. The command will be run on the bot.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
 }
 
