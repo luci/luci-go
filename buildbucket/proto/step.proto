@@ -45,23 +45,15 @@ message Step {
   // MUST NOT be specified, if status is SCHEDULED.
   // MUST be specified, if status is STARTED, SUCCESS, FAILURE, or INFRA_FAILURE
   // MAY be specified, if status is CANCELED.
-  //
-  // MUST be specified, if specified in any of its children.
-  // MUST be in range [parent.start_time, parent.end_time].
   google.protobuf.Timestamp start_time = 2;
 
   // The timestamp when the step ended.
   // Present iff status is terminal.
   // MUST NOT be before start_time.
-  // MUST be in range [parent.start_time, parent.end_time], or unspecified.
   google.protobuf.Timestamp end_time = 3;
 
   // Status of the step.
   // Must be specified, i.e. not STATUS_UNSPECIFIED.
-  //
-  // If the step has children
-  //   status MUST NOT be SCHEDULED.
-  //   status MUST be STARTED if status of any child is not terminal.
   Status status = 4;
 
   // Logs produced by the step.
