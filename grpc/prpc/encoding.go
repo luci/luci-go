@@ -72,7 +72,7 @@ func responseFormat(acceptHeader string) (Format, *protocolError) {
 	}
 	formats := make(acceptFormatSlice, 0, len(parsed))
 	for _, at := range parsed {
-		f, err := FormatFromMediaType(at.MediaType, at.MediaTypeParams)
+		f, err := FormatFromMediaType(at.Value)
 		if err != nil {
 			// Ignore invalid format. Check further.
 			continue
