@@ -55,35 +55,35 @@ func pokePMTask(ctx context.Context, luciProject string) error {
 type projectManager struct {
 	luciProject string
 
-	// Modified by LoadState and read by SaveState.
-	stateOffload *prjmanager.ProjectStateOffload
+	// loadedPState is set by LoadState and read by SaveState.
+	loadedPState *prjpb.PState
 }
 
 // LoadState is called to load the state before a transaction.
 func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
 	p := &prjmanager.Project{ID: pm.luciProject}
-	pm.stateOffload = &prjmanager.ProjectStateOffload{
-		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
-	}
-	err := datastore.Get(ctx, p, pm.stateOffload)
-	merr, multiple := err.(errors.MultiError)
-	switch {
-	case multiple && merr[0] == datastore.ErrNoSuchEntity:
+	switch err := datastore.Get(ctx, p); {
+	case err == datastore.ErrNoSuchEntity:
 		return state.NewInitial(pm.luciProject), 0, nil
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
-	default:
-		// TODO(tandrii): remove this temporary code after all Project entities are
-		// rewritten, as it's only necessary for entities w/o a "State" field.
-		if p.State == nil {
-			p.State = &prjpb.PState{}
-		}
-
-		p.State.LuciProject = pm.luciProject
-		p.State.ConfigHash = pm.stateOffload.ConfigHash
-		s := state.NewExisting(pm.stateOffload.Status, p.State)
-		return s, eventbox.EVersion(p.EVersion), nil
 	}
+	p.State.LuciProject = pm.luciProject
+	pm.loadedPState = p.State
+	if p.State.GetConfigHash() != "" {
+		return state.NewExisting(p.State), eventbox.EVersion(p.EVersion), nil
+	}
+
+	// TODO(crbug/1169206): remove once all entities have migrated.
+	stateOffload := &prjmanager.ProjectStateOffload{
+		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
+	}
+	if err := datastore.Get(ctx, stateOffload); err != nil {
+		return nil, 0, errors.Annotate(err, "failed to get stateOffload %q", pm.luciProject).Tag(transient.Tag).Err()
+	}
+	p.State.Status = stateOffload.Status
+	p.State.ConfigHash = stateOffload.ConfigHash
+	return state.NewExisting(p.State), eventbox.EVersion(p.EVersion), nil
 }
 
 // Mutate is called before a transaction to compute transitions.
@@ -121,6 +121,8 @@ func (pm *projectManager) FetchEVersion(ctx context.Context) (eventbox.EVersion,
 // returned before.
 func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
 	s := st.(*state.State)
+	// Erase PB.LuciProject as it's already stored as Project{ID:...}.
+	s.PB.LuciProject = ""
 	entities := make([]interface{}, 1, 2)
 	entities[0] = &prjmanager.Project{
 		ID:         pm.luciProject,
@@ -128,17 +130,16 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 		UpdateTime: clock.Now(ctx).UTC(),
 		State:      s.PB,
 	}
-	if s.PB.GetConfigHash() != pm.stateOffload.ConfigHash || s.Status != pm.stateOffload.Status {
+
+	old := pm.loadedPState
+	if s.PB.GetConfigHash() != old.GetConfigHash() || s.PB.GetStatus() != old.GetStatus() {
 		entities = append(entities, &prjmanager.ProjectStateOffload{
 			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
-			Status:     s.Status,
+			Status:     s.PB.GetStatus(),
 			ConfigHash: s.PB.GetConfigHash(),
 		})
 	}
-	// Erase s.PB fields which are already stored as top level entities to avoid
-	// storing the same data twice.
-	s.PB.ConfigHash = ""
-	s.PB.LuciProject = ""
+
 	if err := datastore.Put(ctx, entities...); err != nil {
 		return errors.Annotate(err, "failed to put Project").Tag(transient.Tag).Err()
 	}

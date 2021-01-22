@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -226,7 +227,7 @@ func (rb *RunBuilder) checkProjectState(ctx context.Context) {
 			return errors.Annotate(err, "failed to load ProjectStateOffload").Err()
 		case err != nil:
 			return errors.Annotate(err, "failed to load ProjectStateOffload").Tag(transient.Tag).Err()
-		case ps.Status != Status_STARTED:
+		case ps.Status != prjpb.Status_STARTED:
 			return errors.Reason("project %q status is %s, expected STARTED", rb.LUCIProject, ps.Status.String()).Tag(StateChangedTag).Err()
 		case ps.ConfigHash != rb.ConfigGroupID.Hash():
 			return errors.Reason("project config is %s, expected %s", ps.ConfigHash, rb.ConfigGroupID.Hash()).Tag(StateChangedTag).Err()
