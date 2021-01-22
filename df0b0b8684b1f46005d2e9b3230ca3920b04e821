@@ -18,6 +18,41 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "32db662f_4f2c9370",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-22T00:18:11Z",
+      "side": 1,
+      "message": "The main func lgtm. Will test be a separate CL or you will upload a new PS for test?",
+      "parentUuid": "ed59636b_83183a2e",
+      "revId": "df0b0b8684b1f46005d2e9b3230ca3920b04e821",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "355f187e_f51a1304",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-22T00:18:11Z",
+      "side": 1,
+      "message": "The main func lgtm. Will test be a separate CL or you will upload a new PS for test?",
+      "revId": "df0b0b8684b1f46005d2e9b3230ca3920b04e821",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f6d56ad9_ce19f977",
@@ -31,6 +66,30 @@
       "writtenOn": "2021-01-21T21:06:50Z",
       "side": 1,
       "message": "this is notably not implemented 😊",
+      "range": {
+        "startLine": 209,
+        "startChar": 0,
+        "endLine": 209,
+        "endChar": 30
+      },
+      "revId": "df0b0b8684b1f46005d2e9b3230ca3920b04e821",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b6d5b96_4a118350",
+        "filename": "luciexe/build/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-22T00:18:11Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f6d56ad9_ce19f977",
       "range": {
         "startLine": 209,
         "startChar": 0,
