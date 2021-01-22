@@ -37,9 +37,11 @@ func TestRemoveRunFromCLs(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		r := &run.Run{
-			ID:  common.RunID("chromium/111-2-deadbeef"),
-			CLs: []common.CLID{1},
+		s := state{
+			Run: run.Run{
+				ID:  common.RunID("chromium/111-2-deadbeef"),
+				CLs: []common.CLID{1},
+			},
 		}
 		Convey("Works", func() {
 			err := datastore.Put(ctx, &changelist.CL{
@@ -53,7 +55,7 @@ func TestRemoveRunFromCLs(t *testing.T) {
 			ct.Clock.Add(1 * time.Hour)
 			now := clock.Now(ctx).UTC()
 			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return removeRunFromCLs(ctx, r)
+				return s.removeRunFromCLs(ctx)
 			}, nil)
 			So(err, ShouldBeNil)
 
@@ -78,7 +80,7 @@ func TestRemoveRunFromCLs(t *testing.T) {
 
 			ct.Clock.Add(1 * time.Hour)
 			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return removeRunFromCLs(ctx, r)
+				return s.removeRunFromCLs(ctx)
 			}, nil)
 			So(err, ShouldBeNil)
 
