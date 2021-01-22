@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plugin
+package host
 
 import (
 	"context"
@@ -42,8 +42,8 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 )
 
-// ErrTerminated is returned by Process.Err() if the plugin process exited with
-// 0 exit code.
+// ErrTerminated is returned by PluginProcess.Err() if the plugin process exited
+// with 0 exit code.
 var ErrTerminated = errors.Reason("terminated with 0 exit code").Err()
 
 // Host launches plugin subprocesses and accepts connections from them.
@@ -51,11 +51,11 @@ type Host struct {
 	ServiceURL string           // URL of the CIPD repository ("https://...") used by the client
 	Repository RepositoryClient // a subset of api.RepositoryClient available to plugins
 
-	m       sync.Mutex          // protects all fields below
-	plugins map[string]*Process // all launched plugins, per their RPC ticket
-	srv     *grpc.Server        // non-nil if the gRPC server has started
-	srvErr  error               // non-nil if the gRPC server failed to start
-	port    int                 // a localhost TCP port the server is listening on
+	m       sync.Mutex                // protects all fields below
+	plugins map[string]*PluginProcess // all launched plugins, per their RPC ticket
+	srv     *grpc.Server              // non-nil if the gRPC server has started
+	srvErr  error                     // non-nil if the gRPC server failed to start
+	port    int                       // a localhost TCP port the server is listening on
 
 	testServeErr error // non-nil in tests to simulate srv.Serve error
 }
@@ -82,7 +82,7 @@ type Controller struct {
 // the process.
 //
 // Uses the given context for logging from the plugin.
-func (h *Host) LaunchPlugin(ctx context.Context, args []string, ctrl *Controller) (*Process, error) {
+func (h *Host) LaunchPlugin(ctx context.Context, args []string, ctrl *Controller) (*PluginProcess, error) {
 	if len(args) == 0 {
 		return nil, errors.Reason("need at least one argument (the executable to start)").Err()
 	}
@@ -119,7 +119,7 @@ func (h *Host) LaunchPlugin(ctx context.Context, args []string, ctrl *Controller
 		err = errors.Annotate(h.srvErr, "failed to launch the plugins grpc server").Err()
 	} else {
 		if h.plugins == nil {
-			h.plugins = map[string]*Process{}
+			h.plugins = map[string]*PluginProcess{}
 		}
 		h.plugins[ticket] = plugin
 	}
@@ -233,7 +233,7 @@ func (h *Host) serverCrashed(err error) {
 // launchProcess starts a plugin subprocess.
 //
 // Doesn't communicate with it yet. Doesn't update `h.plugins`.
-func (h *Host) launchProcess(ctx context.Context, args []string, ctrl *Controller, ticket string) (*Process, error) {
+func (h *Host) launchProcess(ctx context.Context, args []string, ctrl *Controller, ticket string) (*PluginProcess, error) {
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -244,7 +244,7 @@ func (h *Host) launchProcess(ctx context.Context, args []string, ctrl *Controlle
 	if err := cmd.Start(); err != nil {
 		return nil, errors.Annotate(err, "failed to launch the plugin").Err()
 	}
-	proc := &Process{
+	proc := &PluginProcess{
 		ctx:    ctx,
 		host:   h,
 		ctrl:   ctrl,
@@ -258,12 +258,12 @@ func (h *Host) launchProcess(ctx context.Context, args []string, ctrl *Controlle
 	return proc, nil
 }
 
-// pluginForRPC picks a *Process based on a ticket in the incoming RPC.
+// pluginForRPC picks a *PluginProcess based on a ticket in the incoming RPC.
 //
 // Returns a gRPC status on errors.
-func (h *Host) pluginForRPC(ctx context.Context) (*Process, error) {
+func (h *Host) pluginForRPC(ctx context.Context) (*PluginProcess, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
-	tickets := md.Get(ticketMetadataKey)
+	tickets := md.Get("x-plugin-ticket")
 	if len(tickets) == 0 {
 		return nil, status.Errorf(codes.Unauthenticated, "no ticket in the request")
 	}
@@ -304,8 +304,8 @@ func (h *Host) listMetadata(ctx context.Context, req *protocol.ListMetadataReque
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Process represents a plugin subprocess.
-type Process struct {
+// PluginProcess represents a plugin subprocess.
+type PluginProcess struct {
 	ctx    context.Context // to use for logging from the plugin
 	host   *Host           // the owning host
 	ctrl   *Controller     // implements the plugin communication logic
@@ -318,14 +318,14 @@ type Process struct {
 }
 
 // Done returns a channel that closes when the plugin terminates.
-func (p *Process) Done() <-chan struct{} {
+func (p *PluginProcess) Done() <-chan struct{} {
 	return p.done
 }
 
 // Err returns an error if the plugin terminated (gracefully or not).
 //
 // Valid only if Done() is already closed, nil otherwise.
-func (p *Process) Err() error {
+func (p *PluginProcess) Err() error {
 	err, _ := p.err.Load().(error)
 	return err
 }
@@ -335,7 +335,7 @@ func (p *Process) Err() error {
 //
 // Returns the same value as Err(). Does nothing if the process is already
 // terminated.
-func (p *Process) Terminate(ctx context.Context) error {
+func (p *PluginProcess) Terminate(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -363,7 +363,7 @@ func (p *Process) Terminate(ctx context.Context) error {
 }
 
 // babysit launches a goroutine that waits for the process to stop.
-func (p *Process) babysit() {
+func (p *PluginProcess) babysit() {
 	go func() {
 		err := p.cmd.Wait()
 		if err == nil {
@@ -377,7 +377,7 @@ func (p *Process) babysit() {
 // sendHandshake writes the handshake message to the process's stdin.
 //
 // Respects the context expiration.
-func (p *Process) sendHandshake(ctx context.Context, port int, ticket string) error {
+func (p *PluginProcess) sendHandshake(ctx context.Context, port int, ticket string) error {
 	opts := protojson.MarshalOptions{Multiline: false}
 	body, err := opts.Marshal(&protocol.Handshake{Port: int32(port), Ticket: ticket})
 	if err != nil {

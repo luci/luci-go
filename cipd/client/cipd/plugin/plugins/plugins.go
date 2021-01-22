@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plugin
+// Package plugins contains shared plugin-side functionality.
+package plugins
 
 import (
 	"context"
@@ -136,8 +137,6 @@ func readHandshake(stdin io.Reader) (*protocol.Handshake, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const ticketMetadataKey = "x-plugin-ticket"
-
 // pluginPerRPCCredentials implements credentials.PerRPCCredentials.
 type pluginPerRPCCredentials struct {
 	ticket string
@@ -148,7 +147,7 @@ func (c *pluginPerRPCCredentials) RequireTransportSecurity() bool {
 }
 
 func (c *pluginPerRPCCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	return map[string]string{ticketMetadataKey: c.ticket}, nil
+	return map[string]string{"x-plugin-ticket": c.ticket}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

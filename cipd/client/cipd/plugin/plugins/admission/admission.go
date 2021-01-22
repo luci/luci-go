@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package admission contains API for writing admission plugins.
 package admission
 
 import (
@@ -24,12 +25,12 @@ import (
 	"google.golang.org/grpc/status"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/client/cipd/plugin"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 )
 
-// protocolVersion will change if we have backward-incompatible changes.
-const protocolVersion = 1
+// ProtocolVersion will change if we have backward-incompatible changes.
+const ProtocolVersion = 1
 
 // Handler handles one admission request.
 //
@@ -54,18 +55,18 @@ type InstanceInfo interface {
 	VisitMetadata(ctx context.Context, keys []string, pageSize int, cb func(md *api.InstanceMetadata) bool) error
 }
 
-// RunPlugin executes the run loop of an admission plugin.
+// Run executes the run loop of an admission plugin.
 //
 // It connects to the host and starts handling admission checks (each in an
 // individual goroutine) by calling the handler.
 //
 // Blocks until the stdin closes (which indicates the plugin should terminate).
-func RunPlugin(ctx context.Context, stdin io.ReadCloser, version string, handler Handler) error {
-	return plugin.Run(ctx, stdin, func(ctx context.Context, conn *grpc.ClientConn) error {
+func Run(ctx context.Context, stdin io.ReadCloser, version string, handler Handler) error {
+	return plugins.Run(ctx, stdin, func(ctx context.Context, conn *grpc.ClientConn) error {
 		srv := protocol.NewAdmissionsClient(conn)
 
 		stream, err := srv.ListAdmissions(ctx, &protocol.ListAdmissionsRequest{
-			ProtocolVersion: protocolVersion,
+			ProtocolVersion: ProtocolVersion,
 			PluginVersion:   version,
 		})
 		if err != nil {

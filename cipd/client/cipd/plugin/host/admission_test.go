@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package admission
+package host
 
 import (
 	"context"
@@ -30,12 +30,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/client/cipd/plugin"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins/admission"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/common"
 
@@ -49,108 +48,95 @@ const (
 	listingPageSize   = 7
 )
 
-func TestMain(m *testing.M) {
-	isPluginProc := len(os.Args) >= 1 && strings.HasPrefix(os.Args[1], "PLUGIN_")
-	if isPluginProc {
-		ctx := context.Background()
-		if err := pluginMain(ctx, os.Args[1]); err != nil {
-			errors.Log(ctx, err)
-			os.Exit(1)
-		} else {
-			os.Exit(0)
-		}
-	} else {
-		os.Exit(m.Run())
-	}
-}
-
-func pluginMain(ctx context.Context, mode string) error {
-	switch mode {
-	case "PLUGIN_NOT_CONNECTING":
-		// Block until stdin closes (which indicates the host is closing us).
-		io.Copy(ioutil.Discard, os.Stdin)
-		return nil
-	case "PLUGIN_CRASHING_WHEN_CONNECTING":
-		os.Exit(2)
-	}
-
-	var count int32
-
-	return RunPlugin(ctx, os.Stdin, "some version", func(ctx context.Context, req *protocol.Admission, info InstanceInfo) error {
-		cur := atomic.AddInt32(&count, 1)
-
-		if req.ServiceUrl != exampleHost {
-			return status.Errorf(codes.FailedPrecondition, "unexpected host")
-		}
-
+func init() {
+	registerPluginMain("PLUGIN_ADMISSION", func(ctx context.Context, mode string) error {
 		switch mode {
-		case "PLUGIN_NORMAL_REPLY":
-			if strings.HasPrefix(req.Package, "good/") {
-				return nil
-			}
-			logging.Infof(ctx, "Rejecting %s:%s:%s", req.ServiceUrl, req.Package, common.ObjectRefToInstanceID(req.Instance))
-			return status.Errorf(codes.FailedPrecondition, "the plugin says boo")
-
-		case "PLUGIN_BLOCK_REQUEST":
-			<-ctx.Done()
+		case "NOT_CONNECTING":
+			// Block until stdin closes (which indicates the host is closing us).
+			io.Copy(ioutil.Discard, os.Stdin)
 			return nil
-
-		case "PLUGIN_CRASH_ON_SECOND_REQUEST":
-			if cur == 2 {
-				os.Exit(2)
-			}
-			return nil
-
-		case "PLUGIN_BLOCK_ALL_BUT_FIRST":
-			if cur != 1 {
-				<-ctx.Done()
-			}
-			return nil
-
-		case "PLUGIN_VISIT_METADATA_ALL":
-			var visited []string
-			err := info.VisitMetadata(ctx, []string{"some-key"}, listingPageSize,
-				func(md *api.InstanceMetadata) bool {
-					visited = append(visited, string(md.Value))
-					return true
-				},
-			)
-			if err != nil {
-				return err
-			}
-			if len(visited) != fakeMetadataLimit {
-				return status.Errorf(codes.FailedPrecondition, "unexpected number of metadata entries")
-			}
-			for i, v := range visited {
-				if v != fmt.Sprintf("metadata-value-%d", i) {
-					return status.Errorf(codes.FailedPrecondition, "unexpected metadata #%d %q", i, v)
-				}
-			}
-			return nil
-
-		case "PLUGIN_VISIT_METADATA_ONE":
-			var visited []string
-			err := info.VisitMetadata(ctx, []string{"some-key"}, 0,
-				func(md *api.InstanceMetadata) bool {
-					visited = append(visited, string(md.Value))
-					return false
-				},
-			)
-			if err != nil {
-				return err
-			}
-			if len(visited) != 1 || visited[0] != "metadata-value-0" {
-				return status.Errorf(codes.FailedPrecondition, "unexpected metadata %q", visited)
-			}
-			return nil
-
-		default:
-			return status.Errorf(codes.Aborted, "unknown mode")
+		case "CRASHING_WHEN_CONNECTING":
+			os.Exit(2)
 		}
+
+		var count int32
+
+		return admission.Run(ctx, os.Stdin, "some version", func(ctx context.Context, req *protocol.Admission, info admission.InstanceInfo) error {
+			cur := atomic.AddInt32(&count, 1)
+
+			if req.ServiceUrl != exampleHost {
+				return status.Errorf(codes.FailedPrecondition, "unexpected host")
+			}
+
+			switch mode {
+			case "NORMAL_REPLY":
+				if strings.HasPrefix(req.Package, "good/") {
+					return nil
+				}
+				logging.Infof(ctx, "Rejecting %s:%s:%s", req.ServiceUrl, req.Package, common.ObjectRefToInstanceID(req.Instance))
+				return status.Errorf(codes.FailedPrecondition, "the plugin says boo")
+
+			case "BLOCK_REQUEST":
+				<-ctx.Done()
+				return nil
+
+			case "CRASH_ON_SECOND_REQUEST":
+				if cur == 2 {
+					os.Exit(2)
+				}
+				return nil
+
+			case "BLOCK_ALL_BUT_FIRST":
+				if cur != 1 {
+					<-ctx.Done()
+				}
+				return nil
+
+			case "VISIT_METADATA_ALL":
+				var visited []string
+				err := info.VisitMetadata(ctx, []string{"some-key"}, listingPageSize,
+					func(md *api.InstanceMetadata) bool {
+						visited = append(visited, string(md.Value))
+						return true
+					},
+				)
+				if err != nil {
+					return err
+				}
+				if len(visited) != fakeMetadataLimit {
+					return status.Errorf(codes.FailedPrecondition, "unexpected number of metadata entries")
+				}
+				for i, v := range visited {
+					if v != fmt.Sprintf("metadata-value-%d", i) {
+						return status.Errorf(codes.FailedPrecondition, "unexpected metadata #%d %q", i, v)
+					}
+				}
+				return nil
+
+			case "VISIT_METADATA_ONE":
+				var visited []string
+				err := info.VisitMetadata(ctx, []string{"some-key"}, 0,
+					func(md *api.InstanceMetadata) bool {
+						visited = append(visited, string(md.Value))
+						return false
+					},
+				)
+				if err != nil {
+					return err
+				}
+				if len(visited) != 1 || visited[0] != "metadata-value-0" {
+					return status.Errorf(codes.FailedPrecondition, "unexpected metadata %q", visited)
+				}
+				return nil
+
+			default:
+				return status.Errorf(codes.Aborted, "unknown mode")
+			}
+		})
 	})
 }
 
-func TestPlugin(t *testing.T) {
+func TestAdmissionPlugins(t *testing.T) {
 	t.Parallel()
 
 	const testInstanceID = "qUiQTy8PR5uPgZdpSzAYSw0u0cHNKh7A-4XSmaGSpEcC"
@@ -170,14 +156,18 @@ func TestPlugin(t *testing.T) {
 
 	Convey("With a host", t, func() {
 		fakeRepo := &fakeRepository{}
-		host := &plugin.Host{
+		host := &Host{
 			ServiceURL: exampleHost,
 			Repository: fakeRepo,
 		}
 		defer host.Close(ctx)
 
+		newPlugin := func(testCase string) *AdmissionPlugin {
+			return NewAdmissionPlugin(ctx, host, []string{os.Args[0], "PLUGIN_ADMISSION", testCase})
+		}
+
 		Convey("Happy path", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_NORMAL_REPLY"})
+			plug := newPlugin("NORMAL_REPLY")
 			defer plug.Close(ctx)
 
 			good := plug.CheckAdmission(testPin("good/a/b"))
@@ -231,7 +221,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("VisitMetadata visit all", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_VISIT_METADATA_ALL"})
+			plug := newPlugin("VISIT_METADATA_ALL")
 			defer plug.Close(ctx)
 			So(plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), ShouldBeNil)
 			So(fakeRepo.Calls(), ShouldResembleProto, []*api.ListMetadataRequest{
@@ -259,7 +249,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("VisitMetadata visit one", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_VISIT_METADATA_ONE"})
+			plug := newPlugin("VISIT_METADATA_ONE")
 			defer plug.Close(ctx)
 			So(plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), ShouldBeNil)
 			So(fakeRepo.Calls(), ShouldResembleProto, []*api.ListMetadataRequest{
@@ -275,7 +265,7 @@ func TestPlugin(t *testing.T) {
 		Convey("VisitMetadata visit error", func() {
 			fakeRepo.SetErr(status.Errorf(codes.PermissionDenied, "the listing says boo"))
 
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_VISIT_METADATA_ALL"})
+			plug := newPlugin("VISIT_METADATA_ALL")
 			defer plug.Close(ctx)
 
 			err := plug.CheckAdmission(testPin("good/a/b")).Wait(ctx)
@@ -293,7 +283,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("Closing right after starting", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_BLOCK_REQUEST"})
+			plug := newPlugin("BLOCK_REQUEST")
 			p := plug.CheckAdmission(testPin("good/a/b"))
 			plug.Close(ctx)
 
@@ -305,7 +295,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("Plugin is not connecting", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_NOT_CONNECTING"})
+			plug := newPlugin("NOT_CONNECTING")
 			plug.timeout = time.Second
 			defer plug.Close(ctx)
 
@@ -324,7 +314,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("Plugin is not found", func() {
-			plug := NewPlugin(ctx, host, []string{"doesnt_exist"})
+			plug := NewAdmissionPlugin(ctx, host, []string{"doesnt_exist"})
 			defer plug.Close(ctx)
 
 			p := plug.CheckAdmission(testPin("good/a/b"))
@@ -333,7 +323,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("Plugin is using unexpected protocol version", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_NORMAL_REPLY"})
+			plug := newPlugin("NORMAL_REPLY")
 			plug.protocolVersion = 666
 			defer plug.Close(ctx)
 
@@ -343,7 +333,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("Plugin is crashing when connecting", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_CRASHING_WHEN_CONNECTING"})
+			plug := newPlugin("CRASHING_WHEN_CONNECTING")
 			defer plug.Close(ctx)
 
 			p := plug.CheckAdmission(testPin("good/a/b"))
@@ -352,7 +342,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("Plugin is crashing midway", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_CRASH_ON_SECOND_REQUEST"})
+			plug := newPlugin("CRASH_ON_SECOND_REQUEST")
 			defer plug.Close(ctx)
 
 			p1 := plug.CheckAdmission(testPin("good/a/b/1"))
@@ -363,7 +353,7 @@ func TestPlugin(t *testing.T) {
 		})
 
 		Convey("Terminating with pending queue", func() {
-			plug := NewPlugin(ctx, host, []string{os.Args[0], "PLUGIN_BLOCK_ALL_BUT_FIRST"})
+			plug := newPlugin("BLOCK_ALL_BUT_FIRST")
 			defer plug.Close(ctx)
 
 			p1 := plug.CheckAdmission(testPin("good/a/b/1"))
