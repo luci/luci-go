@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/memlogger"
 
+	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 
@@ -112,7 +113,8 @@ func TestPlugins(t *testing.T) {
 	defer cancel()
 
 	Convey("With a host", t, func() {
-		host := &Host{ServiceURL: "https://example.com"}
+		host := &Host{}
+		host.Initialize(plugin.Config{ServiceURL: "https://example.com"})
 		defer host.Close(ctx)
 
 		Convey("Plugin wrong command line", func() {

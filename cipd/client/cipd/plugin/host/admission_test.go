@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins/admission"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/common"
@@ -156,10 +157,11 @@ func TestAdmissionPlugins(t *testing.T) {
 
 	Convey("With a host", t, func() {
 		fakeRepo := &fakeRepository{}
-		host := &Host{
+		host := &Host{}
+		host.Initialize(plugin.Config{
 			ServiceURL: exampleHost,
 			Repository: fakeRepo,
-		}
+		})
 		defer host.Close(ctx)
 
 		newPlugin := func(testCase string) *AdmissionPlugin {
@@ -203,7 +205,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			So(anotherGood.Wait(ctx), ShouldBeNil)
 
 			// A bit of a stress testing.
-			promises := make([]*Promise, 1000)
+			promises := make([]plugin.Promise, 1000)
 			for i := range promises {
 				promises[i] = plug.CheckAdmission(testPin(fmt.Sprintf("good/pkg/%d", i)))
 			}
