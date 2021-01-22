@@ -43,6 +43,7 @@ func TestTrigger(t *testing.T) {
 	Convey("Find", t, func() {
 		now := testclock.TestRecentTimeUTC
 		ci := &gerritpb.ChangeInfo{
+			Status:          gerritpb.ChangeStatus_NEW,
 			CurrentRevision: "deadbeef~1",
 			Revisions: map[string]*gerritpb.RevisionInfo{
 				"deadbeef~1": {
@@ -61,6 +62,14 @@ func TestTrigger(t *testing.T) {
 			},
 		}
 
+		Convey("Abandoned CL", func() {
+			ci.Status = gerritpb.ChangeStatus_ABANDONED
+			So(Find(ci), ShouldBeNil)
+		})
+		Convey("Merged CL", func() {
+			ci.Status = gerritpb.ChangeStatus_MERGED
+			So(Find(ci), ShouldBeNil)
+		})
 		Convey("No votes", func() {
 			So(Find(ci), ShouldBeNil)
 		})

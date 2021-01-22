@@ -345,6 +345,17 @@ func TestUpdateConfig(t *testing.T) {
 					expected.Trigger = nil
 					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
 				})
+				Convey("abandoned CL is not triggered even if it has CQ vote", func() {
+					cl101.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_ABANDONED
+					expected.Trigger = nil
+					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+				})
+				Convey("Submitted CL is also not triggered even if it has CQ vote", func() {
+					cl101.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
+					expected.Trigger = nil
+					expected.Submitted = true
+					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+				})
 			})
 
 			Convey("snapshot from diff project requires waiting", func() {

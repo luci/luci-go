@@ -41,6 +41,9 @@ var voteToMode = map[int32]run.Mode{
 //
 // Returns nil if CL is not triggered.
 func Find(ci *gerritpb.ChangeInfo) *run.Trigger {
+	if ci.GetStatus() != gerritpb.ChangeStatus_NEW {
+		return nil
+	}
 	li := ci.GetLabels()[CQLabelName]
 	if li == nil {
 		return nil
