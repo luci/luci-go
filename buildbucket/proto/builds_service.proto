@@ -8,6 +8,7 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/rpc/status.proto";
@@ -346,6 +347,17 @@ message ScheduleBuildRequest {
   }
   // Swarming specific part of the build request.
   Swarming swarming = 15;
+
+  // Maximum build pending time.
+  // If the timeout is reached, the build is marked as INFRA_FAILURE status
+  // and both status_details.{timeout, resource_exhaustion} are set.
+  google.protobuf.Duration scheduling_timeout = 16;
+
+  // Maximum build execution time.
+  // Not to be confused with scheduling_timeout.
+  // If the timeout is reached, the build is marked as INFRA_FAILURE status
+  // and status_details.timeout is set.
+  google.protobuf.Duration execution_timeout = 17;
 }
 
 // A request message for CancelBuild rpc.
