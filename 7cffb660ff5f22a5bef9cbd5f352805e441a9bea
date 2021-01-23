@@ -16,6 +16,24 @@
       "message": "wdyt about adding here pb field with all that CQD sent, even if we don\u0027t use it yet.\nWe\u0027ll be able to run later post-process the FinishedRun entities.\n(follow up CL is fine)",
       "revId": "7cffb660ff5f22a5bef9cbd5f352805e441a9bea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "475d9ad4_5edde7f5",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-23T00:58:30Z",
+      "side": 1,
+      "message": "sgtm. I\u0027ll do it in a follow up CL.",
+      "parentUuid": "047a9acd_402881d5",
+      "revId": "7cffb660ff5f22a5bef9cbd5f352805e441a9bea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
