@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "395e0f84_81927109",
+        "filename": "tools/cmd/bqschemaupdater/main_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-23T07:16:59Z",
+      "side": 1,
+      "message": "import format is off.",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 0
+      },
+      "revId": "f15adaaaf0058b45573f02a4a5138537657342a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
