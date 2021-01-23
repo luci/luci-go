@@ -48,8 +48,7 @@
 //  - A request MAY have a header "Content-Encoding: gzip".
 //    If it is present, then the server MUST decompress the request body before
 //    unmarshaling the request message.
-//  - A request MAY have a header "Accept-Encoding: gzip"
-//    (literally; no other attributes are currently permitted).
+//  - A request MAY have a header "Accept-Encoding: gzip".
 //    If the header is present, then the server response body MAY be compressed;
 //    and the server SHOULD decide based on the response message size.
 //    If the response body is compressed, then the response MUST include a

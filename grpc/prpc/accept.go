@@ -141,13 +141,17 @@ func (s acceptFormatSlice) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-// mayGZipResponse returns true if the server response body may be encoded
+// acceptsGZipResponse returns true if the server response body may be encoded
 // with GZIP.
-func mayGZipResponse(header http.Header) bool {
-	for _, v := range header["Accept-Encoding"] {
-		if v == "gzip" {
-			return true
+func acceptsGZipResponse(header http.Header) (bool, error) {
+	accept, err := parseAccept(header.Get("Accept-Encoding"))
+	if err != nil {
+		return false, err
+	}
+	for _, a := range accept {
+		if strings.EqualFold(a.Value, "gzip") {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
