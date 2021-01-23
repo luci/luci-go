@@ -29,14 +29,14 @@ func TestOptions(t *testing.T) {
 	t.Parallel()
 
 	Convey(`options`, t, func() {
-		client := NewFake("")
+		scFake, client := NewUnregisteredFake("")
 
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 
 		Convey(`defaults`, func() {
 			_, err := client.NewStream(ctx, "test")
 			So(err, ShouldBeNil)
-			defaultFlags := client.GetFakeData()["test"].GetFlags()
+			defaultFlags := scFake.Data()["test"].GetFlags()
 			So(defaultFlags.ContentType, ShouldEqual, "text/plain")
 			So(defaultFlags.Timestamp.Time(), ShouldEqual, testclock.TestTimeUTC)
 			So(defaultFlags.Tags, ShouldBeEmpty)
@@ -45,14 +45,14 @@ func TestOptions(t *testing.T) {
 		Convey(`can change content type`, func() {
 			_, err := client.NewStream(ctx, "test", WithContentType("narple"))
 			So(err, ShouldBeNil)
-			testFlags := client.GetFakeData()["test"].GetFlags()
+			testFlags := scFake.Data()["test"].GetFlags()
 			So(testFlags.ContentType, ShouldEqual, "narple")
 		})
 
 		Convey(`can set initial timestamp`, func() {
 			_, err := client.NewStream(ctx, "test", WithTimestamp(testclock.TestRecentTimeUTC))
 			So(err, ShouldBeNil)
-			testFlags := client.GetFakeData()["test"].GetFlags()
+			testFlags := scFake.Data()["test"].GetFlags()
 			So(testFlags.Timestamp.Time(), ShouldEqual, testclock.TestRecentTimeUTC)
 		})
 
@@ -62,7 +62,7 @@ func TestOptions(t *testing.T) {
 				"key2", "value",
 			))
 			So(err, ShouldBeNil)
-			testFlags := client.GetFakeData()["test"].GetFlags()
+			testFlags := scFake.Data()["test"].GetFlags()
 			So(testFlags.Tags, ShouldResemble, streamproto.TagMap{
 				"key1": "value",
 				"key2": "value",
@@ -81,7 +81,7 @@ func TestOptions(t *testing.T) {
 				"key2": "value",
 			}))
 			So(err, ShouldBeNil)
-			testFlags := client.GetFakeData()["test"].GetFlags()
+			testFlags := scFake.Data()["test"].GetFlags()
 			So(testFlags.Tags, ShouldResemble, streamproto.TagMap{
 				"key1": "value",
 				"key2": "value",

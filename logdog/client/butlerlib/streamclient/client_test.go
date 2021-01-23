@@ -35,17 +35,22 @@ func TestClientGeneral(t *testing.T) {
 			So(err, ShouldErrLike, "no protocol registered for [notreal]")
 		})
 
-		Convey(`ForProcess used with datagram stream`, func() {
-			client := NewFake("")
+		scFake := NewFake()
+		defer scFake.Unregister()
 
-			_, err := client.NewDatagramStream(ctx, "test", ForProcess())
+		Convey(`ForProcess used with datagram stream`, func() {
+			client, err := New(scFake.StreamServerPath(), "")
+			So(err, ShouldBeNil)
+
+			_, err = client.NewDatagramStream(ctx, "test", ForProcess())
 			So(err, ShouldErrLike, "cannot specify ForProcess on a datagram stream")
 		})
 
 		Convey(`bad options`, func() {
-			client := NewFake("")
+			client, err := New(scFake.StreamServerPath(), "")
+			So(err, ShouldBeNil)
 
-			_, err := client.NewStream(ctx, "test", WithTags("bad+@!tag", "value"))
+			_, err = client.NewStream(ctx, "test", WithTags("bad+@!tag", "value"))
 			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
 
 			// for coverage, whee.
@@ -58,10 +63,11 @@ func TestClientGeneral(t *testing.T) {
 
 		Convey(`simulated stream errors`, func() {
 			Convey(`connection error`, func() {
-				client := NewFake("")
-				client.SetFakeError(errors.New("bad juju"))
+				client, err := New(scFake.StreamServerPath(), "")
+				So(err, ShouldBeNil)
+				scFake.SetError(errors.New("bad juju"))
 
-				_, err := client.NewStream(ctx, "test")
+				_, err = client.NewStream(ctx, "test")
 				So(err, ShouldErrLike, `stream "test": bad juju`)
 			})
 		})
