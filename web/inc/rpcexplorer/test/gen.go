@@ -23,9 +23,10 @@ import (
 	"os"
 	"os/exec"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 func run() error {
@@ -53,7 +54,7 @@ func run() error {
 		return fmt.Errorf("desc file was read as empty")
 	}
 
-	desc := &descriptor.FileDescriptorSet{}
+	desc := &descriptorpb.FileDescriptorSet{}
 	if err := proto.Unmarshal(descBytes, desc); err != nil {
 		return fmt.Errorf("could not read descriptor file: %s", err)
 	}

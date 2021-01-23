@@ -19,7 +19,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/proto/google/descutil"
@@ -28,8 +28,8 @@ import (
 // printer prints a proto3 definition from a description.
 // Does not support options.
 type printer struct {
-	file           *descriptor.FileDescriptorProto
-	sourceCodeInfo map[interface{}]*descriptor.SourceCodeInfo_Location
+	file           *descriptorpb.FileDescriptorProto
+	sourceCodeInfo map[interface{}]*descriptorpb.SourceCodeInfo_Location
 
 	Out indented.Writer
 
@@ -43,7 +43,7 @@ func newPrinter(out io.Writer) *printer {
 
 // SetFile specifies the file containing the descriptors being printed.
 // Used to relativize names and print comments.
-func (p *printer) SetFile(f *descriptor.FileDescriptorProto) error {
+func (p *printer) SetFile(f *descriptorpb.FileDescriptorProto) error {
 	p.file = f
 	var err error
 	p.sourceCodeInfo, err = descutil.IndexSourceCodeInfo(f)
@@ -75,7 +75,7 @@ func (p *printer) open(format string, a ...interface{}) func() {
 	}
 }
 
-// MaybeLeadingComments prints leading comments of the descriptor proto
+// MaybeLeadingComments prints leading comments of the descriptorpb proto
 // if found.
 func (p *printer) MaybeLeadingComments(ptr interface{}) {
 	comments := p.sourceCodeInfo[ptr].GetLeadingComments()
@@ -107,7 +107,7 @@ func (p *printer) shorten(name string) string {
 // Service prints a service definition.
 // If methodIndex != -1, only one method is printed.
 // If serviceIndex != -1, leading comments are printed if found.
-func (p *printer) Service(service *descriptor.ServiceDescriptorProto, methodIndex int) {
+func (p *printer) Service(service *descriptorpb.ServiceDescriptorProto, methodIndex int) {
 	p.MaybeLeadingComments(service)
 	defer p.open("service %s", service.GetName())()
 
@@ -124,7 +124,7 @@ func (p *printer) Service(service *descriptor.ServiceDescriptorProto, methodInde
 }
 
 // Method prints a service method definition.
-func (p *printer) Method(method *descriptor.MethodDescriptorProto) {
+func (p *printer) Method(method *descriptorpb.MethodDescriptorProto) {
 	p.MaybeLeadingComments(method)
 	p.Printf(
 		"rpc %s(%s) returns (%s) {};\n",
@@ -134,26 +134,26 @@ func (p *printer) Method(method *descriptor.MethodDescriptorProto) {
 	)
 }
 
-var fieldTypeName = map[descriptor.FieldDescriptorProto_Type]string{
-	descriptor.FieldDescriptorProto_TYPE_DOUBLE:   "double",
-	descriptor.FieldDescriptorProto_TYPE_FLOAT:    "float",
-	descriptor.FieldDescriptorProto_TYPE_INT64:    "int64",
-	descriptor.FieldDescriptorProto_TYPE_UINT64:   "uint64",
-	descriptor.FieldDescriptorProto_TYPE_INT32:    "int32",
-	descriptor.FieldDescriptorProto_TYPE_FIXED64:  "fixed64",
-	descriptor.FieldDescriptorProto_TYPE_FIXED32:  "fixed32",
-	descriptor.FieldDescriptorProto_TYPE_BOOL:     "bool",
-	descriptor.FieldDescriptorProto_TYPE_STRING:   "string",
-	descriptor.FieldDescriptorProto_TYPE_BYTES:    "bytes",
-	descriptor.FieldDescriptorProto_TYPE_UINT32:   "uint32",
-	descriptor.FieldDescriptorProto_TYPE_SFIXED32: "sfixed32",
-	descriptor.FieldDescriptorProto_TYPE_SFIXED64: "sfixed64",
-	descriptor.FieldDescriptorProto_TYPE_SINT32:   "sint32",
-	descriptor.FieldDescriptorProto_TYPE_SINT64:   "sint64",
+var fieldTypeName = map[descriptorpb.FieldDescriptorProto_Type]string{
+	descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:   "double",
+	descriptorpb.FieldDescriptorProto_TYPE_FLOAT:    "float",
+	descriptorpb.FieldDescriptorProto_TYPE_INT64:    "int64",
+	descriptorpb.FieldDescriptorProto_TYPE_UINT64:   "uint64",
+	descriptorpb.FieldDescriptorProto_TYPE_INT32:    "int32",
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED64:  "fixed64",
+	descriptorpb.FieldDescriptorProto_TYPE_FIXED32:  "fixed32",
+	descriptorpb.FieldDescriptorProto_TYPE_BOOL:     "bool",
+	descriptorpb.FieldDescriptorProto_TYPE_STRING:   "string",
+	descriptorpb.FieldDescriptorProto_TYPE_BYTES:    "bytes",
+	descriptorpb.FieldDescriptorProto_TYPE_UINT32:   "uint32",
+	descriptorpb.FieldDescriptorProto_TYPE_SFIXED32: "sfixed32",
+	descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: "sfixed64",
+	descriptorpb.FieldDescriptorProto_TYPE_SINT32:   "sint32",
+	descriptorpb.FieldDescriptorProto_TYPE_SINT64:   "sint64",
 }
 
 // Field prints a field definition.
-func (p *printer) Field(field *descriptor.FieldDescriptorProto) {
+func (p *printer) Field(field *descriptorpb.FieldDescriptorProto) {
 	p.MaybeLeadingComments(field)
 	if descutil.Repeated(field) {
 		p.Printf("repeated ")
@@ -170,7 +170,7 @@ func (p *printer) Field(field *descriptor.FieldDescriptorProto) {
 }
 
 // Message prints a message definition.
-func (p *printer) Message(msg *descriptor.DescriptorProto) {
+func (p *printer) Message(msg *descriptorpb.DescriptorProto) {
 	p.MaybeLeadingComments(msg)
 	defer p.open("message %s", msg.GetName())()
 
@@ -186,7 +186,7 @@ func (p *printer) Message(msg *descriptor.DescriptorProto) {
 }
 
 // OneOf prints a oneof definition.
-func (p *printer) OneOf(msg *descriptor.DescriptorProto, oneOfIndex int) {
+func (p *printer) OneOf(msg *descriptorpb.DescriptorProto, oneOfIndex int) {
 	of := msg.GetOneofDecl()[oneOfIndex]
 	p.MaybeLeadingComments(of)
 	defer p.open("oneof %s", of.GetName())()
@@ -199,7 +199,7 @@ func (p *printer) OneOf(msg *descriptor.DescriptorProto, oneOfIndex int) {
 }
 
 // Enum prints an enum definition.
-func (p *printer) Enum(enum *descriptor.EnumDescriptorProto) {
+func (p *printer) Enum(enum *descriptorpb.EnumDescriptorProto) {
 	p.MaybeLeadingComments(enum)
 	defer p.open("enum %s", enum.GetName())()
 
@@ -209,7 +209,7 @@ func (p *printer) Enum(enum *descriptor.EnumDescriptorProto) {
 }
 
 // EnumValue prints an enum value definition.
-func (p *printer) EnumValue(v *descriptor.EnumValueDescriptorProto) {
+func (p *printer) EnumValue(v *descriptorpb.EnumValueDescriptorProto) {
 	p.MaybeLeadingComments(v)
 	p.Printf("%s = %d;\n", v.GetName(), v.GetNumber())
 }

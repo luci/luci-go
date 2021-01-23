@@ -19,11 +19,10 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"cloud.google.com/go/bigquery"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -68,7 +67,7 @@ func TestBQSchemaUpdater(t *testing.T) {
 	Convey("Schema", t, func() {
 		descBytes, err := ioutil.ReadFile("testdata/event.desc")
 		So(err, ShouldBeNil)
-		var desc descriptor.FileDescriptorSet
+		var desc descriptorpb.FileDescriptorSet
 		So(proto.Unmarshal(descBytes, &desc), ShouldBeNil)
 		schema, description, err := schemaFromMessage(&desc, "testdata.BuildEvent")
 		So(err, ShouldBeNil)

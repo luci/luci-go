@@ -22,11 +22,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/grpc/prpc"
 )
@@ -55,8 +54,8 @@ type service struct {
 	exposed func() []string // a dynamic list of services to expose
 
 	m           sync.Mutex
-	services    []string                      // services exposed in last Describe
-	description *descriptor.FileDescriptorSet // their combined descriptor set
+	services    []string                        // services exposed in last Describe
+	description *descriptorpb.FileDescriptorSet // their combined descriptor set
 }
 
 func (s *service) Describe(c context.Context, _ *Void) (*DescribeResponse, error) {
@@ -82,8 +81,8 @@ func (s *service) Describe(c context.Context, _ *Void) (*DescribeResponse, error
 
 // combineDescriptors creates one FileDescriptorSet that covers all services
 // and their dependencies.
-func combineDescriptors(serviceNames []string) (*descriptor.FileDescriptorSet, error) {
-	result := &descriptor.FileDescriptorSet{}
+func combineDescriptors(serviceNames []string) (*descriptorpb.FileDescriptorSet, error) {
+	result := &descriptorpb.FileDescriptorSet{}
 	// seenFiles is a set of descriptor files keyed by SHA256 of their contents.
 	seenFiles := map[[sha256.Size]byte]bool{}
 

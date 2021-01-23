@@ -15,9 +15,9 @@
 package flagpb
 
 import (
-	"go.chromium.org/luci/common/proto/google/descutil"
+	"google.golang.org/protobuf/types/descriptorpb"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"go.chromium.org/luci/common/proto/google/descutil"
 )
 
 // Resolver resolves type names.
@@ -29,18 +29,18 @@ type Resolver interface {
 
 // NewResolver creates a resolver for all types in a file descriptor set.
 // Resolving time complexity is linear.
-func NewResolver(set *descriptor.FileDescriptorSet) Resolver {
+func NewResolver(set *descriptorpb.FileDescriptorSet) Resolver {
 	return &descriptorSetResolver{set}
 }
 
 type descriptorSetResolver struct {
-	set *descriptor.FileDescriptorSet
+	set *descriptorpb.FileDescriptorSet
 }
 
 func (r *descriptorSetResolver) Resolve(name string) interface{} {
 	_, o, _ := descutil.Resolve(r.set, name)
 	switch o := o.(type) {
-	case *descriptor.DescriptorProto, *descriptor.EnumDescriptorProto:
+	case *descriptorpb.DescriptorProto, *descriptorpb.EnumDescriptorProto:
 		return o
 	default:
 		return nil

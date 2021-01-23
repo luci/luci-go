@@ -20,11 +20,10 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"go.chromium.org/luci/common/proto/google/descutil"
-
-	"github.com/golang/protobuf/proto"
-
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -40,7 +39,7 @@ func TestPrinter(t *testing.T) {
 		descFileBytes, err := ioutil.ReadFile("printer_test.desc")
 		So(err, ShouldBeNil)
 
-		var desc descriptor.FileDescriptorSet
+		var desc descriptorpb.FileDescriptorSet
 		err = proto.Unmarshal(descFileBytes, &desc)
 		So(err, ShouldBeNil)
 
@@ -93,7 +92,7 @@ func TestPrinter(t *testing.T) {
 			}
 		})
 
-		testEnum := func(e *descriptor.EnumDescriptorProto, unindent int) {
+		testEnum := func(e *descriptorpb.EnumDescriptorProto, unindent int) {
 			Convey(e.GetName(), func() {
 				printer.Enum(e)
 				checkOutput(e, unindent)
@@ -107,8 +106,8 @@ func TestPrinter(t *testing.T) {
 		})
 
 		Convey("message", func() {
-			var testMsg func(*descriptor.DescriptorProto, int)
-			testMsg = func(m *descriptor.DescriptorProto, unindent int) {
+			var testMsg func(*descriptorpb.DescriptorProto, int)
+			testMsg = func(m *descriptorpb.DescriptorProto, unindent int) {
 				Convey(m.GetName(), func() {
 					if len(m.NestedType) == 0 && len(m.EnumType) == 0 {
 						printer.Message(m)

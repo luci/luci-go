@@ -20,8 +20,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
@@ -104,10 +104,10 @@ func show(c context.Context, client *prpc.Client, name string) error {
 
 	switch obj := obj.(type) {
 
-	case *descriptor.ServiceDescriptorProto:
+	case *descriptorpb.ServiceDescriptorProto:
 		print.Service(obj, -1)
 
-	case *descriptor.MethodDescriptorProto:
+	case *descriptorpb.MethodDescriptorProto:
 		serviceIndex, methodIndex := path[1], path[3]
 		print.Service(file.Service[serviceIndex], methodIndex)
 
@@ -121,7 +121,7 @@ func show(c context.Context, client *prpc.Client, name string) error {
 			if err := print.SetFile(file); err != nil {
 				return err
 			}
-			print.Message(msg.(*descriptor.DescriptorProto))
+			print.Message(msg.(*descriptorpb.DescriptorProto))
 			return nil
 		}
 
@@ -134,16 +134,16 @@ func show(c context.Context, client *prpc.Client, name string) error {
 			return err
 		}
 
-	case *descriptor.DescriptorProto:
+	case *descriptorpb.DescriptorProto:
 		print.Message(obj)
 
-	case *descriptor.FieldDescriptorProto:
+	case *descriptorpb.FieldDescriptorProto:
 		print.Field(obj)
 
-	case *descriptor.EnumDescriptorProto:
+	case *descriptorpb.EnumDescriptorProto:
 		print.Enum(obj)
 
-	case *descriptor.EnumValueDescriptorProto:
+	case *descriptorpb.EnumValueDescriptorProto:
 		print.EnumValue(obj)
 
 	default:

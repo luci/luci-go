@@ -22,11 +22,12 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"go.chromium.org/luci/common/proto/google/descutil"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 // UnmarshalMessage unmarshals the proto message from flags.
@@ -39,7 +40,7 @@ func UnmarshalMessage(flags []string, resolver Resolver, msg proto.Message) erro
 	// code that may depend on implementation details of proto's generated Go
 	// code, which is why this wasn't done initially.
 	name := proto.MessageName(msg)
-	dproto, ok := resolver.Resolve(name).(*descriptor.DescriptorProto)
+	dproto, ok := resolver.Resolve(name).(*descriptorpb.DescriptorProto)
 	if !ok {
 		return fmt.Errorf("could not resolve message %q", name)
 	}
@@ -59,21 +60,21 @@ func UnmarshalMessage(flags []string, resolver Resolver, msg proto.Message) erro
 
 // UnmarshalUntyped unmarshals a key-value map from flags
 // using a protobuf message descriptor.
-func UnmarshalUntyped(flags []string, desc *descriptor.DescriptorProto, resolver Resolver) (map[string]interface{}, error) {
+func UnmarshalUntyped(flags []string, desc *descriptorpb.DescriptorProto, resolver Resolver) (map[string]interface{}, error) {
 	p := parser{resolver}
 	return p.parse(flags, desc)
 }
 
 type message struct {
 	data map[string]interface{}
-	desc *descriptor.DescriptorProto
+	desc *descriptorpb.DescriptorProto
 }
 
 type parser struct {
 	Resolver Resolver
 }
 
-func (p *parser) parse(flags []string, desc *descriptor.DescriptorProto) (map[string]interface{}, error) {
+func (p *parser) parse(flags []string, desc *descriptorpb.DescriptorProto) (map[string]interface{}, error) {
 	if desc == nil {
 		panic("desc is nil")
 	}
@@ -159,10 +160,10 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 		switch {
 		// Boolean and repeated message fields may have no value and ignore
 		// next argument.
-		case field.GetType() == descriptor.FieldDescriptorProto_TYPE_BOOL:
+		case field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_BOOL:
 			value = true
 			hasValue = true
-		case field.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE && descutil.Repeated(field):
+		case field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && descutil.Repeated(field):
 			value = map[string]interface{}{}
 			hasValue = true
 
@@ -239,7 +240,7 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 		}
 
 		f := parent.desc.Field[fieldIndex]
-		if f.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+		if f.GetType() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 			return nil, fmt.Errorf("field %s is not a message", strings.Join(curPath, "."))
 		}
 
@@ -247,7 +248,7 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 		if err != nil {
 			return nil, err
 		}
-		subDesc, ok := subDescInterface.(*descriptor.DescriptorProto)
+		subDesc, ok := subDescInterface.(*descriptorpb.DescriptorProto)
 		if !ok {
 			return nil, fmt.Errorf("%s is not a message", f.GetTypeName())
 		}
@@ -280,57 +281,57 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 
 // parseFieldValue parses a field value according to the field type.
 // Types: https://developers.google.com/protocol-buffers/docs/proto?hl=en#scalar
-func (p *parser) parseFieldValue(s string, msgName string, field *descriptor.FieldDescriptorProto) (interface{}, error) {
+func (p *parser) parseFieldValue(s string, msgName string, field *descriptorpb.FieldDescriptorProto) (interface{}, error) {
 	switch field.GetType() {
 
-	case descriptor.FieldDescriptorProto_TYPE_DOUBLE:
+	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
 		return strconv.ParseFloat(s, 64)
 
-	case descriptor.FieldDescriptorProto_TYPE_FLOAT:
+	case descriptorpb.FieldDescriptorProto_TYPE_FLOAT:
 		x, err := strconv.ParseFloat(s, 32)
 		return float32(x), err
 
 	case
-		descriptor.FieldDescriptorProto_TYPE_INT32,
-		descriptor.FieldDescriptorProto_TYPE_SFIXED32,
-		descriptor.FieldDescriptorProto_TYPE_SINT32:
+		descriptorpb.FieldDescriptorProto_TYPE_INT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT32:
 
 		x, err := strconv.ParseInt(s, 10, 32)
 		return int32(x), err
 
-	case descriptor.FieldDescriptorProto_TYPE_INT64,
-		descriptor.FieldDescriptorProto_TYPE_SFIXED64,
-		descriptor.FieldDescriptorProto_TYPE_SINT64:
+	case descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64:
 
 		return strconv.ParseInt(s, 10, 64)
 
-	case descriptor.FieldDescriptorProto_TYPE_UINT32, descriptor.FieldDescriptorProto_TYPE_FIXED32:
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT32, descriptorpb.FieldDescriptorProto_TYPE_FIXED32:
 		x, err := strconv.ParseUint(s, 10, 32)
 		return uint32(x), err
 
-	case descriptor.FieldDescriptorProto_TYPE_UINT64, descriptor.FieldDescriptorProto_TYPE_FIXED64:
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT64, descriptorpb.FieldDescriptorProto_TYPE_FIXED64:
 		return strconv.ParseUint(s, 10, 64)
 
-	case descriptor.FieldDescriptorProto_TYPE_BOOL:
+	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
 		return strconv.ParseBool(s)
 
-	case descriptor.FieldDescriptorProto_TYPE_STRING:
+	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
 		return s, nil
 
-	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		return nil, fmt.Errorf(
 			"%s.%s is a message field. Specify its field values, not the message itself",
 			msgName, field.GetName())
 
-	case descriptor.FieldDescriptorProto_TYPE_BYTES:
+	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
 		return hex.DecodeString(s)
 
-	case descriptor.FieldDescriptorProto_TYPE_ENUM:
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		obj, err := p.resolve(field.GetTypeName())
 		if err != nil {
 			return nil, err
 		}
-		enum, ok := obj.(*descriptor.EnumDescriptorProto)
+		enum, ok := obj.(*descriptorpb.EnumDescriptorProto)
 		if !ok {
 			return nil, fmt.Errorf(
 				"field %s.%s is declared as of type enum %s, but %s is not an enum",
@@ -372,7 +373,7 @@ func (p *parser) splitKeyValuePair(s string) (key, value string, hasValue bool) 
 }
 
 // parseEnum returns the number of an enum member, which can be name or number.
-func parseEnum(enum *descriptor.EnumDescriptorProto, member string) (int32, error) {
+func parseEnum(enum *descriptorpb.EnumDescriptorProto, member string) (int32, error) {
 	i := descutil.FindEnumValue(enum, member)
 	if i < 0 {
 		// Is member the number?

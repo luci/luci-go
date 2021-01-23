@@ -21,16 +21,15 @@ import (
 	"io/ioutil"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
-
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type entry struct {
 	compressedBytes []byte
 
 	init        sync.Once
-	unmarshaled *descriptor.FileDescriptorSet
+	unmarshaled *descriptorpb.FileDescriptorSet
 	err         error
 }
 
@@ -68,7 +67,7 @@ func getEntry(serviceName string) *entry {
 // Returns (nil, nil) if the service descriptor is unknown.
 //
 // Do NOT modify the returned descriptor.
-func GetDescriptorSet(serviceName string) (*descriptor.FileDescriptorSet, error) {
+func GetDescriptorSet(serviceName string) (*descriptorpb.FileDescriptorSet, error) {
 	e := getEntry(serviceName)
 	if e == nil {
 		return nil, nil
@@ -86,7 +85,7 @@ func GetDescriptorSet(serviceName string) (*descriptor.FileDescriptorSet, error)
 			return
 		}
 
-		var unmarshaled descriptor.FileDescriptorSet
+		var unmarshaled descriptorpb.FileDescriptorSet
 		e.err = proto.Unmarshal(uncompressed, &unmarshaled)
 		if e.err != nil {
 			return
