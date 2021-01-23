@@ -16,6 +16,110 @@
       "message": "I\u0027m sure I need to recompile the go-protos. Robbie or Andrii is there a defined process for how this is done?",
       "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7c2e425_d0ad8e0f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-23T07:01:06Z",
+      "side": 1,
+      "message": "Yep `go generate` should be sufficient",
+      "parentUuid": "403a6e9f_2150b9f0",
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f076ed23_d7ea7eb4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-23T07:01:06Z",
+      "side": 1,
+      "message": "+nodir for historical context on field names and types",
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57384bcd_f2224f1b",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-23T07:01:06Z",
+      "side": 1,
+      "message": "note that this should be bumped up to 19",
+      "range": {
+        "startLine": 209,
+        "startChar": 12,
+        "endLine": 209,
+        "endChar": 14
+      },
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2abc5408_f66ae751",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-23T07:01:06Z",
+      "side": 1,
+      "message": "note that 16 is already taken here",
+      "range": {
+        "startLine": 246,
+        "startChar": 34,
+        "endLine": 246,
+        "endChar": 36
+      },
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c91d2dd_2e272ea1",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-23T07:01:06Z",
+      "side": 1,
+      "message": "since this is in ScheduleBuildRequest, please mention how this will interact with the same-named field in the builder definition.\n\nOn that note, the builder definition has expiration_secs rather than a Duration... I suspect this choice was a carry-over from when those text protos were made with human editing in mind (+nodir to comment). Swarming also only allows second precision, too.\n\nI\u0027m thinking it\u0027ll be good to have it be Duration here, but please document that it currently only has seconds precision for now.\n\n(same on execution_timeout)\n\nI would also be inclined to call this expiration to match the Builder configuration name, too.",
+      "range": {
+        "startLine": 354,
+        "startChar": 27,
+        "endLine": 354,
+        "endChar": 45
+      },
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
