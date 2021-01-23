@@ -36,7 +36,7 @@ func TestFakeProtocol(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 
 		Convey(`good`, func() {
-			client := NewFake("namespace")
+			scFake, client := NewUnregisteredFake("namespace")
 
 			Convey(`can use a text stream`, func() {
 				stream, err := client.NewStream(ctx, "test")
@@ -47,7 +47,7 @@ func TestFakeProtocol(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(stream.Close(), ShouldBeNil)
 
-				streamData := client.GetFakeData()["namespace/test"]
+				streamData := scFake.Data()["namespace/test"]
 				So(streamData, ShouldNotBeNil)
 				So(streamData.GetStreamData(), ShouldEqual, "hi")
 				So(streamData.GetDatagrams(), ShouldResemble, []string{})
@@ -69,7 +69,7 @@ func TestFakeProtocol(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(stream.Close(), ShouldBeNil)
 
-				streamData := client.GetFakeData()["namespace/test"]
+				streamData := scFake.Data()["namespace/test"]
 				So(streamData, ShouldNotBeNil)
 				So(streamData.GetStreamData(), ShouldEqual, "\x00\x01\x02\x03")
 				So(streamData.GetDatagrams(), ShouldResemble, []string{})
@@ -90,7 +90,7 @@ func TestFakeProtocol(t *testing.T) {
 				So(stream.WriteDatagram([]byte("there")), ShouldBeNil)
 				So(stream.Close(), ShouldBeNil)
 
-				streamData := client.GetFakeData()["namespace/test"]
+				streamData := scFake.Data()["namespace/test"]
 				So(streamData, ShouldNotBeNil)
 				So(streamData.GetStreamData(), ShouldEqual, "")
 				So(streamData.GetDatagrams(), ShouldResemble, []string{"hi", "there"})
@@ -106,7 +106,7 @@ func TestFakeProtocol(t *testing.T) {
 
 		Convey(`bad`, func() {
 			Convey(`duplicate stream`, func() {
-				client := NewFake("")
+				_, client := NewUnregisteredFake("")
 
 				stream, err := client.NewStream(ctx, "test")
 				So(err, ShouldBeNil)
@@ -124,15 +124,15 @@ func TestFakeProtocol(t *testing.T) {
 
 			Convey(`simulated stream errors`, func() {
 				Convey(`connection error`, func() {
-					client := NewFake("")
-					client.SetFakeError(errors.New("bad juju"))
+					scFake, client := NewUnregisteredFake("")
+					scFake.SetError(errors.New("bad juju"))
 
 					_, err := client.NewStream(ctx, "test")
 					So(err, ShouldErrLike, `stream "test": bad juju`)
 				})
 
 				Convey(`use of a stream after close`, func() {
-					client := NewFake("")
+					_, client := NewUnregisteredFake("")
 
 					stream, err := client.NewStream(ctx, "test")
 					So(err, ShouldBeNil)

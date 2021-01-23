@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
@@ -62,9 +63,6 @@ type BuildSender func()
 // Errors with this tag set will cause the overall build status to be
 // INFRA_FAILURE instead of FAILURE.
 var InfraErrorTag = errors.BoolTag{Key: errors.NewTagKey("infra_error")}
-
-// "bootstrap.Get"
-type bsg func() (*bootstrap.Bootstrap, error)
 
 // MainFn is the function signature you must implement in your callback to Run.
 //
@@ -126,8 +124,8 @@ func buildFrom(in io.Reader, build *bbpb.Build) {
 	}
 }
 
-func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int, bootstrapGet bsg) (BuildSender, func() error) {
-	ldClient, err := bootstrapGet()
+func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int) (BuildSender, func() error) {
+	bs, err := bootstrap.GetFromEnv(environ.FromCtx(ctx))
 	if err != nil {
 		panic(errors.Annotate(err, "unable to make Logdog Client").Err())
 	}
@@ -136,7 +134,7 @@ func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int, bootst
 	if zlibLevel > 0 {
 		cType = luciexe.BuildProtoZlibContentType
 	}
-	buildStream, err := ldClient.Client.NewDatagramStream(
+	buildStream, err := bs.Client.NewDatagramStream(
 		ctx, luciexe.BuildProtoStreamSuffix,
 		streamclient.WithContentType(cType))
 	if err != nil {
@@ -190,7 +188,7 @@ func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int, bootst
 // a non-nil error, this is converted to FAILURE, unless the InfraErrorTag is
 // set on the error (in which case it's converted to INFRA_FAILURE).
 func Run(main MainFn, options ...Option) {
-	os.Exit(runCtx(gologger.StdConfig.Use(context.Background()), os.Args, bootstrap.Get, options, main))
+	os.Exit(runCtx(gologger.StdConfig.Use(context.Background()), os.Args, options, main))
 }
 
 func appendError(build *bbpb.Build, flavor string, errlike interface{}) {
@@ -200,7 +198,7 @@ func appendError(build *bbpb.Build, flavor string, errlike interface{}) {
 	build.SummaryMarkdown += fmt.Sprintf("Final %s: %s", flavor, errlike)
 }
 
-func runCtx(ctx context.Context, args []string, bootstrapGet bsg, opts []Option, main MainFn) int {
+func runCtx(ctx context.Context, args []string, opts []Option, main MainFn) int {
 	cfg := &config{}
 	for _, o := range opts {
 		if o != nil {
@@ -215,7 +213,7 @@ func runCtx(ctx context.Context, args []string, bootstrapGet bsg, opts []Option,
 	}
 
 	buildFrom(os.Stdin, build)
-	sendBuild, closer := mkBuildStream(ctx, build, cfg.zlibLevel, bootstrapGet)
+	sendBuild, closer := mkBuildStream(ctx, build, cfg.zlibLevel)
 	defer func() {
 		if err := closer(); err != nil {
 			panic(err)

@@ -208,9 +208,9 @@ func TestStepNoop(t *testing.T) {
 
 func TestStepLog(t *testing.T) {
 	Convey(`Step logging`, t, func() {
-		lc := streamclient.NewFake("fakeNS")
+		scFake, lc := streamclient.NewUnregisteredFake("fakeNS")
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-		buildState, ctx, err := Start(ctx, &bbpb.Build{}, OptLogsink(lc.Client))
+		buildState, ctx, err := Start(ctx, &bbpb.Build{}, OptLogsink(lc))
 		So(err, ShouldBeNil)
 		defer func() { buildState.End(nil) }()
 		So(buildState, ShouldNotBeNil)
@@ -230,8 +230,8 @@ func TestStepLog(t *testing.T) {
 				},
 			})
 
-			So(lc.GetFakeData()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "set status: SUCCESS")
-			So(lc.GetFakeData()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "hi there!")
+			So(scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "set status: SUCCESS")
+			So(scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "hi there!")
 		})
 
 		Convey(`can open logs`, func() {
@@ -251,7 +251,7 @@ func TestStepLog(t *testing.T) {
 				},
 			})
 
-			So(lc.GetFakeData()["fakeNS/step/0/log/1"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+			So(scFake.Data()["fakeNS/step/0/log/1"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
 		})
 
 		Convey(`can open datagram logs`, func() {
@@ -271,7 +271,7 @@ func TestStepLog(t *testing.T) {
 				},
 			})
 
-			So(lc.GetFakeData()["fakeNS/step/0/log/1"].GetDatagrams(), ShouldContain, "here's some stuff")
+			So(scFake.Data()["fakeNS/step/0/log/1"].GetDatagrams(), ShouldContain, "here's some stuff")
 		})
 
 		Convey(`sets LOGDOG_NAMESPACE`, func() {

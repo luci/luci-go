@@ -67,7 +67,8 @@ func TestStateLogging(t *testing.T) {
 	t.Parallel()
 
 	Convey(`State logging`, t, func() {
-		lc := streamclient.NewFake("fakeNS")
+		scFake, lc := streamclient.NewUnregisteredFake("fakeNS")
+
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		st, ctx, err := Start(ctx, &bbpb.Build{
 			Output: &bbpb.Build_Output{
@@ -76,7 +77,7 @@ func TestStateLogging(t *testing.T) {
 					{Name: "other"},
 				},
 			},
-		}, OptLogsink(lc.Client))
+		}, OptLogsink(lc))
 		So(err, ShouldBeNil)
 		defer func() { st.End(nil) }()
 		So(st, ShouldNotBeNil)
@@ -105,7 +106,7 @@ func TestStateLogging(t *testing.T) {
 				},
 			})
 
-			So(lc.GetFakeData()["fakeNS/log/2"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+			So(scFake.Data()["fakeNS/log/2"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
 		})
 
 		Convey(`can open datagram logs`, func() {
@@ -125,7 +126,7 @@ func TestStateLogging(t *testing.T) {
 				},
 			})
 
-			So(lc.GetFakeData()["fakeNS/log/2"].GetDatagrams(), ShouldContain, "here's some stuff")
+			So(scFake.Data()["fakeNS/log/2"].GetDatagrams(), ShouldContain, "here's some stuff")
 		})
 
 	})

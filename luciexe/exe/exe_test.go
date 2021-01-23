@@ -28,6 +28,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe"
@@ -40,19 +41,19 @@ func TestExe(t *testing.T) {
 	t.Parallel()
 
 	Convey(`test exe`, t, func() {
-		client := streamclient.NewFake("test_namespace")
-		ldClient := &bootstrap.Bootstrap{
-			CoordinatorHost: "test.example.com",
-			Project:         "test_project",
-			Prefix:          "test_prefix",
-			Namespace:       "test_namespace",
-			Client:          client.Client,
-		}
-		var ldErr error
-		bootstrapGet := func() (*bootstrap.Bootstrap, error) { return ldClient, ldErr }
+		scFake := streamclient.NewFake()
+		defer scFake.Unregister()
+
+		env := environ.Env{}
+		env.Set(bootstrap.EnvCoordinatorHost, "test.example.com")
+		env.Set(bootstrap.EnvStreamProject, "test_project")
+		env.Set(bootstrap.EnvStreamPrefix, "test_prefix")
+		env.Set(bootstrap.EnvNamespace, "test_namespace")
+		env.Set(bootstrap.EnvStreamServerPath, scFake.StreamServerPath())
+		ctx := env.SetInCtx(context.Background())
 
 		getBuilds := func(decompress bool) []*bbpb.Build {
-			fakeData := client.GetFakeData()["test_namespace/build.proto"]
+			fakeData := scFake.Data()["test_namespace/build.proto"]
 			if decompress {
 				So(fakeData.GetFlags().ContentType, ShouldEqual, luciexe.BuildProtoZlibContentType)
 			} else {
@@ -88,11 +89,9 @@ func TestExe(t *testing.T) {
 
 		args := []string{"fake_test_executable"}
 
-		ctx := context.Background()
-
 		Convey(`basic`, func() {
 			Convey(`success`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.Status = bbpb.Status_SCHEDULED
 					return nil
 				})
@@ -106,7 +105,7 @@ func TestExe(t *testing.T) {
 			})
 
 			Convey(`failure`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					return errors.New("bad stuff")
 				})
 				So(exitCode, ShouldEqual, 1)
@@ -120,7 +119,7 @@ func TestExe(t *testing.T) {
 			})
 
 			Convey(`infra failure`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					return errors.New("bad stuff", InfraErrorTag)
 				})
 				So(exitCode, ShouldEqual, 1)
@@ -134,7 +133,7 @@ func TestExe(t *testing.T) {
 			})
 
 			Convey(`panic`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					panic(errors.New("bad stuff"))
 				})
 				So(exitCode, ShouldEqual, 2)
@@ -148,7 +147,7 @@ func TestExe(t *testing.T) {
 			})
 
 			Convey(`respect user program status`, func() {
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.Status = bbpb.Status_INFRA_FAILURE
 					build.SummaryMarkdown = "status set inside"
 					return nil
@@ -165,7 +164,7 @@ func TestExe(t *testing.T) {
 		})
 
 		Convey(`send`, func() {
-			exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+			exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 				build.SummaryMarkdown = "Hi. I did stuff."
 				bs()
 				return errors.New("oh no i failed")
@@ -189,7 +188,7 @@ func TestExe(t *testing.T) {
 		})
 
 		Convey(`send (zlib)`, func() {
-			exitCode := runCtx(ctx, args, bootstrapGet, []Option{WithZlibCompression(5)}, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+			exitCode := runCtx(ctx, args, []Option{WithZlibCompression(5)}, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 				build.SummaryMarkdown = "Hi. I did stuff."
 				bs()
 				return errors.New("oh no i failed")
@@ -220,7 +219,7 @@ func TestExe(t *testing.T) {
 			Convey(`binary`, func() {
 				outFile := filepath.Join(tdir, "out.pb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					err := WriteProperties(build.Output.Properties, map[string]interface{}{
 						"some": "thing",
@@ -254,7 +253,7 @@ func TestExe(t *testing.T) {
 			Convey(`textpb`, func() {
 				outFile := filepath.Join(tdir, "out.textpb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return nil
 				})
@@ -275,7 +274,7 @@ func TestExe(t *testing.T) {
 			Convey(`jsonpb`, func() {
 				outFile := filepath.Join(tdir, "out.json")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return nil
 				})
@@ -299,7 +298,7 @@ func TestExe(t *testing.T) {
 				Convey(`when output is not specified`, func() {
 					args = append(args, ArgsDelim)
 					args = append(args, expectedUserArgs...)
-					exitcode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+					exitcode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 						So(userArgs, ShouldResemble, expectedUserArgs)
 						return nil
 					})
@@ -311,7 +310,7 @@ func TestExe(t *testing.T) {
 					defer os.RemoveAll(tdir)
 					args = append(args, luciexe.OutputCLIArg, filepath.Join(tdir, "out.pb"), ArgsDelim)
 					args = append(args, expectedUserArgs...)
-					exitcode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+					exitcode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 						So(userArgs, ShouldResemble, expectedUserArgs)
 						return nil
 					})
@@ -322,7 +321,7 @@ func TestExe(t *testing.T) {
 			Convey(`write output on error`, func() {
 				outFile := filepath.Join(tdir, "out.json")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return errors.New("bad stuff")
 				})

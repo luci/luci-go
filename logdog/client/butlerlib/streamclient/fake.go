@@ -15,9 +15,12 @@
 package streamclient
 
 import (
+	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -144,25 +147,102 @@ func (d *fakeDialer) DialDgramStream(f streamproto.Flags) (DatagramStream, error
 	return d.getStream(f)
 }
 
-// NewFake makes a FakeClient which absorbs all data written to the client, and
-// allows retrieval via extra methods.
-func NewFake(namespace types.StreamName) FakeClient {
-	return FakeClient{
-		Client: &Client{
-			&fakeDialer{streams: map[types.StreamName]*fakeStream{}},
-			namespace,
-		},
+// These support NewFake and the "fake" protocol handler.
+var (
+	fakeRegistryMu sync.Mutex
+	fakeRegistryID int64
+	fakeRegistry   = map[int64]Fake{}
+)
+
+// NewFake makes an in-memory Fake which absorbs all data written via Clients
+// connected to it, and allows retrieval of this data via extra methods.
+//
+// You must call Fake.Unregister to free the collected data.
+//
+// You can obtain a Client for this Fake by doing:
+//
+//   fake := streamclient.NewFake()
+//   defer fake.Unregister()
+//   client, _ := streamclient.New(fake.StreamServerPath(), "whatever")
+//
+// This is particularly useful for testing programs which use
+// bootstrap.GetFromEnv() to obtain the Client:
+//
+//    env := environ.New(nil)
+//    env.Set(bootstrap.EnvStreamServerPath, client.StreamServerPath())
+//
+//    bs := bootstrap.GetFromEnv(env)   # returns Bootstrap containing `client`.
+//
+// If you JUST want a single client and don't need streamclient.New to work,
+// consider NewUnregisteredFake.
+func NewFake() Fake {
+	fakeRegistryMu.Lock()
+	defer fakeRegistryMu.Unlock()
+
+	id := fakeRegistryID + 1
+	fakeRegistryID++
+
+	ret := Fake{
+		id,
+		&fakeDialer{streams: map[types.StreamName]*fakeStream{}},
 	}
+	fakeRegistry[id] = ret
+	return ret
 }
 
-// FakeClient implements a client which doesn't connect to a real server, but
-// allows the retrieval of the dialed data later via GetFakeData.
-type FakeClient struct {
-	*Client
+// NewUnregisteredFake returns a new Fake as well as a *Client for this Fake.
+//
+// Fake.StreamServerPath() will return an empty string and Unregister is
+// a no-op.
+//
+// Aside from the returned *Client there's no way to obtain another *Client
+// for this Fake.
+func NewUnregisteredFake(namespace types.StreamName) (Fake, *Client) {
+	f := Fake{
+		0,
+		&fakeDialer{streams: map[types.StreamName]*fakeStream{}},
+	}
+	return f, &Client{f.dial, namespace}
+}
+
+// Fake implements an in-memory sink for Client connections and data.
+//
+// You can retrieve the collected data via the Data method.
+type Fake struct {
+	id   int64 // 0 means "unregistered"
+	dial *fakeDialer
+}
+
+// Unregister idempotently removes this Fake from the global registry.
+//
+// This has no effect for a Fake created with NewUnregisteredFake.
+//
+// After calling Unregister, StreamServerPath will return an empty string.
+func (f Fake) Unregister() {
+	id := atomic.SwapInt64(&f.id, 0)
+	if id == 0 {
+		return
+	}
+	fakeRegistryMu.Lock()
+	defer fakeRegistryMu.Unlock()
+	delete(fakeRegistry, id)
+}
+
+// StreamServerPath returns a value suitable for streamclient.New that will
+// allow construction of a *Client which points to this Fake.
+//
+// If this Fake was generated via NewUnregisteredFake, or you called
+// Unregister on it, returns an empty string.
+func (f Fake) StreamServerPath() string {
+	id := atomic.LoadInt64(&f.id)
+	if id == 0 {
+		return ""
+	}
+	return fmt.Sprintf("fake:%d", id)
 }
 
 // FakeStreamData is data about a single stream for a client created with the
-// "fake" protocol. You can retrieve this with Client.GetFakeData().
+// "fake" protocol. You can retrieve this with Fake.Data().
 type FakeStreamData interface {
 	// GetFlags returns the stream's streamproto.Flags from when the stream was
 	// opened.
@@ -182,16 +262,33 @@ type FakeStreamData interface {
 	IsClosed() bool
 }
 
-// GetFakeData returns all absorbed data collected by this client so far.
+// Data returns all absorbed data collected by this Fake so far.
 //
 // Note that the FakeStreamData objects are `live`, and so calling their methods
 // will always get you the current value of those streams. You'll need to call
 // this method again if you expect a new stream to show up, however.
-func (c FakeClient) GetFakeData() map[types.StreamName]FakeStreamData {
-	return c.dial.(*fakeDialer).dumpFakeData()
+func (f Fake) Data() map[types.StreamName]FakeStreamData {
+	return f.dial.dumpFakeData()
 }
 
-// SetFakeError causes New* methods on this Client to return this error.
-func (c FakeClient) SetFakeError(err error) {
-	c.dial.(*fakeDialer).setFakeError(err)
+// SetError causes New* methods for Clients of this Fake to return this error.
+func (f Fake) SetError(err error) {
+	f.dial.setFakeError(err)
+}
+
+func init() {
+	protocolRegistry["fake"] = func(fakeId string) (dialer, error) {
+		id, err := strconv.ParseInt(fakeId, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		fakeRegistryMu.Lock()
+		defer fakeRegistryMu.Unlock()
+		f, ok := fakeRegistry[id]
+		if !ok {
+			return nil, errors.Reason("unknown Fake %d", id).Err()
+		}
+		return f.dial, nil
+	}
 }

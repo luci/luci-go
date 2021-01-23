@@ -83,6 +83,12 @@ type Client struct {
 // Sinks all connections and writes into a null data sink. Useful for tests, or
 // for running programs which use logdog but you don't care about their logdog
 // outputs.
+//
+//   fake:$id
+//
+// Connects to an in-memory Fake created in this package by calling NewFake.
+// The string `fake:$id` can be obtained by calling the Fake's StreamServerPath
+// method.
 func New(path string, namespace types.StreamName) (*Client, error) {
 	parts := strings.SplitN(path, ":", 2)
 	protocol, value := parts[0], ""

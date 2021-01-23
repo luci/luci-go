@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/golang/protobuf/ptypes"
 
@@ -502,9 +503,9 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 // streamsFromAnnotatedLog takes in an annotated log and returns a fully
 // populated set of logdog streams
 func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.Streams, error) {
-	c := streamclient.NewFake("")
+	scFake, c := streamclient.NewUnregisteredFake("")
 	p := annotee.New(ctx, annotee.Options{
-		Client:                 c.Client,
+		Client:                 c,
 		MetadataUpdateInterval: -1, // Neverrrrrr send incr updates.
 		Offline:                true,
 	})
@@ -521,7 +522,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 		return nil, err
 	}
 	p.Finish()
-	return parseAnnotations(c)
+	return parseAnnotations(scFake)
 }
 
 // failedToStart is called in the case where logdog-only mode is on but the
@@ -614,7 +615,7 @@ func resolveLogDogStreamAddrFromTags(tags map[string]string) (*types.StreamAddr,
 // TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
 func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*ui.MiloBuildLegacy, error) {
 	var build ui.MiloBuildLegacy
-	var step annopb.Step
+	var step *annopb.Step
 
 	// Decode the data using annotee. The logdog stream returned here is assumed
 	// to be consistent, which is why the following block of code are not
@@ -628,18 +629,18 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 			})
 			build.Components = append(build.Components, comp)
 		} else if lds.MainStream != nil {
-			step = *lds.MainStream.Data
+			step = proto.Clone(lds.MainStream.Data).(*annopb.Step)
 		}
 	}
 
-	if err := addTaskToMiloStep(c, taskURL.Host, fr.res, &step); err != nil {
+	if err := addTaskToMiloStep(c, taskURL.Host, fr.res, step); err != nil {
 		return nil, err
 	}
 
 	// Log links are built relative to swarming URLs
 	id := taskURL.Query().Get("id")
 	ub := swarmingURLBuilder(id)
-	rawpresentation.AddLogDogToBuild(c, ub, &step, &build)
+	rawpresentation.AddLogDogToBuild(c, ub, step, &build)
 
 	addFailureSummary(&build)
 
