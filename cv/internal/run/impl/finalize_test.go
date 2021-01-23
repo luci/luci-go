@@ -53,7 +53,7 @@ func TestRemoveRunFromCLs(t *testing.T) {
 			ct.Clock.Add(1 * time.Hour)
 			now := clock.Now(ctx).UTC()
 			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return RemoveRunFromCLs(ctx, r)
+				return removeRunFromCLs(ctx, r)
 			}, nil)
 			So(err, ShouldBeNil)
 
@@ -78,7 +78,7 @@ func TestRemoveRunFromCLs(t *testing.T) {
 
 			ct.Clock.Add(1 * time.Hour)
 			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return RemoveRunFromCLs(ctx, r)
+				return removeRunFromCLs(ctx, r)
 			}, nil)
 			So(err, ShouldBeNil)
 

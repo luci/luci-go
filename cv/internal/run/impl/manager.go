@@ -156,10 +156,11 @@ func (rm *runManager) SaveState(ctx context.Context, st eventbox.State, ev event
 
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
-	starts        eventbox.Events
-	cancels       eventbox.Events
-	pokes         eventbox.Events
-	updateConfigs eventbox.Events
+	startEvents        eventbox.Events
+	cancelEvents       eventbox.Events
+	pokeEvents         eventbox.Events
+	updateConfigEvents eventbox.Events
+	finishedEvents     eventbox.Events
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -172,37 +173,48 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	}
 	switch e.GetEvent().(type) {
 	case *eventpb.Event_Start:
-		tr.starts = append(tr.starts, item)
+		tr.startEvents = append(tr.startEvents, item)
 	case *eventpb.Event_Cancel:
-		tr.cancels = append(tr.cancels, item)
+		tr.cancelEvents = append(tr.cancelEvents, item)
 	case *eventpb.Event_Poke:
-		tr.pokes = append(tr.pokes, item)
+		tr.pokeEvents = append(tr.pokeEvents, item)
 	case *eventpb.Event_UpdateConfig:
-		tr.updateConfigs = append(tr.updateConfigs, item)
+		tr.updateConfigEvents = append(tr.updateConfigEvents, item)
+	case *eventpb.Event_Finished:
+		tr.finishedEvents = append(tr.finishedEvents, item)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
 }
 
 func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, s *state) (ret []eventbox.Transition, err error) {
+	if tr.finishedEvents != nil {
+		t := eventbox.Transition{Events: tr.finishedEvents}
+		t.SideEffectFn, s, err = onFinished(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
 	switch {
-	case len(tr.cancels) > 0:
-		t := eventbox.Transition{Events: tr.cancels}
+	case len(tr.cancelEvents) > 0:
+		t := eventbox.Transition{Events: tr.cancelEvents}
 		// Consume all the start events here as well because it is possible
 		// that Run Manager receives start and cancel events at the same time.
 		// For example, user requests to start a Run and immediately cancels
 		// it. But the duration is long enough for Project Manager to create
 		// this Run in CV. In that case, Run Manager should just move this Run
 		// to cancelled state directly.
-		t.Events = append(t.Events, tr.starts...)
+		t.Events = append(t.Events, tr.startEvents...)
 		t.SideEffectFn, s, err = cancel(ctx, rm.runID, s)
 		if err != nil {
 			return nil, err
 		}
 		t.TransitionTo = s
 		ret = append(ret, t)
-	case len(tr.starts) > 0:
-		t := eventbox.Transition{Events: tr.starts}
+	case len(tr.startEvents) > 0:
+		t := eventbox.Transition{Events: tr.startEvents}
 		t.SideEffectFn, s, err = start(ctx, rm.runID, s)
 		if err != nil {
 			return nil, err
@@ -210,13 +222,13 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		t.TransitionTo = s
 		ret = append(ret, t)
 	}
-	if len(tr.updateConfigs) > 0 {
+	if len(tr.updateConfigEvents) > 0 {
 		// TODO(tandrii,yiwzhang): update config.
-		ret = append(ret, eventbox.Transition{Events: tr.updateConfigs, TransitionTo: s})
+		ret = append(ret, eventbox.Transition{Events: tr.updateConfigEvents, TransitionTo: s})
 	}
-	if len(tr.pokes) > 0 {
+	if len(tr.pokeEvents) > 0 {
 		// TODO(tandrii,yiwzhang): implement poke.
-		ret = append(ret, eventbox.Transition{Events: tr.pokes, TransitionTo: s})
+		ret = append(ret, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: s})
 	}
 	return
 }
