@@ -199,6 +199,30 @@
       },
       "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0c2b31ac_e4619f53",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-23T00:19:46Z",
+      "side": 1,
+      "message": "I don\u0027t have the memory, but it looks the condition [0] to determine if a test is NeverFixTests looks simple.\n\nhttps://source.chromium.org/chromium/chromium/src/+/master:third_party/blink/tools/blinkpy/web_tests/lint_test_expectations.py;l\u003d242-243",
+      "parentUuid": "28faf261_bd014140",
+      "range": {
+        "startLine": 126,
+        "startChar": 46,
+        "endLine": 127,
+        "endChar": 20
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
