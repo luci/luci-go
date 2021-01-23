@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "feca432e_b611718e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-23T00:33:35Z",
+      "side": 1,
+      "message": "Nice 👍",
+      "revId": "a18fc4dd7ff88352efa7751da666716933d15d57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2a8d572_f165bbd6",
+        "filename": "logdog/client/butlerlib/streamclient/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-23T00:33:35Z",
+      "side": 1,
+      "message": "nit: set f.id \u003d 0 to match the unregistered Fake behavior.",
+      "revId": "a18fc4dd7ff88352efa7751da666716933d15d57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
