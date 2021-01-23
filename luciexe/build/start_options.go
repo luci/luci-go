@@ -86,8 +86,8 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 			},
 		}, func(batch *buffer.Batch) error {
 			buildPb, vers := func() (*bbpb.Build, int64) {
-				s.copyExclusionMu.Lock()
-				defer s.copyExclusionMu.Unlock()
+				s.buildPbMu.Lock()
+				defer s.buildPbMu.Unlock()
 
 				// technically we don't need atomic here because copyExclusionMu is held
 				// in WRITE mode, but it's clearer to mirror usage directly.
@@ -191,7 +191,7 @@ func OptOutputProperties(writeFnptr, mergeFnptr interface{}) StartOption {
 
 		if writer.Kind() == reflect.Func {
 			writer.Set(reflect.MakeFunc(writer.Type(), func(args []reflect.Value) []reflect.Value {
-				s.mutate(func() bool {
+				s.excludeCopy(func() bool {
 					s.topLevelOutput.set(args[0].Interface().(proto.Message))
 					return true
 				})
@@ -201,7 +201,7 @@ func OptOutputProperties(writeFnptr, mergeFnptr interface{}) StartOption {
 
 		if merger.Kind() == reflect.Func {
 			merger.Set(reflect.MakeFunc(merger.Type(), func(args []reflect.Value) []reflect.Value {
-				s.mutate(func() bool {
+				s.excludeCopy(func() bool {
 					s.topLevelOutput.merge(args[0].Interface().(proto.Message))
 					return true
 				})
