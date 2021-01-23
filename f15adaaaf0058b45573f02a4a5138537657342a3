@@ -22,6 +22,30 @@
       },
       "revId": "f15adaaaf0058b45573f02a4a5138537657342a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d885e83_1abf8214",
+        "filename": "tools/cmd/bqschemaupdater/main_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-23T07:29:16Z",
+      "side": 1,
+      "message": "wow good catch",
+      "parentUuid": "395e0f84_81927109",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 0
+      },
+      "revId": "f15adaaaf0058b45573f02a4a5138537657342a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
