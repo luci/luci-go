@@ -91,7 +91,7 @@ func MakePropertyModifier(ns string, writeFnptr, mergeFnptr interface{}) {
 		msg := args[1].Interface().(proto.Message)
 
 		if st := cstate.state; st != nil {
-			st.mutate(func() bool {
+			st.excludeCopy(func() bool {
 				if prop := st.outputProperties[ns]; prop != nil {
 					opFn(prop, msg)
 					return true

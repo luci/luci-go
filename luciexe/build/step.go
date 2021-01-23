@@ -314,7 +314,7 @@ func (s *Step) logsink() *streamclient.Client {
 //
 // Will panic if stepPb is in a terminal (ended) state.
 func (s *Step) mutate(cb func() bool) {
-	s.state.mutate(func() bool {
+	s.state.excludeCopy(func() bool {
 		s.stepPbMu.Lock()
 		defer s.stepPbMu.Unlock()
 		if protoutil.IsEnded(s.stepPb.Status) {
