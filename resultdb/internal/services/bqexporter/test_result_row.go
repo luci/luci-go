@@ -20,7 +20,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/descriptor"
-	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
@@ -50,11 +50,11 @@ func generateSchema() (schema bigquery.Schema, err error) {
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdtmd, _ := descriptor.MessageDescriptorProto(&pb.TestMetadata{})
 	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
-	fdset := &desc.FileDescriptorSet{
-		File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fdinv}}
+	fdset := &descriptorpb.FileDescriptorSet{
+		File: []*descriptorpb.FileDescriptorProto{fd, fdsp, fdtmd, fdinv}}
 	conv := bq.SchemaConverter{
 		Desc:           fdset,
-		SourceCodeInfo: make(map[*desc.FileDescriptorProto]bq.SourceCodeInfoMap, len(fdset.File)),
+		SourceCodeInfo: make(map[*descriptorpb.FileDescriptorProto]bq.SourceCodeInfoMap, len(fdset.File)),
 	}
 	for _, f := range fdset.File {
 		conv.SourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)

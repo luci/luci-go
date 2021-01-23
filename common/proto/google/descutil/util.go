@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	pb "google.golang.org/protobuf/types/descriptorpb"
 )
 
 // splitFullName splits package name and service/type name.

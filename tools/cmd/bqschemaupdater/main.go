@@ -28,10 +28,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	"google.golang.org/api/option"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/bq"
@@ -238,10 +238,10 @@ func main() {
 
 // schemaFromMessage loads a message by name from .proto files in dir
 // and converts the message to a bigquery schema.
-func schemaFromMessage(desc *descriptor.FileDescriptorSet, messageName string) (schema bigquery.Schema, description string, err error) {
+func schemaFromMessage(desc *descriptorpb.FileDescriptorSet, messageName string) (schema bigquery.Schema, description string, err error) {
 	conv := bq.SchemaConverter{
 		Desc:           desc,
-		SourceCodeInfo: make(map[*descriptor.FileDescriptorProto]bq.SourceCodeInfoMap, len(desc.File)),
+		SourceCodeInfo: make(map[*descriptorpb.FileDescriptorProto]bq.SourceCodeInfoMap, len(desc.File)),
 	}
 	for _, f := range desc.File {
 		conv.SourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)
@@ -309,7 +309,7 @@ func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, er
 
 // loadProtoDescription compiles .proto files in the dir
 // and returns their descriptor.
-func loadProtoDescription(dir string, importPaths []string) (*descriptor.FileDescriptorSet, error) {
+func loadProtoDescription(dir string, importPaths []string) (*descriptorpb.FileDescriptorSet, error) {
 	dir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, errors.Annotate(err, "could make path %q absolute", dir).Err()
@@ -354,7 +354,7 @@ func loadProtoDescription(dir string, importPaths []string) (*descriptor.FileDes
 	if err != nil {
 		return nil, err
 	}
-	var desc descriptor.FileDescriptorSet
+	var desc descriptorpb.FileDescriptorSet
 	err = proto.Unmarshal(descBytes, &desc)
 	return &desc, err
 }

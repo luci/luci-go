@@ -19,8 +19,9 @@ import (
 
 	"io/ioutil"
 
-	"github.com/golang/protobuf/proto"
-	pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/proto"
+	pb "google.golang.org/protobuf/types/descriptorpb"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 

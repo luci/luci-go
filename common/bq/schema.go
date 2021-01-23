@@ -22,7 +22,7 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/pmezard/go-difflib/difflib"
 
@@ -34,11 +34,11 @@ import (
 // SourceCodeInfoMap maps descriptor proto messages to source code info,
 // if available.
 // See also descutil.IndexSourceCodeInfo.
-type SourceCodeInfoMap map[interface{}]*descriptor.SourceCodeInfo_Location
+type SourceCodeInfoMap map[interface{}]*descriptorpb.SourceCodeInfo_Location
 
 type SchemaConverter struct {
-	Desc           *descriptor.FileDescriptorSet
-	SourceCodeInfo map[*descriptor.FileDescriptorProto]SourceCodeInfoMap
+	Desc           *descriptorpb.FileDescriptorSet
+	SourceCodeInfo map[*descriptorpb.FileDescriptorProto]SourceCodeInfoMap
 }
 
 // Schema constructs a bigquery.Schema from a named message.
@@ -47,7 +47,7 @@ func (c *SchemaConverter) Schema(messageName string) (schema bigquery.Schema, de
 	if obj == nil {
 		return nil, "", fmt.Errorf("message %q is not found", messageName)
 	}
-	msg, isMsg := obj.(*descriptor.DescriptorProto)
+	msg, isMsg := obj.(*descriptorpb.DescriptorProto)
 	if !isMsg {
 		return nil, "", fmt.Errorf("expected %q to be a message, but it is %T", messageName, obj)
 	}
@@ -65,7 +65,7 @@ func (c *SchemaConverter) Schema(messageName string) (schema bigquery.Schema, de
 }
 
 // field constructs bigquery.FieldSchema from proto field descriptor.
-func (c *SchemaConverter) field(file *descriptor.FileDescriptorProto, field *descriptor.FieldDescriptorProto) (*bigquery.FieldSchema, error) {
+func (c *SchemaConverter) field(file *descriptorpb.FileDescriptorProto, field *descriptorpb.FieldDescriptorProto) (*bigquery.FieldSchema, error) {
 	schema := &bigquery.FieldSchema{
 		Name:        field.GetName(),
 		Description: c.description(file, field),
@@ -76,38 +76,38 @@ func (c *SchemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 	typeName := strings.TrimPrefix(field.GetTypeName(), ".")
 	switch field.GetType() {
 	case
-		descriptor.FieldDescriptorProto_TYPE_DOUBLE,
-		descriptor.FieldDescriptorProto_TYPE_FLOAT:
+		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
+		descriptorpb.FieldDescriptorProto_TYPE_FLOAT:
 
 		schema.Type = bigquery.FloatFieldType
 
 	case
-		descriptor.FieldDescriptorProto_TYPE_INT64,
-		descriptor.FieldDescriptorProto_TYPE_UINT64,
-		descriptor.FieldDescriptorProto_TYPE_INT32,
-		descriptor.FieldDescriptorProto_TYPE_FIXED64,
-		descriptor.FieldDescriptorProto_TYPE_FIXED32,
-		descriptor.FieldDescriptorProto_TYPE_UINT32,
-		descriptor.FieldDescriptorProto_TYPE_SFIXED32,
-		descriptor.FieldDescriptorProto_TYPE_SFIXED64,
-		descriptor.FieldDescriptorProto_TYPE_SINT32,
-		descriptor.FieldDescriptorProto_TYPE_SINT64:
+		descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_INT32,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64:
 
 		schema.Type = bigquery.IntegerFieldType
 
-	case descriptor.FieldDescriptorProto_TYPE_BOOL:
+	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
 		schema.Type = bigquery.BooleanFieldType
 
-	case descriptor.FieldDescriptorProto_TYPE_STRING:
+	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
 		schema.Type = bigquery.StringFieldType
 
-	case descriptor.FieldDescriptorProto_TYPE_BYTES:
+	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
 		schema.Type = bigquery.BytesFieldType
 
-	case descriptor.FieldDescriptorProto_TYPE_ENUM:
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		schema.Type = bigquery.StringFieldType
 
-	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		switch typeName {
 		case "google.protobuf.Duration":
 			schema.Type = bigquery.FloatFieldType
@@ -139,7 +139,7 @@ func (c *SchemaConverter) field(file *descriptor.FileDescriptorProto, field *des
 // ptr points to.
 // If ptr is a field of an enum type, appends
 // "\nValid values: <comma-separated enum member names>".
-func (c *SchemaConverter) description(file *descriptor.FileDescriptorProto, ptr interface{}) string {
+func (c *SchemaConverter) description(file *descriptorpb.FileDescriptorProto, ptr interface{}) string {
 	description := c.SourceCodeInfo[file][ptr].GetLeadingComments()
 
 	// Trim leading whitespace.
@@ -173,9 +173,9 @@ func (c *SchemaConverter) description(file *descriptor.FileDescriptorProto, ptr 
 	description = strings.TrimSpace(description)
 
 	// Append valid enum values.
-	if field, ok := ptr.(*descriptor.FieldDescriptorProto); ok && field.GetType() == descriptor.FieldDescriptorProto_TYPE_ENUM {
+	if field, ok := ptr.(*descriptorpb.FieldDescriptorProto); ok && field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
 		_, obj, _ := descutil.Resolve(c.Desc, strings.TrimPrefix(field.GetTypeName(), "."))
-		if enum, ok := obj.(*descriptor.EnumDescriptorProto); ok {
+		if enum, ok := obj.(*descriptorpb.EnumDescriptorProto); ok {
 			names := make([]string, len(enum.Value))
 			for i, v := range enum.Value {
 				names[i] = v.GetName()
