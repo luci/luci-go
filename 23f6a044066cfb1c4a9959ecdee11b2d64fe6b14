@@ -120,6 +120,30 @@
       },
       "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47d4750b_740c0c80",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-23T15:52:46Z",
+      "side": 1,
+      "message": "re seconds: yes, those protos are designed for humans to author them in text proto. Also that field was strongly-inspired by swarming.\nBuild.proto uses Duration (this field is copied from there): https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/build.proto#240\nand it was an attempt to find a better name.\n\n+1 to mention how this field interacts with the one in builder config, i.e. let\u0027s not just copy comment from build.proto as is. At the very least let\u0027s refer to Build.scheduling_timeout, instead of copying build.proto-specific stuff like status_details.",
+      "parentUuid": "2c91d2dd_2e272ea1",
+      "range": {
+        "startLine": 354,
+        "startChar": 27,
+        "endLine": 354,
+        "endChar": 45
+      },
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
