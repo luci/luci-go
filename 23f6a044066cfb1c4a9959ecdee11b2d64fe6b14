@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "403a6e9f_2150b9f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1188709
+      },
+      "writtenOn": "2021-01-23T05:15:22Z",
+      "side": 1,
+      "message": "I\u0027m sure I need to recompile the go-protos. Robbie or Andrii is there a defined process for how this is done?",
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
