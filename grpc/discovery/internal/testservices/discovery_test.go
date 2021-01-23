@@ -25,10 +25,10 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"go.chromium.org/luci/common/proto/google/descutil"
 	"go.chromium.org/luci/grpc/discovery"
-
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -77,10 +77,10 @@ func TestDiscovery(t *testing.T) {
 		So(sayHello.GetInputType(), ShouldEqual, ".testservices.HelloRequest")
 		_, obj, _ := descutil.Resolve(desc, "testservices.HelloRequest")
 		So(obj, ShouldNotBeNil)
-		helloReq := obj.(*descriptor.DescriptorProto)
+		helloReq := obj.(*descriptorpb.DescriptorProto)
 		So(helloReq, ShouldNotBeNil)
 		So(helloReq.Field, ShouldHaveLength, 1)
 		So(helloReq.Field[0].GetName(), ShouldEqual, "name")
-		So(helloReq.Field[0].GetType(), ShouldEqual, descriptor.FieldDescriptorProto_TYPE_STRING)
+		So(helloReq.Field[0].GetType(), ShouldEqual, descriptorpb.FieldDescriptorProto_TYPE_STRING)
 	})
 }

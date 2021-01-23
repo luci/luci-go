@@ -18,12 +18,12 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-
-	"go.chromium.org/luci/common/proto/google/descutil"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/common/proto/google/descutil"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -34,16 +34,16 @@ func TestUnmarshal(t *testing.T) {
 		descFileBytes, err := ioutil.ReadFile("unmarshal_test.desc")
 		So(err, ShouldBeNil)
 
-		var desc descriptor.FileDescriptorSet
+		var desc descriptorpb.FileDescriptorSet
 		err = proto.Unmarshal(descFileBytes, &desc)
 		So(err, ShouldBeNil)
 
 		resolver := NewResolver(&desc)
 
-		resolveMsg := func(name string) *descriptor.DescriptorProto {
+		resolveMsg := func(name string) *descriptorpb.DescriptorProto {
 			_, obj, _ := descutil.Resolve(&desc, "flagpb."+name)
 			So(obj, ShouldNotBeNil)
-			return obj.(*descriptor.DescriptorProto)
+			return obj.(*descriptorpb.DescriptorProto)
 		}
 
 		unmarshalOK := func(typeName string, args ...string) map[string]interface{} {
