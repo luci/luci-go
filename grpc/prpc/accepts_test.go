@@ -165,18 +165,29 @@ func TestAcceptContentEncoding(t *testing.T) {
 	Convey("Accept-Encoding", t, func() {
 		h := http.Header{}
 		Convey(`Empty`, func() {
-			So(mayGZipResponse(h), ShouldBeFalse)
+			ok, err := acceptsGZipResponse(h)
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
 		})
 
 		Convey(`gzip`, func() {
 			h.Set("Accept-Encoding", "gzip")
-			So(mayGZipResponse(h), ShouldBeTrue)
+			ok, err := acceptsGZipResponse(h)
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeTrue)
 		})
 
 		Convey(`multiple values`, func() {
-			h.Add("Accept-Encoding", "foo")
-			h.Add("Accept-Encoding", "gzip")
-			So(mayGZipResponse(h), ShouldBeTrue)
+			h.Add("Accept-Encoding", "gzip, deflate, br")
+			ok, err := acceptsGZipResponse(h)
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeTrue)
+		})
+
+		Convey(`invalid input`, func() {
+			h.Add("Accept-Encoding", "gzip; q=a, deflate, br")
+			_, err := acceptsGZipResponse(h)
+			So(err, ShouldErrLike, "q parameter: expected a floating-point number")
 		})
 	})
 }
