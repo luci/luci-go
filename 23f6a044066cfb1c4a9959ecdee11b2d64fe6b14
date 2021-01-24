@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "45b94e4c_351839b7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1188709
+      },
+      "writtenOn": "2021-01-24T01:02:18Z",
+      "side": 1,
+      "message": "ty.",
+      "parentUuid": "b7c2e425_d0ad8e0f",
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "57384bcd_f2224f1b",
@@ -76,6 +94,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "79cc0a5c_9fb47c4b",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1188709
+      },
+      "writtenOn": "2021-01-24T01:02:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57384bcd_f2224f1b",
+      "range": {
+        "startLine": 209,
+        "startChar": 12,
+        "endLine": 209,
+        "endChar": 14
+      },
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2abc5408_f66ae751",
@@ -89,6 +131,30 @@
       "writtenOn": "2021-01-23T07:01:06Z",
       "side": 1,
       "message": "note that 16 is already taken here",
+      "range": {
+        "startLine": 246,
+        "startChar": 34,
+        "endLine": 246,
+        "endChar": 36
+      },
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0d0d0d55_1cca65dd",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1188709
+      },
+      "writtenOn": "2021-01-24T01:02:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2abc5408_f66ae751",
       "range": {
         "startLine": 246,
         "startChar": 34,
@@ -136,6 +202,30 @@
       "side": 1,
       "message": "re seconds: yes, those protos are designed for humans to author them in text proto. Also that field was strongly-inspired by swarming.\nBuild.proto uses Duration (this field is copied from there): https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/build.proto#240\nand it was an attempt to find a better name.\n\n+1 to mention how this field interacts with the one in builder config, i.e. let\u0027s not just copy comment from build.proto as is. At the very least let\u0027s refer to Build.scheduling_timeout, instead of copying build.proto-specific stuff like status_details.",
       "parentUuid": "2c91d2dd_2e272ea1",
+      "range": {
+        "startLine": 354,
+        "startChar": 27,
+        "endLine": 354,
+        "endChar": 45
+      },
+      "revId": "23f6a044066cfb1c4a9959ecdee11b2d64fe6b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49973681_19599082",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1188709
+      },
+      "writtenOn": "2021-01-24T01:02:18Z",
+      "side": 1,
+      "message": "Ok. I\u0027ve kept the duration format. Keeping the names to correspond with those in build.proto. I\u0027ve also added a reference to the relevant values in the builder config, and mentioned that only second precision is supported.",
+      "parentUuid": "47d4750b_740c0c80",
       "range": {
         "startLine": 354,
         "startChar": 27,
