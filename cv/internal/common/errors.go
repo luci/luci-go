@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
 )
@@ -51,13 +52,34 @@ func MostSevereError(err error) error {
 
 // TQifyError does final error processing before returning from a TQ handler.
 //
-// * logs error stack,
+// * logs entire error stack with ERROR severity by default;
+//   logs just error with WARNING severity iff one of error's leaf nodes matches
+//   at least one of the given list of `omitStackTraceFor` errors. This is
+//   useful if TQ handler is known to frequently fail this way.
 // * non-transient errors are tagged with tq.Fatal to avoid retries.
-func TQifyError(ctx context.Context, err error) error {
+//
+// omitStackTraceFor must contain only unwrapped errors.
+func TQifyError(ctx context.Context, err error, omitStackTraceFor ...error) error {
 	if err == nil {
 		return nil
 	}
-	LogError(ctx, err)
+
+	stackTrace := true
+	errors.WalkLeaves(err, func(leafError error) bool {
+		for _, e := range omitStackTraceFor {
+			if leafError == e {
+				stackTrace = false
+				return false // stop
+			}
+		}
+		return true // continue iterating leaf nodes
+	})
+
+	if !stackTrace {
+		logging.Warningf(ctx, "%s", err)
+	} else {
+		LogError(ctx, err)
+	}
 	if !transient.Tag.In(err) {
 		err = tq.Fatal.Apply(err)
 	}

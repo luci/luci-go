@@ -50,6 +50,8 @@ import (
 
 const TaskClassID = "refresh-gerrit-cl"
 
+var errStaleData = errors.New("Fetched stale Gerrit data", transient.Tag)
+
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        TaskClassID,
@@ -60,7 +62,11 @@ func init() {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
 			err := refresh(ctx, t)
-			return common.TQifyError(ctx, err)
+			return common.TQifyError(
+				ctx, err,
+				// Don't log the entire stack trace of stale data, which is sadly an
+				// hourly occurrence.
+				errStaleData)
 		},
 	})
 }
@@ -108,24 +114,25 @@ const blindRefreshInterval = time.Minute
 //
 // If datastore already contains snapshot with Gerrit-reported update time equal
 // to or after updatedHint, then no updating or querying will be performed.
-func refresh(ctx context.Context, r *RefreshGerritCL) error {
-	fetcher := fetcher{
+func refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
+	f := fetcher{
 		luciProject:   r.GetLuciProject(),
 		host:          r.GetHost(),
 		change:        r.GetChange(),
 		forceNotifyPM: r.GetForceNotifyPm(),
 	}
 	if u := r.GetUpdatedHint(); u != nil {
-		fetcher.updatedHint = u.AsTime()
+		f.updatedHint = u.AsTime()
 	}
-	var err error
-	if fetcher.externalID, err = changelist.GobID(fetcher.host, fetcher.change); err != nil {
+	defer func() { err = errors.Annotate(err, "failed to refresh %s", &f).Err() }()
+
+	if f.externalID, err = changelist.GobID(f.host, f.change); err != nil {
 		return err
 	}
-	if fetcher.g, err = gerrit.CurrentClient(ctx, fetcher.host, fetcher.luciProject); err != nil {
+	if f.g, err = gerrit.CurrentClient(ctx, f.host, f.luciProject); err != nil {
 		return err
 	}
-	return fetcher.update(ctx, common.CLID(r.GetClidHint()))
+	return f.update(ctx, common.CLID(r.GetClidHint()))
 }
 
 // fetcher efficiently computes new snapshot by fetching data from Gerrit.
@@ -702,7 +709,7 @@ func (f *fetcher) ensureNotStale(ctx context.Context, externalUpdateTime *timest
 	default:
 		return nil
 	}
-	return errors.Reason("Fetched stale Gerrit data").Tag(transient.Tag).Err()
+	return errStaleData
 }
 
 func (f *fetcher) gerritProjectIfKnown() string {

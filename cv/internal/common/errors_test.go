@@ -16,11 +16,14 @@ package common
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/logging/teelogger"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
 
@@ -31,14 +34,73 @@ func TestTQifyError(t *testing.T) {
 	t.Parallel()
 
 	Convey("TQifyError works", t, func() {
-		ctx := context.Background()
+		ctx := memlogger.Use(context.Background())
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
 		if testing.Verbose() {
-			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+			// Write Debug log to both memlogger and gologger.
+			ctx = teelogger.Use(ctx, gologger.StdConfig.NewLogger)
+		}
+		ctx = logging.SetLevel(ctx, logging.Debug)
+
+		logMessage := func() memlogger.LogEntry {
+			So(ml.Messages(), ShouldHaveLength, 1)
+			return ml.Messages()[0]
 		}
 
-		err := errors.New("oops")
-		err = TQifyError(ctx, err)
-		So(tq.Fatal.In(err), ShouldBeTrue)
+		assertLoggedStack := func() string {
+			m := logMessage()
+			So(m.Level, ShouldEqual, logging.Error)
+			So(m.Msg, ShouldContainSubstring, "common.TestTQifyError()")
+			So(m.Msg, ShouldContainSubstring, "errors_test.go")
+			return m.Msg
+		}
+
+		assertNoStack := func() string {
+			m := logMessage()
+			So(m.Level, ShouldEqual, logging.Warning)
+			So(strings.Split(m.Msg, "\n"), ShouldHaveLength, 1)
+			So(m.Msg, ShouldNotContainSubstring, "common.TestTQifyError()")
+			So(m.Msg, ShouldNotContainSubstring, "errors_test.go")
+			return m.Msg
+		}
+
+		errOops := errors.New("oops")
+		errBoo := errors.New("boo")
+		errTransBoo := transient.Tag.Apply(errBoo)
+		errWrapOops := errors.Annotate(errOops, "wrapped").Err()
+		errMulti := errors.NewMultiError(errWrapOops, errBoo)
+
+		Convey("noop", func() {
+			err := TQifyError(ctx, nil)
+			So(err, ShouldBeNil)
+			So(ml.Messages(), ShouldHaveLength, 0)
+		})
+		Convey("fatal", func() {
+			err := TQifyError(ctx, errOops)
+			So(tq.Fatal.In(err), ShouldBeTrue)
+			So(assertLoggedStack(), ShouldContainSubstring, "oops")
+		})
+		Convey("trans", func() {
+			err := TQifyError(ctx, errTransBoo)
+			So(tq.Fatal.In(err), ShouldBeFalse)
+			So(assertLoggedStack(), ShouldContainSubstring, "boo")
+		})
+		Convey("not excluded", func() {
+			err := TQifyError(ctx, errTransBoo, errOops)
+			So(tq.Fatal.In(err), ShouldBeFalse)
+			So(assertLoggedStack(), ShouldContainSubstring, "boo")
+		})
+		Convey("exclude simple unwrap", func() {
+			err := TQifyError(ctx, errTransBoo, errBoo)
+			So(tq.Fatal.In(err), ShouldBeFalse)
+			So(assertNoStack(), ShouldContainSubstring, "boo")
+		})
+		Convey("exclude with multierror", func() {
+			err := TQifyError(ctx, errMulti, errOops)
+			So(tq.Fatal.In(err), ShouldBeTrue)
+			So(assertNoStack(), ShouldContainSubstring, "oops")
+			So(assertNoStack(), ShouldContainSubstring, "1 other error")
+		})
 	})
 }
 
