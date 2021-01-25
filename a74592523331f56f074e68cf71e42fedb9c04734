@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "a74592523331f56f074e68cf71e42fedb9c04734",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "140ec3d6_341c639f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-25T20:44:27Z",
+      "side": 1,
+      "message": "LGTM, but let\u0027s wait till EOW before landing.\n\nDeleting the *server-side* code should be OK now though, because unlike rdb, deriver deployment isn\u0027t mixed with code we need to continue deploying.",
+      "revId": "a74592523331f56f074e68cf71e42fedb9c04734",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
