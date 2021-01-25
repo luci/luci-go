@@ -351,14 +351,8 @@ func (c *commonFlags) Parse() error {
 	return err
 }
 
-func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error) {
-	// Don't enforce authentication by using OptionalLogin mode. This is needed
-	// for IP-allowed bots: they have NO credentials to send.
-	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
-}
-
 func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService, error) {
-	client, err := c.createAuthClient(ctx)
+	client, err := createAuthClient(ctx, &c.parsedAuthOpts)
 	if err != nil {
 		return nil, err
 	}
