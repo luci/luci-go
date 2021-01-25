@@ -68,6 +68,9 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
 	}
+	if p.State == nil {
+		p.State = &prjpb.PState{}
+	}
 	p.State.LuciProject = pm.luciProject
 	pm.loadedPState = p.State
 	if p.State.GetConfigHash() != "" {
