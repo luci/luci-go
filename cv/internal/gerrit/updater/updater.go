@@ -451,8 +451,10 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 				case len(prs) == 0:
 					continue
 				case len(prs) > 1:
-					logging.Warningf(ctx, "Gerrit.GetRelatedChanges returned rev %q %d times for %s"+
-						"(ALL Related %s)", p.GetId(), len(prs), f, related)
+					logging.Warningf(
+						ctx,
+						"Gerrit.GetRelatedChanges returned rev %q %d times for %s (ALL Related %s)",
+						p.GetId(), len(prs), f, related)
 					// Avoid borking. Take the first CL by number.
 					for i, x := range prs[1:] {
 						if prs[0].GetNumber() > x.GetNumber() {
