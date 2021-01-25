@@ -119,6 +119,13 @@ type Client struct {
 	// their bodies) all queue up in memory anyway.
 	MaxConcurrentRequests int
 
+	// EnableRequestCompression allows the client to compress the request
+	// message. Use this option only with servers that implement pRPC v1.3+.
+	// Olders servers would fail to parse the request.
+	//
+	// The response message compression is configured on the server.
+	EnableRequestCompression bool
+
 	// Semaphore to limit concurrency, initialized in concurrencySem().
 	semOnce sync.Once
 	sem     *semaphore.Weighted
@@ -263,7 +270,10 @@ func (c *Client) CallWithFormats(ctx context.Context, serviceName, methodName st
 // call implements Call and CallWithFormats.
 func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte, error) {
 	md, _ := metadata.FromOutgoingContext(ctx)
-	req := prepareRequest(options, md, in)
+	req, err := c.prepareRequest(options, md, in)
+	if err != nil {
+		return nil, err
+	}
 	ctx = logging.SetFields(ctx, logging.Fields{
 		"host":    options.host,
 		"service": options.serviceName,
@@ -276,7 +286,7 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 
 	// Send the request in a retry loop. Use transient.Tag to propagate the retry
 	// signal from the loop body.
-	err := retry.Retry(ctx, transient.Only(options.Retry), func() (err error) {
+	err = retry.Retry(ctx, transient.Only(options.Retry), func() (err error) {
 		contentType, err = c.attemptCall(ctx, options, req, buf)
 		return
 	}, func(err error, sleepTime time.Duration) {
@@ -587,7 +597,7 @@ func (c *Client) readStatusDetails(r *http.Response) ([]*anypb.Any, error) {
 //
 // Initializes GetBody, so that the request can be resent multiple times when
 // retrying.
-func prepareRequest(options *Options, md metadata.MD, body []byte) *http.Request {
+func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage []byte) (*http.Request, error) {
 	// Convert headers to HTTP canonical form (i.e. Title-Case). Extract Host
 	// header, it is special and must be passed via http.Request.Host. Preallocate
 	// 5 more slots (for 4 headers below and for the RPC deadline header).
@@ -609,8 +619,20 @@ func prepareRequest(options *Options, md metadata.MD, body []byte) *http.Request
 	headers.Set("Content-Type", options.inFormat.MediaType())
 	headers.Set("Accept", options.outFormat.MediaType())
 	headers.Set("User-Agent", options.UserAgent)
+
+	body := requestMessage
+	if c.EnableRequestCompression && len(requestMessage) > gzipThreshold {
+		headers.Set("Content-Encoding", "gzip")
+		var err error
+		if body, err = compressBlob(requestMessage); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		// Do not add "Accept-Encoding: gzip". The http package does this
+		// automatically, and also decompresses the response.
+	}
+
 	headers.Set("Content-Length", strconv.Itoa(len(body)))
-	// TODO(nodir): add "Accept-Encoding: gzip" when pRPC server supports it.
 
 	scheme := "https"
 	if options.Insecure {
@@ -630,7 +652,7 @@ func prepareRequest(options *Options, md metadata.MD, body []byte) *http.Request
 		GetBody: func() (io.ReadCloser, error) {
 			return ioutil.NopCloser(bytes.NewReader(body)), nil
 		},
-	}
+	}, nil
 }
 
 // metadataFromHeaders copies an http.Header object into a metadata.MD map.

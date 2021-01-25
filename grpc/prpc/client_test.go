@@ -29,6 +29,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/klauspost/compress/gzip"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -223,6 +224,47 @@ func TestClient(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(receivedHeader.Get("key"), ShouldEqual, "value")
+			})
+
+			Convey("Works with compression", func(c C) {
+				req := &HelloRequest{Name: strings.Repeat("A", 1024)}
+
+				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
+
+					// Parse request.
+					c.So(r.Header.Get("Accept-Encoding"), ShouldEqual, "gzip")
+					c.So(r.Header.Get("Content-Encoding"), ShouldEqual, "gzip")
+					gz, err := gzip.NewReader(r.Body)
+					c.So(err, ShouldBeNil)
+					defer gz.Close()
+					reqBody, err := ioutil.ReadAll(gz)
+					c.So(err, ShouldBeNil)
+
+					var actualReq HelloRequest
+					err = proto.Unmarshal(reqBody, &actualReq)
+					c.So(err, ShouldBeNil)
+					c.So(&actualReq, ShouldResembleProto, req)
+
+					// Write response.
+					resBytes, err := proto.Marshal(&HelloReply{Message: "compressed response"})
+					c.So(err, ShouldBeNil)
+					resBody, err := compressBlob(resBytes)
+					c.So(err, ShouldBeNil)
+
+					w.Header().Set("Content-Type", mtPRPCBinary)
+					w.Header().Set("Content-Encoding", "gzip")
+					w.Header().Set(HeaderGRPCCode, "0")
+					w.WriteHeader(http.StatusOK)
+					_, err = w.Write(resBody)
+					c.So(err, ShouldBeNil)
+				})
+
+				defer server.Close()
+
+				client.EnableRequestCompression = true
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				So(err, ShouldBeNil)
+				So(res.Message, ShouldEqual, "compressed response")
 			})
 
 			Convey("With a deadline <= now, does not execute.", func(c C) {
