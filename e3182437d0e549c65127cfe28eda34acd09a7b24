@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9161820_ab4d536d",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-25T22:19:20Z",
+      "side": 1,
+      "message": "this is a good insight in general, but can you think of other reasons?\nI feel like we\u0027d forever-complicate the API for the sake of something temporary. It is not hard to update servers to use the latest version of pRPC lib; unless the server is in Python. \n\nprpc clients are often created as myprotopackage.NewFoobarClient(\u0026prpc.Client{...}), i.e. without reusing the prpc client.\n\nThe alternative to a callback, is a recommendation here that they should create two separate clients if one server supports compression and another doesn\u0027t, and bet that it will never happen in practice.\n\nWDYT?",
+      "parentUuid": "33b6d526_97902e23",
+      "range": {
+        "startLine": 127,
+        "startChar": 1,
+        "endLine": 127,
+        "endChar": 25
+      },
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d0286407_3dede663",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-22T21:41:41Z",
       "side": 1,
       "message": "nit: this should be converted to status.Errorf. All errors returned by Call(...) should be grpc status errors. This is a part of grpc.ClientConnInterface interface.",
+      "range": {
+        "startLine": 628,
+        "startChar": 15,
+        "endLine": 628,
+        "endChar": 18
+      },
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8026e49a_7afb8e5a",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 628,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-25T22:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0286407_3dede663",
       "range": {
         "startLine": 628,
         "startChar": 15,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a5809c4_673ca45a",
+        "filename": "grpc/prpc/compression.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-25T22:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72fd0967_5740bd92",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2baa2677_5c148102",
@@ -93,6 +165,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "38c01eb6_43b1f683",
+        "filename": "grpc/prpc/compression.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-25T22:19:20Z",
+      "side": 1,
+      "message": "used it before, but after refactoring removed usage.\n\nremoved from here and removed pool",
+      "parentUuid": "2baa2677_5c148102",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 18
+      },
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9d5e827f_83395d91",
@@ -106,6 +202,24 @@
       "writtenOn": "2021-01-22T21:41:41Z",
       "side": 1,
       "message": "nit: del to be consistent with getGZipWriter",
+      "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f949166e_7e797a59",
+        "filename": "grpc/prpc/compression.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-25T22:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d5e827f_83395d91",
       "revId": "e3182437d0e549c65127cfe28eda34acd09a7b24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
