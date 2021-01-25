@@ -16,6 +16,23 @@
       "message": "I\u0027m also deleting deriver proto in this CL. Could you take another look?",
       "revId": "7f6d544ea3900c5cae497e975b48e82e3d3d847b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d4f9b7c_0cf97635",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-25T21:53:46Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "7f6d544ea3900c5cae497e975b48e82e3d3d847b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
