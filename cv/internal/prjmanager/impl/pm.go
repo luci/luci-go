@@ -61,32 +61,16 @@ type projectManager struct {
 
 // LoadState is called to load the state before a transaction.
 func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
-	p := &prjmanager.Project{ID: pm.luciProject}
-	switch err := datastore.Get(ctx, p); {
-	case err == datastore.ErrNoSuchEntity:
-		return state.NewInitial(pm.luciProject), 0, nil
+	switch p, err := prjmanager.Load(ctx, pm.luciProject); {
 	case err != nil:
-		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
-	}
-	if p.State == nil {
-		p.State = &prjpb.PState{}
-	}
-	p.State.LuciProject = pm.luciProject
-	pm.loadedPState = p.State
-	if p.State.GetConfigHash() != "" {
+		return nil, 0, err
+	case p == nil:
+		return state.NewInitial(pm.luciProject), 0, nil
+	default:
+		p.State.LuciProject = pm.luciProject
+		pm.loadedPState = p.State
 		return state.NewExisting(p.State), eventbox.EVersion(p.EVersion), nil
 	}
-
-	// TODO(crbug/1169206): remove once all entities have migrated.
-	stateOffload := &prjmanager.ProjectStateOffload{
-		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
-	}
-	if err := datastore.Get(ctx, stateOffload); err != nil {
-		return nil, 0, errors.Annotate(err, "failed to get stateOffload %q", pm.luciProject).Tag(transient.Tag).Err()
-	}
-	p.State.Status = stateOffload.Status
-	p.State.ConfigHash = stateOffload.ConfigHash
-	return state.NewExisting(p.State), eventbox.EVersion(p.EVersion), nil
 }
 
 // Mutate is called before a transaction to compute transitions.
