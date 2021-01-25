@@ -55,11 +55,6 @@ var (
 	//
 	// Use it with Server.Authenticator or RegisterDefaultAuth.
 	NoAuthentication Authenticator = nullAuthenticator{}
-
-	// gzipThreshold is the threshold to compress response message.
-	// It is derived from
-	// https://webmasters.stackexchange.com/questions/31750/what-is-recommended-minimum-object-size-for-gzip-performance-benefits
-	gzipThreshold = 1024
 )
 
 // AllowOriginAll returns true unconditionally.

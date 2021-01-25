@@ -25,12 +25,10 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-	"sync"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	anypb "github.com/golang/protobuf/ptypes/any"
-	"github.com/klauspost/compress/gzip"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,23 +38,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 )
 
-const (
-	headerAccept = "Accept"
-)
-
-var gzippers sync.Pool
-
-func getGZipper(w io.Writer) *gzip.Writer {
-	if gw, _ := gzippers.Get().(*gzip.Writer); gw != nil {
-		gw.Reset(w)
-		return gw
-	}
-	return gzip.NewWriter(w)
-}
-
-func returnGzipper(gw *gzip.Writer) {
-	gzippers.Put(gw)
-}
+const headerAccept = "Accept"
 
 // responseFormat returns the format to be used in a response.
 // Can return only FormatBinary (preferred), FormatJSONPB or FormatText.
@@ -151,8 +133,8 @@ func writeMessage(ctx context.Context, w http.ResponseWriter, msg proto.Message,
 	if allowGZip && len(body) > gzipThreshold {
 		w.Header().Set("Content-Encoding", "gzip")
 
-		gz := getGZipper(w)
-		defer returnGzipper(gz)
+		gz := getGZipWriter(w)
+		defer returnGZipWriter(gz)
 		if _, err := gz.Write(body); err != nil {
 			logging.WithError(err).Errorf(ctx, "prpc: failed to write or compress the response body")
 			return
