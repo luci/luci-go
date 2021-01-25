@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -468,13 +469,14 @@ func (ts *tokenSource) Token() (*oauth2.Token, error) {
 	case err != nil:
 		return nil, err
 	case tok == nil:
-		panic("oauth2.Token is unexpectedly nil")
-	case extra != nil:
+		return nil, errors.Reason("using non-OAuth2 based credentials in TokenSource").Err()
+	case len(extra) != 0:
 		keys := make([]string, 0, len(extra))
 		for k := range extra {
 			keys = append(keys, k)
 		}
-		panic(keys)
+		sort.Strings(keys)
+		return nil, errors.Reason("extra headers %q with credentials are not supported in TokenSource", keys).Err()
 	}
 	return tok, nil
 }
@@ -625,12 +627,11 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		options.getRPCHeaders = asUserHeaders
 	case AsCredentialsForwarder:
 		options.checkCtx = func(ctx context.Context) error {
-			_, err := forwardedCreds(ctx)
+			_, _, err := forwardedCreds(ctx)
 			return err
 		}
 		options.getRPCHeaders = func(ctx context.Context, _ *rpcOptions, _ *http.Request) (*oauth2.Token, map[string]string, error) {
-			tok, err := forwardedCreds(ctx)
-			return tok, nil, err
+			return forwardedCreds(ctx)
 		}
 	case AsActor:
 		options.getRPCHeaders = asActorHeaders
@@ -785,16 +786,17 @@ func asUserHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*o
 	return oauthTok, map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
 }
 
-// forwardedCreds returns the end user token, as it was received by the service.
+// forwardedCreds returns the end user token and any extra authentication
+// headers as they were received by the service.
 //
-// Returns (nil, nil) if the incoming call was anonymous. Returns an error if
-// the incoming call was authenticated by non-forwardable credentials.
-func forwardedCreds(ctx context.Context) (*oauth2.Token, error) {
+// Returns (nil, nil, nil) if the incoming call was anonymous. Returns an error
+// if the incoming call was authenticated by non-forwardable credentials.
+func forwardedCreds(ctx context.Context) (*oauth2.Token, map[string]string, error) {
 	switch s := GetState(ctx); {
 	case s == nil:
-		return nil, ErrNotConfigured
+		return nil, nil, ErrNotConfigured
 	case s.User().Identity == identity.AnonymousIdentity:
-		return nil, nil // nothing to forward if the call is anonymous
+		return nil, nil, nil // nothing to forward if the call is anonymous
 	default:
 		// Grab the end user credentials (or an error) from the auth state, as
 		// put there by Authenticate(...).

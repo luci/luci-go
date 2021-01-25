@@ -326,21 +326,32 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 	// Check X-Delegation-Token-V1 and X-Luci-Project headers. They are used in
 	// LUCI-specific protocols to allow LUCI micro-services to act on behalf of
 	// end-users or projects.
-	if token := r.Header.Get(delegation.HTTPHeaderName); token != "" {
+	var delegationToken string
+	var projectHeader string
+	if delegationToken = r.Header.Get(delegation.HTTPHeaderName); delegationToken != "" {
 		stage = "DELEGATION_TOKEN_CHECK"
-		if s.user, err = checkDelegationToken(tracedCtx, cfg, s.db, token, s.peerIdent); err != nil {
+		if s.user, err = checkDelegationToken(tracedCtx, cfg, s.db, delegationToken, s.peerIdent); err != nil {
 			return nil, err
 		}
-	} else if project := r.Header.Get(XLUCIProjectHeader); project != "" {
+	} else if projectHeader = r.Header.Get(XLUCIProjectHeader); projectHeader != "" {
 		stage = "PROJECT_HEADER_CHECK"
-		if s.user, err = checkProjectHeader(tracedCtx, s.db, project, s.peerIdent); err != nil {
+		if s.user, err = checkProjectHeader(tracedCtx, s.db, projectHeader, s.peerIdent); err != nil {
 			return nil, err
 		}
-	} else {
-		// If not using LUCI-specific protocols, grab the end user creds in case we
-		// want to forward them later in GetRPCTransport(AsCredentialsForwarder).
-		if credsGetter, _ := s.method.(UserCredentialsGetter); credsGetter != nil {
-			s.endUserTok, s.endUserErr = credsGetter.GetUserCredentials(tracedCtx, r)
+	}
+
+	// If the main authentication mechanism is based on forwardable OAuth tokens,
+	// grab all forwardable headers for GetRPCTransport(AsCredentialsForwarder).
+	if credsGetter, _ := s.method.(UserCredentialsGetter); credsGetter != nil {
+		s.endUserTok, s.endUserErr = credsGetter.GetUserCredentials(tracedCtx, r)
+		if s.endUserErr == nil && (delegationToken != "" || projectHeader != "") {
+			s.endUserExtraHeaders = make(map[string]string, 2)
+			if delegationToken != "" {
+				s.endUserExtraHeaders[delegation.HTTPHeaderName] = delegationToken
+			}
+			if projectHeader != "" {
+				s.endUserExtraHeaders[XLUCIProjectHeader] = projectHeader
+			}
 		}
 	}
 
