@@ -55,17 +55,6 @@ func CmdTrigger(defaultAuthOpts auth.Options) *subcommands.Command {
 	}
 }
 
-type array []*swarming.SwarmingRpcsStringPair
-
-func (a array) Len() int { return len(a) }
-func (a array) Less(i, j int) bool {
-	return (a[i].Key < a[j].Key) ||
-		(a[i].Key == a[j].Key && a[i].Value < a[j].Value)
-}
-func (a array) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
-}
-
 // mapToArray converts a stringmapflag.Value into an array of
 // swarming.SwarmingRpcsStringPair, sorted by key and then value.
 func mapToArray(m stringmapflag.Value) []*swarming.SwarmingRpcsStringPair {
@@ -74,7 +63,10 @@ func mapToArray(m stringmapflag.Value) []*swarming.SwarmingRpcsStringPair {
 		a = append(a, &swarming.SwarmingRpcsStringPair{Key: k, Value: v})
 	}
 
-	sort.Sort(array(a))
+	sort.Slice(a, func(i, j int) bool {
+		return a[i].Key < a[j].Key ||
+			(a[i].Key == a[j].Key && a[i].Value < a[j].Value)
+	})
 	return a
 }
 
