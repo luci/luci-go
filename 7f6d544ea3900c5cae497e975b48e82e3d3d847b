@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0abc7282_023427d3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-25T21:50:22Z",
+      "side": 1,
+      "message": "I\u0027m also deleting deriver proto in this CL. Could you take another look?",
+      "revId": "7f6d544ea3900c5cae497e975b48e82e3d3d847b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
