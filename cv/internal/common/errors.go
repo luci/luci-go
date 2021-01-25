@@ -16,10 +16,8 @@ package common
 
 import (
 	"context"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
 )
@@ -59,10 +57,18 @@ func TQifyError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
-	LogError(
+	LogError(ctx, err)
+	if !transient.Tag.In(err) {
+		err = tq.Fatal.Apply(err)
+	}
+	return err
+}
+
+// LogError is errors.Log with CV-specific package filtering.
+func LogError(ctx context.Context, err error) {
+	errors.Log(
 		ctx,
 		err,
-
 		// These packages are not useful in CV tests:
 		"github.com/smartystreets/goconvey/convey",
 		"github.com/jtolds/gls",
@@ -71,35 +77,4 @@ func TQifyError(ctx context.Context, err error) error {
 		"go.chromium.org/luci/server/tq",
 		"go.chromium.org/luci/server/router",
 	)
-	if !transient.Tag.In(err) {
-		err = tq.Fatal.Apply(err)
-	}
-	return err
-}
-
-func LogError(ctx context.Context, err error, excludePackages ...string) {
-	const maxBytesPerEntry = 64 * 1024 // Cloud Logging hard limit is 256KB.
-	logError(ctx, err, maxBytesPerEntry, excludePackages...)
-}
-
-func logError(ctx context.Context, err error, maxBytesPerEntry int, excludePackages ...string) {
-	// TODO(tandrii): upstream this fork of errors.Log.
-	log := logging.Get(ctx)
-	lines := errors.RenderStack(err, excludePackages...)
-	for len(lines) > 0 {
-		bytes := 0
-		batch := lines
-		for i, l := range lines {
-			bytes += len(l)
-			// Always allow first line into the batch to ensure progress, even if it's
-			// too big. Practically, this should never happen, but if it doesn't, we
-			// shouldn't be looping forever.
-			if bytes > maxBytesPerEntry && i > 0 {
-				batch = lines[:i] // excluding i-th.
-				break
-			}
-		}
-		lines = lines[len(batch):]
-		log.Errorf("%s", strings.Join(batch, "\n"))
-	}
 }

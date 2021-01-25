@@ -15,9 +15,13 @@
 package errors
 
 import (
+	"context"
 	"regexp"
 	"strings"
 	"testing"
+
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -66,7 +70,7 @@ func TestAnnotation(t *testing.T) {
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:52 - errors.TestAnnotation.func1()`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:56 - errors.TestAnnotation.func1()`,
 				`  reason: 20 some error: "stringy"`,
 				`  internal reason: extra(8.200)`,
 				``,
@@ -74,7 +78,7 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:51 - errors.TestAnnotation()`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:55 - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
@@ -86,11 +90,11 @@ func TestAnnotation(t *testing.T) {
 				`github.com/smartystreets/goconvey/convey`)
 			FixForTest(lines)
 
-			So(lines, ShouldResemble, []string{
+			expectedLines := []string{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:52 - errors.TestAnnotation.func1()`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:56 - errors.TestAnnotation.func1()`,
 				`  annotation #0:`,
 				`    reason: outer frame outer`,
 				`  annotation #1:`,
@@ -101,9 +105,39 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:51 - errors.TestAnnotation()`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:55 - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
+			}
+			So(lines, ShouldResemble, expectedLines)
+
+			Convey("via Log", func() {
+				ctx := memlogger.Use(context.Background())
+				Log(ctx, e, `runtime`, `github.com/jtolds/gls`, `github.com/smartystreets/goconvey/convey`)
+				ml := logging.Get(ctx).(*memlogger.MemLogger)
+				msgs := ml.Messages()
+				So(msgs, ShouldHaveLength, 1)
+				lines := strings.Split(msgs[0].Msg, "\n")
+				FixForTest(lines)
+				So(lines, ShouldResemble, expectedLines)
+			})
+			Convey("via Log in chunks", func() {
+				maxLogEntrySize = 200
+				ctx := memlogger.Use(context.Background())
+				Log(ctx, e, `runtime`, `github.com/jtolds/gls`, `github.com/smartystreets/goconvey/convey`)
+				ml := logging.Get(ctx).(*memlogger.MemLogger)
+				var lines []string
+				for i, m := range ml.Messages() {
+					So(len(m.Msg), ShouldBeLessThan, maxLogEntrySize)
+					mLines := strings.Split(m.Msg, "\n")
+					if i > 0 {
+						So(mLines[0], ShouldEqual, "(continuation of error log)")
+						mLines = mLines[1:]
+					}
+					lines = append(lines, mLines...)
+				}
+				FixForTest(lines)
+				So(lines, ShouldResemble, expectedLines)
 			})
 		})
 	})
