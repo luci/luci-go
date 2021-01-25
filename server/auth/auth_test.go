@@ -46,10 +46,7 @@ func TestAuthenticate(t *testing.T) {
 			allowedClientID: "some_client_id",
 		})
 		auth := Authenticator{
-			Methods: []Method{fakeAuthMethod{
-				clientID: "some_client_id",
-				userTok:  &oauth2.Token{AccessToken: "abc.def"},
-			}},
+			Methods: []Method{fakeAuthMethod{clientID: "some_client_id"}},
 		}
 		req := makeRequest()
 		req.RemoteAddr = "1.2.3.4"
@@ -72,9 +69,10 @@ func TestAuthenticate(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(url, ShouldEqual, "http://fake.logout.url/logout")
 
-		tok, err := GetState(c).UserCredentials()
+		tok, extra, err := GetState(c).UserCredentials()
 		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, &oauth2.Token{AccessToken: "abc.def"})
+		So(tok, ShouldResemble, &oauth2.Token{AccessToken: "token-abc@example.com"})
+		So(extra, ShouldHaveLength, 0)
 	})
 
 	Convey("Custom EndUserIP implementation", t, func() {
@@ -207,6 +205,11 @@ func TestAuthenticate(t *testing.T) {
 			c, err := auth.Authenticate(c, req)
 			So(err, ShouldBeNil)
 			So(CurrentIdentity(c), ShouldEqual, identity.Identity("project:test-proj"))
+
+			tok, extra, err := GetState(c).UserCredentials()
+			So(err, ShouldBeNil)
+			So(tok, ShouldResemble, &oauth2.Token{AccessToken: "token-allowed@example.com"})
+			So(extra, ShouldResemble, map[string]string{XLUCIProjectHeader: "test-proj"})
 		})
 
 		Convey("Forbidden", func() {
@@ -291,7 +294,6 @@ type fakeAuthMethod struct {
 	err      error
 	clientID string
 	email    string
-	userTok  *oauth2.Token
 }
 
 func (m fakeAuthMethod) Authenticate(context.Context, *http.Request) (*User, error) {
@@ -318,10 +320,11 @@ func (m fakeAuthMethod) LogoutURL(ctx context.Context, dest string) (string, err
 }
 
 func (m fakeAuthMethod) GetUserCredentials(context.Context, *http.Request) (*oauth2.Token, error) {
-	if m.userTok != nil {
-		return m.userTok, nil
+	email := m.email
+	if email == "" {
+		email = "abc@example.com"
 	}
-	return nil, ErrNoForwardableCreds
+	return &oauth2.Token{AccessToken: "token-" + email}, nil
 }
 
 func injectTestDB(ctx context.Context, d authdb.DB) context.Context {

@@ -63,7 +63,9 @@ type State interface {
 
 	// UserCredentials is an end-user credentials as they were received if they
 	// are allowed to be forwarded.
-	UserCredentials() (*oauth2.Token, error)
+	//
+	// Includes the primary OAuth token and any extra LUCI-specific headers.
+	UserCredentials() (*oauth2.Token, map[string]string, error)
 }
 
 type stateContextKey int
@@ -289,20 +291,22 @@ type state struct {
 	peerIdent     identity.Identity
 	peerIP        net.IP
 
-	// For AsCredentialsForwarder. Populated only when not using delegation.
-	// 'endUserErr' (if not nil) would be returned by GetRPCTransport when
-	// attempting to forward the credentials.
-	endUserTok *oauth2.Token
-	endUserErr error
+	// For AsCredentialsForwarder. 'endUserErr' (if not nil) would be returned by
+	// GetRPCTransport when attempting to forward the credentials.
+	endUserTok          *oauth2.Token
+	endUserExtraHeaders map[string]string
+	endUserErr          error
 }
 
-func (s *state) Authenticator() *Authenticator           { return s.authenticator }
-func (s *state) DB() authdb.DB                           { return s.db }
-func (s *state) Method() Method                          { return s.method }
-func (s *state) User() *User                             { return s.user }
-func (s *state) PeerIdentity() identity.Identity         { return s.peerIdent }
-func (s *state) PeerIP() net.IP                          { return s.peerIP }
-func (s *state) UserCredentials() (*oauth2.Token, error) { return s.endUserTok, s.endUserErr }
+func (s *state) Authenticator() *Authenticator   { return s.authenticator }
+func (s *state) DB() authdb.DB                   { return s.db }
+func (s *state) Method() Method                  { return s.method }
+func (s *state) User() *User                     { return s.user }
+func (s *state) PeerIdentity() identity.Identity { return s.peerIdent }
+func (s *state) PeerIP() net.IP                  { return s.peerIP }
+func (s *state) UserCredentials() (*oauth2.Token, map[string]string, error) {
+	return s.endUserTok, s.endUserExtraHeaders, s.endUserErr
+}
 
 ///
 
@@ -325,9 +329,11 @@ func (s backgroundState) DB() authdb.DB {
 	return db
 }
 
-func (s backgroundState) Authenticator() *Authenticator           { return nil }
-func (s backgroundState) Method() Method                          { return nil }
-func (s backgroundState) User() *User                             { return &User{Identity: identity.AnonymousIdentity} }
-func (s backgroundState) PeerIdentity() identity.Identity         { return identity.AnonymousIdentity }
-func (s backgroundState) PeerIP() net.IP                          { return nil }
-func (s backgroundState) UserCredentials() (*oauth2.Token, error) { return nil, ErrNoForwardableCreds }
+func (s backgroundState) Authenticator() *Authenticator   { return nil }
+func (s backgroundState) Method() Method                  { return nil }
+func (s backgroundState) User() *User                     { return &User{Identity: identity.AnonymousIdentity} }
+func (s backgroundState) PeerIdentity() identity.Identity { return identity.AnonymousIdentity }
+func (s backgroundState) PeerIP() net.IP                  { return nil }
+func (s backgroundState) UserCredentials() (*oauth2.Token, map[string]string, error) {
+	return nil, nil, ErrNoForwardableCreds
+}

@@ -291,6 +291,7 @@ func TestGetRPCTransport(t *testing.T) {
 					TokenType:   "Bearer",
 					AccessToken: "abc.def",
 				},
+				endUserExtraHeaders: map[string]string{"X-Extra": "val"},
 			})
 
 			t, err := GetRPCTransport(ctx, AsCredentialsForwarder)
@@ -298,9 +299,10 @@ func TestGetRPCTransport(t *testing.T) {
 			_, err = t.RoundTrip(makeReq("https://example.com"))
 			So(err, ShouldBeNil)
 
-			// Passed the token.
+			// Passed the token and the extra header.
 			So(mock.reqs[0].Header, ShouldResemble, http.Header{
 				"Authorization": {"Bearer abc.def"},
+				"X-Extra":       {"val"},
 			})
 		})
 

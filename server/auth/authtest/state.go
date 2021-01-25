@@ -175,9 +175,9 @@ func (s *FakeState) PeerIP() net.IP {
 }
 
 // UserCredentials is part of State interface.
-func (s *FakeState) UserCredentials() (*oauth2.Token, error) {
+func (s *FakeState) UserCredentials() (*oauth2.Token, map[string]string, error) {
 	if s.UserCredentialsOverride != nil {
-		return s.UserCredentialsOverride, nil
+		return s.UserCredentialsOverride, nil, nil
 	}
-	return nil, auth.ErrNoForwardableCreds
+	return nil, nil, auth.ErrNoForwardableCreds
 }
