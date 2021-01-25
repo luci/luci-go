@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d6f386bc_c7dfff3d",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-25T23:56:52Z",
+      "side": 1,
+      "message": "These two functions are exactly the same.",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "3b226d10f9c358bc1ce8371aaf95f0f6e88a56e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2be5c8c_ce3c570a",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-25T23:56:52Z",
+      "side": 1,
+      "message": "I think it is missing \n\n```\nelse if r \u003d\u003d \u0027_\u0027 {\n  return -1\n}\n```\n\nOtherwise, the underscore will be included in the return value.",
+      "range": {
+        "startLine": 203,
+        "startChar": 3,
+        "endLine": 203,
+        "endChar": 4
+      },
+      "revId": "3b226d10f9c358bc1ce8371aaf95f0f6e88a56e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1460948f_ff3dfbc8",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-25T23:56:52Z",
+      "side": 1,
+      "message": "Is `json_name` not in field.Options so that we need to explicitly handle it here?",
+      "range": {
+        "startLine": 274,
+        "startChar": 1,
+        "endLine": 274,
+        "endChar": 62
+      },
+      "revId": "3b226d10f9c358bc1ce8371aaf95f0f6e88a56e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
