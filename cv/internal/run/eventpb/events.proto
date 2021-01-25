@@ -33,15 +33,15 @@ message Event {
     //
     // Sent periodically by Project Manager.
     Poke poke = 3;
-    // On UpdateConfig event, Run Manager will update config the Run for the
+    // On NewConfig event, Run Manager will update config the Run for the
     // given RunID.
     //
     // Sent by Project Manager, which guarantees these events are sent in order
     // of config updates. See also its `eversion` field.
-    UpdateConfig update_config= 4;
+    NewConfig new_config = 4;
     // TODO(yiwzhang): Define following events that Run Manager may receive:
-    //  * CLUpdate
-    //  * TryjobUpdate
+    //  * CLUpdated
+    //  * TryjobUpdated
 
     // On Finished event, Run Manager will finalize the Run.
     //
@@ -63,13 +63,13 @@ message Cancel {
 message Poke {
 }
 
-message UpdateConfig {
+message NewConfig {
   // Hash identifying project config version to update to.
   string hash = 1;
   // Eversion of the project config version identify by hash.
   //
-  // Provided for identifying the latest UpdateConfig message
-  // if there are more than one outstanding UpdateConfig event.
+  // Provided for identifying the latest NewConfig message
+  // if there are more than one outstanding NewConfig event.
   int64 eversion = 2;
 }
 

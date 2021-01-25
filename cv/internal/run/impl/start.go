@@ -33,7 +33,7 @@ func start(ctx context.Context, runID common.RunID, s *state) (eventbox.SideEffe
 		common.LogError(ctx, err)
 		panic(err)
 	case status != run.Status_PENDING:
-		logging.Debugf(ctx, "Skip starting Run %q because this Run is %s", runID, start)
+		logging.Debugf(ctx, "Skip starting Run %q because this Run is %s", runID, status)
 		return nil, s, nil
 	}
 

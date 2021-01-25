@@ -156,11 +156,11 @@ func (rm *runManager) SaveState(ctx context.Context, st eventbox.State, ev event
 
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
-	startEvents        eventbox.Events
-	cancelEvents       eventbox.Events
-	pokeEvents         eventbox.Events
-	updateConfigEvents eventbox.Events
-	finishedEvents     eventbox.Events
+	startEvents     eventbox.Events
+	cancelEvents    eventbox.Events
+	pokeEvents      eventbox.Events
+	newConfigEvents eventbox.Events
+	finishedEvents  eventbox.Events
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -178,8 +178,8 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.cancelEvents = append(tr.cancelEvents, item)
 	case *eventpb.Event_Poke:
 		tr.pokeEvents = append(tr.pokeEvents, item)
-	case *eventpb.Event_UpdateConfig:
-		tr.updateConfigEvents = append(tr.updateConfigEvents, item)
+	case *eventpb.Event_NewConfig:
+		tr.newConfigEvents = append(tr.newConfigEvents, item)
 	case *eventpb.Event_Finished:
 		tr.finishedEvents = append(tr.finishedEvents, item)
 	default:
@@ -222,9 +222,9 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		t.TransitionTo = s
 		ret = append(ret, t)
 	}
-	if len(tr.updateConfigEvents) > 0 {
+	if len(tr.newConfigEvents) > 0 {
 		// TODO(tandrii,yiwzhang): update config.
-		ret = append(ret, eventbox.Transition{Events: tr.updateConfigEvents, TransitionTo: s})
+		ret = append(ret, eventbox.Transition{Events: tr.newConfigEvents, TransitionTo: s})
 	}
 	if len(tr.pokeEvents) > 0 {
 		// TODO(tandrii,yiwzhang): implement poke.
