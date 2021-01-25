@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "ec1e6d02b02c045c0d9d3fc437e99cbd87fddcb6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e739d607_d03ff85f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-25T21:01:17Z",
+      "side": 1,
+      "message": "Please delete https://source.chromium.org/chromium/infra/infra/+/master:build/images/deterministic/luci/resultdb/deriver.yaml;l\u003d1?q\u003dderiver\u0026sq\u003d\u0026ss\u003dchromium%2Finfra%2Finfra:build%2Fimages%2F\nbefore landing this CL.\n\nAlso adding Vadim for extra check.\n\nContext for Vadim: the traffic is still being sent, but it will stop on Friday, and we don\u0027t expect to modify this code anymore. The Docker images are still there.",
+      "revId": "ec1e6d02b02c045c0d9d3fc437e99cbd87fddcb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
