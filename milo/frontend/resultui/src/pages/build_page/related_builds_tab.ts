@@ -36,25 +36,34 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   }
 
   protected render() {
+    if (this.buildState.relatedBuilds === null) {
+      return this.renderLoadingBar();
+    }
+    if (this.buildState.relatedBuilds.length === 0) {
+      return this.renderNoRelatedBuilds();
+    }
     return html`
-      <div id = "main">
-        <h3> Other builds with the same buildset </h3>
+      <div id="main">
         ${this.renderBuildsetInfo()}
         ${this.renderRelatedBuildsTable()}
-        ${this.renderLoadingBar()}
       </div>
     `;
   }
 
   private renderLoadingBar() {
-    if (this.buildState.relatedBuilds === null) {
-      return html`
-        <div id="load">
-          Loading <milo-dot-spinner></milo-dot-spinner>
-        </div>
-      `;
-    }
-    return html ``;
+    return html`
+      <div id="load">
+        Loading <milo-dot-spinner></milo-dot-spinner>
+      </div>
+    `;
+  }
+
+  private renderNoRelatedBuilds() {
+    return html`
+      <div id="no-related-builds">
+        No other builds found with the same buildset.
+      </div>
+    `;
   }
 
   private renderBuildsetInfo() {
@@ -62,6 +71,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       return html``;
     }
     return html`
+      <h3> Other builds with the same buildset </h3>
       <ul>
       ${repeat(
         this.buildState.build.buildSets,
@@ -151,9 +161,13 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       border-color: #00d8fc;
     }
     #load {
+      padding: 10px;
       color: var(--active-text-color);
     }
-    #main {
+    #no-related-builds {
+      padding: 10px;
+    }
+    :host {
       padding-left: 10px;
     }
   `;
