@@ -231,14 +231,40 @@ func (a *Annotator) Err() error {
 	return (*annotatedError)(a)
 }
 
+// maxLogEntrySize limits log messages produced by Log.
+//
+// It is modified in tests of this package.
+var maxLogEntrySize = 64 * 1024
+
 // Log logs the full error. If this is an Annotated error, it will log the full
 // stack information as well.
 //
 // This is a shortcut for logging the output of RenderStack(err).
+//
+// If resulting log message is large, splits it into log entries of at most
+// 64KiB.
 func Log(c context.Context, err error, excludePkgs ...string) {
 	log := logging.Get(c)
-	for _, l := range RenderStack(err, excludePkgs...) {
-		log.Errorf("%s", l)
+	r := renderStack(err)
+	buf := strings.Builder{}
+	_, _ = r.dumpTo(&buf, excludePkgs...) // no errors can happen, only panics.
+	s := strings.TrimSuffix(buf.String(), "\n")
+
+	preamble := ""
+	for len(s) > 0 {
+		chunk := s
+		if maxLen := maxLogEntrySize - len(preamble); maxLen < len(chunk) {
+			// Make chunk end with '\n' and be smaller than maxLen.
+			chunk = strings.TrimRightFunc(chunk[:maxLen], func(r rune) bool { return r != '\n' })
+			if len(chunk) == 0 {
+				// Chunk is 1 very long line, can't be nice about splitting it.
+				chunk = s[:maxLen]
+			}
+		}
+		s = s[len(chunk):]
+		chunk = strings.TrimSuffix(chunk, "\n")
+		log.Errorf("%s%s", preamble, chunk)
+		preamble = "(continuation of error log)\n"
 	}
 }
 
