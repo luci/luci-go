@@ -69,7 +69,7 @@ type UnsafeAdminServer interface {
 }
 
 func RegisterAdminServer(s grpc.ServiceRegistrar, srv AdminServer) {
-	s.RegisterService(&_Admin_serviceDesc, srv)
+	s.RegisterService(&Admin_ServiceDesc, srv)
 }
 
 func _Admin_GetDebugJobState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -90,7 +90,10 @@ func _Admin_GetDebugJobState_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Admin_serviceDesc = grpc.ServiceDesc{
+// Admin_ServiceDesc is the grpc.ServiceDesc for Admin service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Admin_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "internal.admin.Admin",
 	HandlerType: (*AdminServer)(nil),
 	Methods: []grpc.MethodDesc{

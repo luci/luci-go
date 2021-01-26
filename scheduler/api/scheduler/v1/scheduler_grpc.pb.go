@@ -247,7 +247,7 @@ type UnsafeSchedulerServer interface {
 }
 
 func RegisterSchedulerServer(s grpc.ServiceRegistrar, srv SchedulerServer) {
-	s.RegisterService(&_Scheduler_serviceDesc, srv)
+	s.RegisterService(&Scheduler_ServiceDesc, srv)
 }
 
 func _Scheduler_GetJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -394,7 +394,10 @@ func _Scheduler_EmitTriggers_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Scheduler_serviceDesc = grpc.ServiceDesc{
+// Scheduler_ServiceDesc is the grpc.ServiceDesc for Scheduler service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Scheduler_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "scheduler.Scheduler",
 	HandlerType: (*SchedulerServer)(nil),
 	Methods: []grpc.MethodDesc{

@@ -84,16 +84,21 @@ message NoopTrigger {
 // GitilesTrigger is emitted by sources that watch Gitiles and consumed by
 // Buildbucket tasks.
 //
-// Such triggers are emitted whenever the repository state changes.
+// Such triggers are emitted whenever the repository state changes or via
+// EmitTriggers API.
 message GitilesTrigger {
   string repo = 1;     // an URL of a repo that changed
   string ref = 2;      // a ref that changed, in full, e.g "refs/heads/master"
   string revision = 3; // a revision (SHA1 in hex) pointed to by the ref
+
+  // Properties and tags to add in addition to ones generated from the commit.
+  google.protobuf.Struct properties = 4;
+  repeated string tags = 5;
 }
 
 
-// BuildbucketTrigger is emitted by sources that request a build and consumed by
-// Buildbucket tasks.
+// BuildbucketTrigger is emitted by sources that request a general build and
+// consumed by Buildbucket tasks.
 //
 // The trigger contains information to pass to the new Buildbucket build.
 //
