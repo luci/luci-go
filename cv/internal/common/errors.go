@@ -52,10 +52,7 @@ func MostSevereError(err error) error {
 
 // TQifyError does final error processing before returning from a TQ handler.
 //
-// * logs entire error stack with ERROR severity by default;
-//   logs just error with WARNING severity iff one of error's leaf nodes matches
-//   at least one of the given list of `omitStackTraceFor` errors. This is
-//   useful if TQ handler is known to frequently fail this way.
+// * logs error with LogError
 // * non-transient errors are tagged with tq.Fatal to avoid retries.
 //
 // omitStackTraceFor must contain only unwrapped errors.
@@ -64,6 +61,22 @@ func TQifyError(ctx context.Context, err error, omitStackTraceFor ...error) erro
 		return nil
 	}
 
+	LogError(ctx, err, omitStackTraceFor...)
+	if !transient.Tag.In(err) {
+		err = tq.Fatal.Apply(err)
+	}
+	return err
+}
+
+// LogError is errors.Log with CV-specific package filtering.
+//
+// Logs entire error stack with ERROR severity by default.
+// Logs just error with WARNING severity iff one of error's leaf nodes matches
+// at least one of the given list of `omitStackTraceFor` errors. This is useful
+// if TQ handler is known to frequently fail this way.
+//
+// omitStackTraceFor must contain only unwrapped errors.
+func LogError(ctx context.Context, err error, omitStackTraceFor ...error) {
 	stackTrace := true
 	errors.WalkLeaves(err, func(leafError error) bool {
 		for _, e := range omitStackTraceFor {
@@ -77,17 +90,8 @@ func TQifyError(ctx context.Context, err error, omitStackTraceFor ...error) erro
 
 	if !stackTrace {
 		logging.Warningf(ctx, "%s", err)
-	} else {
-		LogError(ctx, err)
+		return
 	}
-	if !transient.Tag.In(err) {
-		err = tq.Fatal.Apply(err)
-	}
-	return err
-}
-
-// LogError is errors.Log with CV-specific package filtering.
-func LogError(ctx context.Context, err error) {
 	errors.Log(
 		ctx,
 		err,
