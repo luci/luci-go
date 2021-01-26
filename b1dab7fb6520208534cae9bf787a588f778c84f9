@@ -16,6 +16,189 @@
       "message": "Hey Andrii, would appreciate another look on test.",
       "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4c33f02_1805176f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "lgtm % avoid kick task as it\u0027s possible here.",
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0de3b3b6_6bae28f6",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "let\u0027s create task right here:\n + avoids kick-task\n + avoids making transaction on Run slower (one fewer DS put), and fewer DS ops overall.\n\nEdge case:\n * If poke task (PT) creation succeeds but transaction on Run fails,\n   then still OK: the created PT task is still most likely necessary, and even if not, it doesn\u0027t hurt and is overall still more efficient than always creating KickPT -\u003e PT chain.",
+      "range": {
+        "startLine": 244,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 3
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68e68bc4_95fe28a9",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "oh, I\u0027ve just realized that because we insert this poke-myself in a transaction, we\u0027d end up with 2 tasks. Will leave comment above.",
+      "range": {
+        "startLine": 263,
+        "startChar": 0,
+        "endLine": 264,
+        "endChar": 62
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "65ab3fad_a3fd8ad9",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89184ae7_0e86dc2a",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "not necessary. You can just rename `in` to `tasks`",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 15
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c396506_a68011e1",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "How about using https://godoc.org/go.chromium.org/luci/server/tq/tqtesting#TaskList.SortByETA \nbut adding comparison by Class ID there?",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 61,
+        "endChar": 27
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d890677a_9fab9d3b",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "👍\n\nI constantly forget this, which may cause memory leaks if slice is kept for a long time.",
+      "range": {
+        "startLine": 95,
+        "startChar": 4,
+        "endLine": 95,
+        "endChar": 33
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bdaa8009_1aac221a",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "noop. It doesn\u0027t copy slice.",
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "951cdc0c_18869153",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T12:58:33Z",
+      "side": 1,
+      "message": "How about helper to avoid copy-pasta to be used like:\n matched, remaining :\u003d matchEventbox(ctx, runID, targets...)\n?",
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
