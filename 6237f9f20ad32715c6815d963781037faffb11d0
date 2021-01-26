@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c69c095_55b70d17",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T18:20:04Z",
+      "side": 1,
+      "message": "Isn\u0027t it transient as well?",
+      "range": {
+        "startLine": 297,
+        "startChar": 9,
+        "endLine": 297,
+        "endChar": 92
+      },
+      "revId": "6237f9f20ad32715c6815d963781037faffb11d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
