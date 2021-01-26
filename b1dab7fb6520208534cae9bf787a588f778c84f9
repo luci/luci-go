@@ -82,6 +82,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f642fa0_d1ef5e1d",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T23:50:20Z",
+      "side": 1,
+      "message": "After is not correct. Transaction may succeed and then app can crash (or more realistically context may expire) preventing the deferredSideEffectFn from executing, resulting in deferredSideEffectFn being really best effort.\n\nTo be fair, you can argue that eventually Poke task will solve everything, but 5+ minute latency isn\u0027t good.",
+      "parentUuid": "3bd013b3_955a756f",
+      "range": {
+        "startLine": 244,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 3
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "68e68bc4_95fe28a9",
