@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "92084938_326d3b30",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-26T01:14:29Z",
+      "side": 1,
+      "message": "please add a reference to Build.scheduling_timeout which has more information.\n\nsimilarly below",
+      "revId": "ecef77103336b5953f5e7e050fffc7faa2b9a841",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
