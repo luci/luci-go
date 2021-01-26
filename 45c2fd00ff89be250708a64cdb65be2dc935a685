@@ -247,6 +247,30 @@
       },
       "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bf5af79b_cd2401d1",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003232
+      },
+      "writtenOn": "2021-01-26T16:52:58Z",
+      "side": 1,
+      "message": "In the meetings we had w/ veenita and yzjr we wanted to make sure the data we got was accurate and didn\u0027t show a bunch of tests as disabled that we never wanted to enable. \n\nI don\u0027t remember if the way we were going to do that was to add some sort of flag to indicate Skip vs. NeverFix, or if we were just going to not report the NeverFix tests.\n\nGTests do not have a similar concept, since they don\u0027t use test expectations; you have to disable tests some other way (e.g., via #ifdefs).",
+      "parentUuid": "2e0a7a11_ce4ed60c",
+      "range": {
+        "startLine": 126,
+        "startChar": 46,
+        "endLine": 127,
+        "endChar": 20
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
