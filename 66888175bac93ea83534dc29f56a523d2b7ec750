@@ -16,6 +16,46 @@
       "message": "added tests",
       "revId": "66888175bac93ea83534dc29f56a523d2b7ec750",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "583f5736_4daf7f27",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T13:25:12Z",
+      "side": 1,
+      "message": "wondering out loud: I see this soooo often, maybe it\u0027s time to make a func in parallel package, smth like:\nparallel.KnownWorkSize(20, len(cls), func ....)\n?\nThe only downside is that it\u0027s easy to mistake which one is work amount and which is maximum concurrency.",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 33
+      },
+      "revId": "66888175bac93ea83534dc29f56a523d2b7ec750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "67472127_18f64d5e",
+        "filename": "cv/internal/run/impl/finalize_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T13:25:12Z",
+      "side": 1,
+      "message": "might as well add it to changelist itself.",
+      "revId": "66888175bac93ea83534dc29f56a523d2b7ec750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

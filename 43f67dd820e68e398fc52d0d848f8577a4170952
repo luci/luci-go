@@ -117,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "39fadb6f_43584d68",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T13:25:12Z",
+      "side": 1,
+      "message": "👍 sufficient.",
+      "parentUuid": "5c3bbe66_9853eeda",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bca99fb4_2e5c1675",
@@ -148,6 +166,24 @@
       "side": 1,
       "message": "\u003e However, updating Run itself doesn\u0027t need to be done atomically with updating CLs.IncompleteRUns, so we\u0027d reduce contention iff we create \u0026 execute transaction right here.\n\nAgreed. I think one problem with your proposed approach is that if any error occurs during the following state transition transaction, CV may end up with a state that a RUN is in RUNNING status but it is not in the IncompleteRun list of any of its CLs (especially when run manager hasn\u0027t leant how to make incremental progress).\n\nI guess it might be okay if a run is temporarily in that state because a run (no matter dry or full) is technically over at this time, so even if CL does have this Run in the IncompleteRuns list and notify the run about the CL update, RunManager doesn\u0027t need to take any action on those events. Let me know what do you think.\n\n(In case we found out this approach may not work, I\u0027ll address this comment once we\u0027ve reached the conclusion)",
       "parentUuid": "bca99fb4_2e5c1675",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4820ad08_e062c485",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T13:25:12Z",
+      "side": 1,
+      "message": "Guess what, I missed lack of () here, even though I wrote the exact same code. So, your code was and is indeed correct as func was a side effect. Sorry.\n\nNow, wrt doing transaction right here: you are exactly right in your analysis (or at least it 100% matches mine). So, yes, I think it\u0027s OK to end up temporarily in such a state. However, I think let\u0027s land as is and observe. It may work just fine as a side effect.",
+      "parentUuid": "455e8316_274f9b96",
       "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -316,6 +352,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "162dc423_d718ab60",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T13:25:12Z",
+      "side": 1,
+      "message": "yep for high level module.",
+      "parentUuid": "a6c65e8e_2df5e01c",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "02a2b217_37cb39b1",
@@ -417,6 +471,24 @@
       "side": 1,
       "message": "It was here already. so I\u0027m too lazy to delete it.",
       "parentUuid": "efb9a8f2_1d218276",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dce46272_f0250a40",
+        "filename": "cv/internal/run/impl/finalize_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T13:25:12Z",
+      "side": 1,
+      "message": "yeah, fine to keep.",
+      "parentUuid": "ff7b5473_f42658db",
       "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
