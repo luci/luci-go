@@ -16,7 +16,6 @@ package common
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
@@ -42,25 +41,12 @@ func TestTQifyError(t *testing.T) {
 		}
 		ctx = logging.SetLevel(ctx, logging.Debug)
 
-		logMessage := func() memlogger.LogEntry {
-			So(ml.Messages(), ShouldHaveLength, 1)
-			return ml.Messages()[0]
-		}
-
 		assertLoggedStack := func() string {
-			m := logMessage()
+			So(ml.Messages(), ShouldHaveLength, 1)
+			m := ml.Messages()[0]
 			So(m.Level, ShouldEqual, logging.Error)
 			So(m.Msg, ShouldContainSubstring, "common.TestTQifyError()")
 			So(m.Msg, ShouldContainSubstring, "errors_test.go")
-			return m.Msg
-		}
-
-		assertNoStack := func() string {
-			m := logMessage()
-			So(m.Level, ShouldEqual, logging.Warning)
-			So(strings.Split(m.Msg, "\n"), ShouldHaveLength, 1)
-			So(m.Msg, ShouldNotContainSubstring, "common.TestTQifyError()")
-			So(m.Msg, ShouldNotContainSubstring, "errors_test.go")
 			return m.Msg
 		}
 
@@ -93,13 +79,12 @@ func TestTQifyError(t *testing.T) {
 		Convey("exclude simple unwrap", func() {
 			err := TQifyError(ctx, errTransBoo, errBoo)
 			So(tq.Fatal.In(err), ShouldBeFalse)
-			So(assertNoStack(), ShouldContainSubstring, "boo")
+			So(ml.Messages(), ShouldBeEmpty)
 		})
 		Convey("exclude with multierror", func() {
 			err := TQifyError(ctx, errMulti, errOops)
 			So(tq.Fatal.In(err), ShouldBeTrue)
-			So(assertNoStack(), ShouldContainSubstring, "oops")
-			So(assertNoStack(), ShouldContainSubstring, "1 other error")
+			So(ml.Messages(), ShouldBeEmpty)
 		})
 	})
 }
