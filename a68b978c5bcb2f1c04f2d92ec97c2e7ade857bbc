@@ -16,6 +16,24 @@
       "message": "Hm; for some reason I thought I saw other CLs of ours using this version (b/c it\u0027s faster). I guess they must not have been luci-go CLs. My bad 😞",
       "revId": "a68b978c5bcb2f1c04f2d92ec97c2e7ade857bbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05ab221f_ca164c50",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T20:03:01Z",
+      "side": 1,
+      "message": "fwiw, i don\u0027t mind if we switch. It may still be faster. But other luciexe code uses standard library, so  thought consistency is better her.",
+      "parentUuid": "30cd4f77_f32e85d1",
+      "revId": "a68b978c5bcb2f1c04f2d92ec97c2e7ade857bbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
