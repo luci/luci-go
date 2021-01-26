@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c511a02_00451511",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T23:52:53Z",
+      "side": 1,
+      "message": "oh yes, this is a much better example than \"ci\".",
+      "range": {
+        "startLine": 36,
+        "startChar": 34,
+        "endLine": 36,
+        "endChar": 37
+      },
+      "revId": "028637df8f67a08bc65110b7af9ac5bf8797e5d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c267c6b7_a3eddadb",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T23:52:53Z",
+      "side": 1,
+      "message": "please remove. Outdated.",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 79
+      },
+      "revId": "028637df8f67a08bc65110b7af9ac5bf8797e5d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
