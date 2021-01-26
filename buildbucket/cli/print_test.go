@@ -68,7 +68,7 @@ var buildJSON = `
     "gitilesCommit": {
         "host": "chromium.googlesource.com",
         "project": "infra/luci/luci-go",
-        "ref": "refs/heads/master",
+        "ref": "refs/heads/x",
         "id": "deadbeef"
     },
     "gerritChanges": [
@@ -159,7 +159,7 @@ const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chrom
 <white+b>Experimental<reset> <white+b>Canary<reset>
 <white+b>Created<reset> on 2019-03-26 at 18:33:47, <white+b>waited<reset> 4.5s, <white+b>started<reset> at 18:33:52, <white+b>ran<reset> for 3m21s, <white+b>ended<reset> at 18:37:13
 <white+b>By<reset>: user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com
-<white+b>Commit<reset>: <white+u>https://crrev.com/deadbeef<reset> on refs/heads/master
+<white+b>Commit<reset>: <white+u>https://crrev.com/deadbeef<reset> on refs/heads/x
 <white+b>CL<reset>: <white+u>https://crrev.com/c/1539021/1<reset>
 <white+b>Tag<reset>: buildset:patch/gerrit/chromium-review.googlesource.com/1539021/1
 <white+b>Tag<reset>: cq_experimental:false
@@ -267,46 +267,46 @@ func TestPrint(t *testing.T) {
 			p.commit(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
-				Ref:     "refs/heads/master",
+				Ref:     "refs/heads/x",
 				Id:      "deadbeef",
 			})
 
 			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://crrev.com/deadbeef", "white+u")+" on refs/heads/master")
+			So(buf.String(), ShouldEqual, ansi.Color("https://crrev.com/deadbeef", "white+u")+" on refs/heads/x")
 		})
 
 		Convey("Chromium commit without id", func() {
 			p.commit(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
-				Ref:     "refs/heads/master",
+				Ref:     "refs/heads/x",
 			})
 
 			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master", "white+u"))
+			So(buf.String(), ShouldEqual, ansi.Color("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x", "white+u"))
 		})
 
 		Convey("Arbitrary commit", func() {
 			p.commit(&pb.GitilesCommit{
 				Host:    "fuchsia.googlesource.com",
 				Project: "infra",
-				Ref:     "refs/heads/master",
+				Ref:     "refs/heads/x",
 				Id:      "deadbeef",
 			})
 
 			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://fuchsia.googlesource.com/infra/+/deadbeef", "white+u")+" on refs/heads/master")
+			So(buf.String(), ShouldEqual, ansi.Color("https://fuchsia.googlesource.com/infra/+/deadbeef", "white+u")+" on refs/heads/x")
 		})
 
 		Convey("Arbitrary commit without id", func() {
 			p.commit(&pb.GitilesCommit{
 				Host:    "fuchsia.googlesource.com",
 				Project: "infra",
-				Ref:     "refs/heads/master",
+				Ref:     "refs/heads/x",
 			})
 
 			So(p.Err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, ansi.Color("https://fuchsia.googlesource.com/infra/+/refs/heads/master", "white+u"))
+			So(buf.String(), ShouldEqual, ansi.Color("https://fuchsia.googlesource.com/infra/+/refs/heads/x", "white+u"))
 		})
 
 		Convey("Chromium CL", func() {
