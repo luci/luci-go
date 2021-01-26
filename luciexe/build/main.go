@@ -16,6 +16,7 @@ package build
 
 import (
 	"bytes"
+	"compress/zlib"
 	"context"
 	"flag"
 	"io"
@@ -24,7 +25,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/klauspost/compress/zlib"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
