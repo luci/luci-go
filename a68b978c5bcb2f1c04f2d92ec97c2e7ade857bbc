@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "30cd4f77_f32e85d1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-26T20:00:47Z",
+      "side": 1,
+      "message": "Hm; for some reason I thought I saw other CLs of ours using this version (b/c it\u0027s faster). I guess they must not have been luci-go CLs. My bad 😞",
+      "revId": "a68b978c5bcb2f1c04f2d92ec97c2e7ade857bbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
