@@ -83,7 +83,7 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 	if err = saveFinishedRun(ctx, req.GetRun()); err != nil {
 		return
 	}
-	if err = run.NotifyFinished(ctx, common.RunID(req.GetRun().GetId())); err != nil {
+	if err = run.NotifyFinished(ctx, common.RunID(req.GetRun().GetId()), 0); err != nil {
 		return
 	}
 
