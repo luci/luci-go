@@ -47,7 +47,6 @@ func application(p Params) *cli.Application {
 			return logCfg.Use(ctx)
 		},
 		Commands: []*subcommands.Command{
-			cmdDerive(p),
 			cmdRPC(p),
 			cmdQuery(p),
 			cmdStream(p),

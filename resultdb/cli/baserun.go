@@ -54,7 +54,6 @@ type baseCommandRun struct {
 	prpcClient  *prpc.Client
 	resultdb    pb.ResultDBClient
 	recorder    pb.RecorderClient
-	deriver     pb.DeriverClient
 	resultdbCtx *lucictx.ResultDB
 }
 
@@ -78,8 +77,8 @@ func (r *baseCommandRun) RegisterJSONFlag(usage string) {
 	r.Flags.BoolVar(&r.json, "json", false, usage)
 }
 
-// initClients validates -host flag and initializes r.httpClient, r.resultdb
-// r.recorder and r.deriver.
+// initClients validates -host flag and initializes r.httpClient, r.resultdb and
+// r.recorder.
 func (r *baseCommandRun) initClients(ctx context.Context, loginMode auth.LoginMode) error {
 	// Create HTTP Client.
 	authOpts, err := r.authFlags.Options()
@@ -131,7 +130,6 @@ func (r *baseCommandRun) initClients(ctx context.Context, loginMode auth.LoginMo
 	}
 	r.resultdb = pb.NewResultDBPRPCClient(r.prpcClient)
 	r.recorder = pb.NewRecorderPRPCClient(r.prpcClient)
-	r.deriver = pb.NewDeriverPRPCClient(r.prpcClient)
 	return nil
 }
 
