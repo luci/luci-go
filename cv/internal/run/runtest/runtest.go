@@ -54,17 +54,8 @@ func SortedRuns(in tqtesting.TaskList) common.RunIDs {
 
 // Tasks returns all Run tasks sorted by ETA and then task class name.
 func Tasks(in tqtesting.TaskList) []proto.Message {
-	tasks := in[:]
-	sort.SliceStable(tasks, func(i, j int) bool {
-		l, r := tasks[i], tasks[j]
-		if l.ETA.Equal(r.ETA) {
-			return l.Class < r.Class
-		}
-		return l.ETA.Before(r.ETA)
-	})
-
-	ret := make([]proto.Message, 0, len(tasks))
-	for _, t := range tasks {
+	ret := make([]proto.Message, 0, len(in))
+	for _, t := range in.SortByETA() {
 		switch v := t.Payload.(type) {
 		case *eventpb.PokeRunTask, *eventpb.KickPokeRunTask:
 			ret = append(ret, v)
@@ -84,35 +75,31 @@ func iterEventBox(ctx context.Context, runID common.RunID, cb func(*eventpb.Even
 	}
 }
 
-// AssertNotInEventbox asserts none of the target events exists in the Eventbox.
-func AssertNotInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
-	var hits []*eventpb.Event
+func matchEventBox(ctx context.Context, runID common.RunID, targets []*eventpb.Event) (matched, remaining []*eventpb.Event) {
+	remaining = make([]*eventpb.Event, len(targets))
+	copy(remaining, targets)
 	iterEventBox(ctx, runID, func(evt *eventpb.Event) {
-		for i, target := range targets {
-			if proto.Equal(evt, target) {
-				hits = append(hits, target)
-				targets[i] = targets[len(targets)-1]
-				targets[len(targets)-1] = nil
-				targets = targets[:len(targets)-1]
+		for i, r := range remaining {
+			if proto.Equal(evt, r) {
+				matched = append(matched, r)
+				remaining[i] = remaining[len(remaining)-1]
+				remaining[len(remaining)-1] = nil
+				remaining = remaining[:len(remaining)-1]
 				return
 			}
 		}
 	})
-	So(hits, ShouldBeEmpty)
+	return
+}
+
+// AssertNotInEventbox asserts none of the target events exists in the Eventbox.
+func AssertNotInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
+	matched, _ := matchEventBox(ctx, runID, targets)
+	So(matched, ShouldBeEmpty)
 }
 
 // AssertInEventbox asserts all target events exist in the Eventbox.
 func AssertInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
-	targets = targets[:]
-	iterEventBox(ctx, runID, func(evt *eventpb.Event) {
-		for i, target := range targets {
-			if proto.Equal(evt, target) {
-				targets[i] = targets[len(targets)-1]
-				targets[len(targets)-1] = nil
-				targets = targets[:len(targets)-1]
-				return
-			}
-		}
-	})
-	So(targets, ShouldBeEmpty)
+	_, remaining := matchEventBox(ctx, runID, targets)
+	So(remaining, ShouldBeEmpty)
 }
