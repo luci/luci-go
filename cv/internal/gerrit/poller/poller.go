@@ -51,6 +51,8 @@ func Poke(ctx context.Context, luciProject string) error {
 	return schedule(ctx, luciProject, time.Time{})
 }
 
+var errConcurrentStateUpdate = errors.New("concurrent change to poller state", transient.Tag)
+
 // poll executes the next poll with the latest known to poller config.
 //
 // For each discovered CL, enqueues a task for CL updater to refresh CL state.
@@ -82,7 +84,8 @@ func poll(ctx context.Context, luciProject string, eta time.Time) error {
 		return schedule(ctx, luciProject, eta)
 	case clock.Now(ctx).After(eta.Add(pollInterval - time.Second)):
 		// Time to finish this task despite error, and trigger a new one.
-		common.LogError(ctx, errors.Annotate(err, "failed to do poll %s", eta).Err())
+		err = errors.Annotate(err, "failed to do poll %s for %q", eta, luciProject).Err()
+		common.LogError(ctx, err, errConcurrentStateUpdate)
 		return schedule(ctx, luciProject, eta)
 	default:
 		return err
@@ -97,7 +100,7 @@ func init() {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*task.PollGerritTask)
 			err := poll(ctx, task.GetLuciProject(), task.GetEta().AsTime())
-			return common.TQifyError(ctx, err)
+			return common.TQifyError(ctx, err, errConcurrentStateUpdate)
 		},
 	})
 }
@@ -215,7 +218,8 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 		for i, sp := range stateBefore.SubPollers.GetSubPollers() {
 			i, sp := i, sp
 			work <- func() error {
-				errs[i] = subpoll(ctx, luciProject, sp)
+				err := subpoll(ctx, luciProject, sp)
+				errs[i] = errors.Annotate(err, "subpoller %s", sp).Err()
 				return nil
 			}
 		}
@@ -236,7 +240,8 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 		// Some progress. We'll retry during next poll.
 		// TODO(tandrii): revisit this logic once CV subscribes to PubSub and makes
 		// polling much less frequent.
-		common.LogError(ctx, errors.Annotate(err, "failed %d/%d pollers. Most severe error:", n, len(errs)).Err())
+		err = errors.Annotate(err, "failed %d/%d pollers for %q. Most severe error:", n, len(errs), luciProject).Err()
+		common.LogError(ctx, err)
 	}
 	return nil
 }
@@ -259,30 +264,40 @@ func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
 
 // save saves state of poller after the poll.
 func save(ctx context.Context, modified *state) error {
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	var innerErr error
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		defer func() { innerErr = err }()
 		latest := state{LuciProject: modified.LuciProject}
-		switch err := datastore.Get(ctx, &latest); {
+		switch err = datastore.Get(ctx, &latest); {
 		case err == datastore.ErrNoSuchEntity:
 			if modified.EVersion > 0 {
 				// At the beginning of the poll, we read an existing state.
 				// So, there was a concurrent deletion.
-				return errors.Reason("poller state for %q was unexpectedly missing",
-					modified.LuciProject).Err()
+				return errors.Reason("poller state for %q was unexpectedly missing", modified.LuciProject).Err()
 			}
 			// Then, we'll create it.
 		case err != nil:
 			return errors.Annotate(err, "failed to get poller state for %q", modified.LuciProject).Err()
 		case latest.EVersion != modified.EVersion:
-			return errors.Reason("concurrent change to poller state %q", modified.LuciProject).Err()
+			return errors.Annotate(errConcurrentStateUpdate, "project %q", modified.LuciProject).Err()
 		}
 		modified.EVersion++
 		modified.UpdateTime = clock.Now(ctx).UTC()
-		err := datastore.Put(ctx, modified)
+		err = datastore.Put(ctx, modified)
 		if err != nil {
 			return errors.Annotate(err, "failed to save poller state for %s", modified.LuciProject).Err()
 		}
 		return nil
 	}, nil)
-	return errors.Annotate(err, "failed to save poller state for %q", modified.LuciProject).Tag(
-		transient.Tag).Err()
+
+	switch {
+	case innerErr != nil:
+		return innerErr
+	case err == datastore.ErrConcurrentTransaction:
+		return errors.Annotate(errConcurrentStateUpdate, "project %q", modified.LuciProject).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to save poller state for %q", modified.LuciProject).Tag(transient.Tag).Err()
+	default:
+		return nil
+	}
 }

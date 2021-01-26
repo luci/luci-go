@@ -52,33 +52,20 @@ func MostSevereError(err error) error {
 
 // TQifyError does final error processing before returning from a TQ handler.
 //
-// * logs entire error stack with ERROR severity by default;
-//   logs just error with WARNING severity iff one of error's leaf nodes matches
-//   at least one of the given list of `omitStackTraceFor` errors. This is
-//   useful if TQ handler is known to frequently fail this way.
-// * non-transient errors are tagged with tq.Fatal to avoid retries.
+//  * logs error with LogError unless one of error's leaf nodes matches at least
+//    one of omitStackTraceFor, in which case no log is emitted at all since
+//    server/tq will emit a line, too.
+//  * non-transient errors are tagged with tq.Fatal to avoid retries.
 //
 // omitStackTraceFor must contain only unwrapped errors.
 func TQifyError(ctx context.Context, err error, omitStackTraceFor ...error) error {
 	if err == nil {
 		return nil
 	}
-
-	stackTrace := true
-	errors.WalkLeaves(err, func(leafError error) bool {
-		for _, e := range omitStackTraceFor {
-			if leafError == e {
-				stackTrace = false
-				return false // stop
-			}
-		}
-		return true // continue iterating leaf nodes
-	})
-
-	if !stackTrace {
-		logging.Warningf(ctx, "%s", err)
-	} else {
-		LogError(ctx, err)
+	// If stack trace isn't needed, there is no reason to log error at all, since
+	// TQ guts emit an ERROR log, too.
+	if !shouldOmitStackTrace(err, omitStackTraceFor...) {
+		LogError(ctx, err, omitStackTraceFor...)
 	}
 	if !transient.Tag.In(err) {
 		err = tq.Fatal.Apply(err)
@@ -87,7 +74,18 @@ func TQifyError(ctx context.Context, err error, omitStackTraceFor ...error) erro
 }
 
 // LogError is errors.Log with CV-specific package filtering.
-func LogError(ctx context.Context, err error) {
+//
+// Logs entire error stack with ERROR severity by default.
+// Logs just error with WARNING severity iff one of error's leaf nodes matches
+// at least one of the given list of `omitStackTraceFor` errors.
+// This is useful if TQ handler is known to frequently fail this way.
+//
+// omitStackTraceFor must contain only unwrapped errors.
+func LogError(ctx context.Context, err error, omitStackTraceFor ...error) {
+	if shouldOmitStackTrace(err, omitStackTraceFor...) {
+		logging.Warningf(ctx, "%s", err)
+		return
+	}
 	errors.Log(
 		ctx,
 		err,
@@ -99,4 +97,18 @@ func LogError(ctx context.Context, err error) {
 		"go.chromium.org/luci/server/tq",
 		"go.chromium.org/luci/server/router",
 	)
+}
+
+func shouldOmitStackTrace(err error, omitStackTraceFor ...error) bool {
+	omit := false
+	errors.WalkLeaves(err, func(leafError error) bool {
+		for _, e := range omitStackTraceFor {
+			if leafError == e {
+				omit = true
+				return false // stop iteration
+			}
+		}
+		return true // continue iterating leaf nodes
+	})
+	return omit
 }
