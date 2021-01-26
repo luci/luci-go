@@ -57,8 +57,13 @@ func List(ctx context.Context, recipient *datastore.Key) (Events, error) {
 	}
 }
 
+// ErrConcurretMutation indicates concurrent mutation.
+var ErrConcurretMutation = errors.New("Concurrent mutation")
+
 // ProcessBatch reliably processes events, while transactionally modifying state
 // and performing arbitrary side effects.
+//
+// Returns wrapped ErrConcurretMutation if entity's EVersion has changed.
 func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) error {
 	var state State
 	var expectedEV EVersion
@@ -92,13 +97,15 @@ func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) er
 		return nil // nothing to do.
 	}
 
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	var innerErr error
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		defer func() { innerErr = err }()
+
 		switch latestEV, err := p.FetchEVersion(ctx); {
 		case err != nil:
 			return err
 		case latestEV != expectedEV:
-			return errors.Reason("Concurrent modification: EVersion read %d, but expected %d",
-				latestEV, expectedEV).Tag(transient.Tag).Err()
+			return errors.Annotate(ErrConcurretMutation, "EVersion read %d, but expected %d", latestEV, expectedEV).Tag(transient.Tag).Err()
 		}
 		popOp, err := d.BeginPop(ctx, listing)
 		if err != nil {
@@ -107,16 +114,11 @@ func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) er
 		var newState State
 		eventsConsumed := 0
 		for _, t := range transitions {
-			switch err := t.apply(ctx, popOp); {
-			case err != nil && !transient.Tag.In(err):
-				logging.Errorf(ctx, "FIXME: only transient errors expected: %s", err)
-				fallthrough
-			case err != nil:
+			if err := t.apply(ctx, popOp); err != nil {
 				return err
-			default:
-				newState = t.TransitionTo
-				eventsConsumed += len(t.Events)
 			}
+			newState = t.TransitionTo
+			eventsConsumed += len(t.Events)
 		}
 
 		logging.Debugf(ctx, "%d transitions, %d events", len(transitions), eventsConsumed)
@@ -129,12 +131,14 @@ func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) er
 		}
 		return dsset.FinishPop(ctx, popOp)
 	}, nil)
-	if err != nil {
-		// Unconditionally mark error as transient. If Transition.Apply needs to
-		// return non-transient errors, this code needs changing.
+	switch {
+	case innerErr != nil:
+		return innerErr
+	case err != nil:
 		return errors.Annotate(err, "failed to commit mutation").Tag(transient.Tag).Err()
+	default:
+		return nil
 	}
-	return nil
 }
 
 // Processor defines safe way to process events in a batch.

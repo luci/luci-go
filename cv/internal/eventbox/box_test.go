@@ -284,7 +284,7 @@ func TestEventboxFails(t *testing.T) {
 			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 				return 1, nil
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "Concurrent modification")
+			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, ErrConcurretMutation)
 			So(firstSideEffectCalled, ShouldBeFalse)
 		})
 
