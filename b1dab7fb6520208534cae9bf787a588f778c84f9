@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "3bd013b3_955a756f",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T22:42:27Z",
+      "side": 1,
+      "message": "Good point. Actually, to avoid edge case, what do you think about adding a `deferredSideEffectFn` field to RunManager and we can execute those function after state transition transaction is finished successfully?",
+      "parentUuid": "0de3b3b6_6bae28f6",
+      "range": {
+        "startLine": 244,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 3
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "68e68bc4_95fe28a9",
@@ -121,6 +145,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1586fb25_0319221b",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T22:42:27Z",
+      "side": 1,
+      "message": "Oops. I think my intention is to copy the slice so that I don\u0027t modify the input slice. Fixed",
+      "parentUuid": "89184ae7_0e86dc2a",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 15
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d34c1d88_be66b007",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T22:42:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89184ae7_0e86dc2a",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 15
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2c396506_a68011e1",
@@ -134,6 +206,30 @@
       "writtenOn": "2021-01-26T12:58:33Z",
       "side": 1,
       "message": "How about using https://godoc.org/go.chromium.org/luci/server/tq/tqtesting#TaskList.SortByETA \nbut adding comparison by Class ID there?",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 61,
+        "endChar": 27
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "44a40c3c_5e28e9b8",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T22:42:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c396506_a68011e1",
       "range": {
         "startLine": 61,
         "startChar": 3,
@@ -184,6 +280,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a4858c2_5eb3d34a",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T22:42:27Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "bdaa8009_1aac221a",
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "951cdc0c_18869153",
@@ -197,6 +311,24 @@
       "writtenOn": "2021-01-26T12:58:33Z",
       "side": 1,
       "message": "How about helper to avoid copy-pasta to be used like:\n matched, remaining :\u003d matchEventbox(ctx, runID, targets...)\n?",
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54d169b1_8e1aa42e",
+        "filename": "cv/internal/run/runtest/runtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T22:42:27Z",
+      "side": 1,
+      "message": "Good point.",
+      "parentUuid": "951cdc0c_18869153",
       "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
