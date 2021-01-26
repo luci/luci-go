@@ -39,6 +39,24 @@
       "message": "Nice! no need to annotate error with project information in ProcessBatch. I\u0027ll do the same for run.\n\nnit: WDYT about use Tag instead of Annotate because I think Annotate adds additional stack frame.",
       "revId": "4b6901957456b6d9e181a6e3a69fc979dd562c65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f7e4a9a2_954969b4",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T21:18:25Z",
+      "side": 1,
+      "message": "Discussed in LUCI chat: decision is annotate, even if heavy, is fine for rarely exercised exception path.",
+      "parentUuid": "95ebbf0b_1c0b5f71",
+      "revId": "4b6901957456b6d9e181a6e3a69fc979dd562c65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
