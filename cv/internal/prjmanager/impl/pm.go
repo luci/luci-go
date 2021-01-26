@@ -84,8 +84,9 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 	if err := datastore.Get(ctx, stateOffload); err != nil {
 		return nil, 0, errors.Annotate(err, "failed to get stateOffload %q", pm.luciProject).Tag(transient.Tag).Err()
 	}
-	p.State.Status = stateOffload.Status
-	p.State.ConfigHash = stateOffload.ConfigHash
+	// Intentionally reset.
+	p.State.Status = prjpb.Status_STATUS_UNSPECIFIED
+	p.State.ConfigHash = ""
 	return state.NewExisting(p.State), eventbox.EVersion(p.EVersion), nil
 }
 
@@ -232,7 +233,8 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	// UpdateConfig event may result in stopping the PM, which requires notifying
 	// each of the incomplete Runs to stop. Thus, runsCreated must be processed
 	// before to ensure no Run will be missed.
-	if len(tr.newConfig) > 0 {
+	// TODO(crbug/1169206): remove once all entities have migrated.
+	if len(tr.newConfig) > 0 || s.PB.ConfigHash == "" {
 		if s, se, err = s.UpdateConfig(ctx); err != nil {
 			return nil, err
 		}
