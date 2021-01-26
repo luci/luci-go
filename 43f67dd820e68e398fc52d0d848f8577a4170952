@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d75e0b77_ba9785e0",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ba9acdc_ff148203",
+      "range": {
+        "startLine": 40,
+        "startChar": 28,
+        "endLine": 40,
+        "endChar": 29
+      },
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f83df7a7_ba54a029",
@@ -77,6 +101,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5c3bbe66_9853eeda",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "This is actually guaranteed because non-final migration run will never be stored: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/migration/run.go;l\u003d139-142;drc\u003d6a0e1bab19fdd06b8c393ab439b8b0bbf23fd6d2\n\n(I don\u0027t mind an extra defensive check though)",
+      "parentUuid": "f83df7a7_ba54a029",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bca99fb4_2e5c1675",
         "filename": "cv/internal/run/impl/finalize.go",
         "patchSetId": 1
@@ -88,6 +130,24 @@
       "writtenOn": "2021-01-22T12:52:22Z",
       "side": 1,
       "message": "this must be ran in a transaction (see comment for the func definition itself).\nSo, doing it as a effect it easiest.\n\nHowever, updating Run itself doesn\u0027t need to be done atomically with updating CLs.INcompleteRUns,\nso we\u0027d reduce contention iff we create \u0026 execute transaction right here.\n\nMore food for thought:\nStrictly speaking, we can update each individual CL independently, so we can do 1 transaction per CL,\nbut this would reduce # of DS RPCs.\nSo, **if** we observe frequent contention failures when committing\ntransaction with s.removeRunFromCLs, then we split Run\u0027s CLs into batches of 5 and do a transaction per 5.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "455e8316_274f9b96",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "\u003e However, updating Run itself doesn\u0027t need to be done atomically with updating CLs.IncompleteRUns, so we\u0027d reduce contention iff we create \u0026 execute transaction right here.\n\nAgreed. I think one problem with your proposed approach is that if any error occurs during the following state transition transaction, CV may end up with a state that a RUN is in RUNNING status but it is not in the IncompleteRun list of any of its CLs (especially when run manager hasn\u0027t leant how to make incremental progress).\n\nI guess it might be okay if a run is temporarily in that state because a run (no matter dry or full) is technically over at this time, so even if CL does have this Run in the IncompleteRuns list and notify the run about the CL update, RunManager doesn\u0027t need to take any action on those events. Let me know what do you think.\n\n(In case we found out this approach may not work, I\u0027ll address this comment once we\u0027ve reached the conclusion)",
+      "parentUuid": "bca99fb4_2e5c1675",
       "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -117,6 +177,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "33f027ce_2f927e45",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "52699d15_ccf1549b",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 7
+      },
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "73688f92_32cd1b35",
         "filename": "cv/internal/run/impl/finalize.go",
         "patchSetId": 1
@@ -128,6 +212,24 @@
       "writtenOn": "2021-01-22T12:52:22Z",
       "side": 1,
       "message": "i\u0027d load these in 1 RPC before parallelizing via workpool, but for throwaway code, this is fine.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d68c021b_e3cb4ffd",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "oh yes. why I\u0027m doing this.. Changed to use newly created `changelist.LoadMulti`.",
+      "parentUuid": "73688f92_32cd1b35",
       "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -155,6 +257,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f87934d_f7a97537",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "Good Catch!",
+      "parentUuid": "07c71fde_89b7df68",
+      "range": {
+        "startLine": 75,
+        "startChar": 31,
+        "endLine": 75,
+        "endChar": 32
+      },
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2a1c5d11_c413e47d",
@@ -168,6 +294,24 @@
       "writtenOn": "2021-01-22T12:52:22Z",
       "side": 1,
       "message": "ah, i see why you asked for ExternalID index 😊\nFWIW, iff this code had to live long term, I think better design would have been to let gobupdater able to accept just CLID and figure out the rest on its own.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6c65e8e_2df5e01c",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "\u003e FWIW, iff this code had to live long term, I think better design would have been to let gobupdater able to accept just CLID and figure out the rest on its own.\n\nThis is exactly what I thought at the beginning when I code up this CL. Moreover, there could be a high-level updater module which handles all such requests and route each request to its corresponding updater (like gob, github).",
+      "parentUuid": "2a1c5d11_c413e47d",
       "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -189,6 +333,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "84445bb9_976e3c7b",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "02a2b217_37cb39b1",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "34bcdc84_e7ff8b9e",
@@ -206,6 +368,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "515e6302_fb891b50",
+        "filename": "cv/internal/run/impl/finalize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "Yes. it is always called in transactional context. but I should do a explicit check here.",
+      "parentUuid": "34bcdc84_e7ff8b9e",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "efb9a8f2_1d218276",
@@ -219,6 +399,24 @@
       "writtenOn": "2021-01-22T12:52:22Z",
       "side": 1,
       "message": "fwiw, i\u0027m much less worried about this small func correctness than onFinished overall. \nBut it\u0027s fine to keep this test as is.",
+      "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff7b5473_f42658db",
+        "filename": "cv/internal/run/impl/finalize_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-26T05:52:53Z",
+      "side": 1,
+      "message": "It was here already. so I\u0027m too lazy to delete it.",
+      "parentUuid": "efb9a8f2_1d218276",
       "revId": "43f67dd820e68e398fc52d0d848f8577a4170952",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
