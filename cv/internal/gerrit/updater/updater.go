@@ -42,6 +42,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cqdepend"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
@@ -337,6 +338,27 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 //
 // Returns nil ChangeInfo if no further fetching should proceed.
 func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOption) (*gerritpb.ChangeInfo, error) {
+	setNoAccess := func() {
+		f.toUpdate.AddDependentMeta = &changelist.DependentMeta{
+			ByProject: map[string]*changelist.DependentMeta_Meta{
+				f.luciProject: {
+					NoAccess:   true,
+					UpdateTime: timestamppb.New(clock.Now(ctx)),
+				},
+			},
+		}
+	}
+
+	// Avoid querying Gerrit iff current project doesn't watch the given host,
+	// which should be treated as PermissionDenied.
+	switch watched, err := f.isHostWatched(ctx); {
+	case err != nil:
+		return nil, err
+	case !watched:
+		setNoAccess()
+		return nil, nil
+	}
+
 	if err := f.ensureGerritClient(ctx); err != nil {
 		return nil, err
 	}
@@ -352,14 +374,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 		}
 	case codes.NotFound, codes.PermissionDenied:
 		// Either no access OR CL was deleted.
-		f.toUpdate.AddDependentMeta = &changelist.DependentMeta{
-			ByProject: map[string]*changelist.DependentMeta_Meta{
-				f.luciProject: {
-					NoAccess:   true,
-					UpdateTime: timestamppb.New(clock.Now(ctx)),
-				},
-			},
-		}
+		setNoAccess()
 		return nil, nil
 	default:
 		return nil, gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
@@ -729,6 +744,26 @@ func (f *fetcher) ensureGerritClient(ctx context.Context) error {
 	var err error
 	f.g, err = gerrit.CurrentClient(ctx, f.host, f.luciProject)
 	return err
+}
+
+// Checks whether this LUCI project watches any repo on this Gerrit host.
+func (f *fetcher) isHostWatched(ctx context.Context) (bool, error) {
+	meta, err := config.GetLatestMeta(ctx, f.luciProject)
+	if err != nil {
+		return false, err
+	}
+	cgs, err := meta.GetConfigGroups(ctx)
+	if err != nil {
+		return false, err
+	}
+	for _, cg := range cgs {
+		for _, g := range cg.Content.GetGerrit() {
+			if config.GerritHost(g) == f.host {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 func (f *fetcher) gerritProjectIfKnown() string {
