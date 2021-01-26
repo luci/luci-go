@@ -8,6 +8,7 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/rpc/status.proto";
@@ -205,7 +206,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild rpc.
 //
-// Next ID: 17.
+// Next ID: 19.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -346,6 +347,18 @@ message ScheduleBuildRequest {
   }
   // Swarming specific part of the build request.
   Swarming swarming = 15;
+
+  // Maximum build pending time.
+  // If set, overrides the default `expiration_secs` set in builder config.
+  // Only supports seconds precision for now.
+  // For more information, see Build.scheduling_timeout in build.proto.
+  google.protobuf.Duration scheduling_timeout = 17;
+
+  // Maximum build execution time.
+  // If set, overrides the default `execution_timeout_secs` set in build config.
+  // Only supports seconds precision for now.
+  // For more information, see Build.execution_timeout in build.proto.
+  google.protobuf.Duration execution_timeout = 18;
 }
 
 // A request message for CancelBuild rpc.
