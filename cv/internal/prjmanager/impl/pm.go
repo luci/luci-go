@@ -40,7 +40,7 @@ func init() {
 			err := pokePMTask(ctx, task.GetLuciProject())
 			// TODO(tandrii): avoid retries iff we know a new task was already
 			// scheduled for the next second.
-			return common.TQifyError(ctx, err)
+			return common.TQifyError(ctx, err, eventbox.ErrConcurretMutation)
 		},
 	)
 }
@@ -48,7 +48,8 @@ func init() {
 func pokePMTask(ctx context.Context, luciProject string) error {
 	ctx = logging.SetField(ctx, "project", luciProject)
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
-	return eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject})
+	err := eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject})
+	return errors.Annotate(err, "project %q", luciProject).Err()
 }
 
 // projectManager implements eventbox.Processor.
