@@ -438,7 +438,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 	body = bytes.TrimPrefix(body, jsonPrefix)
 	if err == nil && dest != nil {
 		if err = json.Unmarshal(body, dest); err != nil {
-			logging.Errorf(ctx, "failed to deserialize response %v: %s", body, err)
+			logging.Errorf(ctx, "failed to deserialize response %s; body:\n\n%s", err, string(body))
 			return ret, status.Errorf(codes.Internal, "failed to deserialize response: %s", err)
 		}
 	}
