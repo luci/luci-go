@@ -157,7 +157,7 @@ message Builder {
     string cipd_package = 6;
 
     // The CIPD version to fetch. This can be a lower-cased git ref (like
-    // `refs/heads/master` or `head`), or it can be a cipd tag (like
+    // `refs/heads/main` or `head`), or it can be a cipd tag (like
     // `git_revision:dead...beef`).
     //
     // The default is `head`, which corresponds to the git repo's HEAD ref. This
