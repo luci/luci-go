@@ -357,7 +357,9 @@ func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID,
 		panic("must specify at least one UpdateFields field")
 	}
 
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	var innerErr error
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		defer func() { innerErr = err }()
 		if knownCLID == 0 {
 			m := clMap{ExternalID: eid}
 			switch err := datastore.Get(ctx, &m); {
@@ -369,8 +371,7 @@ func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID,
 					cl.DependentMeta = fields.AddDependentMeta
 				})
 				if err == nil && notify != nil {
-					err = errors.Annotate(notify(ctx, cl.ID, 1),
-						"notifyCallback failed on %s", eid).Err()
+					err = errors.Annotate(notify(ctx, cl.ID, 1), "notifyCallback failed on %s", eid).Err()
 				}
 				return err
 			case err != nil:
@@ -385,12 +386,19 @@ func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID,
 		// Update exsting entity.
 		updated, err := update(ctx, cl, fields.apply)
 		if err == nil && updated && notify != nil {
-			err = errors.Annotate(notify(ctx, cl.ID, cl.EVersion),
-				"notifyCallback failed on %d", cl.ID).Err()
+			err = errors.Annotate(notify(ctx, cl.ID, cl.EVersion), "notifyCallback failed on %d", cl.ID).Err()
 		}
 		return err
 	}, nil)
-	return errors.Annotate(err, "failed to update CL").Tag(transient.Tag).Err()
+
+	switch {
+	case innerErr != nil:
+		return innerErr
+	case err != nil:
+		return errors.Annotate(err, "failed to update CL").Tag(transient.Tag).Err()
+	default:
+		return nil
+	}
 }
 
 func getExisting(ctx context.Context, clid common.CLID, eid ExternalID) (*CL, error) {
