@@ -113,7 +113,8 @@ const blindRefreshInterval = time.Minute
 // refresh fetches latest info from Gerrit.
 //
 // If datastore already contains snapshot with Gerrit-reported update time equal
-// to or after updatedHint, then no updating or querying will be performed.
+// to or after updatedHint, then no updating or querying will be performed,
+// but forceNotifyPM will still be obeyed.
 func refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	f := fetcher{
 		luciProject:   r.GetLuciProject(),
@@ -127,9 +128,6 @@ func refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	defer func() { err = errors.Annotate(err, "failed to refresh %s", &f).Err() }()
 
 	if f.externalID, err = changelist.GobID(f.host, f.change); err != nil {
-		return err
-	}
-	if f.g, err = gerrit.CurrentClient(ctx, f.host, f.luciProject); err != nil {
 		return err
 	}
 	return f.update(ctx, common.CLID(r.GetClidHint()))
@@ -169,8 +167,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 	switch {
 	case err == datastore.ErrNoSuchEntity:
 		if clidHint != 0 {
-			return errors.Reason("clidHint %d doesn't refer to an existing CL (%s)",
-				clidHint, f).Err()
+			return errors.Reason("clidHint %d doesn't refer to an existing CL (%s)", clidHint, f).Err()
 		}
 		f.priorCL = nil
 		err = f.fetchNew(ctx)
@@ -231,10 +228,14 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		}
 		return nil
 	default:
-		return changelist.Update(ctx, f.externalID, f.clidIfKnown(), f.toUpdate,
+		return changelist.Update(
+			ctx,
+			f.externalID, f.clidIfKnown(),
+			f.toUpdate,
 			func(ctx context.Context, clid common.CLID, eversion int) error {
 				return prjmanager.NotifyCLUpdated(ctx, f.luciProject, clid, eversion)
-			})
+			},
+		)
 	}
 }
 
@@ -336,6 +337,9 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 //
 // Returns nil ChangeInfo if no further fetching should proceed.
 func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOption) (*gerritpb.ChangeInfo, error) {
+	if err := f.ensureGerritClient(ctx); err != nil {
+		return nil, err
+	}
 	ci, err := f.g.GetChange(ctx, &gerritpb.GetChangeRequest{
 		Number:  f.change,
 		Project: f.gerritProjectIfKnown(),
@@ -375,6 +379,9 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 
 // fetchRelated fetches related changes and computes GerritGitDeps.
 func (f *fetcher) fetchRelated(ctx context.Context) error {
+	if err := f.ensureGerritClient(ctx); err != nil {
+		return err
+	}
 	resp, err := f.g.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 		Number:     f.change,
 		Project:    f.gerritProjectIfKnown(),
@@ -537,6 +544,9 @@ func (f *fetcher) countRelatedWhichAreParents(this *gerritpb.GetRelatedChangesRe
 
 // fetchFiles fetches files for the current revision of the new Snapshot.
 func (f *fetcher) fetchFiles(ctx context.Context) error {
+	if err := f.ensureGerritClient(ctx); err != nil {
+		return err
+	}
 	resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
 		Number:     f.change,
 		Project:    f.gerritProjectIfKnown(),
@@ -710,6 +720,15 @@ func (f *fetcher) ensureNotStale(ctx context.Context, externalUpdateTime *timest
 		return nil
 	}
 	return errStaleData
+}
+
+func (f *fetcher) ensureGerritClient(ctx context.Context) error {
+	if f.g != nil {
+		return nil
+	}
+	var err error
+	f.g, err = gerrit.CurrentClient(ctx, f.host, f.luciProject)
+	return err
 }
 
 func (f *fetcher) gerritProjectIfKnown() string {
