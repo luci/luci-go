@@ -61,33 +61,16 @@ type projectManager struct {
 
 // LoadState is called to load the state before a transaction.
 func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
-	p := &prjmanager.Project{ID: pm.luciProject}
-	switch err := datastore.Get(ctx, p); {
-	case err == datastore.ErrNoSuchEntity:
-		return state.NewInitial(pm.luciProject), 0, nil
+	switch p, err := prjmanager.Load(ctx, pm.luciProject); {
 	case err != nil:
-		return nil, 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
-	}
-	if p.State == nil {
-		p.State = &prjpb.PState{}
-	}
-	p.State.LuciProject = pm.luciProject
-	pm.loadedPState = p.State
-	if p.State.GetConfigHash() != "" {
+		return nil, 0, err
+	case p == nil:
+		return state.NewInitial(pm.luciProject), 0, nil
+	default:
+		p.State.LuciProject = pm.luciProject
+		pm.loadedPState = p.State
 		return state.NewExisting(p.State), eventbox.EVersion(p.EVersion), nil
 	}
-
-	// TODO(crbug/1169206): remove once all entities have migrated.
-	stateOffload := &prjmanager.ProjectStateOffload{
-		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
-	}
-	if err := datastore.Get(ctx, stateOffload); err != nil {
-		return nil, 0, errors.Annotate(err, "failed to get stateOffload %q", pm.luciProject).Tag(transient.Tag).Err()
-	}
-	// Intentionally reset.
-	p.State.Status = prjpb.Status_STATUS_UNSPECIFIED
-	p.State.ConfigHash = ""
-	return state.NewExisting(p.State), eventbox.EVersion(p.EVersion), nil
 }
 
 // Mutate is called before a transaction to compute transitions.
@@ -233,8 +216,7 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 	// UpdateConfig event may result in stopping the PM, which requires notifying
 	// each of the incomplete Runs to stop. Thus, runsCreated must be processed
 	// before to ensure no Run will be missed.
-	// TODO(crbug/1169206): remove once all entities have migrated.
-	if len(tr.newConfig) > 0 || s.PB.ConfigHash == "" {
+	if len(tr.newConfig) > 0 {
 		if s, se, err = s.UpdateConfig(ctx); err != nil {
 			return nil, err
 		}

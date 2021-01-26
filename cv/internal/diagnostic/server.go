@@ -58,9 +58,8 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 	eg, ctx := errgroup.WithContext(ctx)
 
 	var p *prjmanager.Project
-	var po *prjmanager.ProjectStateOffload
 	eg.Go(func() (err error) {
-		p, po, err = prjmanager.Load(ctx, req.GetProject())
+		p, err = prjmanager.Load(ctx, req.GetProject())
 		return
 	})
 
@@ -89,8 +88,6 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 	default:
 		resp.State = p.State
 		resp.State.LuciProject = req.GetProject()
-		resp.State.Status = po.Status
-		resp.State.ConfigHash = po.ConfigHash
 		return resp, nil
 	}
 }
