@@ -16,6 +16,24 @@
       "message": "I think we can turn on 20% traffic before going to 100%.",
       "revId": "13c63d02da0f3666654f368b344b904246069136",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05f224d4_9d53f8db",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T23:50:45Z",
+      "side": 1,
+      "message": "good thinking!",
+      "parentUuid": "b2aed067_b36a4b7b",
+      "revId": "13c63d02da0f3666654f368b344b904246069136",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
