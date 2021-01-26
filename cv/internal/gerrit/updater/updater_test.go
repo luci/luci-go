@@ -32,6 +32,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
@@ -197,12 +198,32 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(cl.DependentMeta.GetByProject()[lProject].GetUpdateTime().AsTime(),
 					ShouldResemble, ct.Clock.Now().UTC())
 			}
-			task.Change = 404
-			So(refresh(ctx, task), ShouldBeNil)
-			assertDependentMetaOnly(404)
-			task.Change = 403
-			So(refresh(ctx, task), ShouldBeNil)
-			assertDependentMetaOnly(403)
+
+			Convey("after getting error from Gerrit", func() {
+				task.Change = 404
+				So(refresh(ctx, task), ShouldBeNil)
+				assertDependentMetaOnly(404)
+				task.Change = 403
+				So(refresh(ctx, task), ShouldBeNil)
+				assertDependentMetaOnly(403)
+			})
+
+			Convey("because Gerrit host isn't even watched by the LUCI project", func() {
+				// Add a CL readable to current LUCI project.
+				ci := gf.CI(1, gf.Project(gRepo), gf.Ref("refs/heads/main"))
+				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+				client, err := gerrit.CurrentClient(ctx, gHost, lProject)
+				So(err, ShouldBeNil)
+				_, err = client.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 1})
+				So(err, ShouldBeNil)
+
+				// But update LUCI project config to stop watching entire host.
+				ct.Cfg.Update(ctx, lProject, singleRepoConfig("other-"+gHost, gRepo))
+				gobmap.Update(ctx, lProject)
+				task.Change = 1
+				So(refresh(ctx, task), ShouldBeNil)
+				assertDependentMetaOnly(1)
+			})
 		})
 
 		Convey("Unhandled Gerrit error results in no CL update", func() {
