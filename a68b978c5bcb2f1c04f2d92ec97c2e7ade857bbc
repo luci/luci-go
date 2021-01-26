@@ -34,6 +34,24 @@
       "parentUuid": "30cd4f77_f32e85d1",
       "revId": "a68b978c5bcb2f1c04f2d92ec97c2e7ade857bbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "99c9dcbe_e3fcb2de",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-26T20:33:53Z",
+      "side": 1,
+      "message": "Yep, consistency is better; If we switch we can switch everything.",
+      "parentUuid": "05ab221f_ca164c50",
+      "revId": "a68b978c5bcb2f1c04f2d92ec97c2e7ade857bbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
