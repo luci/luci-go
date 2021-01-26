@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf873efb_b7e78a98",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T23:57:46Z",
+      "side": 1,
+      "message": "thank you, Vadim!",
+      "revId": "2a041c80df9aa80f8099dfd6295ef67c3d71766b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9d9c561_b97b3a17",
+        "filename": "scheduler/appengine/engine/policy/request_builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T23:57:46Z",
+      "side": 1,
+      "message": "nit: please move it to next line, I actually got confused by indent\n(there is something about this in internal go style guide, i think)",
+      "range": {
+        "startLine": 117,
+        "startChar": 17,
+        "endLine": 117,
+        "endChar": 24
+      },
+      "revId": "2a041c80df9aa80f8099dfd6295ef67c3d71766b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e6a6aed_83658a0f",
+        "filename": "scheduler/appengine/engine/policy/request_builder_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-26T23:57:46Z",
+      "side": 1,
+      "message": "nit: overridden\n\n(otherwise it sounds like this tag value is NOT overriding the other one, but it is!)",
+      "range": {
+        "startLine": 104,
+        "startChar": 49,
+        "endLine": 104,
+        "endChar": 59
+      },
+      "revId": "2a041c80df9aa80f8099dfd6295ef67c3d71766b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
