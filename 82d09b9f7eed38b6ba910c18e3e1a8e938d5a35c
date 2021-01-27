@@ -204,6 +204,30 @@
       },
       "revId": "82d09b9f7eed38b6ba910c18e3e1a8e938d5a35c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "991ce522_767fb17b",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-27T04:19:29Z",
+      "side": 1,
+      "message": "yes, 204 was chosen over 200 intentionally (indeed, because there is no content in response).\ngood point about 201. I don\u0027t remember why not 201, and go/resultdb-artifacts doesn\u0027t talk about it. I guess it was not considered.\n\nnote that rdb binary already expects 204 [1], so changing this to 201 would require a migration.\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/sink/artifact_uploader.go;l\u003d152?q\u003dresultdb%20artifact%20f:sink",
+      "parentUuid": "7486dea3_4faccd93",
+      "range": {
+        "startLine": 105,
+        "startChar": 24,
+        "endLine": 105,
+        "endChar": 39
+      },
+      "revId": "82d09b9f7eed38b6ba910c18e3e1a8e938d5a35c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
