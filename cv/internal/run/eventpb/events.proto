@@ -40,8 +40,14 @@ message Event {
     // Sent by Project Manager, which guarantees these events are sent in order
     // of config updates. See also its `eversion` field.
     NewConfig new_config = 4;
+    // On CLUpdated event, Run Manager will decide whether to cancel the Run
+    // based on the current CL state.
+    //
+    // Sent by Gerrit Updater if Run is inside the `IncompleteRuns` list of
+    // a CL.
+    CLUpdated cl_updated = 5;
+
     // TODO(yiwzhang): Define following events that Run Manager may receive:
-    //  * CLUpdated
     //  * TryjobUpdated
 
     // On Finished event, Run Manager will finalize the Run.
@@ -78,6 +84,12 @@ message NewConfig {
   int64 eversion = 2;
 }
 
+message CLUpdated {
+  // Internal ID of a CL that was updated.
+  int64 clid = 1;
+  // EVersion of the updated CL entity.
+  int64 eVersion = 2;
+}
 
 message Finished {
 }
