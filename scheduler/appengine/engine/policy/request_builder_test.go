@@ -101,7 +101,12 @@ func TestRequestBuilder(t *testing.T) {
 					"revision": "will-be-overridden",
 					"stuff":    "remains",
 				}),
-				Tags: []string{"tag1:val1", "gitiles_ref:not-overridden"},
+				Tags: []string{
+					"tag1:val1",
+					"gitiles_ref:not-overridden",
+					"tag1:val1",                    // dup
+					"buildset:commit/git/aaaaaaaa", // dup
+				},
 			}},
 		})
 		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
@@ -121,11 +126,11 @@ func TestRequestBuilder(t *testing.T) {
 			},
 		})
 		So(r.Request.Tags, ShouldResemble, []string{
-			"tag1:val1",
-			"gitiles_ref:not-overridden",
 			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
 			"buildset:commit/git/aaaaaaaa",
 			"gitiles_ref:refs/heads/master",
+			"tag1:val1",
+			"gitiles_ref:not-overridden",
 		})
 	})
 

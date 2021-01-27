@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -113,7 +114,6 @@ func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 
 	// Join t.Tags with tags derived from the commit.
 	r.Tags = make([]string, 0, len(t.Tags)+3)
-	r.Tags = append(r.Tags, t.Tags...)
 	r.Tags = append(
 		r.Tags,
 		strpair.Format(bbv1.TagBuildSet, protoutil.GitilesBuildSet(commit)),
@@ -121,6 +121,8 @@ func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 		strpair.Format(bbv1.TagBuildSet, "commit/git/"+commit.Id),
 		strpair.Format("gitiles_ref", t.Ref),
 	)
+	r.Tags = append(r.Tags, t.Tags...)
+	r.Tags = removeDups(r.Tags)
 }
 
 // FromBuildbucketTrigger derives the request properties from the given
@@ -143,4 +145,16 @@ func mergeIntoStruct(s *structpb.Struct, m map[string]string) *structpb.Struct {
 		}
 	}
 	return s
+}
+
+// removeDups removes duplicates from the list, modifying it in-place.
+func removeDups(l []string) []string {
+	seen := stringset.New(len(l))
+	filtered := l[:0]
+	for _, s := range l {
+		if seen.Add(s) {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
 }
