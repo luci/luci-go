@@ -40,9 +40,10 @@ func TestQuery(t *testing.T) {
 			InvocationIDs:       invocations.NewIDSet("inv1"),
 			PageSize:            100,
 			TestResultPredicate: &pb.TestResultPredicate{},
+			WithRBECASHash:      false,
 		}
 
-		mustFetch := func(q *Query) (arts []*pb.Artifact, token string) {
+		mustFetch := func(q *Query) (arts []*ArtifactWithHash, token string) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
 			arts, tok, err := q.Fetch(ctx)
@@ -356,6 +357,20 @@ func TestQuery(t *testing.T) {
 				"invocations/inv1/artifacts/a0",
 				"invocations/inv1/tests/t/results/r/artifacts/a0",
 			})
+		})
+
+		Convey(`WithRBECASHash`, func() {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "tr/t/r", "a", map[string]interface{}{
+					"ContentType": "text/plain",
+					"Size":        64,
+					"RBECASHash":  "deadbeef",
+				}),
+			)
+			q.WithRBECASHash = true
+			actual, _ := mustFetch(q)
+			So(actual, ShouldHaveLength, 1)
+			So(actual[0].RBECASHash, ShouldEqual, "deadbeef")
 		})
 	})
 }

@@ -67,9 +67,14 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		FollowEdges:         in.GetPredicate().GetFollowEdges(),
 		ContentTypesRegexp:  in.GetPredicate().GetContentTypeRegexp(),
 	}
-	arts, token, err := q.Fetch(ctx)
+	artsWithHash, token, err := q.Fetch(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	arts := make([]*pb.Artifact, 0, len(artsWithHash))
+	for _, a := range artsWithHash {
+		arts = append(arts, a.Artifact)
 	}
 
 	if err := s.populateFetchURLs(ctx, arts...); err != nil {

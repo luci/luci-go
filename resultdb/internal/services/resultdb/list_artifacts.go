@@ -83,9 +83,14 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	}
 
 	// Read artifacts.
-	arts, token, err := q.Fetch(span.Single(ctx))
+	artsWithHash, token, err := q.Fetch(span.Single(ctx))
 	if err != nil {
 		return nil, err
+	}
+
+	arts := make([]*pb.Artifact, 0, len(artsWithHash))
+	for _, a := range artsWithHash {
+		arts = append(arts, a.Artifact)
 	}
 
 	if err := s.populateFetchURLs(ctx, arts...); err != nil {
