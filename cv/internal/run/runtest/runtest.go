@@ -16,12 +16,20 @@
 package runtest
 
 import (
+	"context"
 	"sort"
 
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // Runs returns list of runs from tasks for Run Manager.
@@ -42,4 +50,56 @@ func SortedRuns(in tqtesting.TaskList) common.RunIDs {
 	runs := Runs(in)
 	sort.Sort(runs)
 	return runs
+}
+
+// Tasks returns all Run tasks sorted by ETA.
+func Tasks(in tqtesting.TaskList) tqtesting.TaskList {
+	ret := make(tqtesting.TaskList, 0, len(in))
+	for _, t := range in.SortByETA() {
+		switch t.Payload.(type) {
+		case *eventpb.PokeRunTask, *eventpb.KickPokeRunTask:
+			ret = append(ret, t)
+		}
+	}
+	return ret
+}
+
+func iterEventBox(ctx context.Context, runID common.RunID, cb func(*eventpb.Event)) {
+	runKey := datastore.MakeKey(ctx, run.RunKind, string(runID))
+	events, err := eventbox.List(ctx, runKey)
+	So(err, ShouldBeNil)
+	for _, item := range events {
+		evt := &eventpb.Event{}
+		So(proto.Unmarshal(item.Value, evt), ShouldBeNil)
+		cb(evt)
+	}
+}
+
+func matchEventBox(ctx context.Context, runID common.RunID, targets []*eventpb.Event) (matched, remaining []*eventpb.Event) {
+	remaining = make([]*eventpb.Event, len(targets))
+	copy(remaining, targets)
+	iterEventBox(ctx, runID, func(evt *eventpb.Event) {
+		for i, r := range remaining {
+			if proto.Equal(evt, r) {
+				matched = append(matched, r)
+				remaining[i] = remaining[len(remaining)-1]
+				remaining[len(remaining)-1] = nil
+				remaining = remaining[:len(remaining)-1]
+				return
+			}
+		}
+	})
+	return
+}
+
+// AssertNotInEventbox asserts none of the target events exists in the Eventbox.
+func AssertNotInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
+	matched, _ := matchEventBox(ctx, runID, targets)
+	So(matched, ShouldBeEmpty)
+}
+
+// AssertInEventbox asserts all target events exist in the Eventbox.
+func AssertInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
+	_, remaining := matchEventBox(ctx, runID, targets)
+	So(remaining, ShouldBeEmpty)
 }

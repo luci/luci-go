@@ -156,18 +156,23 @@ func (tl TaskList) Pending() TaskList {
 
 // SortByETA sorts the list in-place by ETA.
 //
+// The full sorting key is
+// (!task.Executing, task.ETA, task.Class, task.Name)
+//
 // Returns it to allow chaining calls.
 func (tl TaskList) SortByETA() TaskList {
 	sort.Slice(tl, func(i, j int) bool {
 		switch l, r := tl[i], tl[j]; {
 		case l.Executing && !r.Executing:
 			return true
-		case !r.Executing && r.Executing:
+		case !l.Executing && r.Executing:
 			return false
-		case l.ETA.Equal(r.ETA):
-			return l.Name < r.Name
-		default:
+		case !l.ETA.Equal(r.ETA):
 			return l.ETA.Before(r.ETA)
+		case l.Class != r.Class:
+			return l.Class < r.Class
+		default:
+			return l.Name < r.Name
 		}
 	})
 	return tl
