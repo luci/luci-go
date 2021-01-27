@@ -17,11 +17,11 @@ package gs
 import (
 	"bytes"
 	"context"
+	"context/ctxhttp"
 	"fmt"
 	"net/http"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/clock"

@@ -17,6 +17,7 @@ package internal
 import (
 	"bytes"
 	"context"
+	"context/ctxhttp"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,8 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-
-	"golang.org/x/net/context/ctxhttp"
 )
 
 // ClientFactory knows how to produce http.Client that attach proper OAuth

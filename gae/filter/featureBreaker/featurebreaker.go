@@ -15,13 +15,12 @@
 package featureBreaker
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"runtime"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 // BreakFeatureCallback can be used to break features at the time of the call.

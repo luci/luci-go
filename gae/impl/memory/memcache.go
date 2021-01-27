@@ -15,6 +15,7 @@
 package memory
 
 import (
+	"context"
 	"encoding/binary"
 	"sync"
 	"time"
@@ -24,8 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-
-	"golang.org/x/net/context"
 )
 
 type mcItem struct {

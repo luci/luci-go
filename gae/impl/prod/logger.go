@@ -15,13 +15,12 @@
 package prod
 
 import (
+	"context"
 	"fmt"
 
 	"go.chromium.org/luci/common/logging"
 
 	"google.golang.org/appengine/log"
-
-	"golang.org/x/net/context"
 )
 
 // useLogging adds a logging.Logger implementation to the context which logs to

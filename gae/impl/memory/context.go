@@ -15,13 +15,12 @@
 package memory
 
 import (
+	"context"
 	"errors"
 	"strings"
 
 	"go.chromium.org/luci/common/logging/memlogger"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 var serializationDeterministic = false

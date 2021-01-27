@@ -15,10 +15,10 @@
 package git
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestProjectContext(t *testing.T) {

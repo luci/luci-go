@@ -15,10 +15,10 @@
 package poller
 
 import (
+	"context"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 

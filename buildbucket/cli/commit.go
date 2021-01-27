@@ -16,6 +16,7 @@ package cli
 
 import (
 	"context"
+	"context/ctxhttp"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -23,8 +24,6 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-
-	"golang.org/x/net/context/ctxhttp"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )

@@ -15,8 +15,9 @@
 package count
 
 import (
+	"context"
+
 	"go.chromium.org/luci/gae/service/user"
-	"golang.org/x/net/context"
 )
 
 // UserCounter is the counter object for the User service.

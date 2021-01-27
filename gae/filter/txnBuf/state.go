@@ -16,6 +16,7 @@ package txnBuf
 
 import (
 	"bytes"
+	"context"
 	"sync"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -24,7 +25,6 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-	"golang.org/x/net/context"
 )
 
 // DefaultSizeBudget is the size budget for the root transaction.

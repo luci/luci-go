@@ -15,6 +15,7 @@
 package memory
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -23,8 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

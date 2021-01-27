@@ -16,6 +16,7 @@ package googleoauth
 
 import (
 	"context"
+	"context/ctxhttp"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -24,8 +25,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"google.golang.org/api/googleapi"
-
-	"golang.org/x/net/context/ctxhttp"
 )
 
 const (

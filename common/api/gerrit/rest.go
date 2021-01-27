@@ -17,6 +17,7 @@ package gerrit
 import (
 	"bytes"
 	"context"
+	"context/ctxhttp"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,7 +28,6 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
