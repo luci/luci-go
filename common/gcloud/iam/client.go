@@ -17,6 +17,7 @@ package iam
 import (
 	"bytes"
 	"context"
+	"context/ctxhttp"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,7 +25,6 @@ import (
 	"net/url"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 

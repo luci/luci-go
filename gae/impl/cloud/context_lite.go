@@ -15,9 +15,10 @@
 package cloud
 
 import (
+	"context"
+
 	"cloud.google.com/go/datastore"
 	"github.com/bradfitz/gomemcache/memcache"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/gae/impl/dummy"
 	ds "go.chromium.org/luci/gae/service/datastore"

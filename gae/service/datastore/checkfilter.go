@@ -15,11 +15,10 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
-
-	"golang.org/x/net/context"
 )
 
 type checkFilter struct {

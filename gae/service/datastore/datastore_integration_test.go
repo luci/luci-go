@@ -15,9 +15,8 @@
 package datastore_test
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging/memlogger"
 

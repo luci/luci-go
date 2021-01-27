@@ -15,7 +15,7 @@
 package txnBuf
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
 )

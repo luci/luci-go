@@ -17,6 +17,7 @@ package gitiles
 import (
 	"bytes"
 	"context"
+	"context/ctxhttp"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -26,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

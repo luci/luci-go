@@ -16,11 +16,11 @@
 package poller
 
 import (
+	"context"
 	"fmt"
 	"hash/fnv"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/protobuf/proto"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 

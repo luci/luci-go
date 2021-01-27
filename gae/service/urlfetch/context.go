@@ -18,10 +18,9 @@
 package urlfetch
 
 import (
+	"context"
 	"errors"
 	"net/http"
-
-	"golang.org/x/net/context"
 )
 
 type key int

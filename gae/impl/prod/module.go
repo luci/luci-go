@@ -15,8 +15,9 @@
 package prod
 
 import (
+	"context"
+
 	"go.chromium.org/luci/gae/service/module"
-	"golang.org/x/net/context"
 	aeModule "google.golang.org/appengine/module"
 )
 

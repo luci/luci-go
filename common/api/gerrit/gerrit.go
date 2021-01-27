@@ -17,6 +17,7 @@ package gerrit
 import (
 	"bytes"
 	"context"
+	"context/ctxhttp"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,8 +28,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-
-	"golang.org/x/net/context/ctxhttp"
 )
 
 const contentType = "application/json; charset=UTF-8"

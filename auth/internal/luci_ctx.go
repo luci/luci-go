@@ -17,6 +17,7 @@ package internal
 import (
 	"bytes"
 	"context"
+	"context/ctxhttp"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -26,7 +27,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth/integration/localauth/rpcs"

@@ -16,12 +16,12 @@ package datastore
 
 import (
 	"container/heap"
+	"context"
 	"fmt"
 	"reflect"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"golang.org/x/net/context"
 )
 
 type resolvedRunCallback func(reflect.Value, CursorCB) error

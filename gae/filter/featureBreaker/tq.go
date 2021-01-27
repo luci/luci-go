@@ -15,9 +15,8 @@
 package featureBreaker
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 
 	tq "go.chromium.org/luci/gae/service/taskqueue"
 )
