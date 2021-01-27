@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "561e5581_a24d5d5b",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-27T22:41:21Z",
+      "side": 1,
+      "message": "Got it. I agree, that doc should be good, and we shouldn\u0027t needlessly duplicate documentation.\n\nI didn\u0027t know there would be 2 actions planned, I just thought that (a) if there is only one planned action, then maybe there can be less abstraction, and (b) if there are 3 or more we don\u0027t need to list them all, 2 examples is usually a good number.",
+      "parentUuid": "6f85d713_9eb5a4dd",
+      "range": {
+        "startLine": 30,
+        "startChar": 14,
+        "endLine": 30,
+        "endChar": 32
+      },
+      "revId": "c8750b72cd77bcdf7d550b39ef56a3e1b16d3c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "be800955_c59e7462",
         "filename": "cv/internal/prjmanager/impl/state/components.go",
         "patchSetId": 1
