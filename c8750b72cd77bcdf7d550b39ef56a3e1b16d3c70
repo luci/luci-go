@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0c536c8d_0a831b30",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-27T22:22:57Z",
+      "side": 1,
+      "message": "I guess this is probably explained more elsewhere in the package, but would probably be good to explain more about this here at the top since the whole file is about performing \"component actions\".\n\n - Is a component a set/list of CLs?\n - What are two planned examples of component actions in practice? Will it be like \"creating a run with these CLs\" or something else?",
+      "range": {
+        "startLine": 30,
+        "startChar": 14,
+        "endLine": 30,
+        "endChar": 32
+      },
+      "revId": "c8750b72cd77bcdf7d550b39ef56a3e1b16d3c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be800955_c59e7462",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-27T22:22:57Z",
+      "side": 1,
+      "message": "nit: component",
+      "range": {
+        "startLine": 145,
+        "startChar": 37,
+        "endLine": 145,
+        "endChar": 47
+      },
+      "revId": "c8750b72cd77bcdf7d550b39ef56a3e1b16d3c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
