@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "05d31eb5_97893b36",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-27T07:33:09Z",
+      "side": 1,
+      "message": "Unfortunately not; openNL terminates with a newline, whereas this one doesn\u0027t.\n\nHOWEVER! Originally I needed this in a bunch of places, but now I don\u0027t! Fixed 😊",
+      "parentUuid": "d6f386bc_c7dfff3d",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "3b226d10f9c358bc1ce8371aaf95f0f6e88a56e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f2be5c8c_ce3c570a",
@@ -49,6 +73,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1c367edd_45c1c541",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-27T07:33:09Z",
+      "side": 1,
+      "message": "Good catch! It\u0027s a bit different (and I added test coverage)",
+      "parentUuid": "f2be5c8c_ce3c570a",
+      "range": {
+        "startLine": 203,
+        "startChar": 3,
+        "endLine": 203,
+        "endChar": 4
+      },
+      "revId": "3b226d10f9c358bc1ce8371aaf95f0f6e88a56e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1460948f_ff3dfbc8",
         "filename": "common/proto/google/descutil/printer.go",
         "patchSetId": 2
@@ -60,6 +108,30 @@
       "writtenOn": "2021-01-25T23:56:52Z",
       "side": 1,
       "message": "Is `json_name` not in field.Options so that we need to explicitly handle it here?",
+      "range": {
+        "startLine": 274,
+        "startChar": 1,
+        "endLine": 274,
+        "endChar": 62
+      },
+      "revId": "3b226d10f9c358bc1ce8371aaf95f0f6e88a56e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b360359_d1b007e9",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-27T07:33:09Z",
+      "side": 1,
+      "message": "Yeah, unfortunately it\u0027s got a special designation.",
+      "parentUuid": "1460948f_ff3dfbc8",
       "range": {
         "startLine": 274,
         "startChar": 1,
