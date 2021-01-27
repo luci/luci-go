@@ -49,17 +49,6 @@ router.setRoutes({
       },
     },
     {
-      path: '/error',
-      name: 'error',
-      action: async (_ctx, cmd) => {
-        await import(
-          /* webpackChunkName: "error_page" */
-          /* webpackPrefetch: true */
-          './pages/error_page');
-        return cmd.component('milo-error-page');
-      },
-    },
-    {
       path: '/',
       component: 'milo-invocation-state-provider',
       children: [
@@ -229,15 +218,4 @@ router.setRoutes({
     },
     notFoundRoute,
   ],
-});
-
-appRoot?.addEventListener('error', (event) => {
-  const searchParams = new URLSearchParams({
-    reason: event.message,
-    sourceUrl: window.location.toString(),
-  });
-  Router.go({
-    pathname: router.urlForName('error'),
-    search: '?' + searchParams.toString(),
-  });
 });
