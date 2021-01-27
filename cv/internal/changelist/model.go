@@ -49,6 +49,15 @@ func GobID(host string, change int64) (ExternalID, error) {
 	return ExternalID(fmt.Sprintf("gerrit/%s/%d", host, change)), nil
 }
 
+// MustGobID is like GobID but panic on error.
+func MustGobID(host string, change int64) ExternalID {
+	ret, err := GobID(host, change)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // ParseGobID returns Gerrit host and change if this is a GobID.
 func (e ExternalID) ParseGobID() (host string, change int64, err error) {
 	parts := strings.Split(string(e), "/")
