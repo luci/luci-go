@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6f85d713_9eb5a4dd",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T22:33:50Z",
+      "side": 1,
+      "message": "So, component is explained here: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto;l\u003d166\n\nthe entire `state` package relies on that doc (i\u0027d like to merge the two packages, but I can\u0027t due to circular dependency which is easiest to break by moving protobuf to a diff package, hence, status quo)\n\nIf you have questions/comments on that proto, I\u0027ll gladly address in a CL (or send me one 😊).\n\n\n\u003e What are two planned examples\n\nFirst, how do you know it\u0027s two? 😊\nThe 2 actions currently planned are indeed:\n * creation of Run\n * undoing CQ votes on CLs for which Run can\u0027t be created.\n\nI meant to document in the follow up CL actually implementing ComponentActor. Also, I\u0027m not 100% sure there will be just 2 actions.",
+      "parentUuid": "0c536c8d_0a831b30",
+      "range": {
+        "startLine": 30,
+        "startChar": 14,
+        "endLine": 30,
+        "endChar": 32
+      },
+      "revId": "c8750b72cd77bcdf7d550b39ef56a3e1b16d3c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "be800955_c59e7462",
         "filename": "cv/internal/prjmanager/impl/state/components.go",
         "patchSetId": 1
