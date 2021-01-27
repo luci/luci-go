@@ -16,11 +16,12 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
+import { observable } from 'mobx';
 
-import '../components/signin';
-import { UserUpdateEvent } from '../components/signin';
 import { AppState, provideAppState } from '../context/app_state/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
+import './signin';
+import { UserUpdateEvent } from './signin';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
   window.gapi?.load('auth2', () => {
@@ -50,9 +51,25 @@ export class PageLayoutElement extends MobxLitElement {
   readonly appState = new AppState();
   readonly configsStore = new UserConfigsStore();
 
+  @observable.ref errorMsg: string | null = null;
+
   constructor() {
     super();
     gAuthPromise.then((gAuth) => this.appState.gAuth = gAuth);
+  }
+
+  errorHandler = (event: ErrorEvent) => {
+    this.errorMsg = event.message;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener('error', this.errorHandler);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener('error', this.errorHandler);
+    super.disconnectedCallback();
   }
 
   protected render() {
@@ -86,7 +103,15 @@ export class PageLayoutElement extends MobxLitElement {
           ></milo-signin>` : ''}
         </div>
       </div>
-      <slot></slot>
+      ${this.errorMsg === null ?
+      html`<slot></slot>` :
+      html`
+      <div id="error-label">An error occurred:</div>
+      <div id="error-message">
+        ${this.errorMsg.split('\n').map((line) => html`<p>${line}</p>`)}
+      </div>
+      `
+      }
     `;
   }
 
@@ -142,6 +167,16 @@ export class PageLayoutElement extends MobxLitElement {
     }
     .interactive-icon:hover {
       opacity: 0.8;
+    }
+
+    #error-label {
+      margin: 8px 16px;
+    }
+
+    #error-message {
+      margin: 8px 16px;
+      background-color: var(--block-background-color);
+      padding: 5px;
     }
   `;
 }
