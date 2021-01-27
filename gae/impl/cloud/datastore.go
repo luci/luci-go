@@ -15,6 +15,7 @@
 package cloud
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -28,8 +29,6 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/iterator"
-
-	"golang.org/x/net/context"
 )
 
 type cloudDatastore struct {

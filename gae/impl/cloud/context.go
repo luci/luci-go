@@ -15,6 +15,7 @@
 package cloud
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -31,8 +32,6 @@ import (
 	"cloud.google.com/go/datastore"
 	cloudLogging "cloud.google.com/go/logging"
 	"github.com/bradfitz/gomemcache/memcache"
-
-	"golang.org/x/net/context"
 )
 
 var requestStateContextKey = "gae/flex request state"

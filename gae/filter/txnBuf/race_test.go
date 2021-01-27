@@ -15,12 +15,12 @@
 package txnBuf
 
 import (
+	"context"
 	"sync"
 	"testing"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"golang.org/x/net/context"
 )
 
 type Counter struct {

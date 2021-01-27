@@ -15,11 +15,10 @@
 package memory
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/gae/service/info"
 	tq "go.chromium.org/luci/gae/service/taskqueue"

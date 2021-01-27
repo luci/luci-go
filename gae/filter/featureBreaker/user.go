@@ -15,8 +15,9 @@
 package featureBreaker
 
 import (
+	"context"
+
 	"go.chromium.org/luci/gae/service/user"
-	"golang.org/x/net/context"
 )
 
 type userState struct {

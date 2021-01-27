@@ -15,13 +15,13 @@
 package prod
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"time"
 
 	bs "go.chromium.org/luci/gae/service/blobstore"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )

@@ -15,6 +15,7 @@
 package cloud
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"os"
@@ -28,13 +29,11 @@ import (
 	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
 	cloudLogging "cloud.google.com/go/logging"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	iamAPI "google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
 	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
-
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 const (
