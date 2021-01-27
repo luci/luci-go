@@ -16,15 +16,19 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/server/cfgmodule"
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	clientauth "go.chromium.org/luci/auth"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config/server/cfgmodule"
+
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
@@ -68,6 +72,15 @@ func main() {
 			func(rc *router.Context) { refreshConfig(rc, isDev) },
 		)
 
+		// TODO(crbug/1171229): find a better and more general way to flush redis.
+		srv.Routes.GET(
+			"/internal/admin/flush-redis",
+			router.NewMiddlewareChain(auth.Authenticate(&auth.GoogleOAuth2Method{
+				Scopes: []string{clientauth.OAuthScopeEmail},
+			})),
+			func(rc *router.Context) { flushRedis(rc, isDev) },
+		)
+
 		// The service has no UI, so just redirect to the RPC Explorer.
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
@@ -91,4 +104,35 @@ func refreshConfig(rc *router.Context, isDev bool) {
 	}
 	rc.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	rc.Writer.WriteHeader(code)
+}
+
+func flushRedis(rc *router.Context, isDev bool) {
+	// TODO(crbug/1171229): find a better and more general way to flush redis.
+	const group = "administrators"
+	ctx := rc.Context
+
+	do := func() (code int, msg string) {
+		switch allowed, err := auth.IsMember(ctx, group); {
+		case err != nil:
+			errors.Log(ctx, err)
+			return 500, "failed to check auth"
+		case !allowed:
+			return 403, fmt.Sprintf("Must be a member of %q group", group)
+		}
+		conn, err := redisconn.Get(rc.Context)
+		if err != nil {
+			return 500, fmt.Sprintf("failed to connect to Redis: %s", err)
+		}
+		resp, err := conn.Do("FLUSHDB")
+		if err != nil {
+			return 500, fmt.Sprintf("failed to FLUSHDB: %s", err)
+		}
+		return 200, fmt.Sprintf("FLUSHDB done: %s", resp)
+	}
+
+	code, msg := do()
+	rc.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	rc.Writer.WriteHeader(code)
+	rc.Writer.Write([]byte(msg))
+	rc.Writer.Write([]byte{'\n'})
 }
