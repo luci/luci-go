@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -76,7 +77,7 @@ func (r *RequestBuilder) FromWebUITrigger(t *scheduler.WebUITrigger) {
 
 // FromNoopTrigger derives the request properties from the given noop trigger.
 func (r *RequestBuilder) FromNoopTrigger(t *scheduler.NoopTrigger) {
-	r.Properties = structFromMap(map[string]string{
+	r.Properties = mergeIntoStruct(&structpb.Struct{}, map[string]string{
 		"noop_trigger_data": t.Data, // for testing
 	})
 }
@@ -89,23 +90,37 @@ func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 		r.DebugLog("Bad repo URL %q in the trigger - %s", t.Repo, err)
 		return
 	}
+
+	// Merge properties derived from the commit info on top t.Properties.
+	if t.Properties != nil && len(t.Properties.Fields) != 0 {
+		r.Properties = proto.Clone(t.Properties).(*structpb.Struct)
+	} else {
+		r.Properties = &structpb.Struct{
+			Fields: make(map[string]*structpb.Value, 3),
+		}
+	}
+	mergeIntoStruct(r.Properties, map[string]string{
+		"revision":   t.Revision,
+		"branch":     t.Ref,
+		"repository": t.Repo,
+	})
+
 	commit := &buildbucketpb.GitilesCommit{
 		Host:    repo.Host,
 		Project: strings.TrimPrefix(repo.Path, "/"),
 		Id:      t.Revision,
 	}
 
-	r.Properties = structFromMap(map[string]string{
-		"revision":   t.Revision,
-		"branch":     t.Ref,
-		"repository": t.Repo,
-	})
-	r.Tags = []string{
+	// Join t.Tags with tags derived from the commit.
+	r.Tags = make([]string, 0, len(t.Tags)+3)
+	r.Tags = append(r.Tags, t.Tags...)
+	r.Tags = append(
+		r.Tags,
 		strpair.Format(bbv1.TagBuildSet, protoutil.GitilesBuildSet(commit)),
 		// TODO(nodir): remove after switching to ScheduleBuild RPC v2.
 		strpair.Format(bbv1.TagBuildSet, "commit/git/"+commit.Id),
 		strpair.Format("gitiles_ref", t.Ref),
-	}
+	)
 }
 
 // FromBuildbucketTrigger derives the request properties from the given
@@ -117,15 +132,15 @@ func (r *RequestBuilder) FromBuildbucketTrigger(t *scheduler.BuildbucketTrigger)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// structFromMap constructs protobuf.Struct with string keys and values.
-func structFromMap(m map[string]string) *structpb.Struct {
-	out := &structpb.Struct{
-		Fields: make(map[string]*structpb.Value, len(m)),
+// mergeIntoStruct merges `m` into protobuf.Struct returning it.
+func mergeIntoStruct(s *structpb.Struct, m map[string]string) *structpb.Struct {
+	if s.Fields == nil {
+		s.Fields = make(map[string]*structpb.Value, len(m))
 	}
 	for k, v := range m {
-		out.Fields[k] = &structpb.Value{
+		s.Fields[k] = &structpb.Value{
 			Kind: &structpb.Value_StringValue{StringValue: v},
 		}
 	}
-	return out
+	return s
 }

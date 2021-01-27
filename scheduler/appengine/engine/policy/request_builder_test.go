@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRequestBuilder(t *testing.T) {
@@ -50,15 +51,14 @@ func TestRequestBuilder(t *testing.T) {
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Noop{Noop: &api.NoopTrigger{Data: "abc"}},
 		})
-		So(r.Request, ShouldResemble, task.Request{
-			Properties: &structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"noop_trigger_data": {
-						Kind: &structpb.Value_StringValue{StringValue: "abc"},
-					},
+		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"noop_trigger_data": {
+					Kind: &structpb.Value_StringValue{StringValue: "abc"},
 				},
 			},
 		})
+		So(r.Request.Tags, ShouldBeEmpty)
 	})
 
 	Convey("FromGitilesTrigger good", t, func() {
@@ -70,25 +70,62 @@ func TestRequestBuilder(t *testing.T) {
 				Revision: "aaaaaaaa",
 			}},
 		})
-		So(r.Request, ShouldResemble, task.Request{
-			Properties: &structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"revision": {
-						Kind: &structpb.Value_StringValue{StringValue: "aaaaaaaa"},
-					},
-					"branch": {
-						Kind: &structpb.Value_StringValue{StringValue: "refs/heads/master"},
-					},
-					"repository": {
-						Kind: &structpb.Value_StringValue{StringValue: "https://example.googlesource.com/repo.git"},
-					},
+		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"revision": {
+					Kind: &structpb.Value_StringValue{StringValue: "aaaaaaaa"},
+				},
+				"branch": {
+					Kind: &structpb.Value_StringValue{StringValue: "refs/heads/master"},
+				},
+				"repository": {
+					Kind: &structpb.Value_StringValue{StringValue: "https://example.googlesource.com/repo.git"},
 				},
 			},
-			Tags: []string{
-				"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
-				"buildset:commit/git/aaaaaaaa",
-				"gitiles_ref:refs/heads/master",
+		})
+		So(r.Request.Tags, ShouldResemble, []string{
+			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
+			"buildset:commit/git/aaaaaaaa",
+			"gitiles_ref:refs/heads/master",
+		})
+	})
+
+	Convey("FromGitilesTrigger with extra properties and tags", t, func() {
+		r := RequestBuilder{}
+		r.FromTrigger(&internal.Trigger{
+			Payload: &internal.Trigger_Gitiles{Gitiles: &api.GitilesTrigger{
+				Repo:     "https://example.googlesource.com/repo.git",
+				Ref:      "refs/heads/master",
+				Revision: "aaaaaaaa",
+				Properties: mergeIntoStruct(&structpb.Struct{}, map[string]string{
+					"revision": "will-be-overridden",
+					"stuff":    "remains",
+				}),
+				Tags: []string{"tag1:val1", "gitiles_ref:not-overridden"},
+			}},
+		})
+		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"revision": {
+					Kind: &structpb.Value_StringValue{StringValue: "aaaaaaaa"},
+				},
+				"branch": {
+					Kind: &structpb.Value_StringValue{StringValue: "refs/heads/master"},
+				},
+				"repository": {
+					Kind: &structpb.Value_StringValue{StringValue: "https://example.googlesource.com/repo.git"},
+				},
+				"stuff": {
+					Kind: &structpb.Value_StringValue{StringValue: "remains"},
+				},
 			},
+		})
+		So(r.Request.Tags, ShouldResemble, []string{
+			"tag1:val1",
+			"gitiles_ref:not-overridden",
+			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
+			"buildset:commit/git/aaaaaaaa",
+			"gitiles_ref:refs/heads/master",
 		})
 	})
 
@@ -111,20 +148,18 @@ func TestRequestBuilder(t *testing.T) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Buildbucket{Buildbucket: &api.BuildbucketTrigger{
-				Properties: structFromMap(map[string]string{"a": "b"}),
+				Properties: mergeIntoStruct(&structpb.Struct{}, map[string]string{"a": "b"}),
 				Tags:       []string{"c:d"},
 			}},
 		})
-		So(r.Request, ShouldResemble, task.Request{
-			Properties: &structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"a": {
-						Kind: &structpb.Value_StringValue{StringValue: "b"},
-					},
+		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"a": {
+					Kind: &structpb.Value_StringValue{StringValue: "b"},
 				},
 			},
-			Tags: []string{"c:d"},
 		})
+		So(r.Request.Tags, ShouldResemble, []string{"c:d"})
 	})
 
 	Convey("From unknown", t, func() {
