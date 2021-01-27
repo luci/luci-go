@@ -16,12 +16,12 @@ package main
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -61,39 +61,27 @@ func main() {
 
 		isDev := srv.Options.CloudProject == "luci-change-verifier-dev"
 
-		srv.Routes.GET("/internal/cron/refresh-config",
+		srv.Routes.GET(
+			"/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
-			func(rc *router.Context) {
-				// The cron job interval is 1 minute.
-				ctx, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
-				defer cancel()
-				wg := sync.WaitGroup{}
-				errs := make(errors.MultiError, 2)
-
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					errs[0] = servicecfg.ImportConfig(ctx)
-				}()
-
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					errs[1] = configcron.SubmitRefreshTasks(ctx, isDev)
-				}()
-
-				wg.Wait()
-				rc.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-				code := 200
-				for _, err := range errs {
-					if err != nil {
-						errors.Log(ctx, err)
-						code = 500
-					}
-				}
-				rc.Writer.WriteHeader(code)
-			})
-
+			func(rc *router.Context) { refreshConfig(rc, isDev) },
+		)
 		return nil
 	})
+}
+
+func refreshConfig(rc *router.Context, isDev bool) {
+	// The cron job interval is 1 minute.
+	ctx, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
+	defer cancel()
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error { return servicecfg.ImportConfig(ctx) })
+	eg.Go(func() error { return configcron.SubmitRefreshTasks(ctx, isDev) })
+	code := 200
+	if err := eg.Wait(); err != nil {
+		errors.Log(ctx, err)
+		code = 500
+	}
+	rc.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	rc.Writer.WriteHeader(code)
 }
