@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "207cc4f0_08c70824",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-27T04:14:40Z",
+      "side": 1,
+      "message": "currently in every place in code which writes the response status, it must not forget to also save the status for the metric. I find this a bit fragile, it is easy to forget to do it.\n\nI recommend to wrap http.ResponseWrapper, override only WriteStatus and capture there, while not overriding other functions:\n\n  type resWriter struct {\n    http.ResponseWriter\n    status int64\n  }\n\n  func (w *resWriter) WriteStatus(status int) {\n    w.status \u003d status\n    w.ResponseWriter.WriteStatus(status)\n  }\n\n  resW :\u003d \u0026resWriter{Writer: c.Writer}\n  c.Writer \u003d resW\n  defer resW.Close() // writes the metrics\n  \n  ",
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c38cf071_eabaedfe",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-27T04:14:40Z",
+      "side": 1,
+      "message": "nit: how about shorter \"op\"",
+      "range": {
+        "startLine": 36,
+        "startChar": 16,
+        "endLine": 36,
+        "endChar": 25
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cda2b5b3_aeb8ac3b",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-27T04:14:40Z",
+      "side": 1,
+      "message": "please add a comment about valid values?\nor, if this a HTTP status, maybe rename to http_status.",
+      "range": {
+        "startLine": 44,
+        "startChar": 13,
+        "endLine": 44,
+        "endChar": 19
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74bc3db9_e03ecd64",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-27T04:14:40Z",
+      "side": 1,
+      "message": "from the comment or func signature, unclear what are the valid values",
+      "range": {
+        "startLine": 51,
+        "startChar": 69,
+        "endLine": 51,
+        "endChar": 79
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08860906_5825248d",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-27T04:14:40Z",
+      "side": 1,
+      "message": "luci-go almost never uses time.Now() - please use clock.Now",
+      "range": {
+        "startLine": 61,
+        "startChar": 13,
+        "endLine": 61,
+        "endChar": 23
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
