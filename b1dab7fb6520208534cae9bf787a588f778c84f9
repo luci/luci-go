@@ -130,6 +130,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "7841c154_9033cd7b",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T00:26:25Z",
+      "side": 1,
+      "message": "The TQ task will be retried, but will the RM decide to execute the same DeferredSideEffectFn?",
+      "parentUuid": "6ba8e8b7_0bb212c7",
+      "range": {
+        "startLine": 244,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 3
+      },
+      "revId": "b1dab7fb6520208534cae9bf787a588f778c84f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "68e68bc4_95fe28a9",
