@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "007618d6_fa89663c",
+        "filename": "cv/tools/Makefile",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-27T18:45:01Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 75
+      },
+      "revId": "adbfa87169faa2b8debdca2006ffd8ccc0cb57ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
