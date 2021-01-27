@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
@@ -54,18 +55,24 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
+		isDev := srv.Options.CloudProject == "luci-change-verifier-dev"
+		srv.Context = gerrit.UseProd(srv.Context)
+
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
 		diagnosticpb.RegisterDiagnosticServer(srv.PRPC, &diagnostic.DiagnosticServer{})
-		srv.Context = gerrit.UseProd(srv.Context)
-
-		isDev := srv.Options.CloudProject == "luci-change-verifier-dev"
 
 		srv.Routes.GET(
 			"/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
 			func(rc *router.Context) { refreshConfig(rc, isDev) },
 		)
+
+		// The service has no UI, so just redirect to the RPC Explorer.
+		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
+		})
+
 		return nil
 	})
 }
