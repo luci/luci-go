@@ -16,6 +16,69 @@
       "message": "PTAL",
       "revId": "a64f1f7ee535d91a1da940436ffb4c26c6c25f38",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa0c04c4_3a60b8df",
+        "filename": "server/redisconn/admin.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T23:34:44Z",
+      "side": 1,
+      "message": "good thinking!",
+      "range": {
+        "startLine": 63,
+        "startChar": 39,
+        "endLine": 63,
+        "endChar": 44
+      },
+      "revId": "a64f1f7ee535d91a1da940436ffb4c26c6c25f38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c1bf71c_7d979483",
+        "filename": "server/redisconn/adminpb/admin.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T23:34:44Z",
+      "side": 1,
+      "message": "what will the rpcexplorer path be? redisconn.Admin?",
+      "revId": "a64f1f7ee535d91a1da940436ffb4c26c6c25f38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "36a63398_b8a8432b",
+        "filename": "server/redisconn/adminpb/admin.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T23:34:44Z",
+      "side": 1,
+      "message": "how about FlushAllAsync to avoid any confusion in an emergency?",
+      "range": {
+        "startLine": 28,
+        "startChar": 6,
+        "endLine": 28,
+        "endChar": 14
+      },
+      "revId": "a64f1f7ee535d91a1da940436ffb4c26c6c25f38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
