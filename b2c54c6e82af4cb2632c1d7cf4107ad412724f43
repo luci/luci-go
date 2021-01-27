@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a9d9fdc_2e0d273a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-27T07:51:05Z",
+      "side": 1,
+      "message": "PTAL.",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d53d9cd_e2685b78",
+        "filename": "cv/internal/run/impl/cl_update.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-27T07:51:05Z",
+      "side": 1,
+      "message": "Don\u0027t know if there\u0027s a better way except copy pasting.",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
