@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3589955d_5e0d39bf",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-27T00:59:59Z",
+      "side": 1,
+      "message": "I think we can drop the cas_ prefix? I.e. if we support another storage for artifact content, I assume we can extend these metrics by adding another field?",
+      "range": {
+        "startLine": 41,
+        "startChar": 12,
+        "endLine": 41,
+        "endChar": 25
+      },
+      "revId": "82d09b9f7eed38b6ba910c18e3e1a8e938d5a35c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d694c5e_2dde3f20",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-27T00:59:59Z",
+      "side": 1,
+      "message": "size_bucket? So people (like me) will not confuse it with LUCI buckets.",
+      "range": {
+        "startLine": 45,
+        "startChar": 13,
+        "endLine": 45,
+        "endChar": 19
+      },
+      "revId": "82d09b9f7eed38b6ba910c18e3e1a8e938d5a35c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "735c1866_4ab76977",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-27T00:59:59Z",
+      "side": 1,
+      "message": "duration?",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 8
+      },
+      "revId": "82d09b9f7eed38b6ba910c18e3e1a8e938d5a35c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c4a83dc_f72779bc",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-27T00:59:59Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be StatusOK?",
+      "range": {
+        "startLine": 105,
+        "startChar": 24,
+        "endLine": 105,
+        "endChar": 39
+      },
+      "revId": "82d09b9f7eed38b6ba910c18e3e1a8e938d5a35c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
