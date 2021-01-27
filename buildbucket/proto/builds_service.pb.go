@@ -1946,29 +1946,13 @@ type BuildsClient interface {
 	//
 	// Buildbot: if the specified build is a buildbot build, converts it to Build
 	// message with the following rules:
-	// * bucket names are full, e.g. "master.chromium". Note that LUCI buckets
-	//   in v2 are shortened, e.g. "ci".
+	// * bucket names are full, e.g. "luci.infra.try". Note that LUCI buckets
+	//   in v2 are shortened, e.g. "try".
 	// * if a v2 Build field does not make sense in V1, it is unset/empty.
 	// * step support is not implemented for Buildbot builds.
 	// Note that it does not support getting a buildbot build by build number.
 	GetBuild(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Searches for builds.
-	//
-	// Buildbot: can return Buildbot builds, see GetBuild for conversion rules.
-	// For example, response may include a mix of LUCI and Buildbot builds if the
-	// predicate is a CL.
-	// Cannot search in a buildbot bucket or buildbot builder, e.g.
-	// {
-	//   "predicate": {
-	//     "builder": {
-	//       "project": "chromium",
-	//       "bucket": "master.chromium",
-	//       "builder": "linux-rel"
-	//     }
-	//   }
-	// }
-	// will look for builds in "master.chromium" LUCI bucket which probably does
-	// not exist.
 	SearchBuilds(ctx context.Context, in *SearchBuildsRequest, opts ...grpc.CallOption) (*SearchBuildsResponse, error)
 	// Updates a build. Returns an empty build.
 	//
@@ -2121,29 +2105,13 @@ type BuildsServer interface {
 	//
 	// Buildbot: if the specified build is a buildbot build, converts it to Build
 	// message with the following rules:
-	// * bucket names are full, e.g. "master.chromium". Note that LUCI buckets
-	//   in v2 are shortened, e.g. "ci".
+	// * bucket names are full, e.g. "luci.infra.try". Note that LUCI buckets
+	//   in v2 are shortened, e.g. "try".
 	// * if a v2 Build field does not make sense in V1, it is unset/empty.
 	// * step support is not implemented for Buildbot builds.
 	// Note that it does not support getting a buildbot build by build number.
 	GetBuild(context.Context, *GetBuildRequest) (*Build, error)
 	// Searches for builds.
-	//
-	// Buildbot: can return Buildbot builds, see GetBuild for conversion rules.
-	// For example, response may include a mix of LUCI and Buildbot builds if the
-	// predicate is a CL.
-	// Cannot search in a buildbot bucket or buildbot builder, e.g.
-	// {
-	//   "predicate": {
-	//     "builder": {
-	//       "project": "chromium",
-	//       "bucket": "master.chromium",
-	//       "builder": "linux-rel"
-	//     }
-	//   }
-	// }
-	// will look for builds in "master.chromium" LUCI bucket which probably does
-	// not exist.
 	SearchBuilds(context.Context, *SearchBuildsRequest) (*SearchBuildsResponse, error)
 	// Updates a build. Returns an empty build.
 	//
