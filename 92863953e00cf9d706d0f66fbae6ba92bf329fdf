@@ -20,6 +20,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "893b9996_ada5abdc",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-27T20:31:22Z",
+      "side": 1,
+      "message": "Technically speaking, this metric can contain the travel time of contents between the client and ResultDB server as well due to the its streaming implementation. It\u0027s also true for /chrome/infra/http/server_response_latency for \u0027/invocations/*rest\u0027.\n\nI\u0027m afraid that this description may sound that this latency reports the upload/download performance between RBE-CAS(stroage) and ResultDB. Could we rephrase this to be more clear?",
+      "range": {
+        "startLine": 32,
+        "startChar": 43,
+        "endLine": 32,
+        "endChar": 58
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13612ae2_ee9aa82c",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-27T20:31:22Z",
+      "side": 1,
+      "message": "Please specify the unit.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/tsmon/types/metric_data_units.go;l\u003d23-26",
+      "range": {
+        "startLine": 33,
+        "startChar": 2,
+        "endLine": 33,
+        "endChar": 5
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c38cf071_eabaedfe",
         "filename": "resultdb/internal/artifactcontent/metrics.go",
         "patchSetId": 3
@@ -43,6 +89,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8051aeb6_9a1cd5c4",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-27T20:31:22Z",
+      "side": 1,
+      "message": "same as described above.",
+      "range": {
+        "startLine": 42,
+        "startChar": 51,
+        "endLine": 42,
+        "endChar": 66
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9cd6fd59_aba106c3",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-27T20:31:22Z",
+      "side": 1,
+      "message": "unit annotation",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 43,
+        "endChar": 5
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cda2b5b3_aeb8ac3b",
         "filename": "resultdb/internal/artifactcontent/metrics.go",
         "patchSetId": 3
@@ -54,6 +146,29 @@
       "writtenOn": "2021-01-27T04:14:40Z",
       "side": 1,
       "message": "please add a comment about valid values?\nor, if this a HTTP status, maybe rename to http_status.",
+      "range": {
+        "startLine": 44,
+        "startChar": 13,
+        "endLine": 44,
+        "endChar": 19
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ffbff9e_8416b99f",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-27T20:31:22Z",
+      "side": 1,
+      "message": "is this the status ResultDB responded to the client? The description sounds like this status is the status returned to/from the storage, RBE-CAS.\n\nFrom user\u0027s PoV, the storage is ResultDB, not RBE-CAS, but this metric is to provide data as a view of the ResultDB, and the storage is RBE-CAS from ResultDB\u0027s PoV.",
       "range": {
         "startLine": 44,
         "startChar": 13,
@@ -89,6 +204,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "177c9550_3b05b548",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-27T20:31:22Z",
+      "side": 1,
+      "message": "https://www.a-or-an.com/a_an/uploading shows me that it\u0027s \"an\"",
+      "range": {
+        "startLine": 55,
+        "startChar": 46,
+        "endLine": 55,
+        "endChar": 55
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "08860906_5825248d",
         "filename": "resultdb/internal/artifactcontent/metrics.go",
         "patchSetId": 3
@@ -105,6 +243,29 @@
         "startChar": 13,
         "endLine": 61,
         "endChar": 23
+      },
+      "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c355afdf_81178f8b",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-27T20:31:22Z",
+      "side": 1,
+      "message": "I\u0027m not sure if 500 is the best HTTP error code to be reported in the artifact download metric in this case. It\u0027s possible that the client cuts the connection before the full content transmitted.",
+      "range": {
+        "startLine": 130,
+        "startChar": 4,
+        "endLine": 131,
+        "endChar": 10
       },
       "revId": "92863953e00cf9d706d0f66fbae6ba92bf329fdf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
