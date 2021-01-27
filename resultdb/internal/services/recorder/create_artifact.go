@@ -26,6 +26,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"github.com/google/uuid"
@@ -43,6 +44,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -83,17 +85,25 @@ type artifactCreationHandler struct {
 // Handle implements router.Handler.
 func (h *artifactCreationHandler) Handle(c *router.Context) {
 	ac := &artifactCreator{artifactCreationHandler: h}
+	startTime := time.Now()
+	responseStatus := http.StatusInternalServerError
+	defer func() {
+		artifactcontent.TrackArtifactUpload(c.Context, startTime, responseStatus, ac.size)
+	}()
 	err := ac.handle(c)
 	st, ok := appstatus.Get(err)
 	switch {
 	case ok:
 		logging.Warningf(c.Context, "Responding with %s: %s", st.Code(), err)
-		http.Error(c.Writer, st.Message(), grpcutil.CodeStatus(st.Code()))
+		responseStatus = grpcutil.CodeStatus(st.Code())
+		http.Error(c.Writer, st.Message(), responseStatus)
 	case err != nil:
 		logging.Errorf(c.Context, "Internal server error: %s", err)
-		http.Error(c.Writer, "Internal server error", http.StatusInternalServerError)
+		responseStatus = http.StatusInternalServerError
+		http.Error(c.Writer, "Internal server error", responseStatus)
 	default:
-		c.Writer.WriteHeader(http.StatusNoContent)
+		responseStatus = http.StatusNoContent
+		c.Writer.WriteHeader(responseStatus)
 	}
 }
 
