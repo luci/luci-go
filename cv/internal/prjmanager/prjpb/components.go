@@ -15,7 +15,7 @@
 package prjpb
 
 import (
-	"go.chromium.org/luci/cv/internal/prjmanager/prjpb/copyonwrite"
+	"go.chromium.org/luci/cv/internal/prjmanager/copyonwrite"
 )
 
 // COWComponents copy-on-write modifies components.

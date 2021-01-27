@@ -18,7 +18,7 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager/prjpb/copyonwrite"
+	"go.chromium.org/luci/cv/internal/prjmanager/copyonwrite"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
