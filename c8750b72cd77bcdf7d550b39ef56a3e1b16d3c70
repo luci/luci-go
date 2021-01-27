@@ -72,6 +72,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fab36e6e_bfe719e8",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T22:57:38Z",
+      "side": 1,
+      "message": "added example to cAction in this CL.",
+      "parentUuid": "561e5581_a24d5d5b",
+      "range": {
+        "startLine": 30,
+        "startChar": 14,
+        "endLine": 30,
+        "endChar": 32
+      },
+      "revId": "c8750b72cd77bcdf7d550b39ef56a3e1b16d3c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be800955_c59e7462",
@@ -85,6 +109,30 @@
       "writtenOn": "2021-01-27T22:22:57Z",
       "side": 1,
       "message": "nit: component",
+      "range": {
+        "startLine": 145,
+        "startChar": 37,
+        "endLine": 145,
+        "endChar": 47
+      },
+      "revId": "c8750b72cd77bcdf7d550b39ef56a3e1b16d3c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4aa83ef2_7838dc77",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T22:57:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be800955_c59e7462",
       "range": {
         "startLine": 145,
         "startChar": 37,
