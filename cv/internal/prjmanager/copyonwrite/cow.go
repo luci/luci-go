@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package copyonwrite providers helpers for modifying slices in Copy-on-Write way.
 package copyonwrite
 
 import (
