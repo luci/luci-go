@@ -148,7 +148,7 @@ func (_ *DiagnosticServer) checkAllowed(ctx context.Context) error {
 }
 
 var regexCrRevPath = regexp.MustCompile(`/([ci])/(\d+)(/(\d+))?`)
-var regexGoB = regexp.MustCompile(`(\w+-)+review\.googlesource\.com/(#/)?(c/)?(([^\+]+)/\+/)?(\d+)(/(\d+)?)?`)
+var regexGoB = regexp.MustCompile(`((\w+-)+review\.googlesource\.com)/(#/)?(c/)?(([^\+]+)/\+/)?(\d+)(/(\d+)?)?`)
 
 func parseGerritURL(s string) (changelist.ExternalID, error) {
 	u, err := url.Parse(s)
@@ -176,11 +176,13 @@ func parseGerritURL(s string) (changelist.ExternalID, error) {
 	} else {
 		m := regexGoB.FindStringSubmatch(s)
 		if m == nil {
-			return "", errors.New("invalid Gerrit URL")
+			return "", errors.Reason("Gerrit URL didn't match regexp %q", regexGoB.String()).Err()
 		}
-		host = u.Host
-		if change, err = strconv.ParseInt(m[6], 10, 64); err != nil {
-			return "", errors.Reason("invalid crrev.com URL change number /%s/", m[6]).Err()
+		if host = m[1]; host == "" {
+			return "", errors.New("invalid Gerrit host")
+		}
+		if change, err = strconv.ParseInt(m[7], 10, 64); err != nil {
+			return "", errors.Reason("invalid Gerrit URL change number /%s/", m[7]).Err()
 		}
 	}
 	return changelist.GobID(host, change)
