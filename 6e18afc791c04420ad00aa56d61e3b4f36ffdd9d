@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35917881_3aa1780a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-27T02:06:53Z",
+      "side": 1,
+      "message": "PTAL, it\u0027s not a big deal, just for nicer internal representations (IIUC, tags will be deduped either way by Buildbucket)",
+      "revId": "6e18afc791c04420ad00aa56d61e3b4f36ffdd9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
