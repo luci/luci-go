@@ -69,6 +69,8 @@ type Change struct {
 	Reviewers              Reviewers               `json:"reviewers"`
 	RevertOf               int                     `json:"revert_of"`
 	CurrentRevision        string                  `json:"current_revision"`
+	CherryPickOfChange     int                     `json:"cherry_pick_of_change"`
+	CherryPickOfPatchset   int                     `json:"cherry_pick_of_patch_set"`
 	Revisions              map[string]RevisionInfo `json:"revisions"`
 	// MoreChanges is not part of a Change, but gerrit piggy-backs on the
 	// last Change in a page to set this flag if there are more changes
