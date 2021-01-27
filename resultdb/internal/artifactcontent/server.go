@@ -157,6 +157,8 @@ type contentRequest struct {
 
 	contentType spanner.NullString
 	size        spanner.NullInt64
+
+	metricResponseStatusCode int
 }
 
 func (r *contentRequest) handle(c *router.Context) {
@@ -248,6 +250,7 @@ func (r *contentRequest) sendError(ctx context.Context, err error) {
 		logging.Errorf(ctx, "responding with: %s", err)
 		http.Error(r.w, "Internal server error", http.StatusInternalServerError)
 	} else {
+		r.metricResponseStatusCode = httpCode
 		logging.Warningf(ctx, "responding with: %s", st.Message())
 		http.Error(r.w, st.Message(), httpCode)
 	}
