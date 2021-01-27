@@ -76,8 +76,10 @@ type HostOptions struct {
 //
 // TODO(vadimsh):
 //  * Allow adding a middleware to the default middleware chain.
-//  * Allow registering pRPC servers.
 type Host interface {
+	// ServiceRegistrar is a registrar that can be used to register gRPC services.
+	ServiceRegistrar() grpc.ServiceRegistrar
+
 	// Routes returns a router that servers HTTP requests hitting the main port.
 	//
 	// The module can use it to register additional request handlers.
