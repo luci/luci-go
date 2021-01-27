@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "109817d4_6d5cf17f",
+        "filename": "scheduler/appengine/engine/policy/request_builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-27T00:01:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9d9c561_b97b3a17",
+      "range": {
+        "startLine": 117,
+        "startChar": 17,
+        "endLine": 117,
+        "endChar": 24
+      },
+      "revId": "2a041c80df9aa80f8099dfd6295ef67c3d71766b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4e6a6aed_83658a0f",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-01-26T23:57:46Z",
       "side": 1,
       "message": "nit: overridden\n\n(otherwise it sounds like this tag value is NOT overriding the other one, but it is!)",
+      "range": {
+        "startLine": 104,
+        "startChar": 49,
+        "endLine": 104,
+        "endChar": 59
+      },
+      "revId": "2a041c80df9aa80f8099dfd6295ef67c3d71766b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f69c298c_f8ffec8d",
+        "filename": "scheduler/appengine/engine/policy/request_builder_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-27T00:01:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e6a6aed_83658a0f",
       "range": {
         "startLine": 104,
         "startChar": 49,
