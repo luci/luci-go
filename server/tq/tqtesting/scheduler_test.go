@@ -296,9 +296,10 @@ func TestTaskList(t *testing.T) {
 	Convey("With task list", t, func() {
 		var epoch = time.Unix(1442540000, 0)
 
-		task := func(payload int, exec bool, eta int, name string) *Task {
+		task := func(payload int, exec bool, eta int, class, name string) *Task {
 			return &Task{
 				Name:      name,
+				Class:     class,
 				Executing: exec,
 				ETA:       epoch.Add(time.Duration(eta) * time.Second),
 				Payload:   &durationpb.Duration{Seconds: int64(payload)},
@@ -306,12 +307,14 @@ func TestTaskList(t *testing.T) {
 		}
 
 		tl := TaskList{
-			task(0, true, 3, ""),
-			task(1, false, 1, ""),
-			task(2, true, 2, ""),
-			task(3, false, 4, ""),
-			task(4, true, 5, "b"),
-			task(5, true, 5, "a"),
+			task(0, true, 3, "", ""),
+			task(1, false, 1, "", ""),
+			task(2, true, 2, "", ""),
+			task(3, false, 4, "", ""),
+			task(4, true, 5, "classB", ""),
+			task(5, true, 5, "classA", ""),
+			task(6, true, 5, "classA", "b"),
+			task(7, true, 5, "classA", "a"),
 		}
 
 		Convey("Payloads", func() {
@@ -322,6 +325,8 @@ func TestTaskList(t *testing.T) {
 				{Seconds: 3},
 				{Seconds: 4},
 				{Seconds: 5},
+				{Seconds: 6},
+				{Seconds: 7},
 			})
 		})
 
@@ -331,6 +336,8 @@ func TestTaskList(t *testing.T) {
 				{Seconds: 2},
 				{Seconds: 4},
 				{Seconds: 5},
+				{Seconds: 6},
+				{Seconds: 7},
 			})
 
 			So(tl.Pending().Payloads(), ShouldResembleProto, []*durationpb.Duration{
@@ -342,10 +349,12 @@ func TestTaskList(t *testing.T) {
 		Convey("SortByETA", func() {
 			So(tl.SortByETA().Payloads(), ShouldResembleProto, []*durationpb.Duration{
 				{Seconds: 2},
-				{Seconds: 1},
 				{Seconds: 0},
 				{Seconds: 5},
+				{Seconds: 7},
+				{Seconds: 6},
 				{Seconds: 4},
+				{Seconds: 1},
 				{Seconds: 3},
 			})
 		})

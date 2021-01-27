@@ -17,6 +17,7 @@ package impl
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -43,6 +44,8 @@ func init() {
 		},
 	)
 }
+
+var pokeInterval = 5 * time.Minute
 
 func pokeRunTask(ctx context.Context, runID common.RunID) error {
 	ctx = logging.SetField(ctx, "run", runID)
@@ -156,11 +159,12 @@ func (rm *runManager) SaveState(ctx context.Context, st eventbox.State, ev event
 
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
-	startEvents     eventbox.Events
-	cancelEvents    eventbox.Events
-	pokeEvents      eventbox.Events
-	newConfigEvents eventbox.Events
-	finishedEvents  eventbox.Events
+	startEvents        eventbox.Events
+	cancelEvents       eventbox.Events
+	pokeEvents         eventbox.Events
+	newConfigEvents    eventbox.Events
+	finishedEvents     eventbox.Events
+	nextReadyEventTime time.Time
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -170,6 +174,12 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		// There is no way to recover on its own.
 		logging.Errorf(ctx, "CRITICAL: failed to deserialize event %q: %s", item.ID, err)
 		panic(err)
+	}
+	if pa := e.GetProcessAfter().AsTime(); pa.After(clock.Now(ctx)) {
+		if tr.nextReadyEventTime.IsZero() || pa.Before(tr.nextReadyEventTime) {
+			tr.nextReadyEventTime = pa
+		}
+		return
 	}
 	switch e.GetEvent().(type) {
 	case *eventpb.Event_Start:
@@ -230,5 +240,22 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		// TODO(tandrii,yiwzhang): implement poke.
 		ret = append(ret, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: s})
 	}
+
+	err = enqueueNextPoke(ctx, rm.runID, tr.nextReadyEventTime)
 	return
+}
+
+func enqueueNextPoke(ctx context.Context, runID common.RunID, nextReadyEventTime time.Time) error {
+	switch now := clock.Now(ctx); {
+	case nextReadyEventTime.IsZero():
+		return run.Poke(ctx, runID, pokeInterval)
+	case now.After(nextReadyEventTime):
+		// It is possible that by this time, next ready event is already overdue.
+		// Invoke Run Manager immediately.
+		return eventpb.Dispatch(ctx, string(runID), time.Time{})
+	case nextReadyEventTime.Before(now.Add(pokeInterval)):
+		return eventpb.Dispatch(ctx, string(runID), nextReadyEventTime)
+	default:
+		return run.Poke(ctx, runID, pokeInterval)
+	}
 }

@@ -19,7 +19,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -30,25 +32,37 @@ import (
 
 // Start tells RunManager to start the given run.
 func Start(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID, &eventpb.Event{
+	return sendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Start{
 			Start: &eventpb.Start{},
 		},
 	})
 }
 
+// PokeNow tells RunManager to check its own state immediately.
+func PokeNow(ctx context.Context, runID common.RunID) error {
+	return Poke(ctx, runID, 0)
+}
+
 // Poke tells RunManager to check its own state.
-func Poke(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID, &eventpb.Event{
+func Poke(ctx context.Context, runID common.RunID, after time.Duration) error {
+	evt := &eventpb.Event{
 		Event: &eventpb.Event_Poke{
 			Poke: &eventpb.Poke{},
 		},
-	})
+	}
+	if after > 0 {
+		t := clock.Now(ctx).Add(after)
+		evt.ProcessAfter = timestamppb.New(t)
+		return send(ctx, runID, evt, t)
+
+	}
+	return sendNow(ctx, runID, evt)
 }
 
 // UpdateConfig tells RunManager to update the given Run to new config.
 func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
-	return send(ctx, runID, &eventpb.Event{
+	return sendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_NewConfig{
 			NewConfig: &eventpb.NewConfig{
 				Hash:     hash,
@@ -62,7 +76,7 @@ func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion
 //
 // TODO(yiwzhang,tandrii): support reason.
 func Cancel(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID, &eventpb.Event{
+	return sendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Cancel{
 			Cancel: &eventpb.Cancel{},
 		},
@@ -72,15 +86,26 @@ func Cancel(ctx context.Context, runID common.RunID) error {
 // NotifyFinished tells RunManager that Run has finished in CQDaemon.
 //
 // TODO(crbug/1141880): Remove this event after migration.
-func NotifyFinished(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID, &eventpb.Event{
+func NotifyFinished(ctx context.Context, runID common.RunID, after time.Duration) error {
+	evt := &eventpb.Event{
 		Event: &eventpb.Event_Finished{
 			Finished: &eventpb.Finished{},
 		},
-	})
+	}
+	if after > 0 {
+		t := clock.Now(ctx).Add(after)
+		evt.ProcessAfter = timestamppb.New(t)
+		return send(ctx, runID, evt, t)
+
+	}
+	return sendNow(ctx, runID, evt)
 }
 
-func send(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
+func sendNow(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
+	return send(ctx, runID, evt, time.Time{})
+}
+
+func send(ctx context.Context, runID common.RunID, evt *eventpb.Event, eta time.Time) error {
 	value, err := proto.Marshal(evt)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
@@ -90,5 +115,5 @@ func send(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
 	if err := eventbox.Emit(ctx, value, to); err != nil {
 		return err
 	}
-	return eventpb.Dispatch(ctx, rid, time.Time{} /*asap*/)
+	return eventpb.Dispatch(ctx, rid, eta)
 }

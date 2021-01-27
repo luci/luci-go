@@ -18,6 +18,7 @@ package cv.run.eventpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 
+import "google/protobuf/timestamp.proto";
 
 // Event is a container for all kinds of events a Run Manager can receive.
 message Event {
@@ -52,6 +53,10 @@ message Event {
     // TODO(crbug/1141880): Remove this event after migration.
     Finished finished = 30;
   }
+
+  // Instructs Run Manager that this event can only be processed after
+  // this timestamp.
+  google.protobuf.Timestamp process_after = 20;
 }
 
 message Start {
