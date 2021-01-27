@@ -48,11 +48,11 @@ func (s *State) prepareComponentActions(ctx context.Context) ([]cAction, error) 
 	// First, do quick serial evaluation of components. Most frequently, this
 	// should result in no actions.
 	pclGetter := s.makePCLGetter()
-	evaluator := s.testComponentPreevaluator
-	if evaluator == nil {
-		// TODO(tandrii): add production implementation.
-		return nil, nil
+	var evaluator componentPreevaluator = &componentPreevaluatorImpl{}
+	if s.testComponentPreevaluator != nil {
+		evaluator = s.testComponentPreevaluator // test only.
 	}
+
 	var potential []cAction
 	now := clock.Now(ctx)
 	for i, c := range s.PB.GetComponents() {
@@ -201,4 +201,43 @@ func (s *State) makePCLGetter() pclGetter {
 		}
 		return pcls[i]
 	}
+}
+
+// componentPreevaluatorImpl implements componentPreevaluator for production.
+type componentPreevaluatorImpl struct{}
+
+// shouldEvaluate implements componentPreevaluator.
+func (*componentPreevaluatorImpl) shouldEvaluate(now time.Time, p pclGetter, c *prjpb.Component) (ce componentActor, skip bool) {
+	if !c.GetDirty() && c.GetDecisionTime().AsTime().After(now) {
+		skip = true
+	} else {
+		ce = &componentActorImpl{c: c, pclGetter: p}
+	}
+	return
+}
+
+// componentActorImpl implements componentActor in production.
+type componentActorImpl struct {
+	c         *prjpb.Component
+	pclGetter pclGetter
+}
+
+// shouldAct implements componentActor.
+func (a *componentActorImpl) shouldAct(ctx context.Context) (bool, error) {
+	// TODO(tandrii): implement.
+	return true, nil
+}
+
+// act implements componentActor.
+func (a *componentActorImpl) act(ctx context.Context) (*prjpb.Component, error) {
+	// TODO(tandrii): implement.
+	if !a.c.GetDirty() {
+		return a.c, nil
+	}
+	return &prjpb.Component{
+		Clids:        a.c.GetClids(),
+		DecisionTime: a.c.GetDecisionTime(),
+		Pruns:        a.c.GetPruns(),
+		Dirty:        false,
+	}, nil
 }
