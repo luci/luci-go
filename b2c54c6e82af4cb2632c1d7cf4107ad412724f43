@@ -20,6 +20,69 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "66424f96_0901840c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "lgtm % suggestions \u0026\u0026 follow ups",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a601572_207fac45",
+        "filename": "cv/internal/run/impl/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "btw, this is missing notifying PM that run has finished \u0026\u0026 it\u0027s worth asserting in tests below. I\u0027m OK with a follow up CL.",
+      "range": {
+        "startLine": 51,
+        "startChar": 8,
+        "endLine": 51,
+        "endChar": 11
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81eeb63f_0bfefced",
+        "filename": "cv/internal/run/impl/cl_update.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "just Patchset.\n\nOur Runs *today* are bound to the patchset, not MinEquiPatchset.",
+      "range": {
+        "startLine": 59,
+        "startChar": 19,
+        "endLine": 59,
+        "endChar": 43
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8d53d9cd_e2685b78",
         "filename": "cv/internal/run/impl/cl_update.go",
         "patchSetId": 4
@@ -31,6 +94,127 @@
       "writtenOn": "2021-01-27T07:51:05Z",
       "side": 1,
       "message": "Don\u0027t know if there\u0027s a better way except copy pasting.",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ba840c0_b18163a7",
+        "filename": "cv/internal/run/impl/cl_update.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "me neither 😞",
+      "parentUuid": "8d53d9cd_e2685b78",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a5e4f31_0dd5d109",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "P0: First, you are missing a noop test where CL patchset \u0026\u0026 trigger remain the same, but say a new message is posted.\n\nP2: Second, this \u0026 below tests are fragile: they\u0027ll work fine so long as impl. doesn\u0027t change substantially, but may continue passing if impl. changes with the reasons for cancelation differing from what test title says. This is the usual problem when one doesn\u0027t want to mock complete real world data and I had to accept such things in PM state tess, too. But, I think in this case, we can rectify this with the following setup:\n\n  ci :\u003d gf.CI(1, gf.PS(6), gf.CQ(+2))\n  tr :\u003d trigger.Find(ci)\n  cl :\u003d CL{1, Snapshot: {PS: 6, Gerrit: Info: ci }\n  rcl :\u003d RunCL{..., ci, tr}\n  Put(\u0026cl, \u0026rcl)\n  \n  Convey(\"most CL updates are noops\", {\n    // assert noop\n  })\n  Convey(\"Cancels Run on new Patchset\", {\n    ciV2 :\u003d gf.CI(1, gf.PS(7), gf.CQ(+2))\n    So(trigger.Find(ciV2), ShouldResembleProto, tr)\n    cl.Snapshot.PS \u003d 7\n    cl.Snapshot.Gerrit.Info \u003d ciV2\n    Put(\u0026cl)\n    // assert cancelled\n  })\n  Convey(\"Cancels Run on removed trigger\", {\n    ciV2 :\u003d gf.CI(1, gf.PS(6), gf.CQ(0))\n    So(trigger.Find(ciV2), ShouldBeNil)\n    cl.Snapshot.Gerrit.Info \u003d ciV2\n    Put(\u0026cl)\n    // assert cancelled\n  })\n\nWDYT?",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26c499fb_7c9189c6",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "also need a test on changed trigger (e.g. CQ+1 changed to CQ+2)",
+      "range": {
+        "startLine": 66,
+        "startChar": 25,
+        "endLine": 66,
+        "endChar": 32
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7af6f7b9_da03081a",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "this reads as if Trigger field exists in snapshot. How about\n  Gerrit: Info: gf.CI(1)\nhere?",
+      "range": {
+        "startLine": 73,
+        "startChar": 5,
+        "endLine": 73,
+        "endChar": 27
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e116c8d_e2f4e66c",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "nit-nit: del empty line, this is directly related to for loop below.",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62d669e3_4346e452",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-27T09:26:32Z",
+      "side": 1,
+      "message": "you have to hook it up from inside of gerrit/updater (follow up CL is fine)",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 101
+      },
       "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
