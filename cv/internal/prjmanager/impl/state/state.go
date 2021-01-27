@@ -66,6 +66,9 @@ type State struct {
 	//
 	// lazily created, see ensurePCLIndex().
 	pclIndex pclIndex // CLID => index.
+
+	// Test mocks. Not set in production.
+	testComponentPreevaluator componentPreevaluator
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
