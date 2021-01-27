@@ -19,7 +19,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
+	"time"
 
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc"
@@ -64,6 +66,13 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 	// https://github.com/bazelbuild/remote-apis/blob/7802003e00901b4e740fe0ebec1243c221e02ae2/build/bazel/remote/execution/v2/remote_execution.proto#L229-L233
 	// https://github.com/googleapis/googleapis/blob/c8e291e6a4d60771219205b653715d5aeec3e96b/google/bytestream/bytestream.proto#L50-L53
 
+	startTime := time.Now()
+	// Unless we explicitly override it on success or on specific error, default to 500.
+	r.metricResponseStatusCode = http.StatusInternalServerError
+	defer func() {
+		TrackArtifactDownload(c.Context, startTime, r.metricResponseStatusCode, r.size.Int64)
+	}()
+
 	// Start a reading stream.
 	stream, err := r.ReadCASBlob(c.Context, &bytestream.ReadRequest{
 		ResourceName: fmt.Sprintf("%s/blobs/%s/%d", r.RBECASInstanceName, strings.TrimPrefix(hash, "sha256:"), r.size.Int64),
@@ -91,6 +100,7 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 		switch {
 		case err == io.EOF:
 			// We are done.
+			r.metricResponseStatusCode = http.StatusOK
 			return
 
 		case err != nil:
