@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn/adminpb"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.
@@ -116,6 +117,11 @@ func (m *redisModule) Initialize(ctx context.Context, host module.Host, opts mod
 	tsmon.RegisterCallbackIn(ctx, func(ctx context.Context) {
 		ReportStats(ctx, pool, "default")
 	})
+
+	// Expose an admin API that can be used to e.g. flush redis. This is
+	// especially useful on GAE where reaching Redis otherwise will require
+	// launching a VM.
+	adminpb.RegisterAdminServer(host.ServiceRegistrar(), &adminServer{pool: pool})
 
 	return ctx, nil
 }
