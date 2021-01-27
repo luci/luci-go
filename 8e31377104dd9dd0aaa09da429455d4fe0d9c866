@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b17d116_abdbba2a",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-27T00:12:42Z",
+      "side": 1,
+      "message": "This is a bug.",
+      "range": {
+        "startLine": 168,
+        "startChar": 7,
+        "endLine": 168,
+        "endChar": 9
+      },
+      "revId": "8e31377104dd9dd0aaa09da429455d4fe0d9c866",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
