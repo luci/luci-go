@@ -15,7 +15,7 @@
 package datastore
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Transaction is a generic interface used to describe a Datastore transaction.

@@ -15,6 +15,7 @@
 package memory
 
 import (
+	"context"
 	"fmt"
 	net_mail "net/mail"
 	"net/textproto"
@@ -24,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/gae/service/mail"
 	"go.chromium.org/luci/gae/service/user"
-	"golang.org/x/net/context"
 )
 
 type mailData struct {

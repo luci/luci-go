@@ -15,8 +15,9 @@
 package memory
 
 import (
+	"context"
+
 	"go.chromium.org/luci/gae/service/module"
-	"golang.org/x/net/context"
 )
 
 type modContextKeyType int

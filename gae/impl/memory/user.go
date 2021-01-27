@@ -15,6 +15,7 @@
 package memory
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
@@ -22,8 +23,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/gae/service/user"
 )

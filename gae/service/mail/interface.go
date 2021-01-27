@@ -15,7 +15,7 @@
 package mail
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // RawInterface is the interface for all of the mail methods.

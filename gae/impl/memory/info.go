@@ -15,13 +15,12 @@
 package memory
 
 import (
+	"context"
 	"fmt"
 
 	"go.chromium.org/luci/gae/impl/dummy"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/gae/service/info/support"
-
-	"golang.org/x/net/context"
 )
 
 var giContextKey = "holds a *globalInfoData"

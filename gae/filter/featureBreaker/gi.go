@@ -15,9 +15,8 @@
 package featureBreaker
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/gae/service/info"
 )

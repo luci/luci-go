@@ -15,10 +15,10 @@
 package prod
 
 import (
+	"context"
 	"net/http"
 
 	uf "go.chromium.org/luci/gae/service/urlfetch"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/urlfetch"
 )
 

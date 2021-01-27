@@ -15,13 +15,12 @@
 package featureBreaker
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

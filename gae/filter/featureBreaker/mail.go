@@ -15,8 +15,9 @@
 package featureBreaker
 
 import (
+	"context"
+
 	"go.chromium.org/luci/gae/service/mail"
-	"golang.org/x/net/context"
 )
 
 type mailState struct {

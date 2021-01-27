@@ -15,12 +15,11 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
-
-	"golang.org/x/net/context"
 )
 
 func applyBatchFilter(c context.Context, rds RawInterface) RawInterface {

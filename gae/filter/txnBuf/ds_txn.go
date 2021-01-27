@@ -15,9 +15,10 @@
 package txnBuf
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/errors"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"golang.org/x/net/context"
 )
 
 // ErrTransactionTooLarge is returned when applying an inner transaction would

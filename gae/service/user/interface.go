@@ -15,7 +15,7 @@
 package user
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // RawInterface provides access to the "appengine/users" API methods.

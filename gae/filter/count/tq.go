@@ -15,9 +15,8 @@
 package count
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 
 	tq "go.chromium.org/luci/gae/service/taskqueue"
 )

@@ -15,10 +15,10 @@
 package internal
 
 import (
+	"context"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/grpc/appstatus"
 )

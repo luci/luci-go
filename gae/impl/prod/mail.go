@@ -15,8 +15,9 @@
 package prod
 
 import (
+	"context"
+
 	gae_mail "go.chromium.org/luci/gae/service/mail"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/mail"
 )
 

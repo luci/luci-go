@@ -15,8 +15,9 @@
 package memcache
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/errors"
-	"golang.org/x/net/context"
 )
 
 func filterItems(lme errors.LazyMultiError, items []Item, nilErr error) ([]Item, []int) {

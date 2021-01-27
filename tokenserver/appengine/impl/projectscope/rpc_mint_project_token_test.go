@@ -15,11 +15,11 @@
 package projectscope
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/appengine/gaetesting"

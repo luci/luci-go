@@ -16,6 +16,7 @@ package dscache
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
 	"math/rand"
@@ -30,8 +31,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

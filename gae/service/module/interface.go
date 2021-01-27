@@ -15,7 +15,7 @@
 package module
 
 import (
-	"golang.org/x/net/context"
+	"context"
 )
 
 // RawInterface is the interface for all of the package methods which normally

@@ -3,8 +3,9 @@
 package buildbot
 
 import (
+	context "context"
+
 	"go.chromium.org/luci/grpc/svcmux"
-	context "golang.org/x/net/context"
 )
 
 type VersionedBuildbot struct {

@@ -15,6 +15,7 @@
 package cloud
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -32,11 +33,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 
-	iamAPI "google.golang.org/api/iam/v1"
-
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	iamAPI "google.golang.org/api/iam/v1"
 )
 
 // googleTokenSourceKey is a normalized string of service accounts, used as

@@ -17,10 +17,10 @@
 package datastore
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/luci/gae/service/info"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

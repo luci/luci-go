@@ -15,6 +15,7 @@
 package dummy
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -25,7 +26,6 @@ import (
 	modS "go.chromium.org/luci/gae/service/module"
 	tqS "go.chromium.org/luci/gae/service/taskqueue"
 	userS "go.chromium.org/luci/gae/service/user"
-	"golang.org/x/net/context"
 )
 
 func TestContextAccess(t *testing.T) {

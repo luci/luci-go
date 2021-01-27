@@ -15,10 +15,10 @@
 package iap
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
-	"golang.org/x/net/context"
 	"google.golang.org/api/idtoken"
 
 	"go.chromium.org/luci/common/logging/gologger"

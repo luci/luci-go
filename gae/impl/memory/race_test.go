@@ -15,13 +15,12 @@
 package memory
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"testing"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 func TestRaceGetPut(t *testing.T) {

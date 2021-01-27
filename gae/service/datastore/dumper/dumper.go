@@ -21,6 +21,7 @@
 package dumper
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -28,8 +29,6 @@ import (
 	"strings"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 // Key is a key into a PropFilterMap

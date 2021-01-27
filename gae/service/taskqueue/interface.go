@@ -15,9 +15,8 @@
 package taskqueue
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"

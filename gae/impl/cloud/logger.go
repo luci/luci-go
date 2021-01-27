@@ -15,6 +15,7 @@
 package cloud
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 
 	cloudLogging "cloud.google.com/go/logging"
-
-	"golang.org/x/net/context"
 )
 
 var (

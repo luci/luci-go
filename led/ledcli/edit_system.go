@@ -15,10 +15,10 @@
 package ledcli
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/flag/stringlistflag"

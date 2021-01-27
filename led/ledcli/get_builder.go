@@ -15,10 +15,9 @@
 package ledcli
 
 import (
+	"context"
 	"net/http"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
 

@@ -15,8 +15,9 @@
 package count
 
 import (
+	"context"
+
 	"go.chromium.org/luci/gae/service/mail"
-	"golang.org/x/net/context"
 )
 
 // MailCounter is the counter object for the Mail service.

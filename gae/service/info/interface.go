@@ -15,10 +15,9 @@
 package info
 
 import (
+	"context"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // RawInterface is the interface for all of the package methods which normally

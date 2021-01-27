@@ -16,6 +16,7 @@ package deriver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -26,7 +27,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
-	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"

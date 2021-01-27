@@ -19,6 +19,7 @@ package datastore
 import (
 	"bytes"
 	"container/heap"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -28,8 +29,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/info"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

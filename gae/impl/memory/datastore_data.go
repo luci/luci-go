@@ -16,6 +16,7 @@ package memory
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	prodConstraints "go.chromium.org/luci/gae/impl/prod/constraints"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 //////////////////////////////// dataStoreData /////////////////////////////////

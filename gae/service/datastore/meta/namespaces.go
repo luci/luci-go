@@ -15,12 +15,11 @@
 package meta
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 // NamespacesCallback is the callback type used with Namespaces. The callback

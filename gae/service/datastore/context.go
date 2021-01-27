@@ -15,9 +15,9 @@
 package datastore
 
 import (
-	"go.chromium.org/luci/gae/service/info"
+	"context"
 
-	"golang.org/x/net/context"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 type key int

@@ -15,12 +15,12 @@
 package ledcli
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 

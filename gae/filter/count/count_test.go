@@ -15,6 +15,7 @@
 package count
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/gae/service/user"
-	"golang.org/x/net/context"
 )
 
 func shouldHaveSuccessesAndErrors(actual interface{}, expected ...interface{}) string {

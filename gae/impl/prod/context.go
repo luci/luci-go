@@ -15,6 +15,7 @@
 package prod
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/cookiejar"
@@ -22,7 +23,6 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/gae/service/urlfetch"
-	"golang.org/x/net/context"
 	gOAuth "golang.org/x/oauth2/google"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/remote_api"

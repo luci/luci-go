@@ -15,6 +15,7 @@
 package dummy
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"strings"
@@ -27,8 +28,6 @@ import (
 	"go.chromium.org/luci/gae/service/module"
 	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/gae/service/user"
-
-	"golang.org/x/net/context"
 )
 
 const niFmtStr = "dummy: method %s.%s is not implemented"

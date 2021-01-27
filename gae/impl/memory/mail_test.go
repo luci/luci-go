@@ -15,13 +15,12 @@
 package memory
 
 import (
+	"context"
 	net_mail "net/mail"
 	"testing"
 
 	"go.chromium.org/luci/gae/service/mail"
 	"go.chromium.org/luci/gae/service/user"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

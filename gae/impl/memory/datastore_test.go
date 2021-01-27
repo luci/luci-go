@@ -15,6 +15,7 @@
 package memory
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -25,8 +26,6 @@ import (
 
 	ds "go.chromium.org/luci/gae/service/datastore"
 	infoS "go.chromium.org/luci/gae/service/info"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -24,11 +24,10 @@
 package flaky
 
 import (
+	"context"
 	"errors"
 	"math/rand"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/service/datastore"

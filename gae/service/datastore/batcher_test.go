@@ -15,14 +15,13 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
 
 	"go.chromium.org/luci/gae/service/info"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

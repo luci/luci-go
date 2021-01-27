@@ -15,14 +15,13 @@
 package prod
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"time"
 
 	"go.chromium.org/luci/gae/impl/prod/constraints"
 	tq "go.chromium.org/luci/gae/service/taskqueue"
-
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/taskqueue"
 )

@@ -15,6 +15,7 @@
 package cloud
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"strconv"
@@ -24,7 +25,6 @@ import (
 	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"golang.org/x/net/context"
 )
 
 const (

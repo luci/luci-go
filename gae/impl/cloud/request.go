@@ -15,6 +15,7 @@
 package cloud
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,8 +27,6 @@ import (
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 
 	cloudLogging "cloud.google.com/go/logging"
-
-	"golang.org/x/net/context"
 )
 
 // HandlerFunc is a callback to handle the HTTP request.

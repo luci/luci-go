@@ -15,6 +15,7 @@
 package gae
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -22,7 +23,6 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/impl/prod"
 	"go.chromium.org/luci/gae/service/datastore"
-	"golang.org/x/net/context"
 )
 
 func Example() {

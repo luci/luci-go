@@ -15,7 +15,7 @@
 package count
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	mc "go.chromium.org/luci/gae/service/memcache"
 )

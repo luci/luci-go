@@ -15,6 +15,7 @@
 package formats
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -24,8 +25,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
