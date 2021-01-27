@@ -45,6 +45,30 @@
       },
       "revId": "028637df8f67a08bc65110b7af9ac5bf8797e5d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2d0dc03_2a0f2ba2",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-27T00:21:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c267c6b7_a3eddadb",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 79
+      },
+      "revId": "028637df8f67a08bc65110b7af9ac5bf8797e5d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
