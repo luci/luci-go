@@ -15,8 +15,9 @@
 package prod
 
 import (
+	"context"
+
 	gae_user "go.chromium.org/luci/gae/service/user"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/user"
 )
 

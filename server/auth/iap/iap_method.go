@@ -18,10 +18,10 @@
 package iap
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
-	"golang.org/x/net/context"
 	"google.golang.org/api/idtoken"
 
 	"go.chromium.org/luci/auth/identity"

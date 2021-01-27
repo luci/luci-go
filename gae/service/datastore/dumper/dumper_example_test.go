@@ -15,12 +15,11 @@
 package dumper
 
 import (
+	"context"
 	"fmt"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 type ExampleModel struct {

@@ -16,6 +16,7 @@ package memory
 
 import (
 	"container/heap"
+	"context"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -24,8 +25,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"golang.org/x/net/context"
 
 	prodConstraints "go.chromium.org/luci/gae/impl/prod/constraints"
 	ds "go.chromium.org/luci/gae/service/datastore"

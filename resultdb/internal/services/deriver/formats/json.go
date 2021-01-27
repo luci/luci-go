@@ -16,6 +16,7 @@ package formats
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,8 +25,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text/indented"

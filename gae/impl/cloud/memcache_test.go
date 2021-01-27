@@ -15,6 +15,7 @@
 package cloud
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"math"
@@ -28,7 +29,6 @@ import (
 	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

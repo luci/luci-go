@@ -15,12 +15,12 @@
 package prod
 
 import (
+	"context"
+
 	"go.chromium.org/luci/gae/impl/prod/constraints"
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/errors"
-
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )

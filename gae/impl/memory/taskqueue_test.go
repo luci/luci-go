@@ -15,6 +15,7 @@
 package memory
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -28,8 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

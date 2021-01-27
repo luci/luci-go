@@ -17,6 +17,7 @@
 package prod
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -26,8 +27,6 @@ import (
 	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/aetest"
 
 	. "github.com/smartystreets/goconvey/convey"

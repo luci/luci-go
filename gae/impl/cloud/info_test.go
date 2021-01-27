@@ -15,13 +15,12 @@
 package cloud
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
 
 	"go.chromium.org/luci/gae/service/info"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
