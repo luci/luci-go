@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bb6c821_4066af07",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-27T02:04:06Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "a690eeed6e15c41b88c2b931a22351eb6460d71e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f33376a_832bfde6",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-27T02:04:06Z",
+      "side": 1,
+      "message": "I\u0027m on the fence about this.\n\nMy reason of changing it is so that Fetch and Run are consistent.\n\nBut on the other hand there\u0027s no use case of fetching artifacts with the hashes...\n\nWDYT?",
+      "range": {
+        "startLine": 207,
+        "startChar": 52,
+        "endLine": 207,
+        "endChar": 68
+      },
+      "revId": "a690eeed6e15c41b88c2b931a22351eb6460d71e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
