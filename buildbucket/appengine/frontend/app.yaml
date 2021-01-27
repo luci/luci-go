@@ -2,7 +2,7 @@
 # Buildbucket (see service-default-go.yaml). However, gae.py requires
 # app.yaml to exist in order to upload any service. This is a dummy app.yaml
 # file, the real file and the complete Buildbucket implementation are here:
-# https://chromium.googlesource.com/infra/infra/+/refs/heads/master/appengine/cr-buildbucket/
+# https://chromium.googlesource.com/infra/infra/+/HEAD/appengine/cr-buildbucket/
 #
 # Upload only "default-go" service:
 # gae.py upload default-go

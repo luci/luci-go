@@ -1164,7 +1164,7 @@ type Builder_Recipe struct {
 	// elsewhere.
 	CipdPackage string `protobuf:"bytes,6,opt,name=cipd_package,json=cipdPackage,proto3" json:"cipd_package,omitempty"`
 	// The CIPD version to fetch. This can be a lower-cased git ref (like
-	// `refs/heads/master` or `head`), or it can be a cipd tag (like
+	// `refs/heads/main` or `head`), or it can be a cipd tag (like
 	// `git_revision:dead...beef`).
 	//
 	// The default is `head`, which corresponds to the git repo's HEAD ref. This
