@@ -43,5 +43,13 @@ func TestParseGerritURL(t *testing.T) {
 		eid, err = parseGerritURL("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7")
 		So(err, ShouldBeNil)
 		So(string(eid), ShouldEqual, "gerrit/chromium-review.googlesource.com/1541677")
+
+		eid, err = parseGerritURL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2652967")
+		So(err, ShouldBeNil)
+		So(string(eid), ShouldEqual, "gerrit/chromium-review.googlesource.com/2652967")
+
+		eid, err = parseGerritURL("chromium-review.googlesource.com/2652967")
+		So(err, ShouldBeNil)
+		So(string(eid), ShouldEqual, "gerrit/chromium-review.googlesource.com/2652967")
 	})
 }
