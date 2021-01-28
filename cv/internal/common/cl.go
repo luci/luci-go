@@ -14,6 +14,8 @@
 
 package common
 
+import "sort"
+
 // CLID is a unique ID of a CL used internally in CV.
 //
 // It's just 8 bytes long and is thus much shorter than ExternalID,
@@ -27,4 +29,27 @@ func CLIDsAsInt64s(ids []CLID) []int64 {
 		r[i] = int64(id)
 	}
 	return r
+}
+
+// CLIDs is a convenience type to facilitate handling of a slice of CLID.
+type CLIDs []CLID
+
+// Dedupe removes duplicates in place.
+//
+// Note: Does not perserve original order.
+func (p *CLIDs) Dedupe() {
+	clids := *p
+	if len(clids) <= 1 {
+		return
+	}
+	sort.Slice(clids, func(i, j int) bool { return clids[i] < clids[j] })
+	n := 0
+	for i := 1; i < len(clids); i++ {
+		if clids[i] == clids[n] {
+			continue
+		}
+		n++
+		clids[n] = clids[i]
+	}
+	*p = clids[:n+1]
 }
