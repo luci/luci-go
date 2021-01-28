@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4fe00ed_08e7e654",
+        "filename": "cv/internal/run/impl/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-28T22:12:51Z",
+      "side": 1,
+      "message": "Oh! Good catch. I\u0027ll do it in a follow up CL.",
+      "parentUuid": "5a601572_207fac45",
+      "range": {
+        "startLine": 51,
+        "startChar": 8,
+        "endLine": 51,
+        "endChar": 11
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "81eeb63f_0bfefced",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-01-27T09:26:32Z",
       "side": 1,
       "message": "just Patchset.\n\nOur Runs *today* are bound to the patchset, not MinEquiPatchset.",
+      "range": {
+        "startLine": 59,
+        "startChar": 19,
+        "endLine": 59,
+        "endChar": 43
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "10117f43_623e587b",
+        "filename": "cv/internal/run/impl/cl_update.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-28T22:12:51Z",
+      "side": 1,
+      "message": "Oh! TIL. So essentially CQ is creating new attempt/run on every new patchset but searching for reusable tryjobs using minPatchSet?",
+      "parentUuid": "81eeb63f_0bfefced",
       "range": {
         "startLine": 59,
         "startChar": 19,
@@ -133,6 +181,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "90b3fd6f_2120c55c",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-28T22:12:51Z",
+      "side": 1,
+      "message": "omg. How can I forget about the awesome gerrit fake package. You are absolutely right about this test is very fragile and may not be able to catch most bugs. I really like your idea. Restructure the test to what you proposed in the new PS.",
+      "parentUuid": "2a5e4f31_0dd5d109",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "26c499fb_7c9189c6",
@@ -146,6 +212,30 @@
       "writtenOn": "2021-01-27T09:26:32Z",
       "side": 1,
       "message": "also need a test on changed trigger (e.g. CQ+1 changed to CQ+2)",
+      "range": {
+        "startLine": 66,
+        "startChar": 25,
+        "endLine": 66,
+        "endChar": 32
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "674b7ec4_e1580cb2",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-28T22:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26c499fb_7c9189c6",
       "range": {
         "startLine": 66,
         "startChar": 25,
@@ -179,6 +269,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0ec946b_8a86a291",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-28T22:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7af6f7b9_da03081a",
+      "range": {
+        "startLine": 73,
+        "startChar": 5,
+        "endLine": 73,
+        "endChar": 27
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2e116c8d_e2f4e66c",
@@ -196,6 +310,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "504c9bd5_9ba1552f",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-28T22:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e116c8d_e2f4e66c",
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "62d669e3_4346e452",
@@ -209,6 +341,30 @@
       "writtenOn": "2021-01-27T09:26:32Z",
       "side": 1,
       "message": "you have to hook it up from inside of gerrit/updater (follow up CL is fine)",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 101
+      },
+      "revId": "b2c54c6e82af4cb2632c1d7cf4107ad412724f43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "56349e37_1a861dea",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-28T22:12:51Z",
+      "side": 1,
+      "message": "Yes. I forgot to comment on this that I will call it when CL is updated by gerrit updater in a separate CL.",
+      "parentUuid": "62d669e3_4346e452",
       "range": {
         "startLine": 86,
         "startChar": 0,
