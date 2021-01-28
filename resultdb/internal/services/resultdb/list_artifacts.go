@@ -83,7 +83,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	}
 
 	// Read artifacts.
-	arts, token, err := q.Fetch(span.Single(ctx))
+	arts, token, err := q.FetchProtos(span.Single(ctx))
 	if err != nil {
 		return nil, err
 	}

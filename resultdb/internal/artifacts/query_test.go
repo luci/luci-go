@@ -40,12 +40,13 @@ func TestQuery(t *testing.T) {
 			InvocationIDs:       invocations.NewIDSet("inv1"),
 			PageSize:            100,
 			TestResultPredicate: &pb.TestResultPredicate{},
+			WithRBECASHash:      false,
 		}
 
 		mustFetch := func(q *Query) (arts []*pb.Artifact, token string) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			arts, tok, err := q.Fetch(ctx)
+			arts, tok, err := q.FetchProtos(ctx)
 			So(err, ShouldBeNil)
 			return arts, tok
 		}
@@ -337,7 +338,7 @@ func TestQuery(t *testing.T) {
 
 			Convey(`Bad token`, func() {
 				q.PageToken = "CgVoZWxsbw=="
-				_, _, err := q.Fetch(span.Single(ctx))
+				_, _, err := q.FetchProtos(span.Single(ctx))
 				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 			})
 		})
@@ -356,6 +357,29 @@ func TestQuery(t *testing.T) {
 				"invocations/inv1/artifacts/a0",
 				"invocations/inv1/tests/t/results/r/artifacts/a0",
 			})
+		})
+
+		Convey(`WithRBECASHash`, func() {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "tr/t/r", "a", map[string]interface{}{
+					"ContentType": "text/plain",
+					"Size":        64,
+					"RBECASHash":  "deadbeef",
+				}),
+			)
+
+			q.WithRBECASHash = true
+			q.PageSize = 0
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			var actual []*Artifact
+			err := q.Run(ctx, func(a *Artifact) error {
+				actual = append(actual, a)
+				return nil
+			})
+			So(err, ShouldBeNil)
+			So(actual, ShouldHaveLength, 1)
+			So(actual[0].RBECASHash, ShouldEqual, "deadbeef")
 		})
 	})
 }

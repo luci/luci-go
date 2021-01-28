@@ -275,7 +275,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 				PageSize:            100,
 				TestResultPredicate: &pb.TestResultPredicate{},
 			}
-			arts, _, err := sq.Fetch(ctx)
+			arts, _, err := sq.FetchProtos(ctx)
 			So(err, ShouldBeNil)
 			So(len(arts), ShouldEqual, 1)
 			So(arts[0].Name, ShouldContainSubstring, "/tests/ninja:%2F%2Ftests:tests%2Fc2%2Ft3.html/results/2/artifacts/log")

@@ -45,6 +45,13 @@ type Query struct {
 	ContentTypesRegexp  string
 	PageSize            int // must be positive
 	PageToken           string
+	WithRBECASHash      bool
+}
+
+// Artifact contains pb.Artifact and its RBECAS hash.
+type Artifact struct {
+	*pb.Artifact
+	RBECASHash string
 }
 
 // tmplQueryArtifacts is a template for the SQL expression that queries
@@ -73,7 +80,10 @@ FilteredTestResults AS (
 			OR (SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant)) FROM UNNEST(@variantContains) kv)
 		)
 )
-SELECT InvocationId, ParentId, ArtifactId, ContentType, Size
+SELECT InvocationId, ParentId, ArtifactId, ContentType, Size,
+{{ if .Q.WithRBECASHash }}
+	RBECASHash
+{{ end }}
 FROM Artifacts art
 {{ if .JoinWithTestResults }}
 LEFT JOIN FilteredTestResults tr USING (InvocationId, ParentId)
@@ -87,14 +97,14 @@ WHERE art.InvocationId IN UNNEST(@invIDs)
 	)
 	AND REGEXP_CONTAINS(art.ParentId, @ParentIdRegexp)
 	{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
-	{{ if .SpecificContentTypes }}
+	{{ if and (ne .Q.ContentTypesRegexp "") (ne .Q.ContentTypesRegexp ".*") }}
 		AND REGEXP_CONTAINS(IFNULL(art.ContentType, ""), @contentTypeRegexp)
 	{{ end }}
 ORDER BY InvocationId, ParentId, ArtifactId
-{{ if .WithLimit }} LIMIT @limit {{ end }}
+{{ if gt .Q.PageSize 0 }} LIMIT @limit {{ end }}
 `))
 
-func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error) {
+func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 	if q.PageSize < 0 {
 		panic("PageSize < 0")
 	}
@@ -102,8 +112,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error)
 	var input struct {
 		JoinWithTestResults    bool
 		InterestingTestResults bool
-		SpecificContentTypes   bool
-		WithLimit              bool
+		Q                      *Query
 	}
 	// If we need to filter artifacts by attributes of test results, then
 	// join with test results table.
@@ -114,8 +123,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error)
 			input.InterestingTestResults = true
 		}
 	}
-	input.SpecificContentTypes = q.ContentTypesRegexp != "" && q.ContentTypesRegexp != ".*"
-	input.WithLimit = q.PageSize > 0
+	input.Q = q
 
 	sql := &bytes.Buffer{}
 	if err = tmplQueryArtifacts.Execute(sql, input); err != nil {
@@ -140,12 +148,22 @@ func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error)
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		a := &Artifact{
+			Artifact: &pb.Artifact{},
+		}
 		var invID invocations.ID
 		var parentID string
 		var contentType spanner.NullString
 		var size spanner.NullInt64
-		a := &pb.Artifact{}
-		if err := b.FromSpanner(row, &invID, &parentID, &a.ArtifactId, &contentType, &size); err != nil {
+		var rbecasHash spanner.NullString
+
+		ptrs := []interface{}{
+			&invID, &parentID, &a.ArtifactId, &contentType, &size,
+		}
+		if q.WithRBECASHash {
+			ptrs = append(ptrs, &rbecasHash)
+		}
+		if err := b.FromSpanner(row, ptrs...); err != nil {
 			return err
 		}
 
@@ -161,6 +179,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error)
 
 		a.ContentType = contentType.StringVal
 		a.SizeBytes = size.Int64
+		a.RBECASHash = rbecasHash.StringVal
 
 		return f(a)
 	})
@@ -169,25 +188,25 @@ func (q *Query) run(ctx context.Context, f func(*pb.Artifact) error) (err error)
 // Run calls f for artifacts matching the query.
 //
 // Refer to Fetch() for the ordering of returned artifacts.
-func (q *Query) Run(ctx context.Context, f func(*pb.Artifact) error) error {
+func (q *Query) Run(ctx context.Context, f func(*Artifact) error) error {
 	if q.PageSize != 0 {
 		panic("PageSize is specified when Query.Run")
 	}
 	return q.run(ctx, f)
 }
 
-// Fetch returns a page of artifacts matching q.
+// FetchProtos returns a page of artifact protos matching q.
 //
 // Returned artifacts are ordered by level (invocation or test result).
 // Test result artifacts are sorted by parent invocation ID, test ID and
 // artifact ID.
-func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken string, err error) {
+func (q *Query) FetchProtos(ctx context.Context) (arts []*pb.Artifact, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
 
-	err = q.run(ctx, func(a *pb.Artifact) error {
-		arts = append(arts, a)
+	err = q.run(ctx, func(a *Artifact) error {
+		arts = append(arts, a.Artifact)
 		return nil
 	})
 	if err != nil {
