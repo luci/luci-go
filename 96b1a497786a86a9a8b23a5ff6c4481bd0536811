@@ -16,6 +16,86 @@
       "message": "Moving quinten to reviewer to ensure it shows up in his inbox.",
       "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e37e356c_da68dd65",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T22:54:15Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4dc563ab_fd32ffe6",
+        "filename": "cv/internal/run/impl/cl_update.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T22:54:15Z",
+      "side": 1,
+      "message": "let\u0027s start with this, but if we go with bigger M1, then we\u0027d need to compare here for exact equality of old/new triggers.",
+      "range": {
+        "startLine": 62,
+        "startChar": 2,
+        "endLine": 65,
+        "endChar": 3
+      },
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ffee9ae2_d06057b2",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T22:54:15Z",
+      "side": 1,
+      "message": "nit-nit: might as well share parent \"When new CL Version\" with 2 below blcosk.",
+      "range": {
+        "startLine": 102,
+        "startChar": 31,
+        "endLine": 102,
+        "endChar": 61
+      },
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb50d9ee_3818903d",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T22:54:15Z",
+      "side": 1,
+      "message": "true, though in practice, we\u0027d see a new timestamp, which ought to result in a new run.",
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
