@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4032aea_ca86beb5",
+        "filename": "cv/internal/changelist/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T13:51:44Z",
+      "side": 1,
+      "message": "^^",
+      "revId": "5f5ba90a6983b6cb8af3063a2ea87c9120bc9ffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "58e27295_baf77630",
@@ -14,6 +31,30 @@
       "writtenOn": "2021-01-28T01:16:11Z",
       "side": 1,
       "message": "IIRC, CQ doesn\u0027t create an attempt for revision with empty files, is that right? Do we still retain this behavior?",
+      "range": {
+        "startLine": 158,
+        "startChar": 2,
+        "endLine": 158,
+        "endChar": 15
+      },
+      "revId": "5f5ba90a6983b6cb8af3063a2ea87c9120bc9ffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18a19649_46e9cbb5",
+        "filename": "cv/internal/changelist/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T13:51:44Z",
+      "side": 1,
+      "message": "correct, we are retaining it for now. However, we request files in a separate RPC to correct deal with merge commits.\nSee storage.proto which has separate files field.",
+      "parentUuid": "58e27295_baf77630",
       "range": {
         "startLine": 158,
         "startChar": 2,
