@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -83,6 +84,11 @@ type artifactCreationHandler struct {
 // Handle implements router.Handler.
 func (h *artifactCreationHandler) Handle(c *router.Context) {
 	ac := &artifactCreator{artifactCreationHandler: h}
+	mw := artifactcontent.NewMetricsWriter(c)
+	defer func() {
+		mw.Upload(c.Context, ac.size)
+	}()
+
 	err := ac.handle(c)
 	st, ok := appstatus.Get(err)
 	switch {
