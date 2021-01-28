@@ -16,6 +16,52 @@
       "message": "LGTM 👍",
       "revId": "9eecfec0cd6a6b149cf337108b36363bbdb695d3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60088c7c_ed203c84",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-28T21:19:51Z",
+      "side": 1,
+      "message": "This function overrides `Writer` of the original router.Context object.\nTherefore, I\u0027m afraid that this will keep wrapping the existing Writer over and over at L87 on resultdb/internal/services/recorder/create_artifact.go,\n\nI didn\u0027t follow up the parent implementation to see how router.Context object is created and managed. Is it created per HTTP-session? If `rdb stream` uploads 1000 metrics with 10 different sessions, then it can possibly cause a Writer wrapped 100 times recursively (assuming even request distribution between the sessions)\n\nI believe that this should either\n(1) skip wrapping if the writer has been already wrapped by MetricWriter, or\n(2) set and return a clone of the input router.Context with the MetricWriter, so that NewMetricsWriter() won\u0027t have any side-effect.",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 15
+      },
+      "revId": "9eecfec0cd6a6b149cf337108b36363bbdb695d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c110d51d_4e1c861e",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-28T21:19:51Z",
+      "side": 1,
+      "message": "mw.statusTracker.status is set by WriteHeader() at L102.\nIt seems that it\u0027s the only way to set mw.statusTracker.status. Therefore, WriteHeader() must be called before invoking Upload() and Download().\n\nAt L97 and L100 on resultdb/internal/services/recorder/create_artifact.go, I see only http.Error(). Does it mean that the Upload metric will be reported with 0?",
+      "range": {
+        "startLine": 92,
+        "startChar": 36,
+        "endLine": 92,
+        "endChar": 59
+      },
+      "revId": "9eecfec0cd6a6b149cf337108b36363bbdb695d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
