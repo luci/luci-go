@@ -37,8 +37,6 @@ import (
 // timestamp implements customized JSON marshal/unmarshal behavior that matches
 // the timestamp format used in Gerrit.
 
-// TODO (throughout) use this to correctly parse AccountInfo response
-// instead of gerritpb.AccountInfo
 type accountInfo struct {
 	Name            string   `json:"name,omitempty"`
 	Email           string   `json:"email,omitempty"`
@@ -48,6 +46,9 @@ type accountInfo struct {
 }
 
 func (a *accountInfo) ToProto() *gerritpb.AccountInfo {
+	if a == nil {
+		return nil
+	}
 	return &gerritpb.AccountInfo{
 		Name:            a.Name,
 		Email:           a.Email,
@@ -63,11 +64,11 @@ type ownerInfo struct {
 
 // changeInfo represents JSON for a gerritpb.ChangeInfo on the wire.
 type changeInfo struct {
-	Number   int64                 `json:"_number"`
-	Owner    *gerritpb.AccountInfo `json:"owner"`
-	Project  string                `json:"project"`
-	Branch   string                `json:"branch"`
-	ChangeID string                `json:"change_id"`
+	Number   int64        `json:"_number"`
+	Owner    *accountInfo `json:"owner"`
+	Project  string       `json:"project"`
+	Branch   string       `json:"branch"`
+	ChangeID string       `json:"change_id"`
 
 	// json.Unmarshal cannot convert enum string to value,
 	// so this field is handled specially in ToProto.
@@ -96,7 +97,7 @@ type changeInfo struct {
 func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 	ret := &gerritpb.ChangeInfo{
 		Number:             ci.Number,
-		Owner:              ci.Owner,
+		Owner:              ci.Owner.ToProto(),
 		Project:            ci.Project,
 		Ref:                branchToRef(ci.Branch),
 		Status:             gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[ci.Status]),
@@ -139,25 +140,25 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 }
 
 type labelInfo struct {
-	Optional     bool                  `json:"optional"`
-	Approved     *gerritpb.AccountInfo `json:"approved"`
-	Rejected     *gerritpb.AccountInfo `json:"rejected"`
-	Recommended  *gerritpb.AccountInfo `json:"recommended"`
-	Disliked     *gerritpb.AccountInfo `json:"disliked"`
-	Blocking     bool                  `json:"blocking"`
-	Value        int32                 `json:"value"`
-	DefaultValue int32                 `json:"default_value"`
-	All          []*approvalInfo       `json:"all"`
-	Values       map[string]string     `json:"values"`
+	Optional     bool              `json:"optional"`
+	Approved     *accountInfo      `json:"approved"`
+	Rejected     *accountInfo      `json:"rejected"`
+	Recommended  *accountInfo      `json:"recommended"`
+	Disliked     *accountInfo      `json:"disliked"`
+	Blocking     bool              `json:"blocking"`
+	Value        int32             `json:"value"`
+	DefaultValue int32             `json:"default_value"`
+	All          []*approvalInfo   `json:"all"`
+	Values       map[string]string `json:"values"`
 }
 
 func (li *labelInfo) ToProto() *gerritpb.LabelInfo {
 	ret := &gerritpb.LabelInfo{
 		Optional:     li.Optional,
-		Approved:     li.Approved,
-		Rejected:     li.Rejected,
-		Recommended:  li.Recommended,
-		Disliked:     li.Disliked,
+		Approved:     li.Approved.ToProto(),
+		Rejected:     li.Rejected.ToProto(),
+		Recommended:  li.Recommended.ToProto(),
+		Disliked:     li.Disliked.ToProto(),
 		Blocking:     li.Blocking,
 		Value:        li.Value,
 		DefaultValue: li.DefaultValue,
@@ -182,7 +183,7 @@ func (li *labelInfo) ToProto() *gerritpb.LabelInfo {
 }
 
 type approvalInfo struct {
-	*gerritpb.AccountInfo
+	accountInfo
 	Value                int32                     `json:"value"`
 	PermittedVotingRange *gerritpb.VotingRangeInfo `json:"permitted_voting_range"`
 	Date                 Timestamp                 `json:"date"`
@@ -192,7 +193,7 @@ type approvalInfo struct {
 
 func (ai *approvalInfo) ToProto() *gerritpb.ApprovalInfo {
 	ret := &gerritpb.ApprovalInfo{
-		User:                 ai.AccountInfo,
+		User:                 ai.accountInfo.ToProto(),
 		Value:                ai.Value,
 		PermittedVotingRange: ai.PermittedVotingRange,
 		Date:                 timestamppb.New(ai.Date.Time),
@@ -203,11 +204,11 @@ func (ai *approvalInfo) ToProto() *gerritpb.ApprovalInfo {
 }
 
 type changeMessageInfo struct {
-	ID         string                `json:"id"`
-	Author     *gerritpb.AccountInfo `json:"author"`
-	RealAuthor *gerritpb.AccountInfo `json:"real_author"`
-	Date       Timestamp             `json:"date"`
-	Message    string                `json:"message"`
+	ID         string       `json:"id"`
+	Author     *accountInfo `json:"author"`
+	RealAuthor *accountInfo `json:"real_author"`
+	Date       Timestamp    `json:"date"`
+	Message    string       `json:"message"`
 }
 
 func (cmi *changeMessageInfo) ToProto() *gerritpb.ChangeMessageInfo {
@@ -216,8 +217,8 @@ func (cmi *changeMessageInfo) ToProto() *gerritpb.ChangeMessageInfo {
 	}
 	return &gerritpb.ChangeMessageInfo{
 		Id:         cmi.ID,
-		Author:     cmi.Author,
-		RealAuthor: cmi.RealAuthor,
+		Author:     cmi.Author.ToProto(),
+		RealAuthor: cmi.RealAuthor.ToProto(),
 		Date:       timestamppb.New(cmi.Date.Time),
 		Message:    cmi.Message,
 	}
