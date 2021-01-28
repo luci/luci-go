@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3d168eb_d30538c6",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-28T00:08:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4941e92_771f932e",
+      "range": {
+        "startLine": 52,
+        "startChar": 13,
+        "endLine": 52,
+        "endChar": 21
+      },
+      "revId": "a690eeed6e15c41b88c2b931a22351eb6460d71e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "38a241c3_95a3c1c6",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-01-27T04:25:26Z",
       "side": 1,
       "message": "should we just put the Query itself into the input?\nthen we can drop a few fields here, and move expression like `q.PageSize\u003e0` into the template",
+      "revId": "a690eeed6e15c41b88c2b931a22351eb6460d71e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b281bf24_29159338",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-28T00:08:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38a241c3_95a3c1c6",
       "revId": "a690eeed6e15c41b88c2b931a22351eb6460d71e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -95,6 +137,30 @@
       "side": 1,
       "message": "Maybe rename the function to FetchProtos and return protos? then we don\u0027t need the loops in the callsites",
       "parentUuid": "0f33376a_832bfde6",
+      "range": {
+        "startLine": 207,
+        "startChar": 52,
+        "endLine": 207,
+        "endChar": 68
+      },
+      "revId": "a690eeed6e15c41b88c2b931a22351eb6460d71e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f873ae8_248b59df",
+        "filename": "resultdb/internal/artifacts/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-28T00:08:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8264edfb_a146d405",
       "range": {
         "startLine": 207,
         "startChar": 52,
