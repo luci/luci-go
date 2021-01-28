@@ -120,6 +120,7 @@ func TestUpdateProject(t *testing.T) {
 			So(hashInfo, ShouldResemble, ConfigHashInfo{
 				Hash:             localHash,
 				Project:          projKey,
+				GitRev:           "97539e76a0d0a45a67e2095a20c5e61e919e7b",
 				ProjectEVersion:  expectedEVersion,
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
