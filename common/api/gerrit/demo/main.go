@@ -71,7 +71,11 @@ func runWithCtx(ctx context.Context) {
 
 func callAndPrintResp(ctx context.Context, client gerritpb.GerritClient) error {
 	resp, err := client.GetChange(ctx, &gerritpb.GetChangeRequest{
-		Number: 1111,
+		Number: 2653292,
+		Options: []gerritpb.QueryOption{
+			gerritpb.QueryOption_DETAILED_LABELS,
+			gerritpb.QueryOption_DETAILED_ACCOUNTS,
+		},
 	})
 	if err != nil {
 		return errors.Annotate(err, "calling gerrit").Err()

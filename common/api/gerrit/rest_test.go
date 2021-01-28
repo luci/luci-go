@@ -79,9 +79,10 @@ func TestListChanges(t *testing.T) {
 					{
 						Number: 1,
 						Owner: &gerritpb.AccountInfo{
-							Name:     "John Doe",
-							Email:    "jdoe@example.com",
-							Username: "jdoe",
+							AccountId: 1000096,
+							Name:      "John Doe",
+							Email:     "jdoe@example.com",
+							Username:  "jdoe",
 						},
 						Project: "example/repo",
 						Ref:     "refs/heads/master",
@@ -100,6 +101,7 @@ func TestListChanges(t *testing.T) {
 					{
 						"_number": 1,
 						"owner": {
+							"_account_id":      1000096,
 							"name":             "John Doe",
 							"email":            "jdoe@example.com",
 							"username":         "jdoe"
@@ -168,6 +170,7 @@ func TestGetChange(t *testing.T) {
 			expectedChange := &gerritpb.ChangeInfo{
 				Number: 1,
 				Owner: &gerritpb.AccountInfo{
+					AccountId:       1000096,
 					Name:            "John Doe",
 					Email:           "jdoe@example.com",
 					SecondaryEmails: []string{"johndoe@chromium.org"},
@@ -217,8 +220,9 @@ func TestGetChange(t *testing.T) {
 						All: []*gerritpb.ApprovalInfo{
 							{
 								User: &gerritpb.AccountInfo{
-									Name:  "Dry Runner",
-									Email: "dry-runner@example.com",
+									AccountId: 1010101,
+									Name:      "Dry Runner",
+									Email:     "dry-runner@example.com",
 								},
 								Value:                1,
 								PermittedVotingRange: &gerritpb.VotingRangeInfo{Min: 0, Max: 2},
@@ -233,9 +237,10 @@ func TestGetChange(t *testing.T) {
 					{
 						Id: "YH-egE",
 						Author: &gerritpb.AccountInfo{
-							Name:     "John Doe",
-							Email:    "john.doe@example.com",
-							Username: "jdoe",
+							AccountId: 1000096,
+							Name:      "John Doe",
+							Email:     "john.doe@example.com",
+							Username:  "jdoe",
 						},
 						Date:    timestamppb.New(parseTime("2013-03-23T21:34:02.419000000Z")),
 						Message: "Patch Set 1:\n\nThis is the first message.",
@@ -243,9 +248,10 @@ func TestGetChange(t *testing.T) {
 					{
 						Id: "WEEdhU",
 						Author: &gerritpb.AccountInfo{
-							Name:     "Jane Roe",
-							Email:    "jane.roe@example.com",
-							Username: "jroe",
+							AccountId: 1000097,
+							Name:      "Jane Roe",
+							Email:     "jane.roe@example.com",
+							Username:  "jroe",
 						},
 						Date:    timestamppb.New(parseTime("2013-03-23T21:36:52.332000000Z")),
 						Message: "Patch Set 1:\n\nThis is the second message.\n\nWith a line break.",
@@ -268,6 +274,7 @@ func TestGetChange(t *testing.T) {
 					"_number": 1,
 					"status": "NEW",
 					"owner": {
+						"_account_id":      1000096,
 						"name":             "John Doe",
 						"email":            "jdoe@example.com",
 						"secondary_emails": ["johndoe@chromium.org"],
