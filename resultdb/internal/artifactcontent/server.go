@@ -193,6 +193,8 @@ func (r *contentRequest) handle(c *router.Context) {
 		r.sendError(c.Context, err)
 
 	case rbeCASHash.Valid:
+		WrapWriter(c)
+		defer WriteDownloadMetrics(c, r)
 		r.handleRBECASContent(c, rbeCASHash.StringVal)
 
 	case isolateURL.Valid:
