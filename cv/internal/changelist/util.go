@@ -17,6 +17,8 @@ package changelist
 import (
 	"context"
 	"time"
+
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
 // IsUpToDate returns whether stored ApplicableConfig is at least as recent as
@@ -126,4 +128,60 @@ func (s *Snapshot) PanicIfNotValid() {
 	case s.GetGerrit().GetInfo() == nil:
 		panic("Gerrit.Info is required, until CV supports more code reviews")
 	}
+}
+
+// RemoveUnusedGerritInfo mutates given ChangeInfo to remove what CV definitely
+// doesn't need to reduce bytes shuffled to/from Datastore.
+//
+// Doesn't complain if anything is missing.
+//
+// NOTE: keep this function actions in sync with storage.proto doc for
+// Gerrit.info field.
+func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
+	cleanUser := func(u *gerritpb.AccountInfo) {
+		if u == nil {
+			return
+		}
+		u.SecondaryEmails = nil
+		u.Name = ""
+		u.Username = ""
+	}
+
+	cleanRevision := func(r *gerritpb.RevisionInfo) {
+		if r == nil {
+			return
+		}
+		if c := r.GetCommit(); c != nil {
+			c.Parents = nil
+		}
+		r.Uploader = nil
+		r.Files = nil
+	}
+
+	cleanMessage := func(m *gerritpb.ChangeMessageInfo) {
+		if m == nil {
+			return
+		}
+		cleanUser(m.GetAuthor())
+		cleanUser(m.GetRealAuthor())
+	}
+
+	cleanLabel := func(l *gerritpb.LabelInfo) {
+		if l == nil {
+			return
+		}
+		for _, a := range l.GetAll() {
+			cleanUser(a.GetUser())
+		}
+	}
+	for _, r := range ci.GetRevisions() {
+		cleanRevision(r)
+	}
+	for _, m := range ci.GetMessages() {
+		cleanMessage(m)
+	}
+	for _, l := range ci.GetLabels() {
+		cleanLabel(l)
+	}
+	cleanUser(ci.GetOwner())
 }

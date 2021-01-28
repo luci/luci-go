@@ -264,6 +264,7 @@ func (f *fetcher) fetchNew(ctx context.Context) error {
 	if err != nil || ci == nil {
 		return err
 	}
+	changelist.RemoveUnusedGerritInfo(ci)
 
 	f.toUpdate.Snapshot = &changelist.Snapshot{
 		LuciProject:        f.luciProject,
