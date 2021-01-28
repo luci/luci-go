@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package descutil
 
 import (
 	"bytes"
@@ -23,8 +23,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"go.chromium.org/luci/common/proto/google/descutil"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -32,21 +30,28 @@ func TestPrinter(t *testing.T) {
 	t.Parallel()
 
 	Convey("Printer", t, func() {
-		protoFile, err := ioutil.ReadFile("printer_test.proto")
+		protoFile, err := ioutil.ReadFile("util_test.proto")
 		So(err, ShouldBeNil)
 		protoFileLines := strings.Split(string(protoFile), "\n")
 
-		descFileBytes, err := ioutil.ReadFile("printer_test.desc")
+		descFileBytes, err := ioutil.ReadFile("util_test.desc")
 		So(err, ShouldBeNil)
 
 		var desc descriptorpb.FileDescriptorSet
 		err = proto.Unmarshal(descFileBytes, &desc)
 		So(err, ShouldBeNil)
 
-		So(desc.File, ShouldHaveLength, 1)
-		file := desc.File[0]
+		var file *descriptorpb.FileDescriptorProto
+		for _, filePb := range desc.File {
+			if filePb.GetName() == "go.chromium.org/luci/common/proto/google/descutil/util_test.proto" {
+				file = filePb
+				break
+			}
+		}
+		// we must find the util_test.proto file in `desc`
+		So(file, ShouldNotBeNil)
 
-		sourceCodeInfo, err := descutil.IndexSourceCodeInfo(file)
+		sourceCodeInfo, err := IndexSourceCodeInfo(file)
 		So(err, ShouldBeNil)
 
 		getExpectedDef := func(ptr interface{}, unindent int) string {
@@ -71,7 +76,7 @@ func TestPrinter(t *testing.T) {
 		}
 
 		var buf bytes.Buffer
-		printer := newPrinter(&buf)
+		printer := NewPrinter(&buf)
 		So(printer.SetFile(file), ShouldBeNil)
 
 		checkOutput := func(ptr interface{}, unindent int) {

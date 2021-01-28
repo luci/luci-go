@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package descutil
 
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
+	"unicode"
 
+	txtpb "github.com/protocolbuffers/txtpbfmt/parser"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/data/text/indented"
-	"go.chromium.org/luci/common/proto/google/descutil"
 )
 
-// printer prints a proto3 definition from a description.
-// Does not support options.
-type printer struct {
+// Printer prints a proto3 definition from a description.
+type Printer struct {
 	file           *descriptorpb.FileDescriptorProto
 	sourceCodeInfo map[interface{}]*descriptorpb.SourceCodeInfo_Location
 
@@ -37,35 +40,38 @@ type printer struct {
 	Err error
 }
 
-func newPrinter(out io.Writer) *printer {
-	return &printer{Out: indented.Writer{Writer: out}}
+// NewPrinter creates a new Printer which will output protobuf definition text
+// (i.e. ".proto" file) to the given writer.
+func NewPrinter(out io.Writer) *Printer {
+	return &Printer{Out: indented.Writer{Writer: out}}
 }
 
 // SetFile specifies the file containing the descriptors being printed.
 // Used to relativize names and print comments.
-func (p *printer) SetFile(f *descriptorpb.FileDescriptorProto) error {
+func (p *Printer) SetFile(f *descriptorpb.FileDescriptorProto) error {
 	p.file = f
 	var err error
-	p.sourceCodeInfo, err = descutil.IndexSourceCodeInfo(f)
+	p.sourceCodeInfo, err = IndexSourceCodeInfo(f)
 	return err
 }
 
 // Printf prints to p.Out unless there was an error.
-func (p *printer) Printf(format string, a ...interface{}) {
+func (p *Printer) Printf(format string, a ...interface{}) {
 	if p.Err == nil {
 		_, p.Err = fmt.Fprintf(&p.Out, format, a...)
 	}
 }
 
 // Package prints package declaration.
-func (p *printer) Package(name string) {
+func (p *Printer) Package(name string) {
 	p.Printf("package %s;\n", name)
 }
 
 // open prints a string, followed by " {\n" and increases indentation level.
-// Returns a function that decreases indentation level and closes the brace.
+// Returns a function that decreases indentation level and closes the brace
+// followed by a newline.
 // Usage: defer open("package x")()
-func (p *printer) open(format string, a ...interface{}) func() {
+func (p *Printer) open(format string, a ...interface{}) func() {
 	p.Printf(format, a...)
 	p.Printf(" {\n")
 	p.Out.Level++
@@ -77,7 +83,7 @@ func (p *printer) open(format string, a ...interface{}) func() {
 
 // MaybeLeadingComments prints leading comments of the descriptorpb proto
 // if found.
-func (p *printer) MaybeLeadingComments(ptr interface{}) {
+func (p *Printer) MaybeLeadingComments(ptr interface{}) {
 	comments := p.sourceCodeInfo[ptr].GetLeadingComments()
 	// print comments, but insert "//" before each newline.
 	for len(comments) > 0 {
@@ -96,7 +102,7 @@ func (p *printer) MaybeLeadingComments(ptr interface{}) {
 }
 
 // shorten removes leading "." and trims package name if it matches p.file.
-func (p *printer) shorten(name string) string {
+func (p *Printer) shorten(name string) string {
 	name = strings.TrimPrefix(name, ".")
 	if p.file.GetPackage() != "" {
 		name = strings.TrimPrefix(name, p.file.GetPackage()+".")
@@ -107,7 +113,7 @@ func (p *printer) shorten(name string) string {
 // Service prints a service definition.
 // If methodIndex != -1, only one method is printed.
 // If serviceIndex != -1, leading comments are printed if found.
-func (p *printer) Service(service *descriptorpb.ServiceDescriptorProto, methodIndex int) {
+func (p *Printer) Service(service *descriptorpb.ServiceDescriptorProto, methodIndex int) {
 	p.MaybeLeadingComments(service)
 	defer p.open("service %s", service.GetName())()
 
@@ -124,7 +130,7 @@ func (p *printer) Service(service *descriptorpb.ServiceDescriptorProto, methodIn
 }
 
 // Method prints a service method definition.
-func (p *printer) Method(method *descriptorpb.MethodDescriptorProto) {
+func (p *Printer) Method(method *descriptorpb.MethodDescriptorProto) {
 	p.MaybeLeadingComments(method)
 	p.Printf(
 		"rpc %s(%s) returns (%s) {};\n",
@@ -153,9 +159,9 @@ var fieldTypeName = map[descriptorpb.FieldDescriptorProto_Type]string{
 }
 
 // Field prints a field definition.
-func (p *printer) Field(field *descriptorpb.FieldDescriptorProto) {
+func (p *Printer) Field(field *descriptorpb.FieldDescriptorProto) {
 	p.MaybeLeadingComments(field)
-	if descutil.Repeated(field) {
+	if Repeated(field) {
 		p.Printf("repeated ")
 	}
 
@@ -166,13 +172,163 @@ func (p *printer) Field(field *descriptorpb.FieldDescriptorProto) {
 	if typeName == "" {
 		typeName = "<unsupported type>"
 	}
-	p.Printf("%s %s = %d;\n", typeName, field.GetName(), field.GetNumber())
+	p.Printf("%s %s = %d", typeName, field.GetName(), field.GetNumber())
+
+	p.fieldOptions(field)
+
+	p.Printf(";\n")
+}
+
+// converts snake_case to camelCase.
+func camel(snakeCase string) string {
+	prev := 'x'
+	return strings.Map(
+		func(r rune) rune {
+			if prev == '_' {
+				prev = r
+				return unicode.ToTitle(r)
+			}
+			prev = r
+			if r == '_' {
+				return -1
+			}
+			return r
+		}, snakeCase)
+}
+
+func (p *Printer) optionValue(ed protoreflect.EnumDescriptor, v protoreflect.Value) {
+	switch x := v.Interface().(type) {
+	case bool:
+		p.Printf(" %t", x)
+	case int32, int64, uint32, uint64:
+		p.Printf(" %d", v.Interface())
+	case float32, float64:
+		p.Printf(" %f", v.Interface())
+	case string, []byte:
+		p.Printf(" %q", v.Interface())
+	case protoreflect.EnumNumber:
+		p.Printf(" %s", ed.Values().ByNumber(x).Name())
+	case protoreflect.Message:
+		p.Printf(" {\n")
+		p.Out.Level++
+		defer func() {
+			p.Out.Level--
+			p.Printf("}")
+		}()
+
+		data, err := prototext.MarshalOptions{Indent: "\t"}.Marshal(x.Interface())
+		if err != nil {
+			panic(err)
+		}
+		// ensure textproto output is stable.
+		data, err = txtpb.Format(data)
+		if err != nil {
+			panic(err)
+		}
+
+		p.Printf("%s", data)
+	default:
+		panic("unknown protoreflect.Value type")
+	}
+
+	return
+}
+
+type optField struct {
+	fieldNum       protoreflect.FieldNumber
+	renderedName   string
+	enumDescriptor protoreflect.EnumDescriptor
+	val            protoreflect.Value
+}
+
+type optFields []optField
+
+func (p *Printer) collectOptions(m protoreflect.ProtoMessage, extra optFields) optFields {
+	toPrint := append(optFields{}, extra...)
+
+	m.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		renderedName := fd.TextName()
+		if fd.IsExtension() {
+			renderedName = fmt.Sprintf("(%s)", p.shorten(string(fd.FullName())))
+		}
+		toPrint = append(toPrint, optField{fd.Number(), renderedName, fd.Enum(), v})
+		return true
+	})
+	sort.Slice(toPrint, func(i, j int) bool {
+		return toPrint[i].fieldNum < toPrint[j].fieldNum
+	})
+	return toPrint
+}
+
+func (of optFields) write(p *Printer, prefix string, afterEach func(last bool)) {
+	for i, f := range of {
+		p.Printf("%s%s =", prefix, f.renderedName)
+		p.optionValue(f.enumDescriptor, f.val)
+		if afterEach != nil {
+			afterEach(i == len(of)-1)
+		}
+	}
+}
+
+func (p *Printer) fieldOptions(field *descriptorpb.FieldDescriptorProto) {
+	var extra optFields
+	if field.GetJsonName() != camel(field.GetName()) {
+		extra = optFields{{
+			0, "json_name", nil, protoreflect.ValueOfString(field.GetJsonName()),
+		}}
+	}
+	toPrint := p.collectOptions(field.Options, extra)
+
+	if len(toPrint) == 0 {
+		return
+	}
+	if len(toPrint) == 1 {
+		p.Printf(" [")
+		toPrint.write(p, "", nil)
+		p.Printf("]")
+		return
+	}
+
+	p.Printf(" [\n")
+	p.Out.Level++
+	defer func() {
+		p.Out.Level--
+		p.Printf("]")
+	}()
+
+	nl := func(hasNext bool) {
+		if hasNext {
+			p.Printf(",\n")
+		} else {
+			p.Printf("\n")
+		}
+	}
+
+	toPrint.write(p, "", func(last bool) {
+		nl(!last)
+	})
 }
 
 // Message prints a message definition.
-func (p *printer) Message(msg *descriptorpb.DescriptorProto) {
+func (p *Printer) Message(msg *descriptorpb.DescriptorProto) {
 	p.MaybeLeadingComments(msg)
 	defer p.open("message %s", msg.GetName())()
+
+	p.collectOptions(msg.Options, nil).write(p, "option ", func(last bool) {
+		p.Printf(";\n")
+	})
+
+	for _, name := range msg.ReservedName {
+		p.Printf("reserved %q;\n", name)
+	}
+
+	for _, rng := range msg.ReservedRange {
+		if rng.GetStart() == rng.GetEnd()-1 {
+			p.Printf("reserved %d;\n", rng.GetStart())
+		} else {
+			p.Printf("reserved %d to %d;\n", rng.GetStart(), rng.GetEnd())
+		}
+	}
 
 	for i := range msg.GetOneofDecl() {
 		p.OneOf(msg, i)
@@ -186,7 +342,7 @@ func (p *printer) Message(msg *descriptorpb.DescriptorProto) {
 }
 
 // OneOf prints a oneof definition.
-func (p *printer) OneOf(msg *descriptorpb.DescriptorProto, oneOfIndex int) {
+func (p *Printer) OneOf(msg *descriptorpb.DescriptorProto, oneOfIndex int) {
 	of := msg.GetOneofDecl()[oneOfIndex]
 	p.MaybeLeadingComments(of)
 	defer p.open("oneof %s", of.GetName())()
@@ -199,7 +355,7 @@ func (p *printer) OneOf(msg *descriptorpb.DescriptorProto, oneOfIndex int) {
 }
 
 // Enum prints an enum definition.
-func (p *printer) Enum(enum *descriptorpb.EnumDescriptorProto) {
+func (p *Printer) Enum(enum *descriptorpb.EnumDescriptorProto) {
 	p.MaybeLeadingComments(enum)
 	defer p.open("enum %s", enum.GetName())()
 
@@ -209,7 +365,7 @@ func (p *printer) Enum(enum *descriptorpb.EnumDescriptorProto) {
 }
 
 // EnumValue prints an enum value definition.
-func (p *printer) EnumValue(v *descriptorpb.EnumValueDescriptorProto) {
+func (p *Printer) EnumValue(v *descriptorpb.EnumValueDescriptorProto) {
 	p.MaybeLeadingComments(v)
 	p.Printf("%s = %d;\n", v.GetName(), v.GetNumber())
 }
