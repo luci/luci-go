@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "56fe38aa_47e5f58e",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-28T23:05:48Z",
+      "side": 1,
+      "message": "Yep, this is when I thought I needed to call SetFile",
+      "parentUuid": "820387c0_3c4e4bca",
+      "range": {
+        "startLine": 112,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 92
+      },
+      "revId": "f39b9f1075554aa2bb63335a83d3fe48adbab26f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c7094cf2_d98a3ece",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-28T01:35:06Z",
       "side": 1,
       "message": "Is this a new utility method? I can\u0027t find it anywhere.",
+      "range": {
+        "startLine": 113,
+        "startChar": 29,
+        "endLine": 113,
+        "endChar": 63
+      },
+      "revId": "f39b9f1075554aa2bb63335a83d3fe48adbab26f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0df920b_a3f3c30c",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-28T23:05:48Z",
+      "side": 1,
+      "message": "Ah, I misspelled it; it\u0027s https://pkg.go.dev/google.golang.org/protobuf/reflect/protodesc#ToDescriptorProto",
+      "parentUuid": "c7094cf2_d98a3ece",
       "range": {
         "startLine": 113,
         "startChar": 29,
