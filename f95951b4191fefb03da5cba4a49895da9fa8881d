@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "92305fec_b1e8c088",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T14:04:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34d6516a_a7bbc8af",
+      "revId": "f95951b4191fefb03da5cba4a49895da9fa8881d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0f22fa3c_84815bab",
@@ -59,6 +77,54 @@
         "startChar": 84,
         "endLine": 92,
         "endChar": 108
+      },
+      "revId": "f95951b4191fefb03da5cba4a49895da9fa8881d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01b212f4_b62fffd7",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T14:04:17Z",
+      "side": 1,
+      "message": "Yes, though not documented.",
+      "parentUuid": "87247abc_5f4f703f",
+      "range": {
+        "startLine": 92,
+        "startChar": 84,
+        "endLine": 92,
+        "endChar": 108
+      },
+      "revId": "f95951b4191fefb03da5cba4a49895da9fa8881d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a7c13a5_1e145d9e",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T14:04:17Z",
+      "side": 1,
+      "message": "no, required. I meant here that there \u003e0 definite shouldActs for the sake of which I\u0027ll ignore X errors.",
+      "parentUuid": "0f22fa3c_84815bab",
+      "range": {
+        "startLine": 92,
+        "startChar": 69,
+        "endLine": 92,
+        "endChar": 77
       },
       "revId": "f95951b4191fefb03da5cba4a49895da9fa8881d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
