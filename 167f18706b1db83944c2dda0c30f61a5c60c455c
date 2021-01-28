@@ -34,6 +34,24 @@
       "parentUuid": "6b03ae28_8ab551b5",
       "revId": "167f18706b1db83944c2dda0c30f61a5c60c455c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b57d7ff_6e4e065a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-28T01:11:10Z",
+      "side": 1,
+      "message": "I infer that at least over a half of them are ScheduleBuild.\n\n(Number of DeadlineExceed in Go (schedule/cancel) -\u003e Py flow is 33. And Go takes 20% traffic. So in total at least 165 requests are ScheduleBuild)",
+      "parentUuid": "28c78a26_7ea15b67",
+      "revId": "167f18706b1db83944c2dda0c30f61a5c60c455c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
