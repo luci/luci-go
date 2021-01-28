@@ -575,6 +575,11 @@ func (h *moduleHostImpl) panicIfInvalid() {
 	}
 }
 
+func (h *moduleHostImpl) ServiceRegistrar() grpc.ServiceRegistrar {
+	h.panicIfInvalid()
+	return h.srv.PRPC
+}
+
 func (h *moduleHostImpl) Routes() *router.Router {
 	h.panicIfInvalid()
 	return h.srv.Routes
