@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1ba8d8e3_922d22ed",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-01-28T21:20:56Z",
+      "side": 1,
+      "message": "err, If `rdb stream` uploads 1000 artifacts via 10 different HTTP sessions, ...",
+      "parentUuid": "60088c7c_ed203c84",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 15
+      },
+      "revId": "9eecfec0cd6a6b149cf337108b36363bbdb695d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c110d51d_4e1c861e",
         "filename": "resultdb/internal/artifactcontent/metrics.go",
         "patchSetId": 5
