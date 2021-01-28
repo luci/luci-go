@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "144ab18b_60a27ef6",
+        "filename": "common/proto/google/descutil/printer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-28T01:21:32Z",
+      "side": 1,
+      "message": "Oops. missed the newline character.",
+      "parentUuid": "05d31eb5_97893b36",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "3b226d10f9c358bc1ce8371aaf95f0f6e88a56e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f2be5c8c_ce3c570a",
