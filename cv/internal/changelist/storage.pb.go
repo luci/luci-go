@@ -279,10 +279,38 @@ type Gerrit struct {
 
 	// Gerrit host.
 	Host string `protobuf:"bytes,5,opt,name=host,proto3" json:"host,omitempty"`
-	// Info contains all revisions, but non-current revisions will not have all
-	// the fields populated.
+	// Info contains subset of ChangeInfo listed below.
 	//
-	// Exact fields TODO.
+	// NOTE: keep this list in sync with RemoveUnusedGerritInfo() function.
+	//  * number
+	//  * owner
+	//      * id
+	//      * email (may be not set)
+	//  * project
+	//  * ref
+	//  * status
+	//  * current_revision
+	//  * revisions
+	//      * kind
+	//      * number
+	//      * ref
+	//      * created
+	//      * description (patchset title)
+	//      * commit (for current_revision only)
+	//          * message (current CL description)
+	//  * labels
+	//      * optional
+	//      * all
+	//          * user
+	//              * id
+	//              * email (may be not set)
+	//      * value
+	//  * messages
+	//      * id
+	//      * date
+	//      * message
+	//  * updated
+	//  * created
 	Info *gerrit.ChangeInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
 	// Files are filenames touched in the current revision.
 	//

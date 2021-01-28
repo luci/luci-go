@@ -484,6 +484,7 @@ func TestUpdateCLWorks(t *testing.T) {
 
 			cl2 := getCL(ctx, gHost, 101)
 			So(cl2.EVersion, ShouldEqual, 2)
+			changelist.RemoveUnusedGerritInfo(ci)
 			So(cl2.Snapshot.GetGerrit().GetInfo(), ShouldResembleProto, ci)
 			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 		})
