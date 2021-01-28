@@ -76,6 +76,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b40d005d_0375c4bf",
+        "filename": "server/redisconn/adminpb/admin.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-28T00:27:32Z",
+      "side": 1,
+      "message": "SG",
+      "parentUuid": "b3971f84_3ee96a0b",
+      "revId": "a64f1f7ee535d91a1da940436ffb4c26c6c25f38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "36a63398_b8a8432b",
