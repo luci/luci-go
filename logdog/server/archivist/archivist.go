@@ -52,6 +52,7 @@ var (
 	tsCount = metric.NewCounter("logdog/archivist/archive/count",
 		"The number of archival tasks processed.",
 		nil,
+		field.String("project"),
 		field.Bool("successful"))
 
 	// tsSize tracks the archive binary file size distribution of completed
@@ -65,6 +66,7 @@ var (
 		"The size (in bytes) of each archive file.",
 		&tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
 		distribution.DefaultBucketer,
+		field.String("project"),
 		field.String("archive"),
 		field.String("stream"))
 
@@ -78,6 +80,7 @@ var (
 	tsTotalBytes = metric.NewCounter("logdog/archivist/archive/total_bytes",
 		"The total number of archived bytes.",
 		&tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
+		field.String("project"),
 		field.String("archive"),
 		field.String("stream"))
 
@@ -89,6 +92,7 @@ var (
 		"The total number of log entries per archive.",
 		nil,
 		distribution.DefaultBucketer,
+		field.String("project"),
 		field.String("stream"))
 
 	// tsTotalLogEntries tracks the total number of log entries that have
@@ -98,6 +102,7 @@ var (
 	tsTotalLogEntries = metric.NewCounter("logdog/archivist/archive/total_log_entries",
 		"The total number of log entries.",
 		nil,
+		field.String("project"),
 		field.String("stream"))
 )
 
@@ -173,7 +178,7 @@ func (a *Archivist) ArchiveTask(c context.Context, task *logdog.ArchiveTask) err
 	}.Infof(c, "Finished archive task.")
 
 	// Add a result metric.
-	tsCount.Add(c, 1, !failure)
+	tsCount.Add(c, 1, task.Project, !failure)
 
 	return err
 }
@@ -292,11 +297,11 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 		// Add metrics for this successful archival.
 		streamType := staged.desc.StreamType.String()
 
-		staged.stream.addMetrics(c, tsEntriesField, streamType)
-		staged.index.addMetrics(c, tsIndexField, streamType)
+		staged.stream.addMetrics(c, task.Project, tsEntriesField, streamType)
+		staged.index.addMetrics(c, task.Project, tsIndexField, streamType)
 
-		tsLogEntries.Add(c, float64(staged.logEntryCount), streamType)
-		tsTotalLogEntries.Add(c, staged.logEntryCount, streamType)
+		tsLogEntries.Add(c, float64(staged.logEntryCount), task.Project, streamType)
+		tsTotalLogEntries.Add(c, staged.logEntryCount, task.Project, streamType)
 	}
 
 	log.Fields{
@@ -659,9 +664,9 @@ func (d *stagingPaths) clearStaged() { d.staged = "" }
 
 func (d *stagingPaths) enabled() bool { return d.final != "" }
 
-func (d *stagingPaths) addMetrics(c context.Context, archiveField, streamField string) {
-	tsSize.Add(c, float64(d.bytesWritten), archiveField, streamField)
-	tsTotalBytes.Add(c, d.bytesWritten, archiveField, streamField)
+func (d *stagingPaths) addMetrics(c context.Context, projectField, archiveField, streamField string) {
+	tsSize.Add(c, float64(d.bytesWritten), projectField, archiveField, streamField)
+	tsTotalBytes.Add(c, d.bytesWritten, projectField, archiveField, streamField)
 }
 
 func (sa *stagedArchival) finalize(c context.Context, ar *logdog.ArchiveStreamRequest) error {
