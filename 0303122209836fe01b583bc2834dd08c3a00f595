@@ -16,6 +16,98 @@
       "message": "I still haven\u0027t added any new tests, could you please review the approach I am proposing before I continue implementing?",
       "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6507cdb_44eebcb4",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T16:36:15Z",
+      "side": 1,
+      "message": "why though? why not allow creating an invocation that includes an existing one. It would save the caller an RPC.",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 33
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35ab6ff1_ffa2f083",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T16:36:15Z",
+      "side": 1,
+      "message": "both must be wrapped with invocations.ID(), like L152, otherwise hash won\u0027t be be prepended.",
+      "range": {
+        "startLine": 178,
+        "startChar": 26,
+        "endLine": 179,
+        "endChar": 63
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42ef0650_9511792e",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T16:36:15Z",
+      "side": 1,
+      "message": "CreateInvocationRequest\n\nthen it applies to both CreateInvocation() and BatchCreateInvocations()",
+      "range": {
+        "startLine": 107,
+        "startChar": 42,
+        "endLine": 107,
+        "endChar": 71
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea677438_5a605af5",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T16:36:15Z",
+      "side": 1,
+      "message": "I think this should be dropped",
+      "range": {
+        "startLine": 107,
+        "startChar": 72,
+        "endLine": 108,
+        "endChar": 56
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
