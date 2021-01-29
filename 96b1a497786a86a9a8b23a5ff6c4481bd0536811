@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4cb0ce2b_1673b17e",
+        "filename": "cv/internal/run/impl/cl_update.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-29T07:13:11Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4dc563ab_fd32ffe6",
+      "range": {
+        "startLine": 62,
+        "startChar": 2,
+        "endLine": 65,
+        "endChar": 3
+      },
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ffee9ae2_d06057b2",
@@ -83,6 +107,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "8686a920_69b59aff",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-29T07:13:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ffee9ae2_d06057b2",
+      "range": {
+        "startLine": 102,
+        "startChar": 31,
+        "endLine": 102,
+        "endChar": 61
+      },
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "bb50d9ee_3818903d",
         "filename": "cv/internal/run/impl/cl_update_test.go",
         "patchSetId": 5
@@ -94,6 +142,24 @@
       "writtenOn": "2021-01-28T22:54:15Z",
       "side": 1,
       "message": "true, though in practice, we\u0027d see a new timestamp, which ought to result in a new run.",
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f30d0b4b_a5c34dbb",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-29T07:13:11Z",
+      "side": 1,
+      "message": "\u003e we\u0027d see a new timestamp,\nYes, missed that. But why would it result to a new run because of a different timestamp?\n\nSo say \n\n  T1: user1 CQ+2 \n  T2: user2 CQ+2 \n  T3: CQ starts the full run\n  T4: user1 for some reason remove CQ+2 vote\n\nShall we still continue the run if CQ+2 from user 2 is valid (i.e. have full run access)?",
+      "parentUuid": "bb50d9ee_3818903d",
       "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
