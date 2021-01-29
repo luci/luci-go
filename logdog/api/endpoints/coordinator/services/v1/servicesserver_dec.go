@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedServices struct {
@@ -59,7 +59,7 @@ func (s *DecoratedServices) LoadStream(ctx context.Context, req *LoadStreamReque
 	return
 }
 
-func (s *DecoratedServices) TerminateStream(ctx context.Context, req *TerminateStreamRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedServices) TerminateStream(ctx context.Context, req *TerminateStreamRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "TerminateStream", req)
@@ -76,7 +76,7 @@ func (s *DecoratedServices) TerminateStream(ctx context.Context, req *TerminateS
 	return
 }
 
-func (s *DecoratedServices) ArchiveStream(ctx context.Context, req *ArchiveStreamRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedServices) ArchiveStream(ctx context.Context, req *ArchiveStreamRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "ArchiveStream", req)
@@ -127,7 +127,7 @@ func (s *DecoratedServices) LeaseArchiveTasks(ctx context.Context, req *LeaseReq
 	return
 }
 
-func (s *DecoratedServices) DeleteArchiveTasks(ctx context.Context, req *DeleteRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedServices) DeleteArchiveTasks(ctx context.Context, req *DeleteRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "DeleteArchiveTasks", req)
