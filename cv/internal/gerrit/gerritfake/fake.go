@@ -420,6 +420,13 @@ func Status(s interface{}) CIModifier {
 	}
 }
 
+// Messages sets .Messages to the given messages.
+func Messages(msgs ...*gerritpb.ChangeMessageInfo) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ci.Messages = msgs
+	}
+}
+
 // Vote sets a label to the given value by the given user(s) on the latest
 // patchset.
 func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {

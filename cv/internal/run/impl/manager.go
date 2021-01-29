@@ -159,10 +159,14 @@ func (rm *runManager) SaveState(ctx context.Context, st eventbox.State, ev event
 
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
-	startEvents        eventbox.Events
-	cancelEvents       eventbox.Events
-	pokeEvents         eventbox.Events
-	newConfigEvents    eventbox.Events
+	startEvents     eventbox.Events
+	cancelEvents    eventbox.Events
+	pokeEvents      eventbox.Events
+	newConfigEvents eventbox.Events
+	clUpdatedEvents struct {
+		events eventbox.Events
+		cls    common.CLIDs
+	}
 	finishedEvents     eventbox.Events
 	nextReadyEventTime time.Time
 }
@@ -190,6 +194,9 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.pokeEvents = append(tr.pokeEvents, item)
 	case *eventpb.Event_NewConfig:
 		tr.newConfigEvents = append(tr.newConfigEvents, item)
+	case *eventpb.Event_ClUpdated:
+		tr.clUpdatedEvents.events = append(tr.clUpdatedEvents.events, item)
+		tr.clUpdatedEvents.cls = append(tr.clUpdatedEvents.cls, common.CLID(e.GetClUpdated().GetClid()))
 	case *eventpb.Event_Finished:
 		tr.finishedEvents = append(tr.finishedEvents, item)
 	default:
@@ -217,7 +224,7 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		// this Run in CV. In that case, Run Manager should just move this Run
 		// to cancelled state directly.
 		t.Events = append(t.Events, tr.startEvents...)
-		t.SideEffectFn, s, err = cancel(ctx, rm.runID, s)
+		t.SideEffectFn, s, err = cancel(ctx, s)
 		if err != nil {
 			return nil, err
 		}
@@ -226,6 +233,15 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 	case len(tr.startEvents) > 0:
 		t := eventbox.Transition{Events: tr.startEvents}
 		t.SideEffectFn, s, err = start(ctx, rm.runID, s)
+		if err != nil {
+			return nil, err
+		}
+		t.TransitionTo = s
+		ret = append(ret, t)
+	}
+	if len(tr.clUpdatedEvents.events) > 0 {
+		t := eventbox.Transition{Events: tr.clUpdatedEvents.events}
+		t.SideEffectFn, s, err = onCLUpdated(ctx, s, tr.clUpdatedEvents.cls)
 		if err != nil {
 			return nil, err
 		}

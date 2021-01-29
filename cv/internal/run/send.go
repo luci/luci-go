@@ -83,6 +83,18 @@ func Cancel(ctx context.Context, runID common.RunID) error {
 	})
 }
 
+// NotifyCLUpdated informs RunManager that given CL has a new version available.
+func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
+	return sendNow(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_ClUpdated{
+			ClUpdated: &eventpb.CLUpdated{
+				Clid:     int64(clid),
+				EVersion: int64(eVersion),
+			},
+		},
+	})
+}
+
 // NotifyFinished tells RunManager that Run has finished in CQDaemon.
 //
 // TODO(crbug/1141880): Remove this event after migration.
