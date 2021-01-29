@@ -196,17 +196,28 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 		// Module.
 		mainScript = filepath.Join(mainScript, "__main__.py")
 	}
-	switch spec, err := l.parseFrom(mainScript); {
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to parse inline spec from: %s", mainScript).Err()
 
-	case spec != nil:
-		logging.Infof(c, "Loaded inline spec from: %s", mainScript)
-		return spec, nil
+	info, err := os.Stat(mainScript)
+	if err != nil {
+		return nil, errors.Annotate(err, "error stat-ing file: %s", mainScript).Err()
+	}
+
+	// Assume the path is a directory until we're sure it's not, then get its directory component
+	dir := mainScript
+	if !info.IsDir() {
+		dir = filepath.Dir(mainScript)
+		switch spec, err := l.parseFrom(mainScript); {
+		case err != nil:
+			return nil, errors.Annotate(err, "failed to parse inline spec from: %s", mainScript).Err()
+
+		case spec != nil:
+			logging.Infof(c, "Loaded inline spec from: %s", mainScript)
+			return spec, nil
+		}
 	}
 
 	// Common: Try and identify a common specification file.
-	switch path, err := l.findCommonWalkingFrom(filepath.Dir(mainScript)); {
+	switch path, err := l.findCommonWalkingFrom(dir); {
 	case err != nil:
 		return nil, err
 

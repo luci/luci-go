@@ -128,9 +128,24 @@ func (o *Options) ResolveSpec(c context.Context) error {
 
 	o.EnvConfig.Spec = &o.DefaultSpec
 
+	// If we have no target, then resolve on the cwd instead to pick up .vpython
+	// for standalone executions of `vpython`
+	target := o.CommandLine.Target
+	_, isNoTarget := target.(python.NoTarget)
+	if isNoTarget {
+		logging.Debugf(c, "Resolving spec from current directory")
+		spec, err := o.SpecLoader.LoadForScript(c, o.WorkDir, false)
+		if err != nil {
+			return errors.Annotate(err, "failed to load spec for script: %s", target).Err()
+		}
+		if spec != nil {
+			o.EnvConfig.Spec = spec
+			return nil
+		}
+	}
+
 	// If we're running a Python script, assert that the target script exists.
 	// Additionally, track whether it's a file or a module (directory).
-	target := o.CommandLine.Target
 	script, isScriptTarget := target.(python.ScriptTarget)
 	if isScriptTarget && script.Path == "-" {
 		logging.Infof(c, "Skipping specification probing for script via stdin.")
