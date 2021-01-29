@@ -232,7 +232,7 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		ret = append(ret, t)
 	case len(tr.startEvents) > 0:
 		t := eventbox.Transition{Events: tr.startEvents}
-		t.SideEffectFn, s, err = start(ctx, rm.runID, s)
+		t.SideEffectFn, s, err = start(ctx, s)
 		if err != nil {
 			return nil, err
 		}
