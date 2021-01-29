@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d65d955_837bb30a",
+        "filename": "resultdb/internal/artifactcontent/metrics.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T06:29:50Z",
+      "side": 1,
+      "message": "nit: join two lines",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 60,
+        "endChar": 6
+      },
+      "revId": "bd7c8c2c445022a30db2215afd83371e37d9671b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
