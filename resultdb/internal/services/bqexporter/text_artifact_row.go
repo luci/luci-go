@@ -15,14 +15,19 @@
 package bqexporter
 
 import (
+	"bufio"
+	"context"
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/genproto/googleapis/bytestream"
 
 	"go.chromium.org/luci/common/bq"
 
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -82,4 +87,43 @@ func (i *textArtifactRowInput) row() *bq.Row {
 
 func (i *textArtifactRowInput) id() []byte {
 	return []byte(fmt.Sprintf("%s%d", i.a.Name, i.shardID))
+}
+
+func (b *bqExporter) getArtifactContentClient(ctx context.Context) (bytestream.ByteStreamClient, error) {
+	conn, err := artifactcontent.RBEConn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bytestream.NewByteStreamClient(conn), nil
+}
+
+func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *pb.Artifact, exported, parent *pb.Invocation) (rows []*bq.Row) {
+	ac := artifactcontent.ArtifactContentScanner{
+		RBEInstance: b.Options.ArtifactRBEInstance,
+		Hash:        a.RBECASHash,
+		Size:        a.Size,
+	}
+
+	var str strings.Builder
+	lineBreak := []byte("\n")
+	shardId := 0
+	ac.DownloadRBECASContent(ctx, b.rbecasClient, func(sc *bufio.Scanner) error {
+		for sc.Scan() {
+			if str.Len()+len(sc.Bytes())+len(lineBreak) > contentShardSize {
+				rows = append(rows, b.generateBQRows(&textArtifactRowInput{
+					exported: exported,
+					parent:   parent,
+					a:        a,
+					shardID:  int32(shardId),
+					content:  str.String(),
+				})...)
+				shardId++
+				str.Reset()
+			}
+			str.Write(sc.Bytes())
+			str.Write(lineBreak)
+		}
+		return nil
+	})
+	return
 }
