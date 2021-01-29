@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e488eb8_0d5c84cd",
+        "filename": "cv/internal/config/refresh_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-29T22:04:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35ea1f3c_552e22c5",
+      "range": {
+        "startLine": 128,
+        "startChar": 40,
+        "endLine": 128,
+        "endChar": 45
+      },
+      "revId": "7070f87a14364a493ca54dfacd2765a1f660cdd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8b10f2d2_c57f7bcd",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-01-29T20:36:18Z",
       "side": 1,
       "message": "nit: I think you can check this first, then set hashInfo.GitRev to empty then use old way to compare the rest of struct as I think it is clearer and more readable.",
+      "range": {
+        "startLine": 130,
+        "startChar": 3,
+        "endLine": 130,
+        "endChar": 44
+      },
+      "revId": "7070f87a14364a493ca54dfacd2765a1f660cdd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "972ca9a6_b18b052f",
+        "filename": "cv/internal/config/refresh_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-01-29T22:04:41Z",
+      "side": 1,
+      "message": "Done, thanks",
+      "parentUuid": "8b10f2d2_c57f7bcd",
       "range": {
         "startLine": 130,
         "startChar": 3,
