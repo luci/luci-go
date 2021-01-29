@@ -36,6 +36,8 @@ import (
 // validateBatchCreateInvocationsRequest checks that the individual requests
 // are valid, that they match the batch request requestID and that their names
 // are not repeated.
+// It also validates that any included_invocations in the requests are also to
+// be created in this same batch.
 func validateBatchCreateInvocationsRequest(
 	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string) (invocations.IDSet, error) {
 	if err := pbutil.ValidateRequestID(requestID); err != nil {
@@ -47,6 +49,7 @@ func validateBatchCreateInvocationsRequest(
 	}
 
 	idSet := make(invocations.IDSet, len(reqs))
+	var includedIDs invocations.IDSet
 	for i, req := range reqs {
 		if err := validateCreateInvocationRequest(req, now); err != nil {
 			return nil, errors.Annotate(err, "requests[%d]", i).Err()
@@ -63,6 +66,24 @@ func validateBatchCreateInvocationsRequest(
 			return nil, errors.Reason("requests[%d].invocation_id: duplicated invocation id %q", i, req.InvocationId).Err()
 		}
 		idSet.Add(invID)
+
+		for j, incInvName := range req.Invocation.IncludedInvocations {
+			incInvID, err := pbutil.ParseInvocationName(incInvName)
+			if err != nil {
+				return nil, errors.Reason("requests[%d].invocation.included_invocations[%d]: invalid included invocation name %q",
+					i, j, incInvName).Err()
+			}
+			if invocations.ID(incInvID) == invID {
+				return nil, errors.Reason("requests[%d].invocation.included_invocations[%d]: invocation %q cannot include itself.",
+					i, j, invID).Err()
+			}
+			includedIDs.Add(invocations.ID(incInvID))
+		}
+	}
+	for incID := range includedIDs {
+		if !idSet.Has(incID) {
+			return nil, errors.Reason("requests.invocation.included_invocations: an invocation in the batch includes invocation %q not defined in the batch", incID).Err()
+		}
 	}
 	return idSet, nil
 }
@@ -122,9 +143,9 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 // inserting a row for each invocation creation requested.
 func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Context, now time.Time, reqs []*pb.CreateInvocationRequest, requestID, createdBy string) []*spanner.Mutation {
 
-	ms := make([]*spanner.Mutation, len(reqs))
+	ms := make([]*spanner.Mutation, 0, len(reqs))
 	// Compute mutations
-	for i, req := range reqs {
+	for _, req := range reqs {
 
 		// Prepare the invocation we will save to spanner.
 		inv := &pb.Invocation{
@@ -146,7 +167,18 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		pbutil.NormalizeInvocation(inv)
 		// Create a mutation to create the invocation.
-		ms[i] = spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID))
+		ms = append(ms, spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID)))
+
+		// Add any inclusions.
+		// Since both the including and included invocations are created in the same transaction,
+		// and the caller has permissions to create both (implying that there's no need to check
+		// permissions to include one into the other) there is no need for further checks.
+		for _, incName := range req.Invocation.IncludedInvocations {
+			ms = append(ms, spanutil.InsertOrUpdateMap("IncludedInvocations", map[string]interface{}{
+				"InvocationId":         req.InvocationId,
+				"IncludedInvocationId": invocations.MustParseName(incName),
+			}))
+		}
 	}
 	return ms
 }
