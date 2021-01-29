@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -131,5 +132,48 @@ func TestPrinter(t *testing.T) {
 				testMsg(m, 0)
 			}
 		})
+
+		Convey("synthesized message", func() {
+			myFakeMessage := mkMessage(
+				"myMessage",
+				mkField("f1", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING, nil),
+				mkField("st", 2, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, &structpb.Struct{}),
+			)
+			printer.AppendLeadingComments(myFakeMessage, []string{"Message comment", "second line."})
+			printer.AppendLeadingComments(myFakeMessage.Field[0], []string{"simple string"})
+			printer.AppendLeadingComments(myFakeMessage.Field[1], []string{"cool message type"})
+
+			printer.Message(myFakeMessage)
+			So(buf.String(), ShouldEqual, `// Message comment
+// second line.
+message myMessage {
+	// simple string
+	string f1 = 1;
+	// cool message type
+	google.protobuf.Struct st = 2;
+}
+`)
+		})
 	})
+}
+
+func mkField(name string, num int32, typ descriptorpb.FieldDescriptorProto_Type, msg proto.Message) *descriptorpb.FieldDescriptorProto {
+	ret := &descriptorpb.FieldDescriptorProto{}
+	ret.Name = &name
+	camelName := camel(name)
+	ret.JsonName = &camelName
+	ret.Number = &num
+	ret.Type = &typ
+	if typ == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		fn := string(msg.ProtoReflect().Descriptor().FullName())
+		ret.TypeName = &fn
+	}
+	return ret
+}
+
+func mkMessage(name string, fields ...*descriptorpb.FieldDescriptorProto) *descriptorpb.DescriptorProto {
+	ret := &descriptorpb.DescriptorProto{}
+	ret.Name = &name
+	ret.Field = fields
+	return ret
 }

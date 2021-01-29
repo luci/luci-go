@@ -101,6 +101,34 @@ func (p *Printer) MaybeLeadingComments(ptr interface{}) {
 	}
 }
 
+// AppendLeadingComments allows adding additional leading comments to any printable
+// descriptorpb object associated with this printer.
+//
+// Each line will be prepended with " " and appended with "\n".
+//
+// e.g.
+//
+//   p := NewPrinter(os.Stdout)
+//   p.AppendLeadingComments(protodesc.ToDescriptorProto(myMsg.ProtoReflect()), []string{
+//     "This is a line.",
+//     "This is the next line.",
+//   })
+func (p *Printer) AppendLeadingComments(ptr interface{}, lines []string) {
+	loc, ok := p.sourceCodeInfo[ptr]
+	if !ok {
+		loc = &descriptorpb.SourceCodeInfo_Location{}
+		p.sourceCodeInfo[ptr] = loc
+	}
+	bld := strings.Builder{}
+	for _, line := range lines {
+		bld.WriteRune(' ')
+		bld.WriteString(line)
+		bld.WriteRune('\n')
+	}
+	comments := loc.GetLeadingComments() + bld.String()
+	loc.LeadingComments = &comments
+}
+
 // shorten removes leading "." and trims package name if it matches p.file.
 func (p *Printer) shorten(name string) string {
 	name = strings.TrimPrefix(name, ".")
