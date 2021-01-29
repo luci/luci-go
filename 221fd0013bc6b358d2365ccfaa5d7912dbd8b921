@@ -16,6 +16,75 @@
       "message": "PTAL",
       "revId": "221fd0013bc6b358d2365ccfaa5d7912dbd8b921",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9b6c9f9_1e1eadcf",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T17:08:22Z",
+      "side": 1,
+      "message": "const\n\nand perhaps combine with the below? const ( foo... bar .. )",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 3
+      },
+      "revId": "221fd0013bc6b358d2365ccfaa5d7912dbd8b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d19bf0a0_57517514",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T17:08:22Z",
+      "side": 1,
+      "message": "nit: same as https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2633397/4/resultdb/internal/services/bqexporter/test_result_row.go#58",
+      "range": {
+        "startLine": 51,
+        "startChar": 14,
+        "endLine": 52,
+        "endChar": 53
+      },
+      "revId": "221fd0013bc6b358d2365ccfaa5d7912dbd8b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "116e5e21_967ba7e4",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T17:08:22Z",
+      "side": 1,
+      "message": "consider\n1) artifact with name \"....myartifact1\" with part 2.\n2) artifact with name \"...myartifact\" with part 12.\n\nthey produce the same id.\n\nwe need a delimiter, e.g. \"%s/%d\"",
+      "range": {
+        "startLine": 84,
+        "startChar": 28,
+        "endLine": 84,
+        "endChar": 32
+      },
+      "revId": "221fd0013bc6b358d2365ccfaa5d7912dbd8b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
