@@ -108,6 +108,30 @@
       },
       "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "260e5193_2a77a754",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-29T21:31:34Z",
+      "side": 1,
+      "message": "I think we should mention that the included invocations should exist or be created in the same batch?",
+      "parentUuid": "ea677438_5a605af5",
+      "range": {
+        "startLine": 107,
+        "startChar": 72,
+        "endLine": 108,
+        "endChar": 56
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
