@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89295cc6_477bf101",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-29T22:32:17Z",
+      "side": 0,
+      "message": "This will be added back in the child CL as manager test will target more on manager itself.",
+      "range": {
+        "startLine": 199,
+        "startChar": 0,
+        "endLine": 232,
+        "endChar": 4
+      },
+      "revId": "15ee2d46604d03cc83b2572ee3bf590635c42198",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
