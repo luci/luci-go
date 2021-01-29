@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
@@ -191,6 +193,8 @@ func TestHandleArchive(t *testing.T) {
 
 	Convey(`A testing archive setup`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
+		c, _ = tsmon.WithDummyInMemory(c)
+		ms := tsmon.Store(c)
 
 		st := memory.Storage{}
 		gsc := testGSClient{}
@@ -609,6 +613,43 @@ func TestHandleArchive(t *testing.T) {
 					})
 				}
 			}
+		})
+
+		Convey(`Will update metric`, func() {
+			fv := func(vs ...interface{}) []interface{} {
+				ret := []interface{}{project}
+				return append(ret, vs...)
+			}
+			dSum := func(val interface{}) interface{} {
+				return val.(*distribution.Distribution).Sum()
+			}
+
+			Convey(`tsCount`, func() {
+				Convey(`With failure`, func() {
+					sc.lsCallback = func(*logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
+						return nil, errors.New("beep")
+					}
+					So(ar.ArchiveTask(c, task), ShouldErrLike, "beep")
+					So(ms.Get(c, tsCount, time.Time{}, fv(false)), ShouldEqual, 1)
+				})
+				Convey(`With success`, func() {
+					So(ar.ArchiveTask(c, task), ShouldBeNil)
+					So(ms.Get(c, tsCount, time.Time{}, fv(true)), ShouldEqual, 1)
+				})
+			})
+
+			Convey(`All others`, func() {
+				addTestEntry(project, 0, 1, 2, 3, 4)
+				So(ar.ArchiveTask(c, task), ShouldBeNil)
+
+				st := logpb.StreamType_TEXT.String()
+				So(dSum(ms.Get(c, tsSize, time.Time{}, fv("entries", st))), ShouldEqual, 116)
+				So(dSum(ms.Get(c, tsSize, time.Time{}, fv("index", st))), ShouldEqual, 58)
+				So(ms.Get(c, tsTotalBytes, time.Time{}, fv("entries", st)), ShouldEqual, 116)
+				So(ms.Get(c, tsTotalBytes, time.Time{}, fv("index", st)), ShouldEqual, 58)
+				So(dSum(ms.Get(c, tsLogEntries, time.Time{}, fv(st))), ShouldEqual, 5)
+				So(ms.Get(c, tsTotalLogEntries, time.Time{}, fv(st)), ShouldEqual, 5)
+			})
 		})
 	})
 }
