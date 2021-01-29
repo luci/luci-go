@@ -87,7 +87,7 @@ func TestUpdateProject(t *testing.T) {
 			localHash := computeHash(cfg)
 			projKey := datastore.MakeKey(ctx, projectConfigKind, "chromium")
 			cgNames := make([]string, len(cfg.GetConfigGroups()))
-			// Verify ConfigGroups
+			// Verify ConfigGroups.
 			for i, cgpb := range cfg.GetConfigGroups() {
 				cgNames[i] = makeConfigGroupName(cgpb.GetName(), i)
 				cg := ConfigGroup{
@@ -100,7 +100,7 @@ func TestUpdateProject(t *testing.T) {
 				So(cg.SubmitOptions, ShouldResembleProto, cfg.GetSubmitOptions())
 				So(cg.Content, ShouldResembleProto, cfg.GetConfigGroups()[i])
 			}
-			// Verify ProjectConfig
+			// Verify ProjectConfig.
 			pc := ProjectConfig{Project: "chromium"}
 			err = datastore.Get(ctx, &pc)
 			So(err, ShouldBeNil)
@@ -113,17 +113,21 @@ func TestUpdateProject(t *testing.T) {
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
 			})
-			// Verify ConfigHashInfo
+			// Verify ConfigHashInfo.
 			hashInfo := ConfigHashInfo{Hash: localHash, Project: projKey}
 			err = datastore.Get(ctx, &hashInfo)
 			So(err, ShouldBeNil)
-			So(hashInfo, ShouldResemble, ConfigHashInfo{
-				Hash:             localHash,
-				Project:          projKey,
-				ProjectEVersion:  expectedEVersion,
-				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
-				ConfigGroupNames: cgNames,
-			})
+			So(hashInfo.Hash, ShouldEqual, localHash)
+			So(hashInfo.Project, ShouldEqual, projKey)
+			So(hashInfo.ProjectEVersion, ShouldEqual, expectedEVersion)
+			So(hashInfo.UpdateTime, ShouldEqual, datastore.RoundTime(testClock.Now()).UTC())
+			So(hashInfo.ConfigGroupNames, ShouldResemble, cgNames)
+			// The revision in the memory-based config fake is a fake
+			// 40-character sha256 hash digest. The particular value is
+			// internally determined by the memory-based implementation
+			// and isn't important here, so just asser that something
+			// that looks like a hash is filled in.
+			So(len(hashInfo.GitRev), ShouldEqual, 40)
 		}
 
 		notifyCalled := false
