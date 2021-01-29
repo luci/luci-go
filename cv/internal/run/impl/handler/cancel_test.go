@@ -15,13 +15,17 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
@@ -51,7 +55,9 @@ func TestCancel(t *testing.T) {
 			now := clock.Now(ctx).UTC()
 			So(newrs.Run.StartTime, ShouldResemble, now)
 			So(newrs.Run.EndTime, ShouldResemble, now)
-			So(se, ShouldBeNil)
+			So(se, ShouldNotBeNil)
+			So(se(ctx), ShouldBeNil)
+			assertNotifyProjRunFinished(ctx, rs.Run.ID)
 		})
 
 		Convey("Cancels RUNNING Run", func() {
@@ -63,7 +69,9 @@ func TestCancel(t *testing.T) {
 			now := clock.Now(ctx).UTC()
 			So(newrs.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
 			So(newrs.Run.EndTime, ShouldResemble, now)
-			So(se, ShouldBeNil)
+			So(se, ShouldNotBeNil)
+			So(se(ctx), ShouldBeNil)
+			assertNotifyProjRunFinished(ctx, rs.Run.ID)
 		})
 
 		statuses := []run.Status{
@@ -83,5 +91,15 @@ func TestCancel(t *testing.T) {
 				So(se, ShouldBeNil)
 			})
 		}
+	})
+}
+
+func assertNotifyProjRunFinished(ctx context.Context, runID common.RunID) {
+	pmtest.AssertInEventbox(ctx, runID.LUCIProject(), &prjpb.Event{
+		Event: &prjpb.Event_RunFinished{
+			RunFinished: &prjpb.RunFinished{
+				RunId: string(runID),
+			},
+		},
 	})
 }

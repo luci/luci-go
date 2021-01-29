@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -50,5 +51,9 @@ func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (eventbox.SideEffec
 		// This run has never started but already gets a cancelled event.
 		ret.Run.StartTime = now
 	}
-	return nil, ret, nil
+
+	se := func(ctx context.Context) error {
+		return prjmanager.NotifyRunFinished(ctx, rs.Run.ID)
+	}
+	return se, ret, nil
 }
