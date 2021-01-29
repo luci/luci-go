@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "92c95d0d_278a1ff7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-29T08:11:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0fa74d6_660f7fab",
+      "range": {
+        "startLine": 9,
+        "startChar": 34,
+        "endLine": 9,
+        "endChar": 39
+      },
+      "revId": "e2018b9ff67f9f77182fb50aeb1b124b672badd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "03f891d3_2b5865eb",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-15T22:12:39Z",
       "side": 1,
       "message": "when can this happen? shouldn\u0027t we panic? why not accept rowInput as param to begin with?\n\nstepping back, I can\u0027t see the CL on top of this one yet, but I feel like generateBQRows and rowInput could be simpler. It currently contains the row loop, while not all callsites need it, so we are creating small slices unnecessarily. Why not\n\n1) rowInput has has two methods: msg() that returns the proto message, and id() like we already have\n2) testResultRowInput implements rowInput\n3) for artifacts, we produces multiple rowInputs\n4) generateBQRows accepts one rowInput and returns one *bq.Row\n\nbut whether it works really depends on your next CL, so maybe I should wait for that one.",
+      "range": {
+        "startLine": 422,
+        "startChar": 2,
+        "endLine": 422,
+        "endChar": 12
+      },
+      "revId": "e2018b9ff67f9f77182fb50aeb1b124b672badd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "51860728_7fd345ee",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 422,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-01-29T08:11:38Z",
+      "side": 1,
+      "message": "Yeah rowInput doesn\u0027t need to return multiple rows. PTAL at the new patch.",
+      "parentUuid": "03f891d3_2b5865eb",
       "range": {
         "startLine": 422,
         "startChar": 2,
