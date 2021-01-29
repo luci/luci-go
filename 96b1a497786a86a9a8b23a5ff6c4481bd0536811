@@ -162,6 +162,24 @@
       "parentUuid": "bb50d9ee_3818903d",
       "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcf1bbbc_bfe8d782",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-29T14:58:37Z",
+      "side": 1,
+      "message": "great example, and you are spot on that ACLs may need re-evaluation.\n\nCQD starts a new Run.\nWhile CV can re-use old Run, I think it\u0027s cleaner to create a new Run to avoid thinking about edge cases in ACLs (and cost attribution (some day)).\n\nHowever, user1 doesn\u0027t usually remove CQ+2 vote just for fun. I think it may be even cleaner to remove *all* CQ+2 votes and ask user(s) to decide what they really want. WDYT?",
+      "parentUuid": "f30d0b4b_a5c34dbb",
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
