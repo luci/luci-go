@@ -15,12 +15,15 @@
 package artifactcontent
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
 	"io"
 	"strings"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -66,7 +69,7 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 
 	// Start a reading stream.
 	stream, err := r.ReadCASBlob(c.Context, &bytestream.ReadRequest{
-		ResourceName: fmt.Sprintf("%s/blobs/%s/%d", r.RBECASInstanceName, strings.TrimPrefix(hash, "sha256:"), r.size.Int64),
+		ResourceName: resourceName(r.RBECASInstanceName, hash, r.size.Int64),
 	})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
@@ -122,4 +125,65 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 			}
 		}
 	}
+}
+
+func resourceName(instance, hash string, size int64) string {
+	return fmt.Sprintf("%s/blobs/%s/%d", instance, strings.TrimPrefix(hash, "sha256:"), size)
+}
+
+// ArtifactContentScanner contains information about the artifact to be scanned.
+type ArtifactContentScanner struct {
+	// RBEInstance is the name of the RBE instance to use for artifact
+	// storage. Example: "projects/luci-resultdb/instances/artifacts".
+	RBEInstance string
+	// Hash is the hash of the artifact content stored in RBE-CAS.
+	Hash string
+	// Size is the content size in bytes.
+	Size int64
+}
+
+// DownloadRBECASContent calls f for the downloaded artifact content.
+func (r *ArtifactContentScanner) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteStreamClient, f func(*bufio.Scanner) error) error {
+	stream, err := bs.Read(ctx, &bytestream.ReadRequest{
+		ResourceName: resourceName(r.RBEInstance, r.Hash, r.Size),
+	})
+
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			logging.Warningf(ctx, "RBE-CAS responded: %s", err)
+		}
+		return err
+	}
+
+	var buf bytes.Buffer
+	sc := bufio.NewScanner(&buf)
+
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+	eg.Go(func() error {
+		return f(sc)
+	})
+
+	for {
+		_, readSpan := trace.StartSpan(ctx, "resultdb.readChunk")
+		chunk, err := stream.Recv()
+		if err == nil {
+			readSpan.Attribute("size", len(chunk.Data))
+		}
+		readSpan.End(err)
+
+		switch {
+		case err == io.EOF:
+			// We are done.
+			return nil
+
+		case err != nil:
+			return err
+
+		default:
+			buf.Write(chunk.Data)
+		}
+	}
+
+	return eg.Wait()
 }
