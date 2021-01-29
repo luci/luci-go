@@ -180,6 +180,24 @@
       "parentUuid": "f30d0b4b_a5c34dbb",
       "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6483bf42_07420b05",
+        "filename": "cv/internal/run/impl/cl_update_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-01-29T18:47:47Z",
+      "side": 1,
+      "message": "I\u0027m not sure if it\u0027s ideal that the removal of user1 vote can void the vote from user2. Since at the time, the intention to trigger a Run from user 2 remains unchanged. If I think of a different scenario that in the middle of the run, user 1 somehow lose ACL, I think we still want the run to continue(or creating a new run) since there\u0027s still another valid vote to back this run.\n\nSo now, within the options between reusing the same run or creating a new run, I think both of them make sense to me from different perspectives. Since we are talking about a relative rare use case, so I\u0027m actually leaning towards creating a new run now because it is definitely easier to implement. (Also, apart from re-eval ACL, I think CV also need to take care of the per-user quota.)\n\ntl;dr, I\u0027ll add a todo to re-evaluate this after m1.",
+      "parentUuid": "fcf1bbbc_bfe8d782",
+      "revId": "96b1a497786a86a9a8b23a5ff6c4481bd0536811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
