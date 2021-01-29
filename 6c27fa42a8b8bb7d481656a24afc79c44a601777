@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "581fa1af_a075188d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-01-29T01:12:00Z",
+      "side": 1,
+      "message": "I was about to release today but caught an error on Dev. Finally identified the root cause. If the `makeOverride` method is marked as 100% overrides, it will make endless loop calls. Go Batch calls Py and that call will be routed back to Go again and again. However, removing this line will solve it and the GAE can correctly find the `default-dot-cr-buildbucket-dev.appspot.com` host. Weird.. Still not completely understand. It must related to internal GAE routing mechanism",
+      "revId": "6c27fa42a8b8bb7d481656a24afc79c44a601777",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
