@@ -16,36 +16,13 @@ package artifactcontent
 
 import (
 	"bufio"
-	"context"
 	"strings"
 	"testing"
-
-	"google.golang.org/genproto/googleapis/bytestream"
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-type fakeByteStreamClient struct {
-}
-
-func (c *fakeByteStreamClient) Read(ctx context.Context, in *bytestream.ReadRequest, opts ...grpc.CallOption) (bytestream.ByteStream_ReadClient, error) {
-	return &fakeCASReader{
-		res: []*bytestream.ReadResponse{
-			{Data: []byte("contents")},
-		},
-	}, nil
-}
-
-func (c *fakeByteStreamClient) Write(ctx context.Context, opts ...grpc.CallOption) (bytestream.ByteStream_WriteClient, error) {
-	return nil, nil
-}
-
-func (c *fakeByteStreamClient) QueryWriteStatus(ctx context.Context, in *bytestream.QueryWriteStatusRequest, opts ...grpc.CallOption) (*bytestream.QueryWriteStatusResponse, error) {
-	return nil, nil
-}
 
 func TestDownloadRBECASContent(t *testing.T) {
 	Convey(`TestDownloadRBECASContent`, t, func() {
@@ -58,7 +35,7 @@ func TestDownloadRBECASContent(t *testing.T) {
 		}
 
 		var str strings.Builder
-		err := ac.DownloadRBECASContent(ctx, &fakeByteStreamClient{}, func(sc *bufio.Scanner) error {
+		err := ac.DownloadRBECASContent(ctx, &FakeByteStreamClient{}, func(sc *bufio.Scanner) error {
 			for sc.Scan() {
 				str.Write(sc.Bytes())
 			}
