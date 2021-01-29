@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package handler
 
 import (
 	"context"
@@ -24,29 +24,23 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-func cancel(ctx context.Context, s *state) (eventbox.SideEffectFn, *state, error) {
+// Start starts a Run.
+func (*Impl) Start(ctx context.Context, s *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
 	switch status := s.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
-		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
+		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", s.Run.ID).Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == run.Status_FINALIZING:
-		logging.Debugf(ctx, "can't cancel run as it is currently finalizing")
-		return nil, s, nil
-	case run.IsEnded(status):
-		logging.Debugf(ctx, "can't cancel an already ended run")
+	case status != run.Status_PENDING:
+		logging.Debugf(ctx, "Skip starting Run because this Run is %s", status)
 		return nil, s, nil
 	}
 
-	ret := s.shallowCopy()
-	ret.Run.Status = run.Status_CANCELLED
-	now := clock.Now(ctx).UTC()
-	ret.Run.EndTime = now
-	if ret.Run.StartTime.IsZero() {
-		// This run has never started but already gets a cancelled event.
-		ret.Run.StartTime = now
-	}
+	ret := s.ShallowCopy()
+	ret.Run.Status = run.Status_RUNNING
+	ret.Run.StartTime = clock.Now(ctx).UTC()
 	return nil, ret, nil
 }
