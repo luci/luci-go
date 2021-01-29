@@ -91,6 +91,30 @@
       },
       "revId": "64b619defc40534392cb6bd10d406455e635eab8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6fb79e93_320ae513",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T17:04:15Z",
+      "side": 1,
+      "message": "or just one line - it is short enough",
+      "parentUuid": "17c0f3cd_94930b73",
+      "range": {
+        "startLine": 58,
+        "startChar": 59,
+        "endLine": 58,
+        "endChar": 60
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
