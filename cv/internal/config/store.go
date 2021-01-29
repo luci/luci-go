@@ -111,9 +111,11 @@ func GetAllProjectIDs(ctx context.Context, enabledOnly bool) ([]string, error) {
 // its corresponding `ConfigGroup`s can be safely deleted.
 type ConfigHashInfo struct {
 	_kind string `gae:"$kind,ProjectConfigHashInfo"`
-	// Hash is the `Hash` of a `ProjectConfig` CV has imported.
+	// Hash is the `Hash` of a `ProjectConfig` that CV has imported.
 	Hash    string         `gae:"$id"`
 	Project *datastore.Key `gae:"$parent"`
+	// GitRev is the git revision of the imported config.
+	GitRev string `gae:",noindex"`
 	// ProjectEVersion is largest version of ProjectConfig that this `Hash`
 	// maps to.
 	//
