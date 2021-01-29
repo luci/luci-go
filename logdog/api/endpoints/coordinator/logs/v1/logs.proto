@@ -107,6 +107,9 @@ message GetResponse {
   // Project is the project name that these logs belong to.
   string project = 1;
 
+  // Realm is the realm (within the project) the stream is associated with.
+  string realm = 6;
+
   // The log stream descriptor and state for this stream.
   //
   // It can be requested by setting the request's State field to true. If the
@@ -226,6 +229,9 @@ message QueryResponse {
   message Stream {
     // Path is the log stream path.
     string path = 1;
+
+    // Realm is the realm (within the project) the stream is associated with.
+    string realm = 5;
 
     // State is the log stream descriptor and state for this stream.
     //
