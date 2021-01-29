@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-func cancel(ctx context.Context, runID common.RunID, s *state) (eventbox.SideEffectFn, *state, error) {
+func cancel(ctx context.Context, s *state) (eventbox.SideEffectFn, *state, error) {
 	switch status := s.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
