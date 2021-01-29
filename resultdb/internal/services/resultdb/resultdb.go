@@ -99,7 +99,6 @@ func InitServer(srv *server.Server, opts Options) error {
 	// dynamically fetches discovery documents from other deployments and
 	// returns their union.
 	pb.RegisterRecorderServer(srv.PRPC, nil)
-	pb.RegisterDeriverServer(srv.PRPC, nil)
 
 	srv.PRPC.AccessControl = prpc.AllowOriginAll
 	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
