@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d0d56d8_55a60210",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-29T08:40:34Z",
+      "side": 1,
+      "message": "I still haven\u0027t added any new tests, could you please review the approach I am proposing before I continue implementing?",
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
