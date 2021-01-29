@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "798867c9_d0fbe227",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T17:02:38Z",
+      "side": 1,
+      "message": "in all callsites, including next CLs, the implementation returns a bq.Row where only the message is initialized.\nConsider returning proto.Message instead, so it would reduce some minor duplication",
+      "range": {
+        "startLine": 412,
+        "startChar": 6,
+        "endLine": 412,
+        "endChar": 14
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "533b104b_341373b7",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T17:02:38Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 418,
+        "startChar": 27,
+        "endLine": 418,
+        "endChar": 32
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02a11c40_3920b28d",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T17:02:38Z",
+      "side": 1,
+      "message": "not sure I understand this logic. In all callsites, including next CLs:\n1) it passes a struct that *does* implement rowInput\n2) there is no check that this func returns nil, so there is no guarantee that it does the right thing\n\nwhy not accept rowInput as a param to begin with?\n\n--------------\n\nstepping back, I am not sure generateBQRow function is needed. Currently both testResult-specific and artifact-specific code do similar work of calling this function, while it could be consolidated in one generic place, specifically consider:\n1) Change batchC from `chan []*bq.Row` to `chan rowInput`\n2) Change insertRowsWithRetries to accept []rowInput instead of []*bq.Row.\n   Move the logic of this function into insertRowsWithRetries, before the retry loop @L370\n3) \u003d\u003e testResult-specific and artifact-specific code no longer have to call this function. And this function is needed too.",
+      "range": {
+        "startLine": 420,
+        "startChar": 0,
+        "endLine": 423,
+        "endChar": 2
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17c0f3cd_94930b73",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-29T17:02:38Z",
+      "side": 1,
+      "message": "nit: for consistency with the codebase, should be on the next line",
+      "range": {
+        "startLine": 58,
+        "startChar": 59,
+        "endLine": 58,
+        "endChar": 60
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
