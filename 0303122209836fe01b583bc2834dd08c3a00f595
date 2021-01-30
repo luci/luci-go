@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e1a39736_24a77ff4",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-30T07:48:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6507cdb_44eebcb4",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 33
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "35ab6ff1_ffa2f083",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d2c1ff4_d7e2e7ca",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-30T07:48:01Z",
+      "side": 1,
+      "message": "Done. Though MustParseName already returns an invocations.ID",
+      "parentUuid": "35ab6ff1_ffa2f083",
+      "range": {
+        "startLine": 178,
+        "startChar": 26,
+        "endLine": 179,
+        "endChar": 63
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "42ef0650_9511792e",
@@ -77,6 +125,30 @@
       "writtenOn": "2021-01-29T16:36:15Z",
       "side": 1,
       "message": "CreateInvocationRequest\n\nthen it applies to both CreateInvocation() and BatchCreateInvocations()",
+      "range": {
+        "startLine": 107,
+        "startChar": 42,
+        "endLine": 107,
+        "endChar": 71
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8758c69_873c9b2c",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-30T07:48:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "42ef0650_9511792e",
       "range": {
         "startLine": 107,
         "startChar": 42,
@@ -124,6 +196,30 @@
       "side": 1,
       "message": "I think we should mention that the included invocations should exist or be created in the same batch?",
       "parentUuid": "ea677438_5a605af5",
+      "range": {
+        "startLine": 107,
+        "startChar": 72,
+        "endLine": 108,
+        "endChar": 56
+      },
+      "revId": "0303122209836fe01b583bc2834dd08c3a00f595",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5a7e474_f812e49d",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-01-30T07:48:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "260e5193_2a77a754",
       "range": {
         "startLine": 107,
         "startChar": 72,
