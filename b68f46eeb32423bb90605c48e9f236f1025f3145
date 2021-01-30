@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "acde93a0_1a19eef9",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "this part seems to be a scope creep: it is specific to the callsite, and the callsite has enough info to do it by themselves. I think this func would have fewer responsibilities (see SRP) if it returned includedIDs.\nThe the callsite can exclude newInvs. \n\nPerhaps we need a new helper function: \n  func (IDSet) Exclude(IDSset)",
+      "range": {
+        "startLine": 41,
+        "startChar": 34,
+        "endLine": 42,
+        "endChar": 44
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "90c1756e_ecf87773",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 44,
+        "startChar": 79,
+        "endLine": 44,
+        "endChar": 96
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54324ef3_86577c26",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "it looks like we allocate a new set for each invocation, and the dump it to the main set here.\nIt would require fewer allocations and operations if we passed the destination set into validateCreateInvocationRequest instead\n\nit also helps a bit because most created invocations won\u0027t have invocations to include, so we wouldn\u0027t create empty sets for nothing",
+      "range": {
+        "startLine": 60,
+        "startChar": 17,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "054718df_b7eec664",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "this might panic because VerifyBatch already wraps the error with appstatus\n(need a test)",
+      "range": {
+        "startLine": 101,
+        "startChar": 16,
+        "endLine": 101,
+        "endChar": 40
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e49afc59_5eeb43b4",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "InsertMap, since we use InsertMap above (there can\u0027t be anything to update)",
+      "range": {
+        "startLine": 173,
+        "startChar": 28,
+        "endLine": 173,
+        "endChar": 45
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4eede0bc_342597d2",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "remove\nthere is no \"invocation\" field here\n\nsame below",
+      "range": {
+        "startLine": 104,
+        "startChar": 37,
+        "endLine": 104,
+        "endChar": 48
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fddbc5b7_5c90d79f",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "nit: normally error messages do not end with punctuation",
+      "range": {
+        "startLine": 108,
+        "startChar": 99,
+        "endLine": 108,
+        "endChar": 100
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1d7e324_b043cfb7",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "nit: should be in the end of the next line?",
+      "range": {
+        "startLine": 109,
+        "startChar": 64,
+        "endLine": 109,
+        "endChar": 65
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1102bda2_6d9219de",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-01-30T20:31:08Z",
+      "side": 1,
+      "message": "double space",
+      "range": {
+        "startLine": 109,
+        "startChar": 47,
+        "endLine": 109,
+        "endChar": 48
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
