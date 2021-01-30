@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b36c42d_059cc58e",
+        "filename": "logdog/appengine/coordinator/flex/logs/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-30T08:04:37Z",
+      "side": 1,
+      "message": "log?\n\nedit: nvm I see that coordinator.Check* log internally...",
+      "revId": "64326d3c8b4fac2f46f4367fd8ef172744f1145e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
