@@ -33,6 +33,24 @@
       "message": "I would move this out to QueryResponse; Since Query requires project+prefix, it means that all streams will have the same realm.\n\nWhen we logdog-\u003erdb realm will be at the invocation level, I see logdog prefix ~\u003d rdb invocation (I suspect that rdb doesn\u0027t serve up realm on each resource within an invocation, just once at the invocation level?)",
       "revId": "73a1b3cbb38224c27f4c98cc43688882eebad0c3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64163b92_fbca346f",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/logs.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-30T02:07:06Z",
+      "side": 1,
+      "message": "Done. I was trying to make it \"future friendly\" for queries across prefixes within a project, but you are right, it won\u0027t be needed.",
+      "parentUuid": "8c830cf7_21920d2f",
+      "revId": "73a1b3cbb38224c27f4c98cc43688882eebad0c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
