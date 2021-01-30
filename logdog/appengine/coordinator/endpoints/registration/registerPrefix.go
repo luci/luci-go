@@ -43,7 +43,7 @@ func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest)
 		return "", 0, grpcutil.Internal
 	}
 
-	pcfg, err := coordinator.CurrentProjectConfig(c)
+	pcfg, err := coordinator.ProjectConfig(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load project configuration.")
 		return "", 0, grpcutil.Internal
