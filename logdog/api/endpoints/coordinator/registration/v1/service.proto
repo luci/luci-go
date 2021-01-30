@@ -18,6 +18,14 @@ message RegisterPrefixRequest {
   // The log stream prefix to register.
   string prefix = 2;
 
+  // The realm name (within the project) to associate the stream prefix with.
+  //
+  // This realm contains ACLs defining who will be able to read logs under this
+  // prefix.
+  //
+  // The caller should have "logdog.logs.create" permission in this realm.
+  string realm = 5;
+
   // Optional information about the registering agent.
   repeated string source_info = 3;
 
