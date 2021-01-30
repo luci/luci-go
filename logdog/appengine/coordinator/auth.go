@@ -16,103 +16,102 @@ package coordinator
 
 import (
 	"context"
-	"fmt"
-	"strings"
+
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
-	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 )
 
-// IsAdminUser tests whether the current user belongs to the administrative
-// users group.
+// PermissionDeniedErr is a generic "doesn't exist or don't have access" error.
 //
-// If the user is not, a MembershipError will be returned.
-func IsAdminUser(c context.Context) error {
-	cfg, err := config.Config(c)
-	if err != nil {
-		return err
+// If the request is anonymous, it is an Unauthenticated error instead.
+func PermissionDeniedErr(ctx context.Context) error {
+	if id := auth.CurrentIdentity(ctx); id.Kind() == identity.Anonymous {
+		return grpcutil.Unauthenticated
 	}
-	return checkMember(c, cfg.Coordinator.AdminAuthGroup)
+	return grpcutil.Errf(codes.PermissionDenied,
+		"The resource doesn't exist or you do not have permission to access it.")
 }
 
-// IsServiceUser tests whether the current user belongs to the backend services
+// CheckAdminUser tests whether the current user belongs to the administrative
 // users group.
 //
-// If the user is not, a MembershipError will be returned.
-func IsServiceUser(c context.Context) error {
-	cfg, err := config.Config(c)
+// Logs the outcome inside. The error is non-nil only if the check itself fails.
+func CheckAdminUser(ctx context.Context) (bool, error) {
+	cfg, err := config.Config(ctx)
 	if err != nil {
-		return err
+		logging.WithError(err).Errorf(ctx, "Failed to load service config")
+		return false, err
 	}
-	return checkMember(c, cfg.Coordinator.ServiceAuthGroup)
+	return checkMember(ctx, "ADMIN", cfg.Coordinator.AdminAuthGroup)
 }
 
-// IsProjectReader tests whether the current user belongs to one of the
+// CheckServiceUser tests whether the current user belongs to the backend
+// services users group.
+//
+// Logs the outcome inside. The error is non-nil only if the check itself fails.
+func CheckServiceUser(ctx context.Context) (bool, error) {
+	cfg, err := config.Config(ctx)
+	if err != nil {
+		logging.WithError(err).Errorf(ctx, "Failed to load service config")
+		return false, err
+	}
+	return checkMember(ctx, "SERVICE", cfg.Coordinator.ServiceAuthGroup)
+}
+
+// CheckProjectReader tests whether the current user belongs to one of the
 // project's declared reader groups.
 //
-// If the user is not, a MembershipError will be returned.
-func IsProjectReader(c context.Context, pcfg *svcconfig.ProjectConfig) error {
-	return checkMember(c, pcfg.ReaderAuthGroups...)
+// Logs the outcome inside. The error is non-nil only if the check itself fails.
+func CheckProjectReader(ctx context.Context, pcfg *svcconfig.ProjectConfig) (bool, error) {
+	return checkMember(ctx, "READ", pcfg.ReaderAuthGroups...)
 }
 
-// IsProjectWriter tests whether the current user belongs to one of the
+// CheckProjectWriter tests whether the current user belongs to one of the
 // project's declared writer groups.
 //
-// If the user is not a member of any of the groups, a MembershipError will be
-// returned.
-func IsProjectWriter(c context.Context, pcfg *svcconfig.ProjectConfig) error {
-	return checkMember(c, pcfg.WriterAuthGroups...)
+// Logs the outcome inside. The error is non-nil only if the check itself fails.
+func CheckProjectWriter(ctx context.Context, pcfg *svcconfig.ProjectConfig) (bool, error) {
+	return checkMember(ctx, "WRITE", pcfg.WriterAuthGroups...)
 }
 
-func checkMember(c context.Context, groups ...string) error {
+func checkMember(ctx context.Context, action string, groups ...string) (bool, error) {
 	// On dev-appserver, the superuser has implicit group membership to
 	// everything.
-	if info.IsDevAppServer(c) {
-		if u := auth.CurrentUser(c); u.Superuser {
-			log.Fields{
+	if info.IsDevAppServer(ctx) {
+		if u := auth.CurrentUser(ctx); u.Superuser {
+			logging.Fields{
 				"identity": u.Identity,
 				"groups":   groups,
-			}.Infof(c, "Granting superuser implicit group membership on development server.")
-			return nil
+			}.Infof(ctx, "Granting superuser implicit group membership for %s on development server.", action)
+			return true, nil
 		}
 	}
-
-	id := auth.CurrentIdentity(c)
-	is, err := auth.IsMember(c, groups...)
-	if err != nil {
-		return err
+	switch yes, err := auth.IsMember(ctx, groups...); {
+	case err != nil:
+		logging.Fields{
+			"identity":       auth.CurrentIdentity(ctx),
+			"groups":         groups,
+			logging.ErrorKey: err,
+		}.Errorf(ctx, "Membership check failed")
+		return false, err
+	case yes:
+		logging.Fields{
+			"identity": auth.CurrentIdentity(ctx),
+			"groups":   groups,
+		}.Debugf(ctx, "User %s access granted.", action)
+		return true, nil
+	default:
+		logging.Fields{
+			"identity": auth.CurrentIdentity(ctx),
+			"groups":   groups,
+		}.Warningf(ctx, "User %s access denied.", action)
+		return false, nil
 	}
-	if is {
-		log.Fields{
-			"identity": id,
-			"group":    groups,
-		}.Debugf(c, "User access granted.")
-		return nil
-	}
-
-	return &MembershipError{
-		Identity: id,
-		Groups:   groups,
-	}
-}
-
-// MembershipError is an error returned by group membership checking functions
-// if the current identity is not a member of the requested group.
-type MembershipError struct {
-	Identity identity.Identity
-	Groups   []string
-}
-
-func (e *MembershipError) Error() string {
-	return fmt.Sprintf("user %q is not a member of [%s]", e.Identity, strings.Join(e.Groups, ", "))
-}
-
-// IsMembershipError returns whether a given error is a membership error.
-func IsMembershipError(e error) bool {
-	_, ok := e.(*MembershipError)
-	return ok
 }

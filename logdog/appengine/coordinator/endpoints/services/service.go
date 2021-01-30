@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 )
@@ -91,19 +91,14 @@ func New(settings ServerSettings) logdog.ServicesServer {
 	return &logdog.DecoratedServices{
 		Service: &server{settings: settings},
 		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-
-			// Only service users may access this endpoint.
-			if err := coordinator.IsServiceUser(c); err != nil {
-				log.WithError(err).Errorf(c, "Failed to authenticate user as a service.")
-
-				if !coordinator.IsMembershipError(err) {
-					// Not a membership error. Something went wrong on the server's end.
-					return nil, grpcutil.Internal
-				}
+			switch yes, err := coordinator.CheckServiceUser(c); {
+			case err != nil:
+				return nil, grpcutil.Internal
+			case !yes:
 				return nil, grpcutil.PermissionDenied
+			default:
+				return maybeEnterProjectNamespace(c, req)
 			}
-
-			return maybeEnterProjectNamespace(c, req)
 		},
 	}
 }

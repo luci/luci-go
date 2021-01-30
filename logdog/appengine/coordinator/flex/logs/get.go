@@ -101,10 +101,11 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 
 	// If this log entry is Purged and we're not admin, pretend it doesn't exist.
 	if ls.Purged {
-		if authErr := coordinator.IsAdminUser(c); authErr != nil {
-			log.Fields{
-				log.ErrorKey: authErr,
-			}.Warningf(c, "Non-superuser requested purged log.")
+		switch yes, err := coordinator.CheckAdminUser(c); {
+		case err != nil:
+			return nil, grpcutil.Internal
+		case !yes:
+			log.Warningf(c, "Non-superuser requested purged log.")
 			return nil, grpcutil.Errf(codes.NotFound, "path not found")
 		}
 	}
