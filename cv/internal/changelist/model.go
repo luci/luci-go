@@ -73,9 +73,9 @@ func (e ExternalID) ParseGobID() (host string, change int64, err error) {
 	return
 }
 
-// Notify is called in a transaction context modifying a CL with its ID and new
-// EVersion.
-type Notify func(ctx context.Context, clid common.CLID, eversion int) error
+// Notify is called with the updated CL in a transaction context after
+// CL is successfully created/updated.
+type Notify func(ctx context.Context, cl *CL) error
 
 // CL is a CL entity in Datastore.
 type CL struct {
@@ -355,8 +355,8 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 // Otherwise, an existing CL entity will be updated as documented in
 // UpdateFields.
 //
-// If notify is given AND cl entity is created/updated,
-// notify is called in a transaction context with CL's ID and latest EVersion.
+// If notify is given AND cl entity is created/updated, notify will be called
+// in a transaction context after CL is successfully created/updated.
 func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID,
 	fields UpdateFields, notify Notify) error {
 	if eid == "" && knownCLID == 0 {
@@ -380,7 +380,7 @@ func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID,
 					cl.DependentMeta = fields.AddDependentMeta
 				})
 				if err == nil && notify != nil {
-					err = errors.Annotate(notify(ctx, cl.ID, 1), "notifyCallback failed on %s", eid).Err()
+					err = errors.Annotate(notify(ctx, cl), "notifyCallback failed on %s", eid).Err()
 				}
 				return err
 			case err != nil:
@@ -395,7 +395,7 @@ func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID,
 		// Update exsting entity.
 		updated, err := update(ctx, cl, fields.apply)
 		if err == nil && updated && notify != nil {
-			err = errors.Annotate(notify(ctx, cl.ID, cl.EVersion), "notifyCallback failed on %d", cl.ID).Err()
+			err = errors.Annotate(notify(ctx, cl), "notifyCallback failed on %d", cl.ID).Err()
 		}
 		return err
 	}, nil)
