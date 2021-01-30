@@ -69,7 +69,7 @@ func TestWithProjectNamespace(t *testing.T) {
 
 			Convey(`Can enter exclusive namespace`, func() {
 				So(WithProjectNamespace(&ctx, "exclusive-access", NamespaceAccessNoAuth), ShouldBeNil)
-				So(CurrentProject(ctx), ShouldEqual, "exclusive-access")
+				So(Project(ctx), ShouldEqual, "exclusive-access")
 			})
 
 			Convey(`Will fail to enter a namespace for a non-existent project with Unauthenticated.`, func() {
@@ -82,12 +82,12 @@ func TestWithProjectNamespace(t *testing.T) {
 
 			Convey(`Can enter exclusive namespace`, func() {
 				So(WithProjectNamespace(&ctx, "exclusive-access", NamespaceAccessAllTesting), ShouldBeNil)
-				So(CurrentProject(ctx), ShouldEqual, "exclusive-access")
+				So(Project(ctx), ShouldEqual, "exclusive-access")
 			})
 
 			Convey(`Will fail to enter a namespace for a non-existent project.`, func() {
 				So(WithProjectNamespace(&ctx, "does-not-exist", NamespaceAccessAllTesting), ShouldBeNil)
-				So(CurrentProject(ctx), ShouldEqual, "does-not-exist")
+				So(Project(ctx), ShouldEqual, "does-not-exist")
 			})
 		})
 
@@ -116,7 +116,7 @@ func TestWithProjectNamespace(t *testing.T) {
 
 						Convey(`Can access exclusive namespace.`, func() {
 							So(WithProjectNamespace(&ctx, "exclusive-access", tc.access), ShouldBeNil)
-							So(CurrentProject(ctx), ShouldEqual, "exclusive-access")
+							So(Project(ctx), ShouldEqual, "exclusive-access")
 						})
 
 						Convey(`Will fail to access non-existent project with PermissionDenied.`, func() {

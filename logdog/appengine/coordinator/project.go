@@ -15,12 +15,7 @@
 package coordinator
 
 import (
-	"context"
 	"strings"
-
-	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/server/config"
 )
 
 const (
@@ -45,25 +40,4 @@ func ProjectFromNamespace(ns string) string {
 		return ""
 	}
 	return ns[len(ProjectNamespacePrefix):]
-}
-
-// CurrentProject returns the current project based on the currently-loaded
-// namespace.
-//
-// If there is no current namespace, or if the current namespace is not a valid
-// project namespace, an empty string will be returned.
-func CurrentProject(ctx context.Context) string {
-	if ns := info.GetNamespace(ctx); ns != "" {
-		return ProjectFromNamespace(ns)
-	}
-	return ""
-}
-
-// CurrentProjectConfig returns the project-specific configuration for the
-// current project.
-//
-// If there is no current project namespace, or if the current project has no
-// configuration, config.ErrInvalidConfig will be returned.
-func CurrentProjectConfig(ctx context.Context) (*svcconfig.ProjectConfig, error) {
-	return config.ProjectConfig(ctx, CurrentProject(ctx))
 }
