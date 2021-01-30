@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "004f357d_94059ead",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-01-30T02:04:03Z",
+      "side": 1,
+      "message": "PTAL. There\u0027ll be more refactorings, it\u0027s just a first stage.",
+      "revId": "65b68a05e8d5243962671f291d4b5768e84d0b2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
