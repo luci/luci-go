@@ -34,6 +34,63 @@
       "parentUuid": "e3bb9b4a_a1c141fd",
       "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "10ce415b_222c3789",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-30T08:40:00Z",
+      "side": 1,
+      "message": "neat",
+      "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7b7ea19b_20f2480d",
+        "filename": "vpython/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-30T08:40:00Z",
+      "side": 1,
+      "message": "May be worth printing an informative message (since we know we\u0027re going into an interactive prompt):\n\n  Loaded vpython spec from /path/to/vpython/spec\n\nOr something like that. I believe the log messages are buffered and only printed on an error, however.",
+      "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5442d9d_c74cc684",
+        "filename": "vpython/spec/load.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-01-30T08:40:00Z",
+      "side": 1,
+      "message": "should this be `dir`? and the line below?\n\nDid you verify that this doesn\u0027t break inline (i.e. embedded) script parsing?",
+      "range": {
+        "startLine": 208,
+        "startChar": 21,
+        "endLine": 208,
+        "endChar": 31
+      },
+      "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
