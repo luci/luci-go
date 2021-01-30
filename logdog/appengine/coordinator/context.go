@@ -21,11 +21,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
 	cfglib "go.chromium.org/luci/config"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 
@@ -56,40 +54,6 @@ const (
 	// namespace.
 	NamespaceAccessWRITE
 )
-
-// WithStream performs all ACL checks on a stream, including:
-//
-//	- Project Namespace check
-//	- Logs purged check
-//
-// This returns the stream metadata, and a new context tied to the project.
-// The new context can be used to fetch the LogStreamState from the datastore.
-// The returned error is a gRPC error, parsable with grpcutil.
-func WithStream(c context.Context, project string, path types.StreamPath, at NamespaceAccessType) (context.Context, *LogStream, error) {
-	nc := c
-	// Do the project namespace check.  If successful, the namespace is installed
-	// into the resulting context.
-	if err := WithProjectNamespace(&nc, project, at); err != nil {
-		return c, nil, err
-	}
-	// Check to see if the log is purged.
-	ls := &LogStream{ID: LogStreamID(path)}
-	switch err := datastore.Get(nc, ls); {
-	case datastore.IsErrNoSuchEntity(err):
-		err = ErrPathNotFound
-		fallthrough
-	case err != nil:
-		return c, nil, err
-	}
-	// If this log entry is Purged and we're not admin, pretend it doesn't exist.
-	if ls.Purged {
-		if authErr := IsAdminUser(c); authErr != nil {
-			return c, nil, ErrPathNotFound
-		}
-	}
-	// Everything is fine.
-	return nc, ls, nil
-}
 
 // WithProjectNamespace sets the current namespace to the project name.
 //
@@ -216,11 +180,23 @@ func WithProjectNamespace(c *context.Context, project string, at NamespaceAccess
 // This function is called with the expectation that the Context is in a
 // namespace conforming to ProjectNamespace. If this is not the case, this
 // method will panic.
-func Project(c context.Context) string {
-	ns := info.GetNamespace(c)
+func Project(ctx context.Context) string {
+	ns := info.GetNamespace(ctx)
 	project := ProjectFromNamespace(ns)
 	if project != "" {
 		return project
 	}
 	panic(fmt.Errorf("current namespace %q does not begin with project namespace prefix (%q)", ns, ProjectNamespacePrefix))
+}
+
+// ProjectConfig returns the project-specific configuration for the
+// current project.
+//
+// If there is no current project namespace, or if the current project has no
+// configuration, config.ErrInvalidConfig will be returned.
+func ProjectConfig(ctx context.Context) (*svcconfig.ProjectConfig, error) {
+	if project := ProjectFromNamespace(info.GetNamespace(ctx)); project != "" {
+		return config.ProjectConfig(ctx, project)
+	}
+	return nil, config.ErrInvalidConfig
 }

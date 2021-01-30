@@ -190,7 +190,7 @@ func isArchived(c context.Context, task *logdog.ArchiveTask) bool {
 			logging.WithError(err).Errorf(c, "while checking if %s/%s is archived", task.Project, task.Id)
 		}
 	}()
-	if c, err = info.Namespace(c, "luci."+task.Project); err != nil {
+	if c, err = info.Namespace(c, coordinator.ProjectNamespace(task.Project)); err != nil {
 		return false
 	}
 	state := (&coordinator.LogStream{ID: coordinator.HashID(task.Id)}).State(c)
