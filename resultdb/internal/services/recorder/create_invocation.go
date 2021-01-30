@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -57,44 +58,58 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
-func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
+// It also returns an IDSet of the invocations to be included into the newly
+// created invocation.
+func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) (invocations.IDSet, error) {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
-		return errors.Annotate(err, "invocation_id").Err()
+		return nil, errors.Annotate(err, "invocation_id").Err()
 	}
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
-		return errors.Annotate(err, "request_id").Err()
+		return nil, errors.Annotate(err, "request_id").Err()
 	}
 
 	inv := req.Invocation
 	if inv == nil {
-		return errors.Annotate(errors.Reason("unspecified").Err(), "invocation").Err()
+		return nil, errors.Annotate(errors.Reason("unspecified").Err(), "invocation").Err()
 	}
 
 	if err := pbutil.ValidateStringPairs(inv.GetTags()); err != nil {
-		return errors.Annotate(err, "invocation.tags").Err()
+		return nil, errors.Annotate(err, "invocation.tags").Err()
 	}
 
 	if inv.Realm == "" {
-		return errors.Annotate(errors.Reason("unspecified").Err(), "invocation.realm").Err()
+		return nil, errors.Annotate(errors.Reason("unspecified").Err(), "invocation.realm").Err()
 	}
 
 	if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
-		return errors.Annotate(err, "invocation.realm").Err()
+		return nil, errors.Annotate(err, "invocation.realm").Err()
 	}
 
 	if inv.GetDeadline() != nil {
 		if err := validateInvocationDeadline(inv.Deadline, now); err != nil {
-			return errors.Annotate(err, "invocation: deadline").Err()
+			return nil, errors.Annotate(err, "invocation: deadline").Err()
 		}
 	}
 
 	for i, bqExport := range inv.GetBigqueryExports() {
 		if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
-			return errors.Annotate(err, "bigquery_export[%d]", i).Err()
+			return nil, errors.Annotate(err, "bigquery_export[%d]", i).Err()
 		}
 	}
 
-	return nil
+	includedIDs := make(invocations.IDSet)
+	for i, incInvName := range inv.GetIncludedInvocations() {
+		incInvID, err := pbutil.ParseInvocationName(incInvName)
+		if err != nil {
+			return nil, errors.Annotate(err, "invocation.included_invocations[%d]: invalid included invocation name %q",
+				i, incInvName).Err()
+		}
+		if incInvID == req.InvocationId {
+			return nil, errors.Reason("invocation.included_invocations[%d]: invocation cannot include itself.", i).Err()
+		}
+		includedIDs.Add(invocations.ID(incInvID))
+	}
+	return includedIDs, nil
 }
 
 func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocationRequest) error {
@@ -156,8 +171,14 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		return nil, err
 	}
 
-	if err := validateCreateInvocationRequest(in, now); err != nil {
+	includedInvs, err := validateCreateInvocationRequest(in, now)
+	if err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+	if len(includedInvs) != 0 {
+		if err := permissions.VerifyBatch(ctx, permIncludeInvocation, includedInvs); err != nil {
+			return nil, err
+		}
 	}
 	invs, tokens, err := s.createInvocations(ctx, []*pb.CreateInvocationRequest{in}, in.RequestId, now, invocations.NewIDSet(invocations.ID(in.InvocationId)))
 	if err != nil {

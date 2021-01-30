@@ -222,19 +222,19 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 	now := testclock.TestRecentTimeUTC
 	Convey(`TestValidateCreateInvocationRequest`, t, func() {
 		Convey(`empty`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now)
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now)
 			So(err, ShouldErrLike, `invocation_id: unspecified`)
 		})
 
 		Convey(`invalid id`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "1",
 			}, now)
 			So(err, ShouldErrLike, `invocation_id: does not match`)
 		})
 
 		Convey(`invalid request id`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-a",
 				RequestId:    "😃",
 			}, now)
@@ -242,7 +242,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		})
 
 		Convey(`invalid tags`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Realm: "chromium:ci",
@@ -254,7 +254,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 		Convey(`invalid deadline`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Realm:    "chromium:ci",
@@ -265,7 +265,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		})
 
 		Convey(`invalid realm`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Realm: "B@d/f::rm@t",
@@ -274,9 +274,20 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation.realm: bad global realm name`)
 		})
 
+		Convey(`invalid included invocation`, func() {
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm:               "chromium:ci",
+					IncludedInvocations: []string{"not an invocation name"},
+				},
+			}, now)
+			So(err, ShouldErrLike, `invocation.included_invocations[0]: invalid included invocation name`)
+		})
+
 		Convey(`invalid bigqueryExports`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
@@ -294,12 +305,13 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			_, err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
-					Deadline: deadline,
-					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
-					Realm:    "chromium:ci",
+					Deadline:            deadline,
+					Tags:                pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+					Realm:               "chromium:ci",
+					IncludedInvocations: []string{"invocations/u-abc-2"},
 				},
 			}, now)
 			So(err, ShouldBeNil)
@@ -318,6 +330,8 @@ func TestCreateInvocation(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: permCreateWithReservedID},
 				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
 				{Realm: "testproject:testrealm", Permission: permSetProducerResource},
+				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
+				{Realm: "testproject:createonly", Permission: permCreateInvocation},
 			},
 		})
 
@@ -405,10 +419,64 @@ func TestCreateInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res2, ShouldResembleProto, res)
 		})
+		Convey(`included invocation`, func() {
+			req = &pb.CreateInvocationRequest{
+				InvocationId: "u-inv",
+				Invocation: &pb.Invocation{
+					Realm:               "testproject:testrealm",
+					IncludedInvocations: []string{"invocations/u-inv-child"},
+				},
+			}
+			Convey(`non-existing invocation`, func() {
+				_, err := recorder.CreateInvocation(ctx, req)
+				So(err, ShouldErrLike, "invocations/u-inv-child not found")
+			})
+			Convey(`non-permitted invocation`, func() {
+				incReq := &pb.CreateInvocationRequest{
+					InvocationId: "u-inv-child",
+					Invocation: &pb.Invocation{
+						Realm: "testproject:createonly",
+					},
+				}
+				_, err := recorder.CreateInvocation(ctx, incReq)
+				So(err, ShouldBeNil)
+
+				_, err = recorder.CreateInvocation(ctx, req)
+				So(err, ShouldErrLike, "caller does not have permission resultdb.invocations.include")
+			})
+			Convey(`valid`, func() {
+				_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
+					InvocationId: "u-inv-child",
+					Invocation: &pb.Invocation{
+						Realm: "testproject:testrealm",
+					},
+				})
+				So(err, ShouldBeNil)
+
+				_, err = recorder.CreateInvocation(ctx, req)
+				So(err, ShouldBeNil)
+
+				incIDs, err := invocations.ReadIncluded(span.Single(ctx), invocations.ID("u-inv"))
+				So(err, ShouldBeNil)
+				So(incIDs.Has(invocations.ID("u-inv-child")), ShouldBeTrue)
+			})
+		})
 
 		Convey(`end to end`, func() {
 			deadline := pbutil.MustTimestampProto(start.Add(time.Hour))
 			headers := &metadata.MD{}
+
+			// Included invocation
+			req := &pb.CreateInvocationRequest{
+				InvocationId: "u-inv-child",
+				Invocation: &pb.Invocation{
+					Realm: "testproject:testrealm",
+				},
+			}
+			_, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
+			So(err, ShouldBeNil)
+
+			// Including invocation.
 			bqExport := &pb.BigQueryExport{
 				Project: "project",
 				Dataset: "dataset",
@@ -417,7 +485,7 @@ func TestCreateInvocation(t *testing.T) {
 					TestResults: &pb.BigQueryExport_TestResults{},
 				},
 			}
-			req := &pb.CreateInvocationRequest{
+			req = &pb.CreateInvocationRequest{
 				InvocationId: "u-inv",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
@@ -430,6 +498,7 @@ func TestCreateInvocation(t *testing.T) {
 					HistoryOptions: &pb.HistoryOptions{
 						UseInvocationTimestamp: true,
 					},
+					IncludedInvocations: []string{"invocations/u-inv-child"},
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
