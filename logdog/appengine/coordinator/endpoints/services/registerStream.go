@@ -109,7 +109,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		return nil, grpcutil.Internal
 	}
 
-	pcfg, err := coordinator.CurrentProjectConfig(c)
+	pcfg, err := coordinator.ProjectConfig(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load current project configuration.")
 		return nil, grpcutil.Internal
