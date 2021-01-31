@@ -110,6 +110,29 @@
       },
       "revId": "7070f87a14364a493ca54dfacd2765a1f660cdd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41431199_5d6181a5",
+        "filename": "cv/internal/config/store.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-01-31T22:36:50Z",
+      "side": 1,
+      "message": "nit-nit: i expected GitRevision from you 😄\n\nI don\u0027t have a preference.",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 7
+      },
+      "revId": "7070f87a14364a493ca54dfacd2765a1f660cdd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
