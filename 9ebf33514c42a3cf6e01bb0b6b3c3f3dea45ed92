@@ -16,6 +16,24 @@
       "message": "why not use this?",
       "revId": "9ebf33514c42a3cf6e01bb0b6b3c3f3dea45ed92",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b3b08bb_b6dcb70a",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-01T07:52:53Z",
+      "side": 1,
+      "message": "Oops, forgot to remove.  \n\n1) CAS Client needs to be created by authFlags. So I moved the CAS client initialization to collect.go.\n2) I separated it to two methods because GetTaskOutputs implements two different tasks (download from Isolate, download from CAS)",
+      "parentUuid": "a3876d1c_30e6aa3c",
+      "revId": "9ebf33514c42a3cf6e01bb0b6b3c3f3dea45ed92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
