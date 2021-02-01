@@ -319,10 +319,9 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 	return cacheContext.Wrap(c), &e
 }
 
-// WithProjectNamespace runs f in project's namespace, bypassing authentication
-// checks.
+// WithProjectNamespace runs f in project's namespace.
 func WithProjectNamespace(c context.Context, project string, f func(context.Context)) {
-	if err := coordinator.WithProjectNamespace(&c, project, coordinator.NamespaceAccessAllTesting); err != nil {
+	if err := coordinator.WithProjectNamespace(&c, project); err != nil {
 		panic(err)
 	}
 	f(c)

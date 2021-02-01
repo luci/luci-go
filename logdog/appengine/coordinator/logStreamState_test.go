@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -36,10 +37,14 @@ func TestLogStreamState(t *testing.T) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
 
-		if err := WithProjectNamespace(&c, "proj-foo", NamespaceAccessAllTesting); err != nil {
+		ds.GetTestable(c).Consistent(true)
+
+		c = withProjectConfigs(c, map[string]*svcconfig.ProjectConfig{
+			"proj-foo": {},
+		})
+		if err := WithProjectNamespace(&c, "proj-foo"); err != nil {
 			panic(err)
 		}
-		ds.GetTestable(c).Consistent(true)
 
 		now := ds.RoundTime(tc.Now().UTC())
 		ls := LogStream{ID: LogStreamID("testing/+/log/stream")}

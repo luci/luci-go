@@ -111,9 +111,7 @@ func maybeEnterProjectNamespace(c context.Context, req proto.Message) (context.C
 		log.Fields{
 			"project": project,
 		}.Debugf(c, "Request is entering project namespace.")
-		if err := coordinator.WithProjectNamespace(&c, project, coordinator.NamespaceAccessNoAuth); err != nil {
-			return c, err
-		}
+		return c, coordinator.WithProjectNamespace(&c, project)
 	}
 	return c, nil
 }

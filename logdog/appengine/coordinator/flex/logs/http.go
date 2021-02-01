@@ -285,10 +285,17 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 		"format":  data.options.format,
 	}.Debugf(c, "parsed options")
 
-	// Enter project namespace.  This is effectively the ACL check.
-	// If successful, the context will be modified to enter the project datastore namespace.
-	if err = coordinator.WithProjectNamespace(&c, project, coordinator.NamespaceAccessREAD); err != nil {
+	// Load project configs, enter the project datastore namespace.
+	if err = coordinator.WithProjectNamespace(&c, project); err != nil {
 		return
+	}
+
+	// TODO(crbug.com/1172492): Replace with realms ACL check.
+	switch yes, err := coordinator.CheckProjectReader(c); {
+	case err != nil:
+		return data, grpcutil.Internal
+	case !yes:
+		return data, coordinator.PermissionDeniedErr(c)
 	}
 
 	logStream := &coordinator.LogStream{ID: coordinator.LogStreamID(data.options.path)}

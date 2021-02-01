@@ -41,7 +41,7 @@ func New() logdog.RegistrationServer {
 			if project == "" {
 				return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
 			}
-			if err := coordinator.WithProjectNamespace(&ctx, project, coordinator.NamespaceAccessWRITE); err != nil {
+			if err := coordinator.WithProjectNamespace(&ctx, project); err != nil {
 				return nil, grpcutil.GRPCifyAndLogErr(ctx, err)
 			}
 			return ctx, nil

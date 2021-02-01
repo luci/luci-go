@@ -47,8 +47,16 @@ func New() logdog.LogsServer {
 			if project == "" {
 				return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
 			}
-			if err := coordinator.WithProjectNamespace(&ctx, project, coordinator.NamespaceAccessREAD); err != nil {
+			if err := coordinator.WithProjectNamespace(&ctx, project); err != nil {
 				return nil, grpcutil.GRPCifyAndLogErr(ctx, err)
+			}
+			// TODO(crbug.com/1172492): Lower down to individual RPCs (where the
+			// prefix metadata is available) and replace with realms ACL check.
+			switch yes, err := coordinator.CheckProjectReader(ctx); {
+			case err != nil:
+				return nil, grpcutil.Internal
+			case !yes:
+				return nil, coordinator.PermissionDeniedErr(ctx)
 			}
 			return ctx, nil
 		},
