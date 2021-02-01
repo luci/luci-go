@@ -70,8 +70,8 @@ func TestQuery(t *testing.T) {
 		c, env := ct.Install(true)
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
-		var svrBase server
-		svr := newService(&svrBase)
+		svr := New()
+		svrBase := svr.(*logdog.DecoratedLogs).Service.(*server)
 
 		const project = "proj-foo"
 

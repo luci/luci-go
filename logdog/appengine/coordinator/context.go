@@ -18,14 +18,12 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
 	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/config"
-	"go.chromium.org/luci/server/auth"
 
 	"google.golang.org/grpc/codes"
 )
@@ -75,19 +73,6 @@ func WithProjectNamespace(c *context.Context, project string, at NamespaceAccess
 		return grpcutil.Errf(codes.InvalidArgument, "Project name is invalid: %s", err)
 	}
 
-	// Return gRPC error for when the user is denied access and does not have READ
-	// access. Returns either Unauthenticated if the user is not authenticated
-	// or PermissionDenied if the user is authenticated.
-	getAccessDeniedError := func() error {
-		if id := auth.CurrentIdentity(ctx); id.Kind() == identity.Anonymous {
-			return grpcutil.Unauthenticated
-		}
-
-		// Deny the existence of the project.
-		return grpcutil.Errf(codes.PermissionDenied,
-			"The project is invalid, or you do not have permission to access it.")
-	}
-
 	// Returns the project config, or "read denied" error if the project does not
 	// exist.
 	getProjectConfig := func() (*svcconfig.ProjectConfig, error) {
@@ -106,7 +91,7 @@ func WithProjectNamespace(c *context.Context, project string, at NamespaceAccess
 				log.ErrorKey: err,
 				"project":    project,
 			}.Errorf(ctx, "Could not load config for project.")
-			return nil, getAccessDeniedError()
+			return nil, PermissionDeniedErr(ctx)
 
 		default:
 			// The configuration attempt failed to load. This is an internal error,
@@ -137,10 +122,11 @@ func WithProjectNamespace(c *context.Context, project string, at NamespaceAccess
 		if err != nil {
 			return err
 		}
-
-		if err := IsProjectReader(*c, pcfg); err != nil {
-			log.WithError(err).Warningf(*c, "User denied READ access to requested project.")
-			return getAccessDeniedError()
+		switch yes, err := CheckProjectReader(ctx, pcfg); {
+		case err != nil:
+			return grpcutil.Internal
+		case !yes:
+			return PermissionDeniedErr(ctx)
 		}
 
 	case NamespaceAccessWRITE:
@@ -149,10 +135,11 @@ func WithProjectNamespace(c *context.Context, project string, at NamespaceAccess
 		if err != nil {
 			return err
 		}
-
-		if err := IsProjectWriter(*c, pcfg); err != nil {
-			log.WithError(err).Errorf(*c, "User denied WRITE access to requested project.")
-			return getAccessDeniedError()
+		switch yes, err := CheckProjectWriter(ctx, pcfg); {
+		case err != nil:
+			return grpcutil.Internal
+		case !yes:
+			return PermissionDeniedErr(ctx)
 		}
 
 	default:

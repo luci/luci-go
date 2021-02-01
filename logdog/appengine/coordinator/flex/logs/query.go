@@ -40,14 +40,13 @@ const (
 func (s *server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
 	// Non-admin users may not request purged results.
 	canSeePurged := true
-	if err := coordinator.IsAdminUser(c); err != nil {
+	switch yes, err := coordinator.CheckAdminUser(c); {
+	case err != nil:
+		return nil, grpcutil.Internal
+	case !yes:
 		canSeePurged = false
-
-		// Non-admin user.
 		if req.Purged == logdog.QueryRequest_YES {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(c, "Non-superuser requested to see purged logs. Denying.")
+			log.Errorf(c, "Non-superuser requested to see purged logs. Denying.")
 			return nil, grpcutil.Errf(codes.InvalidArgument, "non-admin user cannot request purged log streams")
 		}
 	}
