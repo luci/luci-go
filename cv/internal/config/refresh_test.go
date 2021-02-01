@@ -87,7 +87,7 @@ func TestUpdateProject(t *testing.T) {
 			localHash := computeHash(cfg)
 			projKey := datastore.MakeKey(ctx, projectConfigKind, "chromium")
 			cgNames := make([]string, len(cfg.GetConfigGroups()))
-			// Verify ConfigGroups
+			// Verify ConfigGroups.
 			for i, cgpb := range cfg.GetConfigGroups() {
 				cgNames[i] = makeConfigGroupName(cgpb.GetName(), i)
 				cg := ConfigGroup{
@@ -100,7 +100,7 @@ func TestUpdateProject(t *testing.T) {
 				So(cg.SubmitOptions, ShouldResembleProto, cfg.GetSubmitOptions())
 				So(cg.Content, ShouldResembleProto, cfg.GetConfigGroups()[i])
 			}
-			// Verify ProjectConfig
+			// Verify ProjectConfig.
 			pc := ProjectConfig{Project: "chromium"}
 			err = datastore.Get(ctx, &pc)
 			So(err, ShouldBeNil)
@@ -113,10 +113,17 @@ func TestUpdateProject(t *testing.T) {
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
 			})
-			// Verify ConfigHashInfo
+			// The revision in the memory-based config fake is a fake
+			// 40-character sha256 hash digest. The particular value is
+			// internally determined by the memory-based implementation
+			// and isn't important here, so just assert that something
+			// that looks like a hash digest is filled in.
 			hashInfo := ConfigHashInfo{Hash: localHash, Project: projKey}
 			err = datastore.Get(ctx, &hashInfo)
 			So(err, ShouldBeNil)
+			So(len(hashInfo.GitRevision), ShouldEqual, 40)
+			hashInfo.GitRevision = ""
+			// Verify the rest of ConfigHashInfo.
 			So(hashInfo, ShouldResemble, ConfigHashInfo{
 				Hash:             localHash,
 				Project:          projKey,
