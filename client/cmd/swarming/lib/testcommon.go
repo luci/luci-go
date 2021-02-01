@@ -16,22 +16,28 @@ package lib
 
 import (
 	"context"
+	"flag"
 	"net/http"
+
+	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"google.golang.org/api/googleapi"
 )
 
+var _ swarmingService = (*testService)(nil)
+
 type testService struct {
-	newTask        func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
-	countTasks     func(context.Context, float64, ...string) (*swarming.SwarmingRpcsTasksCount, error)
-	listTasks      func(context.Context, int64, string, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
-	cancelTask     func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
-	getTaskRequest func(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error)
-	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
-	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
-	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef, *swarming.SwarmingRpcsCASReference) ([]string, error)
-	listBots       func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
+	newTask                   func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
+	countTasks                func(context.Context, float64, ...string) (*swarming.SwarmingRpcsTasksCount, error)
+	listTasks                 func(context.Context, int64, string, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
+	cancelTask                func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
+	getTaskRequest            func(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error)
+	getTaskResult             func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
+	getTaskOutput             func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
+	getTaskOutputsFromIsolate func(context.Context, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	getTaskOutputsFromCAS     func(context.Context, string, *rbeclient.Client, *swarming.SwarmingRpcsCASReference) ([]string, error)
+	listBots                  func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 }
 
 func (s testService) Client() *http.Client {
@@ -66,10 +72,30 @@ func (s testService) GetTaskOutput(ctx context.Context, taskID string) (*swarmin
 	return s.getTaskOutput(ctx, taskID)
 }
 
-func (s testService) GetTaskOutputs(ctx context.Context, taskID, output string, isolateRef *swarming.SwarmingRpcsFilesRef, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
-	return s.getTaskOutputs(ctx, taskID, output, isolateRef, casRef)
+func (s testService) GetTaskOutputsFromIsolate(ctx context.Context, output string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+	return s.getTaskOutputsFromIsolate(ctx, output, isolateRef)
+}
+
+func (s testService) GetTaskOutputsFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+	return s.getTaskOutputsFromCAS(ctx, outdir, cascli, casRef)
 }
 
 func (s *testService) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {
 	return s.listBots(ctx, dimensions, fields)
+}
+
+var _ AuthFlags = (*testAuthFlags)(nil)
+
+type testAuthFlags struct{}
+
+func (af *testAuthFlags) Register(_ *flag.FlagSet) {}
+
+func (af *testAuthFlags) Parse() error { return nil }
+
+func (af *testAuthFlags) NewHTTPClient(_ context.Context) (*http.Client, error) {
+	return nil, nil
+}
+
+func (af *testAuthFlags) NewCASClient(_ context.Context, _ string) (*rbeclient.Client, error) {
+	return nil, nil
 }
