@@ -29,15 +29,20 @@ var bucketName = []byte("b")
 
 // New instantiates KVS.
 func New(path string) (*KVS, error) {
-	db, err := bbolt.Open(path, 0600, nil)
+
+	db, err := bbolt.Open(path, 0600, &bbolt.Options{
+		// These are necessary to reduce disk access during db operations.
+		// https://pkg.go.dev/go.etcd.io/bbolt/#DB
+		NoSync:         true,
+		NoFreelistSync: true,
+
+		// This is for fast cache load.
+		// https://crbug.com/1172879.
+		FreelistType: bbolt.FreelistMapType,
+	})
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to open database: %s", path).Err()
 	}
-
-	// This is necessary to reduce disk access during db operations.
-	// https://pkg.go.dev/go.etcd.io/bbolt/#DB
-	db.NoSync = true
-	db.NoFreelistSync = true
 
 	if err := db.Update(func(tx *bbolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(bucketName)
