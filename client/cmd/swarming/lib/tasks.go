@@ -25,21 +25,21 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/system/signals"
 )
 
 // CmdTasks returns an object for the `tasks` subcommand.
-func CmdTasks(defaultAuthOpts auth.Options) *subcommands.Command {
+func CmdTasks(authFlgas AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "tasks <options>",
 		ShortDesc: "lists tasks",
 		LongDesc:  "List tasks matching the given options.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &tasksRun{}
-			r.Init(defaultAuthOpts)
+			r.commonFlags.Init(authFlgas)
+			r.Init()
 			return r
 		},
 	}
@@ -54,9 +54,7 @@ type tasksRun struct {
 	fields  []googleapi.Field
 }
 
-func (t *tasksRun) Init(defaultAuthOpts auth.Options) {
-	t.commonFlags.Init(defaultAuthOpts)
-
+func (t *tasksRun) Init() {
 	t.Flags.StringVar(&t.outfile, "json", "", "Path to output JSON results. Implies quiet.")
 	t.Flags.Int64Var(&t.limit, "limit", 200, "Maximum number of tasks to retrieve.")
 	t.Flags.StringVar(&t.state, "state", "ALL", "Only include tasks in the specified state.")
