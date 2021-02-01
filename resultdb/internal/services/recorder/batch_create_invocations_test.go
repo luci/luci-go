@@ -47,7 +47,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 
 	Convey(`TestValidateBatchCreateInvocationsRequest`, t, func() {
 		Convey(`invalid request id - Batch`, func() {
-			_, err := validateBatchCreateInvocationsRequest(
+			_, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				[]*pb.CreateInvocationRequest{{
 					InvocationId: "u-a",
@@ -60,7 +60,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 			So(err, ShouldErrLike, "request_id: does not match")
 		})
 		Convey(`non-matching request id - Batch`, func() {
-			_, err := validateBatchCreateInvocationsRequest(
+			_, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				[]*pb.CreateInvocationRequest{{
 					InvocationId: "u-a",
@@ -73,7 +73,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 			So(err, ShouldErrLike, `request_id: "valid" does not match`)
 		})
 		Convey(`Too many requests`, func() {
-			_, err := validateBatchCreateInvocationsRequest(
+			_, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				make([]*pb.CreateInvocationRequest, 1000),
 				"valid",
@@ -81,7 +81,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 			So(err, ShouldErrLike, `the number of requests in the batch exceeds 500`)
 		})
 		Convey(`valid`, func() {
-			ids, err := validateBatchCreateInvocationsRequest(
+			ids, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				[]*pb.CreateInvocationRequest{{
 					InvocationId: "u-a",
@@ -109,6 +109,8 @@ func TestBatchCreateInvocations(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: permCreateInvocation},
 				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
 				{Realm: "testproject:testrealm", Permission: permSetProducerResource},
+				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
+				{Realm: "testproject:createonly", Permission: permCreateInvocation},
 			},
 		}
 		ctx = auth.WithState(ctx, authState)
@@ -150,6 +152,46 @@ func TestBatchCreateInvocations(t *testing.T) {
 			// Otherwise, the responses must be identical.
 			So(res2, ShouldResembleProto, res)
 		})
+		Convey(`inclusion of non-existent invocation`, func() {
+			req := &pb.BatchCreateInvocationsRequest{
+				Requests: []*pb.CreateInvocationRequest{{
+					InvocationId: "u-batchinv",
+					Invocation: &pb.Invocation{
+						Realm:               "testproject:testrealm",
+						IncludedInvocations: []string{"invocations/u-missing-inv"},
+					},
+				}, {
+					InvocationId: "u-batchinv2",
+					Invocation:   &pb.Invocation{Realm: "testproject:testrealm"},
+				}},
+			}
+			_, err := recorder.BatchCreateInvocations(ctx, req)
+			So(err, ShouldErrLike, "invocations/u-missing-inv not found")
+		})
+
+		Convey(`inclusion of existing disallowed invocation`, func() {
+			req := &pb.BatchCreateInvocationsRequest{
+				Requests: []*pb.CreateInvocationRequest{{
+					InvocationId: "u-batchinv",
+					Invocation:   &pb.Invocation{Realm: "testproject:createonly"},
+				}},
+			}
+			_, err := recorder.BatchCreateInvocations(ctx, req)
+			So(err, ShouldBeNil)
+
+			req = &pb.BatchCreateInvocationsRequest{
+				Requests: []*pb.CreateInvocationRequest{{
+					InvocationId: "u-batchinv2",
+					Invocation: &pb.Invocation{
+						Realm:               "testproject:testrealm",
+						IncludedInvocations: []string{"invocations/u-batchinv"},
+					},
+				}},
+				RequestId: "request id",
+			}
+			_, err = recorder.BatchCreateInvocations(ctx, req)
+			So(err, ShouldErrLike, "caller does not have permission resultdb.invocations.include")
+		})
 
 		Convey(`Same request ID, different identity`, func() {
 			req := &pb.BatchCreateInvocationsRequest{
@@ -187,8 +229,9 @@ func TestBatchCreateInvocations(t *testing.T) {
 							BigqueryExports: []*pb.BigQueryExport{
 								bqExport,
 							},
-							ProducerResource: "//builds.example.com/builds/1",
-							Realm:            "testproject:testrealm",
+							ProducerResource:    "//builds.example.com/builds/1",
+							Realm:               "testproject:testrealm",
+							IncludedInvocations: []string{"invocations/u-batch-inv2"},
 						},
 					},
 					{
@@ -251,6 +294,9 @@ func TestBatchCreateInvocations(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(expectedResultsExpirationTime, ShouldHappenWithin, time.Second, start.Add(expectedResultExpiration))
 			So(invExpirationTime, ShouldHappenWithin, time.Second, start.Add(invocationExpirationDuration))
+			incIDs, err := invocations.ReadIncluded(ctx, invocations.ID("u-batch-inv"))
+			So(err, ShouldBeNil)
+			So(incIDs.Has(invocations.ID("u-batch-inv2")), ShouldBeTrue)
 		})
 	})
 }

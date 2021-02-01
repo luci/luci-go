@@ -40,6 +40,9 @@ func VerifyInvocation(ctx context.Context, permission realms.Permission, ids ...
 // permission.
 // There must not already be a transaction in the given context.
 func VerifyBatch(ctx context.Context, permission realms.Permission, ids invocations.IDSet) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
 	ctx, ts := trace.StartSpan(ctx, "resultdb.permissions.VerifyBatch")
 	defer func() { ts.End(err) }()
 
