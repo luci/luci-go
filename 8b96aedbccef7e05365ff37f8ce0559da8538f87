@@ -104,6 +104,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a12e7151_376d9463",
+        "filename": "vpython/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1396774
+      },
+      "writtenOn": "2021-02-01T17:42:19Z",
+      "side": 1,
+      "message": "Good call, done.",
+      "parentUuid": "7b7ea19b_20f2480d",
+      "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6fa2dd04_bd426b54",
@@ -121,6 +139,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "139f169c_f496d860",
+        "filename": "vpython/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1396774
+      },
+      "writtenOn": "2021-02-01T17:42:19Z",
+      "side": 1,
+      "message": "Yup, done.",
+      "parentUuid": "6fa2dd04_bd426b54",
+      "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d5442d9d_c74cc684",
@@ -134,6 +170,30 @@
       "writtenOn": "2021-01-30T08:40:00Z",
       "side": 1,
       "message": "should this be `dir`? and the line below?\n\nDid you verify that this doesn\u0027t break inline (i.e. embedded) script parsing?",
+      "range": {
+        "startLine": 208,
+        "startChar": 21,
+        "endLine": 208,
+        "endChar": 31
+      },
+      "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6152411c_59df4667",
+        "filename": "vpython/spec/load.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1396774
+      },
+      "writtenOn": "2021-02-01T17:42:19Z",
+      "side": 1,
+      "message": "I cleaned it up a bit.  Verified that inline script parsing still works as before, that is it won\u0027t read an inline spec from a script coming in on stdin:\n\n    [9584] · bash · smcallis@smcallis.bld:~/work/depot_tools · ✔ ~detached~[33287176]\n     ╰─▸ ~/work/infra/infra/go/src/infra/tools/vpython/vpython pylint-1.6 --help \u003e\u0026 /dev/null \u0026\u0026 echo success || echo failure\n    success\n\n    [9585] · bash · smcallis@smcallis.bld:~/work/depot_tools · ✔ ~detached~[33287176]\n     ╰─▸ ~/work/infra/infra/go/src/infra/tools/vpython/vpython - \u003c pylint-1.6 --help \u003e\u0026 /dev/null \u0026\u0026 echo \nsuccess || echo failure\n    failure",
+      "parentUuid": "d5442d9d_c74cc684",
       "range": {
         "startLine": 208,
         "startChar": 21,
