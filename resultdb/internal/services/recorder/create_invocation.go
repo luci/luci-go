@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -57,7 +58,9 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
-func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
+// It also adds the invocations to be included into the newly
+// created invocation to the given IDSet.
+func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time, includedIDs invocations.IDSet) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
 		return errors.Annotate(err, "invocation_id").Err()
 	}
@@ -94,6 +97,16 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
+	for i, incInvName := range inv.GetIncludedInvocations() {
+		incInvID, err := pbutil.ParseInvocationName(incInvName)
+		if err != nil {
+			return errors.Annotate(err, "included_invocations[%d]: invalid included invocation name %q", i, incInvName).Err()
+		}
+		if incInvID == req.InvocationId {
+			return errors.Reason("included_invocations[%d]: invocation cannot include itself", i).Err()
+		}
+		includedIDs.Add(invocations.ID(incInvID))
+	}
 	return nil
 }
 
@@ -156,9 +169,15 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		return nil, err
 	}
 
-	if err := validateCreateInvocationRequest(in, now); err != nil {
+	includedInvs := make(invocations.IDSet)
+	if err := validateCreateInvocationRequest(in, now, includedInvs); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
+
+	if err := permissions.VerifyBatch(ctx, permIncludeInvocation, includedInvs); err != nil {
+		return nil, err
+	}
+
 	invs, tokens, err := s.createInvocations(ctx, []*pb.CreateInvocationRequest{in}, in.RequestId, now, invocations.NewIDSet(invocations.ID(in.InvocationId)))
 	if err != nil {
 		return nil, err

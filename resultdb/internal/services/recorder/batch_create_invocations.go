@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -36,35 +37,39 @@ import (
 // validateBatchCreateInvocationsRequest checks that the individual requests
 // are valid, that they match the batch request requestID and that their names
 // are not repeated.
+// It also returns an IDSet containing the ids of all the invocations to be
+// included in the new invocations.
 func validateBatchCreateInvocationsRequest(
-	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string) (invocations.IDSet, error) {
+	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string) (newInvs, includedInvs invocations.IDSet, err error) {
 	if err := pbutil.ValidateRequestID(requestID); err != nil {
-		return nil, errors.Annotate(err, "request_id").Err()
+		return nil, nil, errors.Annotate(err, "request_id").Err()
 	}
 
 	if err := pbutil.ValidateBatchRequestCount(len(reqs)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	idSet := make(invocations.IDSet, len(reqs))
+	newInvs = make(invocations.IDSet, len(reqs))
+	allIncludedIDs := make(invocations.IDSet)
 	for i, req := range reqs {
-		if err := validateCreateInvocationRequest(req, now); err != nil {
-			return nil, errors.Annotate(err, "requests[%d]", i).Err()
+		if err := validateCreateInvocationRequest(req, now, allIncludedIDs); err != nil {
+			return nil, nil, errors.Annotate(err, "requests[%d]", i).Err()
 		}
 
 		// If there's multiple `CreateInvocationRequest`s their request id
 		// must either be empty or match the one in the batch request.
 		if req.RequestId != "" && req.RequestId != requestID {
-			return nil, errors.Reason("requests[%d].request_id: %q does not match request_id %q", i, requestID, req.RequestId).Err()
+			return nil, nil, errors.Reason("requests[%d].request_id: %q does not match request_id %q", i, requestID, req.RequestId).Err()
 		}
 
 		invID := invocations.ID(req.InvocationId)
-		if idSet.Has(invID) {
-			return nil, errors.Reason("requests[%d].invocation_id: duplicated invocation id %q", i, req.InvocationId).Err()
+		if newInvs.Has(invID) {
+			return nil, nil, errors.Reason("requests[%d].invocation_id: duplicated invocation id %q", i, req.InvocationId).Err()
 		}
-		idSet.Add(invID)
+		newInvs.Add(invID)
 	}
-	return idSet, nil
+
+	return newInvs, allIncludedIDs, nil
 }
 
 // BatchCreateInvocations implements pb.RecorderServer.
@@ -77,9 +82,14 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 
 	}
 
-	idSet, err := validateBatchCreateInvocationsRequest(now, in.Requests, in.RequestId)
+	idSet, includedInvs, err := validateBatchCreateInvocationsRequest(now, in.Requests, in.RequestId)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	includedInvs.RemoveAll(idSet)
+	if err := permissions.VerifyBatch(ctx, permIncludeInvocation, includedInvs); err != nil {
+		return nil, err
 	}
 
 	invs, tokens, err := s.createInvocations(ctx, in.Requests, in.RequestId, now, idSet)
@@ -122,9 +132,9 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 // inserting a row for each invocation creation requested.
 func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Context, now time.Time, reqs []*pb.CreateInvocationRequest, requestID, createdBy string) []*spanner.Mutation {
 
-	ms := make([]*spanner.Mutation, len(reqs))
+	ms := make([]*spanner.Mutation, 0, len(reqs))
 	// Compute mutations
-	for i, req := range reqs {
+	for _, req := range reqs {
 
 		// Prepare the invocation we will save to spanner.
 		inv := &pb.Invocation{
@@ -146,7 +156,15 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		pbutil.NormalizeInvocation(inv)
 		// Create a mutation to create the invocation.
-		ms[i] = spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID))
+		ms = append(ms, spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID)))
+
+		// Add any inclusions.
+		for _, incName := range req.Invocation.IncludedInvocations {
+			ms = append(ms, spanutil.InsertMap("IncludedInvocations", map[string]interface{}{
+				"InvocationId":         invocations.ID(req.InvocationId),
+				"IncludedInvocationId": invocations.MustParseName(incName),
+			}))
+		}
 	}
 	return ms
 }

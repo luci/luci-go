@@ -110,6 +110,15 @@ func (s IDSet) Union(other IDSet) {
 	}
 }
 
+// RemoveAll removes any ids present in other.
+func (s IDSet) RemoveAll(other IDSet) {
+	if len(s) > 0 {
+		for id := range other {
+			s.Remove(id)
+		}
+	}
+}
+
 // Remove removes id from the set if it was present.
 func (s IDSet) Remove(id ID) {
 	delete(s, id)
