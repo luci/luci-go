@@ -447,6 +447,14 @@ func enumToString(v int32, m map[int32]string) string {
 	return m[v][prefixLen:]
 }
 
+type reviewInput struct {
+	Message    string           `json:"message,omitempty"`
+	Labels     map[string]int32 `json:"labels,omitempty"`
+	Tag        string           `json:"tag,omitempty"`
+	Notify     string           `json:"notify,omitempty"`
+	OnBehalfOf int64            `json:"on_behalf_of,omitempty"`
+}
+
 type attentionSetRequest struct {
 	User   string `json:"user"`
 	Reason string `json:"reason"`
