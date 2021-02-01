@@ -70,6 +70,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a5f7bde_174874ff",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-02-01T01:53:34Z",
+      "side": 1,
+      "message": "I like this change. Just one comment in addition to Robbie\u0027s.",
+      "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7b7ea19b_20f2480d",
@@ -83,6 +100,23 @@
       "writtenOn": "2021-01-30T08:40:00Z",
       "side": 1,
       "message": "May be worth printing an informative message (since we know we\u0027re going into an interactive prompt):\n\n  Loaded vpython spec from /path/to/vpython/spec\n\nOr something like that. I believe the log messages are buffered and only printed on an error, however.",
+      "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6fa2dd04_bd426b54",
+        "filename": "vpython/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-02-01T01:53:34Z",
+      "side": 1,
+      "message": "Could we group this together with handling a script read from stdin, which seems semantically the same?",
       "revId": "8b96aedbccef7e05365ff37f8ce0559da8538f87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
