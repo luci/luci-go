@@ -174,20 +174,20 @@ type Loader struct {
 // script's location, looking for a file named in CommonSpecNames. If it finds
 // one, it will use that as the specification file. This enables scripts to
 // implicitly share an specification.
-func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*vpython.Spec, error) {
+func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*vpython.Spec, string, error) {
 	// Partner File: Try loading the spec from an adjacent file.
 	specPath, err := l.findForScript(path, isModule)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to scan for filesystem spec").Err()
+		return nil, "", errors.Annotate(err, "failed to scan for filesystem spec").Err()
 	}
 	if specPath != "" {
 		var spec vpython.Spec
 		if err := Load(specPath, &spec); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		logging.Infof(c, "Loaded specification from: %s", specPath)
-		return &spec, nil
+		return &spec, specPath, nil
 	}
 
 	// Inline: Try and parse the main script for the spec file.
@@ -196,32 +196,43 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 		// Module.
 		mainScript = filepath.Join(mainScript, "__main__.py")
 	}
-	switch spec, err := l.parseFrom(mainScript); {
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to parse inline spec from: %s", mainScript).Err()
 
-	case spec != nil:
-		logging.Infof(c, "Loaded inline spec from: %s", mainScript)
-		return spec, nil
+	info, err := os.Stat(mainScript)
+	if err != nil {
+		return nil, "", errors.Annotate(err, "error stat-ing file: %s", mainScript).Err()
+	}
+
+	// Assume the path is a directory until we're sure it's not, then get its directory component
+	dir := mainScript
+	if !info.IsDir() {
+		dir = filepath.Dir(mainScript)
+		switch spec, err := l.parseFrom(mainScript); {
+		case err != nil:
+			return nil, "", errors.Annotate(err, "failed to parse inline spec from: %s", mainScript).Err()
+
+		case spec != nil:
+			logging.Infof(c, "Loaded inline spec from: %s", mainScript)
+			return spec, mainScript, nil
+		}
 	}
 
 	// Common: Try and identify a common specification file.
-	switch path, err := l.findCommonWalkingFrom(filepath.Dir(mainScript)); {
+	switch path, err := l.findCommonWalkingFrom(dir); {
 	case err != nil:
-		return nil, err
+		return nil, "", err
 
 	case path != "":
 		var spec vpython.Spec
 		if err := Load(path, &spec); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		logging.Infof(c, "Loaded common spec from: %s", path)
-		return &spec, nil
+		return &spec, path, nil
 	}
 
 	// Couldn't identify a specification file.
-	return nil, nil
+	return nil, "", nil
 }
 
 func (l *Loader) findForScript(path string, isModule bool) (string, error) {
