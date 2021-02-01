@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "29eb561a_ea81d883",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-01T20:30:50Z",
+      "side": 1,
+      "message": "a map is already a reference.\nno need to pass a pointer to a reference",
+      "range": {
+        "startLine": 55,
+        "startChar": 51,
+        "endLine": 55,
+        "endChar": 52
+      },
+      "revId": "39ddfef1d10ebde412aca8f2272f630f73b06ca8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5518952_b1018960",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-01T20:30:50Z",
+      "side": 1,
+      "message": "should do it before the check. We might not have anything after exclusion.\n\nalso, in Exclude(), we should probably check if s is empty.\n\nstepping back, the len check be inside VerifyBatch? then we wouldn\u0027t have to repeat it in create_invocation.go",
+      "revId": "39ddfef1d10ebde412aca8f2272f630f73b06ca8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3e343a5_d9bb9354",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-01T20:30:50Z",
+      "side": 1,
+      "message": "nit: please join the two lines back, like it used to be before this CL",
+      "range": {
+        "startLine": 173,
+        "startChar": 2,
+        "endLine": 174,
+        "endChar": 5
+      },
+      "revId": "39ddfef1d10ebde412aca8f2272f630f73b06ca8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

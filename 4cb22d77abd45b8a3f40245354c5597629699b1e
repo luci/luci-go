@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b458cb56_aff9f846",
+        "filename": "resultdb/internal/invocations/id.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-01T20:30:50Z",
+      "side": 1,
+      "message": "RemoveAll SGTM. It is consistent with Remove()",
+      "parentUuid": "7454d2b6_b4b2e373",
+      "range": {
+        "startLine": 114,
+        "startChar": 15,
+        "endLine": 114,
+        "endChar": 22
+      },
+      "revId": "4cb22d77abd45b8a3f40245354c5597629699b1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "17c922e0_37fbb9b6",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 7
