@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7454d2b6_b4b2e373",
+        "filename": "resultdb/internal/invocations/id.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "`a \u003d b.Except(c)` would make sense. But this method is not returning a new idset, instead it\u0027s modifying the current one.\nHow about `a.RemoveAll(b)` ?",
+      "parentUuid": "9ad487bc_9b0d72f1",
+      "range": {
+        "startLine": 114,
+        "startChar": 15,
+        "endLine": 114,
+        "endChar": 22
+      },
+      "revId": "4cb22d77abd45b8a3f40245354c5597629699b1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "17c922e0_37fbb9b6",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 7
@@ -60,6 +84,30 @@
       "writtenOn": "2021-02-01T19:37:33Z",
       "side": 1,
       "message": "should this be a returned value instead, so that the function is more consistent with validateBatchCreateInvocationsRequest?",
+      "range": {
+        "startLine": 63,
+        "startChar": 85,
+        "endLine": 63,
+        "endChar": 115
+      },
+      "revId": "4cb22d77abd45b8a3f40245354c5597629699b1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d03522d2_c37bac10",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "That was my first thought, but Nodir raised a good point: in batches we call this function many times, and we don\u0027t want to allocate a new map for each of them and then merge them at the end, specially because all \"leaf\" invocations will not include anything.",
+      "parentUuid": "464a71a3_7409fc48",
       "range": {
         "startLine": 63,
         "startChar": 85,

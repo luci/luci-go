@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb2cfc30_f9fbb0b9",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "acde93a0_1a19eef9",
+      "range": {
+        "startLine": 41,
+        "startChar": 34,
+        "endLine": 42,
+        "endChar": 44
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "90c1756e_ecf87773",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-01-30T20:31:08Z",
       "side": 1,
       "message": "unnecessary",
+      "range": {
+        "startLine": 44,
+        "startChar": 79,
+        "endLine": 44,
+        "endChar": 96
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93ecfae0_d14cf847",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90c1756e_ecf87773",
       "range": {
         "startLine": 44,
         "startChar": 79,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "81d9538c_06c3bce0",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54324ef3_86577c26",
+      "range": {
+        "startLine": 60,
+        "startChar": 17,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "054718df_b7eec664",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-01-30T20:31:08Z",
       "side": 1,
       "message": "this might panic because VerifyBatch already wraps the error with appstatus\n(need a test)",
+      "range": {
+        "startLine": 101,
+        "startChar": 16,
+        "endLine": 101,
+        "endChar": 40
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c712c445_ca1f0abc",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "I totally missed this. Done.",
+      "parentUuid": "054718df_b7eec664",
       "range": {
         "startLine": 101,
         "startChar": 16,
@@ -116,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d877877a_9704c428",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e49afc59_5eeb43b4",
+      "range": {
+        "startLine": 173,
+        "startChar": 28,
+        "endLine": 173,
+        "endChar": 45
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4eede0bc_342597d2",
@@ -139,6 +259,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f5fb75c_8bcdc610",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4eede0bc_342597d2",
+      "range": {
+        "startLine": 104,
+        "startChar": 37,
+        "endLine": 104,
+        "endChar": 48
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fddbc5b7_5c90d79f",
@@ -152,6 +296,30 @@
       "writtenOn": "2021-01-30T20:31:08Z",
       "side": 1,
       "message": "nit: normally error messages do not end with punctuation",
+      "range": {
+        "startLine": 108,
+        "startChar": 99,
+        "endLine": 108,
+        "endChar": 100
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e1420ae_1b8c0179",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fddbc5b7_5c90d79f",
       "range": {
         "startLine": 108,
         "startChar": 99,
@@ -203,6 +371,54 @@
         "startChar": 47,
         "endLine": 109,
         "endChar": 48
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2b84d93_2a4a5f5a",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1102bda2_6d9219de",
+      "range": {
+        "startLine": 109,
+        "startChar": 47,
+        "endLine": 109,
+        "endChar": 48
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8c203fa_a6d7976f",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T20:10:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d1d7e324_b043cfb7",
+      "range": {
+        "startLine": 109,
+        "startChar": 64,
+        "endLine": 109,
+        "endChar": 65
       },
       "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
