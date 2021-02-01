@@ -110,6 +110,13 @@ func (s IDSet) Union(other IDSet) {
 	}
 }
 
+// Exclude removes any ids present in other.
+func (s IDSet) Exclude(other IDSet) {
+	for id := range other {
+		s.Remove(id)
+	}
+}
+
 // Remove removes id from the set if it was present.
 func (s IDSet) Remove(id ID) {
 	delete(s, id)
