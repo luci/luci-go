@@ -16,6 +16,7 @@ package lib
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -23,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/maruel/subcommands"
@@ -31,7 +33,6 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/client/internal/common"
@@ -71,7 +72,8 @@ type swarmingService interface {
 	GetTaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	GetTaskOutputs(ctx context.Context, taskID, outputDir string, isolateRef *swarming.SwarmingRpcsFilesRef, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
+	GetTaskOutputsFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	GetTaskOutputsFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 }
 
@@ -163,6 +165,53 @@ func (s *swarmingServiceImpl) GetTaskOutput(ctx context.Context, taskID string) 
 		return
 	})
 	return
+}
+
+func (s *swarmingServiceImpl) GetTaskOutputsFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+	isolatedOpts := []isolatedclient.Option{
+		isolatedclient.WithAuthClient(s.client),
+		isolatedclient.WithNamespace(isolateRef.Namespace),
+		isolatedclient.WithUserAgent(SwarmingUserAgent),
+	}
+	isolatedClient := isolatedclient.NewClient(isolateRef.Isolatedserver, isolatedOpts...)
+
+	var filesMu sync.Mutex
+	var files []string
+	ctx, cancel := context.WithCancel(ctx)
+	signals.HandleInterrupt(cancel)
+	opts := &downloader.Options{
+		MaxConcurrentJobs: s.worker,
+		FileCallback: func(name string, _ *isolated.File) {
+			filesMu.Lock()
+			files = append(files, name)
+			filesMu.Unlock()
+		},
+		FileStatsCallback: func(fileStats downloader.FileStats, _ time.Duration) {
+			logging.Debugf(ctx, "Downloaded %d of %d bytes in %d of %d files to %s",
+				fileStats.BytesCompleted, fileStats.BytesScheduled,
+				fileStats.CountCompleted, fileStats.CountScheduled,
+				outdir)
+		},
+	}
+	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(isolateRef.Isolated), outdir, opts)
+	return files, dl.Wait()
+}
+
+// GetTaskOutputsFromCAS downloads outputs from CAS.
+func (s *swarmingServiceImpl) GetTaskOutputsFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+	d := digest.Digest{
+		Hash: casRef.Digest.Hash,
+		Size: casRef.Digest.SizeBytes,
+	}
+	outputs, err := cascli.DownloadDirectory(ctx, d, outdir, filemetadata.NewNoopCache())
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to download directory").Err()
+	}
+	files := make([]string, 0, len(outputs))
+	for path := range outputs {
+		files = append(files, path)
+	}
+	return files, nil
 }
 
 func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, outputDir string, isolateRef *swarming.SwarmingRpcsFilesRef, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
@@ -315,20 +364,34 @@ func (t taskState) Alive() bool {
 	return (t & maskAlive) != 0
 }
 
+// AuthFlags is an interface to register auth flags and create http.Client and CAS Client.
+type AuthFlags interface {
+	// Register registers auth flags to the given flag set. e.g. -service-account-json.
+	Register(f *flag.FlagSet)
+
+	// Parse parses auth flags.
+	Parse() error
+
+	// NewHTTPClient creates an authroised http.Client.
+	NewHTTPClient(ctx context.Context) (*http.Client, error)
+
+	// NewCASClient creates an authroised RBE Client.
+	NewCASClient(ctx context.Context, instance string) (*rbeclient.Client, error)
+}
+
 type commonFlags struct {
 	subcommands.CommandRunBase
 	defaultFlags common.Flags
-	authFlags    authcli.Flags
+	authFlags    AuthFlags
 	serverURL    string
-
-	parsedAuthOpts auth.Options
-	worker         int
+	worker       int
 }
 
 // Init initializes common flags.
-func (c *commonFlags) Init(authOpts auth.Options) {
+func (c *commonFlags) Init(authFlags AuthFlags) {
 	c.defaultFlags.Init(&c.Flags)
-	c.authFlags.Register(&c.Flags, authOpts)
+	c.authFlags = authFlags
+	c.authFlags.Register(&c.Flags)
 	c.Flags.StringVar(&c.serverURL, "server", os.Getenv("SWARMING_SERVER"), "Server URL; required. Set $SWARMING_SERVER to set a default.")
 	c.Flags.StringVar(&c.serverURL, "S", os.Getenv("SWARMING_SERVER"), "Alias for -server.")
 	c.Flags.IntVar(&c.worker, "worker", 8, "Number of workers used to download isolated files.")
@@ -347,19 +410,18 @@ func (c *commonFlags) Parse() error {
 		return err
 	}
 	c.serverURL = s
-	c.parsedAuthOpts, err = c.authFlags.Options()
 	return err
 }
 
 func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService, error) {
-	client, err := createAuthClient(ctx, &c.parsedAuthOpts)
+	authcli, err := c.authFlags.NewHTTPClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 	// Create a copy of the client so that the timeout only applies to Swarming
 	// RPC requests, not to Isolate requests made by this service. A shallow
 	// copy is ok because only the timeout needs to be different.
-	rpcClient := *client
+	rpcClient := *authcli
 	rpcClient.Timeout = swarmingRPCRequestTimeout
 	s, err := swarming.NewService(ctx, option.WithHTTPClient(&rpcClient))
 	if err != nil {
@@ -367,7 +429,10 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	}
 	s.BasePath = c.serverURL + swarmingAPISuffix
 	s.UserAgent = SwarmingUserAgent
-	return &swarmingServiceImpl{client, s, c.worker, c.parsedAuthOpts}, nil
+	return &swarmingServiceImpl{
+		client:  authcli,
+		service: s,
+		worker:  c.worker}, nil
 }
 
 func tagTransientGoogleAPIError(err error) error {
