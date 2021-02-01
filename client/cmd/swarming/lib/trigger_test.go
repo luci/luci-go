@@ -18,7 +18,6 @@ import (
 	"os"
 	"testing"
 
-	"go.chromium.org/luci/auth"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
@@ -199,7 +198,7 @@ func TestNamePartFromDimensions(t *testing.T) {
 func TestTriggerParse_NoArgs(t *testing.T) {
 	Convey(`Make sure that Parse works with no arguments.`, t, func() {
 		c := triggerRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.Parse([]string(nil))
 		So(err, ShouldErrLike, "must provide -server")
@@ -209,7 +208,7 @@ func TestTriggerParse_NoArgs(t *testing.T) {
 func TestTriggerParse_NoDimension(t *testing.T) {
 	Convey(`Make sure that Parse fails with no dimensions.`, t, func() {
 		c := triggerRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 
@@ -221,7 +220,7 @@ func TestTriggerParse_NoDimension(t *testing.T) {
 func TestTriggerParse_NoIsolated(t *testing.T) {
 	Convey(`Make sure that Parse handles a missing isolated flag.`, t, func() {
 		c := triggerRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{
 			"-server", "http://localhost:9050",
@@ -236,7 +235,7 @@ func TestTriggerParse_NoIsolated(t *testing.T) {
 func TestTriggerParse_RawNoArgs(t *testing.T) {
 	Convey(`Make sure that Parse handles missing raw-cmd arguments.`, t, func() {
 		c := triggerRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{
 			"-server", "http://localhost:9050",
@@ -252,7 +251,7 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 func TestTriggerParse_RawArgs(t *testing.T) {
 	Convey(`Make sure that Parse allows both raw-cmd and -isolated`, t, func() {
 		c := triggerRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{
 			"-server", "http://localhost:9050",
@@ -268,7 +267,7 @@ func TestTriggerParse_RawArgs(t *testing.T) {
 func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 	Convey(`Make sure that processing trigger options handles raw-args.`, t, func() {
 		c := triggerRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 		c.commonFlags.serverURL = "http://localhost:9050"
 		c.isolateServer = "http://localhost:10050"
 
@@ -287,7 +286,7 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 	Convey(`Make sure that processing trigger options handles cipd packages.`, t, func() {
 		c := triggerRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 		c.cipdPackage = map[string]string{
 			"path:name": "version",
 		}
@@ -336,7 +335,7 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 	t.Parallel()
 	Convey(`Basic`, t, func() {
 		c := triggerRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 		c.dimensions.Set("foo=abc")
 		c.optionalDimension.Set("bar=def:60")
 
@@ -352,11 +351,11 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 		slice := result.TaskSlices[0]
 		So(slice.Properties.Dimensions, ShouldResemble,
 			[]*swarming.SwarmingRpcsStringPair{
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "foo",
 					Value: "abc",
 				},
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "bar",
 					Value: "def",
 				},
@@ -366,7 +365,7 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 		slice = result.TaskSlices[1]
 		So(slice.Properties.Dimensions, ShouldResemble,
 			[]*swarming.SwarmingRpcsStringPair{
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "foo",
 					Value: "abc",
 				},

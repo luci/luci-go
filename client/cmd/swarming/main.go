@@ -19,13 +19,18 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"log"
+	"net/http"
 	"os"
 
+	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -33,22 +38,55 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
+var _ lib.AuthFlags = (*authFlags)(nil)
+
+type authFlags struct {
+	flags       authcli.Flags
+	defaultOpts auth.Options
+	parsedOpts  auth.Options
+	ctx         context.Context
+}
+
+func (af *authFlags) Register(f *flag.FlagSet) {
+	af.flags.Register(f, af.defaultOpts)
+}
+
+func (af *authFlags) Parse() error {
+	opts, err := af.flags.Options()
+	if err != nil {
+		return err
+	}
+	af.parsedOpts = opts
+	return nil
+}
+
+func (af *authFlags) NewHTTPClient(ctx context.Context) (*http.Client, error) {
+	return auth.NewAuthenticator(ctx, auth.OptionalLogin, af.parsedOpts).Client()
+}
+
+func (af *authFlags) NewCASClient(ctx context.Context, instance string) (*rbeclient.Client, error) {
+	return cas.NewClient(ctx, instance, af.parsedOpts, true)
+}
+
+func getApplication() *subcommands.DefaultApplication {
+	authOpts := chromeinfra.DefaultAuthOptions()
+	af := &authFlags{defaultOpts: authOpts}
+
 	return &subcommands.DefaultApplication{
 		Name:  "swarming",
 		Title: "Client tool to access a swarming server.",
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
-			lib.CmdBots(defaultAuthOpts),
-			lib.CmdCollect(defaultAuthOpts),
-			lib.CmdRequestShow(defaultAuthOpts),
-			lib.CmdSpawnTasks(defaultAuthOpts),
-			lib.CmdTasks(defaultAuthOpts),
-			lib.CmdTrigger(defaultAuthOpts),
+			lib.CmdBots(af),
+			lib.CmdCollect(af),
+			lib.CmdRequestShow(af),
+			lib.CmdSpawnTasks(af),
+			lib.CmdTasks(af),
+			lib.CmdTrigger(af),
 			subcommands.CmdHelp,
-			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
-			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
-			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
+			authcli.SubcommandInfo(authOpts, "whoami", false),
+			authcli.SubcommandLogin(authOpts, "login", false),
+			authcli.SubcommandLogout(authOpts, "logout", false),
 			versioncli.CmdVersion(lib.SwarmingVersion),
 		},
 
@@ -65,6 +103,5 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 func main() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	mathrand.SeedRandomly()
-	app := getApplication(chromeinfra.DefaultAuthOptions())
-	os.Exit(subcommands.Run(app, nil))
+	os.Exit(subcommands.Run(getApplication(), nil))
 }
