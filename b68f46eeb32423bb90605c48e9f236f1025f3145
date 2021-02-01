@@ -118,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4938dc41_b7e110e5",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T21:17:59Z",
+      "side": 1,
+      "message": "I think it was accidental, I don\u0027t remember doing this on purpose. Restored.",
+      "parentUuid": "a38cde28_e263e4eb",
+      "range": {
+        "startLine": 53,
+        "startChar": 33,
+        "endLine": 53,
+        "endChar": 45
+      },
+      "revId": "b68f46eeb32423bb90605c48e9f236f1025f3145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "54324ef3_86577c26",

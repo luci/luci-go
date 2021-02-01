@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "faec9076_8c6d4a06",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T21:17:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29eb561a_ea81d883",
+      "range": {
+        "startLine": 55,
+        "startChar": 51,
+        "endLine": 55,
+        "endChar": 52
+      },
+      "revId": "39ddfef1d10ebde412aca8f2272f630f73b06ca8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e5518952_b1018960",
@@ -41,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4fafb449_28afc29a",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T21:17:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5518952_b1018960",
+      "revId": "39ddfef1d10ebde412aca8f2272f630f73b06ca8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a3e343a5_d9bb9354",
@@ -54,6 +96,30 @@
       "writtenOn": "2021-02-01T20:30:50Z",
       "side": 1,
       "message": "nit: please join the two lines back, like it used to be before this CL",
+      "range": {
+        "startLine": 173,
+        "startChar": 2,
+        "endLine": 174,
+        "endChar": 5
+      },
+      "revId": "39ddfef1d10ebde412aca8f2272f630f73b06ca8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23aad509_ee5b1209",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-01T21:17:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3e343a5_d9bb9354",
       "range": {
         "startLine": 173,
         "startChar": 2,
