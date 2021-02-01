@@ -47,7 +47,7 @@ type NotifyCallback func(context.Context) error
 // UpdateProject imports the latest CV Config for a given LUCI Project
 // from LUCI Config if the config in CV is outdated.
 func UpdateProject(ctx context.Context, project string, notify NotifyCallback) error {
-	externalHash, err := getExternalContentHash(ctx, project)
+	meta, err := getConfigMeta(ctx, project)
 	if err != nil {
 		return err
 	}
@@ -57,11 +57,11 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 		return errors.Annotate(err, "failed to get ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
 	case !existingPC.Enabled:
 		// Go through update process to ensure all configs are present.
-	case existingPC.ExternalHash == externalHash:
-		return nil // up-to-date
+	case existingPC.ExternalHash == meta.ContentHash:
+		return nil // Already up-to-date.
 	}
 
-	cfg, err := fetchCfg(ctx, project, externalHash)
+	cfg, err := fetchCfg(ctx, meta.ContentHash)
 	if err != nil {
 		return err
 	}
@@ -76,8 +76,9 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		hashInfo := ConfigHashInfo{
-			Hash:    localHash,
-			Project: datastore.MakeKey(ctx, projectConfigKind, project),
+			GitRevision: meta.Revision,
+			Hash:        localHash,
+			Project:     datastore.MakeKey(ctx, projectConfigKind, project),
 		}
 		switch err := datastore.Get(ctx, &hashInfo); {
 		case err != nil && err != datastore.ErrNoSuchEntity:
@@ -115,7 +116,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 				UpdateTime:       datastore.RoundTime(clock.Now(ctx)).UTC(),
 				EVersion:         targetEVersion,
 				Hash:             localHash,
-				ExternalHash:     externalHash,
+				ExternalHash:     meta.ContentHash,
 				ConfigGroupNames: cgNames,
 			}
 			updated = true
@@ -131,24 +132,28 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	case err != nil:
 		return errors.Annotate(err, "failed to run transaction to update ProjectConfig").Tag(transient.Tag).Err()
 	case updated:
-		logging.Infof(ctx, "updated project %q to rev %s hash %s ", project, "TODO", localHash)
+		logging.Infof(ctx, "updated project %q to rev %s hash %s ", project, meta.Revision, localHash)
 	}
 	return nil
 }
 
-func getExternalContentHash(ctx context.Context, project string) (string, error) {
+// getConfigMeta fetches the Meta for a project config.
+//
+// Returns an error in the case of an empty content hash or fetch failure.
+func getConfigMeta(ctx context.Context, project string) (config.Meta, error) {
 	var meta config.Meta
 	switch err := cfgclient.Get(ctx, config.ProjectSet(project), ConfigFileName, nil, &meta); {
 	case err != nil:
-		return "", errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
+		return meta, errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
 	case meta.ContentHash == "":
-		return "", errors.Reason("LUCI Config returns empty content hash for project %q", project).Err()
+		return meta, errors.Reason("LUCI Config returns empty content hash for project %q", project).Err()
 	default:
-		return meta.ContentHash, nil
+		return meta, nil
 	}
 }
 
-func fetchCfg(ctx context.Context, project string, contentHash string) (*pb.Config, error) {
+// fetchCfg a config contents from luci-config using the content hash.
+func fetchCfg(ctx context.Context, contentHash string) (*pb.Config, error) {
 	content, err := cfgclient.Client(ctx).GetConfigByHash(ctx, contentHash)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get config by content hash").Tag(transient.Tag).Err()
@@ -157,8 +162,8 @@ func fetchCfg(ctx context.Context, project string, contentHash string) (*pb.Conf
 	if err := cfgclient.ProtoText(ret)(content); err != nil {
 		return nil, errors.Annotate(err, "failed to deserialize config content").Err()
 	}
-	// TODO(yiwzhang): validate the config here again to prevent ingesting a bad
-	// version of config that accidentally slips into LUCI Config.
+	// TODO(yiwzhang): validate the config here again to prevent ingesting a
+	// bad version of config that accidentally slips into LUCI Config.
 	// See: go.chromium.org/luci/cq/appengine/config
 	return ret, nil
 }
