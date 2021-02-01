@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9ad487bc_9b0d72f1",
+        "filename": "resultdb/internal/invocations/id.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-01T19:37:33Z",
+      "side": 1,
+      "message": "Naming nit: Except/Minus ?",
+      "range": {
+        "startLine": 114,
+        "startChar": 15,
+        "endLine": 114,
+        "endChar": 22
+      },
+      "revId": "4cb22d77abd45b8a3f40245354c5597629699b1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17c922e0_37fbb9b6",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-01T19:37:33Z",
+      "side": 1,
+      "message": "period at the end?",
+      "range": {
+        "startLine": 62,
+        "startChar": 35,
+        "endLine": 62,
+        "endChar": 40
+      },
+      "revId": "4cb22d77abd45b8a3f40245354c5597629699b1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "464a71a3_7409fc48",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-01T19:37:33Z",
+      "side": 1,
+      "message": "should this be a returned value instead, so that the function is more consistent with validateBatchCreateInvocationsRequest?",
+      "range": {
+        "startLine": 63,
+        "startChar": 85,
+        "endLine": 63,
+        "endChar": 115
+      },
+      "revId": "4cb22d77abd45b8a3f40245354c5597629699b1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
