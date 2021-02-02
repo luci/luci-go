@@ -290,21 +290,51 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 		return
 	}
 
-	// TODO(crbug.com/1172492): Replace with realms ACL check.
-	switch yes, err := coordinator.CheckProjectReader(c); {
-	case err != nil:
-		return data, grpcutil.Internal
-	case !yes:
-		return data, coordinator.PermissionDeniedErr(c)
+	// Fetch the prefix (for ACL check) and the actual stream.
+	pfx, _ := path.Split()
+	logPrefix := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(pfx)}
+	logStream := &coordinator.LogStream{ID: coordinator.LogStreamID(path)}
+	var prefixErr, streamErr error
+	if err = ds.Get(c, logPrefix, logStream); err != nil {
+		if merr, ok := err.(errors.MultiError); ok {
+			if len(merr) != 2 {
+				panic("impossible")
+			}
+			prefixErr, streamErr = merr[0], merr[1]
+		} else {
+			prefixErr, streamErr = err, err
+		}
 	}
 
-	logStream := &coordinator.LogStream{ID: coordinator.LogStreamID(data.options.path)}
-	if err = ds.Get(c, logStream); err != nil {
-		if ds.IsErrNoSuchEntity(err) {
-			err = grpcutil.NotFoundTag.Apply(err)
-		}
-		return
+	// Treat ErrNoSuchEntity from the prefix in a special way: a non-existing
+	// prefix should be handled in the same way as a prefix "hidden" by ACLs.
+	switch {
+	case prefixErr == ds.ErrNoSuchEntity:
+		return logData{}, coordinator.PermissionDeniedErr(c)
+	case prefixErr != nil:
+		logging.WithError(prefixErr).Errorf(c, "Failed to fetch LogPrefix")
+		return logData{}, grpcutil.Internal
 	}
+
+	// Check the caller is allowed to read streams under this prefix.
+	c = logging.SetField(c, "realm", logPrefix.Realm)
+	switch yes, err := coordinator.HasPermission(c, coordinator.PermLogsGet, logPrefix.Realm); {
+	case err != nil:
+		return logData{}, grpcutil.Internal
+	case !yes:
+		return logData{}, coordinator.PermissionDeniedErr(c)
+	}
+
+	// Check if the stream actually exists. It is fine to expose this information
+	// now after ACLs have been checked.
+	switch {
+	case streamErr == ds.ErrNoSuchEntity:
+		return logData{}, grpcutil.NotFoundTag.Apply(streamErr)
+	case streamErr != nil:
+		logging.WithError(streamErr).Errorf(c, "Failed to fetch LogStream")
+		return logData{}, grpcutil.Internal
+	}
+
 	if data.logDesc, err = logStream.DescriptorProto(); err != nil {
 		return
 	}

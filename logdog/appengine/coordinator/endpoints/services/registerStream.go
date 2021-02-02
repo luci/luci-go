@@ -120,6 +120,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	c = log.SetFields(c, log.Fields{
 		"id":     pfx.ID,
 		"prefix": prefix,
+		"realm":  pfx.Realm,
 	})
 	if err := ds.Get(c, pfx); err != nil {
 		log.WithError(err).Errorf(c, "Failed to load log stream prefix.")
