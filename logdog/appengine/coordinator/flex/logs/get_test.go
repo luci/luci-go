@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/common/archive"
@@ -94,7 +94,7 @@ func testGetImpl(t *testing.T, archived bool) {
 		const project = "proj-foo"
 
 		// Generate our test stream.
-		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
+		tls := ct.MakeStream(c, "proj-foo", "test-realm", "testing/+/foo/bar")
 
 		putLogStream := func(c context.Context) {
 			if err := tls.Put(c); err != nil {
@@ -166,6 +166,8 @@ func testGetImpl(t *testing.T, archived bool) {
 
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogs)
+				So(resp.Project, ShouldEqual, "proj-foo")
+				So(resp.Realm, ShouldEqual, "test-realm")
 			})
 
 			Convey(`Will fail if the Path is not a stream path or a hash.`, func() {
@@ -193,7 +195,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 				Convey(`When accessing a restricted project`, func() {
 					req.Project = "proj-exclusive"
-					tls = ct.MakeStream(c, "proj-exclusive", "testing/+/foo/bar")
+					tls = ct.MakeStream(c, "proj-exclusive", "", "testing/+/foo/bar")
 					putLogStream(c)
 
 					Convey(`Will succeed if the user can access the project.`, func() {
@@ -254,7 +256,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 				Convey(`When accessing a restricted project`, func() {
 					req.Project = "proj-exclusive"
-					tls = ct.MakeStream(c, "proj-exclusive", "testing/+/foo/bar")
+					tls = ct.MakeStream(c, "proj-exclusive", "", "testing/+/foo/bar")
 					putLogStream(c)
 
 					Convey(`Will succeed if the user can access the project.`, func() {

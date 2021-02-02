@@ -25,6 +25,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"google.golang.org/grpc/codes"
 )
@@ -65,8 +66,8 @@ func (s *server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.Que
 	// Execute our queries in parallel.
 	resp := logdog.QueryResponse{}
 	e := &queryRunner{
-		Context:      log.SetField(c, "path", req.Path),
-		QueryRequest: req,
+		ctx:          log.SetField(c, "path", req.Path),
+		req:          req,
 		canSeePurged: canSeePurged,
 		limit:        limit,
 	}
@@ -84,9 +85,8 @@ func (s *server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.Que
 }
 
 type queryRunner struct {
-	context.Context
-	*logdog.QueryRequest
-
+	ctx          context.Context
+	req          *logdog.QueryRequest
 	canSeePurged bool
 	limit        int
 }
@@ -96,29 +96,49 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		return grpcutil.Errf(codes.InvalidArgument, "query limit is zero")
 	}
 
-	if int(r.MaxResults) > 0 && r.limit > int(r.MaxResults) {
-		r.limit = int(r.MaxResults)
+	if int(r.req.MaxResults) > 0 && r.limit > int(r.req.MaxResults) {
+		r.limit = int(r.req.MaxResults)
 	}
 
-	q, err := coordinator.NewLogStreamQuery(r.Path)
+	q, err := coordinator.NewLogStreamQuery(r.req.Path)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
-			"path":       r.Path,
-		}.Errorf(r, "Invalid query path.")
+			"path":       r.req.Path,
+		}.Errorf(r.ctx, "Invalid query path.")
 		return grpcutil.Errf(codes.InvalidArgument, "invalid query `path`")
 	}
 
-	if err := q.SetCursor(r, r.Next); err != nil {
+	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(q.Prefix)}
+	if err := ds.Get(r.ctx, pfx); err != nil {
+		if err == ds.ErrNoSuchEntity {
+			return coordinator.PermissionDeniedErr(r.ctx)
+		}
+		log.WithError(err).Errorf(r.ctx, "Failed to fetch LogPrefix")
+		return grpcutil.Internal
+	}
+	switch yes, err := coordinator.HasPermission(r.ctx, coordinator.PermLogsList, pfx.Realm); {
+	case err != nil:
+		return grpcutil.Internal
+	case !yes:
+		return coordinator.PermissionDeniedErr(r.ctx)
+	}
+
+	resp.Project = r.req.Project
+	if pfx.Realm != "" {
+		_, resp.Realm = realms.Split(pfx.Realm)
+	}
+
+	if err := q.SetCursor(r.ctx, r.req.Next); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
-			"cursor":     r.Next,
-		}.Errorf(r, "Failed to SetCursor.")
+			"cursor":     r.req.Next,
+		}.Errorf(r.ctx, "Failed to SetCursor.")
 		return grpcutil.Errf(codes.InvalidArgument, "invalid `next` value")
 	}
 
-	q.OnlyContentType(r.ContentType)
-	if st := r.StreamType; st != nil {
+	q.OnlyContentType(r.req.ContentType)
+	if st := r.req.StreamType; st != nil {
 		if err := q.OnlyStreamType(st.Value); err != nil {
 			return grpcutil.Errf(codes.InvalidArgument, "invalid query `streamType`: %s", st.Value)
 		}
@@ -128,29 +148,29 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	//
 	// If the user is allowed to, and `r.Purged in (YES, BOTH)`, include purged
 	// results in the result.
-	if r.canSeePurged && r.Purged != logdog.QueryRequest_NO {
+	if r.canSeePurged && r.req.Purged != logdog.QueryRequest_NO {
 		q.IncludePurged()
 		// If the user requested to ONLY see purged results, further restrict the
 		// query.
-		if r.Purged == logdog.QueryRequest_YES {
+		if r.req.Purged == logdog.QueryRequest_YES {
 			q.OnlyPurged()
 		}
 	}
 
-	q.TimeBound(r.Newer, r.Older)
+	q.TimeBound(r.req.Newer, r.req.Older)
 
 	// Add tag constraints.
-	for k, v := range r.Tags {
+	for k, v := range r.req.Tags {
 		if err := types.ValidateTag(k, v); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 				"key":        k,
 				"value":      v,
-			}.Errorf(r, "Invalid tag constraint.")
+			}.Errorf(r.ctx, "Invalid tag constraint.")
 			return grpcutil.Errf(codes.InvalidArgument, "invalid tag constraint: %q", k)
 		}
 	}
-	q.MustHaveTags(r.Tags)
+	q.MustHaveTags(r.req.Tags)
 
 	// The "State" boolean in the query request populates two pieces of data:
 	//   1) The Desc field in logdog.QueryResponse_Stream
@@ -178,15 +198,15 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	var logStreamStates []*coordinator.LogStreamState
 	var respLogStreamStates []*logdog.LogStreamState
 
-	err = q.Run(r, func(ls *coordinator.LogStream, cb ds.CursorCB) error {
+	err = q.Run(r.ctx, func(ls *coordinator.LogStream, cb ds.CursorCB) error {
 		toAdd := &logdog.QueryResponse_Stream{
 			Path: string(ls.Path()),
 		}
 		resp.Streams = append(resp.Streams, toAdd)
-		if r.State {
+		if r.req.State {
 			// ls.State returns a coordinator.LogStreamState object with just its
 			// Parent key field populated.
-			logStreamStates = append(logStreamStates, ls.State(r))
+			logStreamStates = append(logStreamStates, ls.State(r.ctx))
 
 			// generate and fill the response LogStreamState object, then track it for
 			// later.
@@ -195,7 +215,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			respLogStreamStates = append(respLogStreamStates, toAdd.State)
 
 			if desc, err := ls.DescriptorProto(); err != nil {
-				log.Errorf(r, "processing %q: loading descriptor: %s", toAdd.Path, err)
+				log.Errorf(r.ctx, "processing %q: loading descriptor: %s", toAdd.Path, err)
 			} else {
 				toAdd.Desc = desc
 			}
@@ -213,13 +233,13 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
-		}.Errorf(r, "Failed to execute query.")
+		}.Errorf(r.ctx, "Failed to execute query.")
 		return grpcutil.Errf(codes.Internal, "failed to execute query: %s", err)
 	}
 
 	if len(logStreamStates) > 0 {
-		if err := ds.Get(r, logStreamStates); err != nil {
-			log.WithError(err).Errorf(r, "Failed to load log stream states.")
+		if err := ds.Get(r.ctx, logStreamStates); err != nil {
+			log.WithError(err).Errorf(r.ctx, "Failed to load log stream states.")
 			return grpcutil.Errf(codes.Internal, "failed to load log stream states: %s", err)
 		}
 		for i, state := range logStreamStates {
