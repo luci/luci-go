@@ -126,6 +126,11 @@ type Client struct {
 	// The response message compression is configured on the server.
 	EnableRequestCompression bool
 
+	// PathPrefix is the prefix of the URL path, "<PathPrefix>/<service>/<method>"
+	// when making HTTP requests. Must start with "/".
+	// If not set, defaults to "/prpc".
+	PathPrefix string
+
 	// Semaphore to limit concurrency, initialized in concurrencySem().
 	semOnce sync.Once
 	sem     *semaphore.Weighted
@@ -639,12 +644,15 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 		scheme = "http"
 	}
 
-	return &http.Request{
+	if c.PathPrefix == "" {
+		c.PathPrefix = "/prpc"
+	}
+ 	return &http.Request{
 		Method: "POST",
 		URL: &url.URL{
 			Scheme: scheme,
 			Host:   options.host,
-			Path:   fmt.Sprintf("/prpc/%s/%s", options.serviceName, options.methodName),
+			Path:   fmt.Sprintf("%s/%s/%s", c.PathPrefix, options.serviceName, options.methodName),
 		},
 		Host:          hostHdr,
 		Header:        headers,
