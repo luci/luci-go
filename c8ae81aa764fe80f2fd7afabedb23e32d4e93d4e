@@ -74,6 +74,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8a055f89_039d319f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-02T06:33:59Z",
+      "side": 1,
+      "message": "Oh, ci seems not having the envvar.\nhttps://ci.chromium.org/p/infra/g/luci-go/console\n\nCould you enable that there too?",
+      "parentUuid": "4897c9bf_d0a99587",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e85710a9_ddcc2b6f",
         "filename": "client/cmd/swarming/main_test.go",
         "patchSetId": 7
