@@ -47,6 +47,11 @@ type Options struct {
 	// It can be overridden on per-call basis via CallAcceptContentSubtype().
 	AcceptContentSubtype string
 
+	// DispatchPath will be added before this "/prpc/service/method" url path,
+	// Usually, it should be empty. But in some cases, like Buildbucket service,
+	// this field is set to "/python" in order to dispatch to its Python service.
+	DispatchPath string
+
 	// These can be set only using CallOption.
 
 	resHeaderMetadata  *metadata.MD // destination for response HTTP headers.
