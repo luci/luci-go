@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dc44688_8d9550be",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T08:42:14Z",
+      "side": 1,
+      "message": "lgtm; I don\u0027t mind 403 or 404 as long as it\u0027s consistent (looks like it\u0027s consistently 403 right now)",
+      "revId": "34c94240a41080629caf670b8ff0221054720b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f64a187f_47b77346",
+        "filename": "logdog/appengine/coordinator/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T08:42:14Z",
+      "side": 1,
+      "message": "streams",
+      "range": {
+        "startLine": 37,
+        "startChar": 54,
+        "endLine": 37,
+        "endChar": 63
+      },
+      "revId": "34c94240a41080629caf670b8ff0221054720b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48d9b0fd_282b2a44",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T08:42:14Z",
+      "side": 1,
+      "message": "should there be a helper for this whole chunk? It seems like logs/http and logs/get are doing almost exactly the same thing (and it\u0027s kinda non-trivial...)",
+      "revId": "34c94240a41080629caf670b8ff0221054720b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8391d83_228fbe7c",
+        "filename": "logdog/appengine/coordinator/flex/logs/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T08:42:14Z",
+      "side": 1,
+      "message": "doesn\u0027t HasPermission do this check already?",
+      "revId": "34c94240a41080629caf670b8ff0221054720b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

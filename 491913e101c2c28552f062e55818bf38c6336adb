@@ -16,6 +16,24 @@
       "message": "PTAL. More extensive tests for new functionality will be in the next CL, this one is already huge.\n\nOne issue is what to use for non-existing/hidden prefix: HTTP 403 or HTTP 404? Right now Logdog can tell if you are allowed to see *any* prefix in e.g. \"chromium\" and it safely responds with \"HTTP 404 Not Found\" for gibberish requests under chromium/*. \n\nIn the model it will respond with \"HTTP 403 The resource doesn\u0027t exist or you do not have permission to access it\". Perhaps it should be \"HTTP 404 The resource doesn\u0027t exist or you do not have permission to access it\"? Then it will also be 404 when quering for streams in a gibberish project.",
       "revId": "491913e101c2c28552f062e55818bf38c6336adb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d93b5d73_cee6e33b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T08:42:14Z",
+      "side": 1,
+      "message": "I think 404 is \"correct\" here (https://www.rfc-editor.org/rfc/rfc7231.txt):\n\n6.5.3.  403 Forbidden\n\n   The 403 (Forbidden) status code indicates that the server understood\n   the request but refuses to authorize it. \n   ...\n   An origin server that wishes to \"hide\" the current existence of a\n   forbidden target resource MAY instead respond with a status code of\n   404 (Not Found).\n\n\nEither we should reply 404 for missing + unauthorized resources, or we should reply 403 for all of them... I think I don\u0027t really care which one, as long as it\u0027s the same for both (especially since stream names can leak data).",
+      "parentUuid": "f8c6622b_4f644971",
+      "revId": "491913e101c2c28552f062e55818bf38c6336adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
