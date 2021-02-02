@@ -34,12 +34,21 @@ export class TestSearchFilterElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <input
-        id="search-box"
-        placeholder="Search test results..."
-        .value=${this.invocationState.searchText}
-        @input=${(e: InputEvent) => this.invocationState.searchText = (e.target as HTMLInputElement).value}
-      >`;
+      <milo-hotkey
+        key="/"
+        .handler=${() => {
+          // Set a tiny timeout to ensure '/' isn't recorded by the input box.
+          setTimeout(() => this.shadowRoot?.getElementById('search-box')?.focus());
+        }}
+      >
+        <input
+          id="search-box"
+          placeholder="Press / to search test results..."
+          .value=${this.invocationState.searchText}
+          @input=${(e: InputEvent) => this.invocationState.searchText = (e.target as HTMLInputElement).value}
+        >
+      </milo-hotkey>
+    `;
   }
 
   static styles = css`
