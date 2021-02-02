@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
@@ -129,17 +130,23 @@ func TestOnCLUpdated(t *testing.T) {
 			newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
 			gf.PS(6)(newCI)
 			UpdateCL(newCI)
-			_, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			se, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(newrs.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(se, ShouldNotBeNil)
+			So(se(ctx), ShouldBeNil)
+			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 		Convey("Cancels Run on removed trigger", func() {
 			newCI := gf.CI(2, gf.PS(5), gf.CQ(0))
 			UpdateCL(newCI)
 
-			_, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			se, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
 			So(newrs.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(se, ShouldNotBeNil)
+			So(se(ctx), ShouldBeNil)
+			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 	})
 }

@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
@@ -51,7 +52,9 @@ func TestCancel(t *testing.T) {
 			now := clock.Now(ctx).UTC()
 			So(newrs.Run.StartTime, ShouldResemble, now)
 			So(newrs.Run.EndTime, ShouldResemble, now)
-			So(se, ShouldBeNil)
+			So(se, ShouldNotBeNil)
+			So(se(ctx), ShouldBeNil)
+			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 
 		Convey("Cancels RUNNING Run", func() {
@@ -63,7 +66,9 @@ func TestCancel(t *testing.T) {
 			now := clock.Now(ctx).UTC()
 			So(newrs.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
 			So(newrs.Run.EndTime, ShouldResemble, now)
-			So(se, ShouldBeNil)
+			So(se, ShouldNotBeNil)
+			So(se(ctx), ShouldBeNil)
+			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 
 		statuses := []run.Status{
