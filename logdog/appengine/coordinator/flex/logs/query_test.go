@@ -102,7 +102,7 @@ func TestQuery(t *testing.T) {
 			"testing/+/foo/bar/baz",
 			"testing/+/baz",
 		} {
-			tls := ct.MakeStream(c, project, v)
+			tls := ct.MakeStream(c, project, "", v)
 			tls.Desc.ContentType = tls.Stream.Prefix
 			tls.Desc.Tags = map[string]string{
 				"prefix": tls.Stream.Prefix,
@@ -180,11 +180,15 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`If the user is logged in`, func() {
-			req.Path = "bogus/+/**"
 			env.LogIn()
 
 			Convey(`When accessing a restricted project`, func() {
 				req.Project = "proj-exclusive"
+				req.Path = "exclusive/+/**"
+
+				// Add a stream to `proj-exclusive` so we have something to query there.
+				tls := ct.MakeStream(c, "proj-exclusive", "", "exclusive/+/foo")
+				tls.Put(c)
 
 				Convey(`Will succeed if the user can access the project.`, func() {
 					env.JoinGroup("auth")
@@ -201,6 +205,7 @@ func TestQuery(t *testing.T) {
 
 			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
 				req.Project = "does-not-exist"
+				req.Path = "testing/+/**"
 
 				_, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCPermissionDenied)
@@ -209,6 +214,7 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Will fail with Unauthenticated if the project does not exist.`, func() {
 			req.Project = "does-not-exist"
+			req.Path = "testing/+/**"
 
 			_, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCUnauthenticated)
@@ -216,6 +222,7 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Will fail with Unauthenticated if the user can't access the project.`, func() {
 			req.Project = "proj-exclusive"
+			req.Path = "testing/+/**"
 
 			_, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCUnauthenticated)
@@ -239,7 +246,7 @@ func TestQuery(t *testing.T) {
 
 		Convey(`A query with an invalid Next cursor will return BadRequest error.`, func() {
 			req.Next = "invalid"
-			req.Path = "bogus/+/**"
+			req.Path = "testing/+/**"
 			fb.BreakFeatures(errors.New("testing error"), "DecodeCursor")
 
 			_, err := svr.Query(c, &req)
@@ -247,7 +254,7 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`A datastore query error will return InternalServer error.`, func() {
-			req.Path = "bogus/+/**"
+			req.Path = "testing/+/**"
 			fb.BreakFeatures(errors.New("testing error"), "Run")
 
 			_, err := svr.Query(c, &req)
@@ -372,7 +379,7 @@ func TestQuery(t *testing.T) {
 				})
 
 				Convey(`A datastore query error will return InternalServer error.`, func() {
-					req.Path = "bogus/+/**"
+					req.Path = "testing/+/**"
 					fb.BreakFeatures(errors.New("testing error"), "Run")
 
 					_, err := svr.Query(c, &req)
@@ -481,7 +488,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When an invalid tag is specified, returns BadRequest error`, func() {
-				req.Path = "bogus/+/**"
+				req.Path = "testing/+/**"
 				req.Tags["+++not a valid tag+++"] = ""
 
 				_, err := svr.Query(c, &req)

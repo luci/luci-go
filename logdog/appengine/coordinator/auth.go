@@ -16,6 +16,7 @@ package coordinator
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 
@@ -25,6 +26,16 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
+)
+
+var (
+	// PermLogsCreate is a permission required for RegisterPrefix RPC.
+	PermLogsCreate = realms.RegisterPermission("logdog.logs.create")
+	// PermLogsGet is a permission required for reading individual streams.
+	PermLogsGet = realms.RegisterPermission("logdog.logs.get")
+	// PermLogsList is a permission required for listing streams in a prefix.
+	PermLogsList = realms.RegisterPermission("logdog.logs.list")
 )
 
 // PermissionDeniedErr is a generic "doesn't exist or don't have access" error.
@@ -36,6 +47,32 @@ func PermissionDeniedErr(ctx context.Context) error {
 	}
 	return grpcutil.Errf(codes.PermissionDenied,
 		"The resource doesn't exist or you do not have permission to access it.")
+}
+
+// HasPermission checks the caller has the requested permission.
+//
+// `realm` can be an empty string when accessing older LogPrefix entities not
+// associated with any realms.
+//
+// Uses legacy project-scoped ACLs for now. Logs errors inside.
+func HasPermission(ctx context.Context, perm realms.Permission, realm string) (bool, error) {
+	// Check no cross-project mix up is happening as a precaution.
+	if realm != "" {
+		if proj, _ := realms.Split(realm); proj != Project(ctx) {
+			logging.Errorf(ctx, "Unexpectedly checking realm %q in a context of project %q", realm, Project(ctx))
+			return false, grpcutil.Internal
+		}
+	}
+	// TODO(crbug.com/1172492): Consult realms ACLs instead, fallback to legacy
+	// ACLs when necessary.
+	switch perm {
+	case PermLogsCreate:
+		return CheckProjectWriter(ctx)
+	case PermLogsGet, PermLogsList:
+		return CheckProjectReader(ctx)
+	default:
+		panic(fmt.Sprintf("HasPermission got unexpected permissions %q", perm))
+	}
 }
 
 // CheckAdminUser tests whether the current user belongs to the administrative
