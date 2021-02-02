@@ -644,15 +644,16 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 		scheme = "http"
 	}
 
+	pathPrefix := c.PathPrefix
 	if c.PathPrefix == "" {
-		c.PathPrefix = "/prpc"
+		pathPrefix = "/prpc"
 	}
  	return &http.Request{
 		Method: "POST",
 		URL: &url.URL{
 			Scheme: scheme,
 			Host:   options.host,
-			Path:   fmt.Sprintf("%s/%s/%s", c.PathPrefix, options.serviceName, options.methodName),
+			Path:   fmt.Sprintf("%s/%s/%s", pathPrefix, options.serviceName, options.methodName),
 		},
 		Host:          hostHdr,
 		Header:        headers,
