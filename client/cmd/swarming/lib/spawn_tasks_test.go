@@ -22,6 +22,7 @@ import (
 
 	googleapi "google.golang.org/api/googleapi"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
 
@@ -52,7 +53,7 @@ func mockEnv(env map[string]string) func() {
 func TestSpawnTasksParse_NoArgs(t *testing.T) {
 	Convey(`Make sure that Parse works with no arguments.`, t, func() {
 		c := spawnTasksRun{}
-		c.Init(&testAuthFlags{})
+		c.Init(auth.Options{})
 
 		err := c.Parse([]string{})
 		So(err, ShouldErrLike, "must provide -server")
@@ -62,7 +63,7 @@ func TestSpawnTasksParse_NoArgs(t *testing.T) {
 func TestSpawnTasksParse_NoInput(t *testing.T) {
 	Convey(`Make sure that Parse handles no input JSON given.`, t, func() {
 		c := spawnTasksRun{}
-		c.Init(&testAuthFlags{})
+		c.Init(auth.Options{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 

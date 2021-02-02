@@ -22,19 +22,20 @@ import (
 	"github.com/kr/pretty"
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/signals"
 )
 
 // CmdRequestShow returns an object for the `request-show` subcommand.
-func CmdRequestShow(authFlags AuthFlags) *subcommands.Command {
+func CmdRequestShow(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "request-show <task_id>",
 		ShortDesc: "returns properties of a request",
 		LongDesc:  "Returns the properties, what, when, by who, about a request on the Swarming server.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &requestShowRun{}
-			r.commonFlags.Init(authFlags)
+			r.Init(defaultAuthOpts)
 			return r
 		},
 	}

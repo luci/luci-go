@@ -21,7 +21,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 	"runtime/pprof"
 	"sync"
@@ -30,6 +29,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/semaphore"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -129,14 +129,14 @@ func (t *taskResult) Print(w io.Writer) {
 }
 
 // CmdCollect returns an object for the `collect` subcommand.
-func CmdCollect(authFlags AuthFlags) *subcommands.Command {
+func CmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "collect <options> (-requests-json file | task_id...)",
 		ShortDesc: "Waits on a set of Swarming tasks",
 		LongDesc:  "Waits on a set of Swarming tasks.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &collectRun{}
-			r.Init(authFlags)
+			r.Init(defaultAuthOpts)
 			return r
 		},
 	}
@@ -155,8 +155,9 @@ type collectRun struct {
 	jsonInput         string
 }
 
-func (c *collectRun) Init(authFlags AuthFlags) {
-	c.commonFlags.Init(authFlags)
+func (c *collectRun) Init(defaultAuthOpts auth.Options) {
+	c.commonFlags.Init(defaultAuthOpts)
+
 	c.Flags.DurationVar(&c.timeout, "timeout", 0, "Timeout to wait for result. Set to 0 for no timeout.")
 	c.Flags.StringVar(&c.taskSummaryJSON, "task-summary-json", "", "Dump a summary of task results to a file as json.")
 
@@ -259,31 +260,13 @@ func (c *collectRun) fetchTaskResults(
 			}
 			output = taskOutput.Output
 		}
+
 		// Download the result isolated if available and if we have a place to put it.
 		if c.outputDir != "" {
 			logging.Debugf(ctx, "Fetching task outputs: %s", taskID)
-			outdir, err := prepareOutputDir(c.outputDir, taskID)
+			outputs, err = service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef, result.CasOutputRoot)
 			if err != nil {
-				return err
-			}
-			if result.OutputsRef != nil && result.CasOutputRoot != nil {
-				return errors.Reason("Invalid TaskResult: both OutputsRef and CasOutputRoot exist").Err()
-			}
-			if result.OutputsRef != nil {
-				outputs, err = service.GetTaskOutputsFromIsolate(ctx, outdir, result.OutputsRef)
-				if err != nil {
-					return tagTransientGoogleAPIError(err)
-				}
-			}
-			if result.CasOutputRoot != nil {
-				cascli, err := c.authFlags.NewCASClient(ctx, result.CasOutputRoot.CasInstance)
-				if err != nil {
-					return err
-				}
-				outputs, err = service.GetTaskOutputsFromCAS(ctx, outdir, cascli, result.CasOutputRoot)
-				if err != nil {
-					return tagTransientGoogleAPIError(err)
-				}
+				return tagTransientGoogleAPIError(err)
 			}
 		}
 		return nil
@@ -300,24 +283,6 @@ func (c *collectRun) fetchTaskResults(
 		output:  output,
 		outputs: outputs,
 	}
-}
-
-func prepareOutputDir(outputDir, taskID string) (string, error) {
-	// Create a task-id-based subdirectory to house the outputs.
-	dir := filepath.Join(filepath.Clean(outputDir), taskID)
-
-	// This function can be retried when the RPC returned an HTTP 500. In this case,
-	// the directory will already exist and may contain partial results. Take no chance
-	// and restart from scratch.
-	if err := os.RemoveAll(dir); err != nil {
-		return "", errors.Annotate(err, "failed to remove directory: %s", dir).Err()
-	}
-
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return "", errors.Annotate(err, "failed to create directory: %s", dir).Err()
-	}
-
-	return dir, nil
 }
 
 func (c *collectRun) pollForTaskResult(
