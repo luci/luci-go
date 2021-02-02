@@ -46,6 +46,30 @@
       },
       "revId": "b27e0c24a9980dfa715ebd90117545ac33c9255b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dffc6379_6562114c",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 652,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-02T23:53:26Z",
+      "side": 1,
+      "message": "okay, removed the if statement. Missing \"/\" will be handled as the same as the other invalid url paths.",
+      "parentUuid": "ca718b78_65a1f9dd",
+      "range": {
+        "startLine": 649,
+        "startChar": 1,
+        "endLine": 652,
+        "endChar": 2
+      },
+      "revId": "b27e0c24a9980dfa715ebd90117545ac33c9255b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
