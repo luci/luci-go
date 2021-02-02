@@ -201,7 +201,7 @@ func TestClient(t *testing.T) {
 				client, server := setUp(sayHello(c))
 				defer server.Close()
 
-				client.PathPrefix = "/python/prpc"
+				client.PathPrefix = "python/prpc"
 				var hd metadata.MD
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
 				So(err, ShouldBeNil)

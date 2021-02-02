@@ -648,6 +648,9 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 	if c.PathPrefix == "" {
 		pathPrefix = "/prpc"
 	}
+	if !strings.HasPrefix(pathPrefix, "/") {
+		pathPrefix = "/" + pathPrefix
+	}
  	return &http.Request{
 		Method: "POST",
 		URL: &url.URL{
