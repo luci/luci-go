@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package handler
 
 import (
 	"context"
@@ -28,23 +28,25 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-func onCLUpdated(ctx context.Context, s *state, clids common.CLIDs) (eventbox.SideEffectFn, *state, error) {
-	switch status := s.Run.Status; {
+// OnCLUpdated decides whether to cancel a Run based on changes to the CLs.
+func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (eventbox.SideEffectFn, *state.RunState, error) {
+	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: Received CLUpdated events but Run is in unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
 	case status == run.Status_FINALIZING || run.IsEnded(status):
 		// Run is final or finalizing, update on CL shouldn't change the Run state.
-		return nil, s, nil
+		return nil, rs, nil
 	}
 	clids.Dedupe()
 
 	cls := make([]*changelist.CL, len(clids))
 	runCLs := make([]*run.RunCL, len(clids))
-	runKey := datastore.MakeKey(ctx, run.RunKind, string(s.Run.ID))
+	runKey := datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID))
 	for i, clid := range clids {
 		cls[i] = &changelist.CL{ID: clid}
 		runCLs[i] = &run.RunCL{ID: clid, Run: runKey}
@@ -58,16 +60,16 @@ func onCLUpdated(ctx context.Context, s *state, clids common.CLIDs) (eventbox.Si
 		switch cl, runCL := cls[i], runCLs[i]; {
 		case cl.Snapshot.GetPatchset() > runCL.Detail.GetPatchset():
 			// New PS discovered.
-			return cancel(ctx, s)
+			return impl.Cancel(ctx, rs)
 		case trigger.Find(cl.Snapshot.GetGerrit().GetInfo()) == nil:
 			// TODO(yiwzhang): Revisit this after milestone 1, we may need
 			// to cancel the run not only when trigger is removed, but also
 			// when trigger is changed (e.g. switch user).
 			// Trigger has been removed.
-			return cancel(ctx, s)
+			return impl.Cancel(ctx, rs)
 		}
 	}
-	return nil, s, nil
+	return nil, rs, nil
 }
 
 func loadCLsAndRunCLs(ctx context.Context, cls []*changelist.CL, runCLs []*run.RunCL) error {
