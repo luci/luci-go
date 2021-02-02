@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b810a20d_ea3bd0a3",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 652,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T23:18:45Z",
+      "side": 1,
+      "message": "if you keep it, use switch\n\nbut i don\u0027t think this is necessary. User must know that path starts with / based \"/prpc\" being default.",
+      "range": {
+        "startLine": 649,
+        "startChar": 1,
+        "endLine": 652,
+        "endChar": 2
+      },
+      "revId": "b27e0c24a9980dfa715ebd90117545ac33c9255b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
