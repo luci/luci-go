@@ -116,7 +116,7 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 		output = os.Stdout
 	}
 
-	data := triggerResults{Tasks: results}
+	data := TriggerResults{Tasks: results}
 	b, err := json.MarshalIndent(&data, "", "  ")
 	if err != nil {
 		return errors.Annotate(err, "marshalling trigger result").Err()
@@ -130,7 +130,7 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 	return merr
 }
 
-type tasksInput struct {
+type TasksInput struct {
 	Requests []*swarming.SwarmingRpcsNewTaskRequest `json:"requests"`
 }
 
@@ -144,7 +144,7 @@ func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest
 	dec := json.NewDecoder(tasks)
 	dec.DisallowUnknownFields()
 
-	requests := tasksInput{}
+	requests := TasksInput{}
 	if err := dec.Decode(&requests); err != nil {
 		return nil, errors.Annotate(err, "decoding tasks file").Err()
 	}
