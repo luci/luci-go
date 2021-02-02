@@ -35,7 +35,7 @@ func TestHTTP(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, _ := ct.Install(true)
 		c, tc := testclock.UseTime(c, testclock.TestRecentTimeUTC)
-		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
+		tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
 		So(tls.Put(c), ShouldBeNil)
 		resp := httptest.NewRecorder()
 		var options userOptions

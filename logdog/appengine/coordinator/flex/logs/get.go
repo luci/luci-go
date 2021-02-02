@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth/realms"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
 
@@ -82,20 +83,55 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		log.WithError(err).Errorf(c, "Invalid path supplied.")
 		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid path value")
 	}
+	prefix, _ := path.Split()
 
+	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(prefix)}
 	ls := &coordinator.LogStream{ID: coordinator.LogStreamID(path)}
 	lst := ls.State(c)
-	log.Fields{
-		"id": ls.ID,
-	}.Debugf(c, "Loading stream.")
 
-	if err := ds.Get(c, ls, lst); err != nil {
-		if ds.IsErrNoSuchEntity(err) {
-			log.Warningf(c, "Log stream does not exist.")
-			return nil, grpcutil.Errf(codes.NotFound, "path not found")
+	log.Fields{"id": ls.ID}.Debugf(c, "Loading stream.")
+
+	var pfxErr, lsErr, lstErr error
+	if err := ds.Get(c, pfx, ls, lst); err != nil {
+		if merr, ok := err.(errors.MultiError); ok {
+			if len(merr) != 3 {
+				panic("impossible")
+			}
+			pfxErr, lsErr, lstErr = merr[0], merr[1], merr[2]
+		} else {
+			pfxErr, lsErr, lstErr = err, err, err
 		}
+	}
 
-		log.WithError(err).Errorf(c, "Failed to look up log stream.")
+	// Treat ErrNoSuchEntity from the prefix in a special way: a non-existing
+	// prefix should be handled in the same way as a prefix "hidden" by ACLs.
+	switch {
+	case pfxErr == ds.ErrNoSuchEntity:
+		return nil, coordinator.PermissionDeniedErr(c)
+	case pfxErr != nil:
+		log.WithError(pfxErr).Errorf(c, "Failed to fetch LogPrefix")
+		return nil, grpcutil.Internal
+	}
+
+	// Check the caller is allowed to read streams under this prefix.
+	switch yes, err := coordinator.HasPermission(c, coordinator.PermLogsGet, pfx.Realm); {
+	case err != nil:
+		return nil, grpcutil.Internal
+	case !yes:
+		return nil, coordinator.PermissionDeniedErr(c)
+	}
+
+	// Check if the stream actually exists. It is fine to expose this information
+	// now after ACLs have been checked.
+	switch {
+	case lsErr == ds.ErrNoSuchEntity || lstErr == ds.ErrNoSuchEntity:
+		log.Warningf(c, "Log stream does not exist.")
+		return nil, grpcutil.Errf(codes.NotFound, "path not found")
+	case lsErr != nil:
+		log.WithError(lsErr).Errorf(c, "Failed to fetch LogStream")
+		return nil, grpcutil.Internal
+	case lstErr != nil:
+		log.WithError(lstErr).Errorf(c, "Failed to fetch LogStream")
 		return nil, grpcutil.Internal
 	}
 
@@ -110,7 +146,15 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		}
 	}
 
-	resp := logdog.GetResponse{}
+	resp := logdog.GetResponse{Project: req.Project}
+	if pfx.Realm != "" {
+		proj, realm := realms.Split(pfx.Realm)
+		if proj != req.Project {
+			return nil, grpcutil.Errf(codes.Internal, "prefix from project %q is associated with realm %q", req.Project, pfx.Realm)
+		}
+		resp.Realm = realm
+	}
+
 	if req.State {
 		resp.State = buildLogStreamState(ls, lst)
 
