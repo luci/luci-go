@@ -81,6 +81,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3d05c1f_f137a852",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-02T05:52:50Z",
+      "side": 1,
+      "message": "\u003e I wanted to skimp on such a test and just rely on more end-to-end-ish tests of PM. But, i\u0027ll probably change my mind.\n\nYeah. I thought the same at the beginning but then the test complexity may grow exponentially with more and more stuff added. So I break them down. I think it\u0027s still good to have a component level test (e.g. for run manager and project manager) but I think it does no harm if we have both.",
+      "parentUuid": "2b8e9201_ffdbbc39",
+      "revId": "2ff90e193e0ffb4fd216ea78f8b8e225675f0865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a99993cd_23ca10e9",
@@ -94,6 +112,30 @@
       "writtenOn": "2021-02-02T00:57:35Z",
       "side": 1,
       "message": "can it be private?",
+      "range": {
+        "startLine": 55,
+        "startChar": 20,
+        "endLine": 55,
+        "endChar": 27
+      },
+      "revId": "2ff90e193e0ffb4fd216ea78f8b8e225675f0865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7085aa26_6544c84a",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-02T05:52:50Z",
+      "side": 1,
+      "message": "oh yes. Absolutely.",
+      "parentUuid": "a99993cd_23ca10e9",
       "range": {
         "startLine": 55,
         "startChar": 20,
