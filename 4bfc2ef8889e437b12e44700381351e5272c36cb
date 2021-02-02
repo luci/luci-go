@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "23588352_3efa607f",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-02T21:57:05Z",
+      "side": 1,
+      "message": "Yeah. We should get rid of this line later.",
+      "parentUuid": "e6336d3d_5af6cdd8",
+      "range": {
+        "startLine": 128,
+        "startChar": 2,
+        "endLine": 128,
+        "endChar": 85
+      },
+      "revId": "4bfc2ef8889e437b12e44700381351e5272c36cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "912b2382_35b93747",
         "filename": "buildbucket/appengine/rpc/batch.go",
         "patchSetId": 3
@@ -61,6 +85,24 @@
       "writtenOn": "2021-02-02T18:15:01Z",
       "side": 1,
       "message": "oh yeah, it really fits into pClient\u0027s top level field (re: nodir\u0027s comment in parent CL)",
+      "revId": "4bfc2ef8889e437b12e44700381351e5272c36cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0d6e3ff8_28d08422",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-02T21:57:05Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "912b2382_35b93747",
       "revId": "4bfc2ef8889e437b12e44700381351e5272c36cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
