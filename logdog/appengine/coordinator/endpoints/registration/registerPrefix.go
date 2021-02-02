@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
@@ -31,8 +33,6 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/config"
-
-	"google.golang.org/grpc/codes"
 )
 
 func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest) (pubsub.Topic, time.Duration, error) {
@@ -88,6 +88,14 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	if err := prefix.Validate(); err != nil {
 		log.WithError(err).Warningf(c, "Invalid prefix.")
 		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid prefix")
+	}
+
+	// TODO(crbug.com/1172492): Replace with realms ACL check.
+	switch yes, err := coordinator.CheckProjectWriter(c); {
+	case err != nil:
+		return nil, grpcutil.Internal
+	case !yes:
+		return nil, coordinator.PermissionDeniedErr(c)
 	}
 
 	pubsubTopic, expiration, err := getTopicAndExpiration(c, req)

@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 )
@@ -66,18 +65,32 @@ func CheckServiceUser(ctx context.Context) (bool, error) {
 }
 
 // CheckProjectReader tests whether the current user belongs to one of the
-// project's declared reader groups.
+// current project's declared reader groups.
+//
+// Usable only when inside some project namespace, see WithProjectNamespace.
+// Panics otherwise.
 //
 // Logs the outcome inside. The error is non-nil only if the check itself fails.
-func CheckProjectReader(ctx context.Context, pcfg *svcconfig.ProjectConfig) (bool, error) {
+func CheckProjectReader(ctx context.Context) (bool, error) {
+	pcfg, err := ProjectConfig(ctx)
+	if err != nil {
+		panic("CheckProjectReader is called outside of a project namespace")
+	}
 	return checkMember(ctx, "READ", pcfg.ReaderAuthGroups...)
 }
 
 // CheckProjectWriter tests whether the current user belongs to one of the
-// project's declared writer groups.
+// current project's declared writer groups.
+//
+// Usable only when inside some project namespace, see WithProjectNamespace.
+// Panics otherwise.
 //
 // Logs the outcome inside. The error is non-nil only if the check itself fails.
-func CheckProjectWriter(ctx context.Context, pcfg *svcconfig.ProjectConfig) (bool, error) {
+func CheckProjectWriter(ctx context.Context) (bool, error) {
+	pcfg, err := ProjectConfig(ctx)
+	if err != nil {
+		panic("CheckProjectWriter is called outside of a project namespace")
+	}
 	return checkMember(ctx, "WRITE", pcfg.WriterAuthGroups...)
 }
 

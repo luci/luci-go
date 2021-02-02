@@ -16,12 +16,11 @@ package coordinator
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/auth/identity"
 	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
@@ -42,119 +41,47 @@ func TestWithProjectNamespace(t *testing.T) {
 		ctx := context.Background()
 		ctx = memory.Use(ctx)
 
-		// Load fake project configs into the datastore cache.
-		ctx = cfgclient.Use(ctx, projectConfigs(map[string]*svcconfig.ProjectConfig{
-			"all-access": {
-				ReaderAuthGroups: []string{"all"},
-				WriterAuthGroups: []string{"all"},
-			},
-			"exclusive-access": {
-				ReaderAuthGroups: []string{"auth"},
-				WriterAuthGroups: []string{"auth"},
-			},
-		}))
-		config.Sync(ctx)
-
-		// Make them available to handlers.
-		ctx = config.WithStore(ctx, &config.Store{NoCache: true})
-
-		// Fake authentication state.
-		as := authtest.FakeState{
-			IdentityGroups: []string{"all"},
-		}
-		ctx = auth.WithState(ctx, &as)
-
-		Convey(`When using NamespaceAccessNoAuth with anonymous identity`, func() {
-			So(auth.CurrentIdentity(ctx).Kind(), ShouldEqual, identity.Anonymous)
-
-			Convey(`Can enter exclusive namespace`, func() {
-				So(WithProjectNamespace(&ctx, "exclusive-access", NamespaceAccessNoAuth), ShouldBeNil)
-				So(Project(ctx), ShouldEqual, "exclusive-access")
-			})
-
-			Convey(`Will fail to enter a namespace for a non-existent project with Unauthenticated.`, func() {
-				So(WithProjectNamespace(&ctx, "does-not-exist", NamespaceAccessNoAuth), ShouldBeRPCUnauthenticated)
-			})
+		ctx = withProjectConfigs(ctx, map[string]*svcconfig.ProjectConfig{
+			"existing": {ArchiveGsBucket: "some-bucket"},
 		})
 
-		Convey(`When using NamespaceAccessAllTesting with anonymous identity`, func() {
-			So(auth.CurrentIdentity(ctx).Kind(), ShouldEqual, identity.Anonymous)
-
-			Convey(`Can enter exclusive namespace`, func() {
-				So(WithProjectNamespace(&ctx, "exclusive-access", NamespaceAccessAllTesting), ShouldBeNil)
-				So(Project(ctx), ShouldEqual, "exclusive-access")
-			})
-
-			Convey(`Will fail to enter a namespace for a non-existent project.`, func() {
-				So(WithProjectNamespace(&ctx, "does-not-exist", NamespaceAccessAllTesting), ShouldBeNil)
-				So(Project(ctx), ShouldEqual, "does-not-exist")
-			})
+		Convey(`Entering existing project`, func() {
+			So(WithProjectNamespace(&ctx, "existing"), ShouldBeNil)
+			So(Project(ctx), ShouldEqual, "existing")
+			cfg, err := ProjectConfig(ctx)
+			So(err, ShouldBeNil)
+			So(cfg.ArchiveGsBucket, ShouldEqual, "some-bucket")
 		})
 
-		for _, tc := range []struct {
-			testName string
-			access   NamespaceAccessType
-		}{
-			{"READ", NamespaceAccessREAD},
-			{"WRITE", NamespaceAccessWRITE},
-		} {
-			Convey(fmt.Sprintf(`When requesting %s access`, tc.testName), func() {
-
-				Convey(`When logged in`, func() {
-					id, err := identity.MakeIdentity("user:testing@example.com")
-					if err != nil {
-						panic(err)
-					}
-					as.Identity = id
-
-					Convey(`Will successfully access public project.`, func() {
-						So(WithProjectNamespace(&ctx, "all-access", tc.access), ShouldBeNil)
-					})
-
-					Convey(`When user is a member of exclusive group`, func() {
-						as.IdentityGroups = append(as.IdentityGroups, "auth")
-
-						Convey(`Can access exclusive namespace.`, func() {
-							So(WithProjectNamespace(&ctx, "exclusive-access", tc.access), ShouldBeNil)
-							So(Project(ctx), ShouldEqual, "exclusive-access")
-						})
-
-						Convey(`Will fail to access non-existent project with PermissionDenied.`, func() {
-							So(WithProjectNamespace(&ctx, "does-not-exist", tc.access), ShouldBeRPCPermissionDenied)
-						})
-					})
-
-					Convey(`Will fail to access exclusive project with PermissionDenied.`, func() {
-						So(WithProjectNamespace(&ctx, "exclusive-access", tc.access), ShouldBeRPCPermissionDenied)
-					})
-
-					Convey(`Will fail to access non-existent project with PermissionDenied.`, func() {
-						So(WithProjectNamespace(&ctx, "does-not-exist", tc.access), ShouldBeRPCPermissionDenied)
-					})
-				})
-
-				Convey(`Will successfully access public project.`, func() {
-					So(WithProjectNamespace(&ctx, "all-access", tc.access), ShouldBeNil)
-				})
-
-				Convey(`Will fail to access exclusive project with Unauthenticated.`, func() {
-					So(WithProjectNamespace(&ctx, "exclusive-access", tc.access), ShouldBeRPCUnauthenticated)
-				})
-
-				Convey(`Will fail to access non-existent project with Unauthenticated.`, func() {
-					So(WithProjectNamespace(&ctx, "does-not-exist", tc.access), ShouldBeRPCUnauthenticated)
-				})
+		Convey(`Entering non-existing project`, func() {
+			Convey(`Anonymous`, func() {
+				err := WithProjectNamespace(&ctx, "non-existing")
+				So(err, ShouldHaveGRPCStatus, codes.Unauthenticated)
 			})
-		}
+			Convey(`Non-anonymous`, func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+				})
+				err := WithProjectNamespace(&ctx, "non-existing")
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			})
+		})
 	})
 }
 
-func projectConfigs(p map[string]*svcconfig.ProjectConfig) cfglib.Interface {
+// withProjectConfigs configures config.Store in the context.
+func withProjectConfigs(ctx context.Context, p map[string]*svcconfig.ProjectConfig) context.Context {
+	// Prep text config files in memory.
 	configs := make(map[cfglib.Set]cfgmem.Files, len(p))
 	for projectID, cfg := range p {
 		configs[cfglib.ProjectSet(projectID)] = cfgmem.Files{
 			"${appid}.cfg": proto.MarshalTextString(cfg),
 		}
 	}
-	return cfgmem.New(configs)
+	// Install in-memory LUCI config "client" that serves them.
+	ctx = cfgclient.Use(ctx, cfgmem.New(configs))
+	// Sync them into the datastore.
+	config.Sync(ctx)
+	// Make them available to handlers.
+	return config.WithStore(ctx, &config.Store{NoCache: true})
 }
