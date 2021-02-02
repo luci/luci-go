@@ -88,6 +88,24 @@
       "parentUuid": "e38fa11e_ddd50bde",
       "revId": "064ac826a817b90369c1575182f40d3992f61715",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9cf2ea61_51bbc82b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-02-02T05:22:07Z",
+      "side": 1,
+      "message": "Ah, I see (just read the bug so I understand why you want this now). We should think carefully about how to explain this behaviour since it may be unintuitive. Maybe a help icon at the right end of the field that shows a dialog explaining this and other custom syntax? (e.g. like the one Code Search has)",
+      "parentUuid": "24ca2f67_92db810c",
+      "revId": "064ac826a817b90369c1575182f40d3992f61715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
