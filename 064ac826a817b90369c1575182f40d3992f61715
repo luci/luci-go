@@ -70,6 +70,24 @@
       "parentUuid": "794568f4_2dcc1a73",
       "revId": "064ac826a817b90369c1575182f40d3992f61715",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24ca2f67_92db810c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-02T04:39:54Z",
+      "side": 1,
+      "message": "status is for test result status. They are different from the test variant status.\nThe behavior will be similar to Monorail\u0027s filter.\ne.g. result-status:passed means only test variants that contain passed result will be shown.",
+      "parentUuid": "e38fa11e_ddd50bde",
+      "revId": "064ac826a817b90369c1575182f40d3992f61715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
