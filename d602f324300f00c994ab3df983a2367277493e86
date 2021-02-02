@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab45600d_3f6aa78d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T08:23:08Z",
+      "side": 1,
+      "message": "lgtm w/ comments",
+      "revId": "d602f324300f00c994ab3df983a2367277493e86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b00e6fbd_48c237f6",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T08:23:08Z",
+      "side": 1,
+      "message": "would be nice to have some docstring for these",
+      "revId": "d602f324300f00c994ab3df983a2367277493e86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5c1f18d_491c750b",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T08:23:08Z",
+      "side": 1,
+      "message": "note that this is not swarming specific; USER is a well-known environment variable in POSIX (e.g. https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html)",
+      "revId": "d602f324300f00c994ab3df983a2367277493e86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
