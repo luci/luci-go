@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package handler
 
 import (
 	"context"
@@ -24,20 +24,22 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-func start(ctx context.Context, s *state) (eventbox.SideEffectFn, *state, error) {
-	switch status := s.Run.Status; {
+// Start starts a Run.
+func (*Impl) Start(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
-		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", s.Run.ID).Err()
+		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", rs.Run.ID).Err()
 		common.LogError(ctx, err)
 		panic(err)
 	case status != run.Status_PENDING:
 		logging.Debugf(ctx, "Skip starting Run because this Run is %s", status)
-		return nil, s, nil
+		return nil, rs, nil
 	}
 
-	ret := s.shallowCopy()
+	ret := rs.ShallowCopy()
 	ret.Run.Status = run.Status_RUNNING
 	ret.Run.StartTime = clock.Now(ctx).UTC()
 	return nil, ret, nil

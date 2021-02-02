@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package handler
 
 import (
 	"fmt"
@@ -23,48 +23,38 @@ import (
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestCancel(t *testing.T) {
+func TestStart(t *testing.T) {
 	t.Parallel()
 
-	Convey("Cancel", t, func() {
+	Convey("StartRun", t, func() {
 		ct := cvtesting.Test{}
-		ctx, close := ct.SetUp()
-		defer close()
-		s := &state{
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		rs := &state.RunState{
 			Run: run.Run{
 				ID:         "chromium/1111111111111-deadbeef",
-				CreateTime: clock.Now(ctx).UTC().Add(-2 * time.Minute),
+				Status:     run.Status_PENDING,
+				CreateTime: clock.Now(ctx).UTC().Add(-1 * time.Minute),
 			},
 		}
+		h := &Impl{}
 
-		Convey("Cancels PENDING Run", func() {
-			s.Run.Status = run.Status_PENDING
-			se, ns, err := cancel(ctx, s)
+		Convey("Starts when Run is PENDING", func() {
+			rs.Run.Status = run.Status_PENDING
+			se, newrs, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
-			So(ns.Run.Status, ShouldEqual, run.Status_CANCELLED)
-			now := clock.Now(ctx).UTC()
-			So(ns.Run.StartTime, ShouldResemble, now)
-			So(ns.Run.EndTime, ShouldResemble, now)
-			So(se, ShouldBeNil)
-		})
-
-		Convey("Cancels RUNNING Run", func() {
-			s.Run.Status = run.Status_RUNNING
-			s.Run.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
-			se, ns, err := cancel(ctx, s)
-			So(err, ShouldBeNil)
-			So(ns.Run.Status, ShouldEqual, run.Status_CANCELLED)
-			now := clock.Now(ctx).UTC()
-			So(ns.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
-			So(ns.Run.EndTime, ShouldResemble, now)
+			So(newrs.Run.Status, ShouldEqual, run.Status_RUNNING)
+			So(newrs.Run.StartTime, ShouldResemble, clock.Now(ctx).UTC())
 			So(se, ShouldBeNil)
 		})
 
 		statuses := []run.Status{
+			run.Status_RUNNING,
 			run.Status_FINALIZING,
 			run.Status_SUCCEEDED,
 			run.Status_FAILED,
@@ -72,12 +62,10 @@ func TestCancel(t *testing.T) {
 		}
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
-				s.Run.Status = status
-				s.Run.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
-				s.Run.EndTime = clock.Now(ctx).UTC().Add(-30 * time.Second)
-				se, ns, err := cancel(ctx, s)
+				rs.Run.Status = status
+				se, newrs, err := h.Start(ctx, rs)
 				So(err, ShouldBeNil)
-				So(ns, ShouldEqual, s)
+				So(newrs, ShouldEqual, rs)
 				So(se, ShouldBeNil)
 			})
 		}

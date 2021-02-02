@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package handler
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,7 +43,8 @@ func TestOnFinished(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		s := &state{
+		h := &Impl{}
+		rs := &state.RunState{
 			Run: run.Run{
 				ID:  common.RunID("chromium/111-1-beef"),
 				CLs: []common.CLID{1},
@@ -52,16 +53,16 @@ func TestOnFinished(t *testing.T) {
 		cl := &changelist.CL{
 			ID:             1,
 			ExternalID:     changelist.MustGobID("x-review.example.com", 1),
-			IncompleteRuns: common.RunIDs{s.Run.ID},
+			IncompleteRuns: common.RunIDs{rs.Run.ID},
 		}
 		So(datastore.Put(ctx, cl), ShouldBeNil)
 
 		Convey("When Run is RUNNING", func() {
-			s.Run.Status = run.Status_RUNNING
+			rs.Run.Status = run.Status_RUNNING
 
-			sideEffect, s, err := onFinished(ctx, s)
+			sideEffect, newrs, err := h.OnFinished(ctx, rs)
 			So(err, ShouldBeNil)
-			So(s.Run.Status, ShouldEqual, run.Status_FINALIZING)
+			So(newrs.Run.Status, ShouldEqual, run.Status_FINALIZING)
 
 			So(datastore.RunInTransaction(ctx, sideEffect, nil), ShouldBeNil)
 
@@ -79,7 +80,7 @@ func TestOnFinished(t *testing.T) {
 			}
 			So(foundRefreshTask, ShouldBeTrue)
 
-			runtest.AssertInEventbox(ctx, s.Run.ID, &eventpb.Event{
+			runtest.AssertInEventbox(ctx, newrs.Run.ID, &eventpb.Event{
 				Event: &eventpb.Event_Finished{
 					Finished: &eventpb.Finished{},
 				},
@@ -88,90 +89,24 @@ func TestOnFinished(t *testing.T) {
 		})
 
 		Convey("When Run is FINALIZING", func() {
-			s.Run.Status = run.Status_FINALIZING
+			rs.Run.Status = run.Status_FINALIZING
 			mfr := &migration.FinishedRun{
-				ID:      s.Run.ID,
+				ID:      rs.Run.ID,
 				Status:  run.Status_SUCCEEDED,
 				EndTime: clock.Now(ctx).UTC().Truncate(time.Second).Add(-2 * time.Minute),
 			}
 			So(datastore.Put(ctx, mfr), ShouldBeNil)
 
-			sideEffect, s, err := onFinished(ctx, s)
+			sideEffect, newrs, err := h.OnFinished(ctx, rs)
 			So(err, ShouldBeNil)
-			So(s.Run.Status, ShouldEqual, mfr.Status)
-			So(s.Run.EndTime, ShouldEqual, mfr.EndTime)
+			So(newrs.Run.Status, ShouldEqual, mfr.Status)
+			So(newrs.Run.EndTime, ShouldEqual, mfr.EndTime)
 
 			So(datastore.RunInTransaction(ctx, sideEffect, nil), ShouldBeNil)
 
 			afterCL := &changelist.CL{ID: cl.ID}
 			So(datastore.Get(ctx, afterCL), ShouldBeNil)
 			So(afterCL.IncompleteRuns, ShouldBeEmpty)
-		})
-	})
-}
-
-func TestRemoveRunFromCLs(t *testing.T) {
-	t.Parallel()
-
-	Convey("RemoveRunFromCLs", t, func() {
-		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
-		defer cancel()
-		s := state{
-			Run: run.Run{
-				ID:  common.RunID("chromium/111-2-deadbeef"),
-				CLs: []common.CLID{1},
-			},
-		}
-		Convey("Works", func() {
-			err := datastore.Put(ctx, &changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.MakeRunIDs("chromium/111-2-deadbeef", "infra/999-2-cafecafe"),
-				EVersion:       3,
-				UpdateTime:     clock.Now(ctx).UTC(),
-			})
-			So(err, ShouldBeNil)
-
-			ct.Clock.Add(1 * time.Hour)
-			now := clock.Now(ctx).UTC()
-			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return s.removeRunFromCLs(ctx)
-			}, nil)
-			So(err, ShouldBeNil)
-
-			cl := changelist.CL{ID: 1}
-			So(datastore.Get(ctx, &cl), ShouldBeNil)
-			So(cl, ShouldResemble, changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.MakeRunIDs("infra/999-2-cafecafe"),
-				EVersion:       4,
-				UpdateTime:     now,
-			})
-		})
-		Convey("Skips updating CL if Run doesn't exist", func() {
-			t := clock.Now(ctx).UTC()
-			err := datastore.Put(ctx, &changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.MakeRunIDs("infra/999-2-cafecafe"),
-				EVersion:       9,
-				UpdateTime:     t,
-			})
-			So(err, ShouldBeNil)
-
-			ct.Clock.Add(1 * time.Hour)
-			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return s.removeRunFromCLs(ctx)
-			}, nil)
-			So(err, ShouldBeNil)
-
-			cl := changelist.CL{ID: 1}
-			So(datastore.Get(ctx, &cl), ShouldBeNil)
-			So(cl, ShouldResemble, changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.MakeRunIDs("infra/999-2-cafecafe"),
-				EVersion:       9,
-				UpdateTime:     t,
-			})
 		})
 	})
 }

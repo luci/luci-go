@@ -15,6 +15,9 @@
 package impl
 
 import (
+	"context"
+	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -26,16 +29,179 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestRecursivePoke(t *testing.T) {
+func TestRunManager(t *testing.T) {
 	t.Parallel()
+
+	Convey("RunManager", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		const runID = "chromium/222-1-deadbeef"
+		const initialEVersion = 10
+		So(datastore.Put(ctx, &run.Run{
+			ID:       runID,
+			Status:   run.Status_RUNNING,
+			EVersion: initialEVersion,
+		}), ShouldBeNil)
+
+		currentRun := func(ctx context.Context) *run.Run {
+			ret := &run.Run{ID: runID}
+			So(datastore.Get(ctx, ret), ShouldBeNil)
+			return ret
+		}
+
+		// sorted by the order of execution.
+		eventTestcases := []struct {
+			event                *eventpb.Event
+			sendFn               func(context.Context) error
+			invokedHandlerMethod string
+		}{
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_Finished{
+						Finished: &eventpb.Finished{},
+					},
+				},
+				func(ctx context.Context) error {
+					return run.NotifyFinished(ctx, runID, 0)
+				},
+				"OnFinished",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_Cancel{
+						Cancel: &eventpb.Cancel{},
+					},
+				},
+				func(ctx context.Context) error {
+					return run.Cancel(ctx, runID)
+				},
+				"Cancel",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_Start{
+						Start: &eventpb.Start{},
+					},
+				},
+				func(ctx context.Context) error {
+					return run.Start(ctx, runID)
+				},
+				"Start",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_ClUpdated{
+						ClUpdated: &eventpb.CLUpdated{
+							Clid:     int64(1),
+							EVersion: int64(2),
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return run.NotifyCLUpdated(ctx, runID, 1, 2)
+				},
+				"OnCLUpdated",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_NewConfig{
+						NewConfig: &eventpb.NewConfig{
+							Hash:     "deadbeef",
+							Eversion: 2,
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return run.UpdateConfig(ctx, runID, "deadbeef", 2)
+				},
+				"",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_Poke{
+						Poke: &eventpb.Poke{},
+					},
+				},
+				func(ctx context.Context) error {
+					return run.PokeNow(ctx, runID)
+				},
+				"",
+			},
+		}
+		for _, et := range eventTestcases {
+			Convey(fmt.Sprintf("Can process Event %T", et.event.GetEvent()), func() {
+				fh := &fakeHandler{}
+				ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
+				So(et.sendFn(ctx), ShouldBeNil)
+				runtest.AssertInEventbox(ctx, runID, et.event)
+				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+				if et.invokedHandlerMethod == "" {
+					So(fh.invocations, ShouldBeEmpty)
+				} else {
+					So(fh.invocations, ShouldResemble, []string{et.invokedHandlerMethod})
+					So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
+				}
+			})
+		}
+
+		Convey("Process Events in order", func() {
+			fh := &fakeHandler{}
+			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
+
+			var expectInvokedMethods []string
+			for _, et := range eventTestcases {
+				// skipping Cancel because when Start and Cancel are both present.
+				// only Cancel will execute. See next test
+				if et.event.GetCancel() == nil && et.invokedHandlerMethod != "" {
+					expectInvokedMethods = append(expectInvokedMethods, et.invokedHandlerMethod)
+				}
+			}
+			rand.Shuffle(len(eventTestcases), func(i, j int) {
+				eventTestcases[i], eventTestcases[j] = eventTestcases[j], eventTestcases[i]
+			})
+			for _, etc := range eventTestcases {
+				if etc.event.GetCancel() == nil {
+					So(etc.sendFn(ctx), ShouldBeNil)
+				}
+			}
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+			So(fh.invocations, ShouldResemble, expectInvokedMethods)
+			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
+		})
+
+		Convey("Don't Start if received both Cancel and Start Event", func() {
+			fh := &fakeHandler{}
+			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
+			run.Start(ctx, runID)
+			run.Cancel(ctx, runID)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+			So(fh.invocations, ShouldResemble, []string{"Cancel"})
+			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
+			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{
+				Event: &eventpb.Event_Cancel{
+					Cancel: &eventpb.Cancel{},
+				},
+			},
+				&eventpb.Event{
+					Event: &eventpb.Event_Start{
+						Start: &eventpb.Start{},
+					},
+				},
+			)
+		})
+	})
 
 	Convey("Poke", t, func() {
 		ct := cvtesting.Test{}
@@ -81,4 +247,35 @@ func TestRecursivePoke(t *testing.T) {
 			So(task.Payload, ShouldResembleProto, &eventpb.PokeRunTask{RunId: string(runID)})
 		})
 	})
+}
+
+type fakeHandler struct {
+	invocations []string
+}
+
+func (fh *fakeHandler) Start(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+	fh.addInvocation("Start")
+	return nil, rs.ShallowCopy(), nil
+}
+
+func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+	fh.addInvocation("Cancel")
+	return nil, rs.ShallowCopy(), nil
+
+}
+
+func (fh *fakeHandler) OnCLUpdated(ctx context.Context, rs *state.RunState, _ common.CLIDs) (eventbox.SideEffectFn, *state.RunState, error) {
+	fh.addInvocation("OnCLUpdated")
+	return nil, rs.ShallowCopy(), nil
+
+}
+
+func (fh *fakeHandler) OnFinished(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+	fh.addInvocation("OnFinished")
+	return nil, rs.ShallowCopy(), nil
+
+}
+
+func (fh *fakeHandler) addInvocation(method string) {
+	fh.invocations = append(fh.invocations, method)
 }

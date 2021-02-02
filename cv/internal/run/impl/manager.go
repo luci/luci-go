@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/handler"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
 func init() {
@@ -47,53 +49,24 @@ func init() {
 
 var pokeInterval = 5 * time.Minute
 
+var fakeHandlerKey = "Fake Run Events Handler"
+
 func pokeRunTask(ctx context.Context, runID common.RunID) error {
 	ctx = logging.SetField(ctx, "run", runID)
 	recipient := datastore.MakeKey(ctx, run.RunKind, string(runID))
-	return eventbox.ProcessBatch(ctx, recipient, &runManager{runID: runID})
+	rm := &runManager{runID: runID}
+	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
+		rm.handler = h
+	} else {
+		rm.handler = &handler.Impl{}
+	}
+	return eventbox.ProcessBatch(ctx, recipient, rm)
 }
 
 // runManager implements eventbox.Processor.
 type runManager struct {
-	runID common.RunID
-}
-
-// state represents the current state of a Run.
-//
-// It consists of the Run entity and its child entities (could be partial
-// depending on the event received).
-type state struct {
-	Run run.Run
-	// TODO(yiwzhang): add RunOwner, []RunCL, []RunTryjob.
-}
-
-func (s *state) deepCopy() *state {
-	if s == nil {
-		return nil
-	}
-	return &state{
-		Run: run.Run{
-			ID:            s.Run.ID,
-			Mode:          s.Run.Mode,
-			Status:        s.Run.Status,
-			CreateTime:    s.Run.CreateTime,
-			StartTime:     s.Run.StartTime,
-			EndTime:       s.Run.EndTime,
-			UpdateTime:    s.Run.UpdateTime,
-			Owner:         s.Run.Owner,
-			ConfigGroupID: s.Run.ConfigGroupID,
-		},
-	}
-}
-
-func (s *state) shallowCopy() *state {
-	if s == nil {
-		return nil
-	}
-	ret := &state{
-		Run: s.Run,
-	}
-	return ret
+	runID   common.RunID
+	handler handler.Handler
 }
 
 var _ eventbox.Processor = (*runManager)(nil)
@@ -109,10 +82,10 @@ func (rm *runManager) LoadState(ctx context.Context) (eventbox.State, eventbox.E
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get Run %q", rm.runID).Tag(transient.Tag).Err()
 	}
-	s := &state{
+	rs := &state.RunState{
 		Run: r,
 	}
-	return s, eventbox.EVersion(r.EVersion), nil
+	return rs, eventbox.EVersion(r.EVersion), nil
 }
 
 // Mutate is called before a transaction to compute transitions based on a
@@ -125,7 +98,7 @@ func (rm *runManager) Mutate(ctx context.Context, events eventbox.Events, s even
 	for _, e := range events {
 		tr.triage(ctx, e)
 	}
-	return rm.processTriageResults(ctx, tr, s.(*state))
+	return rm.processTriageResults(ctx, tr, s.(*state.RunState))
 }
 
 // FetchEVersion is called at the beginning of a transaction.
@@ -138,7 +111,6 @@ func (rm *runManager) FetchEVersion(ctx context.Context) (eventbox.EVersion, err
 	if err := datastore.Get(ctx, r); err != nil {
 		return 0, errors.Annotate(err, "failed to get %q", rm.runID).Tag(transient.Tag).Err()
 	}
-
 	return eventbox.EVersion(r.EVersion), nil
 
 }
@@ -148,11 +120,11 @@ func (rm *runManager) FetchEVersion(ctx context.Context) (eventbox.EVersion, err
 // The passed eversion is incremented value of eversion of what GetState
 // returned before.
 func (rm *runManager) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
-	s := st.(*state)
-	s.Run.EVersion = int(ev)
-	s.Run.UpdateTime = clock.Now(ctx).UTC()
-	if err := datastore.Put(ctx, &(s.Run)); err != nil {
-		return errors.Annotate(err, "failed to put Run %q", s.Run.ID).Tag(transient.Tag).Err()
+	rs := st.(*state.RunState)
+	rs.Run.EVersion = int(ev)
+	rs.Run.UpdateTime = clock.Now(ctx).UTC()
+	if err := datastore.Put(ctx, &(rs.Run)); err != nil {
+		return errors.Annotate(err, "failed to put Run %q", rs.Run.ID).Tag(transient.Tag).Err()
 	}
 	return nil
 }
@@ -204,14 +176,14 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	}
 }
 
-func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, s *state) (ret []eventbox.Transition, err error) {
+func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) (ret []eventbox.Transition, err error) {
 	if tr.finishedEvents != nil {
 		t := eventbox.Transition{Events: tr.finishedEvents}
-		t.SideEffectFn, s, err = onFinished(ctx, s)
+		t.SideEffectFn, rs, err = rm.handler.OnFinished(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
+		t.TransitionTo = rs
 		ret = append(ret, t)
 	}
 	switch {
@@ -224,37 +196,37 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		// this Run in CV. In that case, Run Manager should just move this Run
 		// to cancelled state directly.
 		t.Events = append(t.Events, tr.startEvents...)
-		t.SideEffectFn, s, err = cancel(ctx, s)
+		t.SideEffectFn, rs, err = rm.handler.Cancel(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
+		t.TransitionTo = rs
 		ret = append(ret, t)
 	case len(tr.startEvents) > 0:
 		t := eventbox.Transition{Events: tr.startEvents}
-		t.SideEffectFn, s, err = start(ctx, s)
+		t.SideEffectFn, rs, err = rm.handler.Start(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
+		t.TransitionTo = rs
 		ret = append(ret, t)
 	}
 	if len(tr.clUpdatedEvents.events) > 0 {
 		t := eventbox.Transition{Events: tr.clUpdatedEvents.events}
-		t.SideEffectFn, s, err = onCLUpdated(ctx, s, tr.clUpdatedEvents.cls)
+		t.SideEffectFn, rs, err = rm.handler.OnCLUpdated(ctx, rs, tr.clUpdatedEvents.cls)
 		if err != nil {
 			return nil, err
 		}
-		t.TransitionTo = s
+		t.TransitionTo = rs
 		ret = append(ret, t)
 	}
 	if len(tr.newConfigEvents) > 0 {
 		// TODO(tandrii,yiwzhang): update config.
-		ret = append(ret, eventbox.Transition{Events: tr.newConfigEvents, TransitionTo: s})
+		ret = append(ret, eventbox.Transition{Events: tr.newConfigEvents, TransitionTo: rs})
 	}
 	if len(tr.pokeEvents) > 0 {
 		// TODO(tandrii,yiwzhang): implement poke.
-		ret = append(ret, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: s})
+		ret = append(ret, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: rs})
 	}
 
 	err = enqueueNextPoke(ctx, rm.runID, tr.nextReadyEventTime)

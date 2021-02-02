@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+package handler
 
 import (
 	"fmt"
@@ -31,6 +31,7 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/state"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -40,10 +41,11 @@ func TestOnCLUpdated(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		h := &Impl{}
 
 		// initial state
 		triggerTime := clock.Now(ctx).UTC()
-		s := &state{
+		rs := &state.RunState{
 			Run: run.Run{
 				ID:        common.RunID("chromium/111-2-deadbeef"),
 				StartTime: triggerTime.Add(1 * time.Minute),
@@ -71,7 +73,7 @@ func TestOnCLUpdated(t *testing.T) {
 		cl := UpdateCL(ci)
 		rcl := run.RunCL{
 			ID:      1,
-			Run:     datastore.MakeKey(ctx, run.RunKind, string(s.Run.ID)),
+			Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID)),
 			Detail:  cl.Snapshot,
 			Trigger: trigger.Find(ci),
 		}
@@ -80,9 +82,9 @@ func TestOnCLUpdated(t *testing.T) {
 
 		Convey("Noop", func() {
 			ensureNoop := func() {
-				se, ns, err := onCLUpdated(ctx, s, common.CLIDs{1})
+				se, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 				So(err, ShouldBeNil)
-				So(ns, ShouldEqual, s)
+				So(newrs, ShouldEqual, rs)
 				So(se, ShouldBeNil)
 
 			}
@@ -94,7 +96,7 @@ func TestOnCLUpdated(t *testing.T) {
 			}
 			for _, status := range statuses {
 				Convey(fmt.Sprintf("When Run is %s", status), func() {
-					s.Run.Status = status
+					rs.Run.Status = status
 					ensureNoop()
 				})
 			}
@@ -127,17 +129,17 @@ func TestOnCLUpdated(t *testing.T) {
 			newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
 			gf.PS(6)(newCI)
 			UpdateCL(newCI)
-			_, rs, err := onCLUpdated(ctx, s, common.CLIDs{1})
+			_, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(rs.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(newrs.Run.Status, ShouldEqual, run.Status_CANCELLED)
 		})
 		Convey("Cancels Run on removed trigger", func() {
 			newCI := gf.CI(2, gf.PS(5), gf.CQ(0))
 			UpdateCL(newCI)
 
-			_, rs, err := onCLUpdated(ctx, s, common.CLIDs{1})
+			_, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(rs.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(newrs.Run.Status, ShouldEqual, run.Status_CANCELLED)
 		})
 	})
 }

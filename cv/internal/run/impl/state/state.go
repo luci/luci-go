@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package impl
+// Package state defines the model for a Run state.
+package state
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -26,43 +25,58 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/eventbox"
 	gobupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-func onFinished(ctx context.Context, s *state) (eventbox.SideEffectFn, *state, error) {
-	switch status := s.Run.Status; {
-	case status == run.Status_RUNNING:
-		s = s.shallowCopy()
-		s.Run.Status = run.Status_FINALIZING
-		se := eventbox.Chain(s.refreshCLs, func(ctx context.Context) error {
-			// Revisit after 1 minute.
-			// Assuming all CLs MUST be up-to-date by then.
-			return run.NotifyFinished(ctx, s.Run.ID, 1*time.Minute)
-		})
-		return se, s, nil
-	case status == run.Status_FINALIZING || run.IsEnded(status):
-		s = s.shallowCopy()
-		rid := s.Run.ID
-		mfr := &migration.FinishedRun{ID: rid}
-		switch err := datastore.Get(ctx, mfr); {
-		case err == datastore.ErrNoSuchEntity:
-			return nil, nil, errors.Reason("Run %q received Finished event but no FinishedRun entity found", rid).Err()
-		case err != nil:
-			return nil, nil, errors.Annotate(err, "failed to load FinishedRun %q", rid).Tag(transient.Tag).Err()
+// RunState represents the current state of a Run.
+//
+// It consists of the Run entity and its child entities (could be partial
+// depending on the event received).
+type RunState struct {
+	Run run.Run
+	// TODO(yiwzhang): add RunOwner, []RunCL, []RunTryjob.
+}
+
+// ShallowCopy returns a shallow copy of run state
+func (rs *RunState) ShallowCopy() *RunState {
+	if rs == nil {
+		return nil
+	}
+	ret := &RunState{
+		Run: rs.Run,
+	}
+	return ret
+}
+
+// loadCLs loads all CL entities involved in the Run.
+//
+// Return nil error iff all CLs are successfully loaded.
+func (rs *RunState) loadCLs(ctx context.Context) ([]*changelist.CL, error) {
+	cls := make([]*changelist.CL, len(rs.Run.CLs))
+	for i, clID := range rs.Run.CLs {
+		cls[i] = &changelist.CL{ID: clID}
+	}
+	err := changelist.LoadMulti(ctx, cls)
+	switch merr, ok := err.(errors.MultiError); {
+	case err == nil:
+		return cls, nil
+	case ok:
+		for i, err := range merr {
+			if err == datastore.ErrNoSuchEntity {
+				return nil, errors.Reason("CL %d not found in Datastore", cls[i].ID).Err()
+			}
 		}
-		s.Run.Status = mfr.Status
-		s.Run.EndTime = mfr.EndTime
-		return s.removeRunFromCLs, s, nil
+		count, err := merr.Summary()
+		return nil, errors.Annotate(err, "failed to load %d out of %d CLs", count, len(cls)).Tag(transient.Tag).Err()
 	default:
-		panic(fmt.Errorf("unexpected run status: %s", status))
+		return nil, errors.Annotate(err, "failed to load %d CLs", len(cls)).Tag(transient.Tag).Err()
 	}
 }
 
-func (s *state) refreshCLs(ctx context.Context) error {
-	cls, err := s.loadCLs(ctx)
+// RefreshCLs submits tasks for refresh all CLs involved in this Run.
+func (rs *RunState) RefreshCLs(ctx context.Context) error {
+	cls, err := rs.loadCLs(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,7 +94,7 @@ func (s *state) refreshCLs(ctx context.Context) error {
 					return err
 				}
 				return gobupdater.Schedule(ctx, &gobupdater.RefreshGerritCL{
-					LuciProject: s.Run.ID.LUCIProject(),
+					LuciProject: rs.Run.ID.LUCIProject(),
 					Host:        host,
 					Change:      change,
 					ClidHint:    int64(cl.ID),
@@ -91,20 +105,20 @@ func (s *state) refreshCLs(ctx context.Context) error {
 	return common.MostSevereError(err)
 }
 
-// removeRunFromCLs removes the Run from the IncompleteRuns list of all
+// RemoveRunFromCLs removes the Run from the IncompleteRuns list of all
 // CL entities associated with this Run.
-func (s *state) removeRunFromCLs(ctx context.Context) error {
+func (rs *RunState) RemoveRunFromCLs(ctx context.Context) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be called in a transaction")
 	}
-	cls, err := s.loadCLs(ctx)
+	cls, err := rs.loadCLs(ctx)
 	if err != nil {
 		return err
 	}
 	changedCLs := cls[:0]
 	for _, cl := range cls {
 		changed := cl.Mutate(ctx, func(cl *changelist.CL) bool {
-			return cl.IncompleteRuns.DelSorted(s.Run.ID)
+			return cl.IncompleteRuns.DelSorted(rs.Run.ID)
 		})
 		if changed {
 			changedCLs = append(changedCLs, cl)
