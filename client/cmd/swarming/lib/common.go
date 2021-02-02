@@ -47,9 +47,15 @@ import (
 )
 
 const (
+	// ServerEnvVar is an environment varible to which clients connect.
 	ServerEnvVar = "SWARMING_SERVER"
+
+	// TaskIDEnvVar is an environment varible of Swarming task ID in which this task is running.
+	// This is set to `ParentTaskId` field in NewTaskRequest.
 	TaskIDEnvVar = "SWARMING_TASK_ID"
-	UserEnvVar   = "USER"
+
+	// UserEnvVar is an envirornment variale set to `User` field in NewTaskRequest.
+	UserEnvVar = "USER"
 )
 
 // triggerResults is a set of results from using the trigger subcommand,
