@@ -70,7 +70,8 @@ func TestFakeLogs(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &logs.QueryResponse{
+				So(rsp, ShouldResembleProto, &logs.QueryResponse{
+					Project: coordinatorTest.AllAccessProject,
 					Streams: []*logs.QueryResponse_Stream{
 						{Path: "some/prefix/+/some/path"},
 					},
@@ -80,7 +81,8 @@ func TestFakeLogs(t *testing.T) {
 					Path: "some/prefix/+/other/**",
 				})
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &logs.QueryResponse{
+				So(rsp, ShouldResembleProto, &logs.QueryResponse{
+					Project: coordinatorTest.AllAccessProject,
 					Streams: []*logs.QueryResponse_Stream{
 						{Path: "some/prefix/+/other/path"},
 					},

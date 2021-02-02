@@ -73,7 +73,7 @@ func TestRegisterStream(t *testing.T) {
 		})
 
 		Convey(`When registering a testing log sream, "testing/+/foo/bar"`, func() {
-			tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
+			tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
 
 			req := logdog.RegisterStreamRequest{
 				Project:       string(tls.Project),
@@ -315,7 +315,7 @@ func BenchmarkRegisterStream(b *testing.B) {
 		project = "proj-foo"
 	)
 
-	tls := ct.MakeStream(c, project, prefix.Join(types.StreamName(fmt.Sprintf("foo/bar"))))
+	tls := ct.MakeStream(c, project, "", prefix.Join(types.StreamName(fmt.Sprintf("foo/bar"))))
 	tls.WithProjectNamespace(c, func(c context.Context) {
 		if err := ds.Put(c, tls.Prefix); err != nil {
 			b.Fatalf("failed to register prefix: %v", err)
@@ -327,7 +327,7 @@ func BenchmarkRegisterStream(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		tls := ct.MakeStream(c, project, prefix.Join(types.StreamName(fmt.Sprintf("foo/bar/%d", i))))
+		tls := ct.MakeStream(c, project, "", prefix.Join(types.StreamName(fmt.Sprintf("foo/bar/%d", i))))
 
 		req := logdog.RegisterStreamRequest{
 			Project:       string(tls.Project),

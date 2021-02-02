@@ -22,7 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
@@ -39,7 +39,7 @@ func TestLoadStream(t *testing.T) {
 		svr := New(ServerSettings{NumQueues: 2})
 
 		// Register a test stream.
-		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
+		tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
 		if err := tls.Put(c); err != nil {
 			panic(err)
 		}
