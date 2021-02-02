@@ -16,6 +16,46 @@
       "message": "yeah, wishy washy.\nbut lgtm % it\u0027d probably benefit from Yiwei\u0027s review.",
       "revId": "334f0db0149014a13a536c56f02fe80ea2b221e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50946283_a151b94b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-02T18:12:38Z",
+      "side": 1,
+      "message": "others lgtm",
+      "revId": "334f0db0149014a13a536c56f02fe80ea2b221e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "378339f2_02b34a48",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-02T18:12:38Z",
+      "side": 1,
+      "message": "I think technically this should be `now.After(soft_deadline) \u0026\u0026 now.Before(soft_deadline + grace_period)`.",
+      "range": {
+        "startLine": 351,
+        "startChar": 8,
+        "endLine": 352,
+        "endChar": 1
+      },
+      "revId": "334f0db0149014a13a536c56f02fe80ea2b221e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
