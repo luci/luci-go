@@ -128,6 +128,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "298013da_780e64b7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T07:47:00Z",
+      "side": 1,
+      "message": "chanli,\nWe are discussing to enable INTEGRATION_TESTS flag.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/testutil/spantest.go;l\u003d42?q\u003df:resultdb%20INTEGRATION_TESTS\u0026ss\u003dchromium",
+      "parentUuid": "e182e76a_d6c4b4bb",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e85710a9_ddcc2b6f",
         "filename": "client/cmd/swarming/main_test.go",
         "patchSetId": 7
