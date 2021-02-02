@@ -19,7 +19,7 @@ import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 import { consumeContext, provideContext } from '../../libs/context';
 import { TestLoader } from '../../models/test_loader';
 import { TestNode } from '../../models/test_node';
-import { Invocation } from '../../services/resultdb';
+import { Invocation, TestVariant } from '../../services/resultdb';
 import { AppState } from '../app_state/app_state';
 
 /**
@@ -28,6 +28,12 @@ import { AppState } from '../app_state/app_state';
 export class InvocationState {
   @observable.ref invocationId = '';
   @observable.ref initialized = false;
+  @observable.ref searchText = '';
+
+  private filterVariant(variant: TestVariant): boolean {
+    return variant.testId.startsWith(this.selectedNode.path) &&
+      variant.testId.toLocaleLowerCase().includes(this.searchText.toLocaleLowerCase());
+  }
 
   constructor(private appState: AppState) {}
 
@@ -85,20 +91,20 @@ export class InvocationState {
 
   @computed get filteredUnexpectedVariants() {
     return (this.testLoader?.unexpectedTestVariants || [])
-      .filter((v) => v.testId.startsWith(this.selectedNode.path));
+      .filter(v => this.filterVariant(v));
   }
 
   @computed get filteredFlakyVariants() {
     return (this.testLoader?.flakyTestVariants || [])
-      .filter((v) => v.testId.startsWith(this.selectedNode.path));
+      .filter(v => this.filterVariant(v));
   }
   @computed get filteredExoneratedVariants() {
     return (this.testLoader?.exoneratedTestVariants || [])
-      .filter((v) => v.testId.startsWith(this.selectedNode.path));
+      .filter(v => this.filterVariant(v));
   }
   @computed get filteredExpectedVariants() {
     return (this.testLoader?.expectedTestVariants || [])
-      .filter((v) => v.testId.startsWith(this.selectedNode.path));
+      .filter(v => this.filterVariant(v));
   }
 }
 
