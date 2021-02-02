@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e5f42b0_3a52100f",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-02T03:51:52Z",
+      "side": 1,
+      "message": "Have to add back this override method, otherwise the Batch logs in Py service side won\u0027t show up while it can still perform the Batch operation correctly. I\u0027m confused with why this happened. But this is what I observed after some experiments in Dev.",
+      "range": {
+        "startLine": 128,
+        "startChar": 2,
+        "endLine": 128,
+        "endChar": 85
+      },
+      "revId": "4bfc2ef8889e437b12e44700381351e5272c36cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
