@@ -65,8 +65,8 @@ func init() {
 
 // Dispatch ensures invocation of ProjectManager via PokePMTask.
 //
-// ProjectManager will be invoced at approximately no earlier than both:
-// * eta time (if given)
+// ProjectManager will be invoked at approximately no earlier than both:
+// * eta time
 // * next possible.
 func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	if datastore.CurrentTransaction(ctx) != nil {

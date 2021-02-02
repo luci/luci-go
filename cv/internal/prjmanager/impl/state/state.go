@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -68,7 +70,7 @@ type State struct {
 	pclIndex pclIndex // CLID => index.
 
 	// Test mocks. Not set in production.
-	testComponentPreevaluator componentPreevaluator
+	testComponentActorFactory func(*prjpb.Component, actorSupporter) componentActor
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
@@ -272,18 +274,30 @@ func (s *State) ExecDeferred(ctx context.Context) (*State, SideEffect, error) {
 		}
 		s.repartition(cat)
 	}
-	switch actions, err := s.prepareComponentActions(ctx); {
+
+	actions, components, err := s.scanComponents(ctx)
+	switch {
 	case err != nil:
 		return nil, nil, err
-	case len(actions) == 0:
+	case components == nil:
+		// scanComponents also guarantees len(actions) == 0.
+		// Since no changes are required, there is no need to re-evaluate
+		// earliestDecisionTime.
 		return s, nil, nil
-	case !mutated:
+	case components != nil && !mutated:
 		s = s.cloneShallow()
-		fallthrough
-	default:
-		if err = s.execComponentActions(ctx, actions); err != nil {
+		s.PB.Components = components
+	}
+	if len(actions) > 0 {
+		if err := s.execComponentActions(ctx, actions, components); err != nil {
 			return nil, nil, err
 		}
-		return s, nil, nil
 	}
+
+	t, tPB := earliestDecisionTime(components)
+	if !proto.Equal(s.PB.NextEvalTime, tPB) {
+		s.PB.NextEvalTime = tPB
+		prjpb.Dispatch(ctx, s.PB.GetLuciProject(), t)
+	}
+	return s, nil, nil
 }
