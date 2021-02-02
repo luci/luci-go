@@ -16,6 +16,24 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results?expected\u003dtrue\u0026exonerated\u003dtrue\u0026flaky\u003dtrue\n\nTest status filter (e.g. status:skipped) will be added in a following CL.",
       "revId": "064ac826a817b90369c1575182f40d3992f61715",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d9adac3_837c4f16",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-02-02T01:22:22Z",
+      "side": 1,
+      "message": "Some comments on the UI:\n\n* Bug: Hotkeys are still active when typing in the text box (e.g. try typing \u0027x\u0027)\n* Could we add a placeholder attribute to the field? e.g.  \"Filter by test name...\" or something?\n* Is it too slow if we update on each keypress rather than when the field loses focus?\n* The bottom margins on the vertical separator and the field itself bother me. Can we add a couple more pixels (like the \"expand/collapse all\" buttons have?)",
+      "parentUuid": "c450c405_9bfb66e0",
+      "revId": "064ac826a817b90369c1575182f40d3992f61715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
