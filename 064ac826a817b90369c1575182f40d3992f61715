@@ -34,6 +34,24 @@
       "parentUuid": "c450c405_9bfb66e0",
       "revId": "064ac826a817b90369c1575182f40d3992f61715",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "794568f4_2dcc1a73",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-02T02:26:01Z",
+      "side": 1,
+      "message": "\u003e Bug: Hotkeys are still active when typing in the text box (e.g. try typing \u0027x\u0027)\nFixed.\n\n\u003e Could we add a placeholder attribute to the field? e.g.  \"Filter by test name...\" or something?\nAdded search test results. This is similar to monorial\u0027s hint text.\nI\u0027ll add status search soon.\n\n\u003e Is it too slow if we update on each keypress rather than when the field loses focus?\nUpdated to instant response. There seems to be no performance issue with 1000 tests.\n\n\u003e The bottom margins on the vertical separator and the field itself bother me. Can we add a couple more pixels (like the \"expand/collapse all\" buttons have?)\nIt\u0027s caused by the search box being to high to be fit in to the header bar. Increased the height of the header bar by 2px.",
+      "parentUuid": "3d9adac3_837c4f16",
+      "revId": "064ac826a817b90369c1575182f40d3992f61715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
