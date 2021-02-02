@@ -16,6 +16,24 @@
       "message": "maruel, t.Parallel() is still allowed to use for test with\nhttps://github.com/maruel/subcommands\n?",
       "revId": "636e1926b11bd4832ef993e5c8e9f7d139394210",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5faed08d_8f04c1e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-02-02T21:01:16Z",
+      "side": 1,
+      "message": "I fixed it upstream. Bump it to v1.0.1.",
+      "parentUuid": "c3d8d10d_dd74ea38",
+      "revId": "636e1926b11bd4832ef993e5c8e9f7d139394210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
