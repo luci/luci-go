@@ -265,7 +265,7 @@ func (c *triggerRun) Parse(args []string) error {
 	}
 
 	if len(c.user) == 0 {
-		c.user = os.Getenv("USER")
+		c.user = os.Getenv(UserEnvVar)
 	}
 
 	return err
@@ -485,7 +485,7 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 
 	return &swarming.SwarmingRpcsNewTaskRequest{
 		Name:           c.taskName,
-		ParentTaskId:   env["SWARMING_TASK_ID"].Value,
+		ParentTaskId:   env[TaskIDEnvVar].Value,
 		Priority:       c.priority,
 		ServiceAccount: c.serviceAccount,
 		Tags:           c.tags,
