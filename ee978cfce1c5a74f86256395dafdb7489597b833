@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b63d9cc_fa071148",
+        "filename": "vpython/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1396774
+      },
+      "writtenOn": "2021-02-02T03:05:51Z",
+      "side": 1,
+      "message": "Good call, I\u0027ll just remove it since we probe regardless now.",
+      "parentUuid": "faabc032_52dbca1d",
+      "revId": "ee978cfce1c5a74f86256395dafdb7489597b833",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4c425c3_cde45ef6",
@@ -43,6 +61,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "528d1440_bd2812d1",
+        "filename": "vpython/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1396774
+      },
+      "writtenOn": "2021-02-02T03:05:51Z",
+      "side": 1,
+      "message": "Read-eval-print-loop (https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop).  Maybe shell would be better for python? Idk what they officially call it.",
+      "parentUuid": "c4c425c3_cde45ef6",
+      "range": {
+        "startLine": 145,
+        "startChar": 37,
+        "endLine": 145,
+        "endChar": 41
+      },
+      "revId": "ee978cfce1c5a74f86256395dafdb7489597b833",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d24ce80f_2c96bbfd",
         "filename": "vpython/spec/load.go",
         "patchSetId": 3
@@ -54,6 +96,24 @@
       "writtenOn": "2021-02-02T01:36:44Z",
       "side": 1,
       "message": "Add something to the top-line comment about this function mentioning what the newly-added return value means?",
+      "revId": "ee978cfce1c5a74f86256395dafdb7489597b833",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7dc4a064_f7115cf3",
+        "filename": "vpython/spec/load.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1396774
+      },
+      "writtenOn": "2021-02-02T03:05:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d24ce80f_2c96bbfd",
       "revId": "ee978cfce1c5a74f86256395dafdb7489597b833",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
