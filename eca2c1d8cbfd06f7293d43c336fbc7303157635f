@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "eca2c1d8cbfd06f7293d43c336fbc7303157635f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e23f963b_67089af2",
+        "filename": "cv/internal/gerrit/updater/updater.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T01:01:27Z",
+      "side": 1,
+      "message": "👍and 100% agree.",
+      "range": {
+        "startLine": 237,
+        "startChar": 3,
+        "endLine": 251,
+        "endChar": 5
+      },
+      "revId": "eca2c1d8cbfd06f7293d43c336fbc7303157635f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
