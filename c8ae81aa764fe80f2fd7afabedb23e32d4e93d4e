@@ -70,6 +70,120 @@
       "parentUuid": "3b326c81_03da16dd",
       "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e85710a9_ddcc2b6f",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-02T06:31:48Z",
+      "side": 1,
+      "message": "leave a blank line above?",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c9dbb43_3656f4d6",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-02T06:31:48Z",
+      "side": 1,
+      "message": "use t.TempDir()?",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0e1400c_d7d08526",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-02T06:31:48Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ca59782_a69e8733",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-02T06:31:48Z",
+      "side": 1,
+      "message": "ShouldBeNil?",
+      "range": {
+        "startLine": 67,
+        "startChar": 10,
+        "endLine": 67,
+        "endChar": 23
+      },
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d6fb32d9_5925b10c",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-02T06:31:48Z",
+      "side": 1,
+      "message": "we cannot use this if we modify global state?",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9558c643_cd3de3cc",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-02T06:31:48Z",
+      "side": 1,
+      "message": "better to use constant value for this?",
+      "range": {
+        "startLine": 77,
+        "startChar": 28,
+        "endLine": 77,
+        "endChar": 44
+      },
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
