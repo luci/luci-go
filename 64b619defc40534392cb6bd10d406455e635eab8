@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "40f478c0_a16f3d8b",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-02T00:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "798867c9_d0fbe227",
+      "range": {
+        "startLine": 412,
+        "startChar": 6,
+        "endLine": 412,
+        "endChar": 14
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "533b104b_341373b7",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5da88b8e_4ce9e47e",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-02T00:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "533b104b_341373b7",
+      "range": {
+        "startLine": 418,
+        "startChar": 27,
+        "endLine": 418,
+        "endChar": 32
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "02a11c40_3920b28d",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-01-29T17:02:38Z",
       "side": 1,
       "message": "not sure I understand this logic. In all callsites, including next CLs:\n1) it passes a struct that *does* implement rowInput\n2) there is no check that this func returns nil, so there is no guarantee that it does the right thing\n\nwhy not accept rowInput as a param to begin with?\n\n--------------\n\nstepping back, I am not sure generateBQRow function is needed. Currently both testResult-specific and artifact-specific code do similar work of calling this function, while it could be consolidated in one generic place, specifically consider:\n1) Change batchC from `chan []*bq.Row` to `chan rowInput`\n2) Change insertRowsWithRetries to accept []rowInput instead of []*bq.Row.\n   Move the logic of this function into insertRowsWithRetries, before the retry loop @L370\n3) \u003d\u003e testResult-specific and artifact-specific code no longer have to call this function. And this function is needed too.",
+      "range": {
+        "startLine": 420,
+        "startChar": 0,
+        "endLine": 423,
+        "endChar": 2
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b4c5a1b6_b30462a9",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-02T00:44:05Z",
+      "side": 1,
+      "message": "I don\u0027t even remember why I used interface...\n\nAnd thank you for the suggestion.",
+      "parentUuid": "02a11c40_3920b28d",
       "range": {
         "startLine": 420,
         "startChar": 0,
@@ -107,6 +179,30 @@
       "side": 1,
       "message": "or just one line - it is short enough",
       "parentUuid": "17c0f3cd_94930b73",
+      "range": {
+        "startLine": 58,
+        "startChar": 59,
+        "endLine": 58,
+        "endChar": 60
+      },
+      "revId": "64b619defc40534392cb6bd10d406455e635eab8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "597c0a91_e688142b",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-02T00:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6fb79e93_320ae513",
       "range": {
         "startLine": 58,
         "startChar": 59,
