@@ -34,6 +34,24 @@
       "parentUuid": "1a29e2c6_45ef96b2",
       "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b326c81_03da16dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2021-02-02T06:18:40Z",
+      "side": 1,
+      "message": "Yeah, but I was wondering if they run like a CI job (i.e. doesn\u0027t need a CL to trigger)",
+      "parentUuid": "758db56e_d011e9a5",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
