@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a2a1739_0e683959",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T16:36:30Z",
+      "side": 1,
+      "message": "+Nodir as prpc owner.\n\nHow do we decide between call option and top level Options?",
+      "revId": "140f1ca3e3c141e5dae3980364018845cd769f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ac071c3_e5b89ee0",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T16:36:30Z",
+      "side": 1,
+      "message": "IMO, this is not helpful, especially once BB Python is removed.\n\nHow about:\n\nDispatchPath, if given, is prefixed to \"/prpc/\u003cservice\u003e/\u003cmethod\u003e\" when making HTTP requests.\nUseful if pRPC server listens on non-default host[:port]/prpc/.+. Must start with \u0027/\u0027.",
+      "range": {
+        "startLine": 51,
+        "startChar": 33,
+        "endLine": 52,
+        "endChar": 78
+      },
+      "revId": "140f1ca3e3c141e5dae3980364018845cd769f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e3592935_72367ab5",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T16:36:30Z",
+      "side": 1,
+      "message": "nit: just reading the name, I thought this would default to \"/prpc\". How about DispatchPathPrefix or jsut PathPrefix?",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 13
+      },
+      "revId": "140f1ca3e3c141e5dae3980364018845cd769f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
