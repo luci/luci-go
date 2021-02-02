@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2323654b_9fbc1a4b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T17:12:34Z",
+      "side": 1,
+      "message": "I think path prefix is at the same level as the hostname, so I vote for top-level.\n\nalso note that there is also an ambiguity Options vs Client struct itself (where Hostname is). In hindsight, the Options struct might have been a mistake. If so, we should probably add new fields to Client struct",
+      "parentUuid": "4a2a1739_0e683959",
+      "revId": "140f1ca3e3c141e5dae3980364018845cd769f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5ac071c3_e5b89ee0",
         "filename": "grpc/prpc/options.go",
         "patchSetId": 3
@@ -54,6 +72,30 @@
       "writtenOn": "2021-02-02T16:36:30Z",
       "side": 1,
       "message": "nit: just reading the name, I thought this would default to \"/prpc\". How about DispatchPathPrefix or jsut PathPrefix?",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 13
+      },
+      "revId": "140f1ca3e3c141e5dae3980364018845cd769f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "09aa29fc_494df44f",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T17:12:34Z",
+      "side": 1,
+      "message": "+1, my thoughts exactly",
+      "parentUuid": "e3592935_72367ab5",
       "range": {
         "startLine": 53,
         "startChar": 1,
