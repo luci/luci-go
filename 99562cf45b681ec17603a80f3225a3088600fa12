@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f21e9c9_af464912",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T05:25:45Z",
+      "side": 1,
+      "message": "this is probably not the main thing this struct does? The point of this struct, I think, is something about reading the contents",
+      "range": {
+        "startLine": 132,
+        "startChar": 10,
+        "endLine": 132,
+        "endChar": 64
+      },
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4c3767d_6eebadba",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T05:25:45Z",
+      "side": 1,
+      "message": "this is impl detail. We might want to change it in the future.\nI recommend io.Reader",
+      "range": {
+        "startLine": 144,
+        "startChar": 99,
+        "endLine": 144,
+        "endChar": 113
+      },
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bdf1c1cf_9946ce2d",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T05:25:45Z",
+      "side": 1,
+      "message": "defer pr.Close()",
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9b0bafb_9c9ba2a8",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T05:25:45Z",
+      "side": 1,
+      "message": "string",
+      "range": {
+        "startLine": 92,
+        "startChar": 21,
+        "endLine": 92,
+        "endChar": 28
+      },
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8235d35_719bebbf",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T05:25:45Z",
+      "side": 1,
+      "message": "I think we might need to accept a destination `chan rowInput` instead.\nThe way the function is written now, it buffers the entire artifact in memory before returning to the caller.\nIn particular, it doesn\u0027t start uploading the artifact until it is read entirely\n\nalso the code would be simpler:\n\n  return ac.Download(...",
+      "range": {
+        "startLine": 91,
+        "startChar": 123,
+        "endLine": 91,
+        "endChar": 138
+      },
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe0d2fc6_7858171e",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T05:25:45Z",
+      "side": 1,
+      "message": "nit: consider making it a global variable, so that we don\u0027t recreate it each time",
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

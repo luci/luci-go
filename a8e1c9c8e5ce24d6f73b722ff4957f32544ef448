@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7c3dda6_9c64a5cc",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T05:25:45Z",
+      "side": 1,
+      "message": "by the reason below you mean that artifactcontent.ArtifactContentScanner has redundancy? \nby that logic artifactcontent.rbecasResourceName does not have a redundancy (all words are different).\nnote that Go file name doesn\u0027t matter.\n\nbut. let me resolve this. resourceName() is a private function. Basically it doesn\u0027t matter much, and short names are nice",
+      "parentUuid": "0b346385_3c311145",
+      "range": {
+        "startLine": 130,
+        "startChar": 5,
+        "endLine": 130,
+        "endChar": 17
+      },
+      "revId": "a8e1c9c8e5ce24d6f73b722ff4957f32544ef448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "25d5c42c_99798d3f",
