@@ -644,7 +644,7 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 		URL: &url.URL{
 			Scheme: scheme,
 			Host:   options.host,
-			Path:   fmt.Sprintf("/prpc/%s/%s", options.serviceName, options.methodName),
+			Path:   fmt.Sprintf("/%s/prpc/%s/%s", options.DispatchPath, options.serviceName, options.methodName),
 		},
 		Host:          hostHdr,
 		Header:        headers,
