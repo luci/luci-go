@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83164f6a_70c07330",
+        "filename": "vpython/options.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-02-02T23:06:31Z",
+      "side": 1,
+      "message": "Maybe reword this as well, i.e. \"Using stdin input, loading vpython spec from ....\"",
+      "revId": "0a3b0e1436a19caa5b4996cf8a89b9f1edd2ab67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b169473_9a3b5453",
+        "filename": "vpython/spec/load.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-02-02T23:06:31Z",
+      "side": 1,
+      "message": "Missing period.",
+      "range": {
+        "startLine": 103,
+        "startChar": 9,
+        "endLine": 103,
+        "endChar": 10
+      },
+      "revId": "0a3b0e1436a19caa5b4996cf8a89b9f1edd2ab67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
