@@ -52,9 +52,9 @@ const (
 	UserEnvVar   = "USER"
 )
 
-// triggerResults is a set of results from using the trigger subcommand,
+// TriggerResults is a set of results from using the trigger subcommand,
 // describing all of the tasks that were triggered successfully.
-type triggerResults struct {
+type TriggerResults struct {
 	// Tasks is a list of successfully triggered tasks represented as
 	// TriggerResult values.
 	Tasks []*swarming.SwarmingRpcsTaskRequestMetadata `json:"tasks"`

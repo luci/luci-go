@@ -188,7 +188,7 @@ func (c *collectRun) Parse(args *[]string) error {
 		if err != nil {
 			return errors.Annotate(err, "reading json input").Err()
 		}
-		input := triggerResults{}
+		input := TriggerResults{}
 		if err := json.Unmarshal(data, &input); err != nil {
 			return errors.Annotate(err, "unmarshalling json input").Err()
 		}
