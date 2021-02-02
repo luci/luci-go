@@ -639,12 +639,16 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 		scheme = "http"
 	}
 
-	return &http.Request{
+	path := fmt.Sprintf("/prpc/%s/%s", options.serviceName, options.methodName)
+	if options.DispatchPath != "" {
+		path = options.DispatchPath + path
+	}
+ 	return &http.Request{
 		Method: "POST",
 		URL: &url.URL{
 			Scheme: scheme,
 			Host:   options.host,
-			Path:   fmt.Sprintf("/prpc/%s/%s", options.serviceName, options.methodName),
+			Path:   path,
 		},
 		Host:          hostHdr,
 		Header:        headers,
