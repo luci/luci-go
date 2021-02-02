@@ -32,8 +32,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
-
-	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"google.golang.org/grpc/codes"
 )
@@ -77,30 +76,17 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		"tail":    tail,
 	}.Debugf(c, "Received get request.")
 
-	path := types.StreamPath(req.Path)
-	if err := path.Validate(); err != nil {
-		log.WithError(err).Errorf(c, "Invalid path supplied.")
-		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid path value")
+	// Fetch the stream metadata, including its state.
+	fetcher := coordinator.MetadataFetcher{
+		Path:      types.StreamPath(req.Path),
+		WithState: true,
 	}
-
-	ls := &coordinator.LogStream{ID: coordinator.LogStreamID(path)}
-	lst := ls.State(c)
-	log.Fields{
-		"id": ls.ID,
-	}.Debugf(c, "Loading stream.")
-
-	if err := ds.Get(c, ls, lst); err != nil {
-		if ds.IsErrNoSuchEntity(err) {
-			log.Warningf(c, "Log stream does not exist.")
-			return nil, grpcutil.Errf(codes.NotFound, "path not found")
-		}
-
-		log.WithError(err).Errorf(c, "Failed to look up log stream.")
-		return nil, grpcutil.Internal
+	if err := fetcher.FetchWithACLCheck(c); err != nil {
+		return nil, err
 	}
 
 	// If this log entry is Purged and we're not admin, pretend it doesn't exist.
-	if ls.Purged {
+	if fetcher.Stream.Purged {
 		switch yes, err := coordinator.CheckAdminUser(c); {
 		case err != nil:
 			return nil, grpcutil.Internal
@@ -110,12 +96,16 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		}
 	}
 
-	resp := logdog.GetResponse{}
+	resp := logdog.GetResponse{Project: req.Project}
+	if fetcher.Prefix.Realm != "" {
+		_, resp.Realm = realms.Split(fetcher.Prefix.Realm)
+	}
+
 	if req.State {
-		resp.State = buildLogStreamState(ls, lst)
+		resp.State = buildLogStreamState(fetcher.Stream, fetcher.State)
 
 		var err error
-		resp.Desc, err = ls.DescriptorProto()
+		resp.Desc, err = fetcher.Stream.DescriptorProto()
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to deserialize descriptor protobuf.")
 			return nil, grpcutil.Internal
@@ -124,7 +114,7 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 
 	// Retrieve requested logs from storage, if requested.
 	startTime := clock.Now(c)
-	if err := s.getLogs(c, req, &resp, tail, ls, lst); err != nil {
+	if err := s.getLogs(c, req, &resp, tail, fetcher.Stream, fetcher.State); err != nil {
 		log.WithError(err).Errorf(c, "Failed to get logs.")
 		return nil, grpcutil.Internal
 	}

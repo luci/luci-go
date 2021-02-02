@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -285,31 +284,20 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 		"format":  data.options.format,
 	}.Debugf(c, "parsed options")
 
-	// Load project configs, enter the project datastore namespace.
 	if err = coordinator.WithProjectNamespace(&c, project); err != nil {
 		return
 	}
 
-	// TODO(crbug.com/1172492): Replace with realms ACL check.
-	switch yes, err := coordinator.CheckProjectReader(c); {
-	case err != nil:
-		return data, grpcutil.Internal
-	case !yes:
-		return data, coordinator.PermissionDeniedErr(c)
-	}
-
-	logStream := &coordinator.LogStream{ID: coordinator.LogStreamID(data.options.path)}
-	if err = ds.Get(c, logStream); err != nil {
-		if ds.IsErrNoSuchEntity(err) {
-			err = grpcutil.NotFoundTag.Apply(err)
-		}
-		return
-	}
-	if data.logDesc, err = logStream.DescriptorProto(); err != nil {
+	fetcher := coordinator.MetadataFetcher{Path: path}
+	if err = fetcher.FetchWithACLCheck(c); err != nil {
 		return
 	}
 
-	param, err := initParams(c, logStream, data.logDesc, project)
+	if data.logDesc, err = fetcher.Stream.DescriptorProto(); err != nil {
+		return
+	}
+
+	param, err := initParams(c, fetcher.Stream, data.logDesc, project)
 	if err != nil {
 		return
 	}

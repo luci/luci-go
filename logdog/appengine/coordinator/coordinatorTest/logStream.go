@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth/realms"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
 
@@ -40,6 +41,8 @@ func TestSecret() types.PrefixSecret {
 type TestStream struct {
 	// Project is the project name for this stream.
 	Project string
+	// Realm is the realm name within the project for this stream.
+	Realm string
 	// Path is the path of this stream.
 	Path types.StreamPath
 
@@ -55,7 +58,7 @@ type TestStream struct {
 }
 
 // MakeStream builds a new TestStream with the supplied parameters.
-func MakeStream(c context.Context, project string, path types.StreamPath) *TestStream {
+func MakeStream(c context.Context, project, realm string, path types.StreamPath) *TestStream {
 	prefix, name := path.Split()
 
 	now := clock.Now(c).UTC()
@@ -63,10 +66,12 @@ func MakeStream(c context.Context, project string, path types.StreamPath) *TestS
 
 	ts := TestStream{
 		Project: project,
+		Realm:   realm,
 		Prefix: &coordinator.LogPrefix{
 			ID:         "", // Filled in by Reload.
 			Created:    ds.RoundTime(now),
 			Prefix:     "", // Filled in by Reload.
+			Realm:      "", // Filled in by Reload.
 			Source:     []string{"test suite"},
 			Expiration: ds.RoundTime(now.Add(24 * time.Hour)),
 			Secret:     secret,
@@ -103,6 +108,11 @@ func (ts *TestStream) Reload(c context.Context) {
 	// LogPrefix
 	ts.Prefix.Prefix = ts.Desc.Prefix
 	ts.Prefix.ID = coordinator.LogPrefixID(types.StreamName(ts.Prefix.Prefix))
+	if ts.Realm != "" {
+		ts.Prefix.Realm = realms.Join(ts.Project, ts.Realm)
+	} else {
+		ts.Prefix.Realm = ""
+	}
 
 	// LogStream
 	ts.Stream.ID = coordinator.LogStreamID(ts.Path)

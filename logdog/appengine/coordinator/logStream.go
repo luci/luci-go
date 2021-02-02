@@ -109,12 +109,6 @@ func LogStreamID(path types.StreamPath) HashID {
 	return makeHashID(string(path))
 }
 
-// LogPrefix returns a keyed (but not loaded) LogPrefix struct for this
-// LogStream's Prefix.
-func (s *LogStream) LogPrefix() *LogPrefix {
-	return &LogPrefix{ID: s.ID}
-}
-
 // PopulateState populates the datastore key fields for the supplied
 // LogStreamState, binding them to the current LogStream.
 func (s *LogStream) PopulateState(c context.Context, lst *LogStreamState) {
@@ -244,6 +238,8 @@ func (s *LogStream) SetDSValidate(v bool) {
 // LogStreamQuery is a function returning `true` if the provided LogStream
 // matches.
 type LogStreamQuery struct {
+	Prefix types.StreamName // the prefix being queried
+
 	q             *ds.Query
 	includePurged bool
 	checks        []func(*LogStream) bool
@@ -280,7 +276,8 @@ func NewLogStreamQuery(pathGlob string) (*LogStreamQuery, error) {
 	}
 
 	ret := &LogStreamQuery{
-		q: ds.NewQuery("LogStream").Eq("Prefix", string(prefix)).Order("-Created"),
+		Prefix: prefix,
+		q:      ds.NewQuery("LogStream").Eq("Prefix", string(prefix)).Order("-Created"),
 	}
 
 	// Escape all regexp metachars. This will have the effect of escaping * as

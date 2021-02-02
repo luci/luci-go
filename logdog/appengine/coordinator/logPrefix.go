@@ -61,6 +61,11 @@ type LogPrefix struct {
 	// HashID.
 	Prefix string `gae:",noindex"`
 
+	// Realm is a full realm name ("<project>:<realm>") with ACLs for this prefix.
+	//
+	// It is set in RegisterStream and can't be changed afterwards.
+	Realm string
+
 	// Source is the (indexed) set of source strings sent by the prefix registrar.
 	Source []string
 

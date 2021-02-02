@@ -55,7 +55,7 @@ func TestTerminateStream(t *testing.T) {
 
 		svr := New(ServerSettings{NumQueues: 2})
 
-		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
+		tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
 
 		req := logdog.TerminateStreamRequest{
 			Project:       string(tls.Project),

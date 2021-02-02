@@ -20,19 +20,19 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/config"
+	"go.chromium.org/luci/server/auth/realms"
 )
 
 func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest) (pubsub.Topic, time.Duration, error) {
@@ -78,10 +78,21 @@ func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest)
 func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixRequest) (*logdog.RegisterPrefixResponse, error) {
 	log.Fields{
 		"project":    req.Project,
+		"realm":      req.Realm,
 		"prefix":     req.Prefix,
 		"source":     req.SourceInfo,
 		"expiration": google.DurationFromProto(req.Expiration),
 	}.Debugf(c, "Registering log prefix.")
+
+	// TODO(crbug.com/1172492): Make `realm` required.
+	var realm string
+	if req.Realm != "" {
+		if err := realms.ValidateRealmName(req.Realm, realms.ProjectScope); err != nil {
+			log.WithError(err).Warningf(c, "Invalid realm.")
+			return nil, grpcutil.Errf(codes.InvalidArgument, "%s", err)
+		}
+		realm = realms.Join(req.Project, req.Realm)
+	}
 
 	// Confirm that the Prefix is a valid stream name.
 	prefix := types.StreamName(req.Prefix)
@@ -90,8 +101,8 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid prefix")
 	}
 
-	// TODO(crbug.com/1172492): Replace with realms ACL check.
-	switch yes, err := coordinator.CheckProjectWriter(c); {
+	// Check the caller is allowed to register prefixes in the requested realm.
+	switch yes, err := coordinator.HasPermission(c, coordinator.PermLogsCreate, realm); {
 	case err != nil:
 		return nil, grpcutil.Internal
 	case !yes:
@@ -151,6 +162,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 
 	pfx.Created = clock.Now(c).UTC()
 	pfx.Prefix = string(prefix)
+	pfx.Realm = realm
 	pfx.Source = req.SourceInfo
 	pfx.Secret = []byte(secret)
 	pfx.Expiration = pfx.Created.Add(expiration)
