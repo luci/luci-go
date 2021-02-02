@@ -242,11 +242,12 @@ func (c *client) DeleteReviewer(ctx context.Context, req *gerritpb.DeleteReviewe
 
 func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
 	path := fmt.Sprintf("/changes/%s/revisions/%s/review", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
-	var data struct {
-		Message string           `json:"message"`
-		Labels  map[string]int32 `json:"labels"`
+	data := reviewInput{
+		Message:    in.Message,
+		Tag:        in.Tag,
+		Notify:     enumToString(int32(in.Notify.Number()), gerritpb.Notify_name),
+		OnBehalfOf: in.OnBehalfOf,
 	}
-	data.Message = in.Message
 	if in.Labels != nil {
 		data.Labels = make(map[string]int32)
 		for k, v := range in.Labels {
