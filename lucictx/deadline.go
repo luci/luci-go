@@ -36,19 +36,6 @@ var signalStop = signal.Stop
 // if Deadline is entirely missing in LUCI_CONTEXT.
 const DefaultGracePeriod = 30 * time.Second
 
-func secsToDuration(secs float64) time.Duration {
-	return time.Duration(secs * float64(time.Second))
-}
-
-func unixFloatToTime(t float64) time.Time {
-	int, frac := math.Modf(t)
-	return time.Unix(int64(int), int64(frac*1e9)).UTC()
-}
-
-func timeToUnixFloat(t time.Time) float64 {
-	return float64(t.Unix()) + (float64(t.Nanosecond()) / 1e9)
-}
-
 // DeadlineEvent is the type pushed into the cleanup channel returned by
 // AdjustDeadline.
 type DeadlineEvent int
@@ -195,7 +182,7 @@ func AdjustDeadline(ctx context.Context, reserve, reserveCleanup time.Duration) 
 	needSet := false
 
 	// Adjust grace period.
-	origGracePeriod := secsToDuration(d.GracePeriod)
+	origGracePeriod := d.GracePeriodDuration()
 	adjustedGrace := origGracePeriod - reserveCleanup
 	if adjustedGrace < 0 {
 		panic(errors.Reason(
@@ -213,7 +200,7 @@ func AdjustDeadline(ctx context.Context, reserve, reserveCleanup time.Duration) 
 	}
 	var lucictxSoftDeadline time.Time
 	if d.SoftDeadline != 0 {
-		lucictxSoftDeadline = unixFloatToTime(d.SoftDeadline)
+		lucictxSoftDeadline = d.SoftDeadlineTime()
 	}
 	adjustedSoftDeadline := earlier(ctxSoftDeadline, lucictxSoftDeadline)
 
@@ -222,7 +209,7 @@ func AdjustDeadline(ctx context.Context, reserve, reserveCleanup time.Duration) 
 	// Set up hard deadline in context, set Deadline.soft_deadline
 	if !adjustedSoftDeadline.IsZero() {
 		adjustedSoftDeadline = adjustedSoftDeadline.Add(-reserve)
-		d.SoftDeadline = timeToUnixFloat(adjustedSoftDeadline)
+		d.SetSoftDeadline(adjustedSoftDeadline)
 		needSet = true
 		// we add adjustedGrace back because the ctx deadline is the HARD deadline;
 		// it must occur `adjustedGrace` after the SoftDeadline.
@@ -338,7 +325,70 @@ func SetDeadline(ctx context.Context, d *Deadline) context.Context {
 		d = &Deadline{GracePeriod: DefaultGracePeriod.Seconds()}
 	}
 	if deadline, ok := ctx.Deadline(); ok && d.SoftDeadline == 0 {
-		d.SoftDeadline = timeToUnixFloat(deadline) - d.GracePeriod
+		d.SetSoftDeadline(deadline)
+		d.SoftDeadline -= d.GracePeriod
 	}
 	return Set(ctx, "deadline", d)
+}
+
+// CheckDeadlines returns information about whether or not the soft/hard
+// deadlines of `ctx` have been hit.
+//
+// This derives the soft deadline by:
+//   * GetDeadline(ctx).SoftDeadline : if ctx/LUCI_CONTEXT have explicitly set deadline
+//   * ctx.Deadline() - GracePeriod  : if ctx has a Go deadline set
+//
+// This derives the hard deadline by adding GracePeriod to the soft deadline.
+//
+// The booleans returned for a given context are sticky; Once past the soft
+// deadline, `hitSoftDeadline` will always be true, and simiilarly for
+// `hitHardDeadline`.
+//
+// See AdjustDeadline for details around deadlines and grace periods.
+func CheckDeadlines(ctx context.Context) (hitSoftDeadline, hitHardDeadline bool) {
+	dl := GetDeadline(ctx)
+	if dl == nil {
+		dl = GetDeadline(SetDeadline(ctx, nil))
+	}
+	if dl.SoftDeadline == 0 {
+		return false, false
+	}
+
+	now := clock.Now(ctx)
+	hitSoftDeadline = now.After(dl.SoftDeadlineTime())
+	hitHardDeadline = now.After(dl.SoftDeadlineTime().Add(dl.GracePeriodDuration()))
+	return
+}
+
+// SoftDeadlineTime returns the SoftDeadline as a time.Time.
+//
+// If SoftDeadline is 0 (or *Deadline is nil) this returns a Zero Time.
+func (d *Deadline) SoftDeadlineTime() time.Time {
+	if d.GetSoftDeadline() == 0 {
+		return time.Time{}
+	}
+
+	int, frac := math.Modf(d.SoftDeadline)
+	return time.Unix(int64(int), int64(frac*1e9)).UTC()
+}
+
+// SetSoftDeadline sets the SoftDeadline from a time.Time.
+//
+// If t.IsZero, this sets the SoftDeadline to 0 as well.
+func (d *Deadline) SetSoftDeadline(t time.Time) {
+	if t.IsZero() {
+		d.SoftDeadline = 0
+	} else {
+		d.SoftDeadline = float64(t.Unix()) + (float64(t.Nanosecond()) / 1e9)
+	}
+}
+
+// GracePeriodDuration returns the GracePeriod as a time.Duration.
+//
+// If d == nil, returns DefaultGracePeriod.
+func (d *Deadline) GracePeriodDuration() time.Duration {
+	if d == nil {
+		return DefaultGracePeriod
+	}
+	return time.Duration(d.GracePeriod * float64(time.Second))
 }
