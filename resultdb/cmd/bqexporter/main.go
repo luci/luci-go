@@ -41,7 +41,6 @@ func main() {
 
 	internal.Main(func(srv *server.Server) error {
 		opts.RateLimit = rate.Limit(rateLimit)
-		bqexporter.InitServer(srv, opts)
-		return nil
+		return bqexporter.InitServer(srv, opts)
 	})
 }
