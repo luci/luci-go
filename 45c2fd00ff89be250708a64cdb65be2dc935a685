@@ -271,6 +271,30 @@
       },
       "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f16d2234_6ce69978",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T22:04:14Z",
+      "side": 1,
+      "message": "i think I won\u0027t have cycles to drive this.\n\ni am also hesitant to define something so ambiguous at such a low level.\n\nlet me abandon this CL and move the discussion back to monorail",
+      "parentUuid": "bf5af79b_cd2401d1",
+      "range": {
+        "startLine": 126,
+        "startChar": 46,
+        "endLine": 127,
+        "endChar": 20
+      },
+      "revId": "45c2fd00ff89be250708a64cdb65be2dc935a685",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
