@@ -16,6 +16,75 @@
       "message": "ptal",
       "revId": "521b8b85b6cf82caf400e5cbd0826a3f788a3cc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be18456d_92e8f149",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:13:25Z",
+      "side": 1,
+      "message": "phew, glad this is useful.",
+      "range": {
+        "startLine": 248,
+        "startChar": 14,
+        "endLine": 248,
+        "endChar": 26
+      },
+      "revId": "521b8b85b6cf82caf400e5cbd0826a3f788a3cc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84706a66_b24534ed",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:13:25Z",
+      "side": 1,
+      "message": "nit-nit/FYI: I lately prefer to test rawBody , as it\u0027s closer to what Gerrit actually sees.",
+      "range": {
+        "startLine": 643,
+        "startChar": 0,
+        "endLine": 651,
+        "endChar": 4
+      },
+      "revId": "521b8b85b6cf82caf400e5cbd0826a3f788a3cc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d6865e8_64418f71",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 910,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:13:25Z",
+      "side": 1,
+      "message": "account_id\n\ns.t. it\u0027s easy to find it in AccountInfo.account_id.",
+      "range": {
+        "startLine": 910,
+        "startChar": 9,
+        "endLine": 910,
+        "endChar": 18
+      },
+      "revId": "521b8b85b6cf82caf400e5cbd0826a3f788a3cc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
