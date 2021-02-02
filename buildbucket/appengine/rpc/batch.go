@@ -154,8 +154,12 @@ func (b *Builds) newPyBBClient(ctx context.Context) (pb.BuildsClient, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get RPC transport to python BB service").Err()
 	}
-	return pb.NewBuildsPRPCClient(&prpc.Client{
-		C:    &http.Client{Transport: t},
-		Host: pyHost,
-	}), nil
+	pClient := &prpc.Client{
+		C:       &http.Client{Transport: t},
+		Host:    pyHost,
+		Options: prpc.DefaultOptions(),
+	}
+	pClient.Options.DispatchPath = "/python"
+	logging.Debugf(ctx, "the prpc Options is %+v", pClient.Options)
+	return pb.NewBuildsPRPCClient(pClient), nil
 }
