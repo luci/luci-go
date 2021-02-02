@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57144f26_88f7fa6c",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T21:59:46Z",
+      "side": 0,
+      "message": "oops, forgot lock. Will re-add in next patchset.",
+      "range": {
+        "startLine": 82,
+        "startChar": 5,
+        "endLine": 82,
+        "endChar": 17
+      },
+      "revId": "142f1e5438687257886cd85508364bcfd63f2e15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
