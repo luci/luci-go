@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ebe17d9_45b0ed37",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T16:47:57Z",
+      "side": 1,
+      "message": "how is this indicated? I\u0027ve read the crbug \u0026 http://b/178235112, but I didn\u0027t grasp 😞",
+      "range": {
+        "startLine": 10,
+        "startChar": 31,
+        "endLine": 10,
+        "endChar": 48
+      },
+      "revId": "2aa585734d40e784c0c89c88e764877d4cb076ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22dc2c6d_0d4013af",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T16:47:57Z",
+      "side": 1,
+      "message": "but you don\u0027t have actual use case, right?",
+      "revId": "2aa585734d40e784c0c89c88e764877d4cb076ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
