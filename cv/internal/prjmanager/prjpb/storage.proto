@@ -85,6 +85,8 @@ message PState {
   //   * CLs referenced by these PRuns may not be tracked;
   //   * If this field is not empty, re-partioning may be required.
   repeated PRun created_pruns = 22;
+  // If set, establishes when components should be re-evaluated.
+  google.protobuf.Timestamp next_eval_time = 23;
 }
 
 enum Status {
