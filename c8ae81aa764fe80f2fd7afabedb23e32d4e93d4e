@@ -340,6 +340,30 @@
       },
       "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "078c7039_ff89c630",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T07:24:59Z",
+      "side": 1,
+      "message": "done in https://crrev.com/c/2665516 \nI rebased the CL.",
+      "parentUuid": "ab7360b6_e2319820",
+      "range": {
+        "startLine": 77,
+        "startChar": 28,
+        "endLine": 77,
+        "endChar": 44
+      },
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
