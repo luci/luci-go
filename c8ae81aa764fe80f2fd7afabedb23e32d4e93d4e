@@ -92,6 +92,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2d877a4a_53cafdd3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T06:55:24Z",
+      "side": 1,
+      "message": "Let me check. But it will also enable other integration tests like ResultDB. \nWould that be ok?",
+      "parentUuid": "8a055f89_039d319f",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e85710a9_ddcc2b6f",
         "filename": "client/cmd/swarming/main_test.go",
         "patchSetId": 7
@@ -103,6 +121,24 @@
       "writtenOn": "2021-02-02T06:31:48Z",
       "side": 1,
       "message": "leave a blank line above?",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5785ffde_4a409783",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T06:55:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e85710a9_ddcc2b6f",
       "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -124,6 +160,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fed5f4d_6e60ff64",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T06:55:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c9dbb43_3656f4d6",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a0e1400c_d7d08526",
@@ -137,6 +191,24 @@
       "writtenOn": "2021-02-02T06:31:48Z",
       "side": 1,
       "message": "ditto",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "266fd8a4_a68bbc46",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T06:55:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0e1400c_d7d08526",
       "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -164,6 +236,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb2c4475_cd83102a",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T06:55:24Z",
+      "side": 1,
+      "message": "This assertion was removed.",
+      "parentUuid": "2ca59782_a69e8733",
+      "range": {
+        "startLine": 67,
+        "startChar": 10,
+        "endLine": 67,
+        "endChar": 23
+      },
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d6fb32d9_5925b10c",
@@ -181,6 +277,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d20b193_aab7a505",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T06:55:24Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "d6fb32d9_5925b10c",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9558c643_cd3de3cc",
@@ -194,6 +308,30 @@
       "writtenOn": "2021-02-02T06:31:48Z",
       "side": 1,
       "message": "better to use constant value for this?",
+      "range": {
+        "startLine": 77,
+        "startChar": 28,
+        "endLine": 77,
+        "endChar": 44
+      },
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ab7360b6_e2319820",
+        "filename": "client/cmd/swarming/main_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T06:55:24Z",
+      "side": 1,
+      "message": "Let me do that in another CL.\nThere are many places.\nhttps://source.chromium.org/search?q\u003df:go%20f:swarming%20SWARMING_TASK_ID\u0026ss\u003dchromium",
+      "parentUuid": "9558c643_cd3de3cc",
       "range": {
         "startLine": 77,
         "startChar": 28,
