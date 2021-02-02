@@ -22,6 +22,30 @@
       },
       "revId": "b27e0c24a9980dfa715ebd90117545ac33c9255b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca718b78_65a1f9dd",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 652,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T23:31:13Z",
+      "side": 1,
+      "message": "yeah, I am not sure about this if statement. If the prefix is missing \"/\", the calling code is wrong. The programmer is better fix their code.\nI\u0027d rather return an error if it doesn\u0027t start with a slash",
+      "parentUuid": "b810a20d_ea3bd0a3",
+      "range": {
+        "startLine": 649,
+        "startChar": 1,
+        "endLine": 652,
+        "endChar": 2
+      },
+      "revId": "b27e0c24a9980dfa715ebd90117545ac33c9255b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
