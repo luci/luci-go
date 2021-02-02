@@ -88,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "525a961a_46da3fca",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:43:21Z",
+      "side": 1,
+      "message": "Oh, I keep forgetting that Go version doesn\u0027t have sort_keys option that I use in Py (https://docs.python.org/3/library/json.html#json.dumps)",
+      "parentUuid": "77874f79_cc37a6ba",
+      "range": {
+        "startLine": 643,
+        "startChar": 0,
+        "endLine": 651,
+        "endChar": 4
+      },
+      "revId": "521b8b85b6cf82caf400e5cbd0826a3f788a3cc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2d6865e8_64418f71",
