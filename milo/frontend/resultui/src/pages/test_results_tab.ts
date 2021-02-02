@@ -24,6 +24,7 @@ import '../components/hotkey';
 import '../components/left_panel';
 import '../components/test_filter';
 import '../components/test_nav_tree';
+import '../components/test_search_filter';
 import '../components/variant_entry';
 import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
@@ -327,6 +328,8 @@ export class TestResultsTabElement extends MobxLitElement {
     return html`
       <div id="header">
         <milo-test-filter></milo-test-filter>
+        <div class="filters-container-delimiter"></div>
+        <milo-test-search-filter></milo-test-search-filter>
         <milo-hotkey key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button
             dense unelevated
@@ -351,15 +354,25 @@ export class TestResultsTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: auto auto 1fr auto;
       grid-gap: 5px;
-      height: 28px;
+      height: 30px;
       padding: 5px 10px 3px 10px;
     }
 
     milo-test-filter {
       margin: 5px;
       margin-bottom: 0px;
+    }
+
+    mwc-button {
+      margin-top: 1px;
+    }
+
+    .filters-container-delimiter {
+      border-left: 1px solid var(--divider-color);
+      width: 0px;
+      height: 100%;
     }
 
     #main {
