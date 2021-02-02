@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf5926fd_ad4f4207",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T21:48:15Z",
+      "side": 1,
+      "message": "PTAL: I\u0027m sorry for the rework. The diff isn\u0027t very meaningful and I couldn\u0027t make it much shorter -- ~250 LoC of logic + same for tests 😞\n\nIf you prefer, I can send CL to remove prior 2 CLs and instead send you this CL from scratch.",
+      "revId": "f19e2aebb82a236c8c7001a983593a3b3953af5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
