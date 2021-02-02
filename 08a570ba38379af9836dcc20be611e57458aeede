@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db95b314_9d26dc52",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T07:50:04Z",
+      "side": 1,
+      "message": "Takuto,\nCan I submit this CL in the meantime? if you don\u0027t have other concerns.\nWe can enable integration tests in CI independently, FWIU.",
+      "revId": "08a570ba38379af9836dcc20be611e57458aeede",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
