@@ -56,6 +56,30 @@
       },
       "revId": "334f0db0149014a13a536c56f02fe80ea2b221e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c1ceeaa_c6f403fb",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T22:14:08Z",
+      "side": 1,
+      "message": "I\u0027ll refactor this to return both booleans for extra clarity.",
+      "parentUuid": "378339f2_02b34a48",
+      "range": {
+        "startLine": 351,
+        "startChar": 8,
+        "endLine": 352,
+        "endChar": 1
+      },
+      "revId": "334f0db0149014a13a536c56f02fe80ea2b221e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
