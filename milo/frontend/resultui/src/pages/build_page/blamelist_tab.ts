@@ -225,8 +225,12 @@ export class BlamelistTabElement extends MobxLitElement {
       display: grid;
       grid-template-columns: 1fr auto;
       grid-gap: 5px;
-      height: 28px;
-      padding: 5px 10px;
+      height: 30px;
+      padding: 5px 10px 3px 10px;
+    }
+
+    mwc-button {
+      margin-top: 1px;
     }
 
     #repo-selector {
@@ -235,15 +239,14 @@ export class BlamelistTabElement extends MobxLitElement {
     #repo-select {
       display: inline-block;
       width: 450px;
-      padding: .3rem .5rem;
+      padding: .27rem .5rem;
       font-size: 1rem;
-      line-height: 1.5;
       color: var(--light-text-color);
       background-clip: padding-box;
       border: 1px solid var(--divider-color);
       border-radius: .25rem;
       transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-      text-overflow: ellipsis
+      text-overflow: ellipsis;
     }
 
     #blamelist-summary {
