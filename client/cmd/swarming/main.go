@@ -53,7 +53,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{
-			"SWARMING_TASK_ID": {
+			lib.TaskIDEnvVar: {
 				Advanced: true,
 				ShortDesc: ("Used when processing new triggered tasks. Is used as the " +
 					"parent task ID for the newly triggered tasks."),

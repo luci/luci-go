@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/client/archiver"
+	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/errors"
 	commonisolated "go.chromium.org/luci/common/isolated"
@@ -186,7 +187,7 @@ func Run(ctx context.Context, command []string, cwd string, env environ.Env, har
 		fmt.Fprint(os.Stderr, `<The executable does not exist or a dependent library is missing>
 <Check for missing .so/.dll in the .isolate or GN file>
 `)
-		if _, ok := environ.System().Get("SWARMING_TASK_ID"); ok {
+		if _, ok := environ.System().Get(swarminglib.TaskIDEnvVar); ok {
 			fmt.Fprint(os.Stderr, `<See the task's page for commands to help diagnose this issue by reproducing the task locally>
 `)
 		}
