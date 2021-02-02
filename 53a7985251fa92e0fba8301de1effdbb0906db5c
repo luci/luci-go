@@ -39,6 +39,30 @@
       },
       "revId": "53a7985251fa92e0fba8301de1effdbb0906db5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2dd793b7_3507a7ea",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-02T19:24:18Z",
+      "side": 1,
+      "message": "I think this was from the early days when we were fretting about\n\n    ctx, err :\u003d WithWhatever(arg)\n    if err !\u003d nil {\n      logging.Errorf(ctx, \"whoops, ctx is nil now\")\n    }\n\nPassing by pointer indicated that WithWhatever would only overwrite ctx if there was no error.\n\nOf course we could just document that WithWhatever always returns a non-nil context....",
+      "parentUuid": "f79d78b2_db938052",
+      "range": {
+        "startLine": 41,
+        "startChar": 26,
+        "endLine": 41,
+        "endChar": 29
+      },
+      "revId": "53a7985251fa92e0fba8301de1effdbb0906db5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
