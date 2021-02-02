@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d11fc59_02bf0dc7",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-02T00:45:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9b6c9f9_1e1eadcf",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 3
+      },
+      "revId": "221fd0013bc6b358d2365ccfaa5d7912dbd8b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d19bf0a0_57517514",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3808dce_1d1f471e",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-02T00:45:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d19bf0a0_57517514",
+      "range": {
+        "startLine": 51,
+        "startChar": 14,
+        "endLine": 52,
+        "endChar": 53
+      },
+      "revId": "221fd0013bc6b358d2365ccfaa5d7912dbd8b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "116e5e21_967ba7e4",
@@ -77,6 +125,30 @@
       "writtenOn": "2021-01-29T17:08:22Z",
       "side": 1,
       "message": "consider\n1) artifact with name \"....myartifact1\" with part 2.\n2) artifact with name \"...myartifact\" with part 12.\n\nthey produce the same id.\n\nwe need a delimiter, e.g. \"%s/%d\"",
+      "range": {
+        "startLine": 84,
+        "startChar": 28,
+        "endLine": 84,
+        "endChar": 32
+      },
+      "revId": "221fd0013bc6b358d2365ccfaa5d7912dbd8b921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0171bc0_ef1f4af6",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-02T00:45:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "116e5e21_967ba7e4",
       "range": {
         "startLine": 84,
         "startChar": 28,
