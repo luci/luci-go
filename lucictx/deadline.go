@@ -40,15 +40,6 @@ func secsToDuration(secs float64) time.Duration {
 	return time.Duration(secs * float64(time.Second))
 }
 
-func unixFloatToTime(t float64) time.Time {
-	int, frac := math.Modf(t)
-	return time.Unix(int64(int), int64(frac*1e9)).UTC()
-}
-
-func timeToUnixFloat(t time.Time) float64 {
-	return float64(t.Unix()) + (float64(t.Nanosecond()) / 1e9)
-}
-
 // DeadlineEvent is the type pushed into the cleanup channel returned by
 // AdjustDeadline.
 type DeadlineEvent int
@@ -213,7 +204,7 @@ func AdjustDeadline(ctx context.Context, reserve, reserveCleanup time.Duration) 
 	}
 	var lucictxSoftDeadline time.Time
 	if d.SoftDeadline != 0 {
-		lucictxSoftDeadline = unixFloatToTime(d.SoftDeadline)
+		lucictxSoftDeadline = d.SoftDeadlineTime()
 	}
 	adjustedSoftDeadline := earlier(ctxSoftDeadline, lucictxSoftDeadline)
 
@@ -222,7 +213,7 @@ func AdjustDeadline(ctx context.Context, reserve, reserveCleanup time.Duration) 
 	// Set up hard deadline in context, set Deadline.soft_deadline
 	if !adjustedSoftDeadline.IsZero() {
 		adjustedSoftDeadline = adjustedSoftDeadline.Add(-reserve)
-		d.SoftDeadline = timeToUnixFloat(adjustedSoftDeadline)
+		d.SetSoftDeadline(adjustedSoftDeadline)
 		needSet = true
 		// we add adjustedGrace back because the ctx deadline is the HARD deadline;
 		// it must occur `adjustedGrace` after the SoftDeadline.
@@ -338,7 +329,47 @@ func SetDeadline(ctx context.Context, d *Deadline) context.Context {
 		d = &Deadline{GracePeriod: DefaultGracePeriod.Seconds()}
 	}
 	if deadline, ok := ctx.Deadline(); ok && d.SoftDeadline == 0 {
-		d.SoftDeadline = timeToUnixFloat(deadline) - d.GracePeriod
+		d.SetSoftDeadline(deadline)
+		d.SoftDeadline -= d.GracePeriod
 	}
 	return Set(ctx, "deadline", d)
+}
+
+// InGracePeriod returns `true` if the clock.Now(ctx) is currently within the
+// grace period defined by GetDeadline(ctx), falling back to DefaultGracePeriod
+// and ctx.Deadline(), if set.
+//
+// See AdjustDeadline for details around deadlines and grace periods.
+func InGracePeriod(ctx context.Context) bool {
+	dl := GetDeadline(ctx)
+	if dl == nil {
+		dl = GetDeadline(SetDeadline(ctx, nil))
+	}
+	if dl.SoftDeadline == 0 {
+		return false
+	}
+	return clock.Now(ctx).After(dl.SoftDeadlineTime())
+}
+
+// SoftDeadlineTime returns the SoftDeadline as a time.Time.
+//
+// If SoftDeadline is 0 (or *Deadline is nil) this returns a Zero Time.
+func (d *Deadline) SoftDeadlineTime() time.Time {
+	if d.GetSoftDeadline() == 0 {
+		return time.Time{}
+	}
+
+	int, frac := math.Modf(d.SoftDeadline)
+	return time.Unix(int64(int), int64(frac*1e9)).UTC()
+}
+
+// SetSoftDeadline sets the SoftDeadline from a time.Time.
+//
+// If t.IsZero, this sets the SoftDeadline to 0 as well.
+func (d *Deadline) SetSoftDeadline(t time.Time) {
+	if t.IsZero() {
+		d.SoftDeadline = 0
+	} else {
+		d.SoftDeadline = float64(t.Unix()) + (float64(t.Nanosecond()) / 1e9)
+	}
 }
