@@ -86,6 +86,10 @@ type Options struct {
 	// be large (e.g. 100) if exports small invocations (1000 results per
 	// invocation).
 	TaskWorkers int
+
+	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
+	// storage. Example: "projects/luci-resultdb/instances/artifacts".
+	ArtifactRBEInstance string
 }
 
 // DefaultOptions returns Options with default values.
