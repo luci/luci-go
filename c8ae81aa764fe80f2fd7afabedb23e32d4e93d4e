@@ -180,6 +180,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a09789a3_acb3328f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T21:43:59Z",
+      "side": 1,
+      "message": "Thank you for your confirmation. will enable it on CI.",
+      "parentUuid": "dd6a47e8_973ad513",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e85710a9_ddcc2b6f",
