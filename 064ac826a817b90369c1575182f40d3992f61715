@@ -52,6 +52,24 @@
       "parentUuid": "3d9adac3_837c4f16",
       "revId": "064ac826a817b90369c1575182f40d3992f61715",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e38fa11e_ddd50bde",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-02-02T04:29:34Z",
+      "side": 1,
+      "message": "Looks great, thanks!\n\nBTW, what\u0027s your plan with adding status:skipped? Is there any reason to do that if we have the filter checkboxes? Or are you thinking of removing them?",
+      "parentUuid": "794568f4_2dcc1a73",
+      "revId": "064ac826a817b90369c1575182f40d3992f61715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
