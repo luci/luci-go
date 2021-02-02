@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba96ffc8_99c75a2d",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T22:30:00Z",
+      "side": 1,
+      "message": "follow up in https://crrev.com/c/2668271",
+      "parentUuid": "b00e6fbd_48c237f6",
+      "revId": "d602f324300f00c994ab3df983a2367277493e86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d5c1f18d_491c750b",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-02-02T08:23:08Z",
       "side": 1,
       "message": "note that this is not swarming specific; USER is a well-known environment variable in POSIX (e.g. https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html)",
+      "revId": "d602f324300f00c994ab3df983a2367277493e86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55c96af5_70b3b5c6",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-02T22:30:00Z",
+      "side": 1,
+      "message": "I should have said \"environment variables used in swarming client\". added a comment in the CL.",
+      "parentUuid": "d5c1f18d_491c750b",
       "revId": "d602f324300f00c994ab3df983a2367277493e86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
