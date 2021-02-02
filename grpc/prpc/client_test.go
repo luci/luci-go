@@ -49,7 +49,7 @@ import (
 func sayHello(c C) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.So(r.Method, ShouldEqual, "POST")
-		c.So(r.URL.Path, ShouldEqual, "/prpc/prpc.Greeter/SayHello")
+		c.So(r.URL.Path == "/prpc/prpc.Greeter/SayHello" || r.URL.Path == "/python/prpc/prpc.Greeter/SayHello", ShouldBeTrue)
 		c.So(r.Header.Get("Content-Type"), ShouldEqual, "application/prpc; encoding=binary")
 		c.So(r.Header.Get("User-Agent"), ShouldEqual, "prpc-test")
 
@@ -70,6 +70,9 @@ func sayHello(c C) http.HandlerFunc {
 		w.Header().Set("X-Lower-Case-Header", "CamelCaseValueStays")
 
 		res := HelloReply{Message: "Hello " + req.Name}
+		if r.URL.Path == "/python/prpc/prpc.Greeter/SayHello" {
+			res.Message = res.Message + " from python service"
+		}
 		var buf []byte
 
 		if req.Name == "ACCEPT JSONPB" {
@@ -192,6 +195,17 @@ func TestClient(t *testing.T) {
 				So(hd["x-lower-case-header"], ShouldResemble, []string{"CamelCaseValueStays"})
 
 				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
+			})
+
+			Convey("Works with PathPrefix", func(c C) {
+				client, server := setUp(sayHello(c))
+				defer server.Close()
+
+				client.PathPrefix = "/python/prpc"
+				var hd metadata.MD
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
+				So(err, ShouldBeNil)
+				So(res.Message, ShouldEqual, "Hello John from python service")
 			})
 
 			Convey("Works with response in JSONPB", func(c C) {
