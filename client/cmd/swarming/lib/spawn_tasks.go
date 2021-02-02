@@ -151,8 +151,8 @@ func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest
 
 	// Populate the tasks with information about the current envirornment
 	// if they're not already set.
-	currentUser := os.Getenv("USER")
-	parentTaskID := os.Getenv("SWARMING_TASK_ID")
+	currentUser := os.Getenv(UserEnvVar)
+	parentTaskID := os.Getenv(TaskIDEnvVar)
 	for _, request := range requests.Requests {
 		if request.User == "" {
 			request.User = currentUser

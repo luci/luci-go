@@ -29,8 +29,8 @@ import (
 
 func init() {
 	// So that this test works on swarming!
-	os.Unsetenv("SWARMING_SERVER")
-	os.Unsetenv("SWARMING_TASK_ID")
+	os.Unsetenv(ServerEnvVar)
+	os.Unsetenv(TaskIDEnvVar)
 }
 
 // Make sure that stringmapflag.Value are returned as sorted arrays.
@@ -352,11 +352,11 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 		slice := result.TaskSlices[0]
 		So(slice.Properties.Dimensions, ShouldResemble,
 			[]*swarming.SwarmingRpcsStringPair{
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "foo",
 					Value: "abc",
 				},
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "bar",
 					Value: "def",
 				},
@@ -366,7 +366,7 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 		slice = result.TaskSlices[1]
 		So(slice.Properties.Dimensions, ShouldResemble,
 			[]*swarming.SwarmingRpcsStringPair{
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "foo",
 					Value: "abc",
 				},

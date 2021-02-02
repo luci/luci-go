@@ -46,6 +46,12 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
+const (
+	ServerEnvVar = "SWARMING_SERVER"
+	TaskIDEnvVar = "SWARMING_TASK_ID"
+	UserEnvVar   = "USER"
+)
+
 // triggerResults is a set of results from using the trigger subcommand,
 // describing all of the tasks that were triggered successfully.
 type triggerResults struct {
@@ -329,8 +335,8 @@ type commonFlags struct {
 func (c *commonFlags) Init(authOpts auth.Options) {
 	c.defaultFlags.Init(&c.Flags)
 	c.authFlags.Register(&c.Flags, authOpts)
-	c.Flags.StringVar(&c.serverURL, "server", os.Getenv("SWARMING_SERVER"), "Server URL; required. Set $SWARMING_SERVER to set a default.")
-	c.Flags.StringVar(&c.serverURL, "S", os.Getenv("SWARMING_SERVER"), "Alias for -server.")
+	c.Flags.StringVar(&c.serverURL, "server", os.Getenv(ServerEnvVar), fmt.Sprintf("Server URL; required. Set $%s to set a default.", ServerEnvVar))
+	c.Flags.StringVar(&c.serverURL, "S", os.Getenv(ServerEnvVar), "Alias for -server.")
 	c.Flags.IntVar(&c.worker, "worker", 8, "Number of workers used to download isolated files.")
 }
 

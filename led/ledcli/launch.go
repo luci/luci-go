@@ -23,6 +23,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
+	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
@@ -97,7 +98,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 		UserID:          uid,
 		FinalBuildProto: "build.proto.json",
 		KitchenSupport:  c.kitchenSupport,
-		ParentTaskId:    os.Getenv("SWARMING_TASK_ID"),
+		ParentTaskId:    os.Getenv(swarminglib.TaskIDEnvVar),
 		ResultDB:        c.resultdb,
 	})
 	if err != nil {

@@ -19,6 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/lucictx"
@@ -50,10 +51,10 @@ func populateSwarmingInfoFromEnv(build *bbpb.Build, env environ.Env) {
 	}
 
 	swarming := build.Infra.Swarming
-	if v, ok := env.Get("SWARMING_SERVER"); ok && swarming.Hostname == "" {
+	if v, ok := env.Get(swarminglib.ServerEnvVar); ok && swarming.Hostname == "" {
 		swarming.Hostname = v
 	}
-	if v, ok := env.Get("SWARMING_TASK_ID"); ok && swarming.TaskId == "" {
+	if v, ok := env.Get(swarminglib.TaskIDEnvVar); ok && swarming.TaskId == "" {
 		swarming.TaskId = v
 	}
 }

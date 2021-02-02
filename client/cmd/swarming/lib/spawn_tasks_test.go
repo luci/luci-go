@@ -93,8 +93,8 @@ func TestProcessTasksStream(t *testing.T) {
 		}`))
 		// Set environment variables to ensure they get picked up.
 		defer mockEnv(map[string]string{
-			"USER":             "test",
-			"SWARMING_TASK_ID": "293109284abc",
+			UserEnvVar:   "test",
+			TaskIDEnvVar: "293109284abc",
 		})()
 		result, err := processTasksStream(r)
 		So(err, ShouldBeNil)
