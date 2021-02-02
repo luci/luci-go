@@ -275,12 +275,14 @@ type StatusDetails struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// If set, indicates that the failure was due to a resource exhaustion / quota
+	// If set, indicates that the build ended due to a resource exhaustion / quota
 	// denial.
-	// Applicable in FAILURE and INFRA_FAILURE statuses.
+	// Applicable in all final statuses; SUCCESS+resource_exhaustion could
+	// indicate a successful recovery from lack of resources.
 	ResourceExhaustion *StatusDetails_ResourceExhaustion `protobuf:"bytes,3,opt,name=resource_exhaustion,json=resourceExhaustion,proto3" json:"resource_exhaustion,omitempty"`
-	// If set, indicates that the failure was due to a timeout.
-	// Applicable in FAILURE and INFRA_FAILURE statuses.
+	// If set, indicates that the build ended due to a timeout.
+	// Applicable in all final statuses; SUCCESS+timeout could
+	// indicate a successful recovery from a timeout.
 	Timeout *StatusDetails_Timeout `protobuf:"bytes,4,opt,name=timeout,proto3" json:"timeout,omitempty"`
 }
 
