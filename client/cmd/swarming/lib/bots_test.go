@@ -17,6 +17,8 @@ package lib
 import (
 	"testing"
 
+	"go.chromium.org/luci/auth"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -24,7 +26,7 @@ import (
 func TestBotsParse(t *testing.T) {
 	Convey(`Make sure that Parse fails with -quiet without -json.`, t, func() {
 		b := botsRun{}
-		b.Init(&testAuthFlags{})
+		b.Init(auth.Options{})
 		err := b.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-quiet"})
 		So(err, ShouldBeNil)
 		err = b.Parse()

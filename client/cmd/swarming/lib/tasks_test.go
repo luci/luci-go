@@ -17,6 +17,8 @@ package lib
 import (
 	"testing"
 
+	"go.chromium.org/luci/auth"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -24,7 +26,7 @@ import (
 func TestTasksParse(t *testing.T) {
 	Convey(`Make sure that Parse fails with zero -limit.`, t, func() {
 		t := tasksRun{}
-		t.Init(&testAuthFlags{})
+		t.Init(auth.Options{})
 		err := t.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-limit", "0"})
 		So(err, ShouldBeNil)
 		So(t.Parse(), ShouldErrLike, "must be positive")
@@ -32,7 +34,7 @@ func TestTasksParse(t *testing.T) {
 
 	Convey(`Make sure that Parse fails with negative -limit.`, t, func() {
 		t := tasksRun{}
-		t.Init(&testAuthFlags{})
+		t.Init(auth.Options{})
 		err := t.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-limit", "-1"})
 		So(err, ShouldBeNil)
 		So(t.Parse(), ShouldErrLike, "must be positive")
@@ -40,7 +42,7 @@ func TestTasksParse(t *testing.T) {
 
 	Convey(`Make sure that Parse fails with -quiet without -json.`, t, func() {
 		t := tasksRun{}
-		t.Init(&testAuthFlags{})
+		t.Init(auth.Options{})
 		err := t.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-quiet"})
 		So(err, ShouldBeNil)
 		So(t.Parse(), ShouldErrLike, "specify -json")
