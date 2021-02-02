@@ -19,6 +19,8 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,6 +29,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/client/cmd/swarming/lib"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -46,7 +49,7 @@ func runCmd(t *testing.T, cmd string, args ...string) int {
 	if !runIntegrationTests() {
 		t.Skipf("Skip integration tests")
 	}
-	args = append([]string{cmd, "-server", "chromium-swarm-dev.appspot.com"}, args...)
+	args = append([]string{cmd, "-server", "chromium-swarm-dev.appspot.com", "-quiet"}, args...)
 	return subcommands.Run(getApplication(chromeinfra.DefaultAuthOptions()), args)
 }
 
@@ -56,7 +59,7 @@ func TestBotsCommand(t *testing.T) {
 		dir := t.TempDir()
 		jsonPath := filepath.Join(dir, "out.json")
 
-		So(runCmd(t, "bots", "-quiet", "-json", jsonPath), ShouldEqual, 0)
+		So(runCmd(t, "bots", "-json", jsonPath), ShouldEqual, 0)
 	})
 }
 
@@ -66,24 +69,127 @@ func TestTasksCommand(t *testing.T) {
 		dir := t.TempDir()
 		jsonPath := filepath.Join(dir, "out.json")
 
-		So(runCmd(t, "tasks", "-limit", "1", "-quiet", "-json", jsonPath), ShouldEqual, 0)
+		So(runCmd(t, "tasks", "-limit", "1", "-json", jsonPath), ShouldEqual, 0)
 	})
 }
 
-func TestTriggerCommand(t *testing.T) {
-	// Unset SWARMING_TASK_ID otherwise the trigger may fail for parent task association.
+// unsetParentTaskID unset SWARMING_TASK_ID environment variable, otherwise task trigger may fail for parent task association.
+func unsetParentTaskID(t *testing.T) {
 	parentTaskID := os.Getenv(lib.TaskIDEnvVar)
 	os.Unsetenv(lib.TaskIDEnvVar)
 	t.Cleanup(func() {
 		os.Setenv(lib.TaskIDEnvVar, parentTaskID)
 	})
+}
+
+func triggerTask(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetadata {
+	dir := t.TempDir()
+	jsonPath := filepath.Join(dir, "out.json")
+	args := []string{
+		"-d", "pool=chromium.tests",
+		"-d", "os=Linux",
+		"-dump-json", jsonPath,
+		"-idempotent",
+		"--", "/bin/echo", "hi",
+	}
+	So(runCmd(t, "trigger", args...), ShouldEqual, 0)
+
+	taskJSON, err := ioutil.ReadFile(jsonPath)
+	So(err, ShouldBeNil)
+
+	results := &lib.TriggerResults{}
+	err = json.Unmarshal(taskJSON, results)
+	So(err, ShouldBeNil)
+	So(results.Tasks, ShouldHaveLength, 1)
+
+	return results.Tasks[0]
+}
+
+func TestTriggerCommand(t *testing.T) {
+	unsetParentTaskID(t)
 	Convey(`ok`, t, func() {
-		args := []string{
-			"-d", "pool=chromium.tests",
-			"-d", "os=Linux",
-			"-idempotent",
-			"--", "/bin/echo", "hi",
-		}
-		So(runCmd(t, "trigger", args...), ShouldEqual, 0)
+		triggerTask(t)
+	})
+}
+
+func TestCollectCommand(t *testing.T) {
+	unsetParentTaskID(t)
+	Convey(`ok`, t, func() {
+		triggeredTask := triggerTask(t)
+		dir := t.TempDir()
+		So(runCmd(t, "collect", "-output-dir", dir, triggeredTask.TaskId), ShouldEqual, 0)
+	})
+}
+
+func TestRequestShowCommand(t *testing.T) {
+	unsetParentTaskID(t)
+	Convey(`ok`, t, func() {
+		triggeredTask := triggerTask(t)
+		So(runCmd(t, "request_show", triggeredTask.TaskId), ShouldEqual, 0)
+	})
+}
+
+const spawnTaskInputJSON = `
+{
+  "requests": [
+    {
+      "name": "spawn-task test",
+      "priority": "200",
+      "task_slices": [
+        {
+          "expiration_secs": "21600",
+          "properties": {
+            "dimensions": [
+              {"key": "pool", "value": "chromium.tests"},
+              {"key": "os", "value": "Linux"}
+            ],
+            "command": ["/bin/echo", "hi"],
+            "execution_timeout_secs": "3600",
+            "idempotent": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "spawn-task test",
+      "priority": "200",
+      "task_slices": [
+        {
+          "expiration_secs": "21600",
+          "properties": {
+            "dimensions": [
+              {"key": "pool", "value": "chromium.tests"},
+              {"key": "os", "value": "Linux"}
+            ],
+            "command": ["/bin/echo", "hi"],
+            "execution_timeout_secs": "3600",
+            "idempotent": true
+          }
+        }
+      ]
+    }
+  ]
+}
+`
+
+func TestSpawnTasksCommand(t *testing.T) {
+	unsetParentTaskID(t)
+	Convey(`ok`, t, func() {
+		// prepare input file.
+		dir := t.TempDir()
+		inputPath := filepath.Join(dir, "input.json")
+		err := ioutil.WriteFile(inputPath, []byte(spawnTaskInputJSON), 0600)
+		So(err, ShouldBeNil)
+
+		outputPath := filepath.Join(dir, "output.json")
+		So(runCmd(t, "spawn_task", "-json-input", inputPath, "-json-output", outputPath), ShouldEqual, 0)
+
+		outputJSON, err := ioutil.ReadFile(outputPath)
+		So(err, ShouldBeNil)
+
+		results := &lib.TriggerResults{}
+		err = json.Unmarshal(outputJSON, results)
+		So(err, ShouldBeNil)
+		So(results.Tasks, ShouldHaveLength, 2)
 	})
 }
