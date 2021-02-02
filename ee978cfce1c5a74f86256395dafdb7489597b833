@@ -85,6 +85,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "17768a00_b10c8ba3",
+        "filename": "vpython/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-02-02T03:20:54Z",
+      "side": 1,
+      "message": "Ah, thanks I hadn\u0027t encountered that acronym before. Looks like the official Python docs call it just \"interactive mode\".\n\nHowever, I think it\u0027s confusing to use either \"repl\" or \"interactive mode\" when the script is specified as \u0027-\u0027, since that\u0027s not actually interactive in the same sense.\n\nMy suggestion:\n- Rename the \"interactive\" variable to something like \"noScript\", \"scriptFromStdin\", etc.\n- Update the comments and logging to use similar terminology.\n\nIt\u0027s a small thing but I don\u0027t want the code/comments/logging to be confusing for people to read.",
+      "parentUuid": "528d1440_bd2812d1",
+      "range": {
+        "startLine": 145,
+        "startChar": 37,
+        "endLine": 145,
+        "endChar": 41
+      },
+      "revId": "ee978cfce1c5a74f86256395dafdb7489597b833",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d24ce80f_2c96bbfd",
         "filename": "vpython/spec/load.go",
         "patchSetId": 3
