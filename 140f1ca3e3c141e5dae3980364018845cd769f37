@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eafa77da_99e7032f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-02T21:56:27Z",
+      "side": 1,
+      "message": "Moved it into the Client struct.",
+      "parentUuid": "2323654b_9fbc1a4b",
+      "revId": "140f1ca3e3c141e5dae3980364018845cd769f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5ac071c3_e5b89ee0",
@@ -49,6 +67,30 @@
       "writtenOn": "2021-02-02T16:36:30Z",
       "side": 1,
       "message": "IMO, this is not helpful, especially once BB Python is removed.\n\nHow about:\n\nDispatchPath, if given, is prefixed to \"/prpc/\u003cservice\u003e/\u003cmethod\u003e\" when making HTTP requests.\nUseful if pRPC server listens on non-default host[:port]/prpc/.+. Must start with \u0027/\u0027.",
+      "range": {
+        "startLine": 51,
+        "startChar": 33,
+        "endLine": 52,
+        "endChar": 78
+      },
+      "revId": "140f1ca3e3c141e5dae3980364018845cd769f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6807d7e4_f4341105",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-02T21:56:27Z",
+      "side": 1,
+      "message": "changed the description slightly as the default is /prpc.",
+      "parentUuid": "5ac071c3_e5b89ee0",
       "range": {
         "startLine": 51,
         "startChar": 33,
@@ -96,6 +138,30 @@
       "side": 1,
       "message": "+1, my thoughts exactly",
       "parentUuid": "e3592935_72367ab5",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 13
+      },
+      "revId": "140f1ca3e3c141e5dae3980364018845cd769f37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3716f0f9_a5c1d99a",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-02T21:56:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09aa29fc_494df44f",
       "range": {
         "startLine": 53,
         "startChar": 1,
