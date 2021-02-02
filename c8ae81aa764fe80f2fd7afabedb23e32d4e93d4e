@@ -110,6 +110,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e182e76a_d6c4b4bb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-02T07:44:23Z",
+      "side": 1,
+      "message": "chanli@, are you fine to enable integration tests in CI?",
+      "parentUuid": "2d877a4a_53cafdd3",
+      "revId": "c8ae81aa764fe80f2fd7afabedb23e32d4e93d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e85710a9_ddcc2b6f",
         "filename": "client/cmd/swarming/main_test.go",
         "patchSetId": 7
