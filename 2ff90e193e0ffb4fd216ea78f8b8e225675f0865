@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4de6a63e_a5756845",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:57:35Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "2ff90e193e0ffb4fd216ea78f8b8e225675f0865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "735a63f6_01824dac",
+        "filename": "cv/internal/run/impl/handler/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:57:35Z",
+      "side": 1,
+      "message": "is this for ease of testing of PM?\nupdate: indeed, i see it.",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 24
+      },
+      "revId": "2ff90e193e0ffb4fd216ea78f8b8e225675f0865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "136cebbf_09128553",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:57:35Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 0
+      },
+      "revId": "2ff90e193e0ffb4fd216ea78f8b8e225675f0865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b8e9201_ffdbbc39",
+        "filename": "cv/internal/run/impl/manager_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:57:35Z",
+      "side": 1,
+      "message": "fwiw: this is a good test. I wanted to skimp on such a test and just rely on more end-to-end-ish tests of PM. But, i\u0027ll probably change my mind.\n\nI think we should similarize structure \u0026 tests of PM and RM after we get a bit more experience.",
+      "revId": "2ff90e193e0ffb4fd216ea78f8b8e225675f0865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a99993cd_23ca10e9",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-02T00:57:35Z",
+      "side": 1,
+      "message": "can it be private?",
+      "range": {
+        "startLine": 55,
+        "startChar": 20,
+        "endLine": 55,
+        "endChar": 27
+      },
+      "revId": "2ff90e193e0ffb4fd216ea78f8b8e225675f0865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
