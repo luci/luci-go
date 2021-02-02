@@ -140,11 +140,9 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client BuildsClie
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
 
 		var req *bbpb.UpdateBuildRequest
-		var final bool
 
 		if b.Meta != nil {
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
-			final = protoutil.IsEnded(req.Build.Status)
 		} else {
 			build := b.Data[0].(*bbpb.Build)
 			req = &bbpb.UpdateBuildRequest{
@@ -157,12 +155,8 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client BuildsClie
 					},
 				},
 			}
-			final = protoutil.IsEnded(build.Status)
-			if final {
-				if build.Status != bbpb.Status_SUCCESS {
-					req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.status")
-				}
-			}
+			// We never include status here; bbagent will do one final send after the
+			// dispatcher channel is closed which includes status.
 			if len(build.Tags) > 0 {
 				req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.tags")
 			}
