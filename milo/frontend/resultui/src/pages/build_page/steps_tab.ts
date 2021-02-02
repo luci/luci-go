@@ -182,8 +182,12 @@ export class StepsTabElement extends MobxLitElement {
       display: grid;
       grid-template-columns: auto auto auto 1fr auto;
       grid-gap: 5px;
-      height: 28px;
+      height: 30px;
       padding: 5px 10px 3px 10px;
+    }
+
+    mwc-button {
+      margin-top: 1px;
     }
 
     .filters-container {
