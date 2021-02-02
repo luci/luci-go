@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9accd35a_0a353d76",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-02T22:01:26Z",
+      "side": 1,
+      "message": "should this check be actually implemented?",
+      "range": {
+        "startLine": 130,
+        "startChar": 31,
+        "endLine": 130,
+        "endChar": 51
+      },
+      "revId": "cdc6ce7e8c504727f3e22a41557bb7012386a43b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
