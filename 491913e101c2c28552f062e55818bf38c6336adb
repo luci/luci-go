@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8c6622b_4f644971",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-02T02:57:19Z",
+      "side": 1,
+      "message": "PTAL. More extensive tests for new functionality will be in the next CL, this one is already huge.\n\nOne issue is what to use for non-existing/hidden prefix: HTTP 403 or HTTP 404? Right now Logdog can tell if you are allowed to see *any* prefix in e.g. \"chromium\" and it safely responds with \"HTTP 404 Not Found\" for gibberish requests under chromium/*. \n\nIn the model it will respond with \"HTTP 403 The resource doesn\u0027t exist or you do not have permission to access it\". Perhaps it should be \"HTTP 404 The resource doesn\u0027t exist or you do not have permission to access it\"? Then it will also be 404 when quering for streams in a gibberish project.",
+      "revId": "491913e101c2c28552f062e55818bf38c6336adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
