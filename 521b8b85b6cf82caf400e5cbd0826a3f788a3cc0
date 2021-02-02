@@ -64,6 +64,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "77874f79_cc37a6ba",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-02T00:22:40Z",
+      "side": 1,
+      "message": "That would work But I\u0027m wondering if that might cause flaky test cause there\u0027s not guarantee that json.Marshal is deterministic or is it implicitly assumed?",
+      "parentUuid": "84706a66_b24534ed",
+      "range": {
+        "startLine": 643,
+        "startChar": 0,
+        "endLine": 651,
+        "endChar": 4
+      },
+      "revId": "521b8b85b6cf82caf400e5cbd0826a3f788a3cc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2d6865e8_64418f71",
@@ -77,6 +101,30 @@
       "writtenOn": "2021-02-02T00:13:25Z",
       "side": 1,
       "message": "account_id\n\ns.t. it\u0027s easy to find it in AccountInfo.account_id.",
+      "range": {
+        "startLine": 910,
+        "startChar": 9,
+        "endLine": 910,
+        "endChar": 18
+      },
+      "revId": "521b8b85b6cf82caf400e5cbd0826a3f788a3cc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47065093_c9c6ea03",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 910,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-02T00:22:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d6865e8_64418f71",
       "range": {
         "startLine": 910,
         "startChar": 9,
