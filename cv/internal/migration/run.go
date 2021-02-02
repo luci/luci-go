@@ -125,6 +125,8 @@ type FinishedRun struct {
 
 	// TODO(yiwzhang): Store rest of the data (e.g. tryjobs) reported by
 	// CQDaemon. This will help CV accumulate more historical data.
+	// XXX this is part of bug 1173168; we want to store the Attempt
+	// proto (BQ payload) here.
 }
 
 var terminalStatusMapping = map[cvbqpb.AttemptStatus]run.Status{
