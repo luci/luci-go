@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "85a073e5_f6641724",
+        "filename": "logdog/appengine/coordinator/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-02T22:23:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f64a187f_47b77346",
+      "range": {
+        "startLine": 37,
+        "startChar": 54,
+        "endLine": 37,
+        "endChar": 63
+      },
+      "revId": "34c94240a41080629caf670b8ff0221054720b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "48d9b0fd_282b2a44",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd4285e9_c4e34f54",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-02T22:23:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48d9b0fd_282b2a44",
+      "revId": "34c94240a41080629caf670b8ff0221054720b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e8391d83_228fbe7c",
@@ -71,6 +113,24 @@
       "writtenOn": "2021-02-02T08:42:14Z",
       "side": 1,
       "message": "doesn\u0027t HasPermission do this check already?",
+      "revId": "34c94240a41080629caf670b8ff0221054720b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b688d8e6_f00066a6",
+        "filename": "logdog/appengine/coordinator/flex/logs/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-02T22:23:28Z",
+      "side": 1,
+      "message": "Good point, simplified.",
+      "parentUuid": "e8391d83_228fbe7c",
       "revId": "34c94240a41080629caf670b8ff0221054720b90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
