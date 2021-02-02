@@ -223,10 +223,9 @@ func TestUpdate(t *testing.T) {
 				Snapshot:         snap,
 				ApplicableConfig: acfg,
 				AddDependentMeta: asdep,
-			}, func(ctx context.Context, id common.CLID, ev int) error {
+			}, func(ctx context.Context, cl *CL) error {
 				So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
-				So(id, ShouldBeGreaterThan, 0)
-				So(ev, ShouldEqual, 1)
+				So(cl.EVersion, ShouldEqual, 1)
 				return nil
 			})
 			So(err, ShouldBeNil)
@@ -249,10 +248,9 @@ func TestUpdate(t *testing.T) {
 
 			snap := makeSnapshot(epoch)
 			err = Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{Snapshot: snap},
-				func(ctx context.Context, id common.CLID, ev int) error {
+				func(ctx context.Context, cl *CL) error {
 					So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
-					So(id, ShouldEqual, cl.ID)
-					So(ev, ShouldEqual, 2)
+					So(cl.EVersion, ShouldEqual, 2)
 					return nil
 				})
 			So(err, ShouldBeNil)
@@ -271,10 +269,9 @@ func TestUpdate(t *testing.T) {
 				acfg2 := makeApplicableConfig(epoch.Add(time.Minute))
 				err = Update(ctx, "" /*unspecified externalID*/, cl.ID,
 					UpdateFields{ApplicableConfig: acfg2},
-					func(ctx context.Context, id common.CLID, ev int) error {
+					func(ctx context.Context, cl *CL) error {
 						So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
-						So(id, ShouldEqual, cl.ID)
-						So(ev, ShouldEqual, 3)
+						So(cl.EVersion, ShouldEqual, 3)
 						return nil
 					})
 				So(err, ShouldBeNil)
@@ -293,7 +290,7 @@ func TestUpdate(t *testing.T) {
 					Snapshot:         makeSnapshot(epoch.Add(-time.Minute)),
 					ApplicableConfig: makeApplicableConfig(epoch.Add(-time.Minute)),
 					AddDependentMeta: makeDependentMeta(epoch.Add(-time.Minute), "another-project"),
-				}, func(context.Context, common.CLID, int) error {
+				}, func(context.Context, *CL) error {
 					panic("must not be called")
 				})
 				So(err, ShouldBeNil)

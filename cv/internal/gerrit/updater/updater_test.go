@@ -31,11 +31,13 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
+	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -321,6 +323,20 @@ func TestUpdateCLWorks(t *testing.T) {
 			// Simulate Gerrit change being updated with +1s timestamp.
 			ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 				c.Info.Updated.Seconds++
+			})
+
+			Convey("Notify IncompleteRuns", func() {
+				rid1 := common.RunID("chromium/111-1-dead")
+				rid2 := common.RunID("chromium/222-1-beef")
+				cl.Mutate(ctx, func(cl *changelist.CL) (updated bool) {
+					cl.IncompleteRuns = []common.RunID{rid1, rid2}
+					return true
+				})
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+				So(refresh(ctx, task), ShouldBeNil)
+				updatedCL := getCL(ctx, gHost, 123)
+				runtest.AssertReceivedCLUpdate(ctx, rid1, updatedCL.ID, updatedCL.EVersion)
+				runtest.AssertReceivedCLUpdate(ctx, rid2, updatedCL.ID, updatedCL.EVersion)
 			})
 
 			Convey("Skips update with updatedHint", func() {

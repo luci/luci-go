@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/cqdepend"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 const TaskClassID = "refresh-gerrit-cl"
@@ -233,8 +234,20 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			ctx,
 			f.externalID, f.clidIfKnown(),
 			f.toUpdate,
-			func(ctx context.Context, clid common.CLID, eversion int) error {
-				return prjmanager.NotifyCLUpdated(ctx, f.luciProject, clid, eversion)
+			func(ctx context.Context, cl *changelist.CL) error {
+				eg, ectx := errgroup.WithContext(ctx)
+				eg.Go(func() error {
+					return prjmanager.NotifyCLUpdated(ectx, f.luciProject, cl.ID, cl.EVersion)
+				})
+				// Generally, a CL will have only one Run at a time. Hence, use
+				// unbounded parallelism here.
+				for _, rid := range cl.IncompleteRuns {
+					rid := rid
+					eg.Go(func() error {
+						return run.NotifyCLUpdated(ctx, rid, cl.ID, cl.EVersion)
+					})
+				}
+				return eg.Wait()
 			},
 		)
 	}
