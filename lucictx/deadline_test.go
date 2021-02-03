@@ -161,12 +161,11 @@ func TestDeadline(t *testing.T) {
 			So(hardDeadline, ShouldEqual, t0.Add(95*time.Second))
 			got := GetDeadline(ac)
 
-			So(got, ShouldResembleProto, &Deadline{
-				// SoftDeadline is always GracePeriod earlier than the hard (context)
-				// deadline.
-				SoftDeadline: timeToUnixFloat(t0.Add(70 * time.Second)),
-				GracePeriod:  25,
-			})
+			expect := &Deadline{GracePeriod: 25}
+			// SoftDeadline is always GracePeriod earlier than the hard (context)
+			// deadline.
+			expect.SetSoftDeadline(t0.Add(70 * time.Second))
+			So(got, ShouldResembleProto, expect)
 			shutdown()
 			<-cleanup // force monitor to make timer before we increment the clock
 			tc.Add(25 * time.Second)
@@ -186,12 +185,11 @@ func TestDeadline(t *testing.T) {
 			So(deadline, ShouldEqual, t0.Add(95*time.Second))
 			got := GetDeadline(ac)
 
-			So(got, ShouldResembleProto, &Deadline{
-				// SoftDeadline is always GracePeriod earlier than the hard (context)
-				// deadline.
-				SoftDeadline: timeToUnixFloat(t0.Add(65 * time.Second)),
-				GracePeriod:  30,
-			})
+			expect := &Deadline{GracePeriod: 30}
+			// SoftDeadline is always GracePeriod earlier than the hard (context)
+			// deadline.
+			expect.SetSoftDeadline(t0.Add(65 * time.Second))
+			So(got, ShouldResembleProto, expect)
 			shutdown()
 			<-cleanup // force monitor to make timer before we increment the clock
 			tc.Add(30 * time.Second)
@@ -200,16 +198,15 @@ func TestDeadline(t *testing.T) {
 
 		Convey(`Deadline in LUCI_CONTEXT`, func() {
 			externalSoftDeadline := t0.Add(100 * time.Second)
-			ctx = SetDeadline(ctx, &Deadline{
-				SoftDeadline: timeToUnixFloat(externalSoftDeadline), // 100s into the future
-				GracePeriod:  40,
-			})
+			dl := &Deadline{GracePeriod: 40}
+			dl.SetSoftDeadline(externalSoftDeadline) // 100s into the future
+			ctx = SetDeadline(ctx, dl)
 
 			Convey(`no deadline in context`, func() {
 				cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
 				defer shutdown()
 
-				softDeadline := unixFloatToTime(GetDeadline(ac).SoftDeadline)
+				softDeadline := GetDeadline(ac).SoftDeadlineTime()
 				So(softDeadline, ShouldHappenWithin, time.Millisecond, externalSoftDeadline)
 
 				hardDeadline, ok := ac.Deadline()
@@ -250,7 +247,7 @@ func TestDeadline(t *testing.T) {
 				cleanup, ac, shutdown := AdjustDeadline(ctx, 50*time.Second, time.Second)
 				defer shutdown()
 
-				softDeadline := unixFloatToTime(GetDeadline(ac).SoftDeadline)
+				softDeadline := GetDeadline(ac).SoftDeadlineTime()
 				So(softDeadline, ShouldHappenWithin, time.Millisecond, externalSoftDeadline.Add(-50*time.Second))
 
 				hardDeadline, ok := ac.Deadline()
@@ -323,6 +320,73 @@ func TestDeadline(t *testing.T) {
 				})
 			})
 
+		})
+	})
+}
+
+func TestDeadlineHelpers(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Deadline helpers`, t, func() {
+		t0 := testclock.TestTimeUTC
+		ctx, tc := testclock.UseTime(context.Background(), t0)
+
+		check := func(ctx context.Context, softExpect, hardExpect bool) {
+			soft, hard := CheckDeadlines(ctx)
+			So(soft, ShouldEqual, softExpect)
+			So(hard, ShouldEqual, hardExpect)
+		}
+
+		Convey(`InGracePeriod`, func() {
+			Convey(`with deadline`, func() {
+				dl := &Deadline{GracePeriod: 30}
+				dl.SetSoftDeadline(t0.Add(10 * time.Minute))
+				ctx = SetDeadline(ctx, dl)
+
+				Convey(`out of grace period`, func() {
+					check(ctx, false, false)
+				})
+
+				Convey(`in grace period`, func() {
+					check(ctx, false, false)
+					tc.Add((time.Minute * 10) - time.Second)
+					check(ctx, false, false)
+					tc.Add(time.Second)
+					check(ctx, true, false)
+					tc.Add(time.Second * 100)
+					check(ctx, true, true)
+				})
+
+			})
+
+			Convey(`with context deadline`, func() {
+				ctx, cancel := clock.WithDeadline(ctx, t0.Add(10*time.Minute))
+				defer cancel()
+
+				Convey(`out of grace period`, func() {
+					check(ctx, false, false)
+				})
+
+				Convey(`in of grace period`, func() {
+					check(ctx, false, false)
+					// the default grace period is 30s, so "grace period" starts at
+					// 10m - 30s
+					tc.Add((time.Minute * 10) - DefaultGracePeriod - time.Second)
+					check(ctx, false, false)
+					tc.Add(time.Second)
+					check(ctx, true, false)
+					tc.Add(time.Second * 100)
+					check(ctx, true, true)
+				})
+			})
+
+			Convey(`with no deadline at all`, func() {
+				Convey(`out of grace period`, func() {
+					check(ctx, false, false)
+					tc.Add(time.Hour)
+					check(ctx, false, false)
+				})
+			})
 		})
 	})
 }
