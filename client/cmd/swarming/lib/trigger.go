@@ -31,7 +31,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
@@ -42,14 +41,14 @@ import (
 )
 
 // CmdTrigger returns an object for the `trigger` subcommand.
-func CmdTrigger(defaultAuthOpts auth.Options) *subcommands.Command {
+func CmdTrigger(authFlags AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "trigger <options>",
 		ShortDesc: "Triggers a Swarming task",
 		LongDesc:  "Triggers a Swarming task.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &triggerRun{}
-			r.Init(defaultAuthOpts)
+			r.Init(authFlags)
 			return r
 		},
 	}
@@ -204,9 +203,8 @@ type triggerRun struct {
 	dumpJSON string
 }
 
-func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
-	c.commonFlags.Init(defaultAuthOpts)
-
+func (c *triggerRun) Init(authFlags AuthFlags) {
+	c.commonFlags.Init(authFlags)
 	// Task properties.
 	c.Flags.StringVar(&c.isolateServer, "isolate-server", "", "URL of the Isolate Server to use.")
 	c.Flags.StringVar(&c.isolateServer, "I", "", "Alias for -isolate-server.")
