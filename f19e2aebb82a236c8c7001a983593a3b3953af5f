@@ -16,6 +16,52 @@
       "message": "PTAL: I\u0027m sorry for the rework. The diff isn\u0027t very meaningful and I couldn\u0027t make it much shorter -- ~250 LoC of logic + same for tests 😞\n\nIf you prefer, I can send CL to remove prior 2 CLs and instead send you this CL from scratch.",
       "revId": "f19e2aebb82a236c8c7001a983593a3b3953af5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24f46f6e_5eb38750",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-03T19:29:57Z",
+      "side": 1,
+      "message": "nit: This assignment seems unnecessary.",
+      "range": {
+        "startLine": 99,
+        "startChar": 12,
+        "endLine": 99,
+        "endChar": 19
+      },
+      "revId": "f19e2aebb82a236c8c7001a983593a3b3953af5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c112f8c_b1179521",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-03T19:29:57Z",
+      "side": 1,
+      "message": "I think this is guaranteed at this timepoint.",
+      "range": {
+        "startLine": 116,
+        "startChar": 9,
+        "endLine": 116,
+        "endChar": 20
+      },
+      "revId": "f19e2aebb82a236c8c7001a983593a3b3953af5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
