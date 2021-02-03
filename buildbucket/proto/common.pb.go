@@ -279,8 +279,8 @@ type StatusDetails struct {
 	// denial.
 	// Applicable in FAILURE and INFRA_FAILURE statuses.
 	ResourceExhaustion *StatusDetails_ResourceExhaustion `protobuf:"bytes,3,opt,name=resource_exhaustion,json=resourceExhaustion,proto3" json:"resource_exhaustion,omitempty"`
-	// If set, indicates that the build ended due to the execution_timeout_secs
-	// set for the build.
+	// If set, indicates that the build ended due to the expiration_timeout or
+	// scheduling_timeout set for the build.
 	//
 	// Applicable in all final statuses.
 	//

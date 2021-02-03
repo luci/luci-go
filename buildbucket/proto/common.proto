@@ -108,8 +108,8 @@ message StatusDetails {
   ResourceExhaustion resource_exhaustion = 3;
 
   message Timeout {}
-  // If set, indicates that the build ended due to the execution_timeout_secs
-  // set for the build.
+  // If set, indicates that the build ended due to the expiration_timeout or
+  // scheduling_timeout set for the build.
   //
   // Applicable in all final statuses.
   //
