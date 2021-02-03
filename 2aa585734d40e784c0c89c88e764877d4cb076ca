@@ -59,6 +59,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b927d86c_1c56efa4",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T07:37:07Z",
+      "side": 1,
+      "message": "removed resource_exhaustion change",
+      "parentUuid": "2f131b08_0c80b97c",
+      "revId": "2aa585734d40e784c0c89c88e764877d4cb076ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1b180ee1_902d7f28",
@@ -96,6 +114,30 @@
       "side": 1,
       "message": "Yeah I think you\u0027re right; this field really indicates that the execution_timeout was hit.\n\nThe more I think about this though, the more I wonder... should we just have buildbucket fill this detail in if the end time of the build is \u003e\u003d start_time + execution_timeout?",
       "parentUuid": "1b180ee1_902d7f28",
+      "range": {
+        "startLine": 114,
+        "startChar": 27,
+        "endLine": 114,
+        "endChar": 51
+      },
+      "revId": "2aa585734d40e784c0c89c88e764877d4cb076ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a85e4ec_255c952b",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T07:37:07Z",
+      "side": 1,
+      "message": "clarified that timeout happens due to execution_timeout_secs",
+      "parentUuid": "16daad5b_220abf41",
       "range": {
         "startLine": 114,
         "startChar": 27,
