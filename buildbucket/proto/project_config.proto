@@ -20,6 +20,7 @@ package buildbucket;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
@@ -75,7 +76,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 31.
+// Next tag: 32.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -356,11 +357,43 @@ message Builder {
   // See also https://chromium.googlesource.com/infra/luci/luci-py.git/+/master/appengine/swarming/doc/User-Guide.md#request
   uint32 priority = 5;
 
-  // Maximum build execution time. Not to be confused with pending time.
+  // Maximum build execution time.
+  //
+  // Not to be confused with pending time.
+  //
+  // If the timeout is reached, the task will be signaled according to the
+  // `deadline` section of
+  // https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
+  // and status_details.timeout is set.
+  //
+  // The task will have `grace_period` amount of time to handle cleanup
+  // before being forcefully terminated.
+  //
+  // NOTE: This corresponds with Build.execution_timeout and
+  // ScheduleBuildRequest.execution_timeout; The name `execution_timeout_secs` and
+  // uint32 type are relics of the past.
   uint32 execution_timeout_secs = 7;
 
   // Maximum build pending time.
+  //
+  // If the timeout is reached, the build is marked as INFRA_FAILURE status
+  // and both status_details.{timeout, resource_exhaustion} are set.
+  //
+  // NOTE: This corresponds with Build.scheduling_timeout and
+  // ScheduleBuildRequest.scheduling_timeout; The name `expiration_secs` and
+  // uint32 type are relics of the past.
   uint32 expiration_secs = 20;
+
+  // Amount of cleanup time after execution_timeout_secs.
+  //
+  // After being signaled according to execution_timeout_secs, the task will
+  // have this many seconds to clean up before being forcefully terminated.
+  //
+  // The signalling process is explained in the `deadline` section of
+  // https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md.
+  //
+  // Defaults to 30s if unspecified or 0.
+  google.protobuf.Duration grace_period = 31;
 
   // If YES, will request that swarming wait until it sees at least one bot
   // report a superset of the requested dimensions.
