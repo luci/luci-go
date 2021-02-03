@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c79a950_55ba669b",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-03T00:03:41Z",
+      "side": 1,
+      "message": "We should remove the retry for build channel.",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 0
+      },
+      "revId": "d0f53b8fd5d26d5648b7eaf47b92da324c2e51d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a5e236f_1ab517bd",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-03T00:03:41Z",
+      "side": 1,
+      "message": "Can you rename this to UpdateBuildErr?",
+      "range": {
+        "startLine": 269,
+        "startChar": 1,
+        "endLine": 269,
+        "endChar": 10
+      },
+      "revId": "d0f53b8fd5d26d5648b7eaf47b92da324c2e51d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
