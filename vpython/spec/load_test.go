@@ -66,9 +66,10 @@ func TestLoadForScript(t *testing.T) {
 				"foo/bar/__init__.py":     "",
 				"foo/bar.vpython":         goodSpecData,
 			})
-			spec, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
+			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("foo/bar.vpython"))
 		})
 
 		Convey(`Layout: module with a bad spec file`, func() {
@@ -78,7 +79,7 @@ func TestLoadForScript(t *testing.T) {
 				"foo/bar/__init__.py":     "",
 				"foo/bar.vpython":         badSpecData,
 			})
-			_, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
+			_, _, err :=  l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
 		})
 
@@ -89,9 +90,10 @@ func TestLoadForScript(t *testing.T) {
 				"foo/bar/__init__.py":     "",
 				"foo/__init__.py":         "",
 			})
-			spec, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
+			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldBeNil)
 			So(spec, ShouldBeNil)
+			So(path, ShouldEqual, "")
 		})
 
 		Convey(`Layout: individual file with a good spec file`, func() {
@@ -99,9 +101,10 @@ func TestLoadForScript(t *testing.T) {
 				"pants.py":         "PANTS!",
 				"pants.py.vpython": goodSpecData,
 			})
-			spec, err := l.LoadForScript(c, makePath("pants.py"), false)
+			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("pants.py.vpython"))
 		})
 
 		Convey(`Layout: individual file with a bad spec file`, func() {
@@ -109,7 +112,7 @@ func TestLoadForScript(t *testing.T) {
 				"pants.py":         "PANTS!",
 				"pants.py.vpython": badSpecData,
 			})
-			_, err := l.LoadForScript(c, makePath("pants.py"), false)
+			_, _, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
 		})
 
@@ -117,9 +120,10 @@ func TestLoadForScript(t *testing.T) {
 			mustBuild(map[string]string{
 				"pants.py": "PANTS!",
 			})
-			spec, err := l.LoadForScript(c, makePath("pants.py"), false)
+			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldBeNil)
 			So(spec, ShouldBeNil)
+			So(path, ShouldBeEmpty)
 		})
 
 		Convey(`Layout: module with good inline spec`, func() {
@@ -138,9 +142,10 @@ func TestLoadForScript(t *testing.T) {
 					"# Additional content...",
 				}, "\n"),
 			})
-			spec, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
+			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("foo/bar/baz/__main__.py"))
 		})
 
 		Convey(`Layout: individual file with good inline spec`, func() {
@@ -159,9 +164,10 @@ func TestLoadForScript(t *testing.T) {
 					"# Additional content...",
 				}, "\n"),
 			})
-			spec, err := l.LoadForScript(c, makePath("pants.py"), false)
+			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("pants.py"))
 		})
 
 		Convey(`Layout: individual file with good inline spec with a prefix`, func() {
@@ -184,9 +190,10 @@ func TestLoadForScript(t *testing.T) {
 				}, "\n"),
 			})
 
-			spec, err := l.LoadForScript(c, makePath("pants.py"), false)
+			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("pants.py"))
 		})
 
 		Convey(`Layout: individual file with bad inline spec`, func() {
@@ -206,7 +213,7 @@ func TestLoadForScript(t *testing.T) {
 				}, "\n"),
 			})
 
-			_, err := l.LoadForScript(c, makePath("pants.py"), false)
+			_, _, err :=  l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
 		})
 
@@ -226,7 +233,7 @@ func TestLoadForScript(t *testing.T) {
 				}, "\n"),
 			})
 
-			_, err := l.LoadForScript(c, makePath("pants.py"), false)
+			_, _, err :=  l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldErrLike, "unterminated inline spec file")
 		})
 
@@ -237,9 +244,10 @@ func TestLoadForScript(t *testing.T) {
 				"common.vpython":      goodSpecData,
 			})
 
-			spec, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
+			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("common.vpython"))
 		})
 
 		Convey(`Layout: individual file with a custom common spec`, func() {
@@ -252,9 +260,10 @@ func TestLoadForScript(t *testing.T) {
 				"ohaithere.friend":    goodSpecData,
 			})
 
-			spec, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
+			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("ohaithere.friend"))
 		})
 
 		Convey(`Layout: individual file with a common spec behind a barrier`, func() {
@@ -265,9 +274,10 @@ func TestLoadForScript(t *testing.T) {
 				"common.vpython":      goodSpecData,
 			})
 
-			spec, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
+			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldBeNil)
 			So(spec, ShouldBeNil)
+			So(path, ShouldBeEmpty)
 		})
 
 		Convey(`Layout: individual file with a spec and barrier sharing a folder`, func() {
@@ -278,9 +288,10 @@ func TestLoadForScript(t *testing.T) {
 				"common.vpython":      goodSpecData,
 			})
 
-			spec, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
+			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("common.vpython"))
 		})
 
 		Convey(`Layout: module with a common spec`, func() {
@@ -291,9 +302,10 @@ func TestLoadForScript(t *testing.T) {
 				"common.vpython":          goodSpecData,
 			})
 
-			spec, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
+			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldBeNil)
 			So(spec, ShouldResemble, goodSpec)
+			So(path, ShouldEqual, makePath("common.vpython"))
 		})
 
 		Convey(`Layout: individual file with a bad common spec`, func() {
@@ -303,7 +315,7 @@ func TestLoadForScript(t *testing.T) {
 				"common.vpython":      badSpecData,
 			})
 
-			_, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
+			_, _, err :=  l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
 		})
 	})
