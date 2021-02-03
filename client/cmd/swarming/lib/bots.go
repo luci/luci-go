@@ -25,7 +25,6 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
@@ -33,14 +32,14 @@ import (
 )
 
 // CmdBots returns an object for the `bots` subcommand.
-func CmdBots(defaultAuthOpts auth.Options) *subcommands.Command {
+func CmdBots(authFlags AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "bots <options>",
 		ShortDesc: "lists bots",
 		LongDesc:  "List bots matching the given options.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &botsRun{}
-			r.Init(defaultAuthOpts)
+			r.Init(authFlags)
 			return r
 		},
 	}
@@ -53,13 +52,11 @@ type botsRun struct {
 	fields     []googleapi.Field
 }
 
-func (b *botsRun) Init(defaultAuthOpts auth.Options) {
-	b.commonFlags.Init(defaultAuthOpts)
-
+func (b *botsRun) Init(authFlags AuthFlags) {
+	b.commonFlags.Init(authFlags)
 	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
 	b.Flags.Var(&b.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	b.Flags.Var(flag.FieldSlice(&b.fields), "field", "Fields to include in a partial response. May be repeated.")
-
 }
 
 func (b *botsRun) Parse() error {
