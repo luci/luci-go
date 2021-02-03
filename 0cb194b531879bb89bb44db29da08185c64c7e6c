@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bb48e52_31d084e3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-03T23:21:17Z",
+      "side": 1,
+      "message": "PTAL the diff please, there is one small functional change I forgot at first: setting removing dirty is next action is in the future.",
+      "revId": "0cb194b531879bb89bb44db29da08185c64c7e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
