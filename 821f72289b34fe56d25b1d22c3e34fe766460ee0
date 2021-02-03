@@ -96,6 +96,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "553e63b0_8baeba0d",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-03T21:24:43Z",
+      "side": 1,
+      "message": "nits: least",
+      "range": {
+        "startLine": 29,
+        "startChar": 28,
+        "endLine": 29,
+        "endChar": 33
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bb28fae3_13858f5d",
         "filename": "milo/frontend/resultui/src/libs/search_query.ts",
         "patchSetId": 5
@@ -131,6 +154,30 @@
       "side": 1,
       "message": "I am guessing that when a user thinks of \"status\", then will be thinking of variant status, because that\u0027s what UI focuses on. Result statuses are secondary. So I vote for reserving \"status\" for variant statuses.\n\nas for result statuses - I am not completely sure we need it. I understand that you are trying to solve the \"sea of skipped results\" problem using filters. I find filtering valuable on its own, so we should land this CL, but I am not sure filtering is the best solution for this particular problem. At the very least, it requires the user to type this by hand. This could be automated - *we know* that user cares about actually-failed tests more than skipped - we don\u0027t need the user to tell us about this. So I wonder if we should add a new TestVariant status UNEXPECTEDLY_SKIPPED, for variants where all results were unexpectedly skipped. Another solution is to exonerate them.\n\nif still need result status filter for some other reason, I\u0027d rather either somehow combine with \"status\" keyword (use same keyword for both), or pick something short, e.g. \"rstatus\"",
       "parentUuid": "bb28fae3_13858f5d",
+      "range": {
+        "startLine": 30,
+        "startChar": 12,
+        "endLine": 30,
+        "endChar": 25
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "84210286_7e05343d",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-03T21:24:43Z",
+      "side": 1,
+      "message": "Weiwei, what is your plan with the current variant filter (the 4 checkboxes), do you plan to keep them our will you merge it with this filter?",
+      "parentUuid": "61dc8273_2997c060",
       "range": {
         "startLine": 30,
         "startChar": 12,
