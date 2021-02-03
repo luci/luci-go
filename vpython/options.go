@@ -16,7 +16,9 @@ package vpython
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"path/filepath"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
@@ -128,15 +130,43 @@ func (o *Options) ResolveSpec(c context.Context) error {
 
 	o.EnvConfig.Spec = &o.DefaultSpec
 
-	// If we're running a Python script, assert that the target script exists.
-	// Additionally, track whether it's a file or a module (directory).
+	// If there's no target, then we're dropping to an interactive shell
 	target := o.CommandLine.Target
+	_, interactive := target.(python.NoTarget)
+
+	// Reading script from stdin is the same as no script in that we don't
+	// have a source file to key off of to find the spec, so resolve from CWD
 	script, isScriptTarget := target.(python.ScriptTarget)
-	if isScriptTarget && script.Path == "-" {
-		logging.Infof(c, "Skipping specification probing for script via stdin.")
-		return nil
+	loadFromStdin := isScriptTarget && (script.Path == "-")
+
+	// We're either dropping to interactive mode or reading a script from stdin,
+	// either way try to resolve the spec from the CWD
+	if interactive || loadFromStdin {
+		spec, path, err := o.SpecLoader.LoadForScript(c, o.WorkDir, false)
+		if err != nil {
+			return errors.Annotate(err, "failed to load spec for script: %s", target).Err()
+		}
+		if spec != nil {
+			relpath, err := filepath.Rel(o.WorkDir, path)
+			if err != nil {
+				return errors.Annotate(err, "failed to get relative path for %s", path).Err()
+			}
+
+			if interactive {
+				fmt.Fprintf(os.Stderr, "Starting interactive mode, loading vpython spec from %s\n", relpath)
+			}
+
+			if loadFromStdin {
+				fmt.Fprintf(os.Stderr, "Reading from stdin, loading vpython spec from %s\n", relpath)
+			}
+
+			o.EnvConfig.Spec = spec
+			return nil
+		}
 	}
 
+	// If we're running a Python script, assert that the target script exists.
+	// Additionally, track whether it's a file or a module (directory).
 	isModule := false
 	if isScriptTarget {
 		logging.Debugf(c, "Resolved Python target script: %s", target)
@@ -159,7 +189,7 @@ func (o *Options) ResolveSpec(c context.Context) error {
 
 	// If it's a script, try resolving from filesystem first.
 	if isScriptTarget {
-		spec, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
+		spec, _, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
 		if err != nil {
 			return errors.Annotate(err, "failed to load spec for script: %s", target).
 				InternalReason("isModule(%v)", isModule).Err()
