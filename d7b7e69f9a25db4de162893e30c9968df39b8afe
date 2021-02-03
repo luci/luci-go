@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0b4d799_29ff2998",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-03T01:35:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5a10a50_f42f56ae",
+      "range": {
+        "startLine": 52,
+        "startChar": 36,
+        "endLine": 52,
+        "endChar": 40
+      },
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "49d5dbce_6b7615dd",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-02-03T01:16:14Z",
       "side": 1,
       "message": "Maybe:\n\n   The `swarming` command line tool uses this to populate `ParentTaskId` when being used to trigger new tasks from within a swarming task.",
+      "range": {
+        "startLine": 56,
+        "startChar": 4,
+        "endLine": 56,
+        "endChar": 58
+      },
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a8f387e_cbe79a6c",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-03T01:35:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49d5dbce_6b7615dd",
       "range": {
         "startLine": 56,
         "startChar": 4,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "244673c2_c8efade4",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-03T01:35:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ffcfa3c2_73f943ce",
+      "range": {
+        "startLine": 59,
+        "startChar": 15,
+        "endLine": 59,
+        "endChar": 24
+      },
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f6f0be01_a0f54025",
@@ -117,6 +189,30 @@
       "writtenOn": "2021-02-03T01:29:45Z",
       "side": 1,
       "message": "Are you sure this is correct? USER is the standard environment variable in Linux, Swarming doesn\u0027t set it.",
+      "range": {
+        "startLine": 60,
+        "startChar": 15,
+        "endLine": 60,
+        "endChar": 19
+      },
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e267d108_2f79b9f2",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-03T01:35:41Z",
+      "side": 1,
+      "message": "Swarming doesn\u0027t set USER, but uses it to popular `User` field when triggering tasks. (I didn\u0027t know that to be honest).\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/cmd/swarming/lib/trigger.go;l\u003d268;drc\u003dd602f324300f00c994ab3df983a2367277493e86\n\nI updated the comment.",
+      "parentUuid": "f6f0be01_a0f54025",
       "range": {
         "startLine": 60,
         "startChar": 15,
