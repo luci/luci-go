@@ -96,6 +96,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d9bc4c1_7cfd402d",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T07:55:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c547aec7_0429f638",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 0
+      },
+      "revId": "d0f53b8fd5d26d5648b7eaf47b92da324c2e51d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8a5e236f_1ab517bd",
@@ -133,6 +157,30 @@
       "side": 1,
       "message": "er, yeah this is badly named now, I\u0027ll rename stuff",
       "parentUuid": "8a5e236f_1ab517bd",
+      "range": {
+        "startLine": 269,
+        "startChar": 1,
+        "endLine": 269,
+        "endChar": 10
+      },
+      "revId": "d0f53b8fd5d26d5648b7eaf47b92da324c2e51d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "83614cf6_39a5c430",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T07:55:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88003f1d_1efb3a09",
       "range": {
         "startLine": 269,
         "startChar": 1,
