@@ -102,6 +102,29 @@
       },
       "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6f0be01_a0f54025",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-03T01:29:45Z",
+      "side": 1,
+      "message": "Are you sure this is correct? USER is the standard environment variable in Linux, Swarming doesn\u0027t set it.",
+      "range": {
+        "startLine": 60,
+        "startChar": 15,
+        "endLine": 60,
+        "endChar": 19
+      },
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
