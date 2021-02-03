@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
@@ -97,20 +96,11 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 	return bbpb.NewBuildsPRPCClient(prpcClient), secrets, nil
 }
 
-// retry if error is transient or the failed batch has ended build status.
-func decideRetry(failedBatch *buffer.Batch, err error) bool {
-	if transient.Tag.In(err) {
-		return true
-	}
-	if req, ok := failedBatch.Meta.(*bbpb.UpdateBuildRequest); ok && protoutil.IsEnded(req.GetBuild().GetStatus()) {
-		return true
-	}
-	return false
-}
-
 // options for the dispatcher.Channel
 func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
-	errorFn, errCh := dispatcher.ErrorFnReport(10, decideRetry)
+	errorFn, errCh := dispatcher.ErrorFnReport(10, func(failedBatch *buffer.Batch, err error) bool {
+		return transient.Tag.In(err)
+	})
 	opts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
 		Buffer: buffer.Options{
@@ -140,11 +130,9 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client BuildsClie
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
 
 		var req *bbpb.UpdateBuildRequest
-		var final bool
 
 		if b.Meta != nil {
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
-			final = protoutil.IsEnded(req.Build.Status)
 		} else {
 			build := b.Data[0].(*bbpb.Build)
 			req = &bbpb.UpdateBuildRequest{
@@ -157,12 +145,8 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client BuildsClie
 					},
 				},
 			}
-			final = protoutil.IsEnded(build.Status)
-			if final {
-				if build.Status != bbpb.Status_SUCCESS {
-					req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.status")
-				}
-			}
+			// We never include status here; bbagent will do one final send after the
+			// dispatcher channel is closed which includes status.
 			if len(build.Tags) > 0 {
 				req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.tags")
 			}
