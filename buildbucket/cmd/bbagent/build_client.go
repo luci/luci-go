@@ -56,7 +56,8 @@ func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildReques
 	return nil, nil
 }
 
-func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket) (BuildsClient, *bbpb.BuildSecrets, error) {
+// retryEnabled allows us to switch retries for this client on and off
+func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket, retryEnabled *bool) (BuildsClient, *bbpb.BuildSecrets, error) {
 	hostname := infraOpts.GetHostname()
 	if hostname == "" {
 		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
@@ -64,7 +65,13 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 	}
 	opts := prpc.DefaultOptions()
 	opts.Insecure = lhttp.IsLocalHost(hostname)
-	opts.Retry = nil // luciexe handles retries itself.
+	originalRetry := opts.Retry
+	opts.Retry = func() retry.Iterator {
+		if *retryEnabled {
+			return originalRetry()
+		}
+		return nil
+	}
 
 	prpcClient := &prpc.Client{
 		Host:    hostname,

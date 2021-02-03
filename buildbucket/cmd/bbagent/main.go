@@ -27,7 +27,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -95,7 +94,15 @@ func mainImpl() int {
 	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
 	check(errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err())
 
-	bbclient, secrets, err := newBuildsClient(sctx, input.Build.Infra.Buildbucket)
+	// We start with retries disabled because the dispatcher.Channel will handle
+	// them during the execution of the user process; In particular we want
+	// dispatcher.Channel to be able to move on to a newer version of the Build if
+	// it encounters transient errors, rather than retrying a potentially stale
+	// Build state.
+	//
+	// We enable them again after the user process has finished.
+	bbclientRetriesEnabled := false
+	bbclient, secrets, err := newBuildsClient(sctx, input.Build.Infra.Buildbucket, &bbclientRetriesEnabled)
 	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 	logdogOutput, err := mkLogdogOutput(sctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
@@ -105,7 +112,7 @@ func mainImpl() int {
 		cancel func()
 	)
 	if dl := lucictx.GetDeadline(ctx); dl.GetSoftDeadline() != 0 {
-		softDeadline := convertFloatToUnixTime(dl.GetSoftDeadline())
+		softDeadline := dl.SoftDeadlineTime()
 		gracePeriod := time.Duration(dl.GetGracePeriod() * float64(time.Second))
 		cctx, cancel = context.WithDeadline(ctx, softDeadline.Add(gracePeriod))
 	} else {
@@ -186,10 +193,10 @@ func mainImpl() int {
 			case <-dctx.Done():
 			}
 		}()
-		if newSoftDeadline := lucictx.GetDeadline(dctx).GetSoftDeadline(); newSoftDeadline != 0 {
+		if newSoftDeadline := lucictx.GetDeadline(dctx).SoftDeadlineTime(); !newSoftDeadline.IsZero() {
 			logging.Infof(dctx,
 				"attempted to reserve %s from soft deadline for bbagent cleanup; new soft deadline: %s",
-				reserve, convertFloatToUnixTime(newSoftDeadline))
+				reserve, newSoftDeadline)
 		}
 		subp, err := invoke.Start(dctx, exeArgs, input.Build, invokeOpts, deadlineEventCh)
 		if err != nil {
@@ -248,7 +255,8 @@ func mainImpl() int {
 	}
 	buildsCh.CloseAndDrain(cctx)
 
-	// Now that the builds channel has been closed now. Update to bb directly.
+	// Now that the builds channel has been closed, update bb directly.
+	bbclientRetriesEnabled = true
 	reportErrToBB := func(err error) {
 		errors.Log(cctx, err)
 		now := timestamppb.New(clock.Now(cctx))
@@ -317,7 +325,7 @@ func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
 // `maxReserveDuration`). Returns 0 If soft deadline doesn't exist or
 // has already been exceeded.
 func calcDeadlineReserve(ctx context.Context) time.Duration {
-	curSoftDeadline := convertFloatToUnixTime(lucictx.GetDeadline(ctx).GetSoftDeadline())
+	curSoftDeadline := lucictx.GetDeadline(ctx).SoftDeadlineTime()
 	if now := clock.Now(ctx).UTC(); !curSoftDeadline.IsZero() && now.Before(curSoftDeadline) {
 		if reserve := curSoftDeadline.Sub(now) / 100; reserve < maxReserveDuration {
 			return reserve
@@ -325,14 +333,6 @@ func calcDeadlineReserve(ctx context.Context) time.Duration {
 		return maxReserveDuration
 	}
 	return 0
-}
-
-func convertFloatToUnixTime(f float64) time.Time {
-	if f == 0 {
-		return time.Time{}
-	}
-	sec, frac := math.Modf(f)
-	return time.Unix(int64(sec), int64(frac*float64(time.Second))).UTC()
 }
 
 func resolveExe(path string) (string, error) {
