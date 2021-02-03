@@ -39,6 +39,30 @@
       },
       "revId": "9519a56cede5824e23ddc28adb7ea790fc0ec1db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "301ba7b1_a803d0a4",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-03T02:17:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8585d19_b5857e8f",
+      "range": {
+        "startLine": 57,
+        "startChar": 72,
+        "endLine": 57,
+        "endChar": 73
+      },
+      "revId": "9519a56cede5824e23ddc28adb7ea790fc0ec1db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
