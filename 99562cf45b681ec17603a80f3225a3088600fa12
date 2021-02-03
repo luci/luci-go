@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3fa539cb_fd221c67",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-03T07:13:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f21e9c9_af464912",
+      "range": {
+        "startLine": 132,
+        "startChar": 10,
+        "endLine": 132,
+        "endChar": 64
+      },
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4c3767d_6eebadba",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-02T05:25:45Z",
       "side": 1,
       "message": "this is impl detail. We might want to change it in the future.\nI recommend io.Reader",
+      "range": {
+        "startLine": 144,
+        "startChar": 99,
+        "endLine": 144,
+        "endChar": 113
+      },
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "768a648c_ebc9abdb",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-03T07:13:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4c3767d_6eebadba",
       "range": {
         "startLine": 144,
         "startChar": 99,
@@ -64,6 +112,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "959af971_e1aaab0e",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-03T07:13:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bdf1c1cf_9946ce2d",
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a9b0bafb_9c9ba2a8",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-02-02T05:25:45Z",
       "side": 1,
       "message": "string",
+      "range": {
+        "startLine": 92,
+        "startChar": 21,
+        "endLine": 92,
+        "endChar": 28
+      },
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63b62c70_87c649cc",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-03T07:13:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9b0bafb_9c9ba2a8",
       "range": {
         "startLine": 92,
         "startChar": 21,
@@ -110,6 +200,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e91765e2_6e4b7b99",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-03T07:13:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8235d35_719bebbf",
+      "range": {
+        "startLine": 91,
+        "startChar": 123,
+        "endLine": 91,
+        "endChar": 138
+      },
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fe0d2fc6_7858171e",
@@ -123,6 +237,24 @@
       "writtenOn": "2021-02-02T05:25:45Z",
       "side": 1,
       "message": "nit: consider making it a global variable, so that we don\u0027t recreate it each time",
+      "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "834710d7_fae73454",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-03T07:13:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe0d2fc6_7858171e",
       "revId": "99562cf45b681ec17603a80f3225a3088600fa12",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
