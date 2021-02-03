@@ -41,6 +41,7 @@ type Subprocess struct {
 	Step        *bbpb.Step
 	collectPath string
 
+	ctx context.Context
 	cmd *exec.Cmd
 
 	closeChannels chan<- struct{}
@@ -138,6 +139,7 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 	s := &Subprocess{
 		Step:        launchOpts.step,
 		collectPath: launchOpts.collectPath,
+		ctx:         ctx,
 		cmd:         cmd,
 
 		closeChannels: closeChannels,
@@ -190,12 +192,34 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 // If Options.CollectOutput (default: false) was specified, this will return the
 // final Build message, as reported by the luciexe.
 //
+// In all cases, finalBuild.StatusDetails will indicate if this Subprocess
+// instructed the luciexe to stop via timeout from deadlineEvtCh passed to Start.
+//
 // If you wish to cancel the subprocess (e.g. due to a timeout or deadline),
 // make sure to pass a cancelable/deadline context to Start().
 //
 // Calling this multiple times is OK; it will return the same values every time.
-func (s *Subprocess) Wait() (*bbpb.Build, error) {
+func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 	s.waitOnce.Do(func() {
+		defer func() {
+			if s.build == nil {
+				s.build = &bbpb.Build{}
+			}
+			// If our process saw a timeout or we think we're in the grace period now,
+			// then we indicate that here.
+			setTimeout := s.firstDeadlineEvent.Load() == lucictx.TimeoutEvent
+			if !setTimeout {
+				setTimeout, _ = lucictx.CheckDeadlines(s.ctx)
+			}
+			if setTimeout {
+				proto.Merge(s.build, &bbpb.Build{
+					StatusDetails: &bbpb.StatusDetails{
+						Timeout: &bbpb.StatusDetails_Timeout{},
+					},
+				})
+			}
+		}()
+
 		defer func() {
 			if evt := s.firstDeadlineEvent.Load(); evt != nil {
 				var errMsg string
@@ -203,14 +227,14 @@ func (s *Subprocess) Wait() (*bbpb.Build, error) {
 				case evt == lucictx.InterruptEvent:
 					errMsg = "luciexe process is interrupted"
 				case evt == lucictx.TimeoutEvent:
-					errMsg = "luciexe process times out"
+					errMsg = "luciexe process timed out"
 				case evt == lucictx.ClosureEvent:
 					errMsg = "luciexe process's context is cancelled"
 				}
 				if s.err != nil {
 					s.err = errors.Annotate(s.err, "%s; luciexe error:", errMsg).Err()
 				} else {
-					s.err = errors.Reason(errMsg).Err()
+					s.err = errors.New(errMsg)
 				}
 			}
 		}()
