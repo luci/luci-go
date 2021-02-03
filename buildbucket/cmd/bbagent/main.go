@@ -41,6 +41,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -177,6 +178,7 @@ func mainImpl() int {
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
 	shutdownCh := make(chan struct{})
+	var statusDetails *bbpb.StatusDetails
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
@@ -202,7 +204,9 @@ func mainImpl() int {
 		if err != nil {
 			return err
 		}
-		_, err = subp.Wait()
+		var build *bbpb.Build
+		build, err = subp.Wait()
+		statusDetails = build.StatusDetails
 		return err
 	})
 	if err != nil {
@@ -210,8 +214,8 @@ func mainImpl() int {
 	}
 
 	var (
-		finalBuild *bbpb.Build
-		fatalErr   atomic.Value
+		finalBuild                *bbpb.Build = proto.Clone(input.Build).(*bbpb.Build)
+		fatalUpdateBuildErrorSlot atomic.Value
 	)
 
 	go func() {
@@ -236,7 +240,7 @@ func mainImpl() int {
 			case err := <-dispatcherErrCh:
 				if !stopped && fatalPred(err) {
 					close(shutdownCh)
-					fatalErr.Store(err)
+					fatalUpdateBuildErrorSlot.Store(err)
 					stopped = true
 				}
 			case <-cctx.Done():
@@ -248,7 +252,7 @@ func mainImpl() int {
 	// Now all we do is shuttle builds through to the buildbucket client channel
 	// until there are no more builds to shuttle.
 	for build := range builds {
-		if fatalErr.Load() == nil {
+		if fatalUpdateBuildErrorSlot.Load() == nil {
 			buildsCh.C <- build
 			finalBuild = build
 		}
@@ -256,47 +260,68 @@ func mainImpl() int {
 	buildsCh.CloseAndDrain(cctx)
 
 	// Now that the builds channel has been closed, update bb directly.
+	updateMask := []string{
+		"build.status",
+		"build.status_details",
+		"build.summary_markdown",
+	}
+	var retcode int
+
+	fatalUpdateBuildErr, _ := fatalUpdateBuildErrorSlot.Load().(error)
+	if finalizeBuild(ctx, finalBuild, fatalUpdateBuildErr, statusDetails, outputFile) {
+		updateMask = append(updateMask, "build.steps", "build.output")
+	} else {
+		// finalizeBuild indicated that something is really wrong; Omit steps and
+		// output from the final push to minimize potential issues.
+		retcode = 1
+	}
 	bbclientRetriesEnabled = true
-	reportErrToBB := func(err error) {
-		errors.Log(cctx, err)
-		now := timestamppb.New(clock.Now(cctx))
-		_, bbErr := bbclient.UpdateBuild(
-			metadata.NewOutgoingContext(cctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken)),
-			&bbpb.UpdateBuildRequest{
-				Build: &bbpb.Build{
-					Id:              input.Build.Id,
-					Builder:         input.Build.Builder,
-					Status:          bbpb.Status_INFRA_FAILURE,
-					SummaryMarkdown: err.Error(),
-					UpdateTime:      now,
-					EndTime:         now,
-				},
-				UpdateMask: &fieldmaskpb.FieldMask{
-					Paths: []string{
-						"build.status",
-						"build.summary_markdown",
-					},
-				},
-			})
-		if bbErr != nil {
-			logging.Errorf(cctx, "Failed to report error %s to Buildbucket due to %s", err, bbErr)
+	_, bbErr := bbclient.UpdateBuild(
+		metadata.NewOutgoingContext(cctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken)),
+		&bbpb.UpdateBuildRequest{
+			Build:      finalBuild,
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: updateMask},
+		})
+	if bbErr != nil {
+		logging.Errorf(cctx, "Failed to report error %s to Buildbucket due to %s", err, bbErr)
+		retcode = 2
+	}
+
+	return retcode
+}
+
+// finalizeBuild returns true if fatalErr is nil and there's no additional
+// errors finalizing the build.
+func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, statusDetails *bbpb.StatusDetails, outputFile *luciexe.OutputFlag) bool {
+	proto.Merge(finalBuild.StatusDetails, statusDetails)
+
+	// set final times
+	now := timestamppb.New(clock.Now(ctx))
+	finalBuild.UpdateTime = now
+	finalBuild.EndTime = now
+
+	var finalErrs errors.MultiError
+	if fatalErr != nil {
+		finalErrs = append(finalErrs, errors.Annotate(fatalErr, "fatal error in builbucket.UpdateBuild").Err())
+	}
+	if err := outputFile.Write(finalBuild); err != nil {
+		finalErrs = append(finalErrs, errors.Annotate(err, "writing final build").Err())
+	}
+
+	if len(finalErrs) > 0 {
+		errors.Log(ctx, finalErrs)
+
+		// we had some really bad error, just downgrade status and add a message to
+		// summary markdown.
+		finalBuild.Status = bbpb.Status_INFRA_FAILURE
+		originalSM := finalBuild.SummaryMarkdown
+		finalBuild.SummaryMarkdown = fmt.Sprintf("FATAL: %s", finalErrs.Error())
+		if originalSM != "" {
+			finalBuild.SummaryMarkdown += "\n\n" + originalSM
 		}
 	}
 
-	if err := fatalErr.Load(); err != nil {
-		reportErrToBB(errors.Annotate(err.(error), "encounter fatal error while updating build to buildbucket").Err())
-		return 1
-	}
-
-	if err := outputFile.Write(finalBuild); err != nil {
-		reportErrToBB(errors.Annotate(err, "writing final build").Err())
-		return 1
-	}
-
-	if finalBuild.Status != bbpb.Status_SUCCESS {
-		return 1
-	}
-	return 0
+	return len(finalErrs) == 0
 }
 
 func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
