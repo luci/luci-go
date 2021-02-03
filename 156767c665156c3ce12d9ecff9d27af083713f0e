@@ -46,6 +46,30 @@
       },
       "revId": "156767c665156c3ce12d9ecff9d27af083713f0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84e6f718_593e6ff3",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T07:02:44Z",
+      "side": 1,
+      "message": "Changed to only set timeout",
+      "parentUuid": "f5ca2c40_3728d7b2",
+      "range": {
+        "startLine": 208,
+        "startChar": 4,
+        "endLine": 210,
+        "endChar": 5
+      },
+      "revId": "156767c665156c3ce12d9ecff9d27af083713f0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
