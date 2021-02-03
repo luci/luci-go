@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1ccf749_79387a20",
+        "filename": "client/cas/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-03T03:45:02Z",
+      "side": 1,
+      "message": "remove this blank line?",
+      "revId": "c504dcc31bdc72530d612fb9a193f48e8a998d0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
