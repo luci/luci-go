@@ -22,6 +22,30 @@
       },
       "revId": "156767c665156c3ce12d9ecff9d27af083713f0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f5ca2c40_3728d7b2",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T06:55:52Z",
+      "side": 1,
+      "message": "ReadBuildFile will return {nil, nil} if the output path is \"\" (unset). \n\n\u003e Even In that case, I think the luciexe protocol is suggesting to interpret it as INFRA_FAILURE instead of SUCCESS because the status is not terminal\n\nHm... this is true. Without specifying the output file we actually can\u0027t know the status for sure :(. Maybe I\u0027ll ONLY have this twiddle the timeout bit, since that\u0027s the only portion we can be sure of",
+      "parentUuid": "089a8807_278cc379",
+      "range": {
+        "startLine": 208,
+        "startChar": 4,
+        "endLine": 210,
+        "endChar": 5
+      },
+      "revId": "156767c665156c3ce12d9ecff9d27af083713f0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
