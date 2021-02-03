@@ -46,6 +46,8 @@ const (
 func init() {
 	switch os.Getenv(selfTestEnvvar) {
 	case "":
+	case "exiterr":
+		os.Exit(unexpectedErrorExitCode)
 	case "hang":
 		<-time.After(time.Minute)
 		fmt.Fprintln(os.Stderr, "ERROR: TIMER ENDED")
@@ -115,7 +117,17 @@ func TestSubprocess(t *testing.T) {
 			So(sp.Step, ShouldBeNil)
 			build, err := sp.Wait()
 			So(err, ShouldBeNil)
-			So(build, ShouldBeNil)
+			So(build, ShouldResembleProto, &bbpb.Build{})
+		})
+
+		Convey(`exiterr`, func() {
+			o.Env.Set(selfTestEnvvar, "exiterr")
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, nil)
+			So(err, ShouldBeNil)
+			So(sp.Step, ShouldBeNil)
+			build, err := sp.Wait()
+			So(err, ShouldErrLike, "exit status 97")
+			So(build, ShouldResembleProto, &bbpb.Build{})
 		})
 
 		Convey(`collect`, func() {
@@ -201,22 +213,27 @@ func TestSubprocess(t *testing.T) {
 			defer os.Remove(readyFile)
 			Convey(`interrupt`, func() {
 				go sendEvent(lucictx.InterruptEvent)
-				_, err = sp.Wait()
+				bld, err := sp.Wait()
 				So(err, ShouldErrLike, "luciexe process is interrupted")
 				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
+				So(bld, ShouldResembleProto, &bbpb.Build{})
 			})
 			Convey(`timeout`, func() {
 				go sendEvent(lucictx.TimeoutEvent)
-				_, err = sp.Wait()
-				So(err, ShouldErrLike, "luciexe process times out")
+				bld, err := sp.Wait()
+				So(err, ShouldErrLike, "luciexe process timed out")
 				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
+				So(bld, ShouldResembleProto, &bbpb.Build{
+					StatusDetails: &bbpb.StatusDetails{Timeout: &bbpb.StatusDetails_Timeout{}},
+				})
 			})
 			Convey(`closure`, func() {
 				go sendEvent(lucictx.ClosureEvent)
-				_, err = sp.Wait()
+				bld, err := sp.Wait()
 				So(err, ShouldErrLike, "luciexe process's context is cancelled")
 				// The exit code for killed process varies on different platform.
 				So(sp.cmd.ProcessState.ExitCode(), ShouldNotEqual, unexpectedErrorExitCode)
+				So(bld, ShouldResembleProto, &bbpb.Build{})
 			})
 		})
 	})
