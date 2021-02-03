@@ -16,27 +16,27 @@ package lib
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 	"testing"
 	"time"
 
+	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/sync/semaphore"
 	googleapi "google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCollectParse_NoArgs(t *testing.T) {
 	Convey(`Make sure that Parse works with no arguments.`, t, func() {
 		c := collectRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.Parse(&[]string{})
 		So(err, ShouldErrLike, "must provide -server")
@@ -46,7 +46,7 @@ func TestCollectParse_NoArgs(t *testing.T) {
 func TestCollectParse_NoInput(t *testing.T) {
 	Convey(`Make sure that Parse handles no task IDs given.`, t, func() {
 		c := collectRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 
@@ -58,7 +58,7 @@ func TestCollectParse_NoInput(t *testing.T) {
 func TestCollectParse_BadTaskID(t *testing.T) {
 	Convey(`Make sure that Parse handles a malformed task ID.`, t, func() {
 		c := collectRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 
@@ -70,7 +70,7 @@ func TestCollectParse_BadTaskID(t *testing.T) {
 func TestCollectParse_BadTimeout(t *testing.T) {
 	Convey(`Make sure that Parse handles a negative timeout.`, t, func() {
 		c := collectRun{}
-		c.Init(auth.Options{})
+		c.Init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{
 			"-server", "http://localhost:9050",
@@ -134,7 +134,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.err, ShouldErrLike, "502")
 	})
 
-	Convey(`Test bot finished`, t, func() {
+	Convey(`Test bot finished with outputs on Isolate server`, t, func() {
 		var writtenTo string
 		var writtenIsolated string
 		service := &testService{
@@ -147,7 +147,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
-			getTaskOutputs: func(c context.Context, _, output string, ref *swarming.SwarmingRpcsFilesRef, _ *swarming.SwarmingRpcsCASReference) ([]string, error) {
+			getTaskOutputsFromIsolate: func(c context.Context, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 				writtenTo = output
 				writtenIsolated = ref.Isolated
 				return []string{"hello"}, nil
@@ -163,8 +163,48 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.result.State, ShouldResemble, "COMPLETED")
 		So(result.output, ShouldResemble, "yipeeee")
 		So(result.outputs, ShouldResemble, []string{"hello"})
-		So(writtenTo, ShouldResemble, "bah")
+		So(writtenTo, ShouldStartWith, "bah")
 		So(writtenIsolated, ShouldResemble, "aaaaaaaaa")
+	})
+
+	Convey(`Test bot finished with outputs on CAS`, t, func() {
+		var writtenTo string
+		var writtenInstance string
+		var writtenDigest string
+		service := &testService{
+			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				return &swarming.SwarmingRpcsTaskResult{
+					State: "COMPLETED",
+					CasOutputRoot: &swarming.SwarmingRpcsCASReference{
+						CasInstance: "test-instance",
+						Digest:      &swarming.SwarmingRpcsDigest{Hash: "aaaaaaaaa", SizeBytes: 111111},
+					},
+				}, nil
+			},
+			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
+				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			},
+			getTaskOutputsFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+				writtenTo = outdir
+				writtenInstance = casRef.CasInstance
+				writtenDigest = fmt.Sprintf("%s/%d", casRef.Digest.Hash, casRef.Digest.SizeBytes)
+				return []string{"hello"}, nil
+			},
+		}
+		runner := &collectRun{
+			taskOutput: taskOutputAll,
+			outputDir:  "bah",
+		}
+		runner.authFlags = &testAuthFlags{}
+		result := testCollectPollWithServer(runner, service)
+		So(result.err, ShouldBeNil)
+		So(result.result, ShouldNotBeNil)
+		So(result.result.State, ShouldResemble, "COMPLETED")
+		So(result.output, ShouldResemble, "yipeeee")
+		So(result.outputs, ShouldResemble, []string{"hello"})
+		So(writtenTo, ShouldStartWith, "bah")
+		So(writtenInstance, ShouldResemble, "test-instance")
+		So(writtenDigest, ShouldResemble, "aaaaaaaaa/111111")
 	})
 
 	Convey(`Test bot finished after failures`, t, func() {

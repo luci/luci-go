@@ -25,7 +25,6 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -33,14 +32,14 @@ import (
 )
 
 // CmdSpawnTasks returns an object for the `spawn-tasks` subcommand.
-func CmdSpawnTasks(defaultAuthOpts auth.Options) *subcommands.Command {
+func CmdSpawnTasks(authFlags AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "spawn-tasks <options>",
 		ShortDesc: "Spawns a set of Swarming tasks",
 		LongDesc:  "Spawns a set of Swarming tasks given a JSON file.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &spawnTasksRun{}
-			r.Init(defaultAuthOpts)
+			r.Init(authFlags)
 			return r
 		},
 	}
@@ -53,8 +52,8 @@ type spawnTasksRun struct {
 	cancelExtraTasks bool
 }
 
-func (c *spawnTasksRun) Init(defaultAuthOpts auth.Options) {
-	c.commonFlags.Init(defaultAuthOpts)
+func (c *spawnTasksRun) Init(authFlags AuthFlags) {
+	c.commonFlags.Init(authFlags)
 	c.Flags.StringVar(&c.jsonInput, "json-input", "", "(required) Read Swarming task requests from this file.")
 	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Write details about the triggered task(s) to this file as json.")
 	// TODO(https://crbug.com/997221): Remove this option.

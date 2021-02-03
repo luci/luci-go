@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 // IntegrationTestEnvVar is the name of the environment variable which controls
@@ -50,7 +49,7 @@ func runCmd(t *testing.T, cmd string, args ...string) int {
 		t.Skipf("Skip integration tests")
 	}
 	args = append([]string{cmd, "-server", "chromium-swarm-dev.appspot.com", "-quiet"}, args...)
-	return subcommands.Run(getApplication(chromeinfra.DefaultAuthOptions()), args)
+	return subcommands.Run(getApplication(), args)
 }
 
 func TestBotsCommand(t *testing.T) {
