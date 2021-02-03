@@ -73,17 +73,29 @@ func TestTasksCommand(t *testing.T) {
 	})
 }
 
+// triggerTaskWithIsolate triggers a task that uploads ouput to Isolate, and returns triggered TaskRequest.
+func triggerTaskWithIsolate(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetadata {
+	return triggerTask(t, []string{"-isolate-server", "isolateserver-dev.appspot.com"})
+}
+
+// triggerTaskWithCAS triggers a task that uploads ouput to CAS, and returns triggered TaskRequest.
+func triggerTaskWithCAS(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetadata {
+	// TODO(jwata): ensure the digest is uploaded on CAS.
+	// https://cas-viewer-dev.appspot.com/projects/chromium-swarm-dev/instances/default_instance/blobs/1febd720bb5e438578194b08ace1e6da072a9741068923798fd5b41856190710/77/tree
+	return triggerTask(t, []string{"-digest", "1febd720bb5e438578194b08ace1e6da072a9741068923798fd5b41856190710/77"})
+}
+
 // triggerTask triggers a task and returns the triggered TaskRequest.
-func triggerTask(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetadata {
+func triggerTask(t *testing.T, args []string) *swarming.SwarmingRpcsTaskRequestMetadata {
 	dir := t.TempDir()
 	jsonPath := filepath.Join(dir, "out.json")
-	args := []string{
+	args = append(args, []string{
 		"-d", "pool=chromium.tests",
 		"-d", "os=Linux",
 		"-dump-json", jsonPath,
 		"-idempotent",
-		"--", "/bin/echo", "hi",
-	}
+		"--", "/bin/bash", "-c", "echo hi > ${ISOLATED_OUTDIR}/out",
+	}...)
 	So(runCmd(t, "trigger", args...), ShouldEqual, 0)
 
 	results := readTriggerResults(jsonPath)
@@ -114,68 +126,97 @@ func unsetParentTaskID(t *testing.T) {
 
 func TestTriggerCommand(t *testing.T) {
 	unsetParentTaskID(t)
-	Convey(`ok`, t, func() {
-		triggerTask(t)
+	Convey(`ok with Isolate server`, t, func() {
+		triggerTaskWithIsolate(t)
 	})
+	Convey(`ok with CAS`, t, func() {
+		triggerTaskWithCAS(t)
+	})
+}
+
+func testCollectCommand(t *testing.T, taskID string) {
+	dir := t.TempDir()
+	So(runCmd(t, "collect", "-output-dir", dir, taskID), ShouldEqual, 0)
+	out, err := ioutil.ReadFile(filepath.Join(dir, taskID, "out"))
+	So(err, ShouldBeNil)
+	So(string(out), ShouldResemble, "hi\n")
 }
 
 func TestCollectCommand(t *testing.T) {
 	unsetParentTaskID(t)
-	Convey(`ok`, t, func() {
-		triggeredTask := triggerTask(t)
-		dir := t.TempDir()
-		So(runCmd(t, "collect", "-output-dir", dir, triggeredTask.TaskId), ShouldEqual, 0)
+
+	Convey(`ok with Isolate server`, t, func() {
+		triggeredTask := triggerTaskWithIsolate(t)
+		testCollectCommand(t, triggeredTask.TaskId)
+	})
+
+	Convey(`ok with CAS`, t, func() {
+		triggeredTask := triggerTaskWithCAS(t)
+		testCollectCommand(t, triggeredTask.TaskId)
 	})
 }
 
 func TestRequestShowCommand(t *testing.T) {
 	unsetParentTaskID(t)
-	Convey(`ok`, t, func() {
-		triggeredTask := triggerTask(t)
+
+	Convey(`ok with Isolate`, t, func() {
+		triggeredTask := triggerTaskWithIsolate(t)
+		So(runCmd(t, "request_show", triggeredTask.TaskId), ShouldEqual, 0)
+	})
+
+	Convey(`ok with CAS`, t, func() {
+		triggeredTask := triggerTaskWithCAS(t)
 		So(runCmd(t, "request_show", triggeredTask.TaskId), ShouldEqual, 0)
 	})
 }
 
 const spawnTaskInputJSON = `
 {
-  "requests": [
-    {
-      "name": "spawn-task test",
-      "priority": "200",
-      "task_slices": [
-        {
-          "expiration_secs": "21600",
-          "properties": {
-            "dimensions": [
-              {"key": "pool", "value": "chromium.tests"},
-              {"key": "os", "value": "Linux"}
-            ],
-            "command": ["/bin/echo", "hi"],
-            "execution_timeout_secs": "3600",
-            "idempotent": true
-          }
-        }
-      ]
-    },
-    {
-      "name": "spawn-task test",
-      "priority": "200",
-      "task_slices": [
-        {
-          "expiration_secs": "21600",
-          "properties": {
-            "dimensions": [
-              {"key": "pool", "value": "chromium.tests"},
-              {"key": "os", "value": "Linux"}
-            ],
-            "command": ["/bin/echo", "hi"],
-            "execution_timeout_secs": "3600",
-            "idempotent": true
-          }
-        }
-      ]
-    }
-  ]
+	"requests": [
+		{
+			"name": "spawn-task test with Isolate server",
+			"priority": "200",
+			"task_slices": [
+				{
+					"expiration_secs": "21600",
+					"properties": {
+						"dimensions": [
+							{"key": "pool", "value": "chromium.tests"},
+							{"key": "os", "value": "Linux"}
+						],
+						"command": ["/bin/bash", "-c", "echo hi > ${ISOLATED_OUTDIR}/out"],
+						"execution_timeout_secs": "3600",
+						"idempotent": true
+					}
+				}
+			]
+		},
+		{
+			"name": "spawn-task test with CAS",
+			"priority": "200",
+			"task_slices": [
+				{
+					"expiration_secs": "21600",
+					"properties": {
+						"dimensions": [
+							{"key": "pool", "value": "chromium.tests"},
+							{"key": "os", "value": "Linux"}
+						],
+						"cas_input_root": {
+							"cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+							"digest": {
+								"hash": "70a9a5e030074dc7eb69d167e91a47fadd3f14c14a52be85fd10f57cfb72dd0a",
+								"size_bytes": "77"
+							}
+						},
+						"command": ["/bin/bash", "-c", "echo hi > ${ISOLATED_OUTDIR}/out"],
+						"execution_timeout_secs": "3600",
+						"idempotent": true
+					}
+				}
+			]
+		}
+	]
 }
 `
 
