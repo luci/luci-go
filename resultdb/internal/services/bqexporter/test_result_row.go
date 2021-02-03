@@ -15,18 +15,23 @@
 package bqexporter
 
 import (
-	"crypto/sha512"
-	"encoding/hex"
+	"context"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/descriptor"
-	"google.golang.org/protobuf/types/descriptorpb"
+	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google/descutil"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -38,32 +43,20 @@ var testResultRowMessage = "luci.resultdb.bq.TestResultRow"
 
 func init() {
 	var err error
-	if testResultRowSchema, err = generateSchema(); err != nil {
+	if testResultRowSchema, err = generateTestResultRowSchema(); err != nil {
 		panic(err)
 	}
 }
 
-func generateSchema() (schema bigquery.Schema, err error) {
+func generateTestResultRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TestResultRow{})
 	// We also need to get FileDescriptorProto for StringPair and TestMetadata
 	// because they are defined in different files.
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdtmd, _ := descriptor.MessageDescriptorProto(&pb.TestMetadata{})
 	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
-	fdset := &descriptorpb.FileDescriptorSet{
-		File: []*descriptorpb.FileDescriptorProto{fd, fdsp, fdtmd, fdinv}}
-	conv := bq.SchemaConverter{
-		Desc:           fdset,
-		SourceCodeInfo: make(map[*descriptorpb.FileDescriptorProto]bq.SourceCodeInfoMap, len(fdset.File)),
-	}
-	for _, f := range fdset.File {
-		conv.SourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to index source code info in file %q", fd.GetName()).Err()
-		}
-	}
-	schema, _, err = conv.Schema(testResultRowMessage)
-	return schema, err
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fdinv}}
+	return generateSchema(fdset, testResultRowMessage)
 }
 
 // Row size limit is 5MB according to
@@ -80,15 +73,15 @@ func invocationProtoToRecord(inv *pb.Invocation) *bqpb.InvocationRecord {
 	}
 }
 
-// rowInput is information required to generate a TestResult BigQuery row.
-type rowInput struct {
+// testResultRowInput is information required to generate a TestResult BigQuery row.
+type testResultRowInput struct {
 	exported   *pb.Invocation
 	parent     *pb.Invocation
 	tr         *pb.TestResult
 	exonerated bool
 }
 
-func (i *rowInput) row() *bqpb.TestResultRow {
+func (i *testResultRowInput) row() protoiface.MessageV1 {
 	tr := i.tr
 
 	ret := &bqpb.TestResultRow{
@@ -117,19 +110,140 @@ func (i *rowInput) row() *bqpb.TestResultRow {
 	return ret
 }
 
-// generateBQRow returns a *bq.Row to be inserted into BQ.
-func (b *bqExporter) generateBQRow(input *rowInput) *bq.Row {
-	ret := &bq.Row{Message: input.row()}
+func (i *testResultRowInput) id() []byte {
+	return []byte(i.tr.Name)
+}
 
-	if b.UseInsertIDs {
-		// InsertID cannot exceed 128 bytes.
-		// https://cloud.google.com/bigquery/quotas#streaming_inserts
-		// Use SHA512 which is exactly 128 bytes in hex.
-		hash := sha512.Sum512([]byte(input.tr.Name))
-		ret.InsertID = hex.EncodeToString(hash[:])
-	} else {
-		ret.InsertID = bigquery.NoDedupeID
+type testVariantKey struct {
+	testID      string
+	variantHash string
+}
+
+// queryExoneratedTestVariants reads exonerated test variants matching the predicate.
+func queryExoneratedTestVariants(ctx context.Context, invIDs invocations.IDSet) (map[testVariantKey]struct{}, error) {
+	st := spanner.NewStatement(`
+		SELECT DISTINCT TestId, VariantHash,
+		FROM TestExonerations
+		WHERE InvocationId IN UNNEST(@invIDs)
+	`)
+	st.Params["invIDs"] = invIDs
+	tvs := map[testVariantKey]struct{}{}
+	var b spanutil.Buffer
+	err := spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		var key testVariantKey
+		if err := b.FromSpanner(row, &key.testID, &key.variantHash); err != nil {
+			return err
+		}
+		tvs[key] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return tvs, nil
+}
+
+func (b *bqExporter) queryTestResults(
+	ctx context.Context,
+	exportedID invocations.ID,
+	q testresults.Query,
+	exoneratedTestVariants map[testVariantKey]struct{},
+	batchC chan []rowInput) error {
+
+	invs, err := invocations.ReadBatch(ctx, q.InvocationIDs)
+	if err != nil {
+		return err
 	}
 
-	return ret
+	rows := make([]rowInput, 0, b.MaxBatchRowCount)
+	batchSize := 0 // Estimated size of rows in bytes.
+	rowCount := 0
+	err = q.Run(ctx, func(tr *pb.TestResult) error {
+		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
+		parentID, _, _ := testresults.MustParseName(tr.Name)
+		rows = append(rows, &testResultRowInput{
+			exported:   invs[exportedID],
+			parent:     invs[parentID],
+			tr:         tr,
+			exonerated: exonerated,
+		})
+		batchSize += proto.Size(tr)
+		rowCount++
+		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case batchC <- rows:
+			}
+			rows = make([]rowInput, 0, b.MaxBatchRowCount)
+			batchSize = 0
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if len(rows) > 0 {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case batchC <- rows:
+		}
+	}
+
+	// Log the number of fetched rows so that later we can compare it to
+	// the value in QueryTestResultsStatistics. This is to help debugging
+	// crbug.com/1090671.
+	logging.Debugf(ctx, "fetched %d rows for invocations %q", rowCount, q.InvocationIDs)
+	return nil
+}
+
+// exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
+func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	// Get the invocation set.
+	invIDs, err := getInvocationIDSet(ctx, invID)
+	if err != nil {
+		return err
+	}
+
+	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invIDs)
+	if err != nil {
+		return err
+	}
+
+	// Query test results and export to BigQuery.
+	batchC := make(chan []rowInput)
+
+	// Batch exports rows to BigQuery.
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		return b.batchExportRows(ctx, ins, batchC, func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row) {
+			// Print up to 10 errors.
+			for i := 0; i < 10 && i < len(err); i++ {
+				tr := rows[err[i].RowIndex].Message.(*bqpb.TestResultRow)
+				logging.Errorf(ctx, "failed to insert row for %s: %s", pbutil.TestResultName(tr.Parent.Id, tr.TestId, tr.ResultId), err[i].Error())
+			}
+			if len(err) > 10 {
+				logging.Errorf(ctx, "%d more row insertions failed", len(err)-10)
+			}
+		})
+	})
+
+	q := testresults.Query{
+		Predicate:     bqExport.GetTestResults().GetPredicate(),
+		InvocationIDs: invIDs,
+		Mask:          testresults.AllFields,
+	}
+	eg.Go(func() error {
+		defer close(batchC)
+		return b.queryTestResults(ctx, invID, q, exoneratedTestVariants, batchC)
+	})
+
+	return eg.Wait()
 }

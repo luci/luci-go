@@ -16,22 +16,23 @@ package bqexporter
 
 import (
 	"context"
+	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -44,12 +45,8 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
-	"go.chromium.org/luci/resultdb/internal/testresults"
-	"go.chromium.org/luci/resultdb/pbutil"
-	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -332,92 +329,6 @@ func ensureBQTableFields(ctx context.Context, t table) error {
 
 }
 
-type testVariantKey struct {
-	testID      string
-	variantHash string
-}
-
-// queryExoneratedTestVariants reads exonerated test variants matching the predicate.
-func queryExoneratedTestVariants(ctx context.Context, invIDs invocations.IDSet) (map[testVariantKey]struct{}, error) {
-	st := spanner.NewStatement(`
-		SELECT DISTINCT TestId, VariantHash,
-		FROM TestExonerations
-		WHERE InvocationId IN UNNEST(@invIDs)
-	`)
-	st.Params["invIDs"] = invIDs
-	tvs := map[testVariantKey]struct{}{}
-	var b spanutil.Buffer
-	err := spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		var key testVariantKey
-		if err := b.FromSpanner(row, &key.testID, &key.variantHash); err != nil {
-			return err
-		}
-		tvs[key] = struct{}{}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return tvs, nil
-}
-
-func (b *bqExporter) queryTestResults(
-	ctx context.Context,
-	exportedID invocations.ID,
-	q testresults.Query,
-	exoneratedTestVariants map[testVariantKey]struct{},
-	batchC chan []*bq.Row) error {
-
-	invs, err := invocations.ReadBatch(ctx, q.InvocationIDs)
-	if err != nil {
-		return err
-	}
-
-	rows := make([]*bq.Row, 0, b.MaxBatchRowCount)
-	batchSize := 0 // Estimated size of rows in bytes.
-	rowCount := 0
-	err = q.Run(ctx, func(tr *pb.TestResult) error {
-		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
-		parentID, _, _ := testresults.MustParseName(tr.Name)
-		rows = append(rows, b.generateBQRow(&rowInput{
-			exported:   invs[exportedID],
-			parent:     invs[parentID],
-			tr:         tr,
-			exonerated: exonerated,
-		}))
-		batchSize += proto.Size(tr)
-		rowCount++
-		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case batchC <- rows:
-			}
-			rows = make([]*bq.Row, 0, b.MaxBatchRowCount)
-			batchSize = 0
-		}
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	if len(rows) > 0 {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case batchC <- rows:
-		}
-	}
-
-	// Log the number of fetched rows so that later we can compare it to
-	// the value in QueryTestResultsStatistics. This is to help debugging
-	// crbug.com/1090671.
-	logging.Debugf(ctx, "fetched %d rows for invocations %q", rowCount, q.InvocationIDs)
-	return nil
-}
-
 func hasReason(apiErr *googleapi.Error, reason string) bool {
 	for _, e := range apiErr.Errors {
 		if e.Reason == reason {
@@ -427,7 +338,16 @@ func hasReason(apiErr *googleapi.Error, reason string) bool {
 	return false
 }
 
-func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []*bq.Row) error {
+// rowInput is information required to generate a BigQuery row.
+type rowInput interface {
+	// row returns a BigQuery row.
+	row() protoiface.MessageV1
+
+	// id returns an identifier for the row.
+	id() []byte
+}
+
+func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []rowInput, errorLogger func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row)) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
@@ -439,7 +359,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 
 		eg.Go(func() error {
 			defer b.batchSem.Release(1)
-			err := b.insertRowsWithRetries(ctx, ins, rows)
+			err := b.insertRowsWithRetries(ctx, ins, rows, errorLogger)
 			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "accessDenied") {
 				err = tasks.PermanentFailure.Apply(err)
 			}
@@ -452,9 +372,25 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 
 // insertRowsWithRetries inserts rows into BigQuery.
 // Retries on quotaExceeded errors.
-func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rows []*bq.Row) error {
+func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rowInputs []rowInput, errorLogger func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row)) error {
 	if err := b.putLimiter.Wait(ctx); err != nil {
 		return err
+	}
+
+	rows := make([]*bq.Row, 0, len(rowInputs))
+	for _, ri := range rowInputs {
+		row := &bq.Row{Message: ri.row()}
+
+		if b.UseInsertIDs {
+			// InsertID cannot exceed 128 bytes.
+			// https://cloud.google.com/bigquery/quotas#streaming_inserts
+			// Use SHA512 which is exactly 128 bytes in hex.
+			hash := sha512.Sum512(ri.id())
+			row.InsertID = hex.EncodeToString(hash[:])
+		} else {
+			row.InsertID = bigquery.NoDedupeID
+		}
+		rows = append(rows, row)
 	}
 
 	return retry.Retry(ctx, quotaErrorIteratorFactory(), func() error {
@@ -462,72 +398,11 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 
 		if bqErr, ok := err.(bigquery.PutMultiError); ok {
 			// TODO(nodir): increment a counter.
-			logPutMultiError(ctx, bqErr, rows)
+			errorLogger(ctx, bqErr, rows)
 		}
 
 		return err
 	}, retry.LogCallback(ctx, "bigquery_put"))
-}
-
-func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row) {
-	// Print up to 10 errors.
-	for i := 0; i < 10 && i < len(err); i++ {
-		tr := rows[err[i].RowIndex].Message.(*bqpb.TestResultRow)
-		logging.Errorf(ctx, "failed to insert row for %s: %s", pbutil.TestResultName(tr.Parent.Id, tr.TestId, tr.ResultId), err[i].Error())
-	}
-	if len(err) > 10 {
-		logging.Errorf(ctx, "%d more row insertions failed", len(err)-10)
-	}
-}
-
-// exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
-func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
-
-	inv, err := invocations.Read(ctx, invID)
-	if err != nil {
-		return err
-	}
-	if inv.State != pb.Invocation_FINALIZED {
-		return errors.Reason("%s is not finalized yet", invID.Name()).Err()
-	}
-
-	// Get the invocation set.
-	invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invID))
-	if err != nil {
-		if invocations.TooManyTag.In(err) {
-			err = tasks.PermanentFailure.Apply(err)
-		}
-		return err
-	}
-
-	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invIDs)
-	if err != nil {
-		return err
-	}
-
-	// Query test results and export to BigQuery.
-	batchC := make(chan []*bq.Row)
-
-	// Batch exports rows to BigQuery.
-	eg, ctx := errgroup.WithContext(ctx)
-
-	eg.Go(func() error {
-		return b.batchExportRows(ctx, ins, batchC)
-	})
-
-	q := testresults.Query{
-		Predicate:     bqExport.GetTestResults().GetPredicate(),
-		InvocationIDs: invIDs,
-		Mask:          testresults.AllFields,
-	}
-	eg.Go(func() error {
-		defer close(batchC)
-		return b.queryTestResults(ctx, invID, q, exoneratedTestVariants, batchC)
-	})
-
-	return eg.Wait()
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
