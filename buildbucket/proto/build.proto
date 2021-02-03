@@ -38,7 +38,7 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 //
-// Next id: 29.
+// Next id: 30.
 message Build {
   // Defines what to build/test.
   //
@@ -243,10 +243,26 @@ message Build {
   google.protobuf.Duration scheduling_timeout = 26;
 
   // Maximum build execution time.
+  //
   // Not to be confused with scheduling_timeout.
-  // If the timeout is reached, the build is marked as INFRA_FAILURE status
+  //
+  // If the timeout is reached, the task will be signaled according to the
+  // `deadline` section of
+  // https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
   // and status_details.timeout is set.
+  //
+  // The task will have `grace_period` amount of time to handle cleanup
+  // before being forcefully terminated.
   google.protobuf.Duration execution_timeout = 27;
+
+  // Amount of cleanup time after execution_timeout.
+  //
+  // After being signaled according to execution_timeout, the task will
+  // have this duration to clean up before being forcefully terminated.
+  //
+  // The signalling process is explained in the `deadline` section of
+  // https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md.
+  google.protobuf.Duration grace_period = 29;
 
   // If set, swarming was requested to wait until it sees at least one bot
   // report a superset of the build's requested dimensions.
