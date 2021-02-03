@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c547aec7_0429f638",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T02:06:51Z",
+      "side": 1,
+      "message": "Oh yeah you\u0027re right we don\u0027t need that bit any more",
+      "parentUuid": "c907db01_6cfa2b38",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 0
+      },
+      "revId": "d0f53b8fd5d26d5648b7eaf47b92da324c2e51d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8a5e236f_1ab517bd",
         "filename": "buildbucket/cmd/bbagent/main.go",
         "patchSetId": 1
