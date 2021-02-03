@@ -16,6 +16,92 @@
       "message": "I\u0027m not sure how this looks in `godoc`, so I would check that to make sure it looks good",
       "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09ade90d_7b4fe0bf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T01:16:14Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5a10a50_f42f56ae",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T01:16:14Z",
+      "side": 1,
+      "message": "can you clarify that this is just the hostname? Maybe \n\n  Example: \"chromium-swarm.appspot.com\"",
+      "range": {
+        "startLine": 52,
+        "startChar": 36,
+        "endLine": 52,
+        "endChar": 40
+      },
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49d5dbce_6b7615dd",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T01:16:14Z",
+      "side": 1,
+      "message": "Maybe:\n\n   The `swarming` command line tool uses this to populate `ParentTaskId` when being used to trigger new tasks from within a swarming task.",
+      "range": {
+        "startLine": 56,
+        "startChar": 4,
+        "endLine": 56,
+        "endChar": 58
+      },
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ffcfa3c2_73f943ce",
+        "filename": "client/cmd/swarming/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T01:16:14Z",
+      "side": 1,
+      "message": "similar (mention `swarming` command line tool which is the entity doing this)",
+      "range": {
+        "startLine": 59,
+        "startChar": 15,
+        "endLine": 59,
+        "endChar": 24
+      },
+      "revId": "d7b7e69f9a25db4de162893e30c9968df39b8afe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
