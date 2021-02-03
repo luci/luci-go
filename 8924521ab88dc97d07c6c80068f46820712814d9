@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0bb4d64_6c6959cb",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-03T21:51:46Z",
+      "side": 1,
+      "message": "no mention of this above. Is this intentional?",
+      "range": {
+        "startLine": 352,
+        "startChar": 2,
+        "endLine": 352,
+        "endChar": 45
+      },
+      "revId": "8924521ab88dc97d07c6c80068f46820712814d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
