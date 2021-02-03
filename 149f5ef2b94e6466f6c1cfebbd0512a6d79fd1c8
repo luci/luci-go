@@ -16,6 +16,132 @@
       "message": "PTAL",
       "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc8fb8ba_bf25b208",
+        "filename": "resultdb/internal/artifactcontent/test_util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:41:49Z",
+      "side": 1,
+      "message": "nit:because this lives in a file other than _test*.go, it is a part of the package now, visible to other packages.\nwhen this happens, normally test utilities are placed in separate package. example: http://godoc.org/net/http/httptest",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 47,
+        "endChar": 25
+      },
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e06029b_b7ff83a2",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:41:49Z",
+      "side": 1,
+      "message": "nit: hard to see where params end and function body starts.\nConsider leaving a blank line to visually separate them, or have multiple params per line, or use a struct",
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a1561549_ed543e63",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:41:49Z",
+      "side": 1,
+      "message": "invID",
+      "range": {
+        "startLine": 164,
+        "startChar": 2,
+        "endLine": 164,
+        "endChar": 10
+      },
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "382a0019_7cd63fad",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:41:49Z",
+      "side": 1,
+      "message": "unnecessary",
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37757f91_2a1cf2dc",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:41:49Z",
+      "side": 1,
+      "message": "while L172 loop runs, we might get way beyond MaxBatchSizeApprox. We should be checking each time we increment batchSize. It is the same problem as before: we might be buffering the entire artifact.\n\nI think this callback @L163 is doing more than it should. In particular, creation of rowC channel for each artifact looks suspicious. \n\nalso, eg.Wait() is never called.\n\nI recommend:\n- in queryTextArtifacts, accept rowC as a parameter. Call downloadArtifactContent like it does already, except there is no need for error group in this queryTextArtifacts. This means that chunks of different artifacts would go to the same channel\n- move the batching logic to exportTextArtifactsToBigQuery. Reuse eg that already exists there. Iterate over rowC, produce batches, check batchSize each time it is incremented.",
+      "range": {
+        "startLine": 175,
+        "startChar": 3,
+        "endLine": 175,
+        "endChar": 56
+      },
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea2857a0_56edc719",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:41:49Z",
+      "side": 1,
+      "message": "artifacts",
+      "range": {
+        "startLine": 214,
+        "startChar": 10,
+        "endLine": 214,
+        "endChar": 22
+      },
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
