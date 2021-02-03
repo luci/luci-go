@@ -240,7 +240,7 @@ func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryE
 
 // ensureBQTable creates a BQ table if it doesn't exist and updates its schema
 // if it is stale.
-func ensureBQTable(ctx context.Context, t table) error {
+func ensureBQTable(ctx context.Context, t table, bqExport *pb.BigQueryExport) error {
 	// Note: creating/updating the table inside GetOrCreate ensures that different
 	// goroutines do not attempt to create/update the same table concurrently.
 	_, err := bqTableCache.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (interface{}, time.Duration, error) {
@@ -261,7 +261,7 @@ func ensureBQTable(ctx context.Context, t table) error {
 
 		// Table exists and is accessible.
 		// Ensure its schema is up to date and remember that for 5 minutes.
-		return nil, 5 * time.Minute, ensureBQTableFields(ctx, t)
+		return nil, 5 * time.Minute, ensureBQTableFields(ctx, t, bqExport)
 	})
 
 	return err
@@ -292,7 +292,7 @@ func createBQTable(ctx context.Context, t table) error {
 }
 
 // ensureBQTableFields adds missing fields to t.
-func ensureBQTableFields(ctx context.Context, t table) error {
+func ensureBQTableFields(ctx context.Context, t table, bqExport *pb.BigQueryExport) error {
 	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		// We should retrieve Metadata in a retry loop because of the ETag check
 		// below.
@@ -305,6 +305,7 @@ func ensureBQTableFields(ctx context.Context, t table) error {
 
 		// Append fields missing in the actual schema.
 		mutated := false
+		var tableType string
 		var appendMissing func(schema, newSchema bigquery.Schema) bigquery.Schema
 		appendMissing = func(schema, newFields bigquery.Schema) bigquery.Schema {
 			indexed := make(map[string]*bigquery.FieldSchema, len(schema))
@@ -325,12 +326,21 @@ func ensureBQTableFields(ctx context.Context, t table) error {
 		}
 
 		// Relax the new fields because we cannot add new required fields.
-		combinedSchema = appendMissing(combinedSchema, testResultRowSchema.Relax())
+		switch bqExport.ResultType.(type) {
+		case *pb.BigQueryExport_TestResults_:
+			combinedSchema = appendMissing(combinedSchema, testResultRowSchema.Relax())
+		case *pb.BigQueryExport_TextArtifacts_:
+			combinedSchema = appendMissing(combinedSchema, textArtifactRowSchema.Relax())
+		case nil:
+			return fmt.Errorf("bqExport.ResultType is unspecified")
+		default:
+			panic("impossible")
+		}
+
 		if !mutated {
 			// Nothing to update.
 			return nil
 		}
-
 		_, err = t.Update(ctx, bigquery.TableMetadataToUpdate{Schema: combinedSchema}, md.ETag)
 		apiErr, ok := err.(*googleapi.Error)
 		switch {
@@ -442,14 +452,24 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 	defer client.Close()
 
 	table := client.Dataset(bqExport.Dataset).Table(bqExport.Table)
-	if err := ensureBQTable(ctx, table); err != nil {
+	if err := ensureBQTable(ctx, table, bqExport); err != nil {
 		return err
 	}
 
 	ins := &bqInserter{
-		inserter: client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter(),
+		inserter: table.Inserter(),
 	}
-	return b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport)
+
+	switch bqExport.ResultType.(type) {
+	case *pb.BigQueryExport_TestResults_:
+		return b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport)
+	case *pb.BigQueryExport_TextArtifacts_:
+		return b.exportTextArtifactsToBigQuery(ctx, ins, invID, bqExport)
+	case nil:
+		return fmt.Errorf("bqExport.ResultType is unspecified")
+	default:
+		panic("impossible")
+	}
 }
 
 // Schedule schedules tasks for all the given invocation's BigQuery Exports.
