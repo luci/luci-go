@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf2ed5d4_1c89d62d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:18:39Z",
+      "side": 1,
+      "message": "just nits",
+      "revId": "9b170c37fdc7786b74bcbdcbd4e3dd934a326908",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5abdc67f_d5f902df",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:18:39Z",
+      "side": 1,
+      "message": "just `error`?",
+      "range": {
+        "startLine": 93,
+        "startChar": 142,
+        "endLine": 93,
+        "endChar": 153
+      },
+      "revId": "9b170c37fdc7786b74bcbdcbd4e3dd934a326908",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0fcc7279_2818ffaf",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:18:39Z",
+      "side": 1,
+      "message": "return ac.Download... ?",
+      "range": {
+        "startLine": 112,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 7
+      },
+      "revId": "9b170c37fdc7786b74bcbdcbd4e3dd934a326908",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2724a8b_93eedf2f",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-03T17:18:39Z",
+      "side": 1,
+      "message": "inline? like below",
+      "range": {
+        "startLine": 118,
+        "startChar": 4,
+        "endLine": 118,
+        "endChar": 7
+      },
+      "revId": "9b170c37fdc7786b74bcbdcbd4e3dd934a326908",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
