@@ -17,6 +17,8 @@ import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
+import { Result } from '../../libs/result';
+import { parseSearchQuery, TestVariantFilter } from '../../libs/search_query';
 import { TestLoader } from '../../models/test_loader';
 import { TestNode } from '../../models/test_node';
 import { Invocation, TestVariant } from '../../services/resultdb';
@@ -30,9 +32,18 @@ export class InvocationState {
   @observable.ref initialized = false;
   @observable.ref searchText = '';
 
+  @computed get searchFilter(): Result<TestVariantFilter, string> {
+    try {
+      return new Result.Ok(parseSearchQuery(this.searchText));
+    } catch (e) {
+      return new Result.Err(e);
+    }
+  }
+
   private filterVariant(variant: TestVariant): boolean {
     return variant.testId.startsWith(this.selectedNode.path) &&
-      variant.testId.toLocaleLowerCase().includes(this.searchText.toLocaleLowerCase());
+      this.searchFilter.isOk() &&
+      this.searchFilter.value(variant);
   }
 
   constructor(private appState: AppState) {}
