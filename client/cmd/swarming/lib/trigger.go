@@ -310,7 +310,7 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 		}
 		defer dump.Close()
 
-		data := triggerResults{Tasks: []*swarming.SwarmingRpcsTaskRequestMetadata{result}}
+		data := TriggerResults{Tasks: []*swarming.SwarmingRpcsTaskRequestMetadata{result}}
 		b, err := json.MarshalIndent(&data, "", "  ")
 		if err != nil {
 			return errors.Annotate(err, "marshalling trigger result").Err()

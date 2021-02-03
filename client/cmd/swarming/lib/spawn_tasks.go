@@ -116,7 +116,7 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 		output = os.Stdout
 	}
 
-	data := triggerResults{Tasks: results}
+	data := TriggerResults{Tasks: results}
 	b, err := json.MarshalIndent(&data, "", "  ")
 	if err != nil {
 		return errors.Annotate(err, "marshalling trigger result").Err()
