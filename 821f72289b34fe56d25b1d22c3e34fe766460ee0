@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "848afd93_91c57207",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-03T12:28:10Z",
+      "side": 1,
+      "message": "This is consistent with monorial.\nBut I feel typing \u0027!\u0027 is more natural and intuitive.\nAnd if we use a filter name like \u0027TEST-STATUS\u0027 or \u0027RESULT-STATUS\u0027, \u0027-\u0027 feels a bit weird.\nMaybe we can support both \u0027!\u0027 and \u0027-\u0027.\nWDYT?",
+      "range": {
+        "startLine": 27,
+        "startChar": 28,
+        "endLine": 27,
+        "endChar": 29
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb28fae3_13858f5d",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-03T12:28:10Z",
+      "side": 1,
+      "message": "This is a bit long. Also, in resultdb\u0027s proto definition, this is called test status rather than result status.\n\nWe can rename it to\n1. TEST-STATUS, but it\u0027s actually filtering the results.\n2. STATUS, but users may confuse this with variant status.",
+      "range": {
+        "startLine": 30,
+        "startChar": 12,
+        "endLine": 30,
+        "endChar": 25
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
