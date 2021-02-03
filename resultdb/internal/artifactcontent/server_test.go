@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"google.golang.org/genproto/googleapis/bytestream"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -77,28 +76,6 @@ func TestGenerateSignedURL(t *testing.T) {
 			So(exp, ShouldResemble, clock.Now(ctx).UTC().Add(time.Hour))
 		})
 	})
-}
-
-type fakeCASReader struct {
-	grpc.ClientStream // implements the rest of grpc.ClientStream
-
-	res         []*bytestream.ReadResponse
-	resIndex    int
-	resErr      error
-	resErrIndex int
-}
-
-func (r *fakeCASReader) Recv() (*bytestream.ReadResponse, error) {
-	if r.resErr != nil && r.resErrIndex == r.resIndex {
-		return nil, r.resErr
-	}
-
-	if r.resIndex < len(r.res) {
-		res := r.res[r.resIndex]
-		r.resIndex++
-		return res, nil
-	}
-	return nil, io.EOF
 }
 
 func TestServeContent(t *testing.T) {
