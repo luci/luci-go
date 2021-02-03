@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
@@ -53,6 +54,11 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 	}
 
+	return NewClientFromPerRPCCredentials(ctx, instance, creds)
+}
+
+// NewClientFromPerRPCCredentials creates CAS client using PerRPCCredentials.
+func NewClientFromPerRPCCredentials(ctx context.Context, instance string, creds credentials.PerRPCCredentials) (*client.Client, error) {
 	casConcurrency := runtime.NumCPU() * 2
 	if runtime.GOOS == "windows" {
 		// This is for better file write performance on Windows (http://b/171672371#comment6).
