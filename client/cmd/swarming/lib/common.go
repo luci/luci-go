@@ -47,9 +47,21 @@ import (
 )
 
 const (
+	// Define environment variables used in Swarming client.
+
+	// ServerEnvVar is Swarming server host to which a client connect.
+	// Example: "chromium-swarm.appspot.com"
 	ServerEnvVar = "SWARMING_SERVER"
+
+	// TaskIDEnvVar is Swarming task ID in which this task is running.
+	// The `swarming` command line tool uses this to populate `ParentTaskId`
+	// when being used to trigger new tasks from within a swarming task.
 	TaskIDEnvVar = "SWARMING_TASK_ID"
-	UserEnvVar   = "USER"
+
+	// UserEnvVar is user name.
+	// The `swarming` command line tool uses this to populate `User`
+	// when being used to trigger new tasks.
+	UserEnvVar = "USER"
 )
 
 // TriggerResults is a set of results from using the trigger subcommand,
