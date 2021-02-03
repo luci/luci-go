@@ -22,6 +22,30 @@
       },
       "revId": "8924521ab88dc97d07c6c80068f46820712814d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86e4cfc8_facbac8d",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-03T22:07:29Z",
+      "side": 1,
+      "message": "Yeah this is in the two above fields... I debated explaining this more, but essentially this is due to swarming\u0027s equivalent field only supporting seconds precision, and the fact that the Builder configuration has integer-typed _secs fields (not Durations).",
+      "parentUuid": "b0bb4d64_6c6959cb",
+      "range": {
+        "startLine": 352,
+        "startChar": 2,
+        "endLine": 352,
+        "endChar": 45
+      },
+      "revId": "8924521ab88dc97d07c6c80068f46820712814d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
