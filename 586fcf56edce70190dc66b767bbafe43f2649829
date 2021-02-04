@@ -85,6 +85,24 @@
       "parentUuid": "a2c8c4bd_9dd37995",
       "revId": "586fcf56edce70190dc66b767bbafe43f2649829",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57a10ee0_8d4445c9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T22:18:30Z",
+      "side": 1,
+      "message": "I think gtest results still have test_location?\n\nhttps://screenshot.googleplex.com/9VnR6E2DbyUnX8J\n\nSo we need to update result_adapter first:\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/infra/tools/result_adapter/gtest.go;l\u003d361",
+      "parentUuid": "2cd2ff3b_fb4950eb",
+      "revId": "586fcf56edce70190dc66b767bbafe43f2649829",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
