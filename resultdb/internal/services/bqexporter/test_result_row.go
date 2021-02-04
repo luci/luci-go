@@ -99,7 +99,6 @@ func (i *testResultRowInput) row() protoiface.MessageV1 {
 		Tags:          tr.Tags,
 		Exonerated:    i.exonerated,
 		PartitionTime: i.exported.CreateTime,
-		TestLocation:  tr.TestLocation,
 		TestMetadata:  tr.TestMetadata,
 	}
 

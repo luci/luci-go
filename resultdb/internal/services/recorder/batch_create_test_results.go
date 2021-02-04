@@ -149,11 +149,6 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		"RunDurationUsec": runDuration,
 		"Tags":            ret.Tags,
 	}
-	if ret.TestLocation != nil {
-		row["TestLocationFileName"] = ret.TestLocation.FileName
-		// Spanner client does not support int32
-		row["TestLocationLine"] = int(ret.TestLocation.Line)
-	}
 	if ret.TestMetadata != nil {
 		if tmd, err := proto.Marshal(ret.TestMetadata); err != nil {
 			panic(fmt.Sprintf("failed to marshal TestMetadata to bytes: %q", err))

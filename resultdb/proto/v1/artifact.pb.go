@@ -80,9 +80,9 @@ type Artifact struct {
 	// showing a link if it is too large.
 	SizeBytes int64 `protobuf:"varint,6,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
 	// Contents of the artifact.
-	// Note that not all RPCs accept/include this field in request/response,
-	// due to size constraints on the payload. Find more details from
-	// the description of the RPCs handling artifacts.
+	// This is INPUT_ONLY, and taken by BatchCreateArtifacts().
+	// All getter RPCs, such as ListArtifacts(), do not populate values into
+	// the field in the response.
 	Contents []byte `protobuf:"bytes,7,opt,name=contents,proto3" json:"contents,omitempty"`
 }
 
