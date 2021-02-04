@@ -293,7 +293,12 @@ func mainImpl() int {
 // finalizeBuild returns true if fatalErr is nil and there's no additional
 // errors finalizing the build.
 func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, statusDetails *bbpb.StatusDetails, outputFile *luciexe.OutputFlag) bool {
-	proto.Merge(finalBuild.StatusDetails, statusDetails)
+	if statusDetails != nil {
+		if finalBuild.StatusDetails == nil {
+			finalBuild.StatusDetails = &bbpb.StatusDetails{}
+		}
+		proto.Merge(finalBuild.StatusDetails, statusDetails)
+	}
 
 	// set final times
 	now := timestamppb.New(clock.Now(ctx))
