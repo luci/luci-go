@@ -19,6 +19,7 @@ import (
 	"crypto"
 	"crypto/sha256"
 	"encoding/hex"
+	"flag"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -27,24 +28,33 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/fakes"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/embeddedkvs"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/testing/testfs"
 )
 
+var _ AuthFlags = (*testAuthFlags)(nil)
+
+type testAuthFlags struct {
+	testEnv *fakes.TestEnv
+}
+
+func (af *testAuthFlags) Register(_ *flag.FlagSet) {}
+
+func (af *testAuthFlags) Parse() error { return nil }
+
+func (af *testAuthFlags) NewClient(ctx context.Context, _ string) (*client.Client, error) {
+	return af.testEnv.Server.NewTestClient(ctx)
+}
+
 func TestArchiveDownload(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
 	Convey(`Upload and download`, t, func() {
-		fakeEnv, cleanup := fakes.NewTestEnv(t)
+		testEnv, cleanup := fakes.NewTestEnv(t)
 		t.Cleanup(cleanup)
-
-		newCasClient = func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
-			return fakeEnv.Server.NewTestClient(ctx)
-		}
 
 		uploaded := t.TempDir()
 		largeFile := string(make([]byte, smallFileThreshold+1))
@@ -57,6 +67,7 @@ func TestArchiveDownload(t *testing.T) {
 		So(testfs.Build(uploaded, layout), ShouldBeNil)
 
 		var ar archiveRun
+		ar.commonFlags.Init(&testAuthFlags{testEnv: testEnv})
 		ar.dumpDigest = filepath.Join(t.TempDir(), "digest")
 		So(ar.paths.Set(uploaded+":."), ShouldBeNil)
 		So(ar.doArchive(ctx), ShouldBeNil)
