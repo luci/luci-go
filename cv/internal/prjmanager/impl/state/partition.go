@@ -17,8 +17,8 @@ package state
 import (
 	"fmt"
 
+	"go.chromium.org/luci/common/data/disjointset"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/disjointset"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
