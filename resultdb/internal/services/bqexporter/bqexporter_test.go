@@ -15,6 +15,7 @@
 package bqexporter
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -128,6 +130,57 @@ func TestExportToBigQuery(t *testing.T) {
 		// without hanging, or race detector does not detect anything.
 		Convey(`fail`, func() {
 			err := b.exportTestResultsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport)
+			So(err, ShouldErrLike, "some error")
+		})
+	})
+
+	Convey(`TestExportTextArtifactToBigQuery`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		testutil.MustApply(ctx,
+			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Inclusion("a", "inv1"),
+			insert.Artifact("inv1", "", "a0", map[string]interface{}{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv1", "tr/t/r", "a0", map[string]interface{}{"ContentType": "text/plain", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv1", "tr/t/r", "a1", nil),
+			insert.Artifact("inv1", "tr/t/r", "a2", map[string]interface{}{"ContentType": "text/plain;encoding=ascii", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv1", "tr/t/r", "a3", map[string]interface{}{"ContentType": "image/jpg", "Size": "100"}),
+			insert.Artifact("inv1", "tr/t/r", "a4", map[string]interface{}{"ContentType": "text/plain;encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
+		)
+
+		bqExport := &pb.BigQueryExport{
+			Project: "project",
+			Dataset: "dataset",
+			Table:   "table",
+			ResultType: &pb.BigQueryExport_TextArtifacts_{
+				TextArtifacts: &pb.BigQueryExport_TextArtifacts{
+					Predicate: &pb.ArtifactPredicate{
+						ContentTypeRegexp: "text/plain.*",
+					},
+				},
+			},
+		}
+
+		opts := DefaultOptions()
+		b := &bqExporter{
+			Options:      &opts,
+			putLimiter:   rate.NewLimiter(100, 1),
+			batchSem:     semaphore.NewWeighted(100),
+			rbecasClient: &artifactcontenttest.FakeByteStreamClient{bytes.Repeat([]byte("contentspart2\n"), 500000)},
+		}
+
+		Convey(`success`, func() {
+			i := &mockPassInserter{}
+			err := b.exportTextArtifactsToBigQuery(ctx, i, "a", bqExport)
+			So(err, ShouldBeNil)
+
+			i.mu.Lock()
+			defer i.mu.Unlock()
+			So(len(i.insertedMessages), ShouldEqual, 8)
+		})
+
+		Convey(`fail`, func() {
+			err := b.exportTextArtifactsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport)
 			So(err, ShouldErrLike, "some error")
 		})
 	})
