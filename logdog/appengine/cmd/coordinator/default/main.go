@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 )
 
 // Run installs and executes this site.
@@ -42,6 +43,7 @@ func main() {
 
 	// Standard HTTP endpoints.
 	standard.InstallHandlers(r)
+	rpcexplorer.Install(r)
 
 	// Register all of the handlers that we want to show up in RPC explorer (via
 	// pRPC discovery).
@@ -67,9 +69,9 @@ func main() {
 	r.POST("/admin/cron/stats/:stat/:namespace", base, cronStatsNSHandler)
 	r.GET("/admin/cron/stats", base, cronStatsHandler)
 
-	// Redirect "/" to "/app/".
+	// Redirect "/" to "/rpcexplorer/".
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
+		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 	})
 	// Redirect "/v/?s=..." to "/logs/..."
 	r.GET("/v/", router.MiddlewareChain{}, func(c *router.Context) {

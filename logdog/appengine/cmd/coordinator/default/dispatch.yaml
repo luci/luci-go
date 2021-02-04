@@ -13,17 +13,7 @@
 # limitations under the License.
 
 dispatch:
-  - url: "*/app/*"
-    service: static
-
   - url: "*/static/*"
-    service: static
-
-  - url: "*/rpcexplorer"
-    service: static
-  - url: "*/rpcexplorer/*"
-    service: static
-  - url: "*/rpcexplorer"
     service: static
 
   ##
