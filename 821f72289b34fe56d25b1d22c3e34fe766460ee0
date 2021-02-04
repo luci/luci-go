@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "13b87c46_6f1e10a5",
+        "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T06:33:48Z",
+      "side": 1,
+      "message": "Ack\n\nI was hoping we can get rid of the Result type by doing that. Honestly, it looks like an overkill to me. It seems the same result could be achieved by two separated fields. In particular, two fields would allow you to preserve last known good query, so that the filtered-out items don\u0027t reappear just because the user made a typo or something",
+      "parentUuid": "1a1a8ed1_4ddbb669",
+      "range": {
+        "startLine": 39,
+        "startChar": 6,
+        "endLine": 39,
+        "endChar": 31
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "67c8002a_d2110e98",
@@ -226,6 +250,30 @@
       "side": 1,
       "message": "\u003e So I wonder if we should add a new TestVariant status UNEXPECTEDLY_SKIPPED, for variants where all results were unexpectedly skipped. Another solution is to exonerate them.\nThat sounds good to me. But since now the variant status are computed on the resultdb (ui specific service), I think it would make more sense to add the new status there.\n\n\u003e if still need result status filter for some other reason, I\u0027d rather either somehow combine with \"status\" keyword (use same keyword for both), or pick something short, e.g. \"rstatus\"\nI will try them out. I\u0027d prefer \"rstatus\" because I\u0027m not quite sure if we should support variant status filter in two places.\n\n\u003e Weiwei, what is your plan with the current variant filter (the 4 checkboxes), do you plan to keep them our will you merge it with this filter?\nI think we can either\n1. Keep them.\n\n2. Move them to the section header in the list below.\nSince we added those section headers, stats are now duplicated on the screen. And it\u0027s a bit inconsistent that users can show the results via a link in the section header but can\u0027t hide them that way.",
       "parentUuid": "84210286_7e05343d",
+      "range": {
+        "startLine": 30,
+        "startChar": 12,
+        "endLine": 30,
+        "endChar": 25
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "deee7288_595b9fc0",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T06:33:48Z",
+      "side": 1,
+      "message": "ok, please file a bug for Chan.",
+      "parentUuid": "1125780e_fab4c771",
       "range": {
         "startLine": 30,
         "startChar": 12,
