@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "68d65e90_c5d36940",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T03:20:09Z",
+      "side": 1,
+      "message": "currently we fetch only one artifact at a time. If they are small, then it is inefficient.\nconsider putting artifacts to a channel here, and then create a constant number of worker goroutines than iterate over the channel and call downloadArtifactContent",
+      "revId": "afea5bdfd5956178af3943b6c680f518649bd0da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c338ccde_a2aee302",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T03:20:09Z",
+      "side": 1,
+      "message": "this is used only in q below. Should it be closer to q?\n\nthen q is used only in queryTextArtifacts? is it queryTextArtifacts\u0027s impl detail?\n\nconsider moving both into queryTextArtifacts().\nexportTextArtifactsToBigQuery will get simpler, and the number of assumptions inside queryTextArtifacts will reduce.\nThe number of params in queryTextArtifacts will become small enough to place them on one line.",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 0
+      },
+      "revId": "afea5bdfd5956178af3943b6c680f518649bd0da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "beb6f1b5_693e13e2",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T03:20:09Z",
+      "side": 1,
+      "message": "ah, wait, should we do this after the check?\ni.e. should the check be `batchSize + len(...) \u003e\u003d ...` ?\n\notherwise we might go from 3.9MB to 7.8MB.",
+      "range": {
+        "startLine": 207,
+        "startChar": 3,
+        "endLine": 207,
+        "endChar": 15
+      },
+      "revId": "afea5bdfd5956178af3943b6c680f518649bd0da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
