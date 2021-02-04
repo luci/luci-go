@@ -16,15 +16,13 @@ package sink
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -49,12 +47,12 @@ func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.R
 	return sinkClient.ReportTestResults(ctx, in)
 }
 
-func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
+func testServerConfig(recorder pb.RecorderClient, addr, tk string) ServerConfig {
 	return ServerConfig{
 		Address:          addr,
 		AuthToken:        tk,
 		ArtifactUploader: &ArtifactUploader{Client: &http.Client{}, Host: "example.org"},
-		Recorder:         pb.NewMockRecorderClient(ctl),
+		Recorder:         recorder,
 		Invocation:       "invocations/u-foo-1587421194_893166206",
 		invocationID:     "u-foo-1587421194_893166206",
 		UpdateToken:      "UpdateToken-ABC",
@@ -75,7 +73,7 @@ func testArtifactWithFile(writer func(f *os.File)) *sinkpb.Artifact {
 
 func testArtifactWithContents(contents []byte) *sinkpb.Artifact {
 	return &sinkpb.Artifact{
-		Body:        &sinkpb.Artifact_Contents{contents},
+		Body:        &sinkpb.Artifact_Contents{Contents: contents},
 		ContentType: "text/plain",
 	}
 }
@@ -115,44 +113,11 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 	}, cleanup
 }
 
-type BatchCreateTestResultsRequestMatcher struct {
-	invocation string
-	trs        []*pb.TestResult
+type mockRecorder struct {
+	pb.RecorderClient
+	batchCreateTestResults func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error)
 }
 
-func matchBatchCreateTestResultsRequest(inv string, trs ...*pb.TestResult) gomock.Matcher {
-	return BatchCreateTestResultsRequestMatcher{inv, trs}
-}
-
-func (m BatchCreateTestResultsRequestMatcher) Matches(x interface{}) bool {
-	req, ok := x.(*pb.BatchCreateTestResultsRequest)
-	if !ok {
-		return false
-	}
-	if req.Invocation != m.invocation {
-		return false
-	}
-
-	for i, r := range req.Requests {
-		if gomock.Eq(m.trs[i]).Matches(r.TestResult) == false {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (m BatchCreateTestResultsRequestMatcher) String() string {
-	ret := &strings.Builder{}
-	fmt.Fprintf(ret, "has invocation:%q ", m.invocation)
-	fmt.Fprintf(ret, "requests:<")
-
-	for i, tr := range m.trs {
-		if i > 0 {
-			fmt.Fprintf(ret, ", ")
-		}
-		fmt.Fprintf(ret, "[%d]: %s", i, tr.String())
-	}
-	fmt.Fprintf(ret, ">")
-	return ret.String()
+func (m *mockRecorder) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*pb.BatchCreateTestResultsResponse, error) {
+	return m.batchCreateTestResults(ctx, in)
 }
