@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "88b1736d_3959f808",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T21:05:11Z",
+      "side": 1,
+      "message": "I didn\u0027t find bugs, so LGTM, but IMO the code could be simpler.",
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "33894ac6_c32552b4",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T21:05:11Z",
+      "side": 1,
+      "message": "a.SizeBytes doesn\u0027t work?",
+      "range": {
+        "startLine": 107,
+        "startChar": 15,
+        "endLine": 107,
+        "endChar": 44
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c15ba8e9_78e7c88d",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T21:05:11Z",
+      "side": 1,
+      "message": "nit: go lint marks this as a warning. Could you specify field names?",
+      "range": {
+        "startLine": 179,
+        "startChar": 30,
+        "endLine": 179,
+        "endChar": 63
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bcaa85e2_c98efd58",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T21:05:11Z",
+      "side": 1,
+      "message": "i think this belongs to the callsite. I find it easier to reason about the code when channel creation and close() are in close proximity. When reading the code below I thought it is bug that there is no close() call",
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18cd8f6f_7fe82650",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T21:05:11Z",
+      "side": 1,
+      "message": "nit: +1 here instead of -1 there\nfor consistency with batchSize",
+      "range": {
+        "startLine": 192,
+        "startChar": 14,
+        "endLine": 192,
+        "endChar": 15
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4509da35_619ccd8a",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T21:05:11Z",
+      "side": 1,
+      "message": "usually things like this are done with an error group.\nit does the counting for you.\ni.e. when then group is done - the channel is closed\n\nimo the code would be more readable if artifactsToRowInputs was inlined. Currently channel creation happens in one place, and closure happens in another.",
+      "range": {
+        "startLine": 215,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 4
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c45714bf_121e9d87",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T21:05:11Z",
+      "side": 1,
+      "message": "nit: join?",
+      "range": {
+        "startLine": 223,
+        "startChar": 2,
+        "endLine": 224,
+        "endChar": 5
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
