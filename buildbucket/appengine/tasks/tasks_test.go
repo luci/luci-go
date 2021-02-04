@@ -95,6 +95,39 @@ func TestTasks(t *testing.T) {
 			})
 		})
 
+		Convey("CreateSwarmingTask", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					So(CreateSwarmingTask(ctx, nil), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("empty", func() {
+					task := &taskdef.CreateSwarmingTask{}
+					So(CreateSwarmingTask(ctx, task), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("zero", func() {
+					task := &taskdef.CreateSwarmingTask{
+						BuildId: 0,
+					}
+					So(CreateSwarmingTask(ctx, task), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				task := &taskdef.CreateSwarmingTask{
+					BuildId: 1,
+				}
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return CreateSwarmingTask(ctx, task)
+				}, nil), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
+
 		Convey("ExportBigQuery", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {

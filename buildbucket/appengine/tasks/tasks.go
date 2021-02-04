@@ -68,6 +68,29 @@ func init() {
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
+		ID: "create-swarming-task",
+		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+			task := m.(*taskdefs.CreateSwarmingTask)
+			body, err := json.Marshal(map[string]interface{}{
+				"generation": 0,
+				"id":    task.BuildId,
+			})
+			if err != nil {
+				return nil, errors.Annotate(err, "error marshaling payload").Err()
+			}
+			return &tq.CustomPayload{
+				Body:        body,
+				Method:      "POST",
+				RelativeURI: fmt.Sprintf("/internal/task/swarming/sync-build/%d", task.BuildId),
+			}, nil
+		},
+		Handler:   rejectionHandler("create-swarming-task"),
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.CreateSwarmingTask)(nil),
+		Queue:     "backend-default",
+	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "export-bigquery",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.ExportBigQuery)
@@ -147,6 +170,17 @@ func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTask) 
 		return errors.Reason("hostname is required").Err()
 	case task.TaskId == "":
 		return errors.Reason("task_id is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: task,
+	})
+}
+
+// CreateSwarmingTask enqueues a task queue task to create a Swarming task from
+// the given build.
+func CreateSwarmingTask(ctx context.Context, task *taskdefs.CreateSwarmingTask) error {
+	if task.GetBuildId() == 0 {
+		return errors.Reason("build_id is required").Err()
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: task,
