@@ -38,6 +38,8 @@ import (
 	"cloud.google.com/go/pubsub"
 
 	"google.golang.org/api/option"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Scopes returns the set of OAuth scopes required for this Output.
@@ -52,9 +54,10 @@ func Scopes() []string {
 
 // Config is the set of configuration parameters for this Output instance.
 type Config struct {
-	// Auth is the Authenticator to use for registration and publishing. It should
-	// be configured to hold the scopes returned by Scopes.
-	Auth *auth.Authenticator
+	// Auth incapsulates an authentication scheme to use.
+	//
+	// Construct it using either LegacyAuth() or RealmsAwareAuth().
+	Auth Auth
 
 	// Host is the name of the LogDog Host to connect to.
 	Host string
@@ -90,7 +93,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	// Validate our configuration parameters.
 	switch {
 	case cfg.Auth == nil:
-		return nil, errors.New("no authenticator supplied")
+		return nil, errors.New("no auth provider supplied")
 	case cfg.Host == "":
 		return nil, errors.New("no host supplied")
 	}
@@ -103,8 +106,91 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 			InternalReason("prefix(%v)", cfg.Prefix).Err()
 	}
 
+	// Check no cross-project shenanigans occur. Eventually cfg.Project will be
+	// removed in favor of providing the realm name.
+	if proj := cfg.Auth.Project(); proj != "" && proj != cfg.Project {
+		return nil, errors.Reason(
+			"registering a prefix in project %q while running in a context of project %q is forbidden",
+			cfg.Project, proj).Err()
+	}
+
+	// TODO(crbug.com/1172492): When running in "realms mode" Auth.RPC should be
+	// used to register the prefix. But it may fail for misconfigured projects
+	// that still expect the system account for the registration RPC, so we
+	// fallback to Auth.PubSub in this case. Once there are no HTTP 403 errors in
+	// the server logs, this fallback can be removed.
+	resp, err := cfg.registerPrefix(c, cfg.Auth.RPC())
+	if cfg.Auth.Realm() != "" && status.Code(err) == codes.PermissionDenied {
+		log.Errorf(c, "Failed to register the prefix using the default account, trying the system one as a fallback")
+		resp, err = cfg.registerPrefix(c, cfg.Auth.PubSub())
+	}
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to register prefix with Coordinator service.")
+		return nil, err
+	}
+	log.Fields{
+		"prefix":      cfg.Prefix,
+		"bundleTopic": resp.LogBundleTopic,
+	}.Debugf(c, "Successfully registered log stream prefix.")
+
+	// Validate the response topic.
+	fullTopic := ps.Topic(resp.LogBundleTopic)
+	if err := fullTopic.Validate(); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"fullTopic":  fullTopic,
+		}.Errorf(c, "Coordinator returned invalid Pub/Sub topic.")
+		return nil, err
+	}
+
+	// Split our topic into project and topic name. This must succeed, since we
+	// just finished validating the topic.
+	proj, topic := fullTopic.Split()
+
+	// Instantiate our Pub/Sub instance.
+	//
+	// We will use the non-cancelling context, for all Pub/Sub calls, as we want
+	// the Pub/Sub system to drain without interruption if the application is
+	// otherwise canceled.
+	pctx := cfg.PublishContext
+	if pctx == nil {
+		pctx = c
+	}
+
+	tokenSource, err := cfg.Auth.PubSub().TokenSource()
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to get TokenSource for Pub/Sub client.")
+		return nil, err
+	}
+
+	psClient, err := pubsub.NewClient(pctx, proj, option.WithTokenSource(tokenSource))
+	if err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"project":    proj,
+		}.Errorf(c, "Failed to create Pub/Sub client.")
+		return nil, errors.New("failed to get Pub/Sub client")
+	}
+	psTopic := psClient.Topic(topic)
+
+	// We own the prefix and all verifiable parameters have been validated.
+	// Successfully return our Output instance.
+	//
+	// Note that we use our publishing context here.
+	return newPubsub(pctx, pubsubConfig{
+		Topic:      pubSubTopicWrapper{psTopic},
+		Host:       cfg.Host,
+		Project:    cfg.Project,
+		Prefix:     string(cfg.Prefix),
+		Secret:     resp.Secret,
+		Compress:   true,
+		RPCTimeout: cfg.RPCTimeout,
+	}), nil
+}
+
+func (cfg *Config) registerPrefix(c context.Context, auth *auth.Authenticator) (*api.RegisterPrefixResponse, error) {
 	// Open a pRPC client to our Coordinator instance.
-	httpClient, err := cfg.Auth.Client()
+	httpClient, err := auth.Client()
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get authenticated HTTP client.")
 		return nil, err
@@ -146,6 +232,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	}
 	req := &api.RegisterPrefixRequest{
 		Project:    string(cfg.Project),
+		Realm:      cfg.Auth.Realm(),
 		Prefix:     string(cfg.Prefix),
 		SourceInfo: sourceInfo,
 		Expiration: google.NewDuration(cfg.PrefixExpiration),
@@ -159,68 +246,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		resp, err = svc.RegisterPrefix(c, req)
 		return grpcutil.WrapIfTransient(err)
 	}, retry.LogCallback(c, "RegisterPrefix"))
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to register prefix with Coordinator service.")
-		return nil, err
-	}
-	log.Fields{
-		"prefix":      cfg.Prefix,
-		"bundleTopic": resp.LogBundleTopic,
-	}.Debugf(c, "Successfully registered log stream prefix.")
-
-	// Validate the response topic.
-	fullTopic := ps.Topic(resp.LogBundleTopic)
-	if err := fullTopic.Validate(); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"fullTopic":  fullTopic,
-		}.Errorf(c, "Coordinator returned invalid Pub/Sub topic.")
-		return nil, err
-	}
-
-	// Split our topic into project and topic name. This must succeed, since we
-	// just finished validating the topic.
-	proj, topic := fullTopic.Split()
-
-	// Instantiate our Pub/Sub instance.
-	//
-	// We will use the non-cancelling context, for all Pub/Sub calls, as we want
-	// the Pub/Sub system to drain without interruption if the application is
-	// otherwise canceled.
-	pctx := cfg.PublishContext
-	if pctx == nil {
-		pctx = c
-	}
-
-	tokenSource, err := cfg.Auth.TokenSource()
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get TokenSource for Pub/Sub client.")
-		return nil, err
-	}
-
-	psClient, err := pubsub.NewClient(pctx, proj, option.WithTokenSource(tokenSource))
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    proj,
-		}.Errorf(c, "Failed to create Pub/Sub client.")
-		return nil, errors.New("failed to get Pub/Sub client")
-	}
-	psTopic := psClient.Topic(topic)
-
-	// We own the prefix and all verifiable parameters have been validated.
-	// Successfully return our Output instance.
-	//
-	// Note that we use our publishing context here.
-	return newPubsub(pctx, pubsubConfig{
-		Topic:      pubSubTopicWrapper{psTopic},
-		Host:       cfg.Host,
-		Project:    cfg.Project,
-		Prefix:     string(cfg.Prefix),
-		Secret:     resp.Secret,
-		Compress:   true,
-		RPCTimeout: cfg.RPCTimeout,
-	}), nil
+	return resp, err
 }
 
 // pubSubTopicWrapper wraps a cloud pubsub package Topic and converts it into

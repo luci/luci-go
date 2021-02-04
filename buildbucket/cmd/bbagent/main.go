@@ -92,9 +92,6 @@ func mainImpl() int {
 	input, err := bbinput.Parse(args[0])
 	check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
 
-	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
-	check(errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err())
-
 	// We start with retries disabled because the dispatcher.Channel will handle
 	// them during the execution of the user process; In particular we want
 	// dispatcher.Channel to be able to move on to a newer version of the Build if
@@ -103,9 +100,9 @@ func mainImpl() int {
 	//
 	// We enable them again after the user process has finished.
 	bbclientRetriesEnabled := false
-	bbclient, secrets, err := newBuildsClient(sctx, input.Build.Infra.Buildbucket, &bbclientRetriesEnabled)
+	bbclient, secrets, err := newBuildsClient(ctx, input.Build.Infra.Buildbucket, &bbclientRetriesEnabled)
 	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
-	logdogOutput, err := mkLogdogOutput(sctx, input.Build.Infra.Logdog)
+	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
 
 	var (
