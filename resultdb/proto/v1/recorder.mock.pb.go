@@ -215,6 +215,26 @@ func (mr *MockRecorderClientMockRecorder) BatchCreateTestExonerations(ctx, in in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateTestExonerations", reflect.TypeOf((*MockRecorderClient)(nil).BatchCreateTestExonerations), varargs...)
 }
 
+// BatchCreateArtifacts mocks base method.
+func (m *MockRecorderClient) BatchCreateArtifacts(ctx context.Context, in *BatchCreateArtifactsRequest, opts ...grpc.CallOption) (*BatchCreateArtifactsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchCreateArtifacts", varargs...)
+	ret0, _ := ret[0].(*BatchCreateArtifactsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchCreateArtifacts indicates an expected call of BatchCreateArtifacts.
+func (mr *MockRecorderClientMockRecorder) BatchCreateArtifacts(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateArtifacts", reflect.TypeOf((*MockRecorderClient)(nil).BatchCreateArtifacts), varargs...)
+}
+
 // MockRecorderServer is a mock of RecorderServer interface.
 type MockRecorderServer struct {
 	ctrl     *gomock.Controller
@@ -371,4 +391,19 @@ func (m *MockRecorderServer) BatchCreateTestExonerations(arg0 context.Context, a
 func (mr *MockRecorderServerMockRecorder) BatchCreateTestExonerations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateTestExonerations", reflect.TypeOf((*MockRecorderServer)(nil).BatchCreateTestExonerations), arg0, arg1)
+}
+
+// BatchCreateArtifacts mocks base method.
+func (m *MockRecorderServer) BatchCreateArtifacts(arg0 context.Context, arg1 *BatchCreateArtifactsRequest) (*BatchCreateArtifactsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchCreateArtifacts", arg0, arg1)
+	ret0, _ := ret[0].(*BatchCreateArtifactsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchCreateArtifacts indicates an expected call of BatchCreateArtifacts.
+func (mr *MockRecorderServerMockRecorder) BatchCreateArtifacts(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateArtifacts", reflect.TypeOf((*MockRecorderServer)(nil).BatchCreateArtifacts), arg0, arg1)
 }
