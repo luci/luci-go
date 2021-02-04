@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "74ae1d69_41c276cb",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T08:04:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68d65e90_c5d36940",
+      "revId": "afea5bdfd5956178af3943b6c680f518649bd0da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c338ccde_a2aee302",
@@ -41,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "51c308ac_bb802a77",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T08:04:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c338ccde_a2aee302",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 0
+      },
+      "revId": "afea5bdfd5956178af3943b6c680f518649bd0da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "beb6f1b5_693e13e2",
@@ -54,6 +96,30 @@
       "writtenOn": "2021-02-04T03:20:09Z",
       "side": 1,
       "message": "ah, wait, should we do this after the check?\ni.e. should the check be `batchSize + len(...) \u003e\u003d ...` ?\n\notherwise we might go from 3.9MB to 7.8MB.",
+      "range": {
+        "startLine": 207,
+        "startChar": 3,
+        "endLine": 207,
+        "endChar": 15
+      },
+      "revId": "afea5bdfd5956178af3943b6c680f518649bd0da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc4ab375_4e54d461",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T08:04:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "beb6f1b5_693e13e2",
       "range": {
         "startLine": 207,
         "startChar": 3,
