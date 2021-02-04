@@ -33,6 +33,23 @@
       "message": "Findit needs to change before we deploy this change, I\u0027ve left a comment at https://chromium-review.googlesource.com/c/infra/infra/+/2628633",
       "revId": "586fcf56edce70190dc66b767bbafe43f2649829",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68ed0d8c_c346549b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T21:07:28Z",
+      "side": 1,
+      "message": "-1 until https://chromium-review.googlesource.com/c/infra/infra/+/2628633/4/appengine/findit/libs/test_results/resultdb_test_results.py#115\nis fixed.",
+      "revId": "586fcf56edce70190dc66b767bbafe43f2649829",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
