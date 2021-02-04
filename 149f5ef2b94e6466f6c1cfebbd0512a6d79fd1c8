@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ebbc6d6_30c546c1",
+        "filename": "resultdb/internal/artifactcontent/test_util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T01:58:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc8fb8ba_bf25b208",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 47,
+        "endChar": 25
+      },
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0e06029b_b7ff83a2",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-02-03T17:41:49Z",
       "side": 1,
       "message": "nit: hard to see where params end and function body starts.\nConsider leaving a blank line to visually separate them, or have multiple params per line, or use a struct",
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08414fb4_e71cb9d2",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T01:58:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e06029b_b7ff83a2",
       "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "acb6ec56_4f88569e",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T01:58:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1561549_ed543e63",
+      "range": {
+        "startLine": 164,
+        "startChar": 2,
+        "endLine": 164,
+        "endChar": 10
+      },
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "382a0019_7cd63fad",
@@ -94,6 +160,24 @@
       "writtenOn": "2021-02-03T17:41:49Z",
       "side": 1,
       "message": "unnecessary",
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6bae33c0_f6ad60a8",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T01:58:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "382a0019_7cd63fad",
       "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -121,6 +205,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9488c61_ef04986b",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T01:58:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "37757f91_2a1cf2dc",
+      "range": {
+        "startLine": 175,
+        "startChar": 3,
+        "endLine": 175,
+        "endChar": 56
+      },
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ea2857a0_56edc719",
@@ -134,6 +242,30 @@
       "writtenOn": "2021-02-03T17:41:49Z",
       "side": 1,
       "message": "artifacts",
+      "range": {
+        "startLine": 214,
+        "startChar": 10,
+        "endLine": 214,
+        "endChar": 22
+      },
+      "revId": "149f5ef2b94e6466f6c1cfebbd0512a6d79fd1c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c77d3aa7_529cc8ec",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-04T01:58:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea2857a0_56edc719",
       "range": {
         "startLine": 214,
         "startChar": 10,
