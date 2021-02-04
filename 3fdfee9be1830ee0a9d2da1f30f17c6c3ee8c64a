@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bfe241d3_3df79c23",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T19:09:36Z",
+      "side": 1,
+      "message": "PTAL. What\u0027s the rollout process?",
+      "revId": "3fdfee9be1830ee0a9d2da1f30f17c6c3ee8c64a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
