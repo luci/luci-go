@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae390ee7_5de64c0a",
+        "filename": "buildbucket/appengine/tasks/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-04T01:58:37Z",
+      "side": 1,
+      "message": "CreateSwarmingTask",
+      "range": {
+        "startLine": 73,
+        "startChar": 24,
+        "endLine": 73,
+        "endChar": 42
+      },
+      "revId": "97b24d0c7d6e649a62ce61a170db3768dc94e356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4febd842_70c980ed",
+        "filename": "buildbucket/appengine/tasks/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-04T01:58:37Z",
+      "side": 1,
+      "message": "id? https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/swarming.py;l\u003d461?q\u003dswarming%2Fsync-build\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 76,
+        "startChar": 5,
+        "endLine": 76,
+        "endChar": 12
+      },
+      "revId": "97b24d0c7d6e649a62ce61a170db3768dc94e356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d63261d1_8c771c78",
+        "filename": "buildbucket/appengine/tasks/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-04T01:58:37Z",
+      "side": 1,
+      "message": "BuildId",
+      "range": {
+        "startLine": 76,
+        "startChar": 23,
+        "endLine": 76,
+        "endChar": 29
+      },
+      "revId": "97b24d0c7d6e649a62ce61a170db3768dc94e356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
