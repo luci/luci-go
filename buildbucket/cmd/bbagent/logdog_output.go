@@ -17,8 +17,6 @@ package main
 import (
 	"context"
 
-	"go.chromium.org/luci/auth"
-
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/output/logdog"
@@ -26,14 +24,12 @@ import (
 )
 
 func mkLogdogOutput(ctx context.Context, opts *bbpb.BuildInfra_LogDog) (output.Output, error) {
+	auth, err := logdog.RealmsAwareAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return (&logdog.Config{
-		Auth: auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
-			Scopes: []string{
-				auth.OAuthScopeEmail,
-				"https://www.googleapis.com/auth/cloud-platform",
-			},
-			MonitorAs: "bbagent/logdog",
-		}),
+		Auth:    auth,
 		Host:    opts.Hostname,
 		Project: opts.Project,
 		Prefix:  types.StreamName(opts.Prefix),

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/lucictx"
 )
 
 // BuildsClient is a trimmed version of `bbpb.BuildsClient` which only
@@ -80,7 +82,13 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 	if err != nil {
 		return nil, nil, err
 	}
-	prpcClient.C, err = auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
+
+	// Use "system" account to call UpdateBuild RPCs.
+	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+	}
+	prpcClient.C, err = auth.NewAuthenticator(sctx, auth.SilentLogin, auth.Options{
 		MonitorAs: "bbagent/buildbucket",
 	}).Client()
 	if err != nil {
