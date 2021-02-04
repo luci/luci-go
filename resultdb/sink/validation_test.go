@@ -56,11 +56,11 @@ func TestValidateArtifacts(t *testing.T) {
 	// valid artifacts
 	validArts := map[string]*sinkpb.Artifact{
 		"art1": {
-			Body:        &sinkpb.Artifact_FilePath{"/tmp/foo"},
+			Body:        &sinkpb.Artifact_FilePath{FilePath: "/tmp/foo"},
 			ContentType: "text/plain",
 		},
 		"art2": {
-			Body:        &sinkpb.Artifact_Contents{[]byte("contents")},
+			Body:        &sinkpb.Artifact_Contents{Contents: []byte("contents")},
 			ContentType: "text/plain",
 		},
 	}

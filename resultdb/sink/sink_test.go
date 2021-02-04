@@ -19,7 +19,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -34,12 +33,10 @@ import (
 
 func TestNewServer(t *testing.T) {
 	t.Parallel()
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
 
 	Convey("NewServer", t, func() {
 		ctx := context.Background()
-		cfg := testServerConfig(ctl, ":42", "my_token")
+		cfg := testServerConfig(&mockRecorder{}, ":42", "my_token")
 
 		Convey("succeeds", func() {
 			srv, err := NewServer(ctx, cfg)
@@ -64,7 +61,7 @@ func TestNewServer(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(srv.cfg.ArtChannelMaxLeases, ShouldEqual, 123)
 			So(srv.cfg.TestResultChannelMaxLeases, ShouldEqual, 456)
-			testServerConfig(ctl, "", "my_token")
+			testServerConfig(&mockRecorder{}, "", "my_token")
 		})
 		Convey("with TestLocationBase", func() {
 			// empty
@@ -113,14 +110,12 @@ func TestNewServer(t *testing.T) {
 
 func TestServer(t *testing.T) {
 	t.Parallel()
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
 
 	Convey("Server", t, func() {
 		req := &sinkpb.ReportTestResultsRequest{}
 		ctx := context.Background()
 
-		srvCfg := testServerConfig(ctl, "", "secret")
+		srvCfg := testServerConfig(&mockRecorder{}, "", "secret")
 		srv, err := NewServer(ctx, srvCfg)
 		So(err, ShouldBeNil)
 
@@ -224,12 +219,10 @@ func TestServer(t *testing.T) {
 
 func TestServerExport(t *testing.T) {
 	t.Parallel()
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
 
 	Convey("Export returns the configured address and auth_token", t, func() {
 		ctx := context.Background()
-		srv, err := NewServer(ctx, testServerConfig(ctl, ":42", "hello"))
+		srv, err := NewServer(ctx, testServerConfig(&mockRecorder{}, ":42", "hello"))
 		So(err, ShouldBeNil)
 
 		ctx = srv.Export(ctx)
