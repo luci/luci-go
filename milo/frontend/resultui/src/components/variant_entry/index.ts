@@ -87,7 +87,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
 
   @computed
   private get variantDef() {
-    const def = this.variant!.variant.def;
+    const def = this.variant!.variant?.def || {};
     const res: Array<[string, string]> = [];
     const seen = new Set();
     for (const key of ORDERED_VARIANT_DEF_KEYS) {
@@ -182,7 +182,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
               <div id="variant-identifier">
                 <span>
                   ${this.variantDef.map(([k, v]) => html`
-                  <span class=${classMap({'greyed-out': !this.prevVariant || v === this.prevVariant.variant.def?.[k], 'kv': true})}>
+                  <span class=${classMap({'greyed-out': !this.prevVariant || v === this.prevVariant.variant?.def?.[k], 'kv': true})}>
                     <span class="kv-key">${k}</span>
                     <span class="kv-value">${v}</span>
                   </span>
