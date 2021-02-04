@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77605b06_fca5d17e",
+        "filename": "cv/internal/migration/run_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-04T19:28:10Z",
+      "side": 0,
+      "message": "nit-nit: i kinda liked this.",
+      "revId": "f25dc79418e4f291d59209309720838000146a8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
