@@ -155,6 +155,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "be43e45b_242f313e",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T01:34:58Z",
+      "side": 1,
+      "message": "Re-reading the previous message, now I agree that the same resource message can be used in different RPCs, each may use a subset of the message fields. PTAL.",
+      "parentUuid": "cbd1e35d_cff14546",
+      "range": {
+        "startLine": 275,
+        "startChar": 8,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c492056a_7e42ff61",
@@ -334,6 +358,30 @@
       "side": 1,
       "message": "in that code, we need the hash before starting streaming to RBE, but we don\u0027t have the hash until we finished reading the request body. There we have a choice of either buffering the contents, or asking the client to provide pre-computed hash. We do the latter.\n\nHere we don\u0027t have to do this because the content is already buffered.",
       "parentUuid": "3ffbcb83_cea4144b",
+      "range": {
+        "startLine": 282,
+        "startChar": 2,
+        "endLine": 284,
+        "endChar": 0
+      },
+      "revId": "5f01d52803a547b84f6e4ef2865f65077865f537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "66e6c0e6_66d10703",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T01:34:58Z",
+      "side": 1,
+      "message": "Done; content_hash removed.",
+      "parentUuid": "18f9d683_02bf59d4",
       "range": {
         "startLine": 282,
         "startChar": 2,

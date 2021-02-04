@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4e73680_1f33cef5",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T01:34:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "703db2ec_e3a19c6c",
+      "range": {
+        "startLine": 284,
+        "startChar": 8,
+        "endLine": 284,
+        "endChar": 15
+      },
+      "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bcd09b16_8ee0d53e",
@@ -180,6 +204,30 @@
       "side": 1,
       "message": "at proto level, there is no such thing as \"content is nil\".\nit can be empty, but it can\u0027t be nil.\n\nas you said, empty artifact is a valid case, so I think content_hash presence should not depend on whether content is empty.\n\n(but then again, I don\u0027t think content_hash field is needed here to begin with. There is another thread about this)",
       "parentUuid": "bbdbd9da_3d489012",
+      "range": {
+        "startLine": 286,
+        "startChar": 33,
+        "endLine": 286,
+        "endChar": 79
+      },
+      "revId": "7f1516e23f89d9d65f1e6c02cd7f601a015c5bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ff50e8d_776a4236",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T01:34:58Z",
+      "side": 1,
+      "message": "removed content_hash",
+      "parentUuid": "2a11a88e_a21968eb",
       "range": {
         "startLine": 286,
         "startChar": 33,
