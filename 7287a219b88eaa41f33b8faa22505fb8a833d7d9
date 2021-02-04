@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70feea63_5f9e48da",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-04T03:58:08Z",
+      "side": 1,
+      "message": "Same as Python, I assume we want to put the builds only after everything else has definitely been done, so I didn\u0027t combine this with FanOutIn above.",
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
