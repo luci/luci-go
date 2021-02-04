@@ -34,6 +34,24 @@
       "parentUuid": "8890e52d_9d385cdd",
       "revId": "da1c0456c7392f5d8d4b37e877d77b1a7befbd6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ccda1765_52226a01",
+        "filename": "cv/internal/migration/run_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-04T23:27:14Z",
+      "side": 1,
+      "message": "I agree, the test doesn\u0027t test very much.\n\nI thought it\u0027s worth it to add it though at least because it provides an example of what the fields of Attempt might look like.",
+      "parentUuid": "b667cc63_2d953297",
+      "revId": "da1c0456c7392f5d8d4b37e877d77b1a7befbd6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
