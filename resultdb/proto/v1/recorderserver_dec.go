@@ -177,3 +177,20 @@ func (s *DecoratedRecorder) BatchCreateTestExonerations(ctx context.Context, req
 	}
 	return
 }
+
+func (s *DecoratedRecorder) BatchCreateArtifacts(ctx context.Context, req *BatchCreateArtifactsRequest) (rsp *BatchCreateArtifactsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchCreateArtifacts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchCreateArtifacts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchCreateArtifacts", rsp, err)
+	}
+	return
+}
