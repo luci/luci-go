@@ -350,7 +350,7 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv1", "tr/t/r", "a1", nil),
 				insert.Artifact("inv1", "tr/t/r", "a3", map[string]interface{}{"ContentType": "image/jpg"}),
 			)
-			q.ContentTypesRegexp = "text/.+"
+			q.ContentTypeRegexp = "text/.+"
 
 			actual := mustFetchNames(q)
 			So(actual, ShouldResemble, []string{

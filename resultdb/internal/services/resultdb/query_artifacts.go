@@ -65,7 +65,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		PageSize:            pagination.AdjustPageSize(in.PageSize),
 		PageToken:           in.PageToken,
 		FollowEdges:         in.GetPredicate().GetFollowEdges(),
-		ContentTypesRegexp:  in.GetPredicate().GetContentTypeRegexp(),
+		ContentTypeRegexp:   in.GetPredicate().GetContentTypeRegexp(),
 	}
 	arts, token, err := q.FetchProtos(ctx)
 	if err != nil {
