@@ -118,13 +118,20 @@ type FinishedRun struct {
 	_kind string `gae:"$kind,migration.FinishedRun"`
 	// ID is ID of this Run in CV.
 	ID common.RunID `gae:"$id"`
+
+	// TODO(yiwzhang): Remove the two fields below when re-implementing run
+	// finalization, as they are both derived from Attempt and redundant.
+
 	// Status is the final Run Status. MUST be one of the terminal statuses.
 	Status run.Status `gae:",noindex"`
 	// EndTime is the time when this Run ends.
 	EndTime time.Time `gae:",noindex"`
 
-	// TODO(yiwzhang): Store rest of the data (e.g. tryjobs) reported by
-	// CQDaemon. This will help CV accumulate more historical data.
+	// The Attempt proto as sent by CQDaemon
+	//
+	// This includes tryjobs and other fields that will be sent to the
+	// BQ table after any attempt to submit CLs.
+	Attempt *cvbqpb.Attempt
 }
 
 var terminalStatusMapping = map[cvbqpb.AttemptStatus]run.Status{
@@ -144,7 +151,8 @@ func saveFinishedRun(ctx context.Context, mr *migrationpb.Run) error {
 	fr := &FinishedRun{
 		ID:      rid,
 		Status:  terminalStatus,
-		EndTime: mr.GetAttempt().GetEndTime().AsTime(),
+		EndTime: attempt.GetEndTime().AsTime(),
+		Attempt: attempt,
 	}
 	return errors.Annotate(datastore.Put(ctx, fr), "failed to put FinishedRun %q", rid).Tag(transient.Tag).Err()
 }
