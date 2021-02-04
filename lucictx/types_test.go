@@ -84,6 +84,9 @@ func TestPredefinedTypes(t *testing.T) {
 			data, _ := getCurrent(c).sections["realm"]
 			So(string(*data), ShouldEqual, `{"name":"test:realm"}`)
 			So(GetRealm(c), ShouldResembleProto, r)
+			proj, realm := CurrentRealm(c)
+			So(proj, ShouldEqual, "test")
+			So(realm, ShouldEqual, "realm")
 		})
 	})
 }

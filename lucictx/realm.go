@@ -16,10 +16,12 @@ package lucictx
 
 import (
 	"context"
+	"fmt"
+	"strings"
 )
 
-// GetRealm returns the current Realm from LUCI_CONTEXT if it was present.
-// nil, otherwise.
+// GetRealm returns the current "realm" section from LUCI_CONTEXT if it was
+// present or nil otherwise.
 func GetRealm(ctx context.Context) *Realm {
 	ret := Realm{}
 	ok, err := Lookup(ctx, "realm", &ret)
@@ -35,4 +37,19 @@ func GetRealm(ctx context.Context) *Realm {
 // SetRealm sets the Realm in the LUCI_CONTEXT.
 func SetRealm(ctx context.Context, r *Realm) context.Context {
 	return Set(ctx, "realm", r)
+}
+
+// CurrentRealm grab the result of GetRealm and parses it into parts.
+//
+// Returns empty strings if there's no "realm" section in the LUCI_CONTEXT.
+func CurrentRealm(ctx context.Context) (project, realm string) {
+	r := GetRealm(ctx)
+	if r == nil || r.Name == "" {
+		return
+	}
+	idx := strings.IndexRune(r.Name, ':')
+	if idx == -1 {
+		panic(fmt.Sprintf("bad realm name %q in LUCI_CONTEXT - should be <project>:<realm>", r.Name))
+	}
+	return r.Name[:idx], r.Name[idx+1:]
 }

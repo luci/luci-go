@@ -65,7 +65,7 @@ func (f *logdogOutputFactory) configOutput(a *application) (output.Output, error
 	}
 
 	cfg := out.Config{
-		Auth:             auth,
+		Auth:             out.LegacyAuth(auth),
 		Host:             host,
 		Project:          a.project,
 		Prefix:           a.prefix,
