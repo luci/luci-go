@@ -277,6 +277,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "13f50269_aebc7e8d",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T06:00:59Z",
+      "side": 1,
+      "message": "wow. I missed so much, and thank you for pointing out them all,\nAll agreed and done. PTAL",
+      "parentUuid": "eceac4bc_b90f2e34",
+      "range": {
+        "startLine": 285,
+        "startChar": 2,
+        "endLine": 286,
+        "endChar": 29
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "29bec044_fa81f599",
@@ -432,6 +456,30 @@
       "side": 1,
       "message": "2MiB sounds better.\n10MiB sounds good too.\nit just means we\u0027d need to use larger machines on the server-side, but we might also win on the RPC overhead.",
       "parentUuid": "b39743b5_63b87f62",
+      "range": {
+        "startLine": 302,
+        "startChar": 49,
+        "endLine": 302,
+        "endChar": 55
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89fc187c_977f77f4",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T06:00:59Z",
+      "side": 1,
+      "message": "I increased this documented limit to 10MB. I will use a lower limit, like 2MiB, in sink first.\nOnce we collect some numbers, we will be able to see if we need to adjust the limit or not.",
+      "parentUuid": "278ac77a_c4088ce4",
       "range": {
         "startLine": 302,
         "startChar": 49,
