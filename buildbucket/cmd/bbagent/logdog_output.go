@@ -18,12 +18,14 @@ import (
 	"context"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/output/logdog"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
 func mkLogdogOutput(ctx context.Context, opts *bbpb.BuildInfra_LogDog) (output.Output, error) {
+	logging.Infof(ctx, "Register Logdog prefix %q in project %q", opts.Prefix, opts.Project)
 	auth, err := logdog.RealmsAwareAuth(ctx)
 	if err != nil {
 		return nil, err
