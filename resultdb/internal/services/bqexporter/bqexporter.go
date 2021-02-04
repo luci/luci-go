@@ -29,10 +29,12 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
+	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -44,6 +46,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -83,6 +86,10 @@ type Options struct {
 	// be large (e.g. 100) if exports small invocations (1000 results per
 	// invocation).
 	TaskWorkers int
+
+	// ArtifactRBEInstance is the name of the RBE instance used for artifact
+	// storage. Example: "projects/luci-resultdb/instances/artifacts".
+	ArtifactRBEInstance string
 }
 
 // DefaultOptions returns Options with default values.
@@ -116,6 +123,9 @@ type bqExporter struct {
 	// The exact number is batchSemWeight + taskWorkers*2,
 	// but this is good enough.
 	batchSem *semaphore.Weighted
+
+	// Client to read from RBE-CAS.
+	rbecasClient bytestream.ByteStreamClient
 }
 
 // Tasks describes how to route bq export tasks.
@@ -131,11 +141,20 @@ var Tasks = tq.RegisterTaskClass(tq.TaskClass{
 var UseTQ = experiments.Register("rdb-use-tq-bq-export")
 
 // InitServer initializes a bqexporter server.
-func InitServer(srv *server.Server, opts Options) {
+func InitServer(srv *server.Server, opts Options) error {
+	if opts.ArtifactRBEInstance == "" {
+		return errors.Reason("opts.ArtifactRBEInstance is required").Err()
+	}
+
+	conn, err := artifactcontent.RBEConn(srv.Context)
+	if err != nil {
+		return err
+	}
 	b := &bqExporter{
-		Options:    &opts,
-		putLimiter: rate.NewLimiter(opts.RateLimit, 1),
-		batchSem:   semaphore.NewWeighted(int64(opts.MaxBatchTotalSizeApprox / opts.MaxBatchSizeApprox)),
+		Options:      &opts,
+		putLimiter:   rate.NewLimiter(opts.RateLimit, 1),
+		batchSem:     semaphore.NewWeighted(int64(opts.MaxBatchTotalSizeApprox / opts.MaxBatchSizeApprox)),
+		rbecasClient: bytestream.NewByteStreamClient(conn),
 	}
 
 	d := tasks.Dispatcher{
@@ -157,6 +176,7 @@ func InitServer(srv *server.Server, opts Options) {
 		task := msg.(*taskspb.ExportInvocationToBQ)
 		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
 	})
+	return nil
 }
 
 // inserter is implemented by bigquery.Inserter.

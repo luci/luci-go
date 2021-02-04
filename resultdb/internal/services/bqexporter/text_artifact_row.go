@@ -15,19 +15,27 @@
 package bqexporter
 
 import (
+	"bufio"
+	"context"
 	"fmt"
+	"io"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
+
 	"google.golang.org/protobuf/runtime/protoiface"
 
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 var artifactRowSchema bigquery.Schema
+
+var lineBreak = []byte("\n")
 
 const (
 	artifactRowMessage = "luci.resultdb.bq.TextArtifactRow"
@@ -80,4 +88,51 @@ func (i *textArtifactRowInput) row() protoiface.MessageV1 {
 
 func (i *textArtifactRowInput) id() []byte {
 	return []byte(fmt.Sprintf("%s/%d", i.a.Name, i.shardID))
+}
+
+func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifacts.Artifact, exported, parent *pb.Invocation, rowC chan rowInput) error {
+	ac := artifactcontent.Reader{
+		RBEInstance: b.Options.ArtifactRBEInstance,
+		Hash:        a.RBECASHash,
+		Size:        a.Artifact.SizeBytes,
+	}
+
+	var str strings.Builder
+	shardId := 0
+	input := func() *textArtifactRowInput {
+		return &textArtifactRowInput{
+			exported: exported,
+			parent:   parent,
+			a:        a.Artifact,
+			shardID:  int32(shardId),
+			content:  str.String(),
+		}
+	}
+
+	return ac.DownloadRBECASContent(ctx, b.rbecasClient, func(pr io.Reader) error {
+		sc := bufio.NewScanner(pr)
+		for sc.Scan() {
+			// TODO(crbug.com/1149736): handle the case that a single line is 5MB+.
+			// If such case happens, we should split the line.
+			if str.Len()+len(sc.Bytes())+len(lineBreak) > contentShardSize {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case rowC <- input():
+				}
+				shardId++
+				str.Reset()
+			}
+			str.Write(sc.Bytes())
+			str.Write(lineBreak)
+		}
+		if str.Len() > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case rowC <- input():
+			}
+		}
+		return nil
+	})
 }

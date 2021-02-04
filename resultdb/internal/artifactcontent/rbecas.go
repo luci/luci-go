@@ -21,6 +21,7 @@ import (
 	"io"
 	"strings"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -66,7 +67,7 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 
 	// Start a reading stream.
 	stream, err := r.ReadCASBlob(c.Context, &bytestream.ReadRequest{
-		ResourceName: fmt.Sprintf("%s/blobs/%s/%d", r.RBECASInstanceName, strings.TrimPrefix(hash, "sha256:"), r.size.Int64),
+		ResourceName: resourceName(r.RBECASInstanceName, hash, r.size.Int64),
 	})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
@@ -122,4 +123,68 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 			}
 		}
 	}
+}
+
+func resourceName(instance, hash string, size int64) string {
+	return fmt.Sprintf("%s/blobs/%s/%d", instance, strings.TrimPrefix(hash, "sha256:"), size)
+}
+
+// Reader reads the artifact content from RBE-CAS.
+type Reader struct {
+	// RBEInstance is the name of the RBE instance where the artifact is stored.
+	// Example: "projects/luci-resultdb/instances/artifacts".
+	RBEInstance string
+	// Hash is the hash of the artifact content stored in RBE-CAS.
+	Hash string
+	// Size is the content size in bytes.
+	Size int64
+}
+
+// DownloadRBECASContent calls f for the downloaded artifact content.
+func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteStreamClient, f func(io.Reader) error) error {
+	stream, err := bs.Read(ctx, &bytestream.ReadRequest{
+		ResourceName: resourceName(r.RBEInstance, r.Hash, r.Size),
+	})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			logging.Warningf(ctx, "RBE-CAS responded: %s", err)
+		}
+		return err
+	}
+
+	pr, pw := io.Pipe()
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+	eg.Go(func() error {
+		defer pr.Close()
+		return f(pr)
+	})
+
+	eg.Go(func() error {
+		defer pw.Close()
+		for {
+			_, readSpan := trace.StartSpan(ctx, "resultdb.readChunk")
+			chunk, err := stream.Recv()
+			if err == nil {
+				readSpan.Attribute("size", len(chunk.Data))
+			}
+			readSpan.End(err)
+
+			switch {
+			case err == io.EOF:
+				// We are done.
+				return nil
+
+			case err != nil:
+				return err
+
+			default:
+				if _, err := pw.Write(chunk.Data); err != nil {
+					return err
+				}
+			}
+		}
+	})
+
+	return eg.Wait()
 }
