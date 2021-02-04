@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "071b41f4_e12d9b80",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-04T20:47:15Z",
+      "side": 1,
+      "message": "Technically, we don\u0027t need to store those two fields anymore because they are derived from the attempt proto. Since we now store the attempt proto directly, we could compute them during the finalization. I can do that while re-implementing run finalization in CV. Can you add a TODO for me here to remove these two fields?",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 125,
+        "endChar": 0
+      },
+      "revId": "27a4eef4a901c852a4c42ae331624072f271438a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

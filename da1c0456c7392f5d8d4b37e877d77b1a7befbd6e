@@ -16,6 +16,24 @@
       "message": "Isn\u0027t there a test for this already, Yiwei?",
       "revId": "da1c0456c7392f5d8d4b37e877d77b1a7befbd6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b667cc63_2d953297",
+        "filename": "cv/internal/migration/run_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-04T20:47:15Z",
+      "side": 1,
+      "message": "I think I ended up not adding it because the test is basically testing `datastore.Put`. But it\u0027s good to have one.\n\nThanks Quinten!",
+      "parentUuid": "8890e52d_9d385cdd",
+      "revId": "da1c0456c7392f5d8d4b37e877d77b1a7befbd6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
