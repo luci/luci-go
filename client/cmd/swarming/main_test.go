@@ -80,8 +80,9 @@ func triggerTaskWithIsolate(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetad
 // triggerTaskWithCAS triggers a task that uploads ouput to CAS, and returns triggered TaskRequest.
 func triggerTaskWithCAS(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetadata {
 	// TODO(jwata): ensure the digest is uploaded on CAS.
-	// https://cas-viewer-dev.appspot.com/projects/chromium-swarm-dev/instances/default_instance/blobs/1febd720bb5e438578194b08ace1e6da072a9741068923798fd5b41856190710/77/tree
-	return triggerTask(t, []string{"-digest", "1febd720bb5e438578194b08ace1e6da072a9741068923798fd5b41856190710/77"})
+	// https://cas-viewer-dev.appspot.com/projects/chromium-swarm-dev/instances/default_instance/blobs/ad455795d66ac6d3bc0905f6a137dda1fb1d2de252a9f2a73329428fe1cf645a/77/tree
+	// Use the same digest with the output so that the content is kept on CAS (hopefully...)
+	return triggerTask(t, []string{"-digest", "ad455795d66ac6d3bc0905f6a137dda1fb1d2de252a9f2a73329428fe1cf645a/77"})
 }
 
 // triggerTask triggers a task and returns the triggered TaskRequest.
@@ -204,7 +205,7 @@ const spawnTaskInputJSON = `
 						"cas_input_root": {
 							"cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
 							"digest": {
-								"hash": "70a9a5e030074dc7eb69d167e91a47fadd3f14c14a52be85fd10f57cfb72dd0a",
+								"hash": "ad455795d66ac6d3bc0905f6a137dda1fb1d2de252a9f2a73329428fe1cf645a",
 								"size_bytes": "77"
 							}
 						},
