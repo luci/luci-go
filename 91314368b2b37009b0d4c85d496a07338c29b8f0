@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "91f8818a_6af59347",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T06:43:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f1850fc_2d0695cb",
+      "range": {
+        "startLine": 284,
+        "startChar": 64,
+        "endLine": 284,
+        "endChar": 66
+      },
+      "revId": "91314368b2b37009b0d4c85d496a07338c29b8f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "53a075bf_76193109",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-04T06:26:10Z",
       "side": 1,
       "message": "artifact.artifact_id\nartifact.name below\nsee L299, L300, L257, etc.\n\nalso maybe remove ` for consistency. Here and in L284-285",
+      "range": {
+        "startLine": 290,
+        "startChar": 5,
+        "endLine": 290,
+        "endChar": 18
+      },
+      "revId": "91314368b2b37009b0d4c85d496a07338c29b8f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5778a14e_91488139",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-04T06:43:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53a075bf_76193109",
       "range": {
         "startLine": 290,
         "startChar": 5,
