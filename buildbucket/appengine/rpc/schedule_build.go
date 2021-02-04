@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -188,11 +190,14 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	blds := make([]*model.Build, len(reqs))
 	for i := range blds {
 		// TODO(crbug/1042991): Generate build IDs.
-		// TODO(crbug/1042991): Actually create builds from the requests.
+		// TODO(crbug/1042991): Fill in relevant proto fields from the builder config.
+		// TODO(crbug/1042991): Fill in relevant proto fields from the request.
 		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
 		blds[i] = &model.Build{
+			ID: int64(i + 1),
 			Proto: pb.Build{
-				Id: int64(i + 1),
+				Builder: reqs[i].Builder,
+				Id:      int64(i + 1),
 			},
 		}
 	}
@@ -200,12 +205,81 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	// TODO(crbug/1150607): Create ResultDB invocations.
 	// TODO(crbug/1042991): Generate build numbers.
 	// TODO(crbug/1042991): Update Builders in the datastore to point to the latest build.
-	// TODO(crbug/1042991): Create Builds in the datastore.
-	// TODO(crbug/1042991): Enqueue taskqueue task to create Swarming task.
-	// TODO(crbug/1042991): Update build creation metric.
 
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = parallel.WorkPool(64, func(work chan<- func() error) {
+		for _, b := range blds {
+			b := b
+			work <- func() error {
+				if b.IsLeased {
+					return appstatus.BadRequest(errors.Reason("build %d is leased", b.ID).Err())
+				}
+
+				// TODO(crbug/1042991): Potentially move Swarming-specifics to internal package.
+				exp := make(map[int64]struct{})
+				for _, d := range b.Proto.Infra.GetSwarming().GetTaskDimensions() {
+					if d.Expiration.Nanos != 0 {
+						return errors.Reason("build %d expiration specifies nanos", b.ID).Err()
+					}
+					exp[d.Expiration.Seconds] = struct{}{}
+				}
+				if len(exp) > 6 {
+					return appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", b.ID).Err())
+				}
+
+				toPut := []interface{}{b}
+
+				if b.Proto.Infra != nil {
+					toPut = append(toPut, &model.BuildInfra{
+						Build: datastore.KeyForObj(ctx, b),
+						Proto: model.DSBuildInfra{
+							*b.Proto.Infra,
+						},
+					})
+				}
+
+				if b.Proto.Input.GetProperties() != nil {
+					toPut = append(toPut, &model.BuildInputProperties{
+						Build: datastore.KeyForObj(ctx, b),
+						Proto: model.DSStruct{
+							*b.Proto.Input.Properties,
+						},
+					})
+				}
+
+				err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					switch err := datastore.Get(ctx, &model.Build{ID: b.ID}); {
+					case err == nil:
+						return errors.Reason("build already exists: %d", b.ID).Err()
+					case err != datastore.ErrNoSuchEntity:
+						return errors.Annotate(err, "failed to fetch build: %d", b.ID).Err()
+					}
+
+					if err := datastore.Put(ctx, toPut...); err != nil {
+						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
+					}
+
+					if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
+						BuildId: b.ID,
+					}); err != nil {
+						return errors.Annotate(err, "failed to enqueue swarming task creation task: %d", b.ID).Err()
+					}
+					return nil
+				}, nil)
+				if err != nil {
+					return err
+				}
+
+				// TODO(crbug/1042991): Update build creation metric.
+				return nil
+			}
+		}
 	})
 	if err != nil {
 		return nil, err
