@@ -16,6 +16,195 @@
       "message": "chanli@ and nodir@. I updated the body. PTAL.",
       "revId": "2a13004c5cede8545101776694311c792dbaf00e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a08ddf5b_4196f11a",
+        "filename": "resultdb/proto/v1/artifact.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "if the reader uses GetArtifact/ListArtifacts/QueryArtifacts, then docs sends them back to the RPC which doesn\u0027t mention content. So it is not super clear that it is not supported.\n\nAlso it seems 3/4 RPCs do not support it. Should we just say that this is supported only in BatchCreateArtifactsRequest? \n\nalso, should we apply https://google.aip.dev/203#input-only ?\nreturning the contents in BatchCreateArtifactsResponse would be wasteful.",
+      "range": {
+        "startLine": 70,
+        "startChar": 45,
+        "endLine": 71,
+        "endChar": 52
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30342c90_0df2353c",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "blank line after this, for consistency",
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "352de61f_e89313a9",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "message comment for consistency?",
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "affbf182_8dff682a",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "MUST",
+      "range": {
+        "startLine": 284,
+        "startChar": 41,
+        "endLine": 284,
+        "endChar": 47
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e14203fa_cb05cbbe",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "why do we ask for CreateArtifactRequest.invocation then?",
+      "range": {
+        "startLine": 285,
+        "startChar": 2,
+        "endLine": 286,
+        "endChar": 29
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "29bec044_fa81f599",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "the existing artifact creation handler is idempotent without this.\ncan this one be the same?\n\nsame below",
+      "range": {
+        "startLine": 288,
+        "startChar": 0,
+        "endLine": 293,
+        "endChar": 24
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a49dc21_39d1d4d3",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "MUST",
+      "range": {
+        "startLine": 302,
+        "startChar": 36,
+        "endLine": 302,
+        "endChar": 42
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2af530b1_274a1252",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "this is rather low for *all* requests. How was this number derived?",
+      "range": {
+        "startLine": 302,
+        "startChar": 49,
+        "endLine": 302,
+        "endChar": 55
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1654e3d4_f87a7b0c",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T01:45:11Z",
+      "side": 1,
+      "message": "i think returning Artifact.content back to the user would be wasteful, so I recommend calling out that it will not be populated. But if you use INPUT_ONLY in the field, then nvm",
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
