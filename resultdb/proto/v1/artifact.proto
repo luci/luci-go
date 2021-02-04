@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
@@ -64,4 +65,10 @@ message Artifact {
   // Can be used in UI to decide between displaying the artifact inline or only
   // showing a link if it is too large.
   int64 size_bytes = 6;
+
+  // Contents of the artifact.
+  // Note that not all RPCs accept/include this field in request/response,
+  // due to size constraints on the payload. Find more details from
+  // the description of the RPCs handling artifacts.
+  bytes contents = 7 [ (google.api.field_behavior) = INPUT_ONLY ];
 }
