@@ -41,3 +41,12 @@ func (s *State) ensureNotYetCloned() {
 		panic("Incorrect use. This State object has already been cloned. See State doc")
 	}
 }
+
+func cloneComponent(c *prjpb.Component) *prjpb.Component {
+	return &prjpb.Component{
+		Clids:        c.GetClids(),
+		Pruns:        c.GetPruns(),
+		DecisionTime: c.GetDecisionTime(),
+		Dirty:        c.GetDirty(),
+	}
+}

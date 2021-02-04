@@ -21,16 +21,39 @@ import (
 	"sync/atomic"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-// cAction is a component action.
+// earliestDecisionTime returns the earliest decision time of all components.
+//
+// Returns the same time as time.Time and proto.
+//
+// Re-uses DecisionTime of one of the components, assuming that components are
+// modified copy-on-write.
+func earliestDecisionTime(cs []*prjpb.Component) (time.Time, *timestamppb.Timestamp) {
+	var ret time.Time
+	var retPB *timestamppb.Timestamp
+	for _, c := range cs {
+		if dt := c.GetDecisionTime(); dt != nil {
+			if t := dt.AsTime(); ret.IsZero() || ret.After(t) {
+				ret = t
+				retPB = dt
+			}
+		}
+	}
+	return ret, retPB
+}
+
+// cAction is a component action to be taken during current PM mutation.
 //
 // An action may involve creating one or more new Runs,
 // or removing CQ votes from CL(s) which can't form a Run for some reason.
@@ -41,73 +64,99 @@ type cAction struct {
 
 const concurrentComponentProcessing = 16
 
-// prepareComponentActions returns actions to be taken on components.
+// scanComponents checks if any immediate actions have be taken on components.
 //
-// Doesn't modify state.
-func (s *State) prepareComponentActions(ctx context.Context) ([]cAction, error) {
-	// First, do quick serial evaluation of components. Most frequently, this
-	// should result in no actions.
-	pclGetter := s.makePCLGetter()
-	var evaluator componentPreevaluator = &componentPreevaluatorImpl{}
-	if s.testComponentPreevaluator != nil {
-		evaluator = s.testComponentPreevaluator // test only.
-	}
+// Doesn't modify state itself. If any components are modified or actions are to
+// be taken, then allocates a new component slice.
+// Otherwise, returns nil, nil, nil.
+func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Component, error) {
 
-	var potential []cAction
-	now := clock.Now(ctx)
-	for i, c := range s.PB.GetComponents() {
-		if actor, skip := evaluator.shouldEvaluate(now, pclGetter, c); !skip {
-			potential = append(potential, cAction{i, actor})
-		}
-	}
-	if len(potential) == 0 {
-		return nil, nil
-	}
-
-	var required []cAction
+	out := make([]*prjpb.Component, len(s.PB.GetComponents()))
+	var modified int32
 	var mutex sync.Mutex
+	var actions []cAction
+	now := clock.Now(ctx)
 
 	poolSize := concurrentComponentProcessing
-	if n := len(potential); n < poolSize {
+	if n := len(s.PB.GetComponents()); n < poolSize {
 		poolSize = n
 	}
 	errs := parallel.WorkPool(poolSize, func(work chan<- func() error) {
-		for _, a := range potential {
-			a := a
+		supporter := s.makeActorSupporter()
+
+		for i, oldC := range s.PB.GetComponents() {
+			out[i] = oldC
+			var oldWhen time.Time
+			canSkip := !oldC.GetDirty()
+			if t := oldC.GetDecisionTime(); t != nil {
+				oldWhen = t.AsTime()
+				if !oldWhen.After(now) {
+					canSkip = false
+				}
+			}
+			if canSkip {
+				continue
+			}
+
+			i, oldC, oldWhen := i, oldC, oldWhen
 			work <- func() error {
-				switch shouldAct, err := a.actor.shouldAct(ctx); {
+				var actor componentActor = &componentActorImpl{c: oldC, s: supporter}
+				if s.testComponentActorFactory != nil {
+					actor = s.testComponentActorFactory(oldC, supporter)
+				}
+				switch when, err := actor.nextActionTime(ctx, now); {
 				case err != nil:
+					// Ensure this component is reconsidered during then next PM mutation.
+					atomic.AddInt32(&modified, 1)
+					out[i] = cloneComponent(oldC)
+					out[i].DecisionTime = timestamppb.New(now)
 					return err
-				case shouldAct:
+
+				case when == now:
 					mutex.Lock()
-					required = append(required, a)
+					actions = append(actions, cAction{i, actor})
 					mutex.Unlock()
+
+				case when != oldWhen || oldC.GetDirty():
+					atomic.AddInt32(&modified, 1)
+					out[i] = cloneComponent(oldC)
+					out[i].Dirty = false
+					if when.IsZero() {
+						out[i].DecisionTime = nil
+					} else {
+						out[i].DecisionTime = timestamppb.New(when)
+					}
 				}
 				return nil
 			}
 		}
 	})
-	if errs == nil {
-		return required, nil
+
+	if len(actions) == 0 && modified == 0 {
+		out = nil // no mutations necessary
 	}
-	sharedMsg := fmt.Sprintf("shouldAct on %d, failed to check %d", len(required), len(errs.(errors.MultiError)))
+	if errs == nil {
+		return actions, out, nil
+	}
+	sharedMsg := fmt.Sprintf("scanComponents(%d): %d errors, %d actions now, %d modified",
+		len(s.PB.GetComponents()), len(errs.(errors.MultiError)), len(actions), modified)
 	severe := common.MostSevereError(errs)
-	if len(required) == 0 {
-		return nil, errors.Annotate(severe, sharedMsg+", keeping the most severe error").Err()
+	if len(actions) == 0 {
+		return nil, nil, errors.Annotate(severe, sharedMsg+", keeping the most severe error").Err()
 	}
 	// Components are independent, so proceed since partial progress is better
 	// than none.
 	logging.Warningf(ctx, "%s (most severe error %s), proceeding to act", sharedMsg, severe)
-	// TODO(tandrii): ensure PM is re-triggered to reeval components with
-	// failures.
-	return required, nil
+	return actions, out, nil
 }
 
 // execComponentActions executes actions on components.
-func (s *State) execComponentActions(ctx context.Context, actions []cAction) error {
-	components := make([]*prjpb.Component, len(s.PB.GetComponents()))
-	copy(components, s.PB.GetComponents())
-	var modified int32
+//
+// Modifies passed component slice in place.
+// Modifies individuals components via copy-on-write.
+func (s *State) execComponentActions(ctx context.Context, actions []cAction, components []*prjpb.Component) error {
+	var errModified int32
+	var okModified int32
 
 	poolSize := concurrentComponentProcessing
 	if l := len(actions); l < poolSize {
@@ -121,52 +170,85 @@ func (s *State) execComponentActions(ctx context.Context, actions []cAction) err
 				var newC *prjpb.Component
 				switch newC, err = a.actor.act(ctx); {
 				case err != nil:
+					// Ensure this component is reconsidered during then next PM mutation.
+					newC = cloneComponent(components[a.componentIndex])
+					newC.DecisionTime = timestamppb.New(clock.Now(ctx))
+					components[a.componentIndex] = newC
+					atomic.AddInt32(&errModified, 1)
 				case newC != oldC:
 					components[a.componentIndex] = newC
-					atomic.AddInt32(&modified, 1)
+					atomic.AddInt32(&okModified, 1)
 				}
 				return
 			}
 		}
 	})
-	s.PB.Components = components
 	if errs == nil {
 		return nil
 	}
-	failed := len(errs.(errors.MultiError))
 	severe := common.MostSevereError(errs)
 	sharedMsg := fmt.Sprintf(
-		"acted on components: succeded %d (modified %d), failed %d",
-		len(actions)-failed, modified, failed)
-	if modified == 0 {
+		"acted on components: succeded %d (ok-modified %d), failed %d",
+		int32(len(actions))-errModified, okModified, errModified)
+	if okModified == 0 {
 		return errors.Annotate(severe, sharedMsg+", keeping the most severe error").Err()
 	}
 	// Components are independent, so proceed since partial progress is better
 	// than none.
 	logging.Warningf(ctx, "%s (most severe error %s)", sharedMsg, severe)
-	// TODO(tandrii): ensure PM is re-triggered to reeval components which had
-	// failures.
+	// For failed components, their DecisionTime is set `now` by scanComponents,
+	// thus PM will reconsider them as soon possible.
 	return nil
 }
 
-// componentPreevaluator checks if a component has to be deeply evaluated.
-type componentPreevaluator interface {
-	// shouldEvaluate quickly checks if action may be necessary on a component.
+type actorSupporter interface {
+	// PCL provides access to State.PB.Pcls w/o exposing entire state.
 	//
-	// If so, returns a new componentActor and false.
-	// Otherwise, returns nil, true to indicate that no action is necessary.
-	//
-	// The given component may only be modified in copy-on-write way.
-	shouldEvaluate(now time.Time, p pclGetter, c *prjpb.Component) (ce componentActor, skip bool)
+	// Returns nil if clid refers to a CL not known to PM's State.
+	PCL(clid int64) *prjpb.PCL
+
+	// ConfigGroup returns a ConfigGroup for a given index of the current LUCI
+	// project config version.
+	ConfigGroup(index int) (*cfgpb.ConfigGroup, error)
+}
+
+func (s *State) makeActorSupporter() actorSupporter {
+	s.ensurePCLIndex()
+	return &actorSupporterImpl{
+		pcls:     s.PB.GetPcls(),
+		pclIndex: s.pclIndex,
+	}
+}
+
+type actorSupporterImpl struct {
+	pcls     []*prjpb.PCL
+	pclIndex map[common.CLID]int
+}
+
+func (a *actorSupporterImpl) PCL(clid int64) *prjpb.PCL {
+	i, ok := a.pclIndex[common.CLID(clid)]
+	if !ok {
+		return nil
+	}
+	return a.pcls[i]
+}
+
+func (a *actorSupporterImpl) ConfigGroup(index int) (*cfgpb.ConfigGroup, error) {
+	panic("not implemented") // TODO: Implement
 }
 
 // componentActor evaluates and acts on a single component.
 type componentActor interface {
-	// shouldAct returns true if component requires an action.
+	// nextActionTime returns time when the component action has to be taken.
+	//
+	// If action is necessary now, must return now as passed.
+	// If action may be necessary later, must return when.
+	// Must return zero value of time.Time to indicate that no action is necessary
+	// until an incoming event.
 	//
 	// Called outside of any Datastore transaction.
 	// May perform its own Datastore operations.
-	shouldAct(ctx context.Context) (bool, error)
+	nextActionTime(ctx context.Context, now time.Time) (time.Time, error)
 
 	// act executes the component action.
 	//
@@ -184,60 +266,25 @@ type componentActor interface {
 	act(ctx context.Context) (*prjpb.Component, error)
 }
 
-// pclGetter provides access to State.PB.Pcls w/o exposing entire state.
-//
-// Returns nil if clid refers to CL not known to PM's State.
-type pclGetter func(clid int64) *prjpb.PCL
-
-// makePCLGetter returns pclGetter for this State.
-func (s *State) makePCLGetter() pclGetter {
-	s.ensurePCLIndex()
-	index := s.pclIndex
-	pcls := s.PB.GetPcls()
-	return func(clid int64) *prjpb.PCL {
-		i, ok := index[common.CLID(clid)]
-		if !ok {
-			return nil
-		}
-		return pcls[i]
-	}
-}
-
-// componentPreevaluatorImpl implements componentPreevaluator for production.
-type componentPreevaluatorImpl struct{}
-
-// shouldEvaluate implements componentPreevaluator.
-func (*componentPreevaluatorImpl) shouldEvaluate(now time.Time, p pclGetter, c *prjpb.Component) (ce componentActor, skip bool) {
-	if !c.GetDirty() && c.GetDecisionTime().AsTime().After(now) {
-		skip = true
-	} else {
-		ce = &componentActorImpl{c: c, pclGetter: p}
-	}
-	return
-}
-
 // componentActorImpl implements componentActor in production.
 type componentActorImpl struct {
-	c         *prjpb.Component
-	pclGetter pclGetter
+	c *prjpb.Component
+	s actorSupporter
 }
 
-// shouldAct implements componentActor.
-func (a *componentActorImpl) shouldAct(ctx context.Context) (bool, error) {
+// nextActionTime implements componentActor.
+func (a *componentActorImpl) nextActionTime(ctx context.Context, now time.Time) (time.Time, error) {
 	// TODO(tandrii): implement.
-	return true, nil
+	if !a.c.GetDirty() {
+		return time.Time{}, nil
+	}
+	return now, nil
 }
 
 // act implements componentActor.
 func (a *componentActorImpl) act(ctx context.Context) (*prjpb.Component, error) {
 	// TODO(tandrii): implement.
-	if !a.c.GetDirty() {
-		return a.c, nil
-	}
-	return &prjpb.Component{
-		Clids:        a.c.GetClids(),
-		DecisionTime: a.c.GetDecisionTime(),
-		Pruns:        a.c.GetPruns(),
-		Dirty:        false,
-	}, nil
+	c := cloneComponent(a.c)
+	c.Dirty = false
+	return c, nil
 }

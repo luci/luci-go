@@ -17,6 +17,8 @@ package pmtest
 
 import (
 	"context"
+	"sort"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -53,6 +55,39 @@ func iterEventBox(ctx context.Context, project string, cb func(*prjpb.Event)) {
 		So(proto.Unmarshal(item.Value, evt), ShouldBeNil)
 		cb(evt)
 	}
+}
+
+// ETAsOf returns sorted list of ETAs for a given project.
+//
+// Includes ETAs encoded in KickPokePMTask tasks.
+func ETAsOF(in tqtesting.TaskList, luciProject string) []time.Time {
+	var out []time.Time
+	for _, t := range in {
+		switch v := t.Payload.(type) {
+		case *prjpb.PokePMTask:
+			if v.GetLuciProject() == luciProject {
+				out = append(out, t.ETA)
+			}
+		case *prjpb.KickPokePMTask:
+			if v.GetLuciProject() == luciProject {
+				out = append(out, v.GetEta().AsTime())
+			}
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Before(out[j]) })
+	return out
+}
+
+// ETAsWithin erturns sorted list of ETAs for a given project in t+-d range.
+func ETAsWithin(in tqtesting.TaskList, luciProject string, d time.Duration, t time.Time) []time.Time {
+	out := ETAsOF(in, luciProject)
+	for len(out) > 0 && out[0].Before(t.Add(-d)) {
+		out = out[1:]
+	}
+	for len(out) > 0 && out[len(out)-1].After(t.Add(d)) {
+		out = out[:len(out)-1]
+	}
+	return out
 }
 
 func matchEventBox(ctx context.Context, project string, targets []*prjpb.Event) (matched, remaining []*prjpb.Event) {
