@@ -16,6 +16,156 @@
       "message": "Same as Python, I assume we want to put the builds only after everything else has definitely been done, so I didn\u0027t combine this with FanOutIn above.",
       "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7778603c_d8e42cde",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:01:22Z",
+      "side": 1,
+      "message": "Ack.\n\nConsider turning your CL comment into a code comment though. For others.",
+      "parentUuid": "70feea63_5f9e48da",
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17767fde_f68265d3",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:01:22Z",
+      "side": 1,
+      "message": "this is pretty large and self-contained func.\nShould we extract it to its own?\n\nalso this seems to be a core logic of build creation. \nIn python, overall creation is 700 LOC which will probably turn into 1400+ LOC of Go.\nShould it live in its own package? It lives in its own module in Python.",
+      "range": {
+        "startLine": 219,
+        "startChar": 11,
+        "endLine": 219,
+        "endChar": 15
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d971230_585e95d1",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:01:22Z",
+      "side": 1,
+      "message": "is this code dead? how can this happen?",
+      "range": {
+        "startLine": 220,
+        "startChar": 0,
+        "endLine": 223,
+        "endChar": 0
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6044da83_2b7be934",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:01:22Z",
+      "side": 1,
+      "message": "I think no BadRequest should happen after we already started mutations in the datastore.\nBadRequest is something that we can detect early on, in the validation phase, i.e. validateSchedule()\n\napplies to other places as well, including L228 which should have been BadRequest too",
+      "range": {
+        "startLine": 233,
+        "startChar": 22,
+        "endLine": 233,
+        "endChar": 32
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c388d02_ebfba011",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:01:22Z",
+      "side": 1,
+      "message": "nit: combine into one line (it is short enough) or add `BuildInfra: ` (because go lint doesn\u0027t like this)\n\nsame below",
+      "range": {
+        "startLine": 241,
+        "startChar": 31,
+        "endLine": 243,
+        "endChar": 8
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b834a53f_b1e19936",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:01:22Z",
+      "side": 1,
+      "message": "apply appstatus?",
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc6d85d2_1e7d7078",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:01:22Z",
+      "side": 1,
+      "message": "nit: hard to read multi-line if statements. consider introducing a variable for the task, or splitting assignment and the if statement",
+      "range": {
+        "startLine": 268,
+        "startChar": 5,
+        "endLine": 270,
+        "endChar": 13
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
