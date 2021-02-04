@@ -832,15 +832,15 @@ type CreateArtifactRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The parent resource where the artifact will be created.
+	// Name of the parent resource where the artifact will be created.
 	//
-	// For invocation-level artifacts, `parent` is the invocation ID.
-	// For test-result-level artifacts, `parent` is the TestResult name.
+	// For invocation-level artifacts, it is the invocation name.
+	// For test-result-level artifacts, it is the TestResult name.
 	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
 	// Artifact to upload.
 	// The length of the artifact contents MUST be <= 512KiB.
-	// `artifact_id` MUST be set.
-	// `name` will be ignored.
+	// artifact.artifact_id MUST be set.
+	// artifact.name will be ignored.
 	Artifact *Artifact `protobuf:"bytes,2,opt,name=artifact,proto3" json:"artifact,omitempty"`
 }
 

@@ -56,10 +56,6 @@ func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cre
 				"a/b", "1",
 				"c", "2",
 			),
-			TestLocation: &pb.TestLocation{
-				FileName: "//a_test.go",
-				Line:     54,
-			},
 			TestMetadata: &pb.TestMetadata{
 				Name: "original_name",
 				Location: &pb.TestLocation{

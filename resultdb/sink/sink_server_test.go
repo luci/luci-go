@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -57,24 +58,15 @@ func TestReportTestResults(t *testing.T) {
 		defer cleanup()
 
 		expected := &pb.TestResult{
-			TestId:      tr.TestId,
-			ResultId:    tr.ResultId,
-			Expected:    tr.Expected,
-			Status:      tr.Status,
-			SummaryHtml: tr.SummaryHtml,
-			StartTime:   tr.StartTime,
-			Duration:    tr.Duration,
-			Tags:        tr.Tags,
-			TestLocation: &pb.TestLocation{
-				FileName: tr.TestLocation.FileName,
-			},
-			TestMetadata: &pb.TestMetadata{
-				Name: "name",
-				Location: &pb.TestLocation{
-					Repo:     "https://chromium.googlesource.com/chromium/src",
-					FileName: tr.TestLocation.FileName,
-				},
-			},
+			TestId:       tr.TestId,
+			ResultId:     tr.ResultId,
+			Expected:     tr.Expected,
+			Status:       tr.Status,
+			SummaryHtml:  tr.SummaryHtml,
+			StartTime:    tr.StartTime,
+			Duration:     tr.Duration,
+			Tags:         tr.Tags,
+			TestMetadata: tr.TestMetadata,
 		}
 
 		checkResults := func() {
@@ -170,20 +162,9 @@ func TestReportTestResults(t *testing.T) {
 		})
 		Convey("with ServerConfig.TestLocationBase", func() {
 			cfg.TestLocationBase = "//base/"
-			tr.TestLocation.FileName = "artifact_dir/a_test.cc"
-			tr.TestMetadata = &pb.TestMetadata{
-				Location: &pb.TestLocation{
-					Repo:     "https://chromium.googlesource.com/chromium/src",
-					FileName: "artifact_dir/a_test.cc",
-				},
-			}
-			expected.TestLocation.FileName = "//base/artifact_dir/a_test.cc"
-			expected.TestMetadata = &pb.TestMetadata{
-				Location: &pb.TestLocation{
-					Repo:     "https://chromium.googlesource.com/chromium/src",
-					FileName: "//base/artifact_dir/a_test.cc",
-				},
-			}
+			tr.TestMetadata.Location.FileName = "artifact_dir/a_test.cc"
+			expected.TestMetadata = proto.Clone(expected.TestMetadata).(*pb.TestMetadata)
+			expected.TestMetadata.Location.FileName = "//base/artifact_dir/a_test.cc"
 			checkResults()
 		})
 
@@ -213,13 +194,6 @@ func TestReportTestResults(t *testing.T) {
 							},
 						},
 					},
-				},
-			}
-			tr.TestMetadata = &pb.TestMetadata{
-				Name: "name",
-				Location: &pb.TestLocation{
-					Repo:     "https://chromium.googlesource.com/chromium/src",
-					FileName: "//artifact_dir/a_test.cc",
 				},
 			}
 			expected.Tags = append(expected.Tags, pbutil.StringPairs(

@@ -50,7 +50,6 @@ var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
 	"status",
 	"start_time",
 	"duration",
-	"test_location",
 )
 
 // ListMask returns mask.Mask converted from field_mask.FieldMask.
@@ -123,8 +122,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		"Status",
 		"StartTime",
 		"RunDurationUsec",
-		"TestLocationFileName",
-		"TestLocationLine",
 	}
 
 	// Select extra columns depending on the mask.
@@ -156,8 +153,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
-		var testLocationFileName spanner.NullString
-		var testLocationLine spanner.NullInt64
 		tr := &pb.TestResult{}
 
 		ptrs := []interface{}{
@@ -168,8 +163,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 			&tr.Status,
 			&tr.StartTime,
 			&micros,
-			&testLocationFileName,
-			&testLocationLine,
 		}
 
 		for _, v := range extraColumns {
@@ -200,7 +193,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		tr.SummaryHtml = string(summaryHTML)
 		PopulateExpectedField(tr, maybeUnexpected)
 		PopulateDurationField(tr, micros)
-		populateTestLocation(tr, testLocationFileName, testLocationLine)
 		if err := populateTestMetadata(tr, tmd); err != nil {
 			return nil, errors.Annotate(err, "error unmarshalling test_metadata for %s", trName).Err()
 		}
