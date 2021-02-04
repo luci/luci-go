@@ -39,7 +39,7 @@ import (
 
 var testResultRowSchema bigquery.Schema
 
-var testResultRowMessage = "luci.resultdb.bq.TestResultRow"
+const testResultRowMessage = "luci.resultdb.bq.TestResultRow"
 
 func init() {
 	var err error
