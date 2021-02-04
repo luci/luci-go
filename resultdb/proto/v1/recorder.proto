@@ -19,6 +19,7 @@ package luci.resultdb.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/artifact.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
@@ -79,6 +80,15 @@ service Recorder {
   // invocation.
   rpc BatchCreateTestExonerations(BatchCreateTestExonerationsRequest)
       returns (BatchCreateTestExonerationsResponse) {};
+
+  // == Artifacts ==============================================================
+
+  // Create multiple artifacts.
+  //
+  // An artifact can be either invocation-level or test-result-level.
+  // See Artifact.name for more info.
+  rpc BatchCreateArtifacts(BatchCreateArtifactsRequest)
+      returns (BatchCreateArtifactsResponse) {};
 }
 
 // == Invocations ==============================================================
@@ -263,4 +273,36 @@ message BatchCreateTestExonerationsRequest {
 message BatchCreateTestExonerationsResponse {
   // Test exonerations created.
   repeated TestExoneration test_exonerations = 1;
+}
+
+// == Artifacts ================================================================
+
+// A request message for CreateArtifactRequest.
+message CreateArtifactRequest {
+  // Name of the parent resource where the artifact will be created.
+  //
+  // For invocation-level artifacts, it is the invocation name.
+  // For test-result-level artifacts, it is the TestResult name.
+  string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // Artifact to upload.
+  // The length of the artifact contents MUST be <= 512KiB.
+  // artifact.artifact_id MUST be set.
+  // artifact.name will be ignored.
+  Artifact artifact = 2 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+// A request message for BatchCreateArtifactsRequest.
+message BatchCreateArtifactsRequest {
+  // Requests to create Artifacts.
+  // The sum of the content lengths MUST be <= 10MiB.
+  // requests[i].invocation MUST be equal to invocation in this message.
+  // requests[i].request_id MUST be either empty or equal to request_id
+  // in this message.
+  repeated CreateArtifactRequest requests = 2;
+}
+
+message BatchCreateArtifactsResponse {
+  // Artifacts created.
+  repeated Artifact artifacts = 1;
 }
