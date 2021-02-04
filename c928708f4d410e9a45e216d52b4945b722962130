@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "c928708f4d410e9a45e216d52b4945b722962130",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da9f54f1_8c8e888f",
+        "filename": "logdog/client/butler/output/logdog/output.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-04T02:01:47Z",
+      "side": 1,
+      "message": "maybe this should be Auth.SystemFallback?",
+      "range": {
+        "startLine": 120,
+        "startChar": 21,
+        "endLine": 120,
+        "endChar": 27
+      },
+      "revId": "c928708f4d410e9a45e216d52b4945b722962130",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
