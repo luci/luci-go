@@ -89,6 +89,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "11757ecf_4214abb1",
+        "filename": "resultdb/proto/v1/artifact.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T06:26:10Z",
+      "side": 1,
+      "message": "friendly ping :)",
+      "parentUuid": "e9b83b80_b5b3f6a1",
+      "range": {
+        "startLine": 70,
+        "startChar": 45,
+        "endLine": 71,
+        "endChar": 52
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "30342c90_0df2353c",
