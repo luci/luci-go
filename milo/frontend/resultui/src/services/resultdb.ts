@@ -184,7 +184,7 @@ export interface QueryTestVariantsResponse {
 
 export interface TestVariant {
   readonly testId: string;
-  readonly variant: Variant;
+  readonly variant?: Variant;
   readonly variantHash: string;
   readonly status: TestVariantStatus;
   readonly results?: readonly TestResultBundle[];
