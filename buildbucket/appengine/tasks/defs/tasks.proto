@@ -19,6 +19,12 @@ message CancelSwarmingTask {
   string realm = 3;
 }
 
+// A task to create a Swarming task.
+message CreateSwarmingTask {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+}
+
 // A task to export a build to BigQuery.
 message ExportBigQuery {
   // ID of a build in the datastore. See model.Build.
