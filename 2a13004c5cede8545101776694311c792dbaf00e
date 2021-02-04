@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9b83b80_b5b3f6a1",
+        "filename": "resultdb/proto/v1/artifact.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:16:01Z",
+      "side": 1,
+      "message": "thanks for adding INPUT_ONLY.\n\nnot sure the other parts of the comments were addressed though (first two paragraphs of my comment).\nWDYT?",
+      "parentUuid": "d03b382d_f933ed19",
+      "range": {
+        "startLine": 70,
+        "startChar": 45,
+        "endLine": 71,
+        "endChar": 52
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "30342c90_0df2353c",
@@ -231,6 +255,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "eceac4bc_b90f2e34",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:16:01Z",
+      "side": 1,
+      "message": "ah. then we should follow those guidelines\n\n1) It should be `parent`, not invocation, because the parent could be a test result. In the latter case, it would be the test result name.\n2) There should be artifact_id field, see https://google.aip.dev/133#user-specified-ids\n3) Artifact.name must be ignored\n\nGiven that we need to be able to create artifacts in different test results (which are different parents), perhaps we should NOT have BatchCreateArtifactsRequest.parent",
+      "parentUuid": "92fc0499_bbdc74a9",
+      "range": {
+        "startLine": 285,
+        "startChar": 2,
+        "endLine": 286,
+        "endChar": 29
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "29bec044_fa81f599",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 7
@@ -360,6 +408,30 @@
       "side": 1,
       "message": "What about 2MiB? It depends on how we define \"small\" artifacts. We could increase the limit as high as 10MiB, but will increase memory pressure on server instances.",
       "parentUuid": "2af530b1_274a1252",
+      "range": {
+        "startLine": 302,
+        "startChar": 49,
+        "endLine": 302,
+        "endChar": 55
+      },
+      "revId": "2a13004c5cede8545101776694311c792dbaf00e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "278ac77a_c4088ce4",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-04T05:16:01Z",
+      "side": 1,
+      "message": "2MiB sounds better.\n10MiB sounds good too.\nit just means we\u0027d need to use larger machines on the server-side, but we might also win on the RPC overhead.",
+      "parentUuid": "b39743b5_63b87f62",
       "range": {
         "startLine": 302,
         "startChar": 49,
