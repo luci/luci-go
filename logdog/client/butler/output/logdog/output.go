@@ -28,6 +28,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
@@ -241,7 +242,7 @@ func (cfg *Config) registerPrefix(c context.Context, auth *auth.Authenticator) (
 
 	svc := api.NewRegistrationPRPCClient(&client)
 	var resp *api.RegisterPrefixResponse
-	err = retry.Retry(c, retry.Default, func() error {
+	err = retry.Retry(c, transient.Only(retry.Default), func() error {
 		var err error
 		resp, err = svc.RegisterPrefix(c, req)
 		return grpcutil.WrapIfTransient(err)
