@@ -39,7 +39,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-var artifactRowSchema bigquery.Schema
+var textArtifactRowSchema bigquery.Schema
 
 var lineBreak = []byte("\n")
 
@@ -57,7 +57,7 @@ const (
 
 func init() {
 	var err error
-	if artifactRowSchema, err = generateArtifactRowSchema(); err != nil {
+	if textArtifactRowSchema, err = generateArtifactRowSchema(); err != nil {
 		panic(err)
 	}
 }

@@ -233,7 +233,7 @@ func TestBqTableCache(t *testing.T) {
 
 		Convey(`Table does not exist`, func() {
 			t.mdErr = &googleapi.Error{Code: http.StatusNotFound}
-			err := ensureBQTable(ctx, t)
+			err := ensureBQTable(ctx, t, testResultRowSchema.Relax())
 			So(err, ShouldBeNil)
 			So(t.createMD.Schema, ShouldResemble, testResultRowSchema)
 		})
@@ -248,7 +248,7 @@ func TestBqTableCache(t *testing.T) {
 					Schema: bigquery.Schema{{Name: "legacy"}},
 				},
 			}
-			err := ensureBQTable(ctx, t)
+			err := ensureBQTable(ctx, t, testResultRowSchema.Relax())
 			So(err, ShouldBeNil)
 
 			So(t.updateMD, ShouldNotBeNil) // The table was updated.
@@ -261,25 +261,25 @@ func TestBqTableCache(t *testing.T) {
 		})
 
 		Convey(`Table is up to date`, func() {
-			t.md.Schema = testResultRowSchema
-			err := ensureBQTable(ctx, t)
+			t.md.Schema = textArtifactRowSchema
+			err := ensureBQTable(ctx, t, textArtifactRowSchema.Relax())
 			So(err, ShouldBeNil)
 			So(t.updateMD, ShouldBeNil) // we did not try to update it
 		})
 
 		Convey(`Cache is working`, func() {
-			err := ensureBQTable(ctx, t)
+			err := ensureBQTable(ctx, t, testResultRowSchema.Relax())
 			So(err, ShouldBeNil)
 			calls := t.mdCalls
 
 			// Confirms the cache is working.
-			err = ensureBQTable(ctx, t)
+			err = ensureBQTable(ctx, t, testResultRowSchema.Relax())
 			So(err, ShouldBeNil)
 			So(t.mdCalls, ShouldEqual, calls) // no more new calls were made.
 
 			// Confirms the cache is expired as expected.
 			tc.Add(6 * time.Minute)
-			err = ensureBQTable(ctx, t)
+			err = ensureBQTable(ctx, t, testResultRowSchema.Relax())
 			So(err, ShouldBeNil)
 			So(t.mdCalls, ShouldBeGreaterThan, calls) // new calls were made.
 		})
