@@ -39,8 +39,6 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-var _ lib.AuthFlags = (*authFlags)(nil)
-
 type authFlags struct {
 	flags       authcli.Flags
 	defaultOpts auth.Options
