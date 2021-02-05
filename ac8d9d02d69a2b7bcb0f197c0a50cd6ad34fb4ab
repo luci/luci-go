@@ -35,6 +35,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "31bf3bae_3cae3bed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-05T20:21:15Z",
+      "side": 1,
+      "message": "How fast does it start?\n\nI think ideally we should add the emulator to our gcloud CIPD package [1] (to make it available on bots), and then programatically (from TestMain) start and stop it in integration tests, making sure to use a separate (and random) CLOUDSDK_CONFIG directory for it, so that test can run in parallel.\n\nFor running on workstations - same thing, just ask the user to install the emulator manually if it\u0027s not available.\n\n[1]: https://chromium.googlesource.com/infra/infra/+/refs/heads/master/3pp/gcloud/install.sh#25",
+      "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f45b9e69_535d1c34",
