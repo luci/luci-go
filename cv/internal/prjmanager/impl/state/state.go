@@ -50,8 +50,7 @@ import (
 //       return proto.Marshal(s0.PB)     // OK
 //     }
 type State struct {
-
-	// Serializable part mutated using copy-on-write approach
+	// PB is the serializable part of State mutated using copy-on-write approach
 	// https://en.wikipedia.org/wiki/Copy-on-write
 	PB *prjpb.PState
 
@@ -60,16 +59,17 @@ type State struct {
 	// alreadyCloned is set to true after state is cloned to prevent incorrect
 	// usage.
 	alreadyCloned bool
-
+	// configGroups are cacehd config groups.
+	configGroups []*config.ConfigGroup
 	// cfgMatcher is lazily created, cached, and passed on to State clones.
 	cfgMatcher *cfgmatcher.Matcher
-
 	// pclIndex provides O(1) check if PCL exists for a CL.
 	//
 	// lazily created, see ensurePCLIndex().
 	pclIndex pclIndex // CLID => index.
 
 	// Test mocks. Not set in production.
+
 	testComponentActorFactory func(*prjpb.Component, actorSupporter) componentActor
 }
 
@@ -110,9 +110,12 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 		s.PB.Status = prjpb.Status_STARTED
 		s.PB.ConfigHash = meta.Hash()
 		s.PB.ConfigGroupNames = meta.ConfigGroupNames
-		if s.cfgMatcher, err = cfgmatcher.LoadMatcherFrom(ctx, meta); err != nil {
+
+		if s.configGroups, err = meta.GetConfigGroups(ctx); err != nil {
 			return nil, nil, err
 		}
+		s.cfgMatcher = cfgmatcher.LoadMatcherFromConfigGroups(ctx, s.configGroups, &meta)
+
 		if err = s.reevalPCLs(ctx); err != nil {
 			return nil, nil, err
 		}
@@ -264,6 +267,10 @@ func (s *State) OnCLsUpdated(ctx context.Context, events []*prjpb.CLUpdated) (*S
 
 // ExecDeferred performs previously postponed actions, notably creating Runs.
 func (s *State) ExecDeferred(ctx context.Context) (*State, SideEffect, error) {
+	if s.PB.GetStatus() != prjpb.Status_STARTED {
+		return s, nil, nil
+	}
+
 	mutated := false
 	if s.PB.GetDirtyComponents() || len(s.PB.GetCreatedPruns()) > 0 {
 		s = s.cloneShallow()

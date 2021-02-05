@@ -74,10 +74,14 @@ func (s *State) evalUpdatedCLs(ctx context.Context, clmap map[common.CLID]int64)
 // Sorts passed cls slice and updates it with loaded from DS info.
 func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	if s.cfgMatcher == nil {
-		var err error
-		if s.cfgMatcher, err = cfgmatcher.LoadMatcher(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash()); err != nil {
+		meta, err := config.GetHashMeta(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash())
+		if err != nil {
 			return err
 		}
+		if s.configGroups, err = meta.GetConfigGroups(ctx); err != nil {
+			return err
+		}
+		s.cfgMatcher = cfgmatcher.LoadMatcherFromConfigGroups(ctx, s.configGroups, &meta)
 	}
 
 	// Sort new/updated CLs in the way as PCLs already are, namely by CL ID. Do it

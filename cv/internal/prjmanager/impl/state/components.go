@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -70,6 +70,10 @@ const concurrentComponentProcessing = 16
 // be taken, then allocates a new component slice.
 // Otherwise, returns nil, nil, nil.
 func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Component, error) {
+	supporter, err := s.makeActorSupporter(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	out := make([]*prjpb.Component, len(s.PB.GetComponents()))
 	var modified int32
@@ -82,8 +86,6 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 		poolSize = n
 	}
 	errs := parallel.WorkPool(poolSize, func(work chan<- func() error) {
-		supporter := s.makeActorSupporter()
-
 		for i, oldC := range s.PB.GetComponents() {
 			out[i] = oldC
 			var oldWhen time.Time
@@ -207,22 +209,38 @@ type actorSupporter interface {
 	// Returns nil if clid refers to a CL not known to PM's State.
 	PCL(clid int64) *prjpb.PCL
 
+	// MustPCL is the same as PCL, but panics if CL is not known to PM's State.
+	//
+	// All component's clids are guaranteed to have a PCL.
+	MustPCL(clid int64) *prjpb.PCL
+
 	// ConfigGroup returns a ConfigGroup for a given index of the current LUCI
 	// project config version.
-	ConfigGroup(index int) (*cfgpb.ConfigGroup, error)
+	ConfigGroup(index int32) *config.ConfigGroup
 }
 
-func (s *State) makeActorSupporter() actorSupporter {
+func (s *State) makeActorSupporter(ctx context.Context) (actorSupporter, error) {
+	if s.configGroups == nil {
+		meta, err := config.GetHashMeta(ctx, s.PB.GetLuciProject(), s.PB.GetConfigHash())
+		if err != nil {
+			return nil, err
+		}
+		if s.configGroups, err = meta.GetConfigGroups(ctx); err != nil {
+			return nil, err
+		}
+	}
 	s.ensurePCLIndex()
 	return &actorSupporterImpl{
-		pcls:     s.PB.GetPcls(),
-		pclIndex: s.pclIndex,
-	}
+		pcls:         s.PB.GetPcls(),
+		pclIndex:     s.pclIndex,
+		configGroups: s.configGroups,
+	}, nil
 }
 
 type actorSupporterImpl struct {
-	pcls     []*prjpb.PCL
-	pclIndex map[common.CLID]int
+	pcls         []*prjpb.PCL
+	pclIndex     map[common.CLID]int
+	configGroups []*config.ConfigGroup
 }
 
 func (a *actorSupporterImpl) PCL(clid int64) *prjpb.PCL {
@@ -233,8 +251,15 @@ func (a *actorSupporterImpl) PCL(clid int64) *prjpb.PCL {
 	return a.pcls[i]
 }
 
-func (a *actorSupporterImpl) ConfigGroup(index int) (*cfgpb.ConfigGroup, error) {
-	panic("not implemented") // TODO: Implement
+func (a *actorSupporterImpl) MustPCL(clid int64) *prjpb.PCL {
+	if p := a.PCL(clid); p != nil {
+		return p
+	}
+	panic(fmt.Errorf("MustPCL: clid %d not known to PM state", clid))
+}
+
+func (a *actorSupporterImpl) ConfigGroup(index int32) *config.ConfigGroup {
+	return a.configGroups[index]
 }
 
 // componentActor evaluates and acts on a single component.
