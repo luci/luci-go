@@ -51,15 +51,35 @@ func LoadMatcherFrom(ctx context.Context, meta config.Meta) (*Matcher, error) {
 	if err != nil {
 		return nil, err
 	}
+	return LoadMatcherFromConfigGroups(ctx, configGroups, &meta), nil
+}
+
+// LoadMatcherFromConfigGroups instantiates Matcher.
+//
+// There must be at least 1 config group, which is true for all valid CV
+// configs.
+//
+// meta, if not nil, must have been used to load the given ConfigGroups. It's an
+// optimization to re-use memory since most callers typically have it.
+func LoadMatcherFromConfigGroups(ctx context.Context, configGroups []*config.ConfigGroup, meta *config.Meta) *Matcher {
 	m := &Matcher{
 		state: &MatcherState{
 			// 1-2 Gerrit hosts is typical as of 2020.
 			Hosts:            make(map[string]*MatcherState_Projects, 2),
 			ConfigGroupNames: make([]string, len(configGroups)),
-			ConfigHash:       meta.Hash(),
 		},
-		cachedConfigGroupIDs: meta.ConfigGroupIDs,
 	}
+	if meta != nil {
+		m.state.ConfigHash = meta.Hash()
+		m.cachedConfigGroupIDs = meta.ConfigGroupIDs
+	} else {
+		m.state.ConfigHash = configGroups[0].ID.Hash()
+		m.cachedConfigGroupIDs = make([]config.ConfigGroupID, len(configGroups))
+		for i, cg := range configGroups {
+			m.cachedConfigGroupIDs[i] = cg.ID
+		}
+	}
+
 	for i, cg := range configGroups {
 		m.state.ConfigGroupNames[i] = cg.ID.Name()
 		for _, gerrit := range cg.Content.GetGerrit() {
@@ -88,7 +108,7 @@ func LoadMatcherFrom(ctx context.Context, meta config.Meta) (*Matcher, error) {
 			}
 		}
 	}
-	return m, nil
+	return m
 }
 
 func (m *Matcher) Serialize() ([]byte, error) {
