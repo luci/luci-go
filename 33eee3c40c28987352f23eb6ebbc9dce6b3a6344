@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd6d3e0b_0386e629",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "so, did we give up on fixing `bb` or are you going for faster-to-market solution?",
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53c53dad_82e06aff",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "how about\n\nshould be made top level error such that naive callers can retry it, notably `bb` cli which doesn\u0027t retry individual ops inside a batch.",
+      "range": {
+        "startLine": 10,
+        "startChar": 31,
+        "endLine": 10,
+        "endChar": 70
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8cd44e13_effb7f84",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "all",
+      "range": {
+        "startLine": 10,
+        "startChar": 9,
+        "endLine": 10,
+        "endChar": 13
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d23af947_e07c804e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "caller",
+      "range": {
+        "startLine": 11,
+        "startChar": 16,
+        "endLine": 11,
+        "endChar": 20
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a8f5b95_beaeac96",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "^",
+      "range": {
+        "startLine": 74,
+        "startChar": 46,
+        "endLine": 74,
+        "endChar": 49
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a17c861_2cf568cf",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "tbh, I see little value in returning per-op errors iff Py gave top level error.\n\nThe only value I see is iff Go ops succeeded, s.t. we provide partial response.\nHowever, not doing this is strictly not worse than Py version before. \nSo, I recommend to translate top level Py error to top level Go Batch error always:\n + simpler\n + covers transport error case (see below comment)",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 3
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18bad222_b37b145c",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "please swap: boolean is usually the 2nd return value,  grpcStatus.FromError being one of many examples.",
+      "range": {
+        "startLine": 145,
+        "startChar": 38,
+        "endLine": 145,
+        "endChar": 65
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e1457cc_49db32b9",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "what if it was a transport error? (see L74)\n\nWe\u0027d want it to become codes.Internal *top* level Batch error, not individual per-op one.",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 23
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31ef705c_ecad8d03",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "doc says \"codes.Unknown\" if false, but this may not be the case here.",
+      "range": {
+        "startLine": 156,
+        "startChar": 15,
+        "endLine": 156,
+        "endChar": 22
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9b5cfa9_7a19eda3",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "Ideally, this should have a test for a py service transport error (per comments on above file) -- though I don\u0027t know how to easily mock it. do you?",
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dab53d60_2183cb44",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:30:01Z",
+      "side": 1,
+      "message": "really? I thought PermDenied would be returned per individual op, not for the entire BatchOp. At least that\u0027s what doc says.",
+      "range": {
+        "startLine": 368,
+        "startChar": 0,
+        "endLine": 375,
+        "endChar": 145
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
