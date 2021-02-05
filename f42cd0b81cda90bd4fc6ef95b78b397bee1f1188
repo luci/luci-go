@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1ca84f5_b25ed852",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-05T04:25:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33894ac6_c32552b4",
+      "range": {
+        "startLine": 107,
+        "startChar": 15,
+        "endLine": 107,
+        "endChar": 44
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c15ba8e9_78e7c88d",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-02-04T21:05:11Z",
       "side": 1,
       "message": "nit: go lint marks this as a warning. Could you specify field names?",
+      "range": {
+        "startLine": 179,
+        "startChar": 30,
+        "endLine": 179,
+        "endChar": 63
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a6020f2_ce1a9f59",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-05T04:25:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c15ba8e9_78e7c88d",
       "range": {
         "startLine": 179,
         "startChar": 30,
@@ -81,6 +129,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fe3d4df_378e176b",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-05T04:25:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bcaa85e2_c98efd58",
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "18cd8f6f_7fe82650",
@@ -94,6 +160,30 @@
       "writtenOn": "2021-02-04T21:05:11Z",
       "side": 1,
       "message": "nit: +1 here instead of -1 there\nfor consistency with batchSize",
+      "range": {
+        "startLine": 192,
+        "startChar": 14,
+        "endLine": 192,
+        "endChar": 15
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37da3888_ce764b1c",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-05T04:25:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18cd8f6f_7fe82650",
       "range": {
         "startLine": 192,
         "startChar": 14,
@@ -127,6 +217,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b69983e_d4142416",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-05T04:25:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4509da35_619ccd8a",
+      "range": {
+        "startLine": 215,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 4
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c45714bf_121e9d87",
@@ -140,6 +254,30 @@
       "writtenOn": "2021-02-04T21:05:11Z",
       "side": 1,
       "message": "nit: join?",
+      "range": {
+        "startLine": 223,
+        "startChar": 2,
+        "endLine": 224,
+        "endChar": 5
+      },
+      "revId": "f42cd0b81cda90bd4fc6ef95b78b397bee1f1188",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b885e00_3dc1ea4a",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-05T04:25:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c45714bf_121e9d87",
       "range": {
         "startLine": 223,
         "startChar": 2,
