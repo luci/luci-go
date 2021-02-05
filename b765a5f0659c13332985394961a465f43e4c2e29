@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f43e2df3_6d720fa6",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-05T07:28:52Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "258e61dd_4017f06b",
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "538a3f32_d6c658b3",
@@ -120,6 +138,30 @@
       "side": 1,
       "message": "Because download test scenario depends on archive. (need a digest)",
       "parentUuid": "29cb592f_6771ae62",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 25
+      },
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22c0919d_76a9bfd4",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-05T07:28:52Z",
+      "side": 1,
+      "message": "but that doesn\u0027t need this Convey nesting?",
+      "parentUuid": "2e889884_7304b289",
       "range": {
         "startLine": 78,
         "startChar": 2,
