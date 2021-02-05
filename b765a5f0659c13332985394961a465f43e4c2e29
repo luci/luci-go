@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "258e61dd_4017f06b",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-05T07:20:42Z",
+      "side": 1,
+      "message": "Either is fine. I just follow the resultdb tests.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/testutil/spantest.go;l\u003d42?q\u003dINTEGRATION_TESTS%20f:resultdb\u0026ss\u003dchromium\n\nI still want to keep the comment though.",
+      "parentUuid": "73f0ad86_850faa73",
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "538a3f32_d6c658b3",
         "filename": "client/cmd/cas/main_test.go",
         "patchSetId": 8
@@ -31,6 +49,30 @@
       "writtenOn": "2021-02-05T06:50:29Z",
       "side": 1,
       "message": "download?",
+      "range": {
+        "startLine": 52,
+        "startChar": 19,
+        "endLine": 52,
+        "endChar": 26
+      },
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "866ead31_8f4b75b8",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-05T07:20:42Z",
+      "side": 1,
+      "message": "Oops..",
+      "parentUuid": "538a3f32_d6c658b3",
       "range": {
         "startLine": 52,
         "startChar": 19,
@@ -54,6 +96,30 @@
       "writtenOn": "2021-02-05T06:50:29Z",
       "side": 1,
       "message": "why do you need to have additional nest here?",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 25
+      },
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e889884_7304b289",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-05T07:20:42Z",
+      "side": 1,
+      "message": "Because download test scenario depends on archive. (need a digest)",
+      "parentUuid": "29cb592f_6771ae62",
       "range": {
         "startLine": 78,
         "startChar": 2,
