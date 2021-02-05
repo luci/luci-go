@@ -18,16 +18,27 @@ import (
 	"context"
 	"flag"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/profiling"
 )
+
+// AuthFlags is an interface to register auth flags and create RBE Client.
+type AuthFlags interface {
+	// Register registers auth flags to the given flag set. e.g. -service-account-json.
+	Register(f *flag.FlagSet)
+
+	// Parse parses auth flags.
+	Parse() error
+
+	// NewClient creates an authroised RBE Client.
+	NewClient(ctx context.Context, instance string) (*client.Client, error)
+}
 
 var _ cli.ContextModificator = (*commonFlags)(nil)
 
@@ -36,18 +47,16 @@ type commonFlags struct {
 	casFlags  cas.Flags
 	logConfig logging.Config // for -log-level, used by ModifyContext
 	profiler  profiling.Profiler
-	authFlags authcli.Flags
-
-	parsedAuthOpts auth.Options
+	authFlags AuthFlags
 }
 
-func (c *commonFlags) Init(authOpts auth.Options) {
+func (c *commonFlags) Init(authFlags AuthFlags) {
 	c.casFlags.Init(&c.Flags)
-
+	c.authFlags = authFlags
+	c.authFlags.Register(&c.Flags)
 	c.logConfig.Level = logging.Warning
 	c.logConfig.AddFlags(&c.Flags)
 	c.profiler.AddFlags(&c.Flags)
-	c.authFlags.Register(&c.Flags, authOpts)
 }
 
 func (c *commonFlags) Parse() error {
@@ -69,9 +78,7 @@ func (c *commonFlags) Parse() error {
 	if err := c.profiler.Start(); err != nil {
 		return err
 	}
-	var err error
-	c.parsedAuthOpts, err = c.authFlags.Options()
-	if err != nil {
+	if err := c.authFlags.Parse(); err != nil {
 		return err
 	}
 
@@ -82,6 +89,3 @@ func (c *commonFlags) Parse() error {
 func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
 	return c.logConfig.Set(ctx)
 }
-
-// This is overwritten in test.
-var newCasClient = cas.NewClient
