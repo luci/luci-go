@@ -21,6 +21,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/grpc/codes"
+	grpcStatus "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/testing/mock"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -332,6 +334,57 @@ func TestBatch(t *testing.T) {
 			}
 			So(err, ShouldBeNil)
 			So(actualRes, ShouldResembleProto, expectedRes)
+		})
+
+		Convey("py service deadline exceed", func() {
+			req := &pb.BatchRequest{}
+			err := jsonpb.UnmarshalString(`{
+				"requests": [
+					{"cancelBuild": {}}
+				]
+			}`, req)
+			So(err, ShouldBeNil)
+			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.DeadlineExceeded, "timeout"))
+			actualRes, err := srv.Batch(ctx, req)
+			So(actualRes, ShouldBeNil)
+			So(err, ShouldErrLike, "rpc error: code = Internal desc = timeout")
+		})
+
+		Convey("py service transient error", func() {
+			req := &pb.BatchRequest{}
+			err := jsonpb.UnmarshalString(`{
+				"requests": [
+					{"cancelBuild": {}}
+				]
+			}`, req)
+			So(err, ShouldBeNil)
+			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.Unavailable, "unavailable"))
+			actualRes, err := srv.Batch(ctx, req)
+			So(actualRes, ShouldBeNil)
+			So(err, ShouldErrLike, "rpc error: code = Unavailable desc = unavailable")
+		})
+
+		Convey("py service non-retryable error", func() {
+			req := &pb.BatchRequest{}
+			err := jsonpb.UnmarshalString(`{
+				"requests": [
+					{"scheduleBuild": {}}
+				]
+			}`, req)
+			So(err, ShouldBeNil)
+			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.PermissionDenied, "no permission to schedule build"))
+			actualRes, err := srv.Batch(ctx, req)
+			So(err, ShouldBeNil)
+			So(actualRes, ShouldResembleProto, &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    7,
+							Message: "no permission to schedule build",
+						},
+					}},
+				},
+			})
 		})
 	})
 }
