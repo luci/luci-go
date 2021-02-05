@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27a15fc1_0aedd5df",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T03:37:25Z",
+      "side": 1,
+      "message": "Convert deadline_exceed to the internal error because:\n\n1. prpc only retries the transient errors. deadline_exceed error is not one of them.(see http://shortn/_Q5ZPKyIKb1) \n2. If a RPC call directly goes to Py BB, it will get the internal error code when timeout. That’s why bb cli retried before the migration. However, a RPC call goes through prpc.Client to Py BB, it gets the deadline exceeded error code.",
+      "revId": "388baf50f4d14008dfdcfcaea78f05211eeaa654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
