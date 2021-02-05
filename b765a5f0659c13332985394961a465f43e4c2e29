@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "73f0ad86_850faa73",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-05T06:51:17Z",
+      "side": 1,
+      "message": "this is fine to be function local variable?",
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "538a3f32_d6c658b3",
         "filename": "client/cmd/cas/main_test.go",
         "patchSetId": 8
