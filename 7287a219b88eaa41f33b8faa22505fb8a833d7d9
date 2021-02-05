@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e43bc0c_4c7b24fe",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-05T01:03:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7778603c_d8e42cde",
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "17767fde_f68265d3",
@@ -61,6 +79,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fa6fa7c5_9bacadca",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-05T01:03:37Z",
+      "side": 1,
+      "message": "Potentially. For now I matched style with cancel_build.go which calls a few functions but keeps the entire \"put phase\" inline:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/34a994fe5aeca7f57b41c5975d2d9c97dbee7a42/buildbucket/appengine/rpc/cancel_build.go#52\n\nIt\u0027s not a great reason, so I\u0027m not against refactoring it later. But if I were to continue along this path I probably would keep the \"put phase\" overall inline but much of the 1.4 KLOC would go to functions (in this file) as necessary.",
+      "parentUuid": "17767fde_f68265d3",
+      "range": {
+        "startLine": 219,
+        "startChar": 11,
+        "endLine": 219,
+        "endChar": 15
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7d971230_585e95d1",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
@@ -72,6 +114,30 @@
       "writtenOn": "2021-02-04T05:01:22Z",
       "side": 1,
       "message": "is this code dead? how can this happen?",
+      "range": {
+        "startLine": 220,
+        "startChar": 0,
+        "endLine": 223,
+        "endChar": 0
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e0ae595_601c3ade",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-05T01:03:37Z",
+      "side": 1,
+      "message": "I feel like it can\u0027t happen but I didn\u0027t trace to see why Python has this check. I suppose just because it\u0027s unified code for v1 and v2. Removed.",
+      "parentUuid": "7d971230_585e95d1",
       "range": {
         "startLine": 220,
         "startChar": 0,
@@ -107,6 +173,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3b609350_deb6e731",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-05T01:03:37Z",
+      "side": 1,
+      "message": "I\u0027ll remove L228 nanoseconds since validating the request and builder configs to not have nanoseconds will suffice. I\u0027ve moved checking the number of expirations to before the FanOutIn so we don\u0027t abort after we\u0027ve written tag indices, updated builder entities, etc.\n\nHowever the Python does fail in this way after datastore mutations have already been done, it just communicates it some different way to the user.",
+      "parentUuid": "6044da83_2b7be934",
+      "range": {
+        "startLine": 233,
+        "startChar": 22,
+        "endLine": 233,
+        "endChar": 32
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8c388d02_ebfba011",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
@@ -118,6 +208,30 @@
       "writtenOn": "2021-02-04T05:01:22Z",
       "side": 1,
       "message": "nit: combine into one line (it is short enough) or add `BuildInfra: ` (because go lint doesn\u0027t like this)\n\nsame below",
+      "range": {
+        "startLine": 241,
+        "startChar": 31,
+        "endLine": 243,
+        "endChar": 8
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5bcfbf7_8de45d2e",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-05T01:03:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c388d02_ebfba011",
       "range": {
         "startLine": 241,
         "startChar": 31,
@@ -145,6 +259,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1aef8355_ae86a911",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-05T01:03:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b834a53f_b1e19936",
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bc6d85d2_1e7d7078",
@@ -158,6 +290,30 @@
       "writtenOn": "2021-02-04T05:01:22Z",
       "side": 1,
       "message": "nit: hard to read multi-line if statements. consider introducing a variable for the task, or splitting assignment and the if statement",
+      "range": {
+        "startLine": 268,
+        "startChar": 5,
+        "endLine": 270,
+        "endChar": 13
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b181ac1_b3c4d7b7",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-05T01:03:37Z",
+      "side": 1,
+      "message": "This one is small compared to the other time you mentioned it to me (I think). I\u0027ve left this as is for now so it remains consistent with the already committed multi-line if task creation in cancel_build.go. Let me know if you insist.",
+      "parentUuid": "bc6d85d2_1e7d7078",
       "range": {
         "startLine": 268,
         "startChar": 5,
