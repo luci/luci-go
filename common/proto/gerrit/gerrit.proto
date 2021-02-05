@@ -241,6 +241,37 @@ enum Notify {
   NOTIFY_ALL = 4;
 }
 
+// NotifyInfo contains detailed information about who should be notified about
+// an update.
+message NotifyInfo {
+  // IDs of the accounts that will be notified.
+  repeated int64 accounts = 1;
+}
+
+// Specify how recipient will be notified.
+enum RecipientType {
+  RECIPIENT_TYPE_UNSPECIFIED = 0;
+  // The standard To field is used; addresses are visible to all.
+  RECIPIENT_TYPE_TO = 1;
+  //The standard CC field is used; addresses are visible to all.
+  RECIPIENT_TYPE_CC = 2;
+  // SMTP RCPT TO is used to hide the address.
+  RECIPIENT_TYPE_BCC = 3;
+}
+
+// Additional information about whom to notify about the update.
+//
+// These notifications are sent out even if a notify option in the request
+// input disables normal notifications.
+message NotifyDetails {
+  message Target {
+    RecipientType recipient_type = 1;
+    NotifyInfo notify_info = 2;
+  }
+  // targets with same RecipientType will be merged.
+  repeated Target targets = 1;
+}
+
 // Request to list changes based on a query.
 message ListChangesRequest {
   // The query used to filter the changes.
@@ -907,11 +938,14 @@ message SetReviewRequest {
   // Notify defines to whom email notifications should be sent.
   Notify notify = 7;
 
+  // NotifyDetails contains additional information about whom to notify.
+  NotifyDetails notify_details = 8;
+
   // The account_id that the review should be posted on behalf of.
   //
   // To use this option the caller must have been granted labelAs-NAME
   // permission for all keys of labels.
-  int64 on_behalf_of = 8;
+  int64 on_behalf_of = 9;
 }
 
 // Information returned by a SetReview RPC.

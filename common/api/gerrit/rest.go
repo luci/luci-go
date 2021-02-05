@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -252,6 +253,38 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 		data.Labels = make(map[string]int32)
 		for k, v := range in.Labels {
 			data.Labels[k] = v
+		}
+	}
+	if targets := in.NotifyDetails.GetTargets(); targets != nil {
+		for _, target := range targets {
+			rt := target.RecipientType
+			if rt == gerritpb.RecipientType_RECIPIENT_TYPE_UNSPECIFIED {
+				return nil, errors.New("must specify recipient type")
+			}
+			rts := enumToString(int32(rt.Number()), gerritpb.RecipientType_name)
+			if _, ok := data.NotifyDetails[rts]; !ok {
+				data.NotifyDetails[rts] = notifyInfo{
+					Accounts: make([]int64, len(target.NotifyInfo.GetAccounts())),
+				}
+			}
+			ni := data.NotifyDetails[rts]
+			ni.Accounts = append(ni.Accounts, target.NotifyInfo.GetAccounts()...)
+		}
+
+		for rt, ni := range data.NotifyDetails {
+			if len(ni.Accounts) == 0 {
+				delete(data.NotifyDetails, rt)
+			}
+			sort.Slice(ni.Accounts, func(i, j int) bool { return ni.Accounts[i] < ni.Accounts[j] })
+			n := 0
+			for i := 1; i < len(ni.Accounts); i++ {
+				if ni.Accounts[n] == ni.Accounts[i] {
+					continue
+				}
+				n++
+				ni.Accounts[n] = ni.Accounts[i]
+			}
+			ni.Accounts = ni.Accounts[:n+1]
 		}
 	}
 	var resp gerritpb.ReviewResult
