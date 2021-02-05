@@ -16,6 +16,24 @@
       "message": "Convert deadline_exceed to the internal error because:\n\n1. prpc only retries the transient errors. deadline_exceed error is not one of them.(see http://shortn/_Q5ZPKyIKb1) \n2. If a RPC call directly goes to Py BB, it will get the internal error code when timeout. That’s why bb cli retried before the migration. However, a RPC call goes through prpc.Client to Py BB, it gets the deadline exceeded error code.",
       "revId": "388baf50f4d14008dfdcfcaea78f05211eeaa654",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c8ffe9f_a8b5334f",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T04:33:50Z",
+      "side": 1,
+      "message": "\u003e However, a RPC call goes through prpc.Client to Py BB, it gets the deadline exceeded error code.\n\nI don\u0027t think this isn\u0027t correct. `bb` received HTTP 200 with an individual Schedule op having a \"deadline exceeded\" error. `bb` doesn\u0027t retry *any* individual batch op errors. The code you linked to deals with *top* level batch errors only. fixing `bb` to handle Batch retries smartly is my ideal solution.\n\nThat said, what you are trying to do in this CL will work so long as you propagate all retriable errors to top level Batch errors.",
+      "parentUuid": "27a15fc1_0aedd5df",
+      "revId": "388baf50f4d14008dfdcfcaea78f05211eeaa654",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
