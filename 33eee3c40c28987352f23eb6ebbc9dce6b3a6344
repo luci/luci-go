@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9065913c_8c14eadb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "It\u0027s not the faster-to-market solution. It\u0027s more like a server-side issue instead of a client side. The `prpc.Client` has the automatic retry mechanism on transient grpc codes. So the server side should return correct grpc code. If we don\u0027t change it in BB and only change the bb cli logic, other clients who use BB will face the same issue.\n\nMoreover, I\u0027m thinking if we make the Go BB have the same behaviors as the Py BB, it won\u0027t become worse to our customers at least.",
+      "parentUuid": "dd6d3e0b_0386e629",
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "53c53dad_82e06aff",
         "filename": "/COMMIT_MSG",
         "patchSetId": 4
@@ -64,6 +82,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a44c0d5_d9ce0fc4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cd44e13_effb7f84",
+      "range": {
+        "startLine": 10,
+        "startChar": 9,
+        "endLine": 10,
+        "endChar": 13
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d23af947_e07c804e",
@@ -77,6 +119,30 @@
       "writtenOn": "2021-02-05T04:30:01Z",
       "side": 1,
       "message": "caller",
+      "range": {
+        "startLine": 11,
+        "startChar": 16,
+        "endLine": 11,
+        "endChar": 20
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d1b69bd_2cef7892",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d23af947_e07c804e",
       "range": {
         "startLine": 11,
         "startChar": 16,
@@ -135,6 +201,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b3bb7ecc_955ad2f7",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "I was misled and thought all PermDenied errors are on Py top-level.That\u0027s why I decided to convert them to Go individual-level. But then I found out some PermDenied is on Py individual-level today. We should fix that bug in Py and here we can make them all to Go top-level errs. see more detail on the reply in batch_test.go, L375.",
+      "parentUuid": "8a17c861_2cf568cf",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 3
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "18bad222_b37b145c",
         "filename": "buildbucket/appengine/rpc/batch.go",
         "patchSetId": 4
@@ -146,6 +236,30 @@
       "writtenOn": "2021-02-05T04:30:01Z",
       "side": 1,
       "message": "please swap: boolean is usually the 2nd return value,  grpcStatus.FromError being one of many examples.",
+      "range": {
+        "startLine": 145,
+        "startChar": 38,
+        "endLine": 145,
+        "endChar": 65
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec9be5c9_24da9f22",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "will do",
+      "parentUuid": "18bad222_b37b145c",
       "range": {
         "startLine": 145,
         "startChar": 38,
@@ -181,6 +295,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "35268f61_790e6dd0",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "It will become the codes.Unknown on top-level due to the conversion of grpcStatus.FromError(err). If we want to make it as codes.Internal, we have to explicitly construct a grpc err.",
+      "parentUuid": "4e1457cc_49db32b9",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 23
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "31ef705c_ecad8d03",
         "filename": "buildbucket/appengine/rpc/batch.go",
         "patchSetId": 4
@@ -192,6 +330,30 @@
       "writtenOn": "2021-02-05T04:30:01Z",
       "side": 1,
       "message": "doc says \"codes.Unknown\" if false, but this may not be the case here.",
+      "range": {
+        "startLine": 156,
+        "startChar": 15,
+        "endLine": 156,
+        "endChar": 22
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "220f6d31_4814bc77",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "The grpcStatus.FromError(err) has already set the gStatus to codes.Unknown.",
+      "parentUuid": "31ef705c_ecad8d03",
       "range": {
         "startLine": 156,
         "startChar": 15,
@@ -221,6 +383,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "81096a4f_1b8f31f0",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "It\u0027s hard to directly mock it. But I can put something in `newPyBBClient()` func like : \n```\n\tif ctx.Value(\"transportErr\") \u003d\u003d \"True\" {\n\t\treturn nil, error\n\t}\n```",
+      "parentUuid": "c9b5cfa9_7a19eda3",
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "dab53d60_2183cb44",
         "filename": "buildbucket/appengine/rpc/batch_test.go",
         "patchSetId": 4
@@ -232,6 +412,30 @@
       "writtenOn": "2021-02-05T04:30:01Z",
       "side": 1,
       "message": "really? I thought PermDenied would be returned per individual op, not for the entire BatchOp. At least that\u0027s what doc says.",
+      "range": {
+        "startLine": 368,
+        "startChar": 0,
+        "endLine": 375,
+        "endChar": 145
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98982d6a_9d5c85fd",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-05T21:32:18Z",
+      "side": 1,
+      "message": "Some of them are on top-level - https://screenshot.googleplex.com/82TAxMH5Y5QcF89.\nSome are on individual-level - https://screenshot.googleplex.com/59HVTi99ojtDZhN.\n\nI think it\u0027s a bug on Py BB side. We should fix it to set all PermDenied on individual-level.\nThen we can make all Py top-level err to Go top-level err.",
+      "parentUuid": "dab53d60_2183cb44",
       "range": {
         "startLine": 368,
         "startChar": 0,
