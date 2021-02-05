@@ -33,6 +33,24 @@
       "message": "i think ensureBQTableFields and ensureBQTable would have less responsibilities (be more focused) if it accepted the schema as param, as opposed to bqExport. Also we\u0027d be able to consolidate the branching logic in L328 and LL462 in one place, perhaps in exportResultsToBigQuery function.\n\nWDYT?",
       "revId": "cdc85d31506c5741a967e5514a45e5e5aba6ae87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f76e53da_7b1f4af4",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-05T04:26:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38290e50_1bc07007",
+      "revId": "cdc85d31506c5741a967e5514a45e5e5aba6ae87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
