@@ -16,6 +16,69 @@
       "message": "This is an updated version of https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2311672\n\nAnd it runs successfully (and fast!) locally.\n\n",
       "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f45b9e69_535d1c34",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-05T16:29:59Z",
+      "side": 1,
+      "message": "should probably move this into the if statement L168.\notherwise new developers will be asked to login, for nothing.",
+      "range": {
+        "startLine": 148,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 2
+      },
+      "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e26290d0_0f4e2c10",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-05T16:29:59Z",
+      "side": 1,
+      "message": "this is probably OK for the first step, but if we intend to call this in the recipe, we probably need to move this into a more global place. Also things like this are usually written in Python (at the time i hacked up something quick and dirty). +Vadim for opinion.",
+      "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ee4f744_596d2b69",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-05T16:29:59Z",
+      "side": 1,
+      "message": "2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 12,
+        "endLine": 1,
+        "endChar": 16
+      },
+      "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
