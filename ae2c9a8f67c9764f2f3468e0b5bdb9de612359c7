@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e3a2ad55_b248b191",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-05T08:40:19Z",
+      "side": 1,
+      "message": "If CAS uses different hashing logic, I think changing here is minor issue compared to changes in other parts.\nI prefer explicity here.",
+      "parentUuid": "237212a0_545f91a9",
+      "range": {
+        "startLine": 76,
+        "startChar": 13,
+        "endLine": 76,
+        "endChar": 29
+      },
+      "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4f591f59_f17a3d49",
         "filename": "client/cmd/cas/main_test.go",
         "patchSetId": 9
@@ -79,6 +103,24 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "4f591f59_f17a3d49",
+      "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39eb6c3b_aceb0e9e",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-05T08:40:19Z",
+      "side": 1,
+      "message": "readfile is not sufficient as that doesn\u0027t check there is no other files.\nwhy not use testfs.Collect?",
+      "parentUuid": "81f80515_851606a7",
       "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
