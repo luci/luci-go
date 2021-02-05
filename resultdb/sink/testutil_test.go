@@ -100,14 +100,12 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		Artifacts: map[string]*sinkpb.Artifact{
 			"art1": artf,
 		},
-		TestLocation: &pb.TestLocation{
-			FileName: "//artifact_dir/a_test.cc",
-		},
 		TestMetadata: &pb.TestMetadata{
 			Name: "name",
 			Location: &pb.TestLocation{
 				Repo:     "https://chromium.googlesource.com/chromium/src",
 				FileName: "//artifact_dir/a_test.cc",
+				Line:     54,
 			},
 		},
 	}, cleanup

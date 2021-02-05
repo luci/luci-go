@@ -33,6 +33,8 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // This message does not specify the test id.
 // It should be available in the message that embeds this message.
 message TestResult {
+  reserved 11; // test_location
+
   // Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
   // RPC.
   // Format:
@@ -116,10 +118,6 @@ message TestResult {
   // A key can be repeated.
   repeated StringPair tags = 10
       [ (google.api.field_behavior) = IMMUTABLE ];
-
-  // Where the test is defined, e.g. the file name.
-  // Deprecated. In favor of test_metadata.
-  TestLocation test_location = 11;
 
   // Hash of the variant.
   // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).

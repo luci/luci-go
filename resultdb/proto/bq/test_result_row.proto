@@ -85,11 +85,7 @@ message TestResultRow {
   // So we keep this column here instead of adding the CreateTime to Invocation.
   google.protobuf.Timestamp partition_time = 14;
 
-  // The location of the test definition.
-  // Deprecated. Use test_metadata instead.
-  luci.resultdb.v1.TestLocation test_location = 15 [deprecated=true];
-
   // Metadata of the test case,
-  // e.g. the original test name, test_location, monorail_component and team_email.
+  // e.g. the original test name and test location.
   luci.resultdb.v1.TestMetadata test_metadata = 16;
 }

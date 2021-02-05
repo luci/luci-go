@@ -107,10 +107,6 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 		if !trs[i].Expected {
 			mutMap["IsUnexpected"] = true
 		}
-		if tr.TestLocation != nil {
-			mutMap["TestLocationFileName"] = tr.TestLocation.FileName
-			mutMap["TestLocationLine"] = int(tr.TestLocation.Line)
-		}
 		if tr.TestMetadata != nil {
 			tmdBytes, err := proto.Marshal(tr.TestMetadata)
 			So(err, ShouldBeNil)

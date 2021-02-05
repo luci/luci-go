@@ -73,21 +73,17 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	var maybeUnexpected spanner.NullBool
 	var micros spanner.NullInt64
 	var summaryHTML spanutil.Compressed
-	var testLocationFileName spanner.NullString
-	var testLocationLine spanner.NullInt64
 	var tmd spanutil.Compressed
 	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
-		"Variant":              &tr.Variant,
-		"VariantHash":          &tr.VariantHash,
-		"IsUnexpected":         &maybeUnexpected,
-		"Status":               &tr.Status,
-		"SummaryHTML":          &summaryHTML,
-		"StartTime":            &tr.StartTime,
-		"RunDurationUsec":      &micros,
-		"Tags":                 &tr.Tags,
-		"TestLocationFileName": &testLocationFileName,
-		"TestLocationLine":     &testLocationLine,
-		"TestMetadata":         &tmd,
+		"Variant":         &tr.Variant,
+		"VariantHash":     &tr.VariantHash,
+		"IsUnexpected":    &maybeUnexpected,
+		"Status":          &tr.Status,
+		"SummaryHTML":     &summaryHTML,
+		"StartTime":       &tr.StartTime,
+		"RunDurationUsec": &micros,
+		"Tags":            &tr.Tags,
+		"TestMetadata":    &tmd,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -100,7 +96,6 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	tr.SummaryHtml = string(summaryHTML)
 	PopulateExpectedField(tr, maybeUnexpected)
 	PopulateDurationField(tr, micros)
-	populateTestLocation(tr, testLocationFileName, testLocationLine)
 	if err := populateTestMetadata(tr, tmd); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal test metadata").Err()
 	}
@@ -118,15 +113,6 @@ func PopulateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
 // PopulateExpectedField populates tr.Expected from NullBool.
 func PopulateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
 	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
-}
-
-func populateTestLocation(tr *pb.TestResult, fileName spanner.NullString, line spanner.NullInt64) {
-	if fileName.Valid {
-		tr.TestLocation = &pb.TestLocation{
-			FileName: fileName.StringVal,
-			Line:     int32(line.Int64),
-		}
-	}
 }
 
 func populateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {

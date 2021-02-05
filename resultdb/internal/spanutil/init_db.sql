@@ -181,14 +181,6 @@ CREATE TABLE TestResults (
   -- status.
   Tags ARRAY<STRING(MAX)>,
 
-  -- Name of the test file.
-  -- See also TestResult.test_location.file_name field.
-  TestLocationFileName STRING(MAX),
-
-  -- Line number in the test file.
-  -- See also TestResult.test_location.line field.
-  TestLocationLine INT64,
-
   -- Compressed metadata for the test case.
   -- For example original test name, test location, etc.
   -- See TestResult.test_metadata for details.

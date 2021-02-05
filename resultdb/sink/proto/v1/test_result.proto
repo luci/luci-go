@@ -28,6 +28,8 @@ option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 // in ../../v1/test_result.proto.
 // See its comments for details.
 message TestResult {
+  reserved 10; // test_location
+
   // Equivalent of luci.resultdb.v1.TestResult.TestId.
   string test_id = 1;
 
@@ -57,10 +59,6 @@ message TestResult {
   // Artifacts to upload and associate with this test result.
   // The map key is an artifact id.
   map<string, Artifact> artifacts = 9;
-
-  // Equivalent of luci.resultdb.v1.TestResult.test_location.
-  // Deprecated, use test_metadata instead.
-  luci.resultdb.v1.TestLocation test_location = 10;
 
   // Equivalent of luci.resultdb.v1.TestResult.test_metadata.
   luci.resultdb.v1.TestMetadata test_metadata = 11;

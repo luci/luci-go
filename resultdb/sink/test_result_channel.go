@@ -153,7 +153,6 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 					StartTime:    tr.GetStartTime(),
 					Duration:     tr.GetDuration(),
 					Tags:         tags,
-					TestLocation: tr.GetTestLocation(),
 					TestMetadata: tr.GetTestMetadata(),
 				},
 			}

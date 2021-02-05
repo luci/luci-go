@@ -32,9 +32,9 @@ func TestValidateTestResult(t *testing.T) {
 		defer cancel()
 
 		Convey(`TestLocation`, func() {
-			tr.TestLocation.FileName = ""
+			tr.TestMetadata.Location.FileName = ""
 			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
-			So(err, ShouldErrLike, "test_location: file_name: unspecified")
+			So(err, ShouldErrLike, "test_metadata: location: file_name: unspecified")
 		})
 
 		Convey(`TestMetadata`, func() {

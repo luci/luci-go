@@ -44,9 +44,12 @@ func validTestResult(now time.Time) *pb.TestResult {
 		SummaryHtml: "HTML summary",
 		StartTime:   st,
 		Duration:    ptypes.DurationProto(time.Minute),
-		TestLocation: &pb.TestLocation{
-			FileName: "//a_test.go",
-			Line:     54,
+		TestMetadata: &pb.TestMetadata{
+			Location: &pb.TestLocation{
+				Repo:     "https://git.example.com",
+				FileName: "//a_test.go",
+				Line:     54,
+			},
 		},
 		Tags: StringPairs("k1", "v1"),
 	}
@@ -239,40 +242,38 @@ func TestValidateTestResult(t *testing.T) {
 			So(validate(msg), ShouldErrLike, `"":"": key: unspecified`)
 		})
 
-		Convey("Test location", func() {
+		Convey("Test metadata", func() {
 			Convey("filename", func() {
 				Convey("unspecified", func() {
-					msg.TestLocation.FileName = ""
-					So(validate(msg), ShouldErrLike, "test_location: file_name: unspecified")
+					msg.TestMetadata.Location.FileName = ""
+					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: unspecified")
 				})
 				Convey("too long", func() {
-					msg.TestLocation.FileName = "//" + strings.Repeat("super long", 100)
-					So(validate(msg), ShouldErrLike, "test_location: file_name: length exceeds 512")
+					msg.TestMetadata.Location.FileName = "//" + strings.Repeat("super long", 100)
+					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: length exceeds 512")
 				})
 				Convey("no double slashes", func() {
-					msg.TestLocation.FileName = "file_name"
-					So(validate(msg), ShouldErrLike, "test_location: file_name: doesn't start with //")
+					msg.TestMetadata.Location.FileName = "file_name"
+					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: doesn't start with //")
 				})
 				Convey("back slash", func() {
-					msg.TestLocation.FileName = "//dir\\file"
-					So(validate(msg), ShouldErrLike, "test_location: file_name: has \\")
+					msg.TestMetadata.Location.FileName = "//dir\\file"
+					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: has \\")
 				})
 				Convey("trailing slash", func() {
-					msg.TestLocation.FileName = "//file_name/"
-					So(validate(msg), ShouldErrLike, "test_location: file_name: ends with /")
+					msg.TestMetadata.Location.FileName = "//file_name/"
+					So(validate(msg), ShouldErrLike, "test_metadata: location: file_name: ends with /")
 				})
 			})
 			Convey("line", func() {
-				msg.TestLocation.Line = -1
-				So(validate(msg), ShouldErrLike, "test_location: line: must not be negative")
+				msg.TestMetadata.Location.Line = -1
+				So(validate(msg), ShouldErrLike, "test_metadata: location: line: must not be negative")
 			})
 			Convey("repo", func() {
-				msg.TestLocation.Repo = "https://chromium.googlesource.com/chromium/src.git"
-				So(validate(msg), ShouldErrLike, "test_location: repo: must not end with .git")
+				msg.TestMetadata.Location.Repo = "https://chromium.googlesource.com/chromium/src.git"
+				So(validate(msg), ShouldErrLike, "test_metadata: location: repo: must not end with .git")
 			})
-		})
 
-		Convey("Test metadata", func() {
 			Convey("no location", func() {
 				msg.TestMetadata = &pb.TestMetadata{Name: "name"}
 				So(validate(msg), ShouldBeNil)
