@@ -101,6 +101,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0aac3f3_c04570ef",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-05T06:02:18Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "fa6fa7c5_9bacadca",
+      "range": {
+        "startLine": 219,
+        "startChar": 11,
+        "endLine": 219,
+        "endChar": 15
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7d971230_585e95d1",
@@ -185,6 +209,30 @@
       "side": 1,
       "message": "I\u0027ll remove L228 nanoseconds since validating the request and builder configs to not have nanoseconds will suffice. I\u0027ve moved checking the number of expirations to before the FanOutIn so we don\u0027t abort after we\u0027ve written tag indices, updated builder entities, etc.\n\nHowever the Python does fail in this way after datastore mutations have already been done, it just communicates it some different way to the user.",
       "parentUuid": "6044da83_2b7be934",
+      "range": {
+        "startLine": 233,
+        "startChar": 22,
+        "endLine": 233,
+        "endChar": 32
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db4962e4_bf99950f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-05T06:02:18Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "3b609350_deb6e731",
       "range": {
         "startLine": 233,
         "startChar": 22,
@@ -314,6 +362,30 @@
       "side": 1,
       "message": "This one is small compared to the other time you mentioned it to me (I think). I\u0027ve left this as is for now so it remains consistent with the already committed multi-line if task creation in cancel_build.go. Let me know if you insist.",
       "parentUuid": "bc6d85d2_1e7d7078",
+      "range": {
+        "startLine": 268,
+        "startChar": 5,
+        "endLine": 270,
+        "endChar": 13
+      },
+      "revId": "7287a219b88eaa41f33b8faa22505fb8a833d7d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45ef7c96_f34de72a",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-05T06:02:18Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2b181ac1_b3c4d7b7",
       "range": {
         "startLine": 268,
         "startChar": 5,
