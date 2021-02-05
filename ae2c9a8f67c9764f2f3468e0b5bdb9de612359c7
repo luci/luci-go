@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "237212a0_545f91a9",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-05T08:23:20Z",
+      "side": 1,
+      "message": "Yes we can. and I updated.\n\nBut the cons is that the test depends on the digest format and hashing logic of CAS.  \nThis test shouldn\u0027t need to know about that. (The digest doesn\u0027t need to be always XXXX/YY from user\u0027s prospective)\nThis reminds me of http://cl/353316742, which was unnecessary broken due to cipd change.\n\nChecking digest content sounds like white box testing to me.\n\nWDYT?",
+      "parentUuid": "14cf194c_f08dd9dd",
+      "range": {
+        "startLine": 76,
+        "startChar": 13,
+        "endLine": 76,
+        "endChar": 29
+      },
+      "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4f591f59_f17a3d49",
         "filename": "client/cmd/cas/main_test.go",
         "patchSetId": 9
@@ -37,6 +61,24 @@
       "writtenOn": "2021-02-05T07:54:15Z",
       "side": 1,
       "message": "check downloaded dir with\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/testing/testfs/build.go;l\u003d74;drc\u003d6049aa01f71f4cce3b6ae0a2d33068ffb0e02d86\n?",
+      "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "81f80515_851606a7",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-05T08:23:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f591f59_f17a3d49",
       "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
