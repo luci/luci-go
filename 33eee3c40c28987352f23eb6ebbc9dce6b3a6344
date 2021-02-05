@@ -106,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2e0b7ae_7cd7400b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T23:42:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53c53dad_82e06aff",
+      "range": {
+        "startLine": 10,
+        "startChar": 31,
+        "endLine": 10,
+        "endChar": 70
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d23af947_e07c804e",
@@ -225,6 +249,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ee95283d_53175fc9",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T23:42:08Z",
+      "side": 1,
+      "message": "I see. thanks for details. I\u0027ve resolved the batch_test.go thread, let\u0027s talk here:\n\nI propose:\n1. simplify code here as I recommended above -- iff Py gives top level error, return top level error. This doesn\u0027t decrease BB correctness, and preserves existing `bb` \u003c-\u003e BB server behavior.\n2. don\u0027t fix Py BB Batch.\n3. do implement Go BB batch correctly (as Schedule/Cancel is available)\n4. Ignore naive clients.\n5. Fix `bb` tool.\n\nWDYT?",
+      "parentUuid": "b3bb7ecc_955ad2f7",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 3
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "18bad222_b37b145c",
         "filename": "buildbucket/appengine/rpc/batch.go",
         "patchSetId": 4
@@ -317,6 +365,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "be39a79f_0d3585ca",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T23:42:08Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "35268f61_790e6dd0",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 23
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "31ef705c_ecad8d03",
@@ -364,6 +436,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7cd54dea_c40f2462",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T23:42:08Z",
+      "side": 1,
+      "message": "ah, i missed that part of fromError. Thanks!",
+      "parentUuid": "220f6d31_4814bc77",
+      "range": {
+        "startLine": 156,
+        "startChar": 15,
+        "endLine": 156,
+        "endChar": 22
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c9b5cfa9_7a19eda3",
@@ -395,6 +491,24 @@
       "side": 1,
       "message": "It\u0027s hard to directly mock it. But I can put something in `newPyBBClient()` func like : \n```\n\tif ctx.Value(\"transportErr\") \u003d\u003d \"True\" {\n\t\treturn nil, error\n\t}\n```",
       "parentUuid": "c9b5cfa9_7a19eda3",
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2093aeba_6e580dab",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T23:42:08Z",
+      "side": 1,
+      "message": "i\u0027m ok with that use non-string key:\n\n  var testFakeTransportError string \u003d \"used in tests only to mock transport\"\n  ...\n  \n  if fakeErr, ok :\u003d ctx.Value(\u0026testFakeTransportError); ok {\n    return nil, fakeErr\n  }",
+      "parentUuid": "81096a4f_1b8f31f0",
       "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -436,6 +550,30 @@
       "side": 1,
       "message": "Some of them are on top-level - https://screenshot.googleplex.com/82TAxMH5Y5QcF89.\nSome are on individual-level - https://screenshot.googleplex.com/59HVTi99ojtDZhN.\n\nI think it\u0027s a bug on Py BB side. We should fix it to set all PermDenied on individual-level.\nThen we can make all Py top-level err to Go top-level err.",
       "parentUuid": "dab53d60_2183cb44",
+      "range": {
+        "startLine": 368,
+        "startChar": 0,
+        "endLine": 375,
+        "endChar": 145
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92207b31_e00b3954",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T23:42:08Z",
+      "side": 1,
+      "message": "Wow, top level errors is indeed a bug. Well, we don\u0027t need to fix Python version, so long as we fix the Go version.\n\nBut until that happens, I\u0027m fine with propagating top level Python errors as top level Go errors, as it\u0027s not any worse than before.",
+      "parentUuid": "98982d6a_9d5c85fd",
       "range": {
         "startLine": 368,
         "startChar": 0,
