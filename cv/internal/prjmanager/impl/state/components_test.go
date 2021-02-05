@@ -24,9 +24,12 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -312,4 +315,241 @@ func (t *testCActor) act(context.Context) (*prjpb.Component, error) {
 	c.Dirty = false
 	c.DecisionTime = nil
 	return c, nil
+}
+
+func TestDepsTriage(t *testing.T) {
+	// This test may hang with infinite recursion due to proto comparison.
+	// If this fails, run it with -test.timeout=100ms while debugging.
+
+	t.Parallel()
+
+	Convey("Component's PCL deps triage", t, func() {
+		// Truncate start time point s.t. easy to see diff in test failures.
+		epoch := testclock.TestRecentTimeUTC.Truncate(10000 * time.Second)
+		dryRun := func(t time.Time) *run.Trigger {
+			return &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}
+		}
+		fullRun := func(t time.Time) *run.Trigger {
+			return &run.Trigger{Mode: string(run.FullRun), Time: timestamppb.New(t)}
+		}
+		singCG := &cfgpb.ConfigGroup{
+			Name: "singular",
+		}
+		combCG := &cfgpb.ConfigGroup{
+			Name:       "combinable",
+			CombineCls: &cfgpb.CombineCLs{},
+		}
+		// anotherCG := &cfgpb.ConfigGroup{
+		// 	Name: "another",
+		// }
+		const singIdx, combIdx, anotherIdx = 0, 1, 2
+
+		state := NewExisting(&prjpb.PState{})
+
+		triage := func(pcl *prjpb.PCL, cgIdx int32, cg *cfgpb.ConfigGroup) triagedDeps {
+			state.pclIndex = nil
+			a := componentActorImpl{s: state.makeActorSupporter()}
+			pb := backupPB(state)
+			td := a.triageDeps(pcl, cgIdx, cg)
+			So(state.PB, ShouldResembleProto, pb)
+			return td
+		}
+
+		Convey("Singluar and Combinable behave the same", func() {
+			sameTests := func(name string, cgIdx int32, cg *cfgpb.ConfigGroup) {
+				Convey(name, func() {
+					Convey("no deps", func() {
+						state.PB.Pcls = []*prjpb.PCL{
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}},
+						}
+						So(triage(state.PB.Pcls[0], cgIdx, cg), ShouldResemble, triagedDeps{})
+					})
+
+					Convey("Valid CL stack CQ+1", func() {
+						state.PB.Pcls = []*prjpb.PCL{
+							{Clid: 31, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(3 * time.Second))},
+							{Clid: 32, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(2 * time.Second))},
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
+								Deps: []*changelist.Dep{
+									{Clid: 31, Kind: changelist.DepKind_SOFT},
+									{Clid: 32, Kind: changelist.DepKind_HARD},
+								}},
+						}
+						td := triage(state.makeActorSupporter().MustPCL(33), cgIdx, cg)
+						So(td, ShouldResemble, triagedDeps{
+							lastTriggered: epoch.Add(3 * time.Second),
+						})
+					})
+
+					Convey("Not yet loaded deps", func() {
+						state.PB.Pcls = []*prjpb.PCL{
+							// 31 isn't in PCLs yet
+							{Clid: 32, Status: prjpb.PCL_UNKNOWN},
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
+								Deps: []*changelist.Dep{
+									{Clid: 31, Kind: changelist.DepKind_SOFT},
+									{Clid: 32, Kind: changelist.DepKind_HARD},
+								}},
+						}
+						pcl33 := state.makeActorSupporter().MustPCL(33)
+						td := triage(pcl33, cgIdx, cg)
+						So(td.notYetLoaded, ShouldResembleProto, pcl33.GetDeps())
+						td.notYetLoaded = nil
+						So(td, ShouldResemble, triagedDeps{})
+					})
+
+					Convey("Unwatched", func() {
+						state.PB.Pcls = []*prjpb.PCL{
+							{Clid: 31, Status: prjpb.PCL_UNWATCHED},
+							{Clid: 32, Status: prjpb.PCL_DELETED},
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
+								Deps: []*changelist.Dep{
+									{Clid: 31, Kind: changelist.DepKind_SOFT},
+									{Clid: 32, Kind: changelist.DepKind_HARD},
+								}},
+						}
+						pcl33 := state.makeActorSupporter().MustPCL(33)
+						td := triage(pcl33, cgIdx, cg)
+						So(td.unwatched, ShouldResembleProto, pcl33.GetDeps())
+						td.unwatched = nil
+						So(td, ShouldResemble, triagedDeps{})
+					})
+
+					Convey("Submitted can be in any config group", func() {
+						state.PB.Pcls = []*prjpb.PCL{
+							{Clid: 32, ConfigGroupIndexes: []int32{anotherIdx}, Submitted: true},
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
+								Deps: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}}},
+						}
+						pcl33 := state.makeActorSupporter().MustPCL(33)
+						td := triage(pcl33, cgIdx, cg)
+						So(td.submitted, ShouldResembleProto, pcl33.GetDeps())
+						td.submitted = nil
+						So(td, ShouldResemble, triagedDeps{})
+					})
+
+					Convey("wrong config group", func() {
+						state.PB.Pcls = []*prjpb.PCL{
+							{Clid: 31, Trigger: dryRun(epoch.Add(3 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx}},
+							{Clid: 32, Trigger: dryRun(epoch.Add(2 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx, cgIdx}},
+							{Clid: 33, Trigger: dryRun(epoch.Add(1 * time.Second)), ConfigGroupIndexes: []int32{cgIdx},
+								Deps: []*changelist.Dep{
+									{Clid: 31, Kind: changelist.DepKind_SOFT},
+									{Clid: 32, Kind: changelist.DepKind_HARD},
+								}},
+						}
+						pcl33 := state.makeActorSupporter().MustPCL(33)
+						td := triage(pcl33, cgIdx, cg)
+						So(td.wrongConfigGroup, ShouldResembleProto, pcl33.GetDeps())
+						td.wrongConfigGroup = nil
+						So(td, ShouldResemble, triagedDeps{
+							lastTriggered: epoch.Add(3 * time.Second),
+						})
+					})
+				})
+			}
+			sameTests("singular", singIdx, singCG)
+			sameTests("combinable", combIdx, combCG)
+		})
+
+		Convey("Singular speciality", func() {
+			state.PB.Pcls = []*prjpb.PCL{
+				{
+					Clid: 31, ConfigGroupIndexes: []int32{singIdx},
+					Trigger: dryRun(epoch.Add(3 * time.Second)),
+				},
+				{
+					Clid: 32, ConfigGroupIndexes: []int32{singIdx},
+					Trigger: fullRun(epoch.Add(2 * time.Second)), // not happy about its dep.
+					Deps:    []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
+				},
+				{
+					Clid: 33, ConfigGroupIndexes: []int32{singIdx},
+					Trigger: dryRun(epoch.Add(3 * time.Second)), // doesn't care about deps.
+					Deps: []*changelist.Dep{
+						{Clid: 31, Kind: changelist.DepKind_SOFT},
+						{Clid: 32, Kind: changelist.DepKind_HARD},
+					},
+				},
+			}
+			Convey("dry run doesn't care about deps' triggers", func() {
+				pcl33 := state.makeActorSupporter().MustPCL(33)
+				td := triage(pcl33, singIdx, singCG)
+				So(td, ShouldResemble, triagedDeps{
+					lastTriggered: epoch.Add(3 * time.Second),
+				})
+			})
+			Convey("full run considers any dep incompatible", func() {
+				pcl32 := state.makeActorSupporter().MustPCL(32)
+				td := triage(pcl32, singIdx, singCG)
+				So(td.incompatMode, ShouldResembleProto, pcl32.GetDeps())
+				td.incompatMode = nil
+				So(td, ShouldResemble, triagedDeps{
+					lastTriggered: epoch.Add(3 * time.Second),
+				})
+			})
+		})
+
+		Convey("Combinable speciality", func() {
+			// Setup valid deps; sub-tests will mutate this to become invalid.
+			state.PB.Pcls = []*prjpb.PCL{
+				{
+					Clid: 31, ConfigGroupIndexes: []int32{combIdx},
+					Trigger: dryRun(epoch.Add(3 * time.Second)),
+				},
+				{
+					Clid: 32, ConfigGroupIndexes: []int32{combIdx},
+					Trigger: dryRun(epoch.Add(2 * time.Second)),
+					Deps:    []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
+				},
+				{
+					Clid: 33, ConfigGroupIndexes: []int32{combIdx},
+					Trigger: dryRun(epoch.Add(1 * time.Second)),
+					Deps: []*changelist.Dep{
+						{Clid: 31, Kind: changelist.DepKind_SOFT},
+						{Clid: 32, Kind: changelist.DepKind_HARD},
+					},
+				},
+			}
+			Convey("dry run expects all deps to be dry", func() {
+				pcl32 := state.makeActorSupporter().MustPCL(32)
+				Convey("ok", func() {
+					So(triage(pcl32, combIdx, combCG), ShouldResemble, triagedDeps{
+						lastTriggered: epoch.Add(3 * time.Second),
+					})
+				})
+
+				Convey("... not full runs", func() {
+					// TODO(tandrii): this can and should be supported.
+					state.makeActorSupporter().MustPCL(31).Trigger.Mode = string(run.FullRun)
+					td := triage(pcl32, combIdx, combCG)
+					So(td.incompatMode, ShouldResembleProto, pcl32.GetDeps())
+					td.incompatMode = nil
+					So(td, ShouldResemble, triagedDeps{
+						lastTriggered: epoch.Add(3 * time.Second),
+					})
+				})
+			})
+			Convey("full run considers any dep incompatible", func() {
+				pcl33 := state.makeActorSupporter().MustPCL(33)
+				Convey("ok", func() {
+					for _, pcl := range state.PB.GetPcls() {
+						pcl.Trigger.Mode = string(run.FullRun)
+					}
+					So(triage(pcl33, combIdx, combCG), ShouldResemble, triagedDeps{
+						lastTriggered: epoch.Add(3 * time.Second),
+					})
+				})
+				Convey("... not dry runs", func() {
+					state.makeActorSupporter().MustPCL(32).Trigger.Mode = string(run.FullRun)
+					td := triage(pcl33, combIdx, combCG)
+					So(td.incompatMode, ShouldResembleProto, []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}})
+					td.incompatMode = nil
+					So(td, ShouldResemble, triagedDeps{
+						lastTriggered: epoch.Add(3 * time.Second),
+					})
+				})
+			})
+		})
+	})
 }
