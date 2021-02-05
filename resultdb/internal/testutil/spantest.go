@@ -54,7 +54,7 @@ const (
 
 // runIntegrationTests returns true if integration tests should run.
 func runIntegrationTests() bool {
-	return os.Getenv(IntegrationTestEnvVar) == "1"
+	return os.Getenv(IntegrationTestEnvVar) == "1" || os.Getenv("SPANNER_EMULATOR_HOST") != ""
 }
 
 // ConnectToRedis returns true if tests should connect to Redis.
