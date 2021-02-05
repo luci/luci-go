@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e37f135f_8265c5d0",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-05T21:54:22Z",
+      "side": 1,
+      "message": "why not just let categorize mutate triagedDeps directly? Is it to make testing easier?",
+      "range": {
+        "startLine": 318,
+        "startChar": 0,
+        "endLine": 320,
+        "endChar": 3
+      },
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1d19ac5_71fe9d41",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-05T21:54:22Z",
+      "side": 1,
+      "message": "I think this should be moved to `categorizeCombinable` since `lastTriggered` is only set when ConfigGroup has `combine_cls` enabled.",
+      "range": {
+        "startLine": 321,
+        "startChar": 0,
+        "endLine": 326,
+        "endChar": 2
+      },
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d4cc380_08f4d5c5",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-05T21:54:22Z",
+      "side": 1,
+      "message": "nit: %s is enough I think.",
+      "range": {
+        "startLine": 393,
+        "startChar": 53,
+        "endLine": 393,
+        "endChar": 58
+      },
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53e40db8_c536df5a",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-05T21:54:22Z",
+      "side": 1,
+      "message": "nit: line is too long here.",
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e26910e_0eb51d7f",
+        "filename": "cv/internal/prjmanager/impl/state/components_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-05T21:54:22Z",
+      "side": 1,
+      "message": "I assume the problem is with comparing triagedDeps. I think maybe we can create a function like `assertTriagedDepsEqual()` and comparing each fields separately s.t. you don\u0027t need to compare the slice, wipe it out and compare the rest like what you did in the current test.",
+      "range": {
+        "startLine": 343,
+        "startChar": 0,
+        "endLine": 344,
+        "endChar": 67
+      },
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
