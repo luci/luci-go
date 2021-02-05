@@ -20,24 +20,57 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/cmd/cas/lib"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 const version = "0.1"
 
-func getApplication(defaultAuthOpts auth.Options) *cli.Application {
+type authFlags struct {
+	flags       authcli.Flags
+	defaultOpts auth.Options
+	parsedOpts  *auth.Options
+}
+
+func (af *authFlags) Register(f *flag.FlagSet) {
+	af.flags.Register(f, af.defaultOpts)
+}
+
+func (af *authFlags) Parse() error {
+	opts, err := af.flags.Options()
+	if err != nil {
+		return err
+	}
+	af.parsedOpts = &opts
+	return nil
+}
+
+func (af *authFlags) NewClient(ctx context.Context, instance string) (*client.Client, error) {
+	if af.parsedOpts == nil {
+		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
+	}
+	return cas.NewClient(ctx, instance, *af.parsedOpts, false)
+}
+
+func getApplication() *cli.Application {
+	authOpts := chromeinfra.DefaultAuthOptions()
+	af := &authFlags{defaultOpts: authOpts}
+
 	return &cli.Application{
 		Name:  "cas",
 		Title: "Client tool to access CAS.",
@@ -47,12 +80,12 @@ func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
 
-			lib.CmdArchive(defaultAuthOpts),
-			lib.CmdDownload(defaultAuthOpts),
+			lib.CmdArchive(af),
+			lib.CmdDownload(af),
 
-			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
-			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
-			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
+			authcli.SubcommandInfo(authOpts, "whoami", false),
+			authcli.SubcommandLogin(authOpts, "login", false),
+			authcli.SubcommandLogout(authOpts, "logout", false),
 			versioncli.CmdVersion(version),
 		},
 	}
@@ -61,6 +94,6 @@ func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 func main() {
 	log.SetFlags(log.Lmicroseconds)
 	mathrand.SeedRandomly()
-	app := getApplication(chromeinfra.DefaultAuthOptions())
+	app := getApplication()
 	os.Exit(subcommands.Run(app, nil))
 }
