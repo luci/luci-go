@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -76,8 +77,28 @@ func TestComponentsActions(t *testing.T) {
 		now := ct.Clock.Now()
 
 		const lProject = "luci-project"
+
+		// scanComponents needs config to exist, but this test doesn't actually care
+		// about what's inside due to mock componentActor.
+		ct.Cfg.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{
+			{
+				Name: "main",
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
+					{
+						Url: "https://example.com",
+						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
+							{Name: "re/po"},
+						},
+					},
+				},
+			},
+		}})
+		meta := ct.Cfg.MustExist(ctx, lProject)
+
 		state := NewExisting(&prjpb.PState{
 			LuciProject: lProject,
+			Status:      prjpb.Status_STARTED,
+			ConfigHash:  meta.Hash(),
 			Pcls: []*prjpb.PCL{
 				{Clid: 1},
 				{Clid: 2},
