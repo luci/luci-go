@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"google.golang.org/genproto/googleapis/bytestream"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -37,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
+	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -79,28 +79,6 @@ func TestGenerateSignedURL(t *testing.T) {
 	})
 }
 
-type fakeCASReader struct {
-	grpc.ClientStream // implements the rest of grpc.ClientStream
-
-	res         []*bytestream.ReadResponse
-	resIndex    int
-	resErr      error
-	resErrIndex int
-}
-
-func (r *fakeCASReader) Recv() (*bytestream.ReadResponse, error) {
-	if r.resErr != nil && r.resErrIndex == r.resIndex {
-		return nil, r.resErr
-	}
-
-	if r.resIndex < len(r.res) {
-		res := r.res[r.resIndex]
-		r.resIndex++
-		return res, nil
-	}
-	return nil, io.EOF
-}
-
 func TestServeContent(t *testing.T) {
 	Convey(`TestServeContent`, t, func(c C) {
 		ctx := testutil.SpannerTestContext(t)
@@ -109,8 +87,8 @@ func TestServeContent(t *testing.T) {
 		ctx = testsecrets.Use(ctx)
 		ctx = authtest.MockAuthConfig(ctx)
 
-		casReader := &fakeCASReader{
-			res: []*bytestream.ReadResponse{
+		casReader := &artifactcontenttest.FakeCASReader{
+			Res: []*bytestream.ReadResponse{
 				{Data: []byte("contents")},
 			},
 		}
@@ -210,7 +188,7 @@ func TestServeContent(t *testing.T) {
 			})
 
 			Convey(`Recv error`, func() {
-				casReader.resErr = status.Errorf(codes.Internal, "internal error")
+				casReader.ResErr = status.Errorf(codes.Internal, "internal error")
 				res, _ := fetch(u)
 				So(res.StatusCode, ShouldEqual, http.StatusInternalServerError)
 			})
@@ -219,7 +197,7 @@ func TestServeContent(t *testing.T) {
 
 		Convey(`E2E`, func() {
 			Convey(`RBE-CAS`, func() {
-				casReader.res = []*bytestream.ReadResponse{
+				casReader.Res = []*bytestream.ReadResponse{
 					{Data: []byte("first ")},
 					{Data: []byte("second")},
 				}

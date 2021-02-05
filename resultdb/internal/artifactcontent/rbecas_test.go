@@ -16,37 +16,15 @@ package artifactcontent
 
 import (
 	"bufio"
-	"context"
 	"io"
 	"strings"
 	"testing"
 
-	"google.golang.org/genproto/googleapis/bytestream"
-	"google.golang.org/grpc"
-
+	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-type fakeByteStreamClient struct{}
-
-func (c *fakeByteStreamClient) Read(ctx context.Context, in *bytestream.ReadRequest, opts ...grpc.CallOption) (bytestream.ByteStream_ReadClient, error) {
-	return &fakeCASReader{
-		res: []*bytestream.ReadResponse{
-			{Data: []byte("contentspart1\n")},
-			{Data: []byte("contentspart2\n")},
-		},
-	}, nil
-}
-
-func (c *fakeByteStreamClient) Write(ctx context.Context, opts ...grpc.CallOption) (bytestream.ByteStream_WriteClient, error) {
-	return nil, nil
-}
-
-func (c *fakeByteStreamClient) QueryWriteStatus(ctx context.Context, in *bytestream.QueryWriteStatusRequest, opts ...grpc.CallOption) (*bytestream.QueryWriteStatusResponse, error) {
-	return nil, nil
-}
 
 func TestDownloadRBECASContent(t *testing.T) {
 	Convey(`TestDownloadRBECASContent`, t, func() {
@@ -59,7 +37,7 @@ func TestDownloadRBECASContent(t *testing.T) {
 		}
 
 		var str strings.Builder
-		err := ac.DownloadRBECASContent(ctx, &fakeByteStreamClient{}, func(pr io.Reader) error {
+		err := ac.DownloadRBECASContent(ctx, &artifactcontenttest.FakeByteStreamClient{[]byte("contentspart2\n")}, func(pr io.Reader) error {
 			sc := bufio.NewScanner(pr)
 			for sc.Scan() {
 				str.Write(sc.Bytes())
