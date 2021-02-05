@@ -16,6 +16,46 @@
       "message": "not an official review. The code is still very messy now. I\u0027m sending it out first to make sure I\u0027m not heading to a wrong track. PTAL at the high-level logic in cancel.go and let me know if there\u0027s any major concern. I\u0027ll further clean up the code and break it down for proper review tomorrow.",
       "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4bd9e43d_209b6dfe",
+        "filename": "cv/internal/gerrit/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T14:26:59Z",
+      "side": 1,
+      "message": "👍for caring about utf8, iiuc, i intentionally ignored it in CQD.",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27773b96_e8c15ff8",
+        "filename": "cv/internal/gerrit/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-05T14:26:59Z",
+      "side": 1,
+      "message": "i\u0027m not convinced that having msg[i:] valid implies that the whole string is valid.\n\nSay you have msg \u003d\u003d []byte{a,b,c,d}\nCan it be that valid runes are `abcd` and `cd` but not `ab`?\n\nHow about slow but definitely correct:\n\nfor !utf8.ValidString(msg) {\n   msg \u003d msg[:len(msg)-1]\n}\n\n?",
+      "range": {
+        "startLine": 38,
+        "startChar": 16,
+        "endLine": 38,
+        "endChar": 47
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
