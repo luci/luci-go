@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "538a3f32_d6c658b3",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-05T06:50:29Z",
+      "side": 1,
+      "message": "download?",
+      "range": {
+        "startLine": 52,
+        "startChar": 19,
+        "endLine": 52,
+        "endChar": 26
+      },
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "29cb592f_6771ae62",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-05T06:50:29Z",
+      "side": 1,
+      "message": "why do you need to have additional nest here?",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 25
+      },
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
