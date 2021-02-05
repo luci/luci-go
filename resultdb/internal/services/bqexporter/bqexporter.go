@@ -87,7 +87,7 @@ type Options struct {
 	// invocation).
 	TaskWorkers int
 
-	// ArtifactRBEInstance is the name of the RBE instance used for artifact
+	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
 	// storage. Example: "projects/luci-resultdb/instances/artifacts".
 	ArtifactRBEInstance string
 }

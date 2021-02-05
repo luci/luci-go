@@ -38,6 +38,7 @@ func main() {
 	rateLimit := int(opts.RateLimit)
 	flag.IntVar(&rateLimit, "rate-limit", rateLimit,
 		"Maximum BigQuery request rate")
+	artifactcontent.RegisterRBEInstanceFlag(flag.CommandLine, &opts.ArtifactRBEInstance)
 
 	internal.Main(func(srv *server.Server) error {
 		opts.RateLimit = rate.Limit(rateLimit)
