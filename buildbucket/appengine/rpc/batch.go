@@ -19,17 +19,25 @@ import (
 	"net/http"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	grpcStatus "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+var retryableRPCCodeSet = map[codes.Code]bool{
+	codes.DeadlineExceeded:  true,
+	codes.ResourceExhausted: true,
+	codes.Unavailable:       true,
+	codes.Unknown:           true,
+}
 
 // pyBatchResponse captures the BatchResponse from Py service.
 type pyBatchResponse struct {
@@ -98,6 +106,10 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 					panic("impossible")
 				}
 				if err != nil {
+					logging.Warningf(ctx, "Error from Go: %s", err)
+					if ok, goErrSt := isBatchRetryableError(err); ok {
+						return appstatus.Error(goErrSt.Code(), goErrSt.Message())
+					}
 					response.Response = toBatchResponseError(ctx, err)
 				}
 				res.Responses[goIndices[i]] = response
@@ -115,10 +127,14 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 
 	pyRes := <-pyResC
 	if pyRes.err != nil {
-		logging.Errorf(ctx, "Error from Python service: %s", pyRes.err)
+		logging.Warningf(ctx, "Error from Python service: %s", pyRes.err)
+		ok, pyErrSt := isBatchRetryableError(pyRes.err)
+		if ok {
+			return nil, appstatus.Error(pyErrSt.Code(), pyErrSt.Message())
+		}
 		for _, idx := range pyIndices {
 			res.Responses[idx] = &pb.BatchResponse_Response{
-				Response: &pb.BatchResponse_Response_Error{Error: status.New(codes.Internal, "Internal server error").Proto()},
+				Response: &pb.BatchResponse_Response_Error{Error: grpcStatus.New(pyErrSt.Code(), pyErrSt.Message()).Proto()},
 			}
 		}
 	} else {
@@ -130,12 +146,29 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	return res, nil
 }
 
+// isBatchRetryableError returns true with grpc status, if this error has the
+// grpc retryable code. Otherwise it returns false with a status which has
+// codes.Unknown and the original error message.
+func isBatchRetryableError(err error) (bool, *grpcStatus.Status) {
+	gStatus, ok := grpcStatus.FromError(err)
+	if !ok {
+		return false, gStatus
+	}
+	switch {
+	case grpcutil.IsTransientCode(gStatus.Code()):
+		return true, gStatus
+	case gStatus.Code() == codes.DeadlineExceeded:
+		return true, grpcStatus.New(codes.Internal, gStatus.Message())
+	}
+	return false, gStatus
+}
+
 // toBatchResponseError converts an error to BatchResponse_Response_Error type.
 func toBatchResponseError(ctx context.Context, err error) *pb.BatchResponse_Response_Error {
 	st, ok := appstatus.Get(err)
 	if !ok {
 		logging.Errorf(ctx, "Non-appstatus error in a batch response: %s", err)
-		return &pb.BatchResponse_Response_Error{Error: status.New(codes.Internal, "Internal server error").Proto()}
+		return &pb.BatchResponse_Response_Error{Error: grpcStatus.New(codes.Internal, "Internal server error").Proto()}
 	}
 	return &pb.BatchResponse_Response_Error{Error: st.Proto()}
 }

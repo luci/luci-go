@@ -16,8 +16,10 @@ package rpc
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
@@ -101,7 +103,6 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
-
 	rsp, err := search.NewQuery(req).Fetch(ctx)
 	if err != nil {
 		return nil, err
