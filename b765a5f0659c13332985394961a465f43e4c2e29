@@ -170,6 +170,30 @@
       },
       "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d0fcfa7c_9acb87d6",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-05T07:45:01Z",
+      "side": 1,
+      "message": "When the download test fails, the archive test is marked as passed.\ne.g. http://screen/JBcVdBMeJhGqT3W",
+      "parentUuid": "22c0919d_76a9bfd4",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 25
+      },
+      "revId": "b765a5f0659c13332985394961a465f43e4c2e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
