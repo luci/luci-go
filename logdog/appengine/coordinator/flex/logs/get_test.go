@@ -23,21 +23,30 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"github.com/golang/protobuf/proto"
+
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/proto/google"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/common/archive"
 	"go.chromium.org/luci/logdog/common/renderer"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
-
-	"github.com/golang/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -161,15 +170,6 @@ func testGetImpl(t *testing.T, archived bool) {
 				Path:    string(tls.Path),
 			}
 
-			Convey(`Will succeed with no logs.`, func() {
-				resp, err := svr.Get(c, &req)
-
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogs)
-				So(resp.Project, ShouldEqual, "proj-foo")
-				So(resp.Realm, ShouldEqual, "test-realm")
-			})
-
 			Convey(`Will fail if the Path is not a stream path or a hash.`, func() {
 				req.Path = "not/a/full/stream/path"
 				_, err := svr.Get(c, &req)
@@ -190,112 +190,119 @@ func testGetImpl(t *testing.T, archived bool) {
 				So(err, ShouldBeRPCInvalidArgument)
 			})
 
-			Convey(`If the user is logged in`, func() {
-				env.LogIn()
+			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {
+				req.Path = "testing/+/does/not/exist"
+				_, err := svr.Get(c, &req)
+				So(err, ShouldBeRPCNotFound)
+			})
 
-				Convey(`When accessing a restricted project`, func() {
-					req.Project = "proj-exclusive"
-					tls = ct.MakeStream(c, "proj-exclusive", "", "testing/+/foo/bar")
-					putLogStream(c)
+			Convey(`Will handle non-existent project.`, func() {
+				req.Project = "does-not-exist"
+				req.Path = "testing/+/**"
 
-					Convey(`Will succeed if the user can access the project.`, func() {
-						env.JoinGroup("auth")
-
-						_, err := svr.Get(c, &req)
-						So(err, ShouldBeRPCOK)
-					})
-
-					Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
-						req.Project = "proj-exclusive"
-						_, err := svr.Get(c, &req)
-						So(err, ShouldBeRPCPermissionDenied)
-					})
+				Convey(`Anon`, func() {
+					_, err := svr.Get(c, &req)
+					So(err, ShouldBeRPCUnauthenticated)
 				})
 
-				Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
-					req.Project = "does-not-exist"
+				Convey(`User`, func() {
+					env.LogIn()
 					_, err := svr.Get(c, &req)
 					So(err, ShouldBeRPCPermissionDenied)
 				})
 			})
 
-			Convey(`Will fail with Unauthenticated if the project does not exist.`, func() {
-				req.Project = "does-not-exist"
-				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCUnauthenticated)
-			})
+			Convey(`Authorization rules`, func() {
+				// "proj-exclusive" has restricted legacy ACLs, see coordinatorTest.
+				const project = "proj-exclusive"
+				req.Project = project
 
-			Convey(`Will fail with Unauthenticated if the user can't access the project.`, func() {
-				req.Project = "proj-exclusive"
-				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCUnauthenticated)
-			})
+				const (
+					User   = "user:caller@example.com"
+					Anon   = identity.AnonymousIdentity
+					Legacy = "user:legacy@example.com" // present in @legacy realm ACL
+				)
 
-			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {
-				req.Path = "testing/+/does/not/exist"
-				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCNotFound)
-			})
-		})
+				const (
+					NoRealm        = ""
+					AllowedRealm   = "allowed"
+					ForbiddenRealm = "forbidden"
+				)
 
-		Convey(`Testing Tail requests (no logs)`, func() {
-			req := logdog.TailRequest{
-				Project: string(project),
-				Path:    string(tls.Path),
-			}
+				const (
+					AllowLegacy  = true
+					ForbidLegacy = false
+				)
 
-			Convey(`Will succeed with no logs.`, func() {
-				resp, err := svr.Tail(c, &req)
+				realm := func(short string) string {
+					return realms.Join(project, short)
+				}
 
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogs)
-			})
+				cases := []struct {
+					enforce     bool              // is enforce_realms_in ON or OFF
+					ident       identity.Identity // who's making the call
+					realm       string            // the realm to put the stream in
+					allowLegacy bool              // mock legacy ACLs to allow access
+					code        codes.Code        // the expected gRPC code
+				}{
+					// Enforcement is on, legacy ACLs are ignored.
+					{true, User, NoRealm, AllowLegacy, codes.PermissionDenied},
+					{true, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
+					{true, Legacy, NoRealm, AllowLegacy, codes.OK},
+					{true, Legacy, NoRealm, ForbidLegacy, codes.OK},
+					{true, User, AllowedRealm, AllowLegacy, codes.OK},
+					{true, User, AllowedRealm, ForbidLegacy, codes.OK},
+					{true, User, ForbiddenRealm, AllowLegacy, codes.PermissionDenied},
+					{true, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
 
-			Convey(`If the user is logged in`, func() {
-				env.LogIn()
+					// Enforcement is off, have a fallback on legacy ACLs.
+					{false, User, NoRealm, AllowLegacy, codes.OK},
+					{false, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
+					{false, Legacy, NoRealm, AllowLegacy, codes.OK},
+					{false, Legacy, NoRealm, ForbidLegacy, codes.OK},
+					{false, User, AllowedRealm, AllowLegacy, codes.OK},
+					{false, User, AllowedRealm, ForbidLegacy, codes.OK},
+					{false, User, ForbiddenRealm, AllowLegacy, codes.OK},
+					{false, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
 
-				Convey(`When accessing a restricted project`, func() {
-					req.Project = "proj-exclusive"
-					tls = ct.MakeStream(c, "proj-exclusive", "", "testing/+/foo/bar")
-					putLogStream(c)
+					// Permission denied for anon => Unauthenticated.
+					{true, Anon, ForbiddenRealm, AllowLegacy, codes.Unauthenticated},
+					{false, Anon, NoRealm, ForbidLegacy, codes.Unauthenticated},
+				}
 
-					Convey(`Will succeed if the user can access the project.`, func() {
-						env.JoinGroup("auth")
+				for i, test := range cases {
+					Convey(fmt.Sprintf("Case #%d", i), func() {
+						tls = ct.MakeStream(c, project, test.realm, types.StreamPath(req.Path))
+						putLogStream(c)
 
-						_, err := svr.Tail(c, &req)
-						So(err, ShouldBeRPCOK)
+						mocks := []authtest.MockedDatum{
+							authtest.MockPermission(test.ident, realm(AllowedRealm), coordinator.PermLogsGet),
+							authtest.MockPermission(Legacy, realm(realms.LegacyRealm), coordinator.PermLogsGet),
+						}
+						if test.enforce {
+							mocks = append(mocks, authtest.MockRealmData(
+								realm(realms.RootRealm),
+								&protocol.RealmData{EnforceInService: []string{env.ServiceID}},
+							))
+						}
+						if test.allowLegacy {
+							mocks = append(mocks, authtest.MockMembership(test.ident, "auth"))
+						}
+
+						c := auth.WithState(c, &authtest.FakeState{
+							Identity: test.ident,
+							FakeDB:   authtest.NewFakeDB(mocks...),
+						})
+
+						resp, err := svr.Get(c, &req)
+						So(status.Code(err), ShouldEqual, test.code)
+						if err == nil {
+							So(resp, shouldHaveLogs)
+							So(resp.Project, ShouldEqual, project)
+							So(resp.Realm, ShouldEqual, test.realm)
+						}
 					})
-
-					Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
-						req.Project = "proj-exclusive"
-						_, err := svr.Tail(c, &req)
-						So(err, ShouldBeRPCPermissionDenied)
-					})
-				})
-
-				Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
-					req.Project = "does-not-exist"
-					_, err := svr.Tail(c, &req)
-					So(err, ShouldBeRPCPermissionDenied)
-				})
-			})
-
-			Convey(`Will fail with Unauthenticated if the project does not exist.`, func() {
-				req.Project = "does-not-exist"
-				_, err := svr.Tail(c, &req)
-				So(err, ShouldBeRPCUnauthenticated)
-			})
-
-			Convey(`Will fail with Unauthenticated if the user can't access the project.`, func() {
-				req.Project = "proj-exclusive"
-				_, err := svr.Tail(c, &req)
-				So(err, ShouldBeRPCUnauthenticated)
-			})
-
-			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {
-				req.Path = "testing/+/does/not/exist"
-				_, err := svr.Tail(c, &req)
-				So(err, ShouldBeRPCNotFound)
+				}
 			})
 		})
 

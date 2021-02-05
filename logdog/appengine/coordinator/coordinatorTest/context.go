@@ -46,6 +46,8 @@ import (
 	logdogcfg "go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/settings"
 
@@ -180,6 +182,12 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 	c = cryptorand.MockForTest(c, 765589025) // as chosen by fair dice roll
 	ds.GetTestable(c).Consistent(true)
+
+	// Signer is used by ShouldEnforceRealmACL to discover service ID.
+	c = auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {
+		cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{AppID: e.ServiceID})
+		return cfg
+	})
 
 	c = caching.WithEmptyProcessCache(c)
 	if *testGoLogger {

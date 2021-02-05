@@ -117,11 +117,9 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		log.WithError(err).Errorf(r.ctx, "Failed to fetch LogPrefix")
 		return grpcutil.Internal
 	}
-	switch yes, err := coordinator.HasPermission(r.ctx, coordinator.PermLogsList, pfx.Realm); {
-	case err != nil:
-		return grpcutil.Internal
-	case !yes:
-		return coordinator.PermissionDeniedErr(r.ctx)
+
+	if err := coordinator.CheckPermission(r.ctx, coordinator.PermLogsList, q.Prefix, pfx.Realm); err != nil {
+		return err
 	}
 
 	resp.Project = r.req.Project

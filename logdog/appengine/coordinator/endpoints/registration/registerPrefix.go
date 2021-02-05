@@ -84,7 +84,10 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		"expiration": google.DurationFromProto(req.Expiration),
 	}.Debugf(c, "Registering log prefix.")
 
-	// TODO(crbug.com/1172492): Make `realm` required.
+	// Note: if the project has `enforce_realms_in` setting ON and req.Realm is
+	// empty, CheckPermission below will barf with InvalidArgument error. And when
+	// not enforcing realm ACLs, it is fine to pass empty "realm" string, it will
+	// be replaced with @legacy.
 	var realm string
 	if req.Realm != "" {
 		if err := realms.ValidateRealmName(req.Realm, realms.ProjectScope); err != nil {
@@ -102,11 +105,8 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	}
 
 	// Check the caller is allowed to register prefixes in the requested realm.
-	switch yes, err := coordinator.HasPermission(c, coordinator.PermLogsCreate, realm); {
-	case err != nil:
-		return nil, grpcutil.Internal
-	case !yes:
-		return nil, coordinator.PermissionDeniedErr(c)
+	if err := coordinator.CheckPermission(c, coordinator.PermLogsCreate, prefix, realm); err != nil {
+		return nil, err
 	}
 
 	pubsubTopic, expiration, err := getTopicAndExpiration(c, req)

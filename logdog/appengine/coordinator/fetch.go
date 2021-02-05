@@ -88,11 +88,8 @@ func (f *MetadataFetcher) FetchWithACLCheck(ctx context.Context) error {
 	}
 
 	// Check the caller is allowed to read streams under this prefix.
-	switch yes, err := HasPermission(ctx, PermLogsGet, f.Prefix.Realm); {
-	case err != nil:
-		return grpcutil.Internal
-	case !yes:
-		return PermissionDeniedErr(ctx)
+	if err := CheckPermission(ctx, PermLogsGet, prefix, f.Prefix.Realm); err != nil {
+		return err
 	}
 
 	// Check if the stream actually exists. It is fine to expose this information
