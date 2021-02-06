@@ -20,10 +20,12 @@ import (
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -1009,7 +1011,8 @@ func TestScheduleBuild(t *testing.T) {
 	Convey("ScheduleBuild", t, func() {
 		srv := &Builds{}
 
-		ctx := memory.Use(context.Background())
+		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx, sch := tq.TestingContext(ctx, nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -1028,6 +1031,7 @@ func TestScheduleBuild(t *testing.T) {
 				rsp, err := srv.ScheduleBuild(ctx, req)
 				So(err, ShouldErrLike, "not found")
 				So(rsp, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("permission denied", func() {
@@ -1051,6 +1055,7 @@ func TestScheduleBuild(t *testing.T) {
 				rsp, err := srv.ScheduleBuild(ctx, req)
 				So(err, ShouldErrLike, "not found")
 				So(rsp, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("ok", func() {
@@ -1066,16 +1071,6 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.Build{
-					Proto: pb.Build{
-						Id: 1,
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-					},
-				}), ShouldBeNil)
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -1088,6 +1083,30 @@ func TestScheduleBuild(t *testing.T) {
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldErrLike, "error fetching builders")
 					So(rsp, ShouldBeNil)
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("exists", func() {
+					So(datastore.Put(ctx, &model.Builder{
+						Parent: model.BucketKey(ctx, "project", "bucket"),
+						ID:     "builder",
+					}), ShouldBeNil)
+					So(datastore.Put(ctx, &model.Build{
+						ID: 1,
+						Proto: pb.Build{
+							Id: 1,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+						},
+					}), ShouldBeNil)
+
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldErrLike, "build already exists")
+					So(rsp, ShouldBeNil)
+					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
 				Convey("ok", func() {
@@ -1099,9 +1118,15 @@ func TestScheduleBuild(t *testing.T) {
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldBeNil)
 					So(rsp, ShouldResembleProto, &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
 						Id:    1,
 						Input: &pb.Build_Input{},
 					})
+					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
 			})
 		})
@@ -1109,17 +1134,19 @@ func TestScheduleBuild(t *testing.T) {
 		Convey("template build ID", func() {
 			Convey("not found", func() {
 				req := &pb.ScheduleBuildRequest{
-					TemplateBuildId: 1,
+					TemplateBuildId: 1000,
 				}
 				rsp, err := srv.ScheduleBuild(ctx, req)
 				So(err, ShouldErrLike, "not found")
 				So(rsp, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("permission denied", func() {
 				So(datastore.Put(ctx, &model.Build{
+					ID: 1000,
 					Proto: pb.Build{
-						Id: 1,
+						Id: 1000,
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -1133,6 +1160,7 @@ func TestScheduleBuild(t *testing.T) {
 				rsp, err := srv.ScheduleBuild(ctx, req)
 				So(err, ShouldErrLike, "not found")
 				So(rsp, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("ok", func() {
@@ -1149,8 +1177,9 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
+					ID: 1000,
 					Proto: pb.Build{
-						Id: 1,
+						Id: 1000,
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -1159,13 +1188,14 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				req := &pb.ScheduleBuildRequest{
-					TemplateBuildId: 1,
+					TemplateBuildId: 1000,
 				}
 
 				Convey("not found", func() {
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldErrLike, "error fetching builders")
 					So(rsp, ShouldBeNil)
+					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
 				Convey("ok", func() {
@@ -1177,9 +1207,15 @@ func TestScheduleBuild(t *testing.T) {
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldBeNil)
 					So(rsp, ShouldResembleProto, &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
 						Id:    1,
 						Input: &pb.Build_Input{},
 					})
+					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
 			})
 		})
