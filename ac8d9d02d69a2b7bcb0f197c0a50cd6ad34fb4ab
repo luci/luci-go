@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "62a2d8b9_3822f0a9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-06T01:25:32Z",
+      "side": 1,
+      "message": "Here is stats when I ran `$ time go test -v ./...`:\nreal\t0m3.085s\nuser\t0m32.767s\nsys\t0m6.826s\n\nI\u0027m not sure how I can get the start time though.\n\nI\u0027ve moved the part of starting/stopping emulator and creating instance into code. PTAL.",
+      "parentUuid": "31bf3bae_3cae3bed",
+      "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f45b9e69_535d1c34",
@@ -65,6 +83,30 @@
       "writtenOn": "2021-02-05T16:29:59Z",
       "side": 1,
       "message": "should probably move this into the if statement L168.\notherwise new developers will be asked to login, for nothing.",
+      "range": {
+        "startLine": 148,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 2
+      },
+      "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5593754f_53439333",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-06T01:25:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f45b9e69_535d1c34",
       "range": {
         "startLine": 148,
         "startChar": 0,
@@ -92,6 +134,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "08114a2b_a10251ae",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-06T01:25:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e26290d0_0f4e2c10",
+      "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2ee4f744_596d2b69",
@@ -105,6 +165,30 @@
       "writtenOn": "2021-02-05T16:29:59Z",
       "side": 1,
       "message": "2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 12,
+        "endLine": 1,
+        "endChar": 16
+      },
+      "revId": "ac8d9d02d69a2b7bcb0f197c0a50cd6ad34fb4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68562d78_0bbfb735",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-06T01:25:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ee4f744_596d2b69",
       "range": {
         "startLine": 1,
         "startChar": 12,
