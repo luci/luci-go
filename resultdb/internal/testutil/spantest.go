@@ -15,10 +15,13 @@
 package testutil
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -54,7 +57,7 @@ const (
 
 // runIntegrationTests returns true if integration tests should run.
 func runIntegrationTests() bool {
-	return os.Getenv(IntegrationTestEnvVar) == "1"
+	return os.Getenv(IntegrationTestEnvVar) == "1" || os.Getenv("SPANNER_EMULATOR_HOST") != ""
 }
 
 // ConnectToRedis returns true if tests should connect to Redis.
@@ -135,28 +138,81 @@ func SpannerTestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
+func startSpannerEmulator(ctx context.Context) error {
+	fmt.Println("Starting Cloud Spanner Emulator")
+	cmd := exec.Command("gcloud", "beta", "emulators", "spanner", "start")
+	out, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	c := make(chan error, 0)
+	go func() {
+		defer close(c)
+		scanner := bufio.NewScanner(out)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "Cloud Spanner emulator running.") {
+				return
+			}
+		}
+		c <- scanner.Err()
+	}()
+
+	if err = cmd.Start(); err != nil {
+		return err
+	}
+
+	select {
+	case err = <-c:
+	case <-ctx.Done():
+		err = fmt.Errorf("deadline exceeded")
+	}
+	return err
+}
+
+func stopSpannerEmulator() error {
+	fmt.Println("Stopping Cloud Spanner Emulator")
+	return exec.Command("pkill", "-f", "cloud_spanner_emulator").Run()
+}
+
 func spannerTestMain(m *testing.M) (exitCode int, err error) {
 	testing.Init()
 
 	if runIntegrationTests() {
+		ctx := context.Background()
 		// Find init_db.sql
 		initScriptPath, err := findInitScript()
 		if err != nil {
 			return 0, err
 		}
 
+		if err = startSpannerEmulator(ctx); err != nil {
+			return 0, err
+		}
+
+		// Create a Spanner instance.
+		instanceName, err := spantest.NewTempInstance(ctx, "")
+		if err != nil {
+			return 0, err
+		}
+
 		// Create a Spanner database.
-		ctx := context.Background()
 		start := time.Now()
-		db, err := spantest.NewTempDB(ctx, spantest.TempDBConfig{InitScriptPath: initScriptPath})
+		db, err := spantest.NewTempDB(ctx, spantest.TempDBConfig{InitScriptPath: initScriptPath, InstanceName: instanceName})
 		if err != nil {
 			return 0, errors.Annotate(err, "failed to create a temporary Spanner database").Err()
 		}
 		fmt.Printf("created a temporary Spanner database %s in %s\n", db.Name, time.Since(start))
 
 		defer func() {
-			switch dropErr := db.Drop(ctx); {
+			dropErr := db.Drop(ctx)
+			stopErr := stopSpannerEmulator()
+			switch {
+			case stopErr == nil:
+
 			case dropErr == nil:
+				dropErr = stopErr
 
 			case err == nil:
 				err = dropErr
@@ -164,6 +220,7 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 			default:
 				fmt.Fprintf(os.Stderr, "failed to drop the database: %s\n", dropErr)
 			}
+
 		}()
 
 		// Create a global Spanner client.

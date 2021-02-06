@@ -69,7 +69,7 @@ func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange, cal
 		SELECT
 			i.InvocationId,
 			i.HistoryTime,
-		FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp} i
+		FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp, spanner_emulator.disable_query_null_filtered_index_check=true} i
 		WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
 		ORDER BY i.HistoryTime DESC
 	`)

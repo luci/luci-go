@@ -22,14 +22,17 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	spandb "cloud.google.com/go/spanner/admin/database/apiv1"
+	spanins "cloud.google.com/go/spanner/admin/instance/apiv1"
 	"google.golang.org/api/option"
 	dbpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
+	inspb "google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -105,27 +108,24 @@ func (cfg *TempDBConfig) readDDLStatements() ([]string, error) {
 }
 
 // adminClient returns a Spanner admin client, it must be closed when done.
-func adminClient(ctx context.Context, creds credentials.PerRPCCredentials) (*spandb.DatabaseAdminClient, error) {
-	return spandb.NewDatabaseAdminClient(ctx,
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+func adminClient(ctx context.Context, opts []option.ClientOption) (*spandb.DatabaseAdminClient, error) {
+	return spandb.NewDatabaseAdminClient(ctx, opts...)
 }
 
 // TempDB is a temporary Spanner database.
 type TempDB struct {
-	Name  string
-	creds credentials.PerRPCCredentials
+	Name string
+	opts []option.ClientOption
 }
 
 // Client returns a spanner client connected to the database.
 func (db *TempDB) Client(ctx context.Context) (*spanner.Client, error) {
-	return spanner.NewClient(ctx, db.Name,
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(db.creds)),
-	)
+	return spanner.NewClient(ctx, db.Name, db.opts...)
 }
 
 // Drop deletes the database.
 func (db *TempDB) Drop(ctx context.Context) error {
-	client, err := adminClient(ctx, db.creds)
+	client, err := adminClient(ctx, db.opts)
 	if err != nil {
 		return err
 	}
@@ -147,17 +147,30 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 		instanceName = chromeinfra.TestSpannerInstance
 	}
 
-	creds, err := cfg.credentials(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	initStatements, err := cfg.readDDLStatements()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read %q", cfg.InitScriptPath).Err()
 	}
 
-	client, err := adminClient(ctx, creds)
+	// Use Spanner emulator if available.
+	// TODO(crbug.com/1066993): require Spanner emulator.
+	var opts []option.ClientOption
+	if emulatorAddr := os.Getenv("SPANNER_EMULATOR_HOST"); emulatorAddr != "" {
+		opts = append(
+			opts,
+			option.WithEndpoint(emulatorAddr),
+			option.WithGRPCDialOption(grpc.WithInsecure()),
+			option.WithoutAuthentication(),
+		)
+	} else {
+		creds, err := cfg.credentials(ctx)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	}
+
+	client, err := adminClient(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -185,8 +198,8 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 	}
 
 	return &TempDB{
-		Name:  db.Name,
-		creds: creds,
+		Name: db.Name,
+		opts: opts,
 	}, nil
 }
 
@@ -201,4 +214,51 @@ func SanitizeDBName(name string) string {
 	}
 	name = strings.TrimRight(name, "_")
 	return name
+}
+
+// NewTempInstance creates a temporary instance.
+func NewTempInstance(ctx context.Context, projectName string) (string, error) {
+	if projectName == "" {
+		// TODO(crbug.com/1066993): add the default to chromeinfra.
+		projectName = "projects/chops-spanner-testing"
+	}
+	errAnnotation := "failed to create instance"
+	emulatorAddr := os.Getenv("SPANNER_EMULATOR_HOST")
+	if emulatorAddr == "" {
+		return "", errors.Annotate(fmt.Errorf("cloud spanner emulator not found"), errAnnotation).Err()
+	}
+
+	opts := []option.ClientOption{
+		option.WithEndpoint(emulatorAddr),
+		option.WithGRPCDialOption(grpc.WithInsecure()),
+		option.WithoutAuthentication(),
+	}
+	client, err := spanins.NewInstanceAdminClient(ctx, opts...)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	insOp, err := client.CreateInstance(ctx, &inspb.CreateInstanceRequest{
+		Parent:     projectName,
+		InstanceId: "testing",
+		Instance: &inspb.Instance{
+			Config:      "spanner-emulator",
+			DisplayName: "test",
+			NodeCount:   int32(1),
+		},
+	})
+	if err != nil {
+		return "", errors.Annotate(err, errAnnotation).Err()
+	}
+
+	ins, err := insOp.Wait(ctx)
+	if err != nil {
+		return "", errors.Annotate(err, errAnnotation).Err()
+	}
+	if ins.State != inspb.Instance_READY {
+		return "", errors.Annotate(fmt.Errorf("instance is not ready, got state %v", ins.State), errAnnotation).Err()
+	}
+
+	return ins.Name, nil
 }
