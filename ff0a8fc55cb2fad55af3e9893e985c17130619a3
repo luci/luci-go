@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bb46e85_eb42b643",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-06T00:35:27Z",
+      "side": 1,
+      "message": "no, saving 15 lines of \n  x \u003d append(x, dep)\n  return\ncopypasta. But you are right, it\u0027s cleaner that way.",
+      "parentUuid": "e37f135f_8265c5d0",
+      "range": {
+        "startLine": 318,
+        "startChar": 0,
+        "endLine": 320,
+        "endChar": 3
+      },
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e1d19ac5_71fe9d41",
@@ -42,6 +66,53 @@
         "startChar": 0,
         "endLine": 326,
         "endChar": 2
+      },
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2701a96_c0c57708",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-06T00:35:27Z",
+      "side": 1,
+      "message": "it actually was there, but I moved it here because I want to know it in all cases (it\u0027s cleaner this way, and may eventually become useful).",
+      "parentUuid": "e1d19ac5_71fe9d41",
+      "range": {
+        "startLine": 321,
+        "startChar": 0,
+        "endLine": 326,
+        "endChar": 2
+      },
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a3d7bf42_3935261b",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-06T00:35:27Z",
+      "side": 1,
+      "message": "removed.",
+      "range": {
+        "startLine": 337,
+        "startChar": 21,
+        "endLine": 337,
+        "endChar": 71
       },
       "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -70,6 +141,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d39321fd_ba9f442c",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-06T00:35:27Z",
+      "side": 1,
+      "message": "FWIW, my goal was and is to cover yet distinguish 2 cases:\n1. Compiled proto already knows about new value (s.t. String() returns something), but this code is out of date.\n2. Both compiled proto and this code is out of date.\n\nI\u0027ve looked into String() and indeed it\u0027ll emit string-formatted number if in case of (2). Done \u0026\u0026 thanks!",
+      "parentUuid": "3d4cc380_08f4d5c5",
+      "range": {
+        "startLine": 393,
+        "startChar": 53,
+        "endLine": 393,
+        "endChar": 58
+      },
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "53e40db8_c536df5a",
@@ -83,6 +178,24 @@
       "writtenOn": "2021-02-05T21:54:22Z",
       "side": 1,
       "message": "nit: line is too long here.",
+      "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f4ac97f_8d51cccf",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-06T00:35:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53e40db8_c536df5a",
       "revId": "ff0a8fc55cb2fad55af3e9893e985c17130619a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
