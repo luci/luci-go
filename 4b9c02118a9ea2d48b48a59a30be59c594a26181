@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "4b9c02118a9ea2d48b48a59a30be59c594a26181",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3b3d65e_32f61709",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-06T00:25:53Z",
+      "side": 1,
+      "message": "out of curiosity, why not have CheckPermission do this?",
+      "range": {
+        "startLine": 93,
+        "startChar": 19,
+        "endLine": 93,
+        "endChar": 36
+      },
+      "revId": "4b9c02118a9ea2d48b48a59a30be59c594a26181",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
