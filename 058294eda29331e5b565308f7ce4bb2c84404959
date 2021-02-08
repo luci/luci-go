@@ -45,6 +45,54 @@
       },
       "revId": "058294eda29331e5b565308f7ce4bb2c84404959",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d5f5563_e866f989",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-08T11:15:43Z",
+      "side": 1,
+      "message": "Will do.\nI also plan to add auto-completion like the monorail bug search.",
+      "parentUuid": "08e378ac_fd9e0342",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 21
+      },
+      "revId": "058294eda29331e5b565308f7ce4bb2c84404959",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2f91f35_2b9bc5e2",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-08T11:15:43Z",
+      "side": 1,
+      "message": "let\u0027s keep it as rstatus",
+      "parentUuid": "a3f7db62_b3c5cd8b",
+      "range": {
+        "startLine": 30,
+        "startChar": 12,
+        "endLine": 30,
+        "endChar": 19
+      },
+      "revId": "058294eda29331e5b565308f7ce4bb2c84404959",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
