@@ -255,7 +255,7 @@ describe('test_loader', () => {
         assert.strictEqual(addTestSpy.getCall(2).args[0], variant3.testId);
         assert.strictEqual(addTestSpy.getCall(3).args[0], variant4.testId);
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingFlaky);
-      })
+      });
 
       it('should load until FLAKY correctly', async () => {
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingUnexpected);
@@ -268,7 +268,7 @@ describe('test_loader', () => {
         assert.strictEqual(addTestSpy.getCall(2).args[0], variant3.testId);
         assert.strictEqual(addTestSpy.getCall(3).args[0], variant4.testId);
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingFlaky);
-      })
+      });
 
       it('should load until EXONERATED correctly', async () => {
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingUnexpected);
@@ -284,7 +284,7 @@ describe('test_loader', () => {
         assert.strictEqual(addTestSpy.getCall(5).args[0], variant6.testId);
         assert.strictEqual(addTestSpy.getCall(6).args[0], variant7.testId);
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
-      })
+      });
 
       it('should load until EXPECTED correctly', async () => {
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingUnexpected);
@@ -304,7 +304,7 @@ describe('test_loader', () => {
         assert.strictEqual(addTestSpy.getCall(9).args[0], variant10.testId);
         assert.strictEqual(addTestSpy.getCall(10).args[0], variant11.testId);
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
-      })
+      });
 
       it('should load one page of EXPECTED variants when EXPECTED is next', async () => {
         await testLoader.loadPagesUntilStatus(TestVariantStatus.EXONERATED);
@@ -318,7 +318,7 @@ describe('test_loader', () => {
         assert.strictEqual(addTestSpy.getCall(9).args[0], variant10.testId);
         assert.strictEqual(addTestSpy.getCall(10).args[0], variant11.testId);
         assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
-      })
+      });
 
       it('should load one page of EXPECTED variants when some EXPECTED variants have already been loaded', async () => {
         await testLoader.loadPagesUntilStatus(TestVariantStatus.EXPECTED);
@@ -329,7 +329,7 @@ describe('test_loader', () => {
         assert.strictEqual(addTestSpy.callCount, 12);
         assert.strictEqual(addTestSpy.getCall(11).args[0], variant12.testId);
         assert.strictEqual(testLoader.stage, LoadingStage.Done);
-      })
+      });
     });
 
     describe('when first page contains no variants', () => {
