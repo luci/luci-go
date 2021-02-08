@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -70,7 +71,7 @@ type State struct {
 
 	// Test mocks. Not set in production.
 
-	testComponentActorFactory func(*prjpb.Component, actorSupporter) componentActor
+	testComponentActorFactory func(*prjpb.Component, componentactor.Supporter) componentActor
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
