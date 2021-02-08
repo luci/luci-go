@@ -30,6 +30,8 @@ func (s *State) cloneShallow() *State {
 		Components:       s.PB.GetComponents(),
 		DirtyComponents:  s.PB.GetDirtyComponents(),
 		CreatedPruns:     s.PB.GetCreatedPruns(),
+		NextEvalTime:     s.PB.GetNextEvalTime(),
+		PurgingCls:       s.PB.GetPurgingCls(),
 	}
 
 	s.alreadyCloned = true

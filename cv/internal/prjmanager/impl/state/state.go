@@ -17,9 +17,12 @@ package state
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -263,6 +266,37 @@ func (s *State) OnCLsUpdated(ctx context.Context, events []*prjpb.CLUpdated) (*S
 	if err := s.evalUpdatedCLs(ctx, updated); err != nil {
 		return nil, nil, err
 	}
+	return s, nil, nil
+}
+
+// OnPurgesCompleted updates state as a result of completed purge operations.
+func (s *State) OnPurgesCompleted(ctx context.Context, events []*prjpb.PurgeCompleted) (*State, SideEffect, error) {
+	opIDs := stringset.New(len(events))
+	for _, e := range events {
+		opIDs.Add(e.GetOperationId())
+	}
+	// Give 1 minute grace before expiring purging tasks. This doesn't change
+	// correctness, but decreases probability of starting another purge before PM
+	// observes CLUpdated event with results of prior purge.
+	expireCutOff := clock.Now(ctx).Add(-time.Minute)
+
+	out, mutated := s.PB.COWPurgingCLs(func(p *prjpb.PurgingCL) *prjpb.PurgingCL {
+		if opIDs.Has(p.GetOperationId()) {
+			return nil // delete
+		}
+		if p.GetDeadline().AsTime().Before(expireCutOff) {
+			logging.Debugf(ctx, "PurgingCL %d %q expired", p.GetClid(), p.GetOperationId())
+			return nil // delete
+		}
+		return p // keep as is
+	}, nil)
+	logging.Debugf(ctx, "out: %v %t", out, mutated)
+	if !mutated {
+		return s, nil, nil
+	}
+	s = s.cloneShallow()
+	s.PB.PurgingCls = out
+	// TODO(tandrii): mark matching components as dirty.
 	return s, nil, nil
 }
 
