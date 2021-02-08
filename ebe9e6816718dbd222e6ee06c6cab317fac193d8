@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea05f0d9_2561ecb5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-08T05:26:09Z",
+      "side": 1,
+      "message": "build failed?\nhttps://ci.chromium.org/ui/p/infra/builders/try/luci-go-try-trusty-64/b8855890536001621136/overview",
+      "revId": "ebe9e6816718dbd222e6ee06c6cab317fac193d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
