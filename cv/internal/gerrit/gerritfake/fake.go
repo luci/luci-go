@@ -177,6 +177,7 @@ func CI(change int, mods ...CIModifier) *gerritpb.ChangeInfo {
 		Project: "infra/infra",
 		Ref:     "refs/heads/main",
 		Status:  gerritpb.ChangeStatus_NEW,
+		Owner:   U("owner-99"),
 
 		Created: timestamppb.New(testclock.TestRecentTimeUTC.Add(1 * time.Hour)),
 		Updated: timestamppb.New(testclock.TestRecentTimeUTC.Add(2 * time.Hour)),
@@ -375,6 +376,16 @@ func Desc(cldescription string) CIModifier {
 	return func(ci *gerritpb.ChangeInfo) {
 		ri := ci.GetRevisions()[ci.GetCurrentRevision()]
 		ri.GetCommit().Message = cldescription
+	}
+}
+
+// Owner sets .Owner to the given username.
+//
+// See U() for format.
+func Owner(username string) CIModifier {
+	a := U(username) // fail fast if wrong format
+	return func(ci *gerritpb.ChangeInfo) {
+		ci.Owner = a
 	}
 }
 

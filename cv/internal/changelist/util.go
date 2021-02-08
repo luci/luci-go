@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
@@ -184,4 +186,31 @@ func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 		cleanLabel(l)
 	}
 	cleanUser(ci.GetOwner())
+}
+
+// OwnerIdentity is the identity of a user owning this CL.
+//
+// Snapshot must not be nil.
+func (s *Snapshot) OwnerIdentity() (identity.Identity, error) {
+	if s == nil {
+		panic("Snapshot is nil")
+	}
+
+	g := s.GetGerrit()
+	if g == nil {
+		return "", errors.New("non-Gerrit CLs not supported")
+	}
+	owner := g.GetInfo().GetOwner()
+	if owner == nil {
+		panic("Snapshot Gerrit has no owner. Bug in gerrit/updater")
+	}
+	email := owner.GetEmail()
+	if email == "" {
+		return "", errors.Reason(
+			"CL %s/%d owner email of account %d is unknown",
+			g.GetHost(), g.GetInfo().GetNumber(),
+			owner.GetAccountId(),
+		).Err()
+	}
+	return identity.MakeIdentity("user:" + email)
 }
