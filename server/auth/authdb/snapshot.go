@@ -231,7 +231,7 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 		if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
 			return false, errors.Annotate(err, "when checking %q", perm).Err()
 		}
-		project, _ := realms.Split(realm)
+		project, name := realms.Split(realm)
 		root := realms.Join(project, realms.RootRealm)
 		if realm == root {
 			logging.Warningf(c, "Checking %q in a non-existing root realm %q: denying", perm, realm)
@@ -241,7 +241,10 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 			logging.Warningf(c, "Checking %q in a non-existing realm %q that doesn't have a root realm (no such project?): denying", perm, realm)
 			return false, nil
 		}
-		logging.Warningf(c, "Checking %q in a non-existing realm %q: falling back to the root realm %q", perm, realm, root)
+		// Don't log @legacy => @root fallbacks, they are semi-expected.
+		if name != realms.LegacyRealm {
+			logging.Warningf(c, "Checking %q in a non-existing realm %q: falling back to the root realm %q", perm, realm, root)
+		}
 		realm = root
 	}
 
