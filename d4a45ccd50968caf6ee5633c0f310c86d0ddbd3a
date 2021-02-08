@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd7898ef_e837f5a4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-08T11:12:34Z",
+      "side": 1,
+      "message": "should we apply the same change to the steps tab?",
+      "range": {
+        "startLine": 7,
+        "startChar": 32,
+        "endLine": 7,
+        "endChar": 61
+      },
+      "revId": "d4a45ccd50968caf6ee5633c0f310c86d0ddbd3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "ac2c41b7_9faff8fc",
