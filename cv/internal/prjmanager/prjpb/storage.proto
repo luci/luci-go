@@ -70,6 +70,18 @@ message PState {
   // belong to at most 1 component, while unwatched dep may be referenced by
   // several.
   repeated Component components = 12;
+  // PurgingCLs are CLs currently being purged.
+  //
+  // They are tracked in PState to avoid creating Runs with such CLs.
+  //
+  // A CL being purged does not necessarily have a corresponding PCL.
+  // A PurgingCL is kept in PState until purging process stops, regardless of
+  // successful or failed.
+  //
+  // See more in PurgingCL doc.
+  //
+  // Sorted by CL ID.
+  repeated PurgingCL purging_cls = 13;
 
   // If true, components partition must be redone as soon as possible.
   bool dirty_components = 21;
@@ -192,4 +204,36 @@ message Component {
 
   // If true, this component must be re-evaluated as soon as possible.
   bool dirty = 11;
+}
+
+// PurgingCL represents purging of a CL due to some problem.
+//
+// Purging process is initiated during PM state mutation while atomically adding
+// a TQ task to perform actual purge.
+//
+// Purging itself constitutes removing whatever triggered CV on a CL as well as
+// posting the reason for purging to the user.
+//
+// Individual CLs are purged independently, even if CLs are related.
+//
+// Upon TQ task completion, the task handler notifies PM back via an
+// PurgeCompleted event. For fail-safe reasons, there is a deadline to
+// perform the purged. PM keeps the PurgingCL in PState until either deadline is
+// reached OR PurgeCompleted event is received.
+message PurgingCL {
+  // CL ID which is being purged.
+  int64 clid = 1;
+  // Operation ID is a unique within a project identifier of a purge operation
+  // to use in PurgeCompleted events.
+  string operation_id = 2;
+  // Deadline is obeyed by the purging TQ task.
+  //
+  // TQ task SHOULD not modify a CL (e.g. via Gerrit RPCs) beyond this point.
+  // This is merely best effort, as an RPC to external system initiated before
+  // this deadline may still complete after it.
+  //
+  // If PM doesn't receive PurgeCompleted event before this deadline + some grace
+  // period, PM will consider purge operation expired and it'll be removed from
+  // PState.
+  google.protobuf.Timestamp deadline = 3;
 }
