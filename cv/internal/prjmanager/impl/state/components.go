@@ -215,9 +215,14 @@ func (s *State) makeActorSupporter(ctx context.Context) (*actorSupporterImpl, er
 		}
 	}
 	s.ensurePCLIndex()
+	purging := make(map[int64]*prjpb.PurgingCL, len(s.PB.GetPurgingCls()))
+	for _, p := range s.PB.GetPurgingCls() {
+		purging[p.GetClid()] = p
+	}
 	return &actorSupporterImpl{
 		pcls:         s.PB.GetPcls(),
 		pclIndex:     s.pclIndex,
+		purging:      purging,
 		configGroups: s.configGroups,
 	}, nil
 }
@@ -225,6 +230,7 @@ func (s *State) makeActorSupporter(ctx context.Context) (*actorSupporterImpl, er
 type actorSupporterImpl struct {
 	pcls         []*prjpb.PCL
 	pclIndex     map[common.CLID]int
+	purging      map[int64]*prjpb.PurgingCL
 	configGroups []*config.ConfigGroup
 }
 
@@ -234,6 +240,10 @@ func (a *actorSupporterImpl) PCL(clid int64) *prjpb.PCL {
 		return nil
 	}
 	return a.pcls[i]
+}
+
+func (a *actorSupporterImpl) PurgingCL(clid int64) *prjpb.PurgingCL {
+	return a.purging[clid]
 }
 
 func (a *actorSupporterImpl) ConfigGroup(index int32) *config.ConfigGroup {
@@ -266,5 +276,7 @@ type componentActor interface {
 	// upon.
 	//
 	// If error is not nil, the potentially modified component is ignored.
+	//
+	// TODO(tandrii): support purge CL and cancel Run actions.
 	Act(ctx context.Context) (*prjpb.Component, error)
 }
