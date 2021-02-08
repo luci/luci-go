@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ffdfa11_74cccf14",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-08T05:27:42Z",
+      "side": 1,
+      "message": "lgtm % fixing the race on ctx.",
+      "revId": "1b485834842686ce1e8ff3102faa34ef8ac0844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60ac7569_f823a233",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-08T05:27:42Z",
+      "side": 1,
+      "message": "This function can be removed now",
+      "range": {
+        "startLine": 347,
+        "startChar": 0,
+        "endLine": 360,
+        "endChar": 1
+      },
+      "revId": "1b485834842686ce1e8ff3102faa34ef8ac0844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
