@@ -60,6 +60,14 @@ type RunBuilder struct {
 	Mode run.Mode
 	// Owner is the Run Owner. Required.
 	Owner identity.Identity
+	// ExpectedIncompleteRunIDs are a sorted slice of Run IDs which may be associated with
+	// CLs.
+	//
+	// If CLs.IncompleteRuns reference any other Run ID, the creation will be
+	// aborted and error tagged with StateChangedTag.
+	//
+	// Nil by default, which doesn't permit any incomplete Run.
+	ExpectedIncompleteRunIDs common.RunIDs
 	// OperationID is an arbitrary string uniquely identifying this creation
 	// attempt.
 	//
@@ -254,9 +262,12 @@ func (rb *RunBuilder) checkCLsUnchanged(ctx context.Context) {
 				return errors.Annotate(err, "failed to load CL %d", id).Tag(transient.Tag).Err()
 			case rb.cls[i].EVersion != expected:
 				return errors.Reason("CL %d changed since EVersion %d", id, expected).Tag(StateChangedTag).Err()
-			default:
-				return nil
 			}
+			diff := rb.cls[i].IncompleteRuns.DifferenceSorted(rb.ExpectedIncompleteRunIDs)
+			if len(diff) > 0 {
+				return errors.Reason("CL %d has unexpected incomplete runs: %v", id, diff).Tag(StateChangedTag).Err()
+			}
+			return nil
 		})
 	}
 }
