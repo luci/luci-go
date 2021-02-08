@@ -18,10 +18,12 @@ import (
 	"context"
 	"testing"
 
+	spb "google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/grpc/codes"
+	grpcStatus "google.golang.org/grpc/status"
+
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
-	spb "google.golang.org/genproto/googleapis/rpc/status"
-
 	"go.chromium.org/luci/common/testing/mock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -332,6 +334,50 @@ func TestBatch(t *testing.T) {
 			}
 			So(err, ShouldBeNil)
 			So(actualRes, ShouldResembleProto, expectedRes)
+		})
+
+		Convey("py service error", func() {
+			req := &pb.BatchRequest{}
+			err := jsonpb.UnmarshalString(`{
+				"requests": [
+					{"cancelBuild": {}}
+				]
+			}`, req)
+			So(err, ShouldBeNil)
+			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.Unavailable, "unavailable"))
+			actualRes, err := srv.Batch(ctx, req)
+			So(actualRes, ShouldBeNil)
+			So(err, ShouldErrLike, "rpc error: code = Unavailable desc = unavailable")
+		})
+
+		Convey("py timout error", func() {
+			req := &pb.BatchRequest{}
+			err := jsonpb.UnmarshalString(`{
+				"requests": [
+					{"cancelBuild": {}}
+				]
+			}`, req)
+			So(err, ShouldBeNil)
+			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(nil, grpcStatus.Error(codes.DeadlineExceeded, "timeout"))
+			actualRes, err := srv.Batch(ctx, req)
+			So(actualRes, ShouldBeNil)
+			So(err, ShouldErrLike, "rpc error: code = Internal desc = timeout")
+		})
+
+		Convey("transport error", func() {
+			newctx := memory.Use(context.Background())
+			newctx = context.WithValue(newctx, testFakeTransportError, grpcStatus.Error(codes.Internal, "failed to get Py BB RPC transport"))
+			srv := &Builds{}
+			req := &pb.BatchRequest{}
+			err := jsonpb.UnmarshalString(`{
+				"requests": [
+					{"scheduleBuild": {}}
+				]
+			}`, req)
+			So(err, ShouldBeNil)
+			actualRes, err := srv.Batch(newctx, req)
+			So(actualRes, ShouldBeNil)
+			So(err, ShouldErrLike, "code = Internal desc = failed to get Py BB RPC transport")
 		})
 	})
 }
