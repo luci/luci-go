@@ -110,6 +110,18 @@ func TestMakeConfigGroupID(t *testing.T) {
 	})
 }
 
+func TestConfigGroupProjectString(t *testing.T) {
+	t.Parallel()
+
+	Convey("ConfigGroup.ProjectString works", t, func() {
+		ctx := gaememory.Use(context.Background())
+		c := ConfigGroup{
+			Project: datastore.MakeKey(ctx, projectConfigKind, "chromium"),
+		}
+		So(c.ProjectString(), ShouldEqual, "chromium")
+	})
+}
+
 type readOnlyFilter struct{ datastore.RawInterface }
 
 func (f readOnlyFilter) PutMulti(keys []*datastore.Key, vals []datastore.PropertyMap, cb datastore.NewKeyCB) error {
