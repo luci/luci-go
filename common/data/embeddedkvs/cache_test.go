@@ -15,6 +15,7 @@
 package embeddedkvs
 
 import (
+	"context"
 	"path/filepath"
 	"sort"
 	"sync"
@@ -28,7 +29,7 @@ func TestCache(t *testing.T) {
 
 	Convey("basic", t, func() {
 		path := filepath.Join(t.TempDir(), "db")
-		k, err := New(path)
+		k, err := New(context.Background(), path)
 		So(err, ShouldBeNil)
 
 		So(k.Set("key1", []byte("value1")), ShouldBeNil)
