@@ -27,13 +27,19 @@ message Event {
     CLUpdated cl_updated = 3;
     RunCreated run_created = 4;
     RunFinished run_finished = 5;
+    PurgeCompleted purge_completed = 6;
   }
 }
 
+// NewConfig is sent to PM by Project Config updater upon saving newest config
+// in datastore.
 message NewConfig {}
 
+// Poke is sent to PM by Project Config updater.
 message Poke {}
 
+// CLUpdated is sent to PM when a CL entity attributes relevant to PM were
+// updated, e.g. Snapshot.
 message CLUpdated {
   // Internal ID of a CL that was updated.
   int64 clid = 1;
@@ -41,10 +47,24 @@ message CLUpdated {
   int64 eversion = 2;
 }
 
+// RunCreated is sent to PM by either itself or API-based Run creation.
 message RunCreated {
   string run_id = 1;
 }
 
+// RunFinished is sent to PM by Run Manager after or atomically with changing Run's
+// status to a final status.
 message RunFinished {
   string run_id = 1;
+}
+
+// PurgingCompleted is sent to PM by TQ task purging a CL.
+//
+// See storage.proto:PurgingCL doc.
+//
+// There is no status of the purge because it's the CL state that matters,
+// hence success or failure will reach PM via CLUpdated event.
+message PurgeCompleted {
+  // Operation ID suffices to identify a purge.
+  string operation_id = 1;
 }

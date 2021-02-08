@@ -20,11 +20,13 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -772,7 +774,102 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				})
 			})
 		})
+	})
+}
 
+func TestOnPurgesCompleted(t *testing.T) {
+	t.Parallel()
+
+	Convey("OnPurgesCompleted works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		Convey("Empty", func() {
+			s1 := NewExisting(&prjpb.PState{})
+			s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{{OperationId: "op1"}})
+			So(err, ShouldBeNil)
+			So(sideEffect, ShouldBeNil)
+			So(s1, ShouldEqual, s2)
+		})
+
+		Convey("With existing", func() {
+			now := testclock.TestRecentTimeUTC
+			ctx, _ := testclock.UseTime(ctx, now)
+			s1 := NewExisting(&prjpb.PState{
+				PurgingCls: []*prjpb.PurgingCL{
+					// expires later
+					{Clid: 1, OperationId: "1", Deadline: timestamppb.New(now.Add(time.Minute))},
+					// expires now, but due to grace period it'll stay here.
+					{Clid: 2, OperationId: "2", Deadline: timestamppb.New(now)},
+					// definitely expired.
+					{Clid: 3, OperationId: "3", Deadline: timestamppb.New(now.Add(-time.Hour))},
+				},
+				// Components require PCLs, but in this test it doesn't matter.
+				Components: []*prjpb.Component{
+					{Clids: []int64{9}}, // for unconfusing indexes below.
+					{Clids: []int64{1}},
+					{Clids: []int64{2}, Dirty: true},
+					{Clids: []int64{3}},
+				},
+			})
+			pb := backupPB(s1)
+
+			Convey("Expires and removed", func() {
+				s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{{OperationId: "1"}})
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				So(s1.PB, ShouldResembleProto, pb)
+
+				pb.PurgingCls = []*prjpb.PurgingCL{
+					{Clid: 2, OperationId: "2", Deadline: timestamppb.New(now)},
+				}
+				pb.Components = []*prjpb.Component{
+					pb.Components[0],
+					{Clids: []int64{1}, Dirty: true},
+					pb.Components[2],
+					{Clids: []int64{3}, Dirty: true},
+				}
+				So(s2.PB, ShouldResembleProto, pb)
+			})
+
+			Convey("All removed", func() {
+				s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{
+					{OperationId: "3"},
+					{OperationId: "1"},
+					{OperationId: "5"},
+					{OperationId: "2"},
+				})
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				So(s1.PB, ShouldResembleProto, pb)
+
+				pb.PurgingCls = nil
+				pb.Components = []*prjpb.Component{
+					pb.Components[0],
+					{Clids: []int64{1}, Dirty: true},
+					pb.Components[2], // it was dirty already
+					{Clids: []int64{3}, Dirty: true},
+				}
+				So(s2.PB, ShouldResembleProto, pb)
+			})
+
+			Convey("Doesn't modify components if they are due re-repartition anyway", func() {
+				s1.PB.DirtyComponents = true
+				pb := backupPB(s1)
+				s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{
+					{OperationId: "1"},
+					{OperationId: "2"},
+					{OperationId: "3"},
+				})
+				So(err, ShouldBeNil)
+				So(sideEffect, ShouldBeNil)
+				So(s1.PB, ShouldResembleProto, pb)
+
+				pb.PurgingCls = nil
+				So(s2.PB, ShouldResembleProto, pb)
+			})
+		})
 	})
 }
 

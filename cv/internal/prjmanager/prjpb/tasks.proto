@@ -14,11 +14,14 @@
 
 syntax = "proto3";
 
-package internal.prjmanager.prjpb;
+package cv.prjmanager.prjpb;
 
 option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
 import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/cv/internal/run/storage.proto";
+import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
 
 
 // PokePMTask sends a signal to ProjectManager to process events.
@@ -30,12 +33,27 @@ message PokePMTask {
   string luci_project = 1;
 }
 
-// KickPokePMTask starts a task to actually enqueue PokePMTask. It exists in
-// order to poke ProjectManager
-// from a transaction.
+// KickPokePMTask starts a task to actually enqueue PokePMTask.
+//
+// It exists in order to poke ProjectManager from a transaction.
 //
 // Queue: "manage-project".
 message KickPokePMTask {
   string luci_project = 1;
   google.protobuf.Timestamp eta = 2;
+}
+
+// PurgeCLTask starts a task to purge a CL.
+//
+// Queue: "purge-cls".
+message PurgeCLTask {
+  string luci_project = 1;
+  PurgingCL purging_cl = 2;
+
+  cv.run.Trigger trigger = 3;
+
+  message Reason {
+    // TODO(tandrii): expand.
+  }
+  Reason reason = 4;
 }

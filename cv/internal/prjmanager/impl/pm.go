@@ -154,6 +154,10 @@ type triageResult struct {
 		events eventbox.Events
 		runs   common.RunIDs
 	}
+	purgesCompleted struct {
+		events eventbox.Events
+		purges []*prjpb.PurgeCompleted
+	}
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -178,6 +182,9 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *prjpb.Event_RunFinished:
 		tr.runsFinished.events = append(tr.runsFinished.events, item)
 		tr.runsFinished.runs = append(tr.runsFinished.runs, common.RunID(v.RunFinished.GetRunId()))
+	case *prjpb.Event_PurgeCompleted:
+		tr.purgesCompleted.events = append(tr.purgesCompleted.events, item)
+		tr.purgesCompleted.purges = append(tr.purgesCompleted.purges, v.PurgeCompleted)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
@@ -249,6 +256,16 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 			TransitionTo: s,
 		})
 	}
+
+	// OnPurgesCompleted may expire purges even without incoming event.
+	if s, se, err = s.OnPurgesCompleted(ctx, tr.purgesCompleted.purges); err != nil {
+		return nil, err
+	}
+	ret = append(ret, eventbox.Transition{
+		Events:       tr.purgesCompleted.events,
+		SideEffectFn: state.SideEffectFn(se),
+		TransitionTo: s,
+	})
 
 	if s, se, err = s.ExecDeferred(ctx); err != nil {
 		return nil, err

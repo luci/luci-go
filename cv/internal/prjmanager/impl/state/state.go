@@ -17,9 +17,12 @@ package state
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -262,6 +265,59 @@ func (s *State) OnCLsUpdated(ctx context.Context, events []*prjpb.CLUpdated) (*S
 	s = s.cloneShallow()
 	if err := s.evalUpdatedCLs(ctx, updated); err != nil {
 		return nil, nil, err
+	}
+	return s, nil, nil
+}
+
+// OnPurgesCompleted updates state as a result of completed purge operations.
+func (s *State) OnPurgesCompleted(ctx context.Context, events []*prjpb.PurgeCompleted) (*State, SideEffect, error) {
+	opIDs := stringset.New(len(events))
+	for _, e := range events {
+		opIDs.Add(e.GetOperationId())
+	}
+	// Give 1 minute grace before expiring purging tasks. This doesn't change
+	// correctness, but decreases probability of starting another purge before PM
+	// observes CLUpdated event with results of prior purge.
+	expireCutOff := clock.Now(ctx).Add(-time.Minute)
+
+	deleted := map[int64]struct{}{}
+	out, mutated := s.PB.COWPurgingCLs(func(p *prjpb.PurgingCL) *prjpb.PurgingCL {
+		if opIDs.Has(p.GetOperationId()) {
+			deleted[p.GetClid()] = struct{}{}
+			return nil // delete
+		}
+		if p.GetDeadline().AsTime().Before(expireCutOff) {
+			logging.Debugf(ctx, "PurgingCL %d %q expired", p.GetClid(), p.GetOperationId())
+			deleted[p.GetClid()] = struct{}{}
+			return nil // delete
+		}
+		return p // keep as is
+	}, nil)
+	if !mutated {
+		return s, nil, nil
+	}
+	s = s.cloneShallow()
+	s.PB.PurgingCls = out
+
+	// Must mark affected components for re-evaluation.
+	if s.PB.GetDirtyComponents() {
+		return s, nil, nil
+	}
+	cs, mutatedComponents := s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
+		if c.GetDirty() {
+			return c
+		}
+		for _, id := range c.GetClids() {
+			if _, yes := deleted[id]; yes {
+				c = c.CloneShallow()
+				c.Dirty = true
+				return c
+			}
+		}
+		return c
+	}, nil)
+	if mutatedComponents {
+		s.PB.Components = cs
 	}
 	return s, nil, nil
 }

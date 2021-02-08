@@ -46,6 +46,7 @@ type Event struct {
 	//	*Event_ClUpdated
 	//	*Event_RunCreated
 	//	*Event_RunFinished
+	//	*Event_PurgeCompleted
 	Event isEvent_Event `protobuf_oneof:"event"`
 }
 
@@ -123,6 +124,13 @@ func (x *Event) GetRunFinished() *RunFinished {
 	return nil
 }
 
+func (x *Event) GetPurgeCompleted() *PurgeCompleted {
+	if x, ok := x.GetEvent().(*Event_PurgeCompleted); ok {
+		return x.PurgeCompleted
+	}
+	return nil
+}
+
 type isEvent_Event interface {
 	isEvent_Event()
 }
@@ -147,6 +155,10 @@ type Event_RunFinished struct {
 	RunFinished *RunFinished `protobuf:"bytes,5,opt,name=run_finished,json=runFinished,proto3,oneof"`
 }
 
+type Event_PurgeCompleted struct {
+	PurgeCompleted *PurgeCompleted `protobuf:"bytes,6,opt,name=purge_completed,json=purgeCompleted,proto3,oneof"`
+}
+
 func (*Event_NewConfig) isEvent_Event() {}
 
 func (*Event_Poke) isEvent_Event() {}
@@ -157,6 +169,10 @@ func (*Event_RunCreated) isEvent_Event() {}
 
 func (*Event_RunFinished) isEvent_Event() {}
 
+func (*Event_PurgeCompleted) isEvent_Event() {}
+
+// NewConfig is sent to PM by Project Config updater upon saving newest config
+// in datastore.
 type NewConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -195,6 +211,7 @@ func (*NewConfig) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDescGZIP(), []int{1}
 }
 
+// Poke is sent to PM by Project Config updater.
 type Poke struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -233,6 +250,8 @@ func (*Poke) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDescGZIP(), []int{2}
 }
 
+// CLUpdated is sent to PM when a CL entity attributes relevant to PM were
+// updated, e.g. Snapshot.
 type CLUpdated struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -290,6 +309,7 @@ func (x *CLUpdated) GetEversion() int64 {
 	return 0
 }
 
+// RunCreated is sent to PM by either itself or API-based Run creation.
 type RunCreated struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -337,6 +357,8 @@ func (x *RunCreated) GetRunId() string {
 	return ""
 }
 
+// RunFinished is sent to PM by Run Manager after or atomically with changing Run's
+// status to a final status.
 type RunFinished struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -384,6 +406,60 @@ func (x *RunFinished) GetRunId() string {
 	return ""
 }
 
+// PurgingCompleted is sent to PM by TQ task purging a CL.
+//
+// See storage.proto:PurgingCL doc.
+//
+// There is no status of the purge because it's the CL state that matters,
+// hence success or failure will reach PM via CLUpdated event.
+type PurgeCompleted struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Operation ID suffices to identify a purge.
+	OperationId string `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
+}
+
+func (x *PurgeCompleted) Reset() {
+	*x = PurgeCompleted{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PurgeCompleted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PurgeCompleted) ProtoMessage() {}
+
+func (x *PurgeCompleted) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PurgeCompleted.ProtoReflect.Descriptor instead.
+func (*PurgeCompleted) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *PurgeCompleted) GetOperationId() string {
+	if x != nil {
+		return x.OperationId
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDesc = []byte{
@@ -392,7 +468,7 @@ var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDesc 
 	0x61, 0x6c, 0x2f, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2f, 0x70, 0x72,
 	0x6a, 0x70, 0x62, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x12, 0x13, 0x63, 0x76, 0x2e, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2e,
-	0x70, 0x72, 0x6a, 0x70, 0x62, 0x22, 0xce, 0x02, 0x0a, 0x05, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12,
+	0x70, 0x72, 0x6a, 0x70, 0x62, 0x22, 0x9e, 0x03, 0x0a, 0x05, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12,
 	0x3f, 0x0a, 0x0a, 0x6e, 0x65, 0x77, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x63, 0x76, 0x2e, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61,
 	0x67, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x2e, 0x4e, 0x65, 0x77, 0x43, 0x6f, 0x6e,
@@ -412,7 +488,12 @@ var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDesc 
 	0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x63,
 	0x76, 0x2e, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6a,
 	0x70, 0x62, 0x2e, 0x52, 0x75, 0x6e, 0x46, 0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x48, 0x00,
-	0x52, 0x0b, 0x72, 0x75, 0x6e, 0x46, 0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x42, 0x07, 0x0a,
+	0x52, 0x0b, 0x72, 0x75, 0x6e, 0x46, 0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x12, 0x4e, 0x0a,
+	0x0f, 0x70, 0x75, 0x72, 0x67, 0x65, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x6c, 0x65, 0x74, 0x65, 0x64,
+	0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x63, 0x76, 0x2e, 0x70, 0x72, 0x6a, 0x6d,
+	0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x2e, 0x50, 0x75, 0x72,
+	0x67, 0x65, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x65, 0x74, 0x65, 0x64, 0x48, 0x00, 0x52, 0x0e, 0x70,
+	0x75, 0x72, 0x67, 0x65, 0x43, 0x6f, 0x6d, 0x70, 0x6c, 0x65, 0x74, 0x65, 0x64, 0x42, 0x07, 0x0a,
 	0x05, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x22, 0x0b, 0x0a, 0x09, 0x4e, 0x65, 0x77, 0x43, 0x6f, 0x6e,
 	0x66, 0x69, 0x67, 0x22, 0x06, 0x0a, 0x04, 0x50, 0x6f, 0x6b, 0x65, 0x22, 0x3b, 0x0a, 0x09, 0x43,
 	0x4c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6c, 0x69, 0x64,
@@ -423,11 +504,14 @@ var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDesc 
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x72, 0x75, 0x6e, 0x49, 0x64, 0x22, 0x24, 0x0a,
 	0x0b, 0x52, 0x75, 0x6e, 0x46, 0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x12, 0x15, 0x0a, 0x06,
 	0x72, 0x75, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x72, 0x75,
-	0x6e, 0x49, 0x64, 0x42, 0x39, 0x5a, 0x37, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69,
-	0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69,
-	0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61, 0x67,
-	0x65, 0x72, 0x2f, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x3b, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x49, 0x64, 0x22, 0x33, 0x0a, 0x0e, 0x50, 0x75, 0x72, 0x67, 0x65, 0x43, 0x6f, 0x6d, 0x70,
+	0x6c, 0x65, 0x74, 0x65, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6f, 0x70, 0x65,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x42, 0x39, 0x5a, 0x37, 0x67, 0x6f, 0x2e, 0x63,
+	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
+	0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x70, 0x72, 0x6a,
+	0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x3b, 0x70, 0x72,
+	0x6a, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -442,14 +526,15 @@ func file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDesc
 	return file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_goTypes = []interface{}{
-	(*Event)(nil),       // 0: cv.prjmanager.prjpb.Event
-	(*NewConfig)(nil),   // 1: cv.prjmanager.prjpb.NewConfig
-	(*Poke)(nil),        // 2: cv.prjmanager.prjpb.Poke
-	(*CLUpdated)(nil),   // 3: cv.prjmanager.prjpb.CLUpdated
-	(*RunCreated)(nil),  // 4: cv.prjmanager.prjpb.RunCreated
-	(*RunFinished)(nil), // 5: cv.prjmanager.prjpb.RunFinished
+	(*Event)(nil),          // 0: cv.prjmanager.prjpb.Event
+	(*NewConfig)(nil),      // 1: cv.prjmanager.prjpb.NewConfig
+	(*Poke)(nil),           // 2: cv.prjmanager.prjpb.Poke
+	(*CLUpdated)(nil),      // 3: cv.prjmanager.prjpb.CLUpdated
+	(*RunCreated)(nil),     // 4: cv.prjmanager.prjpb.RunCreated
+	(*RunFinished)(nil),    // 5: cv.prjmanager.prjpb.RunFinished
+	(*PurgeCompleted)(nil), // 6: cv.prjmanager.prjpb.PurgeCompleted
 }
 var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_depIdxs = []int32{
 	1, // 0: cv.prjmanager.prjpb.Event.new_config:type_name -> cv.prjmanager.prjpb.NewConfig
@@ -457,11 +542,12 @@ var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_depIdxs 
 	3, // 2: cv.prjmanager.prjpb.Event.cl_updated:type_name -> cv.prjmanager.prjpb.CLUpdated
 	4, // 3: cv.prjmanager.prjpb.Event.run_created:type_name -> cv.prjmanager.prjpb.RunCreated
 	5, // 4: cv.prjmanager.prjpb.Event.run_finished:type_name -> cv.prjmanager.prjpb.RunFinished
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	6, // 5: cv.prjmanager.prjpb.Event.purge_completed:type_name -> cv.prjmanager.prjpb.PurgeCompleted
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_init() }
@@ -542,6 +628,18 @@ func file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_init() 
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PurgeCompleted); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*Event_NewConfig)(nil),
@@ -549,6 +647,7 @@ func file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_init() 
 		(*Event_ClUpdated)(nil),
 		(*Event_RunCreated)(nil),
 		(*Event_RunFinished)(nil),
+		(*Event_PurgeCompleted)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -556,7 +655,7 @@ func file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_init() 
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_events_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
