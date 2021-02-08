@@ -33,6 +33,24 @@
       "message": "Why is this helper helpful? (Rather than just using c.Project.StringID()?)\n\nAlso, how is LUCI project encoded so that it needs to be decoded?",
       "revId": "ff98b7e755afe534beccd194c0faf79bed53af18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "16dd04f9_c1238ca6",
+        "filename": "cv/internal/config/store.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-08T19:30:55Z",
+      "side": 1,
+      "message": "\u003e Why is this helper helpful? (Rather than just using c.Project.StringID()?)\n\nI guess it helps encapsulate the datastore dependency within this package?\n\n\u003e Also, how is LUCI project encoded so that it needs to be decoded?\n\n+1 on this question. wdym by decoded? Maybe just `ProjectString returns LUCI Project as a string.`",
+      "parentUuid": "19344a6d_edf9e1d5",
+      "revId": "ff98b7e755afe534beccd194c0faf79bed53af18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
