@@ -356,7 +356,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 
 	var kvs *embeddedkvs.KVS
 	if r.kvs != "" {
-		kvs, err = embeddedkvs.New(r.kvs)
+		kvs, err = embeddedkvs.New(ctx, r.kvs)
 		if err != nil {
 			return err
 		}
@@ -410,7 +410,8 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 			to[output.Digest] = output
 		}
 	}
-	logger.Infof("finished copy from cache (if any), dups: %d, to: %d, took %s", len(dups), len(to), time.Since(start))
+	logger.Infof("finished copy from cache (if any), dups: %d, to: %d, smallFiles: %d, took %s",
+		len(dups), len(to), len(smallFiles), time.Since(start))
 
 	start = time.Now()
 

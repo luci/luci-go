@@ -15,10 +15,14 @@
 package embeddedkvs
 
 import (
+	"context"
+	"os"
+
 	"go.etcd.io/bbolt"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 type KVS struct {
@@ -28,7 +32,12 @@ type KVS struct {
 var bucketName = []byte("b")
 
 // New instantiates KVS.
-func New(path string) (*KVS, error) {
+func New(ctx context.Context, path string) (*KVS, error) {
+	logger := logging.Get(ctx)
+
+	if s, err := os.Stat(path); err == nil {
+		logger.Infof("initial cache file size is %d", s.Size())
+	}
 
 	db, err := bbolt.Open(path, 0600, &bbolt.Options{
 		// These are necessary to reduce disk access during db operations.
@@ -45,10 +54,13 @@ func New(path string) (*KVS, error) {
 	}
 
 	if err := db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(bucketName)
+		b, err := tx.CreateBucketIfNotExists(bucketName)
 		if err != nil {
 			return errors.Annotate(err, "failed to create bucket: %s", bucketName).Err()
 		}
+
+		logger.Infof("the number of initial key value is %d", b.Stats().KeyN)
+
 		return nil
 	}); err != nil {
 		db.Close()

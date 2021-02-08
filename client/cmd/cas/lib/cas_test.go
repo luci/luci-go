@@ -84,7 +84,7 @@ func TestArchiveDownload(t *testing.T) {
 			err = dr.doDownload(ctx)
 			So(err, ShouldBeNil)
 
-			kvs, err := embeddedkvs.New(dr.kvs)
+			kvs, err := embeddedkvs.New(ctx, dr.kvs)
 			So(err, ShouldBeNil)
 			defer func() {
 				So(kvs.Close(), ShouldBeNil)
