@@ -196,6 +196,11 @@ type ConfigGroup struct {
 	Content *pb.ConfigGroup
 }
 
+// ProjectString returns LUCI Project as a string.
+func (c *ConfigGroup) ProjectString() string {
+	return c.Project.StringID()
+}
+
 // putConfigGroups puts the ConfigGroups in the given CV config to datastore.
 //
 // It checks for existence of each ConfigGroup first to avoid unnecessary puts.
