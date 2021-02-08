@@ -20,14 +20,23 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -179,53 +188,113 @@ func TestQuery(t *testing.T) {
 			So(err, ShouldBeRPCInvalidArgument, "invalid query `path`")
 		})
 
-		Convey(`If the user is logged in`, func() {
-			env.LogIn()
+		Convey(`Handles non-existent project.`, func() {
+			req.Project = "does-not-exist"
+			req.Path = "testing/+/**"
 
-			Convey(`When accessing a restricted project`, func() {
-				req.Project = "proj-exclusive"
-				req.Path = "exclusive/+/**"
-
-				// Add a stream to `proj-exclusive` so we have something to query there.
-				tls := ct.MakeStream(c, "proj-exclusive", "", "exclusive/+/foo")
-				tls.Put(c)
-
-				Convey(`Will succeed if the user can access the project.`, func() {
-					env.JoinGroup("auth")
-
-					_, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCOK)
-				})
-
-				Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
-					_, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCPermissionDenied)
-				})
+			Convey(`Anon`, func() {
+				_, err := svr.Query(c, &req)
+				So(err, ShouldBeRPCUnauthenticated)
 			})
 
-			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
-				req.Project = "does-not-exist"
-				req.Path = "testing/+/**"
-
+			Convey(`User`, func() {
+				env.LogIn()
 				_, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCPermissionDenied)
 			})
 		})
 
-		Convey(`Will fail with Unauthenticated if the project does not exist.`, func() {
-			req.Project = "does-not-exist"
-			req.Path = "testing/+/**"
-
-			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCUnauthenticated)
-		})
-
-		Convey(`Will fail with Unauthenticated if the user can't access the project.`, func() {
+		Convey(`Authorization rules`, func() {
+			// "proj-exclusive" has restricted legacy ACLs, see coordinatorTest.
+			const project = "proj-exclusive"
 			req.Project = "proj-exclusive"
-			req.Path = "testing/+/**"
+			req.Path = "exclusive/+/**"
 
-			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCUnauthenticated)
+			const (
+				User   = "user:caller@example.com"
+				Anon   = identity.AnonymousIdentity
+				Legacy = "user:legacy@example.com" // present in @legacy realm ACL
+			)
+
+			const (
+				NoRealm        = ""
+				AllowedRealm   = "allowed"
+				ForbiddenRealm = "forbidden"
+			)
+
+			const (
+				AllowLegacy  = true
+				ForbidLegacy = false
+			)
+
+			realm := func(short string) string {
+				return realms.Join(project, short)
+			}
+
+			cases := []struct {
+				enforce     bool              // is enforce_realms_in ON or OFF
+				ident       identity.Identity // who's making the call
+				realm       string            // the realm to put the stream in
+				allowLegacy bool              // mock legacy ACLs to allow access
+				code        codes.Code        // the expected gRPC code
+			}{
+				// Enforcement is on, legacy ACLs are ignored.
+				{true, User, NoRealm, AllowLegacy, codes.PermissionDenied},
+				{true, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
+				{true, Legacy, NoRealm, AllowLegacy, codes.OK},
+				{true, Legacy, NoRealm, ForbidLegacy, codes.OK},
+				{true, User, AllowedRealm, AllowLegacy, codes.OK},
+				{true, User, AllowedRealm, ForbidLegacy, codes.OK},
+				{true, User, ForbiddenRealm, AllowLegacy, codes.PermissionDenied},
+				{true, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
+
+				// Enforcement is off, have a fallback on legacy ACLs.
+				{false, User, NoRealm, AllowLegacy, codes.OK},
+				{false, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
+				{false, Legacy, NoRealm, AllowLegacy, codes.OK},
+				{false, Legacy, NoRealm, ForbidLegacy, codes.OK},
+				{false, User, AllowedRealm, AllowLegacy, codes.OK},
+				{false, User, AllowedRealm, ForbidLegacy, codes.OK},
+				{false, User, ForbiddenRealm, AllowLegacy, codes.OK},
+				{false, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
+
+				// Permission denied for anon => Unauthenticated.
+				{true, Anon, ForbiddenRealm, AllowLegacy, codes.Unauthenticated},
+				{false, Anon, NoRealm, ForbidLegacy, codes.Unauthenticated},
+			}
+
+			for i, test := range cases {
+				Convey(fmt.Sprintf("Case #%d", i), func() {
+					tls := ct.MakeStream(c, project, test.realm, "exclusive/+/foo")
+					tls.Put(c)
+
+					mocks := []authtest.MockedDatum{
+						authtest.MockPermission(test.ident, realm(AllowedRealm), coordinator.PermLogsList),
+						authtest.MockPermission(Legacy, realm(realms.LegacyRealm), coordinator.PermLogsList),
+					}
+					if test.enforce {
+						mocks = append(mocks, authtest.MockRealmData(
+							realm(realms.RootRealm),
+							&protocol.RealmData{EnforceInService: []string{env.ServiceID}},
+						))
+					}
+					if test.allowLegacy {
+						mocks = append(mocks, authtest.MockMembership(test.ident, "auth"))
+					}
+
+					c := auth.WithState(c, &authtest.FakeState{
+						Identity: test.ident,
+						FakeDB:   authtest.NewFakeDB(mocks...),
+					})
+
+					resp, err := svr.Query(c, &req)
+					So(status.Code(err), ShouldEqual, test.code)
+					if err == nil {
+						So(resp.Project, ShouldEqual, project)
+						So(resp.Realm, ShouldEqual, test.realm)
+					}
+				})
+			}
 		})
 
 		Convey(`An empty query will include purged streams if admin.`, func() {

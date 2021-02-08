@@ -22,8 +22,8 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
@@ -49,30 +49,102 @@ func PermissionDeniedErr(ctx context.Context) error {
 		"The resource doesn't exist or you do not have permission to access it.")
 }
 
-// HasPermission checks the caller has the requested permission.
+// CheckPermission checks the caller has the requested permission.
 //
 // `realm` can be an empty string when accessing older LogPrefix entities not
-// associated with any realms.
+// associated with any realms or when RegisterPrefix is called without a realm.
 //
-// Uses legacy project-scoped ACLs for now. Logs errors inside.
-func HasPermission(ctx context.Context, perm realms.Permission, realm string) (bool, error) {
+// If the project has `enforce_realms_in` setting ON in the "@root" realm, will
+// use realms ACLs exclusively. Otherwise the overall ACL is a union of the
+// realms ACLs and legacy ACLs. Fallbacks to legacy ACLs are logged.
+//
+// Logs the outcome inside (`prefix` is used only in this logging). Returns
+// gRPC errors that can be returned directly to the caller.
+func CheckPermission(ctx context.Context, perm realms.Permission, prefix types.StreamName, realm string) error {
 	// Check no cross-project mix up is happening as a precaution.
+	project := Project(ctx)
 	if realm != "" {
-		if proj, _ := realms.Split(realm); proj != Project(ctx) {
-			logging.Errorf(ctx, "Unexpectedly checking realm %q in a context of project %q", realm, Project(ctx))
-			return false, grpcutil.Internal
+		if projInRealm, _ := realms.Split(realm); projInRealm != project {
+			logging.Errorf(ctx, "Unexpectedly checking realm %q in a context of project %q", realm, project)
+			return grpcutil.Internal
 		}
 	}
-	// TODO(crbug.com/1172492): Consult realms ACLs instead, fallback to legacy
-	// ACLs when necessary.
+
+	// The project as a whole is either in "allow realms, but fallback to old
+	// ACLs" or in "enforce realms" modes, depending on configuration stored in
+	// the @root realm. We can't just check `realm` here because it can be an
+	// empty string.
+	enforce, err := auth.ShouldEnforceRealmACL(ctx, realms.Join(project, realms.RootRealm))
+	if err != nil {
+		logging.WithError(err).Errorf(ctx, "failed to check realms ACL enforcement")
+		return grpcutil.Internal
+	}
+
+	// When registering a new prefix a realm is required if in the "enforce" mode.
+	// Otherwise the missing realm is substituted with "@legacy". That way old
+	// LogPrefix entities without "realm" field get some read ACLs, and legacy
+	// RegisterPrefix callers that omit "realm" field still hit some realm ACLs
+	// before hitting the legacy ones.
+	if realm == "" {
+		if perm == PermLogsCreate && enforce {
+			logging.Fields{
+				"identity": auth.CurrentIdentity(ctx),
+				"prefix":   prefix,
+				"project":  project,
+			}.Errorf(ctx, "Missing `realm` in the request")
+			return grpcutil.Errf(codes.InvalidArgument, "a realm is required when registering a prefix in project %q", project)
+		}
+		realm = realms.Join(project, realms.LegacyRealm)
+	}
+
+	// Log all the details to help debug permission issues.
+	ctx = logging.SetFields(ctx, logging.Fields{
+		"identity": auth.CurrentIdentity(ctx),
+		"perm":     perm,
+		"prefix":   prefix,
+		"realm":    realm,
+	})
+
+	// Do the realms ACL check.
+	granted, err := auth.HasPermission(ctx, perm, realm)
+	if err != nil {
+		logging.WithError(err).Errorf(ctx, "failed to check realms ACL")
+		return grpcutil.Internal
+	}
+
+	// If in the enforcement mode, this is all we do. Don't use legacy ACLs.
+	// Also if got a positive result, no need to check legacy ACLs at all.
+	if enforce || granted {
+		if granted {
+			logging.Debugf(ctx, "Permission granted")
+			return nil
+		}
+		logging.Warningf(ctx, "Permission denied")
+		return PermissionDeniedErr(ctx)
+	}
+
+	// On a negative outcome fallback to legacy ACLs, so nothing breaks.
 	switch perm {
 	case PermLogsCreate:
-		return CheckProjectWriter(ctx)
+		granted, err = checkLegacyProjectWriter(ctx)
 	case PermLogsGet, PermLogsList:
-		return CheckProjectReader(ctx)
+		granted, err = checkLegacyProjectReader(ctx)
 	default:
-		panic(fmt.Sprintf("HasPermission got unexpected permissions %q", perm))
+		panic(fmt.Sprintf("CheckPermission got unexpected permissions %q", perm))
 	}
+	if err != nil {
+		return grpcutil.Internal
+	}
+
+	// Log if the permission is granted through the legacy ACL to be able to
+	// eventually verify legacy ACLs can be removed. Note that the outcome of
+	// the legacy ACL check was already logged by the legacy ACL implementation.
+	if granted {
+		logging.Warningf(ctx, "crbug.com/1172492: triggered fallback to legacy ACLs")
+		return nil
+	}
+
+	return PermissionDeniedErr(ctx)
 }
 
 // CheckAdminUser tests whether the current user belongs to the administrative
@@ -101,48 +173,37 @@ func CheckServiceUser(ctx context.Context) (bool, error) {
 	return checkMember(ctx, "SERVICE", cfg.Coordinator.ServiceAuthGroup)
 }
 
-// CheckProjectReader tests whether the current user belongs to one of the
+// checkLegacyProjectReader tests whether the current user belongs to one of the
 // current project's declared reader groups.
 //
 // Usable only when inside some project namespace, see WithProjectNamespace.
 // Panics otherwise.
 //
 // Logs the outcome inside. The error is non-nil only if the check itself fails.
-func CheckProjectReader(ctx context.Context) (bool, error) {
+func checkLegacyProjectReader(ctx context.Context) (bool, error) {
 	pcfg, err := ProjectConfig(ctx)
 	if err != nil {
-		panic("CheckProjectReader is called outside of a project namespace")
+		panic("checkLegacyProjectReader is called outside of a project namespace")
 	}
 	return checkMember(ctx, "READ", pcfg.ReaderAuthGroups...)
 }
 
-// CheckProjectWriter tests whether the current user belongs to one of the
+// checkLegacyProjectWriter tests whether the current user belongs to one of the
 // current project's declared writer groups.
 //
 // Usable only when inside some project namespace, see WithProjectNamespace.
 // Panics otherwise.
 //
 // Logs the outcome inside. The error is non-nil only if the check itself fails.
-func CheckProjectWriter(ctx context.Context) (bool, error) {
+func checkLegacyProjectWriter(ctx context.Context) (bool, error) {
 	pcfg, err := ProjectConfig(ctx)
 	if err != nil {
-		panic("CheckProjectWriter is called outside of a project namespace")
+		panic("checkLegacyProjectWriter is called outside of a project namespace")
 	}
 	return checkMember(ctx, "WRITE", pcfg.WriterAuthGroups...)
 }
 
 func checkMember(ctx context.Context, action string, groups ...string) (bool, error) {
-	// On dev-appserver, the superuser has implicit group membership to
-	// everything.
-	if info.IsDevAppServer(ctx) {
-		if u := auth.CurrentUser(ctx); u.Superuser {
-			logging.Fields{
-				"identity": u.Identity,
-				"groups":   groups,
-			}.Infof(ctx, "Granting superuser implicit group membership for %s on development server.", action)
-			return true, nil
-		}
-	}
 	switch yes, err := auth.IsMember(ctx, groups...); {
 	case err != nil:
 		logging.Fields{

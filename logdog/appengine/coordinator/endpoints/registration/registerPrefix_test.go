@@ -17,9 +17,14 @@ package registration
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/proto/google"
@@ -30,6 +35,10 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -65,30 +74,84 @@ func TestRegisterPrefix(t *testing.T) {
 		}
 		pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(types.StreamName(req.Prefix))}
 
-		Convey(`If user is logged in`, func() {
-			// "proj-bar" does not have anonymous write.
-			req.Project = "proj-bar"
-			env.LogIn()
+		Convey(`Authorization rules`, func() {
+			// "proj-exclusive" has restricted legacy ACLs, see coordinatorTest.
+			const project = "proj-exclusive"
+			req.Project = project
 
-			Convey(`Succeeds if the user has write access.`, func() {
-				env.JoinGroup("auth")
+			const (
+				User = "user:caller@example.com"
+				Anon = identity.AnonymousIdentity
+			)
 
-				_, err := svr.RegisterPrefix(c, &req)
-				So(err, ShouldBeRPCOK)
-			})
+			const (
+				NoRealm        = ""
+				AllowedRealm   = "allowed"
+				ForbiddenRealm = "forbidden"
+			)
 
-			Convey(`Returns PermissionDenied if the user does not have write access.`, func() {
-				_, err := svr.RegisterPrefix(c, &req)
-				So(err, ShouldBeRPCPermissionDenied)
-			})
-		})
+			const (
+				AllowLegacy  = true
+				ForbidLegacy = false
+			)
 
-		Convey(`Returns Unauthenticated if not user does not have write access.`, func() {
-			// "proj-bar" does not have anonymous write.
-			req.Project = "proj-bar"
+			realm := func(short string) string {
+				return realms.Join(project, short)
+			}
 
-			_, err := svr.RegisterPrefix(c, &req)
-			So(err, ShouldBeRPCUnauthenticated)
+			cases := []struct {
+				enforce     bool              // is enforce_realms_in ON or OFF
+				ident       identity.Identity // who's making the call
+				realm       string            // the realm in the RPC
+				allowLegacy bool              // mock legacy ACLs to allow access
+				code        codes.Code        // the expected gRPC code
+			}{
+				// Enforcement is on, legacy ACLs are ignored.
+				{true, User, NoRealm, AllowLegacy, codes.InvalidArgument},
+				{true, User, NoRealm, ForbidLegacy, codes.InvalidArgument},
+				{true, User, AllowedRealm, AllowLegacy, codes.OK},
+				{true, User, AllowedRealm, ForbidLegacy, codes.OK},
+				{true, User, ForbiddenRealm, AllowLegacy, codes.PermissionDenied},
+				{true, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
+
+				// Enforcement is off, have a fallback on legacy ACLs.
+				{false, User, NoRealm, AllowLegacy, codes.OK},
+				{false, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
+				{false, User, AllowedRealm, AllowLegacy, codes.OK},
+				{false, User, AllowedRealm, ForbidLegacy, codes.OK},
+				{false, User, ForbiddenRealm, AllowLegacy, codes.OK},
+				{false, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
+
+				// Permission denied for anon => Unauthenticated.
+				{true, Anon, ForbiddenRealm, AllowLegacy, codes.Unauthenticated},
+				{false, Anon, NoRealm, ForbidLegacy, codes.Unauthenticated},
+			}
+
+			for i, test := range cases {
+				Convey(fmt.Sprintf("Case #%d", i), func() {
+					mocks := []authtest.MockedDatum{
+						authtest.MockPermission(test.ident, realm(AllowedRealm), coordinator.PermLogsCreate),
+					}
+					if test.enforce {
+						mocks = append(mocks, authtest.MockRealmData(
+							realm(realms.RootRealm),
+							&protocol.RealmData{EnforceInService: []string{env.ServiceID}},
+						))
+					}
+					if test.allowLegacy {
+						mocks = append(mocks, authtest.MockMembership(test.ident, "auth"))
+					}
+
+					c := auth.WithState(c, &authtest.FakeState{
+						Identity: test.ident,
+						FakeDB:   authtest.NewFakeDB(mocks...),
+					})
+
+					req.Realm = test.realm
+					_, err := svr.RegisterPrefix(c, &req)
+					So(status.Code(err), ShouldEqual, test.code)
+				})
+			}
 		})
 
 		Convey(`Will register a new prefix.`, func() {
