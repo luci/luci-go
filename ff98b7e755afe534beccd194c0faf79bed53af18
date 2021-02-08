@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "345bf5c9_225301cc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-08T19:05:40Z",
+      "side": 1,
+      "message": "To get LUCI project string",
+      "revId": "ff98b7e755afe534beccd194c0faf79bed53af18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "19344a6d_edf9e1d5",
+        "filename": "cv/internal/config/store.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-08T19:05:40Z",
+      "side": 1,
+      "message": "Why is this helper helpful? (Rather than just using c.Project.StringID()?)\n\nAlso, how is LUCI project encoded so that it needs to be decoded?",
+      "revId": "ff98b7e755afe534beccd194c0faf79bed53af18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
