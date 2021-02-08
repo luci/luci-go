@@ -153,8 +153,9 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderSteps() {
     const build = this.buildState.build!;
-    const nonSucceededSteps = (build.rootSteps || [])
-      .map((step, i) => [step, i + 1] as [StepExt, number])
+    const allSteps = (build.rootSteps || [])
+      .map((step, i) => [step, i + 1] as [StepExt, number]);
+    const nonSucceededSteps = allSteps
       .filter(([step, _stepNum]) => !step.succeededRecursively);
     const scheduledSteps = nonSucceededSteps
       .filter(([step, _stepNum]) => step.status === BuildStatus.Scheduled);
@@ -164,6 +165,12 @@ export class OverviewTabElement extends MobxLitElement {
       .filter(([step, _stepNum]) => step.status === BuildStatus.Canceled);
     const failedSteps = nonSucceededSteps
       .filter(([step, _stepNum]) => step.failed);
+    // If all steps passed, show them all (collapsed by default).
+    // Otherwise, if some steps failed or are still running, the user is probably
+    // most interested in those, so only show them. Since there are likely only a
+    // few non-passing steps, we expand them by default.
+    const shownSteps = (nonSucceededSteps.length > 0) ? nonSucceededSteps : allSteps;
+    const expandedByDefault = nonSucceededSteps.length > 0;
 
     return html`
       <div>
@@ -176,9 +183,9 @@ export class OverviewTabElement extends MobxLitElement {
         <div class="step-summary-line">
           ${this.renderStepSummary(failedSteps.length, canceledSteps.length, scheduledSteps.length, runningSteps.length)}
         </div>
-        ${nonSucceededSteps.map(([step, stepNum]) => html`
+        ${shownSteps.map(([step, stepNum]) => html`
         <milo-build-step-entry
-          .expanded=${true}
+          .expanded=${expandedByDefault}
           .number=${stepNum}
           .step=${step}
           .showDebugLogs=${false}
