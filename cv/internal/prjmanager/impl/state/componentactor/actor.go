@@ -31,12 +31,25 @@ type Supporter interface {
 	// Returns nil if clid refers to a CL not known to PM's State.
 	PCL(clid int64) *prjpb.PCL
 
+	// PurgingCL provides access to State.PB.PurgingCLs w/o exposing entire state.
+	//
+	// Returns nil if given CL isn't being purged.
+	PurgingCL(clid int64) *prjpb.PurgingCL
+
 	// ConfigGroup returns a ConfigGroup for a given index of the current LUCI
 	// project config version.
 	ConfigGroup(index int32) *config.ConfigGroup
 }
 
 // Actor implements PM state.componentActor in production.
+//
+// Assumptions:
+//   for each Component's CL:
+//     * there is a PCL via Supporter interface
+//     * for each dependency:
+//        * it's not yet loaded OR must be itself a component's CL.
+//
+// The assumptions are in fact guaranteed by PM's State.repartion function.
 type Actor struct {
 	c *prjpb.Component
 	s supporterWrapper
