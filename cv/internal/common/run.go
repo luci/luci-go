@@ -151,6 +151,31 @@ func (ids RunIDs) ContainsSorted(id RunID) bool {
 	return i < len(ids) && ids[i] == id
 }
 
+// DifferenceSorted returns all IDs in this slice and not the other one.
+//
+// Both slices must be sorted. Doesn't modify input slices.
+func (a RunIDs) DifferenceSorted(b RunIDs) RunIDs {
+	var diff RunIDs
+	for {
+		if len(b) == 0 {
+			return append(diff, a...)
+		}
+		if len(a) == 0 {
+			return diff
+		}
+		x, y := a[0], b[0]
+		switch {
+		case x == y:
+			a, b = a[1:], b[1:]
+		case x < y:
+			diff = append(diff, x)
+			a = a[1:]
+		default:
+			b = b[1:]
+		}
+	}
+}
+
 // Equal checks if two assumed-to-be-sorted slices are equal.
 func (ids RunIDs) Equal(other RunIDs) bool {
 	if len(ids) != len(other) {

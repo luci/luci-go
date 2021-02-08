@@ -106,6 +106,19 @@ func TestIDs(t *testing.T) {
 		So(ids.DelSorted(RunID("2")), ShouldBeTrue)
 		So(ids, ShouldResemble, MakeRunIDs())
 	})
+
+	Convey("IDs DifferenceSorted works", t, func() {
+		ids := MakeRunIDs()
+		So(ids.DifferenceSorted(MakeRunIDs("1")), ShouldBeEmpty)
+
+		ids = MakeRunIDs("2", "3", "5")
+		So(ids.DifferenceSorted(nil), ShouldResemble, MakeRunIDs("2", "3", "5"))
+		So(ids.DifferenceSorted(MakeRunIDs()), ShouldResemble, MakeRunIDs("2", "3", "5"))
+		So(ids.DifferenceSorted(MakeRunIDs("3")), ShouldResemble, MakeRunIDs("2", "5"))
+		So(ids.DifferenceSorted(MakeRunIDs("4")), ShouldResemble, MakeRunIDs("2", "3", "5"))
+		So(ids.DifferenceSorted(MakeRunIDs("1", "3", "4")), ShouldResemble, MakeRunIDs("2", "5"))
+		So(ids.DifferenceSorted(MakeRunIDs("1", "2", "3", "4", "5")), ShouldBeEmpty)
+	})
 }
 
 func assertSameSlice(a, b RunIDs) {
