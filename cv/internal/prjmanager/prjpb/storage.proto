@@ -161,6 +161,8 @@ message PCL {
   // a dep of another CL or as a member of an incomplete Run (though the other
   // Run will probably finish soon).
   bool submitted = 13;
+
+  // TODO(tandrii): track lack of owner email.
 }
 
 // PRun is an incomplete Run on which CV is currently working.
