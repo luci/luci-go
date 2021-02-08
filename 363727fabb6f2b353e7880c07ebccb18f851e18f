@@ -16,6 +16,24 @@
       "message": "Demo:\nhttps://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results?expected\u003dtrue\u0026exonerated\u003dtrue\u0026flaky\u003dtrue\n\nAuto completion and error handling will be added in following CLs.",
       "revId": "363727fabb6f2b353e7880c07ebccb18f851e18f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32df5ab9_058f6266",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-02-08T05:15:10Z",
+      "side": 1,
+      "message": "I\u0027m guessing this demo needs updating?",
+      "parentUuid": "0915d23b_1daa15c3",
+      "revId": "363727fabb6f2b353e7880c07ebccb18f851e18f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

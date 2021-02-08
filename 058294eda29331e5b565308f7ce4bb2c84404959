@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08e378ac_fd9e0342",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-02-08T05:15:10Z",
+      "side": 1,
+      "message": "Doesn\u0027t have to be in this CL, but just noting my strong preference for launching this with a help dialog (e.g. see the one Code Search has). Otherwise these keywords are undiscoverable and there\u0027s no way for a user to know what they mean.",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 21
+      },
+      "revId": "058294eda29331e5b565308f7ce4bb2c84404959",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3f7db62_b3c5cd8b",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-02-08T05:15:10Z",
+      "side": 1,
+      "message": "note that in the UI we call these \"runs\", so this could either be \"run-status\" or leave it as \"rstatus\" with the R standing for \"run\"",
+      "range": {
+        "startLine": 30,
+        "startChar": 12,
+        "endLine": 30,
+        "endChar": 19
+      },
+      "revId": "058294eda29331e5b565308f7ce4bb2c84404959",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
