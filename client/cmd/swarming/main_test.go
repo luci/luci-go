@@ -89,11 +89,15 @@ func triggerTaskWithCAS(t *testing.T) *swarming.SwarmingRpcsTaskRequestMetadata 
 func triggerTask(t *testing.T, args []string) *swarming.SwarmingRpcsTaskRequestMetadata {
 	dir := t.TempDir()
 	jsonPath := filepath.Join(dir, "out.json")
+	sbDir := t.TempDir()
+	sbPath := filepath.Join(sbDir, "secret_bytes.txt")
+	ioutil.WriteFile(sbPath, []byte("This is secret!"), 0600)
 	args = append(args, []string{
 		"-d", "pool=chromium.tests",
 		"-d", "os=Linux",
 		"-dump-json", jsonPath,
 		"-idempotent",
+		"-secret-bytes-path", sbPath,
 		"--", "/bin/bash", "-c", "echo hi > ${ISOLATED_OUTDIR}/out",
 	}...)
 	So(runCmd(t, "trigger", args...), ShouldEqual, 0)
