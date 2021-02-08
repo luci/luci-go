@@ -72,6 +72,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c07d7149_47dff3ff",
+        "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-08T03:31:01Z",
+      "side": 1,
+      "message": "\u003e In particular, two fields would allow you to preserve last known good query, so that the filtered-out items don\u0027t reappear just because the user made a typo or something.\nThat\u0027s a good point. Converted that to an autorun and only update the filter when a new valid query is received.",
+      "parentUuid": "13b87c46_6f1e10a5",
+      "range": {
+        "startLine": 39,
+        "startChar": 6,
+        "endLine": 39,
+        "endChar": 31
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "67c8002a_d2110e98",
@@ -85,6 +109,30 @@
       "writtenOn": "2021-02-03T18:27:47Z",
       "side": 1,
       "message": "\\-",
+      "range": {
+        "startLine": 17,
+        "startChar": 52,
+        "endLine": 17,
+        "endChar": 53
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d54a367c_01fe17ad",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-08T03:31:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67c8002a_d2110e98",
       "range": {
         "startLine": 17,
         "startChar": 52,
@@ -155,6 +203,30 @@
       "writtenOn": "2021-02-03T21:24:43Z",
       "side": 1,
       "message": "nits: least",
+      "range": {
+        "startLine": 29,
+        "startChar": 28,
+        "endLine": 29,
+        "endChar": 33
+      },
+      "revId": "821f72289b34fe56d25b1d22c3e34fe766460ee0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3ae789d_97082956",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-08T03:31:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "553e63b0_8baeba0d",
       "range": {
         "startLine": 29,
         "startChar": 28,
