@@ -72,6 +72,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "510e2cf5_8370522b",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-08T01:06:42Z",
+      "side": 1,
+      "message": "My argument is that the explicitness isn\u0027t necessary. It makes sense to check \"{hash}/{size_bytes}\" format, though.\n\nBtw, I already updated the assertion as it\u0027s a nit for me.",
+      "parentUuid": "e3a2ad55_b248b191",
+      "range": {
+        "startLine": 76,
+        "startChar": 13,
+        "endLine": 76,
+        "endChar": 29
+      },
+      "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4f591f59_f17a3d49",
@@ -121,6 +145,24 @@
       "side": 1,
       "message": "readfile is not sufficient as that doesn\u0027t check there is no other files.\nwhy not use testfs.Collect?",
       "parentUuid": "81f80515_851606a7",
+      "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca4949b9_a0c61ca9",
+        "filename": "client/cmd/cas/main_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-08T01:06:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39eb6c3b_aceb0e9e",
       "revId": "ae2c9a8f67c9764f2f3468e0b5bdb9de612359c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
