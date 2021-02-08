@@ -131,16 +131,19 @@ func TestRunBuilder(t *testing.T) {
 		cl1 := writeCL(makeSnapshot(makeCI(1)))
 		ct.Clock.Add(time.Minute)
 		cl2 := writeCL(makeSnapshot(makeCI(2)))
+		cl2.IncompleteRuns = common.MakeRunIDs("expected/000-run")
+		So(datastore.Put(ctx, cl2), ShouldBeNil)
 
 		owner, err := identity.MakeIdentity("user:owner@example.com")
 		So(err, ShouldBeNil)
 
 		rb := RunBuilder{
-			LUCIProject:   lProject,
-			ConfigGroupID: config.ConfigGroupID("sha256:cafe/cq-group"),
-			OperationID:   "this-operation-id",
-			Mode:          run.DryRun,
-			Owner:         owner,
+			LUCIProject:              lProject,
+			ConfigGroupID:            config.ConfigGroupID("sha256:cafe/cq-group"),
+			OperationID:              "this-operation-id",
+			Mode:                     run.DryRun,
+			Owner:                    owner,
+			ExpectedIncompleteRunIDs: common.MakeRunIDs("expected/000-run"),
 			InputCLs: []RunBuilderCL{
 				{
 					ID:               cl1.ID,
@@ -203,6 +206,15 @@ func TestRunBuilder(t *testing.T) {
 				rb.InputCLs[0].ExpectedEVersion = 11
 				_, err := rb.Create(ctx)
 				So(err, ShouldErrLike, fmt.Sprintf("CL %d changed since EVersion 11", cl1.ID))
+				So(StateChangedTag.In(err), ShouldBeTrue)
+				So(transient.Tag.In(err), ShouldBeFalse)
+			})
+
+			Convey("Unexpected IncompleteRun in a CL", func() {
+				cl2.IncompleteRuns = common.MakeRunIDs("unexpected/111-run")
+				So(datastore.Put(ctx, cl2), ShouldBeNil)
+				_, err := rb.Create(ctx)
+				So(err, ShouldErrLike, fmt.Sprintf(`CL %d has unexpected incomplete runs: [unexpected/111-run]`, cl2.ID))
 				So(StateChangedTag.In(err), ShouldBeTrue)
 				So(transient.Tag.In(err), ShouldBeFalse)
 			})
