@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a52e597_7741d91c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-08T22:54:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9065913c_8c14eadb",
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "53c53dad_82e06aff",
@@ -271,6 +289,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a35599f9_2508ae36",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-08T22:54:54Z",
+      "side": 1,
+      "message": "Reached a consent offline. \nFirstly, ship the faster-to-market solution which is Py top-level error -\u003e Go top-level error.\nAfter release Batch, fix `bb` tool",
+      "parentUuid": "ee95283d_53175fc9",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 3
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "18bad222_b37b145c",
@@ -308,6 +350,30 @@
       "side": 1,
       "message": "will do",
       "parentUuid": "18bad222_b37b145c",
+      "range": {
+        "startLine": 145,
+        "startChar": 38,
+        "endLine": 145,
+        "endChar": 65
+      },
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "256a5d8d_b208d228",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-08T22:54:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec9be5c9_24da9f22",
       "range": {
         "startLine": 145,
         "startChar": 38,
@@ -509,6 +575,24 @@
       "side": 1,
       "message": "i\u0027m ok with that use non-string key:\n\n  var testFakeTransportError string \u003d \"used in tests only to mock transport\"\n  ...\n  \n  if fakeErr, ok :\u003d ctx.Value(\u0026testFakeTransportError); ok {\n    return nil, fakeErr\n  }",
       "parentUuid": "81096a4f_1b8f31f0",
+      "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64c9b432_d15048d4",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-08T22:54:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2093aeba_6e580dab",
       "revId": "33eee3c40c28987352f23eb6ebbc9dce6b3a6344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
