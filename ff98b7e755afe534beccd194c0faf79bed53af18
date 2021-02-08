@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd0ec1ac_fd900b9a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-08T20:07:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "345bf5c9_225301cc",
+      "revId": "ff98b7e755afe534beccd194c0faf79bed53af18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "19344a6d_edf9e1d5",
@@ -49,6 +67,24 @@
       "side": 1,
       "message": "\u003e Why is this helper helpful? (Rather than just using c.Project.StringID()?)\n\nI guess it helps encapsulate the datastore dependency within this package?\n\n\u003e Also, how is LUCI project encoded so that it needs to be decoded?\n\n+1 on this question. wdym by decoded? Maybe just `ProjectString returns LUCI Project as a string.`",
       "parentUuid": "19344a6d_edf9e1d5",
+      "revId": "ff98b7e755afe534beccd194c0faf79bed53af18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d409651_30663840",
+        "filename": "cv/internal/config/store.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-08T20:07:46Z",
+      "side": 1,
+      "message": "\u003e I guess it helps encapsulate the datastore dependency within this package?\n\nYes, though I must admit I didn\u0027t think explicitly in these terms. What happened was that I needed project ID, but I didn\u0027t remember how to get it form Key(), so I just left a stub with panic(\"todo\") inside and continued with my work.\n\nFixed my comment.",
+      "parentUuid": "16dd04f9_c1238ca6",
       "revId": "ff98b7e755afe534beccd194c0faf79bed53af18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
