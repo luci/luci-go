@@ -39,6 +39,30 @@
       },
       "revId": "4b9c02118a9ea2d48b48a59a30be59c594a26181",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dcc12f78_a623c317",
+        "filename": "logdog/appengine/coordinator/endpoints/registration/registerPrefix.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-08T20:24:22Z",
+      "side": 1,
+      "message": "It felt wrong to do realms.Join(...) with unvalidated data.",
+      "parentUuid": "c3b3d65e_32f61709",
+      "range": {
+        "startLine": 93,
+        "startChar": 19,
+        "endLine": 93,
+        "endChar": 36
+      },
+      "revId": "4b9c02118a9ea2d48b48a59a30be59c594a26181",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
