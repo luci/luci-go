@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02eedd07_f77483eb",
+        "filename": "client/cmd/swarming/lib/trigger_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 386,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-08T08:35:56Z",
+      "side": 1,
+      "message": "check error?",
+      "revId": "d688d4ef63d88d7dad8119d199878d284d27a719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
