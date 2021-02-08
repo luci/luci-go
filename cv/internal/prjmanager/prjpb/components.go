@@ -18,6 +18,16 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/copyonwrite"
 )
 
+// CloneShallow creates a new shallow clone.
+func (c *Component) CloneShallow() *Component {
+	return &Component{
+		Clids:        c.GetClids(),
+		Pruns:        c.GetPruns(),
+		DecisionTime: c.GetDecisionTime(),
+		Dirty:        c.GetDirty(),
+	}
+}
+
 // COWComponents copy-on-write modifies components.
 func (p *PState) COWComponents(m func(*Component) *Component, toAdd []*Component) ([]*Component, bool) {
 	var mf copyonwrite.Modifier

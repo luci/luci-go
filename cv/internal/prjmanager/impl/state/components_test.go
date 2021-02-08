@@ -16,7 +16,6 @@ package state
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -26,12 +25,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -129,7 +126,7 @@ func TestComponentsActions(t *testing.T) {
 
 		unDirty := func(c *prjpb.Component) *prjpb.Component {
 			So(c.GetDirty(), ShouldBeTrue)
-			o := cloneComponent(c)
+			o := c.CloneShallow()
 			o.Dirty = false
 			return o
 		}
@@ -314,7 +311,7 @@ type componentActorSetup struct {
 	actErrOnCLs []int64
 }
 
-func (s *componentActorSetup) factory(c *prjpb.Component, _ actorSupporter) componentActor {
+func (s *componentActorSetup) factory(c *prjpb.Component, _ componentactor.Supporter) componentActor {
 	return &testCActor{s, c}
 }
 
@@ -323,272 +320,18 @@ type testCActor struct {
 	c      *prjpb.Component
 }
 
-func (t *testCActor) nextActionTime(_ context.Context, now time.Time) (time.Time, error) {
+func (t *testCActor) NextActionTime(_ context.Context, now time.Time) (time.Time, error) {
 	return t.parent.nextAction(t.c.GetClids()[0], now)
 }
 
-func (t *testCActor) act(context.Context) (*prjpb.Component, error) {
+func (t *testCActor) Act(context.Context) (*prjpb.Component, error) {
 	for _, clid := range t.parent.actErrOnCLs {
 		if t.c.GetClids()[0] == clid {
 			return nil, errors.Reason("act-oops %v", t.c).Err()
 		}
 	}
-	c := cloneComponent(t.c)
+	c := t.c.CloneShallow()
 	c.Dirty = false
 	c.DecisionTime = nil
 	return c, nil
-}
-
-func TestDepsTriage(t *testing.T) {
-	// This test may hang with infinite recursion due to proto comparison.
-	// If this fails, run it with -test.timeout=100ms while debugging.
-
-	t.Parallel()
-
-	Convey("Component's PCL deps triage", t, func() {
-		// Truncate start time point s.t. easy to see diff in test failures.
-		epoch := testclock.TestRecentTimeUTC.Truncate(10000 * time.Second)
-		dryRun := func(t time.Time) *run.Trigger {
-			return &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}
-		}
-		fullRun := func(t time.Time) *run.Trigger {
-			return &run.Trigger{Mode: string(run.FullRun), Time: timestamppb.New(t)}
-		}
-		state := NewExisting(&prjpb.PState{})
-
-		configGroups := []*config.ConfigGroup{
-			{ID: "hash/singular", Content: &cfgpb.ConfigGroup{}},
-			{ID: "hash/combinable", Content: &cfgpb.ConfigGroup{CombineCls: &cfgpb.CombineCLs{}}},
-			{ID: "hash/another", Content: &cfgpb.ConfigGroup{}},
-		}
-		const singIdx, combIdx, anotherIdx = 0, 1, 2
-
-		triage := func(pcl *prjpb.PCL, cgIdx int32) *triagedDeps {
-			state.pclIndex = nil
-			state.ensurePCLIndex()
-			a := componentActorImpl{s: &actorSupporterImpl{
-				pclIndex:     state.pclIndex,
-				pcls:         state.PB.GetPcls(),
-				configGroups: configGroups,
-			}}
-			pb := backupPB(state)
-			td := a.triageDeps(pcl, cgIdx)
-			So(state.PB, ShouldResembleProto, pb)
-			return td
-		}
-
-		assertEqual := func(a, b *triagedDeps) {
-			So(a.lastTriggered, ShouldResemble, b.lastTriggered)
-
-			So(a.notYetLoaded, ShouldResembleProto, b.notYetLoaded)
-			So(a.submitted, ShouldResembleProto, b.submitted)
-
-			So(a.unwatched, ShouldResembleProto, b.unwatched)
-			So(a.wrongConfigGroup, ShouldResembleProto, b.wrongConfigGroup)
-			So(a.incompatMode, ShouldResembleProto, b.incompatMode)
-		}
-
-		mustPCL := func(id int64) *prjpb.PCL {
-			for _, pcl := range state.PB.GetPcls() {
-				if pcl.GetClid() == id {
-					return pcl
-				}
-			}
-			panic(fmt.Errorf("wrong ID: %d", id))
-		}
-
-		Convey("Singluar and Combinable behave the same", func() {
-			sameTests := func(name string, cgIdx int32) {
-				Convey(name, func() {
-					Convey("no deps", func() {
-						state.PB.Pcls = []*prjpb.PCL{
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}},
-						}
-						td := triage(state.PB.Pcls[0], cgIdx)
-						assertEqual(td, &triagedDeps{})
-						So(td.OK(), ShouldBeTrue)
-					})
-
-					Convey("Valid CL stack CQ+1", func() {
-						state.PB.Pcls = []*prjpb.PCL{
-							{Clid: 31, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(3 * time.Second))},
-							{Clid: 32, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(2 * time.Second))},
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
-								Deps: []*changelist.Dep{
-									{Clid: 31, Kind: changelist.DepKind_SOFT},
-									{Clid: 32, Kind: changelist.DepKind_HARD},
-								}},
-						}
-						td := triage(mustPCL(33), cgIdx)
-						assertEqual(td, &triagedDeps{
-							lastTriggered: epoch.Add(3 * time.Second),
-						})
-						So(td.OK(), ShouldBeTrue)
-					})
-
-					Convey("Not yet loaded deps", func() {
-						state.PB.Pcls = []*prjpb.PCL{
-							// 31 isn't in PCLs yet
-							{Clid: 32, Status: prjpb.PCL_UNKNOWN},
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
-								Deps: []*changelist.Dep{
-									{Clid: 31, Kind: changelist.DepKind_SOFT},
-									{Clid: 32, Kind: changelist.DepKind_HARD},
-								}},
-						}
-						pcl33 := mustPCL(33)
-						td := triage(pcl33, cgIdx)
-						assertEqual(td, &triagedDeps{notYetLoaded: pcl33.GetDeps()})
-						So(td.OK(), ShouldBeTrue)
-					})
-
-					Convey("Unwatched", func() {
-						state.PB.Pcls = []*prjpb.PCL{
-							{Clid: 31, Status: prjpb.PCL_UNWATCHED},
-							{Clid: 32, Status: prjpb.PCL_DELETED},
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
-								Deps: []*changelist.Dep{
-									{Clid: 31, Kind: changelist.DepKind_SOFT},
-									{Clid: 32, Kind: changelist.DepKind_HARD},
-								}},
-						}
-						pcl33 := mustPCL(33)
-						td := triage(pcl33, cgIdx)
-						assertEqual(td, &triagedDeps{unwatched: pcl33.GetDeps()})
-						So(td.OK(), ShouldBeFalse)
-					})
-
-					Convey("Submitted can be in any config group and they are OK deps", func() {
-						state.PB.Pcls = []*prjpb.PCL{
-							{Clid: 32, ConfigGroupIndexes: []int32{anotherIdx}, Submitted: true},
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
-								Deps: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}}},
-						}
-						pcl33 := mustPCL(33)
-						td := triage(pcl33, cgIdx)
-						assertEqual(td, &triagedDeps{submitted: pcl33.GetDeps()})
-						So(td.OK(), ShouldBeTrue)
-					})
-
-					Convey("wrong config group", func() {
-						state.PB.Pcls = []*prjpb.PCL{
-							{Clid: 31, Trigger: dryRun(epoch.Add(3 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx}},
-							{Clid: 32, Trigger: dryRun(epoch.Add(2 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx, cgIdx}},
-							{Clid: 33, Trigger: dryRun(epoch.Add(1 * time.Second)), ConfigGroupIndexes: []int32{cgIdx},
-								Deps: []*changelist.Dep{
-									{Clid: 31, Kind: changelist.DepKind_SOFT},
-									{Clid: 32, Kind: changelist.DepKind_HARD},
-								}},
-						}
-						pcl33 := mustPCL(33)
-						td := triage(pcl33, cgIdx)
-						assertEqual(td, &triagedDeps{
-							lastTriggered:    epoch.Add(3 * time.Second),
-							wrongConfigGroup: pcl33.GetDeps(),
-						})
-						So(td.OK(), ShouldBeFalse)
-					})
-				})
-			}
-			sameTests("singular", singIdx)
-			sameTests("combinable", combIdx)
-		})
-
-		Convey("Singular speciality", func() {
-			state.PB.Pcls = []*prjpb.PCL{
-				{
-					Clid: 31, ConfigGroupIndexes: []int32{singIdx},
-					Trigger: dryRun(epoch.Add(3 * time.Second)),
-				},
-				{
-					Clid: 32, ConfigGroupIndexes: []int32{singIdx},
-					Trigger: fullRun(epoch.Add(2 * time.Second)), // not happy about its dep.
-					Deps:    []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
-				},
-				{
-					Clid: 33, ConfigGroupIndexes: []int32{singIdx},
-					Trigger: dryRun(epoch.Add(3 * time.Second)), // doesn't care about deps.
-					Deps: []*changelist.Dep{
-						{Clid: 31, Kind: changelist.DepKind_SOFT},
-						{Clid: 32, Kind: changelist.DepKind_HARD},
-					},
-				},
-			}
-			Convey("dry run doesn't care about deps' triggers", func() {
-				pcl33 := mustPCL(33)
-				td := triage(pcl33, singIdx)
-				assertEqual(td, &triagedDeps{
-					lastTriggered: epoch.Add(3 * time.Second),
-				})
-			})
-			Convey("full run considers any dep incompatible", func() {
-				pcl32 := mustPCL(32)
-				td := triage(pcl32, singIdx)
-				assertEqual(td, &triagedDeps{
-					lastTriggered: epoch.Add(3 * time.Second),
-					incompatMode:  pcl32.GetDeps(),
-				})
-				So(td.OK(), ShouldBeFalse)
-			})
-		})
-
-		Convey("Combinable speciality", func() {
-			// Setup valid deps; sub-tests will mutate this to become invalid.
-			state.PB.Pcls = []*prjpb.PCL{
-				{
-					Clid: 31, ConfigGroupIndexes: []int32{combIdx},
-					Trigger: dryRun(epoch.Add(3 * time.Second)),
-				},
-				{
-					Clid: 32, ConfigGroupIndexes: []int32{combIdx},
-					Trigger: dryRun(epoch.Add(2 * time.Second)),
-					Deps:    []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
-				},
-				{
-					Clid: 33, ConfigGroupIndexes: []int32{combIdx},
-					Trigger: dryRun(epoch.Add(1 * time.Second)),
-					Deps: []*changelist.Dep{
-						{Clid: 31, Kind: changelist.DepKind_SOFT},
-						{Clid: 32, Kind: changelist.DepKind_HARD},
-					},
-				},
-			}
-			Convey("dry run expects all deps to be dry", func() {
-				pcl32 := mustPCL(32)
-				Convey("ok", func() {
-					td := triage(pcl32, combIdx)
-					assertEqual(td, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
-				})
-
-				Convey("... not full runs", func() {
-					// TODO(tandrii): this can and should be supported.
-					mustPCL(31).Trigger.Mode = string(run.FullRun)
-					td := triage(pcl32, combIdx)
-					assertEqual(td, &triagedDeps{
-						lastTriggered: epoch.Add(3 * time.Second),
-						incompatMode:  pcl32.GetDeps(),
-					})
-				})
-			})
-			Convey("full run considers any dep incompatible", func() {
-				pcl33 := mustPCL(33)
-				Convey("ok", func() {
-					for _, pcl := range state.PB.GetPcls() {
-						pcl.Trigger.Mode = string(run.FullRun)
-					}
-					td := triage(pcl33, combIdx)
-					assertEqual(td, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
-				})
-				Convey("... not dry runs", func() {
-					mustPCL(32).Trigger.Mode = string(run.FullRun)
-					td := triage(pcl33, combIdx)
-					assertEqual(td, &triagedDeps{
-						lastTriggered: epoch.Add(3 * time.Second),
-						incompatMode:  []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
-					})
-					So(td.OK(), ShouldBeFalse)
-				})
-			})
-		})
-	})
 }
