@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1487a0a_46bf55f1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-08T23:13:29Z",
+      "side": 1,
+      "message": "lgtm % i dunno how tests works.",
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c548a4da_d63e46eb",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-08T23:13:29Z",
+      "side": 1,
+      "message": "nit: one empty line so it\u0027s easy to scan just the first sentence.",
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ac149943_a96f750a",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-08T23:13:29Z",
+      "side": 1,
+      "message": "add bug link here.",
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b9f7691_44b258e0",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-08T23:13:29Z",
+      "side": 1,
+      "message": "fwiw, \n  ctx :\u003d\nis also fine here.",
+      "range": {
+        "startLine": 368,
+        "startChar": 3,
+        "endLine": 368,
+        "endChar": 9
+      },
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9dfc70bd_dccd650a",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-08T23:13:29Z",
+      "side": 1,
+      "message": "isn\u0027t it supposed to be \u0026testFakeTransportError?\nTBH, i have no idea how it works right now.",
+      "range": {
+        "startLine": 369,
+        "startChar": 38,
+        "endLine": 369,
+        "endChar": 60
+      },
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
