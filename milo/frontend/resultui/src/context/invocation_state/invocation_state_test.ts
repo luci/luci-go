@@ -96,5 +96,18 @@ describe('InvocationState', () => {
       assert.deepEqual(invocationState.filteredExoneratedVariants, [variant4]);
       assert.deepEqual(invocationState.filteredExpectedVariants, [variant5]);
     });
+
+    it('should preserve the last known valid filter', () => {
+      invocationState.searchText = 'test-suite-b';
+      assert.deepEqual(invocationState.filteredUnexpectedVariants, []);
+      assert.deepEqual(invocationState.filteredFlakyVariants, [variant3]);
+      assert.deepEqual(invocationState.filteredExoneratedVariants, [variant4]);
+      assert.deepEqual(invocationState.filteredExpectedVariants, [variant5]);
+      invocationState.searchText = 'invalid:filter';
+      assert.deepEqual(invocationState.filteredUnexpectedVariants, []);
+      assert.deepEqual(invocationState.filteredFlakyVariants, [variant3]);
+      assert.deepEqual(invocationState.filteredExoneratedVariants, [variant4]);
+      assert.deepEqual(invocationState.filteredExpectedVariants, [variant5]);
+    });
   });
 });

@@ -13,10 +13,11 @@
 // limitations under the License.
 
 
-import { computed, observable } from 'mobx';
+import { autorun, computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../../libs/context';
+import { parseSearchQuery } from '../../libs/search_query';
 import { TestLoader } from '../../models/test_loader';
 import { TestNode } from '../../models/test_node';
 import { Invocation, TestVariant } from '../../services/resultdb';
@@ -30,12 +31,22 @@ export class InvocationState {
   @observable.ref initialized = false;
   @observable.ref searchText = '';
 
+  @observable.ref searchFilter = (_v: TestVariant) => true;
+
   private filterVariant(variant: TestVariant): boolean {
-    return variant.testId.startsWith(this.selectedNode.path) &&
-      variant.testId.toLocaleLowerCase().includes(this.searchText.toLocaleLowerCase());
+    return variant.testId.startsWith(this.selectedNode.path) && this.searchFilter(variant);
   }
 
-  constructor(private appState: AppState) {}
+  constructor(private appState: AppState) {
+    autorun(() => {
+      try {
+        this.searchFilter = parseSearchQuery(this.searchText);
+      } catch (e) {
+        //TODO(weiweilin): display the error to the user.
+        console.error(e);
+      }
+    });
+  }
 
   @observable.ref private isDisposed = false;
 
