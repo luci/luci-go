@@ -114,7 +114,7 @@ type CL struct {
 	// See description in protobuf type with the same name.
 	DependentMeta *DependentMeta
 
-	// IncompleteRuns tracks not yet finalized Runs working on this CL.
+	// IncompleteRuns tracks not yet finalized Runs working on this CL. Sorted.
 	//
 	// It's updated transactionally with the Run being modified.
 	IncompleteRuns common.RunIDs `gae:",noindex"`
