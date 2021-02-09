@@ -1,0 +1,250 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d60c291_d553082c",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "I think it is fine to support this in later CL.",
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9e38fea2_a6bdb37b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "I think it is fine to support this in later CL.",
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d65e83e_52a8c30a",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "I think it is fine to support this in later CL.",
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f3debda_a82f1d74",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "better to name request as Swarming has result proto for task.",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 99,
+        "endChar": 7
+      },
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4760a525_45d71df2",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "better to use logging here.",
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f31b82e8_4f04a941",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "\u0027_, env\u0027?",
+      "range": {
+        "startLine": 116,
+        "startChar": 5,
+        "endLine": 116,
+        "endChar": 7
+      },
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ed6644a_8983ff2b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "\u0027_, prefix\u0027?",
+      "range": {
+        "startLine": 127,
+        "startChar": 5,
+        "endLine": 127,
+        "endChar": 7
+      },
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "510643ff_47801f89",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "\u0027_, v\u0027?",
+      "range": {
+        "startLine": 131,
+        "startChar": 6,
+        "endLine": 131,
+        "endChar": 7
+      },
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7fdcbb3c_9cd67220",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "could you rename this to GetFilesFromIsolate in different CL?",
+      "range": {
+        "startLine": 148,
+        "startChar": 24,
+        "endLine": 148,
+        "endChar": 49
+      },
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e925b128_54bdfa9d",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "could you rename this to GetFilesFromCAS in different CL?",
+      "range": {
+        "startLine": 157,
+        "startChar": 24,
+        "endLine": 157,
+        "endChar": 45
+      },
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f529073_9b778fcb",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "run?",
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62edf02c_f88922ae",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-09T02:04:26Z",
+      "side": 1,
+      "message": "no need to return dir?",
+      "range": {
+        "startLine": 183,
+        "startChar": 8,
+        "endLine": 183,
+        "endChar": 12
+      },
+      "revId": "29f020638ebebc7e7d0982b9e9624f4e4f2d844a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
