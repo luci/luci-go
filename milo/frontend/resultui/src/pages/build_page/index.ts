@@ -115,6 +115,12 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         ?.slice('invocations/'.length) || '';
       this.invocationState.initialized = true;
 
+      // If the build has only passed steps, show all steps in the steps tab by
+      // default (even if the user's preference is to hide passed steps).
+      if (!build.rootSteps?.find((s) => s.status !== BuildStatus.Success)) {
+        this.configsStore.userConfigs.steps.showSucceededSteps = true;
+      }
+
       // If the input gitiles commit is in the blamelist pins, select it.
       // Otherwise, select the first blamelist pin.
       const buildInputCommitRepo = build.input.gitilesCommit
