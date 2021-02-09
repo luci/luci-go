@@ -20,6 +20,46 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "788a7dbc_5b592d96",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-09T01:16:31Z",
+      "side": 1,
+      "message": "Can you avoid adding it right after L260 ?",
+      "range": {
+        "startLine": 280,
+        "startChar": 3,
+        "endLine": 282,
+        "endChar": 4
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6455ef9a_046ba932",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-09T01:16:31Z",
+      "side": 1,
+      "message": "please add comment that you are removing duplicats.",
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2be2cf23_26bd90c2",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
@@ -100,6 +140,30 @@
       "writtenOn": "2021-02-09T00:46:10Z",
       "side": 1,
       "message": "Name is likely to overlap with some future Gerrit \"NotifyInfo\" (their typical way of naming things).\nFurthermore, it could probably be inlined into Recipient.\nBut then why would \"Recipient\" (singular) have 2+ accounts?\nSo, final recommendation:\n\n  Recipient{\n    int64 account_id\n    RecipientType type\n  }\n\nand I think this will also simply code in rest.go slightly.",
+      "range": {
+        "startLine": 264,
+        "startChar": 0,
+        "endLine": 267,
+        "endChar": 20
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa70575a_fcf69dee",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-09T01:16:31Z",
+      "side": 1,
+      "message": "ah, i see Gerrit already has this. Please add a URL to Gerrit doc about this struct. I guess let\u0027s keep it.",
+      "parentUuid": "03283032_c6ef3273",
       "range": {
         "startLine": 264,
         "startChar": 0,
