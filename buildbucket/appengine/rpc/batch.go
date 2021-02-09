@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	grpcStatus "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -30,6 +30,8 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+var testFakeTransportError = "used in tests only to mock the transport error"
 
 // pyBatchResponse captures the BatchResponse from Py service.
 type pyBatchResponse struct {
@@ -98,6 +100,10 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 					panic("impossible")
 				}
 				if err != nil {
+					logging.Warningf(ctx, "Error from Go: %s", err)
+					if goErrSt, ok := convertGRPCError(err); ok {
+						return appstatus.Error(goErrSt.Code(), goErrSt.Message())
+					}
 					response.Response = toBatchResponseError(ctx, err)
 				}
 				res.Responses[goIndices[i]] = response
@@ -115,12 +121,9 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 
 	pyRes := <-pyResC
 	if pyRes.err != nil {
-		logging.Errorf(ctx, "Error from Python service: %s", pyRes.err)
-		for _, idx := range pyIndices {
-			res.Responses[idx] = &pb.BatchResponse_Response{
-				Response: &pb.BatchResponse_Response_Error{Error: status.New(codes.Internal, "Internal server error").Proto()},
-			}
-		}
+		logging.Warningf(ctx, "Error from Python service: %s", pyRes.err)
+		gStatus, _ := convertGRPCError(pyRes.err)
+		return nil, appstatus.Error(gStatus.Code(), gStatus.Message())
 	} else {
 		for i, idx := range pyIndices {
 			res.Responses[idx] = pyRes.res.Responses[i]
@@ -130,19 +133,40 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	return res, nil
 }
 
+// convertGRPCError converts to a grpc Status, if this error is a grpc error.
+//
+// If it's DeadlineExceeded error, return a Status with the internal error code
+// as a short-term solution (crbug.com/1174310) for the caller side retry, e.g., bb cli.
+//
+// If it's not a grpc error, ok is false and a Status is returned with
+// codes.Unknown and the original error message.
+func convertGRPCError(err error) (*grpcStatus.Status, bool) {
+	gStatus, ok := grpcStatus.FromError(err)
+	if !ok {
+		return gStatus, false
+	}
+	if gStatus.Code() == codes.DeadlineExceeded {
+		return grpcStatus.New(codes.Internal, gStatus.Message()), true
+	}
+	return gStatus, true
+}
+
 // toBatchResponseError converts an error to BatchResponse_Response_Error type.
 func toBatchResponseError(ctx context.Context, err error) *pb.BatchResponse_Response_Error {
 	st, ok := appstatus.Get(err)
 	if !ok {
 		logging.Errorf(ctx, "Non-appstatus error in a batch response: %s", err)
-		return &pb.BatchResponse_Response_Error{Error: status.New(codes.Internal, "Internal server error").Proto()}
+		return &pb.BatchResponse_Response_Error{Error: grpcStatus.New(codes.Internal, "Internal server error").Proto()}
 	}
 	return &pb.BatchResponse_Response_Error{Error: st.Proto()}
 }
 
 // newPyBBClient constructs a BuildBucket python client.
 func (b *Builds) newPyBBClient(ctx context.Context) (pb.BuildsClient, error) {
-	if b.testPyBuildsClient != nil {
+	switch fakeErr, ok := ctx.Value(&testFakeTransportError).(error); {
+	case ok:
+		return nil, fakeErr
+	case b.testPyBuildsClient != nil:
 		return b.testPyBuildsClient, nil
 	}
 
@@ -152,7 +176,8 @@ func (b *Builds) newPyBBClient(ctx context.Context) (pb.BuildsClient, error) {
 	}
 	t, err := auth.GetRPCTransport(ctx, auth.AsCredentialsForwarder)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get RPC transport to python BB service").Err()
+		logging.Errorf(ctx, "failed to get Py BB RPC transport: %s", err)
+		return nil, grpcStatus.Error(codes.Internal, "failed to get Py BB RPC transport")
 	}
 	pClient := &prpc.Client{
 		C:          &http.Client{Transport: t},
