@@ -16,6 +16,46 @@
       "message": "Quinten, PTAL this CL\u0027s docs. It\u0027s the most important in this batch.",
       "revId": "26efc5736a207a7d38ecf04da0ef4dfe6bed7921",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0da588ea_c9a4bd4b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-09T23:11:30Z",
+      "side": 1,
+      "message": "I like the name \"purge\". And I learned today that \"purgatory\" (Latin purgatorium) is supposed to be where souls wait to be purged (purified) before they can go to heaven or wherever. :-)",
+      "revId": "26efc5736a207a7d38ecf04da0ef4dfe6bed7921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "40161181_96a8ca3f",
+        "filename": "cv/internal/prjmanager/prjpb/storage.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-09T23:11:30Z",
+      "side": 1,
+      "message": "Optional nit: \"The purging process...\", and \"...the actual purge\" sounds slightly better to me.\n\nSide note: You\u0027ve probably noticed a long time ago, since Slavic languages don\u0027t use determiners (\"the\", \"a\") like English does, Slavic speakers drop determiners in English more frequently than other English speakers. This usually sounds fine, just a little terse, but sometimes dropping the determiner makes it sound like a proper noun (like if \"Purging Process\", \"Actual Purge\" were the names organizations).\n\nBut in this case it\u0027s not really worth going back and making a CL to edit this; this was just a thought :-)",
+      "range": {
+        "startLine": 211,
+        "startChar": 3,
+        "endLine": 212,
+        "endChar": 37
+      },
+      "revId": "26efc5736a207a7d38ecf04da0ef4dfe6bed7921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
