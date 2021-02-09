@@ -74,6 +74,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "062d3c5a_1eb0a085",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2021-02-09T05:07:35Z",
+      "side": 1,
+      "message": "Ah, I see. Makes sense to me that if there are only passing steps, we should override the user\u0027s choice in that case. I\u0027ll put it in a separate CL.",
+      "parentUuid": "9b733462_0ead9c1b",
+      "range": {
+        "startLine": 7,
+        "startChar": 32,
+        "endLine": 7,
+        "endChar": 61
+      },
+      "revId": "d4a45ccd50968caf6ee5633c0f310c86d0ddbd3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ac2c41b7_9faff8fc",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
