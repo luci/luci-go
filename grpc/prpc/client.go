@@ -244,7 +244,13 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 	case FormatBinary:
 		err = proto.Unmarshal(resp, out)
 	case FormatJSONPB:
-		err = jsonpb.UnmarshalString(string(resp), out)
+		// We AllowUnknownFields because otherwise all prpc clients become tightly
+		// coupled to the server implementation and will break with codes.Internal
+		// when the server adds a new field to the response.
+		//
+		// We presume here that decoding a partial response will be easier to
+		// recover from in a deployment scenario than breaking all callers.
+		err = (&jsonpb.Unmarshaler{AllowUnknownFields: true}).Unmarshal(bytes.NewReader(resp), out)
 	default:
 		panic("impossible")
 	}
@@ -647,7 +653,7 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 	if c.PathPrefix == "" {
 		pathPrefix = "/prpc"
 	}
- 	return &http.Request{
+	return &http.Request{
 		Method: "POST",
 		URL: &url.URL{
 			Scheme: scheme,

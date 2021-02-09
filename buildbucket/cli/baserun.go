@@ -107,9 +107,6 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 	rpcOpts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
-	// TODO(crbug/1016443): remove AcceptContentSubtype defaulting into binary
-	// protobuf encoding once Buildbucket server becomes faster.
-	rpcOpts.AcceptContentSubtype = "json"
 	// Per crbug/1030156, default of 5 retries isn't good enough.
 	rpcOpts.Retry = func() retry.Iterator {
 		return &retry.ExponentialBackoff{
