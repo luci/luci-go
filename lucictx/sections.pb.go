@@ -21,7 +21,6 @@
 package lucictx
 
 import (
-	proto "github.com/golang/protobuf/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -34,10 +33,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // LocalAuth is a struct that may be used with the "local_auth" section of
 // LUCI_CONTEXT.
@@ -506,38 +501,61 @@ func (x *ResultSink) GetAuthToken() string {
 }
 
 // Deadline represents an externally-imposed termination criteria for the
-// process observing the LUCI_CONTEXT.
+// process observing the `LUCI_CONTEXT`.
 //
-// Additionally, this contains `grace_period` which can be used to communicate
-// how long the external process will allow for clean up once it sends
+// Additionally, this contains `grace_period` which can be used to communicate how
+// long the external process will allow for clean up once it sends
 // SIGTERM/Ctrl-Break.
 //
-// Intermediate applications SHOULD NOT increase soft_deadline or grace_period.
+// Intermediate applications MUST NOT increase `soft_deadline` or `grace_period`.
 //
-// If the entire Deadline is missing from LUCI_CONTEXT, it should be assumed to
+// If the entire Deadline is missing from `LUCI_CONTEXT`, it should be assumed to
 // be:
-//   {soft_deadline: infinity, grace_period: 30}
+//     {soft_deadline: infinity, grace_period: 30}
+//
+// Intermediate applications can 'reserve' portions of `soft_deadline` and
+// `grace_period` by reducing them and then enforcing the reduced times.
+//
+// *** note
+// **WARNING:** Reducing `soft_deadline` may adversely affect the parent process's
+// ability to accurately assess if `soft_deadline` was exceeded. This could affect
+// reporting indicators such as 'timeout occurred', because the child process may
+// terminate itself before the parent can send a signal and mark that it has done
+// so.
+//
+// Most applications SHOULD only reserve time from `grace_period`. Those reserving
+// from `soft_deadline` should take care to ensure that timeout status will still
+// be accurately communicated to their parent process, if that's important for
+// the application.
+// ***
 type Deadline struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The absolute soft deadline for execution for this context (as a 'float'
-	// unix timestamp; integer part is seconds, fractional part is fractions of
-	// a second. This is the same as python's `time.time()` representation).
+	// The soft deadline for execution for this context as a 'float' unix
+	// timestamp (seconds past unix epoch). This is the same as python's
+	// `time.time()` representation.
 	//
-	// Processes reading this value SHOULD choose to terminate and clean
-	// themselves up before this deadline.
+	// If this value is set, processes SHOULD rely on their parent process
+	// to send SIGTERM/Ctrl-Break at this time.
 	//
-	// This is a 'soft' deadline because the parent process will give
-	// `grace_period` seconds past this before sending SIGKILL/Terminate.
-	//
-	// Parent processes MUST send SIGTERM/Ctrl-Break to subprocesses which
-	// exceed this deadline. They should attempt to do this as close to
-	// `soft_deadline` as possible.
+	// Parent processes adjusting or setting `soft_deadline` MUST enforce it by
+	// sending SIGTERM/Ctrl-Break as close to this time as possible, followed
+	// by SIGKILL/Terminate after `grace_period` additional time.
 	//
 	// If `soft_deadline` is 0 consider there to be no stated deadline (i.e.
 	// infinite).
+	//
+	// Processes reading this value can use it to determine if a timeout will
+	// actually be honored; i.e. if the user asks for 30s to run a process, but
+	// soft_deadline indicates an end in 10s, your program can react accordingly
+	// (print warning, adjust user-requested timeout, refuse to run user's
+	// process, etc.).
+	//
+	// Processes can also observe this value in conjunction with
+	// receiving a signal (i.e. I got a signal after `soft_deadline` then I'm likely
+	// in a timeout state).
 	SoftDeadline float64 `protobuf:"fixed64,1,opt,name=soft_deadline,proto3" json:"soft_deadline,omitempty"`
 	// The amount of time (in fractional seconds), processes in this context have
 	// time to react to a SIGTERM/Ctrl-Break before being SIGKILL/Terminated.
