@@ -18,6 +18,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "2be2cf23_26bd90c2",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-09T00:46:10Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 250,
+        "startChar": 19,
+        "endLine": 250,
+        "endChar": 20
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "13ecebb6_f26336ff",
@@ -41,6 +64,69 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "48b6e359_0a8319bf",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-09T00:46:10Z",
+      "side": 1,
+      "message": "is this expected to be used elsewhere? I bet not, so how about sticking into NotifyDetails?\nIt\u0027ll also be nicely scoped to NotifyDetails in Go (but not C++)",
+      "range": {
+        "startLine": 254,
+        "startChar": 0,
+        "endLine": 263,
+        "endChar": 1
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03283032_c6ef3273",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-09T00:46:10Z",
+      "side": 1,
+      "message": "Name is likely to overlap with some future Gerrit \"NotifyInfo\" (their typical way of naming things).\nFurthermore, it could probably be inlined into Recipient.\nBut then why would \"Recipient\" (singular) have 2+ accounts?\nSo, final recommendation:\n\n  Recipient{\n    int64 account_id\n    RecipientType type\n  }\n\nand I think this will also simply code in rest.go slightly.",
+      "range": {
+        "startLine": 264,
+        "startChar": 0,
+        "endLine": 267,
+        "endChar": 20
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c768ed6d_05eff794",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 938,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-09T00:46:10Z",
+      "side": 1,
+      "message": "worth adding here that it can be combined with the notify\u003dNONE (above field) for granular notification.",
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "058cd33f_0f40cbbd",
@@ -54,6 +140,30 @@
       "writtenOn": "2021-02-09T00:33:05Z",
       "side": 1,
       "message": "No one is using it so I just change the number to make the notify related field have consecutive number :D",
+      "range": {
+        "startLine": 945,
+        "startChar": 23,
+        "endLine": 945,
+        "endChar": 25
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a1e0fc0_d90c8906",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 945,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-09T00:46:10Z",
+      "side": 1,
+      "message": "yeah, that\u0027s fine.",
+      "parentUuid": "058cd33f_0f40cbbd",
       "range": {
         "startLine": 945,
         "startChar": 23,
