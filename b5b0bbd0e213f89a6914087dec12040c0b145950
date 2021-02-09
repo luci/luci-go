@@ -98,6 +98,30 @@
       },
       "revId": "b5b0bbd0e213f89a6914087dec12040c0b145950",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "322cb265_ca175bec",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-09T20:28:26Z",
+      "side": 1,
+      "message": "Oh, heh yeah I read this wrong.",
+      "parentUuid": "d09da22a_7a2e5512",
+      "range": {
+        "startLine": 122,
+        "startChar": 5,
+        "endLine": 122,
+        "endChar": 11
+      },
+      "revId": "b5b0bbd0e213f89a6914087dec12040c0b145950",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
