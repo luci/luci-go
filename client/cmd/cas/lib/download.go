@@ -413,26 +413,26 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	logger.Infof("finished copy from cache (if any), dups: %d, to: %d, smallFiles: %d, took %s",
 		len(dups), len(to), len(smallFiles), time.Since(start))
 
-	start = time.Now()
-
 	if kvs != nil {
+		start := time.Now()
+
 		if err := copySmallFilesFromCache(kvs, smallFiles); err != nil {
 			return err
 		}
-	}
 
-	// Process non-cached files.
-	for _, files := range smallFiles {
-		for _, file := range files {
-			if _, ok := to[file.Digest]; ok {
-				dups = append(dups, file)
-			} else {
-				to[file.Digest] = file
+		// Process non-cached files.
+		for _, files := range smallFiles {
+			for _, file := range files {
+				if _, ok := to[file.Digest]; ok {
+					dups = append(dups, file)
+				} else {
+					to[file.Digest] = file
+				}
 			}
 		}
-	}
 
-	logger.Infof("finished copy small files from cache (if any), to: %d, took %s", len(to), time.Since(start))
+		logger.Infof("finished copy small files from cache (if any), to: %d, took %s", len(to), time.Since(start))
+	}
 
 	start = time.Now()
 	if err := c.DownloadFiles(ctx, "", to); err != nil {
