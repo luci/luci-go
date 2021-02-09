@@ -270,7 +270,7 @@ func (c *collectRun) fetchTaskResults(
 				return errors.Reason("Invalid TaskResult: both OutputsRef and CasOutputRoot exist").Err()
 			}
 			if result.OutputsRef != nil {
-				outputs, err = service.GetTaskOutputsFromIsolate(ctx, outdir, result.OutputsRef)
+				outputs, err = service.GetFilesFromIsolate(ctx, outdir, result.OutputsRef)
 				if err != nil {
 					return tagTransientGoogleAPIError(err)
 				}
@@ -280,7 +280,7 @@ func (c *collectRun) fetchTaskResults(
 				if err != nil {
 					return err
 				}
-				outputs, err = service.GetTaskOutputsFromCAS(ctx, outdir, cascli, result.CasOutputRoot)
+				outputs, err = service.GetFilesFromCAS(ctx, outdir, cascli, result.CasOutputRoot)
 				if err != nil {
 					return tagTransientGoogleAPIError(err)
 				}
