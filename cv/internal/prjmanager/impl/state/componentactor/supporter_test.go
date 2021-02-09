@@ -33,6 +33,15 @@ func (s *simpleSupporter) PCL(clid int64) *prjpb.PCL {
 	return nil
 }
 
+func (s *simpleSupporter) PurgingCL(clid int64) *prjpb.PurgingCL {
+	for _, p := range s.pb.GetPurgingCls() {
+		if p.GetClid() == clid {
+			return p
+		}
+	}
+	return nil
+}
+
 func (s *simpleSupporter) ConfigGroup(index int32) *config.ConfigGroup {
 	return s.cgs[index]
 }

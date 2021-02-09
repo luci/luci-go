@@ -59,7 +59,6 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 	d := disjointset.New(len(s.PB.GetPcls())) // operates on indexes of PCLs
 
 	// CLs of a Run must be in the same set.
-	// Runs must be in the same set.
 	s.PB.IterIncompleteRuns(func(r *prjpb.PRun, _ *prjpb.Component) (stop bool) {
 		clids := r.GetClids()
 		first := s.pclIndex[common.CLID(clids[0])]
