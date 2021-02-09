@@ -18,6 +18,7 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -47,6 +48,72 @@ func TestDiskTokenCache(t *testing.T) {
 			Context:    ctx,
 			SecretsDir: tmp,
 		})
+	})
+
+	Convey("Retains unknown cacheFileEntry fields", t, func() {
+		cacheFile := filepath.Join(tmp, CacheFilename)
+		testData := `
+		{
+			"cache": [
+				{
+					"key": {"key": "a"},
+					"token": {
+						"access_token": "abc"
+					},
+					"email": "a@example.com",
+					"random_stuff": {"abc": {"def": "zzz"}},
+					"abc": "def"
+				}
+			],
+			"last_update": "2021-02-08T23:18:00.463912Z"
+		}
+		`
+		So(ioutil.WriteFile(cacheFile, []byte(testData), 0600), ShouldBeNil)
+
+		cache := &DiskTokenCache{
+			Context:    ctx,
+			SecretsDir: tmp,
+		}
+
+		tok, err := cache.GetToken(&CacheKey{Key: "a"})
+		So(err, ShouldBeNil)
+		So(tok, ShouldResemble, &Token{
+			Token: oauth2.Token{AccessToken: "abc"},
+			Email: "a@example.com",
+		})
+		So(cache.PutToken(&CacheKey{Key: "a"}, &Token{
+			Token: oauth2.Token{
+				AccessToken: "def",
+				Expiry:      clock.Now(ctx).Add(time.Hour),
+			},
+			Email: "a@example.com",
+		}), ShouldBeNil)
+
+		// Check "random_stuff" and "abc" were preserved by the update.
+		blob, err := ioutil.ReadFile(cacheFile)
+		So(err, ShouldBeNil)
+		So(string(blob), ShouldEqual, `{
+  "cache": [
+    {
+      "key": {
+        "key": "a"
+      },
+      "token": {
+        "access_token": "def",
+        "expiry": "2016-02-03T13:05:06.000000007Z"
+      },
+      "email": "a@example.com",
+      "last_update": "2016-02-03T12:05:06.000000007Z",
+      "abc": "def",
+      "random_stuff": {
+        "abc": {
+          "def": "zzz"
+        }
+      }
+    }
+  ],
+  "last_update": "2016-02-03T12:05:06.000000007Z"
+}`)
 	})
 
 	// TODO(vadimsh): This test is flaky on Windows, there's non zero probability
