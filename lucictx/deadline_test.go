@@ -115,7 +115,7 @@ func TestDeadline(t *testing.T) {
 	// not Parallel because this uses the global mock signalNotify.
 	// t.Parallel()
 
-	Convey(`AdjustDeadline`, t, func() {
+	Convey(`TrackDeadline`, t, func() {
 		t0 := testclock.TestTimeUTC
 		ctx, tc := testclock.UseTime(context.Background(), t0)
 		ctx, cancel := context.WithCancel(ctx)
@@ -127,7 +127,7 @@ func TestDeadline(t *testing.T) {
 		ctx = Set(ctx, "deadline", nil)
 
 		Convey(`Empty context`, func() {
-			cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
+			cleanup, ac, shutdown := TrackDeadline(ctx, 5*time.Second)
 			defer shutdown()
 
 			deadline, ok := ac.Deadline()
@@ -150,7 +150,7 @@ func TestDeadline(t *testing.T) {
 			ctx, cancel := clock.WithDeadline(ctx, t0.Add(100*time.Second))
 			defer cancel()
 
-			cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
+			cleanup, ac, shutdown := TrackDeadline(ctx, 5*time.Second)
 			defer shutdown()
 
 			hardDeadline, ok := ac.Deadline()
@@ -173,10 +173,10 @@ func TestDeadline(t *testing.T) {
 		})
 
 		Convey(`deadline context reserve`, func() {
-			ctx, cancel := clock.WithDeadline(ctx, t0.Add(100*time.Second))
+			ctx, cancel := clock.WithDeadline(ctx, t0.Add(95*time.Second))
 			defer cancel()
 
-			cleanup, ac, shutdown := AdjustDeadline(ctx, 5*time.Second, 0)
+			cleanup, ac, shutdown := TrackDeadline(ctx, 0)
 			defer shutdown()
 
 			deadline, ok := ac.Deadline()
@@ -198,12 +198,22 @@ func TestDeadline(t *testing.T) {
 
 		Convey(`Deadline in LUCI_CONTEXT`, func() {
 			externalSoftDeadline := t0.Add(100 * time.Second)
+
+			// Note, LUCI_CONTEXT asserts that non-zero SoftDeadlines must be enforced
+			// by 'an external process', so we mock that with the goroutine here.
+			go func() {
+				if (<-clock.After(ctx, 100*time.Second)).Err == nil {
+					mockGenerateInterrupt()
+				}
+			}()
+
 			dl := &Deadline{GracePeriod: 40}
 			dl.SetSoftDeadline(externalSoftDeadline) // 100s into the future
+
 			ctx = SetDeadline(ctx, dl)
 
 			Convey(`no deadline in context`, func() {
-				cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
+				cleanup, ac, shutdown := TrackDeadline(ctx, 5*time.Second)
 				defer shutdown()
 
 				softDeadline := GetDeadline(ac).SoftDeadlineTime()
@@ -241,52 +251,19 @@ func TestDeadline(t *testing.T) {
 					// should still have 65s before the soft deadline
 					So(tc.Now(), ShouldHappenWithin, time.Millisecond, softDeadline.Add(-65*time.Second))
 				})
-			})
 
-			Convey(`reduce deadline by more than grace_period`, func() {
-				cleanup, ac, shutdown := AdjustDeadline(ctx, 50*time.Second, time.Second)
-				defer shutdown()
-
-				softDeadline := GetDeadline(ac).SoftDeadlineTime()
-				So(softDeadline, ShouldHappenWithin, time.Millisecond, externalSoftDeadline.Add(-50*time.Second))
-
-				hardDeadline, ok := ac.Deadline()
-				So(ok, ShouldBeTrue)
-				So(hardDeadline, ShouldHappenWithin, time.Millisecond, externalSoftDeadline.Add((-50+39)*time.Second))
-
-				Convey(`natural expiration`, func() {
-					tc.Add(50 * time.Second)
-					So(<-cleanup, ShouldEqual, TimeoutEvent) // cleanup unblocks
-					So(ac, shouldWaitForNotDone)
-
-					tc.Add(39 * time.Second)
+				Convey(`cancel context`, func() {
+					cancel()
+					So(<-cleanup, ShouldEqual, ClosureEvent)
 					<-ac.Done()
-
-					// We should have ended right around the deadline; there's some slop
-					// in the clock package though, and this doesn't seem to be zero.
-					So(tc.Now(), ShouldHappenWithin, time.Millisecond, hardDeadline)
 				})
-
-				Convey(`signal`, func() {
-					mockGenerateInterrupt()
-					So(<-cleanup, ShouldEqual, InterruptEvent) // cleanup unblocks on signal
-
-					So(ac, shouldWaitForNotDone)
-
-					tc.Add(39 * time.Second)
-					<-ac.Done()
-
-					// Should have about 11s of time left before the soft deadline.
-					So(tc.Now(), ShouldHappenWithin, time.Millisecond, softDeadline.Add(-11*time.Second))
-				})
-
 			})
 
 			Convey(`earlier deadline in context`, func() {
 				ctx, cancel := clock.WithDeadline(ctx, externalSoftDeadline.Add(-50*time.Second))
 				defer cancel()
 
-				cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
+				cleanup, ac, shutdown := TrackDeadline(ctx, 5*time.Second)
 				defer shutdown()
 
 				hardDeadline, ok := ac.Deadline()

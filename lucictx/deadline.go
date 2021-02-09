@@ -83,14 +83,12 @@ func earlier(a, b time.Time) time.Time {
 	return b
 }
 
-// AdjustDeadline returns a 'cleanup' channel and a new 'shutdown'-able context
-// based on the combination of the input context's deadline, as well as the
+// TrackDeadline returns a 'cleanup' channel and a new 'shutdown'-able context
+// based on the combination of the input context's deadline and the
 // Deadline information in LUCI_CONTEXT.
 //
-// This function allows you to reserve a portion of the deadline and/or
-// grace_period with `reserve` and `reserveCleanup` respectively.
-//
-// reserve and reserveCleanup must not be less than 0 or this panics.
+// This function additionally allows you to reserve a portion of the
+// grace_period with `reserveGracePeriod`.
 //
 // First, if Deadline is missing from LUCI_CONTEXT, it is filled in with the
 // default:
@@ -99,76 +97,67 @@ func earlier(a, b time.Time) time.Time {
 //
 // We then calculate:
 //
-//   adjustedSoftDeadline = earlier(
-//     ctx.Deadline() - gracePeriod,
+//   softDeadline = earlier(
+//     ctx.Deadline() - Deadline.grace_period,
 //     Deadline.soft_deadline,
-//   ) - reserve
+//   )
+//   adjustedGracePeriod = Deadline.grace_period - reserveGracePeriod
+//   adjustedHardDeadline = softDeadline + adjustedGracePeriod
 //
-// Next, `reserveCleanup` is subtracted from Deadline.grace_period.
-// This becomes the `adjustedGracePeriod`.
+// If softDeadline or adjustedGracePeriod differ from their counterparts
+// in LUCI_CONTEXT, a new LUCI_CONTEXT['deadline'] is set in `newCtx` with
+// the updated value(s).
+//
+// newCtx's deadline is set to adjustedHardDeadline.
 //
 // The `cleanup` channel is set up with a goroutine which:
 //   * On shutdown()/SIGTERM/os.Interrupt, continuously sends InterruptEvent.
-//     After `adjustedGracePeriod` from the interrupt, newCtx will be canceled.
-//   * On `adjustedSoftDeadline`, continuously sends TimeoutEvent.
-//     The newCtx will meet its hard deadline after `adjustedGracePeriod`.
+//     After `adjustedGracePeriod` from the interrupt, cancels newCtx.
+//   * On `softDeadline`, continuously sends TimeoutEvent.
+//     After `adjustedGracePeriod` from the interrupt, cancels newCtx.
 //   * On newCtx.Done, closes (so reads will see ClosureEvent).
 //
-// Finally, the newCtx has its deadline set to
-// `adjustedSoftDeadline+adjustedGracePeriod`, and LUCI_CONTEXT['deadline'] is
-// populated with the adjusted soft_deadline and grace_period.
+// The returned shutdown() function will begin the shutdown process (acts as
+// if an os.Interrupt signal was triggered).
 //
-// The returned shutdown() function will begin the shutdown process (acts as if
-// an os.Interrupt signal was triggered). After calling shutdown, you may block
-// on ctx.Done() which will take up to adjustedGracePeriod to occur.
+// NOTE: If you want to reduce `soft_deadline`, you should do so by applying a
+// Deadline/Timeout to the context prior to invoking this function.
 //
-// Note, if Deadline.grace_period is insufficient to cover reserveCleanup
-// (including if reserveCleanup>DefaultGracePeriodSecs and no Deadline was in
-// LUCI_CONTEXT at all), this function panics.
+// Panics if:
+//   * reserveGracePeriod < 0.
+//   * Deadline.grace_period (or its default 30s value) is insufficient to
+//     cover reserveGracePeriod.
 //
 // Example:
 //
 //    func MainFunc(ctx context.Context) {
-//      // ctx.Deadline  = unix(t0+5:40)
+//      // ctx.Deadline  = <unset>
 //      // soft_deadline = unix(t0+5:00)
 //      // grace_period  = 40
-//      cleanup, newCtx, shutdown := lucictx.AdjustDeadline(ctx, time.Minute, 500*time.Millisecond)
+//      cleanup, newCtx, shutdown := lucictx.TrackDeadline(ctx, 500*time.Millisecond)
 //      defer shutdown()
 //      ScopedFunction(newCtx, cleanup)
-//
-//      // When ScopedFunction returns (assuming it returns immediately on
-//      // newCtx.Done):
-//      //   If there was a signal, you have 500ms left.
-//      //   If newCtx timed out, you have 1m40s.
-//      //
-//      // If you had a goroutine waiting on <-cleanup, you would get the full
-//      // grace_period to do something. If <-cleanup returned TimeoutEvent, you
-//      // would also get the remainder of soft_deadline (i.e. 1 additional
-//      // minute)
 //    }
 //
 //    func ScopedFunction(newCtx context.Context, cleanup <-chan DeadlineEvent) {
-//      // newCtx.Deadline  = unix(t0+4:39.5)
-//      // soft_deadline = unix(t0+4:00)
+//      // newCtx.Deadline  = unix(t0+5:39.5)
+//      // soft_deadline = unix(t0+5:00)
 //      // grace_period  = 39.5
 //
 //      go func() {
-//        // cleanup is unblocked at SIGTERM, $soft_deadline or shutdown(),
+//        // cleanup is unblocked at SIGTERM, soft_deadline or shutdown(),
 //        // whichever is first.
 //        <-cleanup
-//        // have grace_period to do something (say, send SIGTERM to a child)
-//        // before newCtx.Done().
+//        // have 39.5s to do something (say, send SIGTERM to a child, or start
+//        // tearing down work in-process) before newCtx.Done().
 //      }()
 //    }
 //
 // NOTE: In the event that `ctx` is canceled, everything immediately moves to
 // the 'Kill' phase without providing any grace period.
-func AdjustDeadline(ctx context.Context, reserve, reserveCleanup time.Duration) (cleanup <-chan DeadlineEvent, newCtx context.Context, shutdown func()) {
-	if reserve < 0 {
-		panic(errors.Reason("reserve(%d) < 0", reserve).Err())
-	}
-	if reserveCleanup < 0 {
-		panic(errors.Reason("reserveCleanup(%d) < 0", reserveCleanup).Err())
+func TrackDeadline(ctx context.Context, reserveGracePeriod time.Duration) (cleanup <-chan DeadlineEvent, newCtx context.Context, shutdown func()) {
+	if reserveGracePeriod < 0 {
+		panic(errors.Reason("reserveGracePeriod(%d) < 0", reserveGracePeriod).Err())
 	}
 
 	d := GetDeadline(ctx)
@@ -179,60 +168,57 @@ func AdjustDeadline(ctx context.Context, reserve, reserveCleanup time.Duration) 
 		d = &Deadline{GracePeriod: DefaultGracePeriod.Seconds()}
 	}
 
-	needSet := false
+	needSet := false // set to true if we need to do a write to LUCI_CONTEXT
 
-	// Adjust grace period.
-	origGracePeriod := d.GracePeriodDuration()
-	adjustedGrace := origGracePeriod - reserveCleanup
-	if adjustedGrace < 0 {
-		panic(errors.Reason(
-			"reserveCleanup(%f) > gracePeriod(%f)", reserveCleanup.Seconds(), d.GracePeriod).Err())
+	// find current soft deadline
+	var ctxSoftDeadline time.Time
+	if ctxDl, ok := ctx.Deadline(); ok {
+		// synthesize the current soft deadline by applying the current grace period
+		// to the context's existing hard deadline.
+		ctxSoftDeadline = ctxDl.Add(-d.GracePeriodDuration())
 	}
-	if reserveCleanup > 0 {
+	lucictxSoftDeadline := d.SoftDeadlineTime()
+	softDeadline := earlier(ctxSoftDeadline, lucictxSoftDeadline)
+
+	// adjust grace period.
+	adjustedGrace := d.GracePeriodDuration()
+	if reserveGracePeriod > 0 {
+		adjustedGrace -= reserveGracePeriod
+		if adjustedGrace < 0 {
+			panic(errors.Reason(
+				"reserveGracePeriod(%f) > gracePeriod(%f)", reserveGracePeriod.Seconds(), d.GracePeriod).Err())
+		}
 		d.GracePeriod = adjustedGrace.Seconds()
 		needSet = true
 	}
 
-	// find adjustedSoftDeadline
-	var ctxSoftDeadline time.Time
-	if d, ok := ctx.Deadline(); ok {
-		ctxSoftDeadline = d.Add(-origGracePeriod)
-	}
-	var lucictxSoftDeadline time.Time
-	if d.SoftDeadline != 0 {
-		lucictxSoftDeadline = d.SoftDeadlineTime()
-	}
-	adjustedSoftDeadline := earlier(ctxSoftDeadline, lucictxSoftDeadline)
-
 	var newCtxCancel func()
+	var enforceSoftDeadline bool
 
-	// Set up hard deadline in context, set Deadline.soft_deadline
-	if !adjustedSoftDeadline.IsZero() {
-		adjustedSoftDeadline = adjustedSoftDeadline.Add(-reserve)
-		d.SetSoftDeadline(adjustedSoftDeadline)
-		needSet = true
-		// we add adjustedGrace back because the ctx deadline is the HARD deadline;
-		// it must occur `adjustedGrace` after the SoftDeadline.
-		//
-		// note that if adjustedSoftDeadline+adjustedGrace is in the past, this
-		// returns newCtx as already Done.
-		newCtx, newCtxCancel = clock.WithDeadline(ctx, adjustedSoftDeadline.Add(adjustedGrace))
-	} else {
+	// set the new hard deadline, if any, on newCtx
+	if softDeadline.IsZero() /* a.k.a. "infinity" */ {
 		// need cancel func here so that newCtx can hit hard closure after
 		// a signal/shutdown, even though it won't have a deadline.
 		newCtx, newCtxCancel = context.WithCancel(ctx)
+	} else {
+		if !softDeadline.Equal(lucictxSoftDeadline) {
+			d.SetSoftDeadline(softDeadline)
+			needSet = true
+			enforceSoftDeadline = true
+		}
+		newCtx, newCtxCancel = clock.WithDeadline(ctx, softDeadline.Add(adjustedGrace))
 	}
 
 	if needSet {
 		newCtx = SetDeadline(newCtx, d)
 	}
 
-	cleanup, shutdown = runDeadlineMonitor(newCtx, newCtxCancel, adjustedSoftDeadline, adjustedGrace)
+	cleanup, shutdown = runDeadlineMonitor(newCtx, newCtxCancel, softDeadline, enforceSoftDeadline, adjustedGrace)
 
 	return
 }
 
-func runDeadlineMonitor(ctx context.Context, cancel func(), adjustedSoftDeadline time.Time, gracePeriod time.Duration) (<-chan DeadlineEvent, func()) {
+func runDeadlineMonitor(ctx context.Context, cancel func(), softDeadline time.Time, enforceSoftDeadline bool, gracePeriod time.Duration) (<-chan DeadlineEvent, func()) {
 	cleanupCh := make(chan DeadlineEvent)
 	// buffer 1 is essential; otherwise signals will be missed if our goroutine
 	// isn't currently blocked on sigCh. With a buffer of 1, sigCh is always ready
@@ -241,8 +227,8 @@ func runDeadlineMonitor(ctx context.Context, cancel func(), adjustedSoftDeadline
 	signalNotify(sigCh, signals.Interrupts()...)
 
 	var timeoutC <-chan clock.TimerResult
-	if !adjustedSoftDeadline.IsZero() {
-		timeoutC = clock.After(ctx, clock.Until(ctx, adjustedSoftDeadline))
+	if enforceSoftDeadline {
+		timeoutC = clock.After(ctx, clock.Until(ctx, softDeadline))
 	}
 
 	go func() {
@@ -257,6 +243,9 @@ func runDeadlineMonitor(ctx context.Context, cancel func(), adjustedSoftDeadline
 			case <-ctx.Done():
 				return ClosureEvent
 			case <-sigCh:
+				if !softDeadline.IsZero() && clock.Now(ctx).After(softDeadline) {
+					return TimeoutEvent
+				}
 				return InterruptEvent
 			}
 		}()

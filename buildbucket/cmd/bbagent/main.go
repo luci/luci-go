@@ -183,8 +183,10 @@ func mainImpl() int {
 			BaseDir:  hostOpts.BaseDir,
 			CacheDir: input.CacheDir,
 		}
-		reserve := calcDeadlineReserve(ctx)
-		deadlineEventCh, dctx, shutdown := lucictx.AdjustDeadline(ctx, reserve, 500*time.Millisecond)
+		logging.Infof(
+			ctx, "Reserving 500ms out of %s of grace_period from LUCI_CONTEXT.",
+			lucictx.GetDeadline(ctx).GracePeriodDuration())
+		deadlineEventCh, dctx, shutdown := lucictx.TrackDeadline(ctx, 500*time.Millisecond)
 		go func() {
 			select {
 			case <-shutdownCh:
@@ -192,11 +194,6 @@ func mainImpl() int {
 			case <-dctx.Done():
 			}
 		}()
-		if newSoftDeadline := lucictx.GetDeadline(dctx).SoftDeadlineTime(); !newSoftDeadline.IsZero() {
-			logging.Infof(dctx,
-				"attempted to reserve %s from soft deadline for bbagent cleanup; new soft deadline: %s",
-				reserve, newSoftDeadline)
-		}
 		subp, err := invoke.Start(dctx, exeArgs, input.Build, invokeOpts, deadlineEventCh)
 		if err != nil {
 			return err
