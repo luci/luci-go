@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ced97dec_b5170985",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-09T00:33:05Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "13ecebb6_f26336ff",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-09T00:33:05Z",
+      "side": 1,
+      "message": "Sadly, protobuf doesn\u0027t support enum map key and I prefer type-safety (that\u0027s why I don\u0027t use map[string]NotifyInfo or map[int32]NotifyInfo instead). Otherwise, would be a lot more easier.",
+      "range": {
+        "startLine": 245,
+        "startChar": 0,
+        "endLine": 252,
+        "endChar": 1
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "058cd33f_0f40cbbd",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 945,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-09T00:33:05Z",
+      "side": 1,
+      "message": "No one is using it so I just change the number to make the notify related field have consecutive number :D",
+      "range": {
+        "startLine": 945,
+        "startChar": 23,
+        "endLine": 945,
+        "endChar": 25
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
