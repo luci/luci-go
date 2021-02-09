@@ -88,8 +88,8 @@ type swarmingService interface {
 	GetTaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
-	GetTaskOutputsFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error)
-	GetTaskOutputsFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
+	GetFilesFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	GetFilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error)
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 }
 
@@ -183,7 +183,7 @@ func (s *swarmingServiceImpl) GetTaskOutput(ctx context.Context, taskID string) 
 	return
 }
 
-func (s *swarmingServiceImpl) GetTaskOutputsFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+func (s *swarmingServiceImpl) GetFilesFromIsolate(ctx context.Context, outdir string, isolateRef *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 	isolatedOpts := []isolatedclient.Option{
 		isolatedclient.WithAuthClient(s.client),
 		isolatedclient.WithNamespace(isolateRef.Namespace),
@@ -213,8 +213,8 @@ func (s *swarmingServiceImpl) GetTaskOutputsFromIsolate(ctx context.Context, out
 	return files, dl.Wait()
 }
 
-// GetTaskOutputsFromCAS downloads outputs from CAS.
-func (s *swarmingServiceImpl) GetTaskOutputsFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+// GetFilesFromCAS downloads outputs from CAS.
+func (s *swarmingServiceImpl) GetFilesFromCAS(ctx context.Context, outdir string, cascli *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
 	d := digest.Digest{
 		Hash: casRef.Digest.Hash,
 		Size: casRef.Digest.SizeBytes,
