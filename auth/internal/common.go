@@ -156,7 +156,7 @@ type CacheKey struct {
 	Key string `json:"key"`
 
 	// Scopes is the list of requested OAuth scopes.
-	Scopes []string `json:"scopes"`
+	Scopes []string `json:"scopes,omitempty"`
 }
 
 var bufPool = sync.Pool{}
