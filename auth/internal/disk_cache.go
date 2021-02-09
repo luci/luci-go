@@ -15,11 +15,14 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -82,21 +85,92 @@ type cacheFile struct {
 	LastUpdate time.Time         `json:"last_update"`
 }
 
+// cacheFileEntry holds one set of cached tokens.
+//
+// Implements custom JSON marshaling logic to round-trip unknown fields. This
+// is useful when new fields are added by newer code, but the token cache is
+// still used by older code. Extra fields are better left untouched by the older
+// code.
 type cacheFileEntry struct {
-	Key        CacheKey     `json:"key"`
-	Token      oauth2.Token `json:"token"`
-	Email      string       `json:"email"`
-	LastUpdate time.Time    `json:"last_update"`
+	key        CacheKey
+	token      oauth2.Token
+	email      string
+	lastUpdate time.Time
+
+	extra map[string]*json.RawMessage
+}
+
+type keyPtr struct {
+	key string
+	ptr interface{}
+}
+
+func (e *cacheFileEntry) structure() []keyPtr {
+	return []keyPtr{
+		{"key", &e.key},
+		{"token", &e.token},
+		{"email", &e.email},
+		{"last_update", &e.lastUpdate},
+	}
+}
+
+func (e *cacheFileEntry) UnmarshalJSON(data []byte) error {
+	*e = cacheFileEntry{extra: make(map[string]*json.RawMessage)}
+	if err := json.Unmarshal(data, &e.extra); err != nil {
+		return err
+	}
+	for _, kv := range e.structure() {
+		if raw := e.extra[kv.key]; raw != nil {
+			delete(e.extra, kv.key)
+			if err := json.Unmarshal([]byte(*raw), kv.ptr); err != nil {
+				return fmt.Errorf("when JSON decoding %q - %s", kv.key, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (e *cacheFileEntry) MarshalJSON() ([]byte, error) {
+	// Note: this way of marshaling preserves the order of keys per structure().
+	// All unrecognized extra keys are placed at the end, sorted.
+
+	fields := e.structure()
+	if len(e.extra) != 0 {
+		l := len(fields)
+		for k, v := range e.extra {
+			fields = append(fields, keyPtr{k, v})
+		}
+		extra := fields[l:]
+		sort.Slice(extra, func(i, j int) bool { return extra[i].key < extra[j].key })
+	}
+
+	out := bytes.Buffer{}
+	out.WriteString("{")
+
+	first := true
+	for _, kv := range fields {
+		if !first {
+			out.WriteString(",")
+		}
+		first = false
+		fmt.Fprintf(&out, "%q:", kv.key)
+		if err := json.NewEncoder(&out).Encode(kv.ptr); err != nil {
+			return nil, fmt.Errorf("when JSON encoding %q - %s", kv.key, err)
+		}
+	}
+
+	out.WriteString("}")
+	return out.Bytes(), nil
 }
 
 func (e *cacheFileEntry) isOld(now time.Time) bool {
 	delay := GCAccessTokenMaxAge
-	if e.Token.RefreshToken != "" {
+	if e.token.RefreshToken != "" {
 		delay = GCRefreshTokenMaxAge
 	}
-	exp := e.Token.Expiry
+	exp := e.token.Expiry
 	if exp.IsZero() {
-		exp = e.LastUpdate
+		exp = e.lastUpdate
 	}
 	return now.Sub(exp.Round(0)) >= delay
 }
@@ -153,7 +227,7 @@ func (c *DiskTokenCache) writeCacheFile(cache *cacheFile, now time.Time) error {
 	cleaned.LastUpdate = now
 	for _, entry := range cache.Cache {
 		if entry.isOld(now) {
-			logging.Debugf(c.Context, "Cleaning up old token cache entry: %s", entry.Key.Key)
+			logging.Debugf(c.Context, "Cleaning up old token cache entry: %s", entry.key.Key)
 		} else {
 			cleaned.Cache = append(cleaned.Cache, entry)
 		}
@@ -255,10 +329,10 @@ func (c *DiskTokenCache) GetToken(key *CacheKey) (*Token, error) {
 		return nil, err
 	}
 	for _, entry := range cache.Cache {
-		if EqualCacheKeys(&entry.Key, key) {
+		if EqualCacheKeys(&entry.key, key) {
 			return &Token{
-				Token: entry.Token,
-				Email: entry.Email,
+				Token: entry.token,
+				Email: entry.email,
 			}, nil
 		}
 	}
@@ -273,18 +347,18 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 	}
 	return c.updateCacheFile(func(cache *cacheFile, now time.Time) bool {
 		for _, entry := range cache.Cache {
-			if EqualCacheKeys(&entry.Key, key) {
-				entry.Token = token
-				entry.Email = tok.Email
-				entry.LastUpdate = now
+			if EqualCacheKeys(&entry.key, key) {
+				entry.token = token
+				entry.email = tok.Email
+				entry.lastUpdate = now
 				return true
 			}
 		}
 		cache.Cache = append(cache.Cache, &cacheFileEntry{
-			Key:        *key,
-			Token:      token,
-			Email:      tok.Email,
-			LastUpdate: now,
+			key:        *key,
+			token:      token,
+			email:      tok.Email,
+			lastUpdate: now,
 		})
 		return true
 	})
@@ -294,7 +368,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 func (c *DiskTokenCache) DeleteToken(key *CacheKey) error {
 	return c.updateCacheFile(func(cache *cacheFile, now time.Time) bool {
 		for i, entry := range cache.Cache {
-			if EqualCacheKeys(&entry.Key, key) {
+			if EqualCacheKeys(&entry.key, key) {
 				cache.Cache = append(cache.Cache[:i], cache.Cache[i+1:]...)
 				return true
 			}
