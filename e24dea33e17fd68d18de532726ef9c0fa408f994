@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66dffeaf_697d4c58",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-09T06:00:34Z",
+      "side": 1,
+      "message": "I think it\u0027s probably clearer to use\nif (build.rootSteps.every((s) \u003d\u003e s.status \u003d\u003d\u003d BuildStatus.Success)) {",
+      "range": {
+        "startLine": 120,
+        "startChar": 10,
+        "endLine": 120,
+        "endChar": 73
+      },
+      "revId": "e24dea33e17fd68d18de532726ef9c0fa408f994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e707c7a7_9ecb12ea",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-09T06:00:34Z",
+      "side": 1,
+      "message": "I don\u0027t think this is needed. build.rootStep can\u0027t be undefined.",
+      "range": {
+        "startLine": 120,
+        "startChar": 26,
+        "endLine": 120,
+        "endChar": 27
+      },
+      "revId": "e24dea33e17fd68d18de532726ef9c0fa408f994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
