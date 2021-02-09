@@ -12,6 +12,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // RepositoryClient is the client API for Repository service.
@@ -21,7 +22,8 @@ type RepositoryClient interface {
 	// Returns metadata associated with the given prefix.
 	//
 	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	// parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
+	// otherwise the call fails with PERMISSION_DENIED error.
 	//
 	// If the caller has OWNER permission in any of parent prefixes, but the
 	// requested prefix has no metadata associated with it, the call fails with
@@ -30,7 +32,8 @@ type RepositoryClient interface {
 	// Returns metadata associated with the given prefix and all parent prefixes.
 	//
 	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	// parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
+	// otherwise the call fails with PERMISSION_DENIED error.
 	//
 	// Note that if the caller has permission to see the metadata for the
 	// requested prefix, they will also see metadata for all parent prefixes,
@@ -60,8 +63,9 @@ type RepositoryClient interface {
 	UpdatePrefixMetadata(ctx context.Context, in *PrefixMetadata, opts ...grpc.CallOption) (*PrefixMetadata, error)
 	// Returns a set of roles the caller has in the given prefix.
 	//
-	// Unlike GetPrefixMetadata call that requires OWNER access (since it returns
-	// a lot of detailed information), GetRolesInPrefix can be called by anyone.
+	// Unlike GetPrefixMetadata call that requires special permissions (since it
+	// returns a lot of detailed information), GetRolesInPrefix can be called by
+	// anyone.
 	//
 	// It understands and expands roles inheritance, e.g. if the caller is an
 	// OWNER, the result will also contain WRITER and READER (as they are implied
@@ -557,7 +561,8 @@ type RepositoryServer interface {
 	// Returns metadata associated with the given prefix.
 	//
 	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	// parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
+	// otherwise the call fails with PERMISSION_DENIED error.
 	//
 	// If the caller has OWNER permission in any of parent prefixes, but the
 	// requested prefix has no metadata associated with it, the call fails with
@@ -566,7 +571,8 @@ type RepositoryServer interface {
 	// Returns metadata associated with the given prefix and all parent prefixes.
 	//
 	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	// parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
+	// otherwise the call fails with PERMISSION_DENIED error.
 	//
 	// Note that if the caller has permission to see the metadata for the
 	// requested prefix, they will also see metadata for all parent prefixes,
@@ -596,8 +602,9 @@ type RepositoryServer interface {
 	UpdatePrefixMetadata(context.Context, *PrefixMetadata) (*PrefixMetadata, error)
 	// Returns a set of roles the caller has in the given prefix.
 	//
-	// Unlike GetPrefixMetadata call that requires OWNER access (since it returns
-	// a lot of detailed information), GetRolesInPrefix can be called by anyone.
+	// Unlike GetPrefixMetadata call that requires special permissions (since it
+	// returns a lot of detailed information), GetRolesInPrefix can be called by
+	// anyone.
 	//
 	// It understands and expands roles inheritance, e.g. if the caller is an
 	// OWNER, the result will also contain WRITER and READER (as they are implied
@@ -955,7 +962,7 @@ type UnsafeRepositoryServer interface {
 }
 
 func RegisterRepositoryServer(s grpc.ServiceRegistrar, srv RepositoryServer) {
-	s.RegisterService(&_Repository_serviceDesc, srv)
+	s.RegisterService(&Repository_ServiceDesc, srv)
 }
 
 func _Repository_GetPrefixMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1372,7 +1379,10 @@ func _Repository_DescribeClient_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Repository_serviceDesc = grpc.ServiceDesc{
+// Repository_ServiceDesc is the grpc.ServiceDesc for Repository service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Repository_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "cipd.Repository",
 	HandlerType: (*RepositoryServer)(nil),
 	Methods: []grpc.MethodDesc{

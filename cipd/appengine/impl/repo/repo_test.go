@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -57,7 +58,9 @@ func TestMetadataFetching(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		_, _, as := testutil.TestingContext()
+		_, _, as := testutil.TestingContext(
+			authtest.MockMembership("user:prefixes-viewer@example.com", PrefixesViewers),
+		)
 
 		meta := testutil.MetadataStore{}
 
@@ -104,8 +107,20 @@ func TestMetadataFetching(t *testing.T) {
 			So(resp, ShouldResembleProto, leafMeta)
 		})
 
+		Convey("GetPrefixMetadata happy path via global group", func() {
+			resp, err := callGet("a/b/c/d", "user:prefixes-viewer@example.com")
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, leafMeta)
+		})
+
 		Convey("GetInheritedPrefixMetadata happy path", func() {
 			resp, err := callGetInherited("a/b/c/d", "user:top-owner@example.com")
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, topMeta, leafMeta})
+		})
+
+		Convey("GetInheritedPrefixMetadata happy path via global group", func() {
+			resp, err := callGetInherited("a/b/c/d", "user:prefixes-viewer@example.com")
 			So(err, ShouldBeNil)
 			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, topMeta, leafMeta})
 		})
