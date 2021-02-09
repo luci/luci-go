@@ -16,9 +16,11 @@ package lib
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -189,6 +191,7 @@ type triggerRun struct {
 	optionalDimension         optionalDimension
 	serviceAccount            string
 	relativeCwd               string
+	secretBytesPath           string
 
 	// Task request.
 	taskName       string
@@ -233,6 +236,7 @@ func (c *triggerRun) Init(authFlags AuthFlags) {
 	c.Flags.StringVar(&c.relativeCwd, "relative-cwd", "", "Use this flag instead of the isolated 'relative_cwd'.")
 	c.Flags.StringVar(&c.serviceAccount, "service-account", "",
 		`Email of a service account to run the task as, or literal "bot" string to indicate that the task should use the same account the bot itself is using to authenticate to Swarming. Don't use task service accounts if not given (default).`)
+	c.Flags.StringVar(&c.secretBytesPath, "secret-bytes-path", "", "Specify the secret bytes file path.")
 
 	// Task request.
 	c.Flags.StringVar(&c.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
@@ -381,6 +385,15 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 		}
 	}
 
+	var secretBytesEnc string
+	if c.secretBytesPath != "" {
+		secretBytes, err := ioutil.ReadFile(c.secretBytesPath)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to read secret bytes from %s", c.secretBytesPath).Err()
+		}
+		secretBytesEnc = base64.StdEncoding.EncodeToString(secretBytes)
+	}
+
 	var CASRef *swarming.SwarmingRpcsCASReference
 	if c.digest != "" {
 		d, err := digest.NewFromString(c.digest)
@@ -430,6 +443,7 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 			LimitProcesses:            c.limitProcesses,
 			LimitTotalCommittedMemory: c.limitTotalCommittedMemory,
 		},
+		SecretBytes: secretBytesEnc,
 	}
 
 	if len(c.cipdPackage) > 0 {

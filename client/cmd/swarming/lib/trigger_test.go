@@ -15,7 +15,10 @@
 package lib
 
 import (
+	"encoding/base64"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -371,5 +374,26 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 				},
 			})
 		So(slice.ExpirationSecs, ShouldResemble, totalExp-optDimExp)
+	})
+}
+
+func TestProcessTriggerOptions_SecretBytesPath(t *testing.T) {
+	Convey(`Read secret bytes from the file, and set the base64 encoded string.`, t, func() {
+		// prepare secret bytes file.
+		dir := t.TempDir()
+		secretBytes := []byte("this is secret!")
+		secretBytesPath := filepath.Join(dir, "secret_bytes")
+		err := ioutil.WriteFile(secretBytesPath, secretBytes, 0600)
+		So(err, ShouldBeEmpty)
+
+		c := triggerRun{}
+		c.Init(&testAuthFlags{})
+		c.secretBytesPath = secretBytesPath
+		result, err := c.processTriggerOptions(nil, nil)
+		So(err, ShouldBeNil)
+		So(result.Properties, ShouldBeNil)
+		So(result.TaskSlices, ShouldHaveLength, 1)
+		slice := result.TaskSlices[0]
+		So(slice.Properties.SecretBytes, ShouldEqual, base64.StdEncoding.EncodeToString(secretBytes))
 	})
 }
