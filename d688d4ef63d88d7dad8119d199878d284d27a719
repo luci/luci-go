@@ -16,6 +16,24 @@
       "message": "check error?",
       "revId": "d688d4ef63d88d7dad8119d199878d284d27a719",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ecf3bb6_d10f6f59",
+        "filename": "client/cmd/swarming/lib/trigger_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 386,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-02-09T00:14:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "02eedd07_f77483eb",
+      "revId": "d688d4ef63d88d7dad8119d199878d284d27a719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
