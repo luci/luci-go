@@ -16,6 +16,46 @@
       "message": "PTAL. I\u0027m not 100% sure of this change. It looks like a beginning of a downhill roll.\n\nIt is meant to fix a problem where Google folks are confused who can see what because they don\u0027t see prefix ACLs.",
       "revId": "b5b0bbd0e213f89a6914087dec12040c0b145950",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e39c172_6f7b64d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-09T20:19:04Z",
+      "side": 1,
+      "message": "lgtm; I assume this is fallout from the \u0027experimental\u0027 thing I asked about this morning?\n\nAgree that ideally this would be a new permission, but I also think this will be just fine for now.",
+      "revId": "b5b0bbd0e213f89a6914087dec12040c0b145950",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07733781_f3b7354b",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-09T20:19:04Z",
+      "side": 1,
+      "message": "I don\u0027t see a code change for this; was this doc just out of date?",
+      "range": {
+        "startLine": 122,
+        "startChar": 5,
+        "endLine": 122,
+        "endChar": 11
+      },
+      "revId": "b5b0bbd0e213f89a6914087dec12040c0b145950",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
