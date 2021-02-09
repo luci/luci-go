@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60501de8_2a4c9421",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-09T19:13:03Z",
+      "side": 1,
+      "message": "Are all of the int64s in this struct CLIDs? Optionally perhaps there could be a type alias aliasing a CLID type to int64.\n\nAlso, I\u0027m sure it\u0027s documented elsewhere, but just for my own refreshing, how are CLIDs created? Is it based on some kind of hash that includes host and CL number or something?",
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "43a3e1eb_a0122fd7",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-09T19:13:03Z",
+      "side": 1,
+      "message": "Possible clarification question: Will this start a run with all CLs in the component or sometimes only some?",
+      "range": {
+        "startLine": 65,
+        "startChar": 16,
+        "endLine": 65,
+        "endChar": 33
+      },
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7da16014_f1cdbfae",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-09T19:13:03Z",
+      "side": 1,
+      "message": "Nit, is Component generally capitalized? If so also capitalize here.",
+      "range": {
+        "startLine": 53,
+        "startChar": 41,
+        "endLine": 53,
+        "endChar": 50
+      },
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f2693c7_3de4b659",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagedeps_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-09T19:13:03Z",
+      "side": 1,
+      "message": "Nit about convey strings; optionally you could be a little more verbose, e.g. \"with no deps\", \"with only submitted deps\"",
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
