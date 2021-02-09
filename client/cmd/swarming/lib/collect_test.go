@@ -147,7 +147,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
-			getTaskOutputsFromIsolate: func(c context.Context, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+			getFilesFromIsolate: func(c context.Context, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 				writtenTo = output
 				writtenIsolated = ref.Isolated
 				return []string{"hello"}, nil
@@ -184,7 +184,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 			getTaskOutput: func(c context.Context, _ string) (*swarming.SwarmingRpcsTaskOutput, error) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
-			getTaskOutputsFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
+			getFilesFromCAS: func(c context.Context, outdir string, _ *rbeclient.Client, casRef *swarming.SwarmingRpcsCASReference) ([]string, error) {
 				writtenTo = outdir
 				writtenInstance = casRef.CasInstance
 				writtenDigest = fmt.Sprintf("%s/%d", casRef.Digest.Hash, casRef.Digest.SizeBytes)
