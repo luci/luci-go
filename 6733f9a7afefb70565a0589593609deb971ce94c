@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2cd94059_03d96075",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-09T00:21:50Z",
+      "side": 1,
+      "message": "Hacked the py version to let it timeout for certain Batch req and tested in Dev. It works as expected.",
+      "parentUuid": "f1487a0a_46bf55f1",
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c548a4da_d63e46eb",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9121e6e2_51d96f30",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-09T00:21:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c548a4da_d63e46eb",
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ac149943_a96f750a",
@@ -48,6 +84,24 @@
       "writtenOn": "2021-02-08T23:13:29Z",
       "side": 1,
       "message": "add bug link here.",
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82857cea_8f13a74c",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-09T00:21:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac149943_a96f750a",
       "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -88,6 +142,30 @@
       "writtenOn": "2021-02-08T23:13:29Z",
       "side": 1,
       "message": "isn\u0027t it supposed to be \u0026testFakeTransportError?\nTBH, i have no idea how it works right now.",
+      "range": {
+        "startLine": 369,
+        "startChar": 38,
+        "endLine": 369,
+        "endChar": 60
+      },
+      "revId": "6733f9a7afefb70565a0589593609deb971ce94c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa1b9e2d_571b7c6e",
+        "filename": "buildbucket/appengine/rpc/batch_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-09T00:21:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9dfc70bd_dccd650a",
       "range": {
         "startLine": 369,
         "startChar": 38,
