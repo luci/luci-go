@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "42b6009eb179f497c4d328e99fc6308011051cf7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9f024e8_bcf27534",
+        "filename": "auth/internal/disk_cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-09T21:15:59Z",
+      "side": 1,
+      "message": "why not make a map[string]interface{} and then marshal that? It could have a mix of *RawMessage and other things, and I think json will do the right thing.",
+      "range": {
+        "startLine": 148,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 4
+      },
+      "revId": "42b6009eb179f497c4d328e99fc6308011051cf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
