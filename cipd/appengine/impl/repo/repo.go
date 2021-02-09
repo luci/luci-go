@@ -55,6 +55,10 @@ import (
 	"go.chromium.org/luci/cipd/common"
 )
 
+// PrefixesViewers is a group membership in which grants read access to all
+// prefix metadata regardless of individual prefix ACLs.
+const PrefixesViewers = "cipd-prefixes-viewers"
+
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
@@ -169,10 +173,23 @@ func (impl *repoImpl) GetInheritedPrefixMetadata(c context.Context, r *api.Prefi
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
 	}
 
-	metas, err := impl.checkRole(c, r.Prefix, api.Role_OWNER)
+	var metas []*api.PrefixMetadata
+	var prefixViewer bool
+	switch prefixViewer, err = auth.IsMember(c, PrefixesViewers); {
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to check group membership")
+	case prefixViewer:
+		// Have access to the metadata via the global group, just fetch it.
+		metas, err = impl.meta.GetMetadata(c, r.Prefix)
+	default:
+		// Check if have OWNER access in the prefix, this also fetches metadata as
+		// a side effect (it is needed to check ACLs too).
+		metas, err = impl.checkRole(c, r.Prefix, api.Role_OWNER)
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	return &api.InheritedPrefixMetadata{PerPrefixMetadata: metas}, nil
 }
 

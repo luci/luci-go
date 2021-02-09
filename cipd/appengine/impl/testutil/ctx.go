@@ -31,13 +31,14 @@ import (
 var TestTime = testclock.TestRecentTimeUTC.Round(time.Millisecond)
 var TestUser = identity.Identity("user:u@example.com")
 
-func TestingContext() (context.Context, testclock.TestClock, func(string) context.Context) {
+func TestingContext(mocks ...authtest.MockedDatum) (context.Context, testclock.TestClock, func(string) context.Context) {
 	ctx, _ := testclock.UseTime(gaetesting.TestingContext(), TestTime)
 	datastore.GetTestable(ctx).AutoIndex(true)
 	taskqueue.GetTestable(ctx).CreatePullQueue("bqlog-events")
 	as := func(email string) context.Context {
 		return auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity("user:" + email),
+			FakeDB:   authtest.NewFakeDB(mocks...),
 		})
 	}
 	return as(TestUser.Email()), clock.Get(ctx).(testclock.TestClock), as
