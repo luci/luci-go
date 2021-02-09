@@ -133,7 +133,7 @@ func ReadWriteTransaction(ctx context.Context, f func(ctx context.Context) error
 	return cts, err
 }
 
-// RO returns the current read-only transaction in the context of nil if it's
+// RO returns the current read-only transaction in the context or nil if it's
 // not a read-only transactional context.
 func RO(ctx context.Context) *spanner.ReadOnlyTransaction {
 	if s := getTxnState(ctx); s != nil {
