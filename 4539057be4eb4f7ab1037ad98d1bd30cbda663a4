@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b48aa8ed_dd462d6f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-10T05:55:22Z",
+      "side": 1,
+      "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/10655/overview\n\nActually it has nothing there, but it will send a page view to GA (luci-milo-dev) https://screenshot.googleplex.com/BaJJTRWnJU6CtgS\n\n",
+      "revId": "4539057be4eb4f7ab1037ad98d1bd30cbda663a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
