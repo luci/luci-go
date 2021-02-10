@@ -158,10 +158,14 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 		return err
 	}
 
+	contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
+	if contentTypeRegexp == "" {
+		contentTypeRegexp = "text/.*"
+	}
 	q := artifacts.Query{
 		InvocationIDs:       invIDs,
 		TestResultPredicate: bqExport.GetTextArtifacts().GetPredicate().GetTestResultPredicate(),
-		ContentTypeRegexp:   bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp(),
+		ContentTypeRegexp:   contentTypeRegexp,
 		WithRBECASHash:      true,
 	}
 

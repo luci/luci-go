@@ -154,9 +154,7 @@ func TestExportToBigQuery(t *testing.T) {
 			Table:   "table",
 			ResultType: &pb.BigQueryExport_TextArtifacts_{
 				TextArtifacts: &pb.BigQueryExport_TextArtifacts{
-					Predicate: &pb.ArtifactPredicate{
-						ContentTypeRegexp: "text/plain.*",
-					},
+					Predicate: &pb.ArtifactPredicate{},
 				},
 			},
 		}
