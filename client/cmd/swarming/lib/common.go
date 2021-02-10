@@ -219,7 +219,7 @@ func (s *swarmingServiceImpl) GetFilesFromCAS(ctx context.Context, outdir string
 		Hash: casRef.Digest.Hash,
 		Size: casRef.Digest.SizeBytes,
 	}
-	outputs, err := cascli.DownloadDirectory(ctx, d, outdir, filemetadata.NewNoopCache())
+	outputs, _, err := cascli.DownloadDirectory(ctx, d, outdir, filemetadata.NewNoopCache())
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to download directory").Err()
 	}
