@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b9970b6_c6042987",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:30:59Z",
+      "side": 1,
+      "message": "lgtm % suggestion",
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39d5c901_714324a1",
+        "filename": "auth/internal/disk_cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:30:59Z",
+      "side": 1,
+      "message": "nit: it\u0027s only a matter of time until `old` becomes offensive, so maybe absPathLegacy()?",
+      "range": {
+        "startLine": 176,
+        "startChar": 25,
+        "endLine": 176,
+        "endChar": 35
+      },
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b33218a1_7fd8784d",
+        "filename": "auth/internal/disk_cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:30:59Z",
+      "side": 1,
+      "message": "LOL 😊",
+      "range": {
+        "startLine": 332,
+        "startChar": 1,
+        "endLine": 332,
+        "endChar": 71
+      },
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1de62495_2899a8bb",
+        "filename": "auth/internal/disk_cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:30:59Z",
+      "side": 1,
+      "message": "seriously though, the legacy file and old entires would be less confusing.",
+      "range": {
+        "startLine": 374,
+        "startChar": 32,
+        "endLine": 374,
+        "endChar": 35
+      },
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
