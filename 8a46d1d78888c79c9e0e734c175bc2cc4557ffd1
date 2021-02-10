@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ccffb0c_fbbcc3ae",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "834c96a1_a1d7f9fe",
+      "range": {
+        "startLine": 15,
+        "startChar": 67,
+        "endLine": 15,
+        "endChar": 70
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "26a2947b_49ad547c",
@@ -71,6 +95,24 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "nit-nit: you can make line slightly less longer by putting each arg on new line.",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84a17228_03cc535e",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Yup.",
+      "parentUuid": "26a2947b_49ad547c",
       "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -121,6 +163,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2611e2ea_142ea18b",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df5513f8_1b49029e",
+      "range": {
+        "startLine": 74,
+        "startChar": 37,
+        "endLine": 74,
+        "endChar": 38
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9b34999_7aa776ec",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c036bd4_0544c57e",
+      "range": {
+        "startLine": 74,
+        "startChar": 48,
+        "endLine": 74,
+        "endChar": 50
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e557a0ff_ae7724a1",
@@ -134,6 +224,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "join condition",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 22
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2db37395_efc1463f",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e557a0ff_ae7724a1",
       "range": {
         "startLine": 82,
         "startChar": 0,
@@ -161,6 +275,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3c1ec3d_8b3eab4f",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "ah right!",
+      "parentUuid": "4cefe8a0_0496a8e2",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2db6939b_bb16669b",
@@ -174,6 +306,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "(cont.) unnecessary if `n \u003d gerritpb.Notify_NOTIFY_NONE` is at the top.",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 33
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7e5f8e6_afbc9130",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2db6939b_bb16669b",
       "range": {
         "startLine": 107,
         "startChar": 0,
@@ -207,6 +363,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fea5824_91a6dd3c",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4bca2b67_3134449f",
+      "range": {
+        "startLine": 113,
+        "startChar": 52,
+        "endLine": 113,
+        "endChar": 53
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "331c483b_1a6a24ee",
@@ -220,6 +400,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "presumably with snapshot set?",
+      "range": {
+        "startLine": 115,
+        "startChar": 23,
+        "endLine": 115,
+        "endChar": 24
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb19ca5e_5234a828",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "331c483b_1a6a24ee",
       "range": {
         "startLine": 115,
         "startChar": 23,
@@ -253,6 +457,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f44edb9_4e886807",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54da8e1c_7e533b46",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 68
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c234d1fe_b753a06d",
@@ -276,6 +504,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef8d3a25_1d89d45b",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c234d1fe_b753a06d",
+      "range": {
+        "startLine": 119,
+        "startChar": 37,
+        "endLine": 119,
+        "endChar": 39
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "660b3504_03853228",
@@ -289,6 +541,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "CQ",
+      "range": {
+        "startLine": 120,
+        "startChar": 4,
+        "endLine": 120,
+        "endChar": 6
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "831200c7_3ea6466f",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "660b3504_03853228",
       "range": {
         "startLine": 120,
         "startChar": 4,
@@ -345,6 +621,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ce3dbc5_b6f6d80c",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f14c048_d62e495f",
+      "range": {
+        "startLine": 130,
+        "startChar": 44,
+        "endLine": 130,
+        "endChar": 45
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9b5153b0_dd5f685e",
@@ -358,6 +658,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "uses",
+      "range": {
+        "startLine": 132,
+        "startChar": 49,
+        "endLine": 132,
+        "endChar": 52
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "95ccc639_76a6e59f",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b5153b0_dd5f685e",
       "range": {
         "startLine": 132,
         "startChar": 49,
@@ -391,6 +715,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "68ebe22e_74f7df18",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Yeah, in CQ world, I feel like it\u0027s quite useful to easily find which CLs are included in the Attempt/Run.  Now that in cq, that should be much easier with diagnostic api.",
+      "parentUuid": "7e70e243_7efef5e1",
+      "range": {
+        "startLine": 139,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 17
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "720dec9b_cd517f1d",
@@ -404,6 +752,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "CQ",
+      "range": {
+        "startLine": 142,
+        "startChar": 31,
+        "endLine": 142,
+        "endChar": 33
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "88b13b6d_f5b9686a",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "720dec9b_cd517f1d",
       "range": {
         "startLine": 142,
         "startChar": 31,
@@ -437,6 +809,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "18eb756a_12538a30",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "\u003e However, I lean on requiring LUCI project explicitly passed as top level input for clarity at the call site, and then here panic if LUCI project is different. WDYT?\n\nsgtm",
+      "parentUuid": "91c750f1_3fce59e8",
+      "range": {
+        "startLine": 176,
+        "startChar": 15,
+        "endLine": 176,
+        "endChar": 47
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dcaaf7b1_31e33126",
@@ -450,6 +846,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "how about leaseCtx?\nor better yet, stick all code using cctx into separate func, say cancelWhileLeased",
+      "range": {
+        "startLine": 185,
+        "startChar": 1,
+        "endLine": 185,
+        "endChar": 5
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a2a0cb5_add1c661",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done both!",
+      "parentUuid": "dcaaf7b1_31e33126",
       "range": {
         "startLine": 185,
         "startChar": 1,
@@ -477,6 +897,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "92336be3_497273ad",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Good point!.",
+      "parentUuid": "eee8abbe_30807e40",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "768a9bc1_ae94299e",
@@ -490,6 +928,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "this may be nil",
+      "range": {
+        "startLine": 199,
+        "startChar": 18,
+        "endLine": 199,
+        "endChar": 32
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "17ffb522_c86acd12",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "ah true! but this line won\u0027t error because I think nil will be handled. However, I\u0027ve added early return in the next line if approvalInfos are empty.",
+      "parentUuid": "768a9bc1_ae94299e",
       "range": {
         "startLine": 199,
         "startChar": 18,
@@ -523,6 +985,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "24bca578_b0c40a63",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "oh yes!",
+      "parentUuid": "beb6f1b9_6c37ecac",
+      "range": {
+        "startLine": 209,
+        "startChar": 1,
+        "endLine": 210,
+        "endChar": 27
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2111b53a_8bf221b3",
@@ -536,6 +1022,24 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "in CQD case, this was the best we could do.\nin CV case, we could record this fact in CL and save it to Datastore in order to avoid working on the same trigger again. I filed https://crbug.com/1175086 \n\nCan you add a TODO(crbug1175086) here?",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ad48807_1f4003ac",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Makes sense, thanks for filing the bug.",
+      "parentUuid": "2111b53a_8bf221b3",
       "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -563,6 +1067,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f84317b_1f32d2bf",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2d39840_b8a60a30",
+      "range": {
+        "startLine": 234,
+        "startChar": 103,
+        "endLine": 234,
+        "endChar": 150
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "806e40b6_341e2b6d",
@@ -580,6 +1108,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "87d75e4e_abeaa185",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "806e40b6_341e2b6d",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "97a7bd0e_8080227d",
@@ -593,6 +1139,24 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "is this annotation necessary? IIRC, lease always returns annotated errors and sets transient code correctly.",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "83324e8a_4e97a244",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Yep! true.",
+      "parentUuid": "97a7bd0e_8080227d",
       "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -637,6 +1201,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb2a5119_e04a8345",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8fd23c5c_00206e70",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "806d4129_e6e18bec",
@@ -650,6 +1232,24 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "CURRENT_REVISION, DETAILED_LABELS, ACCOUNT_INFO.",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58dfb9a7_717a65d2",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "ah forget to address this todo.",
+      "parentUuid": "806d4129_e6e18bec",
       "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -671,6 +1271,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5447ece8_b99eb3d3",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "66ffef8e_1dffa559",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "15f89515_7a630d30",
@@ -684,6 +1302,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "suppose err\u003d\u003dnil \u0026\u0026 !triggerFound.\nThen shouldn\u0027t we still post a message (if any)?\n\nAFAIU, right now this will return nil as iff everything went well.",
+      "range": {
+        "startLine": 309,
+        "startChar": 37,
+        "endLine": 309,
+        "endChar": 50
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eaf20268_46c9d5d5",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "\u003e AFAIU, right now this will return nil as iff everything went well.\n\nCorrect. I think the reason I implement this way is that\n  1. the intention of calling Cancel() has been fulfilled, even though not by this method.\n  2. IIUC, the idea of posting message is to communicate the error that prevent CV from removing votes and also appending bot data. However, in this case, since the trigger vote has already gone, CV is essentially doing nothing wrong and CV doesn\u0027t need to rely on bot data to prevent creation of new run.",
+      "parentUuid": "15f89515_7a630d30",
       "range": {
         "startLine": 309,
         "startChar": 37,
@@ -717,6 +1359,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "939b8da9_9d0f3a53",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Ooops",
+      "parentUuid": "7decf320_e2dba963",
+      "range": {
+        "startLine": 315,
+        "startChar": 17,
+        "endLine": 315,
+        "endChar": 28
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c13e2650_f1e6c504",
@@ -730,6 +1396,24 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "this also deserves TODO(crbug/1175086) as PermDenied and NotFound should be treated as permanent failure to cancel.",
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "16ae1e07_4d034d68",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c13e2650_f1e6c504",
       "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -757,6 +1441,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8717ac80_a47a1a3b",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "It is actually handled by Append function already.\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/gerrit/botdata/bot_data.go;l\u003d127-130;drc\u003d43df690a12cae932d9fd460ab888a9d9d1f2f5a6",
+      "parentUuid": "6266e6f4_10d67cf7",
+      "range": {
+        "startLine": 355,
+        "startChar": 23,
+        "endLine": 355,
+        "endChar": 29
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cd5a8e92_1c403f14",
@@ -770,6 +1478,30 @@
       "writtenOn": "2021-02-05T15:30:30Z",
       "side": 1,
       "message": "let\u0027s  re-use the original GetLatest result (and you need MESSAGES opt there, too)\nSince we are holding the lease, it\u0027s highly unlike someone else will post the same thing, and we can\u0027t really guarantee at most 1 posting anyway.",
+      "range": {
+        "startLine": 359,
+        "startChar": 1,
+        "endLine": 362,
+        "endChar": 2
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "de411eb6_895cdac2",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 362,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd5a8e92_1c403f14",
       "range": {
         "startLine": 359,
         "startChar": 1,
@@ -857,6 +1589,30 @@
       "side": 1,
       "message": "update: so I went to see if utf8 library offers anything good and found https://golang.org/pkg/unicode/utf8/#RuneStart\n\nSo, iff abcd is valid **utf8** rune, then each of {bcd} always have the top two bits set to 10. So, your code is correct, 👍\n\nCan you add a comment for future readers?",
       "parentUuid": "27773b96_e8c15ff8",
+      "range": {
+        "startLine": 38,
+        "startChar": 16,
+        "endLine": 38,
+        "endChar": 47
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e050d329_49508e24",
+        "filename": "cv/internal/gerrit/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:50:39Z",
+      "side": 1,
+      "message": "Thanks for help verifying the correctness. I know this characteristic before, but I didn\u0027t think too deep while implementing this. I\u0027ve moved it to a new CL: https://crrev.com/c/2686674",
+      "parentUuid": "f5ceb3b8_29a0f952",
       "range": {
         "startLine": 38,
         "startChar": 16,
