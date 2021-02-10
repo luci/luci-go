@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f90f32a_ba8c9bd5",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-10T19:47:56Z",
+      "side": 1,
+      "message": "What does li contain/ (What is the type of `a`?)",
+      "revId": "29bd40294042f64dd46042b686d7686cde7acd55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
