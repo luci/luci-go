@@ -448,11 +448,16 @@ func enumToString(v int32, m map[int32]string) string {
 }
 
 type reviewInput struct {
-	Message    string           `json:"message,omitempty"`
-	Labels     map[string]int32 `json:"labels,omitempty"`
-	Tag        string           `json:"tag,omitempty"`
-	Notify     string           `json:"notify,omitempty"`
-	OnBehalfOf int64            `json:"on_behalf_of,omitempty"`
+	Message       string                 `json:"message,omitempty"`
+	Labels        map[string]int32       `json:"labels,omitempty"`
+	Tag           string                 `json:"tag,omitempty"`
+	Notify        string                 `json:"notify,omitempty"`
+	NotifyDetails map[string]*notifyInfo `json:"notify_details,omitempty"`
+	OnBehalfOf    int64                  `json:"on_behalf_of,omitempty"`
+}
+
+type notifyInfo struct {
+	Accounts []int64 `json:"accounts,omitempty"`
 }
 
 type attentionSetRequest struct {
