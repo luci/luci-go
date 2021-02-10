@@ -84,7 +84,7 @@ func returnBlob(ctx context.Context, w http.ResponseWriter, cl *client.Client, b
 
 // readBlob reads the blob from CAS.
 func readBlob(ctx context.Context, cl *client.Client, bd *digest.Digest) ([]byte, error) {
-	b, err := cl.ReadBlob(ctx, *bd)
+	b, _, err := cl.ReadBlob(ctx, *bd)
 	if err != nil {
 		// convert gRPC code to LUCI errors tag.
 		t := grpcutil.Tag.With(status.Code(err))
