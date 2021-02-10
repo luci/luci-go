@@ -70,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c237088_a7baf716",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-10T01:51:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35c79ae0_07f23e14",
+      "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3fe27ecb_3cbcf2a7",
@@ -89,6 +107,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ffddb871_7a0e616e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-10T01:51:46Z",
+      "side": 1,
+      "message": "Done.\n\nI\u0027m still on the fence though, since the only usage for this is when exporting text artifacts to bq, so it seems fine for me to enforce that.",
+      "parentUuid": "3fe27ecb_3cbcf2a7",
+      "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e5f5afc1_c1550935",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 1
@@ -100,6 +136,24 @@
       "writtenOn": "2021-02-10T01:02:09Z",
       "side": 1,
       "message": "currently we initialize ret.follow_edges even if both included_invocations and test_results are not passed.\ni think we should not assign anything to ret.follow_edges if they were\u0027not passed.\nwhich makes me think that defaults for these two params should be None, not False (to be able to distinguish between intentional False and not-passing)",
+      "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbee20a8_1b6f97b5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-10T01:51:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5f5afc1_c1550935",
       "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
