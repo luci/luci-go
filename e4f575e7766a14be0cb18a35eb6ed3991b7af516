@@ -125,6 +125,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "108a4f5a_2c8ab883",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-10T04:11:32Z",
+      "side": 1,
+      "message": "the server already has the right defaults:\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/v1/invocation.proto;l\u003d168?q\u003dtextartifact%20f:invo\n\ni feel like doing this function text-specific is repeating what we already did on the server",
+      "parentUuid": "ffddb871_7a0e616e",
+      "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e5f5afc1_c1550935",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 1
