@@ -176,7 +176,7 @@ func downloadFromCas(ctx context.Context, casRef *apipb.CASReference, casClient 
 		Size: casRef.Digest.SizeBytes,
 	}
 	logging.Infof(ctx, "downloading from RBE-CAS...")
-	_, err := casClient.DownloadDirectory(ctx, d, tdir, filemetadata.NewNoopCache())
+	_, _, err := casClient.DownloadDirectory(ctx, d, tdir, filemetadata.NewNoopCache())
 	if err != nil {
 		return errors.Annotate(err, "failed to download directory").Err()
 	}
