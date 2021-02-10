@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "114b9957_bd22d02a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-02-10T21:57:49Z",
+      "side": 1,
+      "message": "This is super exciting, thanks!\n\nFound a minor nit.",
+      "revId": "6ddd61b1521c160dcdbbbfaf38f7909a55bd5138",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d325610b_f53e1b01",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-02-10T21:57:49Z",
+      "side": 1,
+      "message": "This parameter is not used?",
+      "range": {
+        "startLine": 61,
+        "startChar": 32,
+        "endLine": 61,
+        "endChar": 48
+      },
+      "revId": "6ddd61b1521c160dcdbbbfaf38f7909a55bd5138",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
