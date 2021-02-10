@@ -51,7 +51,7 @@ func TestDiskTokenCache(t *testing.T) {
 	})
 
 	Convey("Retains unknown cacheFileEntry fields", t, func() {
-		cacheFile := filepath.Join(tmp, CacheFilename)
+		cacheFile := filepath.Join(tmp, "tokens.json")
 		testData := `
 		{
 			"cache": [
@@ -110,6 +110,167 @@ func TestDiskTokenCache(t *testing.T) {
           "def": "zzz"
         }
       }
+    }
+  ],
+  "last_update": "2016-02-03T04:05:06.000000007Z"
+}`)
+	})
+
+	Convey("Merges creds.json and tokens.json", t, func() {
+		oldCacheFile := filepath.Join(tmp, "creds.json")
+		oldCacheFileData := `
+		{
+			"cache": [
+				{
+					"key": {"key": "a"},
+					"token": {
+						"access_token": "abc",
+						"expiry": "2016-02-03T07:00:00Z"
+					},
+					"email": "a@example.com",
+					"last_update": "2016-02-03T05:00:00Z"
+				},
+				{
+					"key": {"key": "b"},
+					"token": {
+						"access_token": "def",
+						"expiry": "2016-02-03T07:00:00Z"
+					},
+					"email": "a@example.com",
+					"last_update": "2016-02-03T05:00:00Z"
+				}
+			],
+			"last_update": "2016-02-03T05:00:00Z"
+		}
+		`
+
+		newCacheFile := filepath.Join(tmp, "tokens.json")
+		newCacheFileData := `
+		{
+			"cache": [
+				{
+					"key": {"key": "a"},
+					"token": {
+						"access_token": "better-abc",
+						"expiry": "2016-02-03T07:00:00Z"
+					},
+					"email": "a@example.com",
+					"last_update": "2016-02-03T06:00:00Z",
+					"extra": "zzz"
+				},
+				{
+					"key": {"key": "c"},
+					"token": {
+						"access_token": "zzz",
+						"expiry": "2016-02-03T07:00:00Z"
+					},
+					"email": "a@example.com",
+					"last_update": "2016-02-03T06:00:00Z"
+				}
+			],
+			"last_update": "2016-02-03T06:00:00Z"
+		}
+		`
+
+		So(ioutil.WriteFile(oldCacheFile, []byte(oldCacheFileData), 0600), ShouldBeNil)
+		So(ioutil.WriteFile(newCacheFile, []byte(newCacheFileData), 0600), ShouldBeNil)
+
+		cache := &DiskTokenCache{
+			Context:    ctx,
+			SecretsDir: tmp,
+		}
+
+		tok, err := cache.GetToken(&CacheKey{Key: "a"})
+		So(err, ShouldBeNil)
+		So(tok.Token.AccessToken, ShouldEqual, "better-abc")
+		So(cache.PutToken(&CacheKey{Key: "a"}, &Token{
+			Token: oauth2.Token{
+				AccessToken: "xyz",
+				Expiry:      clock.Now(ctx).Add(time.Hour).UTC(),
+			},
+			Email: "a@example.com",
+		}), ShouldBeNil)
+
+		updatedOld, err := ioutil.ReadFile(oldCacheFile)
+		So(err, ShouldBeNil)
+		So(string(updatedOld), ShouldEqual, `{
+  "cache": [
+    {
+      "key": {
+        "key": "a"
+      },
+      "token": {
+        "access_token": "xyz",
+        "expiry": "2016-02-03T05:05:06.000000007Z"
+      },
+      "email": "a@example.com",
+      "last_update": "2016-02-03T04:05:06.000000007Z",
+      "extra": "zzz"
+    },
+    {
+      "key": {
+        "key": "c"
+      },
+      "token": {
+        "access_token": "zzz",
+        "expiry": "2016-02-03T07:00:00Z"
+      },
+      "email": "a@example.com",
+      "last_update": "2016-02-03T06:00:00Z"
+    },
+    {
+      "key": {
+        "key": "b"
+      },
+      "token": {
+        "access_token": "def",
+        "expiry": "2016-02-03T07:00:00Z"
+      },
+      "email": "a@example.com",
+      "last_update": "2016-02-03T05:00:00Z"
+    }
+  ],
+  "last_update": "2016-02-03T05:00:00Z"
+}`)
+
+		// tokens.json is almost identical, except last_update is newer.
+		updatedNew, err := ioutil.ReadFile(newCacheFile)
+		So(err, ShouldBeNil)
+		So(string(updatedNew), ShouldEqual, `{
+  "cache": [
+    {
+      "key": {
+        "key": "a"
+      },
+      "token": {
+        "access_token": "xyz",
+        "expiry": "2016-02-03T05:05:06.000000007Z"
+      },
+      "email": "a@example.com",
+      "last_update": "2016-02-03T04:05:06.000000007Z",
+      "extra": "zzz"
+    },
+    {
+      "key": {
+        "key": "c"
+      },
+      "token": {
+        "access_token": "zzz",
+        "expiry": "2016-02-03T07:00:00Z"
+      },
+      "email": "a@example.com",
+      "last_update": "2016-02-03T06:00:00Z"
+    },
+    {
+      "key": {
+        "key": "b"
+      },
+      "token": {
+        "access_token": "def",
+        "expiry": "2016-02-03T07:00:00Z"
+      },
+      "email": "a@example.com",
+      "last_update": "2016-02-03T05:00:00Z"
     }
   ],
   "last_update": "2016-02-03T04:05:06.000000007Z"
