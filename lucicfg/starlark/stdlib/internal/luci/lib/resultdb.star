@@ -58,6 +58,19 @@ def _history_options(*, by_timestamp = False):
         use_invocation_timestamp = by_timestamp,
     )
 
+def _bq_export(bq_table = None, predicate = None):
+    project, dataset, table = validate.string(
+        "bq_table",
+        bq_table,
+        regexp = r"^([^.]+)\.([^.]+)\.([^.]+)$",
+    ).split(".")
+
+    return resultdb_pb.BigQueryExport(
+        project = project,
+        dataset = dataset,
+        table = table,
+    )
+
 def _export_test_results(
         *,
         bq_table = None,
@@ -75,25 +88,16 @@ def _export_test_results(
     Returns:
       A populated resultdb_pb.BigQueryExport() proto.
     """
-    project, dataset, table = validate.string(
-        "bq_table",
-        bq_table,
-        regexp = r"^([^.]+)\.([^.]+)\.([^.]+)$",
-    ).split(".")
-
-    return resultdb_pb.BigQueryExport(
-        project = project,
-        dataset = dataset,
-        table = table,
-        test_results = resultdb_pb.BigQueryExport.TestResults(
-            predicate = validate.type(
-                "predicate",
-                predicate,
-                predicate_pb.TestResultPredicate(),
-                required = False,
-            ),
+    ret = _bq_export(bq_table)
+    ret.test_results = resultdb_pb.BigQueryExport.TestResults(
+        predicate = validate.type(
+            "predicate",
+            predicate,
+            predicate_pb.TestResultPredicate(),
+            required = False,
         ),
     )
+    return ret
 
 def _test_result_predicate(
         *,
@@ -151,6 +155,89 @@ def _test_result_predicate(
 
     return ret
 
+def _export_text_artifacts(
+        *,
+        bq_table = None,
+        predicate = None):
+    """Defines a mapping between text artifacts and a BigQuery table for them.
+
+    Args:
+      bq_table: string of the form `<project>.<dataset>.<table>`
+        where the parts respresent the BigQuery-enabled gcp project, dataset and
+        table to export results.
+      predicate: A predicate_pb.ArtifactPredicate() proto. If given, specifies
+        the subset of text artifacts to export to the above table, instead of all.
+        Use resultdb.artifact_predicate(...) to generate this, if needed.
+
+    Returns:
+      A populated resultdb_pb.BigQueryExport() proto.
+    """
+    ret = _bq_export(bq_table)
+    ret.text_artifacts = resultdb_pb.BigQueryExport.TextArtifacts(
+        predicate = validate.type(
+            "predicate",
+            predicate,
+            predicate_pb.ArtifactPredicate(),
+            required = False,
+        ),
+    )
+    return ret
+
+def _artifact_predicate(
+        *,
+        test_result_predicate = None,
+        included_invocations = None,
+        test_results = None,
+        content_type_regexp = None):
+    """Represents a predicate of text artifacts.
+
+    Args:
+      test_result_predicate: predicate_pb.TestResultPredicate(), a predicate of
+        test results.
+      included_invocations: bool, if true, invocation level artifacts are
+        included.
+      test_results: bool, if true, test result level artifacts are included.
+      content_type_regexp: string, an artifact must have a content type matching
+        this regular expression entirely, i.e. the expression is implicitly
+        wrapped with ^ and $.
+
+    Returns:
+      A populated predicate_pb.ArtifactPredicate() proto.
+    """
+    ret = predicate_pb.ArtifactPredicate(
+        test_result_predicate = validate.type(
+            "test_result_predicate",
+            test_result_predicate,
+            predicate_pb.TestResultPredicate(),
+            required = False,
+        ),
+        content_type_regexp = validate.string(
+            "content_type_regexp",
+            content_type_regexp,
+            required = False,
+        ),
+    )
+
+    included_invocations = validate.bool(
+        "included_invocations",
+        included_invocations,
+        default = None,
+        required = False,
+    )
+    if included_invocations != None:
+        ret.follow_edges.included_invocations = included_invocations
+
+    test_results = validate.bool(
+        "test_results",
+        test_results,
+        default = None,
+        required = False,
+    )
+    if test_results != None:
+        ret.follow_edges.test_results = test_results
+
+    return ret
+
 def _validate_settings(attr, settings):
     """Validates the type of a ResultDB settings proto.
 
@@ -174,4 +261,6 @@ resultdb = struct(
     test_result_predicate = _test_result_predicate,
     validate_settings = _validate_settings,
     history_options = _history_options,
+    export_text_artifacts = _export_text_artifacts,
+    artifact_predicate = _artifact_predicate,
 )

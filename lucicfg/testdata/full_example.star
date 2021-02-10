@@ -146,6 +146,20 @@ luci.builder(
                     variant = {"test_suite": "super_interesting_suite"},
                 ),
             ),
+            resultdb.export_text_artifacts(
+                bq_table = "luci-resultdb.my-awesome-project.all_text_artifacts",
+                predicate = resultdb.artifact_predicate(
+                    test_result_predicate = resultdb.test_result_predicate(
+                        test_id_regexp = "ninja:.*",
+                        unexpected_only = True,
+                        variant_contains = True,
+                        variant = {"test_suite": "super_interesting_suite"},
+                    ),
+                    included_invocations = False,
+                    test_results = True,
+                    content_type_regexp = "text.*",
+                ),
+            ),
         ],
         history_options = resultdb.history_options(
             by_timestamp = True,
@@ -652,6 +666,31 @@ lucicfg.emit(
 #                 }
 #               }
 #               expectancy: VARIANTS_WITH_UNEXPECTED_RESULTS
+#             }
+#           }
+#         }
+#         bq_exports {
+#           project: "luci-resultdb"
+#           dataset: "my-awesome-project"
+#           table: "all_text_artifacts"
+#           text_artifacts {
+#             predicate {
+#               follow_edges {
+#                 test_results: true
+#               }
+#               test_result_predicate {
+#                 test_id_regexp: "ninja:.*"
+#                 variant {
+#                   contains {
+#                     def {
+#                       key: "test_suite"
+#                       value: "super_interesting_suite"
+#                     }
+#                   }
+#                 }
+#                 expectancy: VARIANTS_WITH_UNEXPECTED_RESULTS
+#               }
+#               content_type_regexp: "text.*"
 #             }
 #           }
 #         }
