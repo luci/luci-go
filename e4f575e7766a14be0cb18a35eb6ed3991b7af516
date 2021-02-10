@@ -51,6 +51,57 @@
       "parentUuid": "11ab4d55_9978ad76",
       "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35c79ae0_07f23e14",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-10T01:02:09Z",
+      "side": 1,
+      "message": "could you refactor the code to reduce copy-pasta with above?",
+      "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3fe27ecb_3cbcf2a7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-10T01:02:09Z",
+      "side": 1,
+      "message": "I think this could be more generic:\n- rename to _artifact_predicate\n- remove the default value for content_type_regexp",
+      "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5f5afc1_c1550935",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-10T01:02:09Z",
+      "side": 1,
+      "message": "currently we initialize ret.follow_edges even if both included_invocations and test_results are not passed.\ni think we should not assign anything to ret.follow_edges if they were\u0027not passed.\nwhich makes me think that defaults for these two params should be None, not False (to be able to distinguish between intentional False and not-passing)",
+      "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
