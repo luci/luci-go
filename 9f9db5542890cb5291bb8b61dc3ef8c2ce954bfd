@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "51cc9c01_55e94494",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-10T18:53:30Z",
+      "side": 1,
+      "message": "would it be completely daft to use a binary pb for the new file? That would have avoided the backwards compatibility stuff you\u0027re trying to fix now",
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "39d5c901_714324a1",
@@ -31,6 +48,30 @@
       "writtenOn": "2021-02-10T15:30:59Z",
       "side": 1,
       "message": "nit: it\u0027s only a matter of time until `old` becomes offensive, so maybe absPathLegacy()?",
+      "range": {
+        "startLine": 176,
+        "startChar": 25,
+        "endLine": 176,
+        "endChar": 35
+      },
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1d5f8b8_955f6239",
+        "filename": "auth/internal/disk_cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-10T18:53:30Z",
+      "side": 1,
+      "message": "this seems like a bit of a stretch to me. legacy works too, tho",
+      "parentUuid": "39d5c901_714324a1",
       "range": {
         "startLine": 176,
         "startChar": 25,
