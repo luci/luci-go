@@ -71,6 +71,10 @@ func (x duration) Binary(op syntax.Token, y starlark.Value, side starlark.Side) 
 			return x.Int.Div(y.Int), nil
 		case (op == syntax.SLASH || op == syntax.SLASHSLASH) && side == starlark.Right:
 			return y.Int.Div(x.Int), nil
+		case (op == syntax.PERCENT) && side == starlark.Left:
+			return x.Int.Mod(y.Int), nil
+		case (op == syntax.PERCENT) && side == starlark.Right:
+			return y.Int.Mod(x.Int), nil
 		}
 	}
 

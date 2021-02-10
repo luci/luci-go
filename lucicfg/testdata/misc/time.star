@@ -23,6 +23,7 @@ def test_duration_type():
     assert.eq(sec(1) * 10, sec(10))
     assert.eq(10 * sec(1), sec(10))
     assert.eq(sec(10) / 10, sec(1))
+    assert.eq(time.duration(7500) % sec(1), 500)
 
     # duration / duration binary op.
     assert.eq(sec(100) / sec(5), 20)

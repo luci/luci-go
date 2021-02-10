@@ -117,6 +117,7 @@ luci.builder(
         swarming.cache("path3", name = "name3", wait_for_warm_cache = 10 * time.minute),
     ],
     execution_timeout = 3 * time.hour,
+    grace_period = 2 * time.minute,
     dimensions = {
         "os": "Linux",
         "builder": "linux ci builder",  # no auto_builder_dimension
@@ -615,6 +616,9 @@ lucicfg.emit(
 #       priority: 80
 #       execution_timeout_secs: 10800
 #       expiration_secs: 3600
+#       grace_period {
+#         seconds: 120
+#       }
 #       caches {
 #         name: "name2"
 #         path: "path2"

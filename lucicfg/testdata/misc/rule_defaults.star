@@ -76,6 +76,7 @@ luci.builder(
     ),
     service_account = "new@example.com",
     execution_timeout = 30 * time.minute,
+    grace_period = 2 * time.minute,
     priority = 1,
     expiration_timeout = 20 * time.minute,
     wait_for_capacity = True,
@@ -198,6 +199,9 @@ luci.builder(
 #       priority: 1
 #       execution_timeout_secs: 1800
 #       expiration_secs: 1200
+#       grace_period {
+#         seconds: 120
+#       }
 #       wait_for_capacity: YES
 #       caches {
 #         name: "base"
