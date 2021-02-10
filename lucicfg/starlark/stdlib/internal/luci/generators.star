@@ -136,10 +136,10 @@ def optional_sec(duration):
 def optional_duration_pb(duration):
     """duration|None => duration_pb.Duration | None."""
     if duration == None:
-      return None
+        return None
     return duration_pb.Duration(
-      seconds = duration // time.second,
-      nanos = (duration % time.second) * 1000000,
+        seconds = duration // time.second,
+        nanos = (duration % time.second) * 1000000,
     )
 
 def optional_UInt32Value(val):

@@ -2679,6 +2679,58 @@ A populated resultdb_pb.HistoryOptions() proto.
 
 
 
+### resultdb.export_text_artifacts {#resultdb.export_text_artifacts}
+
+```python
+resultdb.export_text_artifacts(bq_table = None, predicate = None)
+```
+
+
+
+Defines a mapping between text artifacts and a BigQuery table for them.
+
+#### Arguments {#resultdb.export_text_artifacts-args}
+
+* **bq_table**: string of the form `<project>.<dataset>.<table>` where the parts respresent the BigQuery-enabled gcp project, dataset and table to export results.
+* **predicate**: A predicate_pb.ArtifactPredicate() proto. If given, specifies the subset of text artifacts to export to the above table, instead of all. Use [resultdb.artifact_predicate(...)](#resultdb.artifact_predicate) to generate this, if needed.
+
+
+#### Returns  {#resultdb.export_text_artifacts-returns}
+
+A populated resultdb_pb.BigQueryExport() proto.
+
+
+
+### resultdb.artifact_predicate {#resultdb.artifact_predicate}
+
+```python
+resultdb.artifact_predicate(
+    # Optional arguments.
+    test_result_predicate = None,
+    included_invocations = None,
+    test_results = None,
+    content_type_regexp = None,
+)
+```
+
+
+
+Represents a predicate of text artifacts.
+
+#### Arguments {#resultdb.artifact_predicate-args}
+
+* **test_result_predicate**: predicate_pb.TestResultPredicate(), a predicate of test results.
+* **included_invocations**: bool, if true, invocation level artifacts are included.
+* **test_results**: bool, if true, test result level artifacts are included.
+* **content_type_regexp**: string, an artifact must have a content type matching this regular expression entirely, i.e. the expression is implicitly wrapped with ^ and $.
+
+
+#### Returns  {#resultdb.artifact_predicate-returns}
+
+A populated predicate_pb.ArtifactPredicate() proto.
+
+
+
 
 
 ## Swarming
