@@ -100,6 +100,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b4334d5_647784cf",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T14:43:54Z",
+      "side": 1,
+      "message": "not done, but fine.",
+      "parentUuid": "c4179598_fd010bf4",
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2be2cf23_26bd90c2",
