@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -157,12 +157,9 @@ func TestCancelBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					EndTime: &timestamp.Timestamp{
-						Seconds: 1454501106,
-						Nanos:   7,
-					},
-					Input:  &pb.Build_Input{},
-					Status: pb.Status_CANCELED,
+					EndTime: timestamppb.New(now),
+					Input:   &pb.Build_Input{},
+					Status:  pb.Status_CANCELED,
 				})
 				So(sch.Tasks(), ShouldHaveLength, 2)
 			})
@@ -244,7 +241,7 @@ func TestCancelBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.BuildInfra{
 					Build: datastore.MakeKey(ctx, "Build", 1),
 					Proto: model.DSBuildInfra{
-						pb.BuildInfra{
+						BuildInfra: pb.BuildInfra{
 							Swarming: &pb.BuildInfra_Swarming{
 								Hostname: "example.com",
 								TaskId:   "id",
@@ -265,12 +262,9 @@ func TestCancelBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					EndTime: &timestamp.Timestamp{
-						Seconds: 1454501106,
-						Nanos:   7,
-					},
-					Input:  &pb.Build_Input{},
-					Status: pb.Status_CANCELED,
+					EndTime: timestamppb.New(now),
+					Input:   &pb.Build_Input{},
+					Status:  pb.Status_CANCELED,
 				})
 				So(sch.Tasks(), ShouldHaveLength, 3)
 			})
@@ -306,7 +300,7 @@ func TestCancelBuild(t *testing.T) {
 				So(datastore.Put(ctx, &model.BuildInfra{
 					Build: datastore.MakeKey(ctx, "Build", 1),
 					Proto: model.DSBuildInfra{
-						pb.BuildInfra{
+						BuildInfra: pb.BuildInfra{
 							Resultdb: &pb.BuildInfra_ResultDB{
 								Hostname:   "example.com",
 								Invocation: "id",
@@ -327,12 +321,9 @@ func TestCancelBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					EndTime: &timestamp.Timestamp{
-						Seconds: 1454501106,
-						Nanos:   7,
-					},
-					Input:  &pb.Build_Input{},
-					Status: pb.Status_CANCELED,
+					EndTime: timestamppb.New(now),
+					Input:   &pb.Build_Input{},
+					Status:  pb.Status_CANCELED,
 				})
 				So(sch.Tasks(), ShouldHaveLength, 3)
 			})
