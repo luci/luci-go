@@ -58,7 +58,7 @@ def _history_options(*, by_timestamp = False):
         use_invocation_timestamp = by_timestamp,
     )
 
-def _bq_export(bq_table = None, predicate = None):
+def _bq_export(bq_table = None):
     project, dataset, table = validate.string(
         "bq_table",
         bq_table,
