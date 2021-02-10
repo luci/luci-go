@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "776b94e1_c158d778",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-10T19:42:54Z",
+      "side": 1,
+      "message": "Got it. Optionally I\u0027d recommend mentioning in the comments for this struct that these are CLIDs, e.g. \"cls maps CLIDs to info for each CL of the component\": \"toPurge are CLIDs for CLs that should be newly purged\", etc.",
+      "parentUuid": "a575b61e_fca295e6",
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "43a3e1eb_a0122fd7",
         "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
         "patchSetId": 1
@@ -107,6 +125,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5da62d03_2b31ad7c",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-10T19:42:54Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a51dd28d_881daffe",
+      "range": {
+        "startLine": 65,
+        "startChar": 16,
+        "endLine": 65,
+        "endChar": 33
+      },
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7da16014_f1cdbfae",
@@ -154,6 +196,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7592e6f4_1b666553",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-10T19:42:54Z",
+      "side": 1,
+      "message": "As long as it\u0027s consistent I\u0027m happy :-)",
+      "parentUuid": "74c468b1_44c8782e",
+      "range": {
+        "startLine": 53,
+        "startChar": 41,
+        "endLine": 53,
+        "endChar": 50
+      },
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9f2693c7_3de4b659",
@@ -185,6 +251,24 @@
       "side": 1,
       "message": "I could, sure, but meh. Little benefit here, or so I think, but I wrote this.\nSo, do tell me iff my Convey title is confusing/ambiguous/deceiving, and I\u0027ll gladly fix it.",
       "parentUuid": "9f2693c7_3de4b659",
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbd87da3_907009ab",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagedeps_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-10T19:42:54Z",
+      "side": 1,
+      "message": "Ack, I agree that the benefit isn\u0027t great here; not ambiguous or misleading. (Although I do tend to think that more verbosity in convey string is usually better.)",
+      "parentUuid": "9a7fb3c4_4534b335",
       "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
