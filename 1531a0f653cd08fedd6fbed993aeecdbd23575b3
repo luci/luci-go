@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1afbcb5e_8b797e32",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-10T19:46:02Z",
+      "side": 1,
+      "message": "Quick question:\n\n\"triageCL updates clInfo\".\n\nAt a high level, is the main/only purpose of this triage to decide whether a CL should be purged (trigger removed)?",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "1531a0f653cd08fedd6fbed993aeecdbd23575b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
