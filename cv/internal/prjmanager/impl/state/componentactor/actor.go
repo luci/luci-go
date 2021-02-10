@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -99,8 +102,24 @@ func (a *Actor) Act(ctx context.Context) (*prjpb.Component, error) {
 }
 
 func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
-	// TODO: implement.
-	return nil, nil
+	if len(a.runBuilders) == 0 {
+		return nil, nil
+	}
+	toAdd := make([]*prjpb.PRun, 0, len(a.runBuilders))
+	var errs errors.MultiError
+	for _, rb := range a.runBuilders {
+		switch r, err := rb.Create(ctx); {
+		case err != nil:
+			errs = append(errs, err)
+		default:
+			toAdd = append(toAdd, prjpb.MakePRun(r))
+		}
+	}
+	if len(errs) > 0 {
+		err := common.MostSevereError(errs)
+		return nil, errors.Annotate(err, "failed to create %d Runs, most severe error:", len(errs)).Err()
+	}
+	return toAdd, nil
 }
 
 type supporterWrapper struct {
