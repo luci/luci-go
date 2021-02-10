@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "215f10d1_35df5dd6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-10T22:42:40Z",
+      "side": 1,
+      "message": "I don\u0027t remember this code very well :(",
+      "revId": "af91917db26ad8b25217ce505d6a9551880dd244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad72c361_0d7383fb",
+        "filename": "scheduler/appengine/engine/cron/machine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-10T22:42:40Z",
+      "side": 1,
+      "message": "nit: now",
+      "range": {
+        "startLine": 242,
+        "startChar": 47,
+        "endLine": 242,
+        "endChar": 52
+      },
+      "revId": "af91917db26ad8b25217ce505d6a9551880dd244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6bc8fd48_1a29624a",
+        "filename": "scheduler/appengine/engine/cron/machine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-10T22:42:40Z",
+      "side": 1,
+      "message": "Strictly speaking reusing the tick nonce is bad. If Cloud Tasks redelivers the task, it won\u0027t be dedupped. In pathological cases this can lead to exponential growths in tasks (though with 15w delay it\u0027s probably not an issue). Up to you.",
+      "range": {
+        "startLine": 244,
+        "startChar": 32,
+        "endLine": 244,
+        "endChar": 48
+      },
+      "revId": "af91917db26ad8b25217ce505d6a9551880dd244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
