@@ -66,13 +66,26 @@ func pokeCron(c context.Context, job *Job, disp *tq.Dispatcher, cb func(m *cron.
 	for _, action := range machine.Actions {
 		switch a := action.(type) {
 		case cron.TickLaterAction:
-			logging.Infof(c, "Scheduling tick %d after %s", a.TickNonce, a.When.Sub(now))
+			delay := a.When.Sub(now)
+			// Some very infrequent schedules may have next tick weeks in the future.
+			// However, Task Queue limits tasks to at most 30 days in the future.
+			// Thus, waiting may be done via a chain of several TQ tasks. To allow
+			// cron.Machine.OnTimerTick to distinguish such chains from accidentally
+			// too early execution of a specific TQ task, ensure intermediate TQ tasks
+			// are at least 1 hour before actual tick.
+			const maxDelay = 15 * 24 * time.Hour // conservative 15 days.
+			if delay > maxDelay+time.Hour {
+				logging.Infof(c, "Scheduling tick %d after %s via task chain (next task delay %s)", a.TickNonce, delay, maxDelay)
+				delay = maxDelay
+			} else {
+				logging.Infof(c, "Scheduling tick %d after %s", a.TickNonce, delay)
+			}
 			tasks = append(tasks, &tq.Task{
 				Payload: &internal.CronTickTask{
 					JobId:     job.JobID,
 					TickNonce: a.TickNonce,
 				},
-				ETA: a.When,
+				Delay: delay,
 			})
 		case cron.StartInvocationAction:
 			trigger := cronTrigger(a, now)
