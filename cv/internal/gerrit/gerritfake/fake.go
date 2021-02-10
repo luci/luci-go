@@ -23,9 +23,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -54,6 +54,9 @@ type Fake struct {
 	//
 	// childrenOf[X] can be read as "changes which depend on X non-transitively".
 	childrenOf map[string][]string
+
+	// requests are all incoming requests that this Fake has received.
+	requests []proto.Message
 }
 
 func (f *Fake) Install(ctx context.Context) context.Context {
@@ -64,6 +67,15 @@ func (f *Fake) Install(ctx context.Context) context.Context {
 		}
 		return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
 	})
+}
+
+// Requests returns a copy of all incoming requests this fake has received.
+func (f *Fake) Requests() []proto.Message {
+	f.m.Lock()
+	defer f.m.Unlock()
+	cpy := make([]proto.Message, len(f.requests))
+	copy(cpy, f.requests)
+	return cpy
 }
 
 // Change = change details + ACLs.
