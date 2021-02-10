@@ -56,6 +56,30 @@
       },
       "revId": "26efc5736a207a7d38ecf04da0ef4dfe6bed7921",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a11ed7b_79895477",
+        "filename": "cv/internal/prjmanager/prjpb/storage.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T01:51:17Z",
+      "side": 1,
+      "message": "Spot on 😊\n\nI used to be 100% at a loss of when to add and when not to, but after 15 years of practice, I\u0027ve improved to about 80% loss (at least according to academic tests 😄)",
+      "parentUuid": "40161181_96a8ca3f",
+      "range": {
+        "startLine": 211,
+        "startChar": 3,
+        "endLine": 212,
+        "endChar": 37
+      },
+      "revId": "26efc5736a207a7d38ecf04da0ef4dfe6bed7921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
