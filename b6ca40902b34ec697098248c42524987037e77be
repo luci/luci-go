@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "de28d977_3777d750",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-10T19:43:31Z",
+      "side": 1,
+      "message": "tandrii; this is the bit that does it. See default value of precision (https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/starlark/stdlib/internal/validate.star#139)",
+      "range": {
+        "startLine": 235,
+        "startChar": 0,
+        "endLine": 235,
+        "endChar": 90
+      },
+      "revId": "b6ca40902b34ec697098248c42524987037e77be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
