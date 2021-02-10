@@ -40,7 +40,7 @@ func TestDiskTokenCache(t *testing.T) {
 	defer os.RemoveAll(tmp)
 
 	ctx := context.Background()
-	ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+	ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC.Local())
 
 	Convey("DiskTokenCache works", t, func() {
 		// testCacheSemantics is in proc_cache_test.go.
@@ -84,7 +84,7 @@ func TestDiskTokenCache(t *testing.T) {
 		So(cache.PutToken(&CacheKey{Key: "a"}, &Token{
 			Token: oauth2.Token{
 				AccessToken: "def",
-				Expiry:      clock.Now(ctx).Add(time.Hour),
+				Expiry:      clock.Now(ctx).Add(time.Hour).UTC(),
 			},
 			Email: "a@example.com",
 		}), ShouldBeNil)
@@ -100,10 +100,10 @@ func TestDiskTokenCache(t *testing.T) {
       },
       "token": {
         "access_token": "def",
-        "expiry": "2016-02-03T13:05:06.000000007Z"
+        "expiry": "2016-02-03T05:05:06.000000007Z"
       },
       "email": "a@example.com",
-      "last_update": "2016-02-03T12:05:06.000000007Z",
+      "last_update": "2016-02-03T04:05:06.000000007Z",
       "abc": "def",
       "random_stuff": {
         "abc": {
@@ -112,7 +112,7 @@ func TestDiskTokenCache(t *testing.T) {
       }
     }
   ],
-  "last_update": "2016-02-03T12:05:06.000000007Z"
+  "last_update": "2016-02-03T04:05:06.000000007Z"
 }`)
 	})
 
