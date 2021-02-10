@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4aa54b09_4966c26e",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:49:53Z",
+      "side": 1,
+      "message": "Good point. Done",
+      "parentUuid": "788a7dbc_5b592d96",
+      "range": {
+        "startLine": 280,
+        "startChar": 3,
+        "endLine": 282,
+        "endChar": 4
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6455ef9a_046ba932",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4179598_fd010bf4",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:49:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6455ef9a_046ba932",
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2be2cf23_26bd90c2",
@@ -71,6 +113,30 @@
       "writtenOn": "2021-02-09T00:46:10Z",
       "side": 1,
       "message": "the",
+      "range": {
+        "startLine": 250,
+        "startChar": 19,
+        "endLine": 250,
+        "endChar": 20
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4141f924_6dfaffae",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:49:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2be2cf23_26bd90c2",
       "range": {
         "startLine": 250,
         "startChar": 19,
@@ -117,6 +183,30 @@
       "writtenOn": "2021-02-09T00:46:10Z",
       "side": 1,
       "message": "is this expected to be used elsewhere? I bet not, so how about sticking into NotifyDetails?\nIt\u0027ll also be nicely scoped to NotifyDetails in Go (but not C++)",
+      "range": {
+        "startLine": 254,
+        "startChar": 0,
+        "endLine": 263,
+        "endChar": 1
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4d62b9b_f89dd6c8",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:49:53Z",
+      "side": 1,
+      "message": "Correct, it\u0027s not. both this and NotifyInfo.",
+      "parentUuid": "48b6e359_0a8319bf",
       "range": {
         "startLine": 254,
         "startChar": 0,
@@ -174,6 +264,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f838987f_c369ae36",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:49:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa70575a_fcf69dee",
+      "range": {
+        "startLine": 264,
+        "startChar": 0,
+        "endLine": 267,
+        "endChar": 20
+      },
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c768ed6d_05eff794",
@@ -187,6 +301,24 @@
       "writtenOn": "2021-02-09T00:46:10Z",
       "side": 1,
       "message": "worth adding here that it can be combined with the notify\u003dNONE (above field) for granular notification.",
+      "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ec10206_3e3dfda5",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 938,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-10T03:49:53Z",
+      "side": 1,
+      "message": "ha, it\u0027s used to be here. but got lost when I moving around code. added back",
+      "parentUuid": "c768ed6d_05eff794",
       "revId": "b4934cf8d5b3d356228d898f46f45b08b92ffa9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
