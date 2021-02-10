@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd09fe89_33c8cdf3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-10T22:02:03Z",
+      "side": 1,
+      "message": "Meh, it is hard with jsonpb encoding, which I want to retain because it is useful to be able to read this file manually when debugging issues or \"extracting\" tokens for use elsewhere.",
+      "parentUuid": "d817f773_08fc59b1",
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "39d5c901_714324a1",
