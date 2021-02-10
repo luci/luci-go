@@ -34,6 +34,24 @@
       "parentUuid": "6f90f32a_ba8c9bd5",
       "revId": "29bd40294042f64dd46042b686d7686cde7acd55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e9bf771_ae03ae6d",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-10T22:21:36Z",
+      "side": 1,
+      "message": "(Ah, so as far as I understand, one li contains all of the votes on a particular label; so if multiple users vote +1, +1, +2, then the aggregated GetValue would return the value +2. For the sake of this function we\u0027re only concerned with whether this is a vote (+1 or +2) by any user.)",
+      "parentUuid": "ee1022e0_79bf5d6c",
+      "revId": "29bd40294042f64dd46042b686d7686cde7acd55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
