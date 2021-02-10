@@ -33,6 +33,24 @@
       "message": "Please update https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/version.go#27 to 1.21.6",
       "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "450849cd_78108495",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-10T00:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11ab4d55_9978ad76",
+      "revId": "e4f575e7766a14be0cb18a35eb6ed3991b7af516",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
