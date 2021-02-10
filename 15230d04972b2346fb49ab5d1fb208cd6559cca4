@@ -16,6 +16,63 @@
       "message": "PTAL",
       "revId": "15230d04972b2346fb49ab5d1fb208cd6559cca4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a93b9b0_8afa87e7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:52:07Z",
+      "side": 1,
+      "message": "👍 I\u0027ve sent https://crrev.com/c/2686221 and verified that it fixes tests for this CL.",
+      "revId": "15230d04972b2346fb49ab5d1fb208cd6559cca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b4b67957_c8977379",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:52:07Z",
+      "side": 1,
+      "message": "nice!",
+      "range": {
+        "startLine": 239,
+        "startChar": 42,
+        "endLine": 239,
+        "endChar": 82
+      },
+      "revId": "15230d04972b2346fb49ab5d1fb208cd6559cca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b141e29e_7db1e723",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:52:07Z",
+      "side": 1,
+      "message": "I think this should instead traverse .All().\nDone in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2686221\nwhich should fix tests.",
+      "revId": "15230d04972b2346fb49ab5d1fb208cd6559cca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

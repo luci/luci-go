@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c3555c5_ae085300",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 471,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:52:07Z",
+      "side": 0,
+      "message": "So, this is the only difference from before. Perhaps this is why List with CQ\u003e0 query is broken.\nSent https://crrev.com/c/2686221 to fix.",
+      "range": {
+        "startLine": 471,
+        "startChar": 4,
+        "endLine": 471,
+        "endChar": 24
+      },
+      "revId": "a50ebac57124d286dcb0d02ce9c5eb64d5f5f609",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
