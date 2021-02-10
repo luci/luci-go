@@ -33,6 +33,24 @@
       "message": "oops, I was supposed to do this in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2630268. Sorry.",
       "revId": "333ded30e2a66e9ff1f9e40725f1b0288f4361e8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "af45f0c1_a5ee69d3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-10T20:40:00Z",
+      "side": 1,
+      "message": "That change was before it\u0027s actually used in bqExport. So no worries at all!",
+      "parentUuid": "5ec90b64_2b27da05",
+      "revId": "333ded30e2a66e9ff1f9e40725f1b0288f4361e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
