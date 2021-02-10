@@ -16,6 +16,24 @@
       "message": "qq: are miliseconds (e..g 7.5s) supported? IIUC, some field couldn\u0027t use fraction of a second.",
       "revId": "baec8457819f39476d28ac10e4c0d6a80402e4f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "352c321f_2f8081d5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-10T19:15:03Z",
+      "side": 1,
+      "message": "the validation for this in the generator currently specifies time.second precision, and if you pass sub-second values this will generate an error and request you do time.truncate to the value.\n\nThe actual protobuf supports sub-second precision; I was thinking about potential non-swarming implementations of this. When we have a more accepting backend, we can lift the validation here in lucicfg.\n\nTechnically we could implement execution_timeout+grace_period on swarming, too, via bbagent (setting task timeouts e.g. 1 second higher), but the execution_timeout field in the buildbucket proto is currently integer number of seconds.",
+      "parentUuid": "8adf6596_0f2be47a",
+      "revId": "baec8457819f39476d28ac10e4c0d6a80402e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
