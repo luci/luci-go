@@ -33,6 +33,24 @@
       "message": "OMG, Google Analytics have its own monitoring framework? Awesome!",
       "revId": "4539057be4eb4f7ab1037ad98d1bd30cbda663a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb7f3386_5d48e813",
+        "filename": "milo/frontend/resultui/src/libs/analytics_utils.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-10T18:04:52Z",
+      "side": 1,
+      "message": "we can measure everything! :)",
+      "parentUuid": "2e860e77_b95b8e8f",
+      "revId": "4539057be4eb4f7ab1037ad98d1bd30cbda663a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
