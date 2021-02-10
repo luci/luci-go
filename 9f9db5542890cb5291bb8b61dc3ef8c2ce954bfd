@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d817f773_08fc59b1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-10T21:40:11Z",
+      "side": 1,
+      "message": "The problem is not that unknown fields cause the code to break. The problem is that unknown fields are not round-tripped by the old code. It reads the cacheEntry, modifies it, stores it back. All fields it doesn\u0027t know about are lost. So when new code adds \"id_token\" field, old binaries will actively keep erasing it.\n\nUsing protobuf naively won\u0027t solve this problem. I have never tried working with unrecognized fields in protobufs, I\u0027ll see how hard it is. Perhaps it\u0027s not very hard.",
+      "parentUuid": "51cc9c01_55e94494",
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "39d5c901_714324a1",
