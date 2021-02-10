@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd9e62ff_5043e1c4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-10T04:36:18Z",
+      "side": 1,
+      "message": "Done.\n\nAnd I think this surfaces a bug in go code: we don\u0027t actually use the default \"text/.*\", I\u0027ll upload a patch to fix that.",
+      "parentUuid": "c88b4c31_f38824aa",
+      "range": {
+        "startLine": 191,
+        "startChar": 30,
+        "endLine": 191,
+        "endChar": 34
+      },
+      "revId": "592c70dd2ec81b1527001c4a6638a3afad2afe8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "60efda43_b2372786",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-02-10T04:11:32Z",
       "side": 1,
       "message": "nit: usually `is not` is used for None, at least in Python. Not sure if this works in Starlark though",
+      "range": {
+        "startLine": 227,
+        "startChar": 28,
+        "endLine": 227,
+        "endChar": 30
+      },
+      "revId": "592c70dd2ec81b1527001c4a6638a3afad2afe8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "baf5cc2e_69072cb9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-10T04:36:18Z",
+      "side": 1,
+      "message": "i tried `is not` and it doesn\u0027t work, and I\u0027ve found cases where `!\u003d None` is used in starlark code.\n\nhttps://source.chromium.org/search?q\u003d%22!%3D%20None%22%20\u0026sq\u003d\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2Flucicfg%2F",
+      "parentUuid": "60efda43_b2372786",
       "range": {
         "startLine": 227,
         "startChar": 28,
