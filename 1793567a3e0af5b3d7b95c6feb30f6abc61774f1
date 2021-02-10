@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e76b20f_93e0290b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-10T01:06:36Z",
+      "side": 1,
+      "message": "Feel free to land manually. Everything broken now anyway %)",
+      "revId": "1793567a3e0af5b3d7b95c6feb30f6abc61774f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
