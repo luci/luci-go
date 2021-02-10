@@ -241,6 +241,38 @@ enum Notify {
   NOTIFY_ALL = 4;
 }
 
+// Detailed information about whom to notify about the update.
+message NotifyDetails {
+  // Specify how recipient will be notified.
+  //
+  // Source of truth:
+  // https://gerrit-review.googlesource.com/Documentation/user-notify.html#recipient-types
+  enum RecipientType {
+    RECIPIENT_TYPE_UNSPECIFIED = 0;
+    // The standard To field is used; addresses are visible to all.
+    RECIPIENT_TYPE_TO = 1;
+    // The standard CC field is used; addresses are visible to all.
+    RECIPIENT_TYPE_CC = 2;
+    // SMTP RCPT TO is used to hide the address.
+    RECIPIENT_TYPE_BCC = 3;
+  }
+
+  // Source of truth:
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#notify-info
+  message Info {
+    // IDs of the accounts that will be notified.
+    repeated int64 accounts = 1;
+  }
+
+  message Recipient {
+    RecipientType recipient_type = 1;
+    Info info = 2;
+  }
+  // Recipients of the same RecipientType will be merged. Duplicate
+  // accountIDs in `notify_info` will be removed.
+  repeated Recipient recipients = 1;
+}
+
 // Request to list changes based on a query.
 message ListChangesRequest {
   // The query used to filter the changes.
@@ -907,11 +939,17 @@ message SetReviewRequest {
   // Notify defines to whom email notifications should be sent.
   Notify notify = 7;
 
+  // NotifyDetails contains additional information about whom to notify.
+  //
+  // These notifications are sent out even if `notify` options disables normal
+  // notifications.
+  NotifyDetails notify_details = 8;
+
   // The account_id that the review should be posted on behalf of.
   //
   // To use this option the caller must have been granted labelAs-NAME
   // permission for all keys of labels.
-  int64 on_behalf_of = 8;
+  int64 on_behalf_of = 9;
 }
 
 // Information returned by a SetReview RPC.
