@@ -133,6 +133,15 @@ def optional_sec(duration):
     """duration|None => number of seconds | None."""
     return None if duration == None else duration // time.second
 
+def optional_duration_pb(duration):
+    """duration|None => duration_pb.Duration | None."""
+    if duration == None:
+      return None
+    return duration_pb.Duration(
+      seconds = duration // time.second,
+      nanos = (duration % time.second) * 1000000,
+    )
+
 def optional_UInt32Value(val):
     """int|None => google.protobuf.UInt32Value."""
     return None if val == None else wrappers_pb.UInt32Value(value = val)
@@ -295,6 +304,7 @@ def _buildbucket_builders(bucket):
             service_account = node.props.service_account,
             caches = _buildbucket_caches(node.props.caches),
             execution_timeout_secs = optional_sec(node.props.execution_timeout),
+            grace_period = optional_duration_pb(node.props.grace_period),
             dimensions = _buildbucket_dimensions(node.props.dimensions),
             priority = node.props.priority,
             swarming_tags = node.props.swarming_tags,

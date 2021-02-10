@@ -1418,6 +1418,7 @@ luci.builder(
     service_account = None,
     caches = None,
     execution_timeout = None,
+    grace_period = None,
     dimensions = None,
     priority = None,
     swarming_host = None,
@@ -1495,6 +1496,7 @@ Buildbucket.
 * **service_account**: an email of a service account to run the executable under: the executable (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI). Supports the module-scoped default.
 * **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details. Supports the module-scoped defaults. They are joined with the explicitly passed caches.
 * **execution_timeout**: how long to wait for a running build to finish before forcefully aborting it and marking the build as timed out. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **grace_period**: how long to wait after the expiration of `execution_timeout` or after a Cancel event, before the build is forcefully shut down. Your build can use this time as a 'last gasp' to do quick actions like killing child processes, cleaning resources, etc. Supports the module-scoped default.
 * **dimensions**: a dict with swarming dimensions, indicating requirements for a bot to execute the build. Keys are strings (e.g. `os`), and values are either strings (e.g. `Linux`), [swarming.dimension(...)](#swarming.dimension) objects (for defining expiring dimensions) or lists of thereof. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed dimensions.
 * **priority**: int [1-255] or None, indicating swarming task priority, lower is more important. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **swarming_host**: appspot hostname of a Swarming service to use for this builder instead of the default specified in [luci.project(...)](#luci.project). Use with great caution. Supports the module-scoped default.

@@ -37,6 +37,7 @@ def _builder(
         service_account = None,
         caches = None,
         execution_timeout = None,
+        grace_period = None,
 
         # Scheduling parameters.
         dimensions = None,
@@ -134,6 +135,11 @@ def _builder(
         forcefully aborting it and marking the build as timed out. If None,
         defer the decision to Buildbucket service. Supports the module-scoped
         default.
+      grace_period: how long to wait after the expiration of `execution_timeout`
+        or after a Cancel event, before the build is forcefully shut down. Your
+        build can use this time as a 'last gasp' to do quick actions like
+        killing child processes, cleaning resources, etc. Supports the
+        module-scoped default.
 
       dimensions: a dict with swarming dimensions, indicating requirements for
         a bot to execute the build. Keys are strings (e.g. `os`), and values
@@ -226,6 +232,7 @@ def _builder(
         "service_account": validate.string("service_account", service_account, required = False),
         "caches": swarming.validate_caches("caches", caches),
         "execution_timeout": validate.duration("execution_timeout", execution_timeout, required = False),
+        "grace_period": validate.duration("grace_period", grace_period, required = False),
         "dimensions": swarming.validate_dimensions("dimensions", dimensions, allow_none = True),
         "priority": validate.int("priority", priority, min = 1, max = 255, required = False),
         "swarming_host": validate.string("swarming_host", swarming_host, required = False),
@@ -360,6 +367,7 @@ builder = lucicfg.rule(
         "service_account": validate.string,
         "caches": swarming.validate_caches,
         "execution_timeout": validate.duration,
+        "grace_period": validate.duration,
         "dimensions": swarming.validate_dimensions,
         "priority": lambda attr, val: validate.int(attr, val, min = 1, max = 255),
         "swarming_host": validate.string,
