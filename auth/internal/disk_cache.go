@@ -28,6 +28,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -59,9 +60,6 @@ const (
 	// and uses it elsewhere (it happens). Such token can always be revoked from
 	// Google Accounts page manually, if required.
 	GCRefreshTokenMaxAge = 14 * 24 * time.Hour
-
-	// CacheFilename is a name of the file with all cached tokens.
-	CacheFilename = "creds.json"
 )
 
 // DiskTokenCache implements TokenCache on top of a file.
@@ -175,12 +173,16 @@ func (e *cacheFileEntry) isOld(now time.Time) bool {
 	return now.Sub(exp.Round(0)) >= delay
 }
 
-func (c *DiskTokenCache) absPath() string {
-	return filepath.Join(c.SecretsDir, CacheFilename)
+func (c *DiskTokenCache) legacyPath() string {
+	return filepath.Join(c.SecretsDir, "creds.json")
+}
+
+func (c *DiskTokenCache) tokensPath() string {
+	return filepath.Join(c.SecretsDir, "tokens.json")
 }
 
 // readCacheFile loads the file with cached tokens.
-func (c *DiskTokenCache) readCacheFile() (*cacheFile, error) {
+func (c *DiskTokenCache) readCacheFile(path string) (*cacheFile, error) {
 	// Minimize the time the file is locked on Windows by reading it all at once
 	// and decoding later.
 	//
@@ -189,7 +191,7 @@ func (c *DiskTokenCache) readCacheFile() (*cacheFile, error) {
 	// for the file to be closed). For some reason, omitting FILE_SHARE_DELETE
 	// flag causes random sharing violation errors when opening the file for
 	// reading.
-	f, err := openSharedDelete(c.absPath())
+	f, err := openSharedDelete(path)
 	switch {
 	case os.IsNotExist(err):
 		return &cacheFile{}, nil
@@ -207,7 +209,7 @@ func (c *DiskTokenCache) readCacheFile() (*cacheFile, error) {
 		// If the cache file got broken somehow, it makes sense to treat it as
 		// empty (so it can later be overwritten), since it's unlikely it's going
 		// to "fix itself".
-		logging.WithError(err).Warningf(c.Context, "The token cache %s is broken", c.absPath())
+		logging.Warningf(c.Context, "The token cache %s is broken: %s", path, err)
 		return &cacheFile{}, nil
 	}
 
@@ -216,32 +218,18 @@ func (c *DiskTokenCache) readCacheFile() (*cacheFile, error) {
 
 // writeCacheFile overwrites the file with cached tokens.
 //
-// It also automatically discards old entries.
-//
 // Returns a transient error if the file is locked by some other process and
 // can't be updated (this happens on Windows).
-func (c *DiskTokenCache) writeCacheFile(cache *cacheFile, now time.Time) error {
-	// Throw away old entries.
-	cleaned := *cache
-	cleaned.Cache = make([]*cacheFileEntry, 0, len(cache.Cache))
-	cleaned.LastUpdate = now
-	for _, entry := range cache.Cache {
-		if entry.isOld(now) {
-			logging.Debugf(c.Context, "Cleaning up old token cache entry: %s", entry.key.Key)
-		} else {
-			cleaned.Cache = append(cleaned.Cache, entry)
-		}
-	}
-
+func (c *DiskTokenCache) writeCacheFile(path string, cache *cacheFile) error {
 	// Nothing left? Remove the file completely.
-	if len(cleaned.Cache) == 0 {
-		if err := os.Remove(c.absPath()); err != nil && !os.IsNotExist(err) {
+	if len(cache.Cache) == 0 {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 			return err
 		}
 		return nil
 	}
 
-	blob, err := json.MarshalIndent(cleaned, "", "  ")
+	blob, err := json.MarshalIndent(cache, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -251,7 +239,7 @@ func (c *DiskTokenCache) writeCacheFile(cache *cacheFile, now time.Time) error {
 		logging.WithError(err).Warningf(c.Context, "Failed to mkdir token cache dir")
 		// carry on, TempFile will fail too.
 	}
-	tmp, err := ioutil.TempFile(c.SecretsDir, CacheFilename)
+	tmp, err := ioutil.TempFile(c.SecretsDir, "tokens.json.*")
 	if err != nil {
 		return err
 	}
@@ -281,22 +269,26 @@ func (c *DiskTokenCache) writeCacheFile(cache *cacheFile, now time.Time) error {
 	// On Windows Rename may fail with sharing violation error if some other
 	// process has opened the file. We treat it as transient error, to trigger
 	// a retry in updateCacheFile.
-	if err = os.Rename(tmp.Name(), c.absPath()); err != nil {
+	if err = os.Rename(tmp.Name(), path); err != nil {
 		cleanup()
 		return transient.Tag.Apply(err)
 	}
 	return nil
 }
 
-// updateCacheFile reads the token cache file, calls the callback, writes the file
+// updateCache reads token cache files, calls the callback and writes the files
 // back if the callback returns 'true'.
 //
 // It retries a bunch of times when encountering sharing violation errors on
 // Windows.
 //
+// Mutates tokens.json and creds.json. tokens.json is the primary token cache
+// file and creds.json is an old one used by the older versions of this library.
+// It will eventually be phased out.
+//
 // TODO(vadimsh): Change this to use file locking - updateCacheFile is a global
 // critical section.
-func (c *DiskTokenCache) updateCacheFile(cb func(*cacheFile, time.Time) bool) error {
+func (c *DiskTokenCache) updateCache(cb func(*cacheFile, time.Time) bool) error {
 	retryParams := func() retry.Iterator {
 		return &retry.ExponentialBackoff{
 			Limited: retry.Limited{
@@ -308,23 +300,92 @@ func (c *DiskTokenCache) updateCacheFile(cb func(*cacheFile, time.Time) bool) er
 		}
 	}
 	return retry.Retry(c.Context, transient.Only(retryParams), func() error {
-		cache, err := c.readCacheFile()
-		if err != nil {
-			return err
-		}
-		now := clock.Now(c.Context).UTC()
-		if cb(cache, now) {
-			return c.writeCacheFile(cache, now)
-		}
-		return nil
-	}, func(err error, d time.Duration) {
-		logging.WithError(err).Warningf(c.Context, "Failed to update %s, retrying...", c.absPath())
+		return c.updateCacheFiles(cb)
+	}, func(err error, _ time.Duration) {
+		logging.Warningf(c.Context, "Retrying the failed token cache update: %s", err)
 	})
+}
+
+// readCache reads tokens.json and creds.json and merges them.
+func (c *DiskTokenCache) readCache() (*cacheFile, time.Time, error) {
+	legacyCache, err := c.readCacheFile(c.legacyPath())
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	newCache, err := c.readCacheFile(c.tokensPath())
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+
+	// Merge tokens from legacyCache into newCache, but don't override anything.
+	seen := stringset.New(len(newCache.Cache))
+	for _, entry := range newCache.Cache {
+		seen.Add(entry.key.ToMapKey())
+	}
+	for _, entry := range legacyCache.Cache {
+		if !seen.Has(entry.key.ToMapKey()) {
+			newCache.Cache = append(newCache.Cache, entry)
+		}
+	}
+
+	// If legacyCache didn't exist at all, pretend it was touched in distant past.
+	// This avoid weird looking "0001-01-01" dates. Seventies were better.
+	if legacyCache.LastUpdate.IsZero() {
+		legacyCache.LastUpdate = time.Date(1970, time.January, 01, 0, 0, 0, 0, time.UTC)
+	}
+
+	return newCache, legacyCache.LastUpdate, nil
+}
+
+// updateCacheFiles does one attempt at updating the cache files.
+func (c *DiskTokenCache) updateCacheFiles(cb func(*cacheFile, time.Time) bool) error {
+	// Read and merge tokens.json and creds.json.
+	cache, legacyLastUpdate, err := c.readCache()
+	if err != nil {
+		return err
+	}
+
+	// Apply the mutation.
+	now := clock.Now(c.Context).UTC()
+	if !cb(cache, now) {
+		return nil
+	}
+
+	// Tidy up the cache before saving it.
+	c.discardOldEntries(cache, now)
+
+	// HACK: Update creds.json, but do not touch its "last_update" time. That way
+	// refresh tokens created by newer `cipd auth-login ...` would still work with
+	// older binaries that look at creds.json, but there's still a way to know
+	// when creds.json is not actually used (its `last_update` time would be
+	// ancient). This will eventually be used to decide if it is safe to delete
+	// creds.json.
+	cache.LastUpdate = legacyLastUpdate
+	if err := c.writeCacheFile(c.legacyPath(), cache); err != nil {
+		return err
+	}
+
+	// Update tokens.json as usual, updating its `last_update` field.
+	cache.LastUpdate = now
+	return c.writeCacheFile(c.tokensPath(), cache)
+}
+
+// discardOldEntries filters out old entries.
+func (c *DiskTokenCache) discardOldEntries(cache *cacheFile, now time.Time) {
+	filtered := cache.Cache[:0]
+	for _, entry := range cache.Cache {
+		if !entry.isOld(now) {
+			filtered = append(filtered, entry)
+		} else {
+			logging.Debugf(c.Context, "Cleaning up old token cache entry: %s", entry.key.Key)
+		}
+	}
+	cache.Cache = filtered
 }
 
 // GetToken reads the token from cache.
 func (c *DiskTokenCache) GetToken(key *CacheKey) (*Token, error) {
-	cache, err := c.readCacheFile()
+	cache, _, err := c.readCache()
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +406,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 	if !token.Expiry.IsZero() {
 		token.Expiry = token.Expiry.UTC()
 	}
-	return c.updateCacheFile(func(cache *cacheFile, now time.Time) bool {
+	return c.updateCache(func(cache *cacheFile, now time.Time) bool {
 		for _, entry := range cache.Cache {
 			if EqualCacheKeys(&entry.key, key) {
 				entry.token = token
@@ -366,7 +427,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 
 // DeleteToken removes the token from cache.
 func (c *DiskTokenCache) DeleteToken(key *CacheKey) error {
-	return c.updateCacheFile(func(cache *cacheFile, now time.Time) bool {
+	return c.updateCache(func(cache *cacheFile, now time.Time) bool {
 		for i, entry := range cache.Cache {
 			if EqualCacheKeys(&entry.key, key) {
 				cache.Cache = append(cache.Cache[:i], cache.Cache[i+1:]...)
