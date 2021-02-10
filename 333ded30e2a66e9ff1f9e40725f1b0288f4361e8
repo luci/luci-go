@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "333ded30e2a66e9ff1f9e40725f1b0288f4361e8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ec90b64_2b27da05",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-10T20:37:23Z",
+      "side": 1,
+      "message": "oops, I was supposed to do this in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2630268. Sorry.",
+      "revId": "333ded30e2a66e9ff1f9e40725f1b0288f4361e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
