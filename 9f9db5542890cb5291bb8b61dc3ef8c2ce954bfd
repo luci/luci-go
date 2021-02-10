@@ -120,6 +120,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b2046f32_8be25d95",
+        "filename": "auth/internal/disk_cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-10T22:07:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1d5f8b8_955f6239",
+      "range": {
+        "startLine": 176,
+        "startChar": 25,
+        "endLine": 176,
+        "endChar": 35
+      },
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b33218a1_7fd8784d",
         "filename": "auth/internal/disk_cache.go",
         "patchSetId": 1
@@ -154,6 +178,30 @@
       "writtenOn": "2021-02-10T15:30:59Z",
       "side": 1,
       "message": "seriously though, the legacy file and old entires would be less confusing.",
+      "range": {
+        "startLine": 374,
+        "startChar": 32,
+        "endLine": 374,
+        "endChar": 35
+      },
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8656e42_e84cb995",
+        "filename": "auth/internal/disk_cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-10T22:07:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1de62495_2899a8bb",
       "range": {
         "startLine": 374,
         "startChar": 32,
