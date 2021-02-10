@@ -397,10 +397,15 @@ func (p *parsedListChangesQuery) matchesLabel(c *Change) bool {
 		return true
 	case !exists:
 		return false
-	case li.GetValue() <= int32(p.label.minValueExclusive):
-		return false
 	default:
-		return true
+		// In theory, we could use aggregated `li.GetValue()`, but this requires all
+		// ChangeInfos to be faked correctly.
+		for _, vote := range li.GetAll() {
+			if vote.GetValue() > int32(p.label.minValueExclusive) {
+				return true
+			}
+		}
+		return false
 	}
 }
 
