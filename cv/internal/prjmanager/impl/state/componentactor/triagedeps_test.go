@@ -15,6 +15,7 @@
 package componentactor
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -271,6 +272,58 @@ func TestDepsTriage(t *testing.T) {
 						incompatMode:  []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
 					})
 					So(td.OK(), ShouldBeFalse)
+				})
+			})
+		})
+
+		Convey("iterateNotSubmitted works", func() {
+			d1 := &changelist.Dep{Clid: 1}
+			d2 := &changelist.Dep{Clid: 2}
+			d3 := &changelist.Dep{Clid: 3}
+			pcl := &prjpb.PCL{}
+			td := &triagedDeps{}
+
+			iterate := func() (out []*changelist.Dep) {
+				td.iterateNotSubmitted(pcl, func(dep *changelist.Dep) { out = append(out, dep) })
+				return
+			}
+
+			Convey("no deps", func() {
+				So(iterate(), ShouldBeEmpty)
+			})
+			Convey("only submitted", func() {
+				td.submitted = []*changelist.Dep{d3, d1, d2}
+				pcl.Deps = []*changelist.Dep{d3, d1, d2} // order must be the same
+				So(iterate(), ShouldBeEmpty)
+			})
+			Convey("some submitted", func() {
+				pcl.Deps = []*changelist.Dep{d3, d1, d2}
+				td.submitted = []*changelist.Dep{d3}
+				So(iterate(), ShouldResembleProto, []*changelist.Dep{d1, d2})
+				td.submitted = []*changelist.Dep{d1}
+				So(iterate(), ShouldResembleProto, []*changelist.Dep{d3, d2})
+				td.submitted = []*changelist.Dep{d2}
+				So(iterate(), ShouldResembleProto, []*changelist.Dep{d3, d1})
+			})
+			Convey("none submitted", func() {
+				pcl.Deps = []*changelist.Dep{d3, d1, d2}
+				So(iterate(), ShouldResembleProto, []*changelist.Dep{d3, d1, d2})
+			})
+			Convey("notYetLoaded deps are iterated over, too", func() {
+				pcl.Deps = []*changelist.Dep{d3, d1, d2}
+				td.notYetLoaded = []*changelist.Dep{d3}
+				td.submitted = []*changelist.Dep{d2}
+				So(iterate(), ShouldResembleProto, []*changelist.Dep{d3, d1})
+			})
+			Convey("panic on invalid usage", func() {
+				Convey("wrong PCL", func() {
+					pcl.Deps = []*changelist.Dep{d3, d1, d2}
+					td.submitted = []*changelist.Dep{d1, d2, d3} // wrong order
+					So(func() { iterate() }, ShouldPanicLike, fmt.Errorf("(wrong PCL?)"))
+				})
+				Convey("non-OK triagedDeps", func() {
+					td.incompatMode = []*changelist.Dep{d1}
+					So(func() { iterate() }, ShouldPanicLike, fmt.Errorf("non-OK triagedDeps"))
 				})
 			})
 		})
