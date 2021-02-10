@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8adf6596_0f2be47a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T19:06:56Z",
+      "side": 1,
+      "message": "qq: are miliseconds (e..g 7.5s) supported? IIUC, some field couldn\u0027t use fraction of a second.",
+      "revId": "baec8457819f39476d28ac10e4c0d6a80402e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
