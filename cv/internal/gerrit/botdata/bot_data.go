@@ -25,6 +25,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
+	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
 // ActionType describes the type of the action taken by CV against a Gerrit
@@ -43,12 +45,6 @@ const (
 	botDataPrefix = "Bot data: "
 	// botDataSep separates non-empty human message and BotData message.
 	botDataSep = "\n\n"
-	// maxMessageLength is the max message length for Gerrit as of Jun 2020
-	// based on error messages.
-	maxMessageLength = 16384
-	// placeholder is added to the message when the length of the message
-	// exceeds `MaxMessageLength` and human message gets truncated.
-	placeholder = "\n...[truncated too long message]"
 )
 
 // UnmarshalJSON sets `*at` to the `ActionType` the given bytes represents.
@@ -129,7 +125,7 @@ func Parse(cmi *gerritpb.ChangeMessageInfo) (ret BotData, ok bool) {
 // `MaxMessageLength`. Returns error if marshalling BotData to JSON fails or
 // the BotData message itself is already too long.
 func Append(humanMsg string, bd BotData) (string, error) {
-	return append(humanMsg, bd, maxMessageLength)
+	return append(humanMsg, bd, gerrit.MaxMessageLength)
 }
 
 func append(humanMsg string, bd BotData, maxLen int) (string, error) {
@@ -149,13 +145,13 @@ func append(humanMsg string, bd BotData, maxLen int) (string, error) {
 		buf.Grow(sepLen + bdLen)
 		writeBotData(buf, b, true)
 	default:
-		keepLen := maxLen - bdLen - sepLen - len(placeholder)
+		keepLen := maxLen - bdLen - sepLen - len(gerrit.PlaceHolder)
 		if keepLen <= 0 {
 			return "", errors.Reason("bot data too long to display human message; max length: %d, got %d", maxLen, bdLen).Err()
 		}
 		buf.Truncate(keepLen)
 		buf.Grow(maxLen - keepLen)
-		buf.WriteString(placeholder)
+		buf.WriteString(gerrit.PlaceHolder)
 		writeBotData(buf, b, true)
 	}
 	return buf.String(), nil
