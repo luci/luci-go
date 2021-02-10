@@ -320,7 +320,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	}
 
 	rootDir := &repb.Directory{}
-	if err := c.ReadProto(ctx, d, rootDir); err != nil {
+	if _, err := c.ReadProto(ctx, d, rootDir); err != nil {
 		return errors.Annotate(err, "failed to read root directory proto").Err()
 	}
 
@@ -435,7 +435,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	}
 
 	start = time.Now()
-	if err := c.DownloadFiles(ctx, "", to); err != nil {
+	if _, err := c.DownloadFiles(ctx, "", to); err != nil {
 		return errors.Annotate(err, "failed to download files").Err()
 	}
 	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
