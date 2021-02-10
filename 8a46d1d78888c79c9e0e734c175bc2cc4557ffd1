@@ -962,6 +962,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0a29d08_be0677b7",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:59:20Z",
+      "side": 1,
+      "message": "From https://blog.golang.org/maps\n\n\u003e A nil map behaves like an empty map when reading, but attempts to write to a nil map will cause a runtime panic; don\u0027t do that\n\nThis is like 5th time I\u0027m re-learning this 😞",
+      "parentUuid": "17ffb522_c86acd12",
+      "range": {
+        "startLine": 199,
+        "startChar": 18,
+        "endLine": 199,
+        "endChar": 32
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "beb6f1b9_6c37ecac",
@@ -1336,6 +1360,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c094f335_a25ebb25",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:59:20Z",
+      "side": 1,
+      "message": "If CV is trying to communicate result of a run (e.g. \"Dry Run failed because x,y,z\"), \nposting comment shouldn\u0027t be skipped. In CQD, I essentially required cancel() to post it.\n\nAnother possibility, which I guess you are proposing is that caller of cancel() should recognize (via return value) that nothing was posted and then post the message itself. Right? \n\nupdate: let\u0027s move discussion to the function signature section.",
+      "parentUuid": "eaf20268_46c9d5d5",
+      "range": {
+        "startLine": 309,
+        "startChar": 37,
+        "endLine": 309,
+        "endChar": 50
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7decf320_e2dba963",
@@ -1455,6 +1503,30 @@
       "side": 1,
       "message": "It is actually handled by Append function already.\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/gerrit/botdata/bot_data.go;l\u003d127-130;drc\u003d43df690a12cae932d9fd460ab888a9d9d1f2f5a6",
       "parentUuid": "6266e6f4_10d67cf7",
+      "range": {
+        "startLine": 355,
+        "startChar": 23,
+        "endLine": 355,
+        "endChar": 29
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bec5147c_fd4efece",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:59:20Z",
+      "side": 1,
+      "message": "oh, I forgot about that.👍",
+      "parentUuid": "8717ac80_a47a1a3b",
       "range": {
         "startLine": 355,
         "startChar": 23,
@@ -1613,6 +1685,30 @@
       "side": 1,
       "message": "Thanks for help verifying the correctness. I know this characteristic before, but I didn\u0027t think too deep while implementing this. I\u0027ve moved it to a new CL: https://crrev.com/c/2686674",
       "parentUuid": "f5ceb3b8_29a0f952",
+      "range": {
+        "startLine": 38,
+        "startChar": 16,
+        "endLine": 38,
+        "endChar": 47
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "169923b9_9f6cc3d5",
+        "filename": "cv/internal/gerrit/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T15:59:20Z",
+      "side": 1,
+      "message": "new CL LGTM, but you didn\u0027t the code from this CL.",
+      "parentUuid": "e050d329_49508e24",
       "range": {
         "startLine": 38,
         "startChar": 16,
