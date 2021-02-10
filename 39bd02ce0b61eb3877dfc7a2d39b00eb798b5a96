@@ -16,6 +16,24 @@
       "message": "You may need to land this manually.",
       "revId": "39bd02ce0b61eb3877dfc7a2d39b00eb798b5a96",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc515833_d6cc0bc2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-10T00:50:02Z",
+      "side": 1,
+      "message": "I see. I\u0027ll include DEPS change in infra.",
+      "parentUuid": "548f93aa_aea3da30",
+      "revId": "39bd02ce0b61eb3877dfc7a2d39b00eb798b5a96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
