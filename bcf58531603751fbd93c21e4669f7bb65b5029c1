@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64e8724f_cf52a8eb",
+        "filename": "cv/internal/gerrit/util_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T14:50:08Z",
+      "side": 1,
+      "message": "self-referential messages are a win 👍\n(https://en.wikipedia.org/wiki/G%C3%B6del,_Escher,_Bach)",
+      "revId": "bcf58531603751fbd93c21e4669f7bb65b5029c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cdfdb577_b845a67f",
+        "filename": "cv/internal/gerrit/util_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-10T14:50:08Z",
+      "side": 1,
+      "message": "consider: \n  So(msg, ShouldHaveLength, 12*4) // bytes",
+      "range": {
+        "startLine": 39,
+        "startChar": 30,
+        "endLine": 39,
+        "endChar": 59
+      },
+      "revId": "bcf58531603751fbd93c21e4669f7bb65b5029c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
