@@ -596,8 +596,8 @@ func (x *Component) GetDirty() bool {
 
 // PurgingCL represents purging of a CL due to some problem.
 //
-// Purging process is initiated during PM state mutation while atomically adding
-// a TQ task to perform actual purge.
+// The purging process is initiated during PM state mutation while atomically
+// adding a TQ task to perform the actual purge.
 //
 // Purging itself constitutes removing whatever triggered CV on a CL as well as
 // posting the reason for purging to the user.
