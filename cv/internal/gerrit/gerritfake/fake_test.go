@@ -22,8 +22,11 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritutil "go.chromium.org/luci/common/api/gerrit"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -503,6 +506,158 @@ func TestListChanges(t *testing.T) {
 			So(test(`before:2019-20-01`), ShouldErrLike, `failed to parse Gerrit timestamp "2019-20-01"`)
 			So(test(` after:2019-20-01`), ShouldErrLike, `failed to parse Gerrit timestamp "2019-20-01"`)
 			So(test(`before:"2019-20-01"`), ShouldErrLike, `failed to parse Gerrit timestamp "\"2019-20-01\""`)
+		})
+	})
+}
+
+func TestSetReview(t *testing.T) {
+	t.Parallel()
+
+	Convey("SetReview", t, func() {
+		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		user := U("user-123")
+		accountID := user.AccountId
+		f := WithCIs("example",
+			ACLGrant(OpReview, codes.PermissionDenied, "chromium").Or(ACLGrant(OpAlterVotesOfOthers, codes.PermissionDenied, "chromium")),
+			CI(10001, CQ(1, clock.Now(ctx).Add(-2*time.Minute), user)))
+		ctx = f.Install(ctx)
+
+		mustWriterClient := func(host, luciProject string) gerrit.CLWriterClient {
+			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
+			So(err, ShouldBeNil)
+			return cl
+		}
+
+		latestCI := func() *gerritpb.ChangeInfo {
+			return f.GetChange("example", 10001).Info
+		}
+		Convey("ACLs enforced", func() {
+			client := mustWriterClient("example", "not-chromium")
+			res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
+				Number: 11111,
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+
+			res, err = client.SetReview(ctx, &gerritpb.SetReviewRequest{
+				Number:  10001,
+				Message: "this is a message",
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+
+			res, err = client.SetReview(ctx, &gerritpb.SetReviewRequest{
+				Number: 10001,
+				Labels: map[string]int32{
+					"Commit-Queue": 0,
+				},
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+
+			res, err = client.SetReview(ctx, &gerritpb.SetReviewRequest{
+				Number: 10001,
+				Labels: map[string]int32{
+					"Commit-Queue": 0,
+				},
+				OnBehalfOf: accountID,
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("Post message", func() {
+			client := mustWriterClient("example", "chromium")
+			res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
+				Number:  10001,
+				Message: "this is a message",
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &gerritpb.ReviewResult{})
+			So(latestCI().GetMessages(), ShouldResembleProto, []*gerritpb.ChangeMessageInfo{
+				{
+					Id:      "0",
+					Author:  U("chromium"),
+					Date:    timestamppb.New(clock.Now(ctx)),
+					Message: "this is a message",
+				},
+			})
+		})
+
+		Convey("Set vote", func() {
+			client := mustWriterClient("example", "chromium")
+			res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
+				Number: 10001,
+				Labels: map[string]int32{
+					"Commit-Queue": 2,
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+				Labels: map[string]int32{
+					"Commit-Queue": 2,
+				},
+			})
+			So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+				{
+					User:  user,
+					Value: 1,
+					Date:  timestamppb.New(clock.Now(ctx).Add(-2 * time.Minute)),
+				},
+				{
+					User:  U("chromium"),
+					Value: 2,
+					Date:  timestamppb.New(clock.Now(ctx)),
+				},
+			})
+		})
+
+		Convey("Set vote on behalf of", func() {
+			client := mustWriterClient("example", "chromium")
+			Convey("existing voter", func() {
+				res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
+					Number: 10001,
+					Labels: map[string]int32{
+						"Commit-Queue": 0,
+					},
+					OnBehalfOf: 123,
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+					Labels: map[string]int32{
+						"Commit-Queue": 0,
+					},
+				})
+				So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldBeEmpty)
+			})
+
+			Convey("existing new voter", func() {
+				res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
+					Number: 10001,
+					Labels: map[string]int32{
+						"Commit-Queue": 1,
+					},
+					OnBehalfOf: 789,
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+					Labels: map[string]int32{
+						"Commit-Queue": 1,
+					},
+				})
+				So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+					{
+						User:  user,
+						Value: 1,
+						Date:  timestamppb.New(clock.Now(ctx).Add(-2 * time.Minute)),
+					},
+					{
+						User:  U("user-789"),
+						Value: 1,
+						Date:  timestamppb.New(clock.Now(ctx)),
+					},
+				})
+			})
 		})
 	})
 }
