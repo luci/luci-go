@@ -2,6 +2,10 @@
 queue:
 - name: read-project-config
   rate: 1000/m
+  retry_parameters:
+    # 1 minute after first try there will normally be a new equivalent task
+    # created by read-config cron, which runs every minute.
+    task_age_limit: 1m
 
 - name: timers
   rate: 500/s
