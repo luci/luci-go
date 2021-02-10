@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7eac74a_f314fb30",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-10T22:21:47Z",
+      "side": 1,
+      "message": "Yeah, with jsonpb it\u0027s hard (impossible? I didn\u0027t look). With binary proto it\u0027s on by default.",
+      "parentUuid": "cd09fe89_33c8cdf3",
+      "revId": "9f9db5542890cb5291bb8b61dc3ef8c2ce954bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "39d5c901_714324a1",
