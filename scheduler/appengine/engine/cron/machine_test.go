@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/schedule"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMachine(t *testing.T) {
@@ -59,10 +60,23 @@ func TestMachine(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(tm.Actions, ShouldBeNil)
 
-		// Very early tick is ignored with an error.
-		tm.Now = parseTime("01:00").Add(-200 * time.Millisecond)
+		// Very early tick re-schedules itself (https://crbug.com/1176901#c4)
+		// with new nonce.
+		tm.Now = parseTime("01:00").Add(-1 * time.Minute)
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
-		So(err.Error(), ShouldEqual, "tick happened 200ms before it was expected")
+		So(err, ShouldBeNil)
+		So(tm.Actions, ShouldResemble, []Action{
+			TickLaterAction{
+				When:      parseTime("01:00"),
+				TickNonce: 2,
+			},
+		})
+		tm.Actions = nil
+
+		// Moderately early tick is ignored with an error.
+		tm.Now = parseTime("01:00").Add(-200 * time.Millisecond)
+		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
+		So(err, ShouldErrLike, "tick happened 200ms before it was expected")
 		So(tm.Actions, ShouldEqual, nil)
 
 		// Slightly earlier tick (i.e. due to clock desync) is accepted.
@@ -74,13 +88,13 @@ func TestMachine(t *testing.T) {
 		So(tm.Actions, ShouldEqual, nil)
 
 		// The correct tick comes. Invocation is started and new tick is scheduled.
-		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
+		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
 		So(err, ShouldBeNil)
 		So(tm.Actions, ShouldResemble, []Action{
-			StartInvocationAction{Generation: 3},
+			StartInvocationAction{Generation: 4},
 			TickLaterAction{
 				When:      parseTime("02:00"),
-				TickNonce: 2,
+				TickNonce: 3,
 			},
 		})
 
