@@ -108,6 +108,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a8a14ec_7d214e57",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T17:51:36Z",
+      "side": 1,
+      "message": "(fwiw, I like this, but I\u0027m not confident enough in the resultdb codebase to give a final stamp; I like that this has extra utility for combining multiple invocations in a one-shot RPC, too :))",
+      "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "faaa58ad_6251c8ff",
