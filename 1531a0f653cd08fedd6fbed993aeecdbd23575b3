@@ -22,6 +22,30 @@
       },
       "revId": "1531a0f653cd08fedd6fbed993aeecdbd23575b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3809e21_7eeafe4c",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-11T00:48:03Z",
+      "side": 1,
+      "message": "No, deciding which one is .ready to be used in Runs is just as important.",
+      "parentUuid": "1afbcb5e_8b797e32",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "1531a0f653cd08fedd6fbed993aeecdbd23575b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
