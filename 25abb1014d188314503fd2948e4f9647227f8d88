@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "313909b3_91ed0d95",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-11T04:22:17Z",
+      "side": 1,
+      "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/10717/overview\n\nIt just sends events to GA: https://screenshot.googleplex.com/AosLM5A8CdthZye",
+      "revId": "25abb1014d188314503fd2948e4f9647227f8d88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
