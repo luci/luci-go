@@ -87,6 +87,30 @@
       },
       "revId": "25abb1014d188314503fd2948e4f9647227f8d88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad1e73ab_e62f031e",
+        "filename": "milo/frontend/resultui/src/libs/constants.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-11T05:24:43Z",
+      "side": 1,
+      "message": "in general, I think \"constants.ts\" approach doesn\u0027t scale. It some point there will be so many, unrelated constants, that the file might turn into a \"dumping ground\". The key source of smell is that it might collect a bunch of things that have little to do with each other.",
+      "parentUuid": "4212a211_24e95a79",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 1
+      },
+      "revId": "25abb1014d188314503fd2948e4f9647227f8d88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
