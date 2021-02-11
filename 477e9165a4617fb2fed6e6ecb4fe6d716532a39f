@@ -88,6 +88,24 @@
       "parentUuid": "94816422_510052ce",
       "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d4ab707f_fb7f7064",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-11T05:51:35Z",
+      "side": 1,
+      "message": "ah, one more use cases where this functionality may be useful: you have two invocations, and you\u0027d like to combine them.",
+      "parentUuid": "eeaf0249_b0d075c6",
+      "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
