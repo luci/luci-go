@@ -30,6 +30,7 @@ import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE } from '../libs/constants';
 import { TestNode } from '../models/test_node';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
@@ -105,6 +106,7 @@ export class TestResultsTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'test-results';
+    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED);
 
     // When a new test loader is received, load the first page and reset the
     // selected node.

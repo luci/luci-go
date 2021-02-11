@@ -12,7 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export function trackEvent(category: string, action: string, label?: string, value?: number) {
+export enum GA_CATEGORIES {
+  OVERVIEW_TAB = 'Overview Tab',
+  TEST_RESULTS_TAB = 'Test Results Tab',
+  STEPS_TAB = 'Steps Tab',
+  RELATED_BUILD_TAB = 'Related Builds Tab',
+  TIMELINE_TAB = 'Timeline Tab',
+  BLAMELIST_TAB = 'Blamelist Tab',
+}
+
+export enum GA_ACTIONS {
+  TAB_VISITED = 'Tab Visited',
+}
+
+export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
   // See https://developers.google.com/analytics/devguides/collection/analyticsjs/events?hl=en#event_fields
   // for more information
   ga('send', {
