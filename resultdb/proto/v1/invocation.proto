@@ -62,8 +62,11 @@ message Invocation {
 
   // Current state of the invocation.
   //
-  // Output only.
-  State state = 2 [ (google.api.field_behavior) = OUTPUT_ONLY ];
+  // At creation time this can be set to FINALIZING e.g. if this invocation is
+  // a simple wrapper of another and will itself not be modified.
+  //
+  // Otherwise this is an output only field.
+  State state = 2;
 
   // When the invocation was created.
   // Output only.
