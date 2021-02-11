@@ -52,6 +52,24 @@
       "parentUuid": "95dc4a8f_db1f487b",
       "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "94816422_510052ce",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-11T05:45:13Z",
+      "side": 1,
+      "message": "Agreed (sorry for the misleading comment in https://chromium-review.googlesource.com/c/infra/infra/+/2685271).\n\nBut now I\u0027m wondering if it\u0027s worth complicating the CreateInvocation for this special case to save a RPC. Does it violates the single-responsibility principle?",
+      "parentUuid": "08b99e42_cf424dc1",
+      "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
