@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "216832e3_5d81ccd3",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-11T22:04:46Z",
+      "side": 1,
+      "message": "+1 to refactor.",
+      "parentUuid": "7a1f3a12_cefb0c18",
+      "revId": "d86b6caefdcae6c2eac621159ab9b7675844b3ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2b0627ba_962b9c1e",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 4
