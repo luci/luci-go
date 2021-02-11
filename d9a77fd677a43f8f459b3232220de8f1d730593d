@@ -33,6 +33,24 @@
       "message": "Also I have no idea how to unit-test this goo...",
       "revId": "d9a77fd677a43f8f459b3232220de8f1d730593d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd64bc08_7ba263ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T17:50:14Z",
+      "side": 1,
+      "message": "Me either :(",
+      "parentUuid": "54980a71_78943c6e",
+      "revId": "d9a77fd677a43f8f459b3232220de8f1d730593d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

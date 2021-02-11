@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b51a660_97e251f0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T17:50:14Z",
+      "side": 1,
+      "message": "nit: Currently",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 7
+      },
+      "revId": "1fd7b2983bbc7dac1e966c768c44585b6dbfd1dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad04e681_0dbd9094",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T17:50:14Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "1fd7b2983bbc7dac1e966c768c44585b6dbfd1dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ff161c4_2c0b7600",
+        "filename": "auth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T17:50:14Z",
+      "side": 1,
+      "message": "🙃",
+      "range": {
+        "startLine": 103,
+        "startChar": 3,
+        "endLine": 103,
+        "endChar": 26
+      },
+      "revId": "1fd7b2983bbc7dac1e966c768c44585b6dbfd1dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "59694db3_20ad682a",
+        "filename": "auth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T17:50:14Z",
+      "side": 1,
+      "message": "maybe RequireIDTokens?",
+      "range": {
+        "startLine": 241,
+        "startChar": 1,
+        "endLine": 241,
+        "endChar": 12
+      },
+      "revId": "1fd7b2983bbc7dac1e966c768c44585b6dbfd1dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "932cd58b_4efe7e4e",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T17:50:14Z",
+      "side": 1,
+      "message": "this may not be enough of a hint on the command line? i.e. \"when should I set this?\"",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 174,
+        "endChar": 61
+      },
+      "revId": "1fd7b2983bbc7dac1e966c768c44585b6dbfd1dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7f6cd07_67617523",
+        "filename": "auth/internal/id_token.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T17:50:14Z",
+      "side": 1,
+      "message": "would it be worth having these fields be the full word instead of the optimized-for-json-short-key?",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 4
+      },
+      "revId": "1fd7b2983bbc7dac1e966c768c44585b6dbfd1dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
