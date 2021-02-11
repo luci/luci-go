@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ae9fd81_549db33b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-11T21:15:17Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "1531a0f653cd08fedd6fbed993aeecdbd23575b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1afbcb5e_8b797e32",
@@ -43,6 +60,53 @@
         "startChar": 0,
         "endLine": 79,
         "endChar": 7
+      },
+      "revId": "1531a0f653cd08fedd6fbed993aeecdbd23575b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0fabbfa_fa174d05",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-11T21:15:17Z",
+      "side": 1,
+      "message": "Got it; so optionally you could edit this function comment to be something like:\n\n    // triageCL triages a CL to determine whether it\u0027s ready.\n    //\n    // Updates the given clInfo; if the CL can be used in a run,\n    // .ready can be set to true; and if the CL should not be used\n    // and the trigger should be used, it can be marked to be purged.\n    //\n    // Panics iff the component is not in a valid state.",
+      "parentUuid": "d3809e21_7eeafe4c",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "1531a0f653cd08fedd6fbed993aeecdbd23575b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3074672a_04dcf3bd",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-11T21:15:17Z",
+      "side": 1,
+      "message": "Nit: ideally add a username or bug for TODOs, here and below",
+      "range": {
+        "startLine": 190,
+        "startChar": 6,
+        "endLine": 190,
+        "endChar": 10
       },
       "revId": "1531a0f653cd08fedd6fbed993aeecdbd23575b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
