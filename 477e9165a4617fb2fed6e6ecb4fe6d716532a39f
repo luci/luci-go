@@ -34,6 +34,24 @@
       "parentUuid": "6baef148_57d5dfc5",
       "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08b99e42_cf424dc1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-11T04:52:18Z",
+      "side": 1,
+      "message": "it is true that that task will do nothing in case of build-number-based invocations, but this CL changes *generic* code that must not assume that it will be used only in that case. A future reader of the updated proto comments might think that they can create a finalizing invocation that includes finalized invocations and it will work the same way as CreateInvocation+FinalizeInvocation (except it won\u0027t).\n\nI think creation of a finalized invocation must work the same way as creation of an invocation immediately followed by finalization.",
+      "parentUuid": "95dc4a8f_db1f487b",
+      "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
