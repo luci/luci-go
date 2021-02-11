@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba4d6022_7a114cda",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T16:44:28Z",
+      "side": 1,
+      "message": "I remembered; the new textproto renderer is non-deterministic and splatters alternate space characters and things like that into the output. Will likely cause red herrings in the diff :(",
+      "range": {
+        "startLine": 51,
+        "startChar": 3,
+        "endLine": 51,
+        "endChar": 18
+      },
+      "revId": "f7262d437ea8eaa42374a5fd4d6d9ba3c8a079b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a823a7c_3075716c",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-11T16:44:28Z",
+      "side": 1,
+      "message": "may as well make these stringbuilders",
+      "revId": "f7262d437ea8eaa42374a5fd4d6d9ba3c8a079b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
