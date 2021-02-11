@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a1f3a12_cefb0c18",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-11T21:46:09Z",
+      "side": 1,
+      "message": "this assumes that this code is synchronized with FinalizeInvocation code.\nCould you please add explicit comments here and in FinalizeInvocation that these pieces code MUST be synchronized to each other.\n\nor refactor the code to not assume that",
+      "revId": "d86b6caefdcae6c2eac621159ab9b7675844b3ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b0627ba_962b9c1e",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-11T21:46:09Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 108,
+        "startChar": 92,
+        "endLine": 108,
+        "endChar": 101
+      },
+      "revId": "d86b6caefdcae6c2eac621159ab9b7675844b3ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ce264c2_a7e71a5a",
+        "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-11T21:46:09Z",
+      "side": 1,
+      "message": "we should really get rid of tasks.UseFinalizationTQ. It is a long overdue, and now are adding more code because this dead code is still not deleted",
+      "revId": "d86b6caefdcae6c2eac621159ab9b7675844b3ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
