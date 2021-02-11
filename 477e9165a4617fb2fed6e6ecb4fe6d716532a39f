@@ -158,6 +158,24 @@
       "message": "imo, I would:\n  1) normalize all incoming UNSPECIFIED to ACTIVE\n  2) validate that all incoming invocations are explicitly in (ACTIVE, FINALIZING)\n  3) reject all other states\n\nRight now, if you add another state, this would permit you to generate a new invocation in that currently unknown state; I suspect that would be bad :)",
       "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e29c338_be594e6e",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-11T21:38:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "faaa58ad_6251c8ff",
+      "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
