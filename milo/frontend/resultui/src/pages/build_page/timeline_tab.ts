@@ -22,6 +22,7 @@ import { Timeline } from 'vis-timeline/peer';
 
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { displayDuration } from '../../libs/time_utils';
 
@@ -34,6 +35,7 @@ export class TimelineTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'timeline';
+    trackEvent(GA_CATEGORIES.TIMELINE_TAB, GA_ACTIONS.TAB_VISITED);
     this.rendered = false;
     this.disposers.push(
       autorun(

@@ -26,6 +26,7 @@ import '../../components/lazy_list';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/app_state/user_configs';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BuildStatus } from '../../services/buildbucket';
 
 export class StepsTabElement extends MobxLitElement {
@@ -37,6 +38,7 @@ export class StepsTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'steps';
+    trackEvent(GA_CATEGORIES.STEPS_TAB, GA_ACTIONS.TAB_VISITED);
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
