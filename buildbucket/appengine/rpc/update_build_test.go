@@ -105,7 +105,7 @@ func TestValidateUpdate(t *testing.T) {
 		})
 	})
 
-	Convey("validate BuildStatus", t, func() {
+	Convey("validate status", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status"}}
 
@@ -120,21 +120,21 @@ func TestValidateUpdate(t *testing.T) {
 		})
 	})
 
-	Convey("validate BuildTags", t, func() {
+	Convey("validate tags", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.tags"}}
 		req.Build.Tags = []*pb.StringPair{{Key: "ci:builder", Value: ""}}
 		So(validateUpdate(req, nil), ShouldErrLike, `tag key "ci:builder" cannot have a colon`)
 	})
 
-	Convey("validate SummaryMarkdown", t, func() {
+	Convey("validate summary_markdown", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}}
 		req.Build.SummaryMarkdown = strings.Repeat("☕", summaryMarkdownMaxLength)
 		So(validateUpdate(req, nil), ShouldErrLike, "too big to accept")
 	})
 
-	Convey("validate with Commit", t, func() {
+	Convey("validate output.gitiles_ommit", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.gitiles_commit"}}
 		req.Build.Output = &pb.Build_Output{GitilesCommit: &pb.GitilesCommit{
@@ -145,7 +145,24 @@ func TestValidateUpdate(t *testing.T) {
 		So(validateUpdate(req, nil), ShouldErrLike, "ref is required")
 	})
 
-	Convey("validate with Steps", t, func() {
+	Convey("validate output.properties", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.properties"}}
+
+		Convey("succeeds", func() {
+			props, _ := structpb.NewStruct(map[string]interface{}{"key": "value"})
+			req.Build.Output = &pb.Build_Output{Properties: props}
+			So(validateUpdate(req, nil), ShouldBeNil)
+		})
+
+		Convey("fails", func() {
+			props, _ := structpb.NewStruct(map[string]interface{}{"key": nil})
+			req.Build.Output = &pb.Build_Output{Properties: props}
+			So(validateUpdate(req, nil), ShouldErrLike, "value is not set")
+		})
+	})
+
+	Convey("validate steps", t, func() {
 		t, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC)
 		bs := &model.BuildSteps{ID: 1}
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
