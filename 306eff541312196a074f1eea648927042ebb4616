@@ -16,6 +16,40 @@
       "message": "Found two bugs from cr-buildbucket-dev. PTAL",
       "revId": "306eff541312196a074f1eea648927042ebb4616",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "700349f0_fcb201e8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-11T04:23:51Z",
+      "side": 1,
+      "message": "lgtm % tests coverage for Build entity is missing and should be added.",
+      "revId": "306eff541312196a074f1eea648927042ebb4616",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34deb418_49106067",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-11T04:23:51Z",
+      "side": 1,
+      "message": "how come this wasn\u0027t caught by tests?",
+      "revId": "306eff541312196a074f1eea648927042ebb4616",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
