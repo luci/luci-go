@@ -27,7 +27,7 @@ import (
 )
 
 // Version is the version of luci-auth tool.
-const Version = "1.1.1"
+const Version = "1.2.0"
 
 // GetApplication returns cli.Application that implements 'luci-auth'.
 //
@@ -58,14 +58,16 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 			}),
 
 			authcli.SubcommandInfoWithParams(authcli.CommandParams{
-				Name:          "info",
-				AuthOptions:   defaultAuthOpts,
-				UseScopeFlags: true,
+				Name:            "info",
+				AuthOptions:     defaultAuthOpts,
+				UseScopeFlags:   true,
+				UseIDTokenFlags: true,
 			}),
 			authcli.SubcommandTokenWithParams(authcli.CommandParams{
-				Name:          "token",
-				AuthOptions:   defaultAuthOpts,
-				UseScopeFlags: true,
+				Name:            "token",
+				AuthOptions:     defaultAuthOpts,
+				UseScopeFlags:   true,
+				UseIDTokenFlags: true,
 			}),
 
 			authcli.SubcommandContextWithParams(authcli.CommandParams{
