@@ -135,11 +135,15 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 	ms := make([]*spanner.Mutation, 0, len(reqs))
 	// Compute mutations
 	for _, req := range reqs {
+		newInvState := req.Invocation.GetState()
+		if newInvState == pb.Invocation_STATE_UNSPECIFIED {
+			newInvState = pb.Invocation_ACTIVE
+		}
 
 		// Prepare the invocation we will save to spanner.
 		inv := &pb.Invocation{
 			Name:             invocations.ID(req.InvocationId).Name(),
-			State:            pb.Invocation_ACTIVE,
+			State:            newInvState,
 			Deadline:         req.Invocation.GetDeadline(),
 			Tags:             req.Invocation.GetTags(),
 			BigqueryExports:  req.Invocation.GetBigqueryExports(),
