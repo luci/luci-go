@@ -112,6 +112,8 @@ enum TestVariantStatus {
   FLAKY = 2;
   // The test variant has one or more test exonerations.
   EXONERATED = 3;
+  // The test variant has no exonerations, and all results are unexpectedly skipped.
+  UNEXPECTEDLY_SKIPPED = 4;
   // The test variant has no exonerations, and all results are expected.
   EXPECTED = 16;
 }
