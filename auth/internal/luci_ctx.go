@@ -178,7 +178,8 @@ func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *Token) (
 			Expiry:      time.Unix(response.Expiry, 0).UTC(),
 			TokenType:   "Bearer",
 		},
-		Email: p.Email(),
+		IDToken: NoIDToken,
+		Email:   p.Email(),
 	}, nil
 }
 

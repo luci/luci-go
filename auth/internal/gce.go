@@ -210,7 +210,8 @@ func (p *gceTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 			"oauth2.google.tokenSource":    "compute-metadata",
 			"oauth2.google.serviceAccount": p.account,
 		}),
-		Email: p.Email(),
+		IDToken: NoIDToken,
+		Email:   p.Email(),
 	}, nil
 }
 

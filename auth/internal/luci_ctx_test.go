@@ -111,7 +111,8 @@ func TestLUCIContextProvider(t *testing.T) {
 					TokenType:   "Bearer",
 					Expiry:      time.Unix(1487456796, 0).UTC(),
 				},
-				Email: "some-acc-email@example.com",
+				IDToken: NoIDToken,
+				Email:   "some-acc-email@example.com",
 			})
 
 			So(<-requests, ShouldResemble, rpcs.GetOAuthTokenRequest{
