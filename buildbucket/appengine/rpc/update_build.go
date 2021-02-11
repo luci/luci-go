@@ -95,8 +95,10 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 		case "build.output":
 			// TODO(crbug/1110990): validate properties and gitiles_commit
 		case "build.output.properties":
-			if req.Build.Output.GetProperties() == nil {
-				return errors.Reason("build.output.properties: unspecified").Err()
+			for k, v := range req.Build.Output.GetProperties().AsMap() {
+				if v == nil {
+					return errors.Reason("build.output.properties[%q]: value is not set; if necessary, use null_value instead", k).Err()
+				}
 			}
 		case "build.output.gitiles_commit":
 			if err := validateCommitWithRef(req.Build.Output.GetGitilesCommit()); err != nil {
@@ -280,9 +282,13 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 
 		// output.properties
 		if buildMask.MustIncludes("output.properties") == mask.IncludeEntirely {
+			prop := model.DSStruct{}
+			if req.Build.Output.Properties != nil {
+				prop = model.DSStruct{*req.Build.Output.Properties}
+			}
 			toSave = append(toSave, &model.BuildOutputProperties{
 				Build: bk,
-				Proto: model.DSStruct{*req.Build.Output.Properties},
+				Proto: prop,
 			})
 		}
 
