@@ -105,7 +105,7 @@ type Build struct {
 
 	// UpdateToken is set at the build creation time, and UpdateBuild requests are required
 	// to have it in the header.
-	UpdateToken string `gae:update_token,noindex`
+	UpdateToken string `gae:"update_token,noindex"`
 
 	// PubSubCallback, if set, creates notifications for build status changes.
 	PubSubCallback PubSubCallback `gae:"pubsub_callback,noindex"`
