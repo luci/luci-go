@@ -15,13 +15,17 @@
 package assertions
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
+	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+
+	protoLegacy "github.com/golang/protobuf/proto"
+
+	"github.com/smartystreets/assertions"
 )
 
 // ShouldResembleProto asserts that given two values that contain proto messages
@@ -41,13 +45,12 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 	// strings. This is much simpler than trying to achieve the same using
 	// reflection, clearing of XXX_*** fields and ShouldResemble.
 
-	if m, ok := actual.(proto.Message); ok {
-		if err := convey.ShouldHaveSameTypeAs(actual, exp); err != "" {
+	if am, ok := protoMessage(actual); ok {
+		if err := assertions.ShouldHaveSameTypeAs(actual, exp); err != "" {
 			return err
 		}
-		return convey.ShouldEqual(
-			proto.MarshalTextString(m),
-			proto.MarshalTextString(exp.(proto.Message)))
+		em, _ := protoMessage(exp)
+		return assertions.ShouldEqual(textPBMultiline.Format(am), textPBMultiline.Format(em))
 	}
 
 	lVal := reflect.ValueOf(actual)
@@ -56,31 +59,28 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 		if rVal.Kind() != reflect.Slice {
 			return "ShouldResembleProto is expecting both arguments to be a slice if first one is a slice"
 		}
-		if err := convey.ShouldHaveLength(actual, rVal.Len()); err != "" {
+		if err := assertions.ShouldHaveLength(actual, rVal.Len()); err != "" {
 			return err
 		}
 
-		left := bytes.Buffer{}
-		right := bytes.Buffer{}
+		var left, right strings.Builder
 
 		for i := 0; i < lVal.Len(); i++ {
 			l := lVal.Index(i).Interface()
 			r := rVal.Index(i).Interface()
-			if err := convey.ShouldHaveSameTypeAs(l, r); err != "" {
+			if err := assertions.ShouldHaveSameTypeAs(l, r); err != "" {
 				return err
 			}
 			if i != 0 {
 				left.WriteString("---\n")
 				right.WriteString("---\n")
 			}
-			if err := proto.MarshalText(&left, l.(proto.Message)); err != nil {
-				return err.Error()
-			}
-			if err := proto.MarshalText(&right, r.(proto.Message)); err != nil {
-				return err.Error()
-			}
+			lm, _ := protoMessage(l)
+			rm, _ := protoMessage(r)
+			left.WriteString(textPBMultiline.Format(lm))
+			right.WriteString(textPBMultiline.Format(rm))
 		}
-		return convey.ShouldEqual(left.String(), right.String())
+		return assertions.ShouldEqual(left.String(), right.String())
 	}
 
 	return fmt.Sprintf(
@@ -92,18 +92,28 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 // is protobuf text.
 // actual must be a message. A slice of messages is not supported.
 func ShouldResembleProtoText(actual interface{}, expected ...interface{}) string {
-	return shouldResembleProtoUnmarshal(proto.UnmarshalText, actual, expected...)
+	return shouldResembleProtoUnmarshal(
+		func(s string, m proto.Message) error {
+			return prototext.Unmarshal([]byte(s), m)
+		},
+		actual,
+		expected...)
 }
 
 // ShouldResembleProtoJSON is like ShouldResembleProto, but expected
 // is protobuf text.
 // actual must be a message. A slice of messages is not supported.
 func ShouldResembleProtoJSON(actual interface{}, expected ...interface{}) string {
-	return shouldResembleProtoUnmarshal(jsonpb.UnmarshalString, actual, expected...)
+	return shouldResembleProtoUnmarshal(
+		func(s string, m proto.Message) error {
+			return protojson.Unmarshal([]byte(s), m)
+		},
+		actual,
+		expected...)
 }
 
 func shouldResembleProtoUnmarshal(unmarshal func(string, proto.Message) error, actual interface{}, expected ...interface{}) string {
-	if _, ok := actual.(proto.Message); !ok {
+	if _, ok := protoMessage(actual); !ok {
 		return fmt.Sprintf("ShouldResembleProtoText expects a proto message, got %T", actual)
 	}
 
@@ -121,4 +131,19 @@ func shouldResembleProtoUnmarshal(unmarshal func(string, proto.Message) error, a
 		return err.Error()
 	}
 	return ShouldResembleProto(actual, expMsg)
+}
+
+var textPBMultiline = prototext.MarshalOptions{
+	Multiline: true,
+}
+
+// protoMessage returns V2 proto message, converting v1 on the fly.
+func protoMessage(a interface{}) (proto.Message, bool) {
+	if m, ok := a.(proto.Message); ok {
+		return m, true
+	}
+	if m, ok := a.(protoLegacy.Message); ok {
+		return protoLegacy.MessageV2(m), true
+	}
+	return nil, false
 }
