@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/assertions"
+
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 )
 
 // ShouldResembleProto asserts that given two values that contain proto messages
@@ -42,12 +44,12 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 	// reflection, clearing of XXX_*** fields and ShouldResemble.
 
 	if m, ok := actual.(proto.Message); ok {
-		if err := convey.ShouldHaveSameTypeAs(actual, exp); err != "" {
+		if err := assertions.ShouldHaveSameTypeAs(actual, exp); err != "" {
 			return err
 		}
-		return convey.ShouldEqual(
-			proto.MarshalTextString(m),
-			proto.MarshalTextString(exp.(proto.Message)))
+		return assertions.ShouldEqual(
+			textPBMultiline.Format(m),
+			textPBMultiline.Format(exp.(proto.Message)))
 	}
 
 	lVal := reflect.ValueOf(actual)
@@ -56,7 +58,7 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 		if rVal.Kind() != reflect.Slice {
 			return "ShouldResembleProto is expecting both arguments to be a slice if first one is a slice"
 		}
-		if err := convey.ShouldHaveLength(actual, rVal.Len()); err != "" {
+		if err := assertions.ShouldHaveLength(actual, rVal.Len()); err != "" {
 			return err
 		}
 
@@ -66,21 +68,17 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 		for i := 0; i < lVal.Len(); i++ {
 			l := lVal.Index(i).Interface()
 			r := rVal.Index(i).Interface()
-			if err := convey.ShouldHaveSameTypeAs(l, r); err != "" {
+			if err := assertions.ShouldHaveSameTypeAs(l, r); err != "" {
 				return err
 			}
 			if i != 0 {
 				left.WriteString("---\n")
 				right.WriteString("---\n")
 			}
-			if err := proto.MarshalText(&left, l.(proto.Message)); err != nil {
-				return err.Error()
-			}
-			if err := proto.MarshalText(&right, r.(proto.Message)); err != nil {
-				return err.Error()
-			}
+			left.WriteString(textPBMultiline.Format(l.(proto.Message)))
+			right.WriteString(textPBMultiline.Format(r.(proto.Message)))
 		}
-		return convey.ShouldEqual(left.String(), right.String())
+		return assertions.ShouldEqual(left.String(), right.String())
 	}
 
 	return fmt.Sprintf(
@@ -92,14 +90,24 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 // is protobuf text.
 // actual must be a message. A slice of messages is not supported.
 func ShouldResembleProtoText(actual interface{}, expected ...interface{}) string {
-	return shouldResembleProtoUnmarshal(proto.UnmarshalText, actual, expected...)
+	return shouldResembleProtoUnmarshal(
+		func(s string, m proto.Message) error {
+			return prototext.Unmarshal([]byte(s), m)
+		},
+		actual,
+		expected...)
 }
 
 // ShouldResembleProtoJSON is like ShouldResembleProto, but expected
 // is protobuf text.
 // actual must be a message. A slice of messages is not supported.
 func ShouldResembleProtoJSON(actual interface{}, expected ...interface{}) string {
-	return shouldResembleProtoUnmarshal(jsonpb.UnmarshalString, actual, expected...)
+	return shouldResembleProtoUnmarshal(
+		func(s string, m proto.Message) error {
+			return protojson.Unmarshal([]byte(s), m)
+		},
+		actual,
+		expected...)
 }
 
 func shouldResembleProtoUnmarshal(unmarshal func(string, proto.Message) error, actual interface{}, expected ...interface{}) string {
@@ -121,4 +129,8 @@ func shouldResembleProtoUnmarshal(unmarshal func(string, proto.Message) error, a
 		return err.Error()
 	}
 	return ShouldResembleProto(actual, expMsg)
+}
+
+var textPBMultiline = prototext.MarshalOptions{
+	Multiline: true,
 }
