@@ -14,7 +14,7 @@
 
 // Package auth implements a wrapper around golang.org/x/oauth2.
 //
-// Its main improvement is the on-disk cache for OAuth tokens, which is
+// Its main improvement is the on-disk cache for authentication tokens, which is
 // especially important for 3-legged interactive OAuth flows: its usage
 // eliminates annoying login prompts each time a program is used (because the
 // refresh token can now be reused). The cache also allows to reduce unnecessary
@@ -79,6 +79,12 @@ var (
 	// to authenticator indicate incompatible features. This likely indicates
 	// a programming error.
 	ErrBadOptions = errors.New("bad authenticator options")
+
+	// ErrNoIDToken is returned by GetAccessToken when UseIDTokens option is true,
+	// but the authentication method doesn't actually support ID tokens either
+	// inherently by its nature (e.g. not implemented) or due to its configuration
+	// (e.g. no necessary scopes).
+	ErrNoIDToken = errors.New("ID tokens are not supported in this configuration")
 )
 
 // Some known Google API OAuth scopes.
@@ -89,12 +95,12 @@ const (
 
 const (
 	// GCEServiceAccount is special value that can be passed instead of path to
-	// a service account credentials file to indicate that GCE VM credentials should
-	// be used instead of a real credentials file.
+	// a service account credentials file to indicate that GCE VM credentials
+	// should be used instead of a real credentials file.
 	GCEServiceAccount = ":gce"
 )
 
-// Method defines a method to use to obtain OAuth access token.
+// Method defines a method to use to obtain authentication token.
 type Method string
 
 // Supported authentication methods.
@@ -218,10 +224,21 @@ type Options struct {
 	// Default: http.DefaultTransport.
 	Transport http.RoundTripper
 
-	// Method defines how to grab OAuth2 tokens.
+	// Method defines how to grab authentication tokens.
 	//
 	// Default: AutoSelectMethod.
 	Method Method
+
+	// UseIDTokens indicates to use ID tokens instead of access tokens.
+	//
+	// All methods that use or return OAuth access tokens would use ID tokens
+	// instead. This is useful, for example, when calling APIs that are hosted on
+	// Cloud Run or served via Cloud Endpoints.
+	//
+	// Currently works only with UserCredentialsMethod.
+	//
+	// Default: false.
+	UseIDTokens bool
 
 	// Scopes is a list of OAuth scopes to request.
 	//
@@ -459,8 +476,8 @@ func AllowsArbitraryScopes(ctx context.Context, opts Options) bool {
 }
 
 // Authenticator is a factory for http.RoundTripper objects that know how to use
-// cached OAuth credentials and how to send monitoring metrics (if tsmon package
-// was imported).
+// cached credentials and how to send monitoring metrics (if tsmon package was
+// imported).
 //
 // Authenticator also knows how to run interactive login flow, if required.
 type Authenticator struct {
@@ -510,8 +527,8 @@ type Authenticator struct {
 // NewAuthenticator returns a new instance of Authenticator given its options.
 //
 // The authenticator is essentially a factory for http.RoundTripper that knows
-// how to use OAuth2 tokens. It is bound to the given context: uses its logger,
-// clock, transport and deadline.
+// how to use and update cached credentials tokens. It is bound to the given
+// context: uses its logger, clock and deadline.
 func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *Authenticator {
 	// Add default scope, sort scopes.
 	if len(opts.Scopes) == 0 {
@@ -632,11 +649,19 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 	if err != nil {
 		return nil, err
 	}
+
+	// If interested in using ID tokens, but there's no ID token cached yet, force
+	// a refresh. Note that auth methods that don't support ID tokens at all
+	// return internal.NoIDToken in place of the ID token (and it is != ""). This
+	// case is handled below.
+	forceRefresh := tok != nil && a.opts.UseIDTokens && tok.IDToken == ""
+
 	// Impose some arbitrary limit, since <= 0 lifetime won't work.
 	if lifetime < time.Second {
 		lifetime = time.Second
 	}
-	if tok == nil || internal.TokenExpiresInRnd(a.ctx, tok, lifetime) {
+
+	if tok == nil || forceRefresh || internal.TokenExpiresInRnd(a.ctx, tok, lifetime) {
 		// Give 5 sec extra to make sure callers definitely receive a token that
 		// has at least 'lifetime' seconds of life left. Without this margin, we
 		// can get into an unlucky situation where the token is valid here, but
@@ -653,6 +678,18 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 			return nil, fmt.Errorf("auth: failed to refresh the token")
 		}
 	}
+
+	if a.opts.UseIDTokens {
+		if tok.IDToken == "" || tok.IDToken == internal.NoIDToken {
+			return nil, ErrNoIDToken
+		}
+		return &oauth2.Token{
+			AccessToken: tok.IDToken,
+			Expiry:      tok.Expiry,
+			TokenType:   "Bearer",
+		}, nil
+	}
+
 	return &tok.Token, nil
 }
 

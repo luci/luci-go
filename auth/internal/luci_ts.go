@@ -122,7 +122,8 @@ func (p *luciTSTokenProvider) MintToken(ctx context.Context, base *Token) (*Toke
 			Expiry:      google.TimeFromProto(resp.Expiry),
 			TokenType:   "Bearer",
 		},
-		Email: p.Email(),
+		IDToken: NoIDToken,
+		Email:   p.Email(),
 	}, nil
 }
 
