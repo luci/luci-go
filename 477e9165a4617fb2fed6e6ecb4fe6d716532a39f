@@ -70,6 +70,24 @@
       "parentUuid": "08b99e42_cf424dc1",
       "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eeaf0249_b0d075c6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-11T05:50:08Z",
+      "side": 1,
+      "message": "idk if it violates SRP (the responsibility is still to create an invocation), but I definitely agree that it is more complexity. I think making two sequential RPCs during build creation would increase build creation latency, so I\u0027d like to avoid that. I\u0027d be OK with either a proper implementation of this CL, or creating finalization task on bb side.",
+      "parentUuid": "94816422_510052ce",
+      "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
