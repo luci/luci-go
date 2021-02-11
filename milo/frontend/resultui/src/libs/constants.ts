@@ -103,3 +103,17 @@ export const BUILD_STATUS_COLOR_MAP = Object.freeze({
   [BuildStatus.InfraFailure]: 'var(--critical-failure-color)',
   [BuildStatus.Canceled]: 'var(--canceled-color)',
 });
+
+// Google Analytics constants
+export enum GA_CATEGORIES {
+  OVERVIEW_TAB = 'Overview Tab',
+  TEST_RESULTS_TAB = 'Test Results Tab',
+  STEPS_TAB = 'Steps Tab',
+  RELATED_BUILD_TAB = 'Related Builds Tab',
+  TIMELINE_TAB = 'Timeline Tab',
+  BLAMELIST_TAB = 'Blamelist Tab',
+}
+
+export enum GA_ACTIONS {
+  TAB_VISITED = 'Tab Visited',
+}

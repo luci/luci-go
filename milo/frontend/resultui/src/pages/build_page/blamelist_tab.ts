@@ -24,7 +24,9 @@ import '../../components/dot_spinner';
 import '../../components/hotkey';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { trackEvent } from '../../libs/analytics_utils';
 import { getGitilesRepoURL } from '../../libs/build_utils';
+import { GA_ACTIONS, GA_CATEGORIES } from '../../libs/constants';
 import { GitCommit } from '../../services/milo_internal';
 
 export class BlamelistTabElement extends MobxLitElement {
@@ -91,6 +93,7 @@ export class BlamelistTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'blamelist';
+    trackEvent(GA_CATEGORIES.BLAMELIST_TAB, GA_ACTIONS.TAB_VISITED);
     this.disposer = reaction(
       () => this.queryBlamelistResIter,
       () => {

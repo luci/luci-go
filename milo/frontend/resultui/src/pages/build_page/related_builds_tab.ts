@@ -20,8 +20,9 @@ import { observable } from 'mobx';
 import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { trackEvent } from '../../libs/analytics_utils';
 import { getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, GA_ACTIONS, GA_CATEGORIES } from '../../libs/constants';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { BuildExt } from '../../models/build_ext';
@@ -33,6 +34,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'related-builds';
+    trackEvent(GA_CATEGORIES.RELATED_BUILD_TAB, GA_ACTIONS.TAB_VISITED);
   }
 
   protected render() {
