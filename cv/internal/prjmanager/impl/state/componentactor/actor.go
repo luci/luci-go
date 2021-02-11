@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -53,6 +54,20 @@ type Supporter interface {
 type Actor struct {
 	c *prjpb.Component
 	s supporterWrapper
+
+	// cls provides clid -> info for each CL of the component.
+	cls map[int64]*clInfo
+	// reverseDeps maps dep (as clid) -> which CLs depend on it.
+	//
+	// Only for CLs with clInfo.ready being true.
+	reverseDeps map[int64][]int64
+	// visitedCLs tracks clid of visited CLs during stageNewRuns.
+	visitedCLs map[int64]struct{}
+
+	// runBuilders are prepared by NextActionTime() and executed in Act().
+	runBuilders []*prjmanager.RunBuilder
+	// toPurge are clids of CLs which should be newly purged.
+	toPurge map[int64]struct{}
 }
 
 // New returns new Actor.
@@ -62,19 +77,30 @@ func New(c *prjpb.Component, s Supporter) *Actor {
 
 // NextActionTime implements componentActor.
 func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, error) {
-	// TODO(tandrii): implement.
-	if !a.c.GetDirty() {
-		return time.Time{}, nil
-	}
-	return now, nil
+	a.triageCLs()
+	return a.stageNewRuns(ctx)
 }
 
 // Act implements state.componentActor.
 func (a *Actor) Act(ctx context.Context) (*prjpb.Component, error) {
-	// TODO(tandrii): implement.
 	c := a.c.CloneShallow()
 	c.Dirty = false
+
+	switch newPruns, err := a.createRuns(ctx); {
+	case err != nil:
+		return nil, err
+	case len(newPruns) > 0:
+		c.Pruns, _ = c.COWPRuns(nil, newPruns)
+	}
+
+	// TODO: cancelations
+	// TODO: purges
 	return c, nil
+}
+
+func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
+	// TODO: implement.
+	return nil, nil
 }
 
 type supporterWrapper struct {
