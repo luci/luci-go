@@ -91,6 +91,10 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
+	if inv.GetState() == pb.Invocation_FINALIZED {
+		return errors.Reason("invocation.state: cannot be created in the finalized state").Err()
+	}
+
 	for i, bqExport := range inv.GetBigqueryExports() {
 		if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
 			return errors.Annotate(err, "bigquery_export[%d]", i).Err()

@@ -275,6 +275,17 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation.realm: bad global realm name`)
 		})
 
+		Convey(`invalid state`, func() {
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm: "chromium:ci",
+					State: pb.Invocation_FINALIZED,
+				},
+			}, now, addedInvs)
+			So(err, ShouldErrLike, `invocation.state: cannot be created in the finalized state`)
+		})
+
 		Convey(`invalid included invocation`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
@@ -313,6 +324,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					Tags:                pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
 					Realm:               "chromium:ci",
 					IncludedInvocations: []string{"invocations/u-abc-2"},
+					State:               pb.Invocation_FINALIZING,
 				},
 			}, now, addedInvs)
 			So(err, ShouldBeNil)
@@ -500,6 +512,7 @@ func TestCreateInvocation(t *testing.T) {
 						UseInvocationTimestamp: true,
 					},
 					IncludedInvocations: []string{"invocations/u-inv-child"},
+					State:               pb.Invocation_FINALIZING,
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
@@ -508,7 +521,6 @@ func TestCreateInvocation(t *testing.T) {
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-inv",
-				State:     pb.Invocation_ACTIVE,
 				CreatedBy: "user:someone@example.com",
 
 				// we use Spanner commit time, so skip the check
