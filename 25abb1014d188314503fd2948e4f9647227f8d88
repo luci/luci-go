@@ -16,6 +16,29 @@
       "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/10717/overview\n\nIt just sends events to GA: https://screenshot.googleplex.com/AosLM5A8CdthZye",
       "revId": "25abb1014d188314503fd2948e4f9647227f8d88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51b4223f_c7dbb746",
+        "filename": "milo/frontend/resultui/src/libs/constants.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-11T04:54:43Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be in analytics_util.ts, and shouldn\u0027t trackEvent function accept enums instead of strings?",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 1
+      },
+      "revId": "25abb1014d188314503fd2948e4f9647227f8d88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
