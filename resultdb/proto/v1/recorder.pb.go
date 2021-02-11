@@ -898,9 +898,7 @@ type BatchCreateArtifactsRequest struct {
 
 	// Requests to create Artifacts.
 	// The sum of the content lengths MUST be <= 10MiB.
-	// requests[i].invocation MUST be equal to invocation in this message.
-	// requests[i].request_id MUST be either empty or equal to request_id
-	// in this message.
+	// The parents of all the requests must be derived from the same invocation.
 	Requests []*CreateArtifactRequest `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty"`
 }
 
