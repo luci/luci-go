@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5991972_416ad647",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-11T06:58:30Z",
+      "side": 0,
+      "message": "Same. This is not checked by PyBB. I will do this after the traffic migration completed.",
+      "range": {
+        "startLine": 96,
+        "startChar": 3,
+        "endLine": 96,
+        "endChar": 65
+      },
+      "revId": "1902e2f6999761ac384f2b7d945adc68b688da2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f6c05cc_6ab30f15",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-11T06:58:30Z",
+      "side": 0,
+      "message": "if this was reasonable, then I will add this check after the traffic migration is completed. I\u0027d like avoid additional checks ,to GoBB, that were not checked by PyBB.",
+      "range": {
+        "startLine": 98,
+        "startChar": 3,
+        "endLine": 99,
+        "endChar": 70
+      },
+      "revId": "1902e2f6999761ac384f2b7d945adc68b688da2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
