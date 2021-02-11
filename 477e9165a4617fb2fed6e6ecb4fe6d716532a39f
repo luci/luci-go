@@ -16,6 +16,24 @@
       "message": "see how FinalizeInvocation is implemented. It is more than just setting the column in Spanner.",
       "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "95dc4a8f_db1f487b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-11T03:39:59Z",
+      "side": 1,
+      "message": "The only other part that I see is the scheduling of the task, which, as Chan pointed out, will get dropped anyway since the included invocation will not be ready. What am I missing?",
+      "parentUuid": "6baef148_57d5dfc5",
+      "revId": "477e9165a4617fb2fed6e6ecb4fe6d716532a39f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
