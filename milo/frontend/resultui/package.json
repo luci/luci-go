@@ -12,6 +12,7 @@
     "@material/mwc-icon": "^0.17.2",
     "@material/mwc-textarea": "^0.18.0",
     "@types/codemirror": "0.0.98",
+    "@types/google.analytics": "0.0.41",
     "@vaadin/router": "^1.7.2",
     "bottleneck": "^2.19.5",
     "codemirror": "^5.58.2",
