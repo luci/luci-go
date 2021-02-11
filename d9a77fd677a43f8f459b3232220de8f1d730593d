@@ -16,6 +16,23 @@
       "message": "PTAL\n\nIt is a bit hairy and I expect more refactorings in the future to support more ways of getting the token (e.g. using service accounts). \n\nOne feature I tried to keep is ability to \"pick up\" existing cached refresh tokens, so users don\u0027t need to do \"luci-auth login\" again.",
       "revId": "d9a77fd677a43f8f459b3232220de8f1d730593d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54980a71_78943c6e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-11T01:20:44Z",
+      "side": 1,
+      "message": "Also I have no idea how to unit-test this goo...",
+      "revId": "d9a77fd677a43f8f459b3232220de8f1d730593d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
