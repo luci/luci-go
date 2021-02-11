@@ -32,9 +32,13 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -275,6 +279,17 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation.realm: bad global realm name`)
 		})
 
+		Convey(`invalid state`, func() {
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm: "chromium:ci",
+					State: pb.Invocation_FINALIZED,
+				},
+			}, now, addedInvs)
+			So(err, ShouldErrLike, `invocation.state: cannot be created in the state FINALIZED`)
+		})
+
 		Convey(`invalid included invocation`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
@@ -313,6 +328,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					Tags:                pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
 					Realm:               "chromium:ci",
 					IncludedInvocations: []string{"invocations/u-abc-2"},
+					State:               pb.Invocation_FINALIZING,
 				},
 			}, now, addedInvs)
 			So(err, ShouldBeNil)
@@ -324,6 +340,8 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, sched := tq.TestingContext(ctx, nil)
+		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -500,15 +518,18 @@ func TestCreateInvocation(t *testing.T) {
 						UseInvocationTimestamp: true,
 					},
 					IncludedInvocations: []string{"invocations/u-inv-child"},
+					State:               pb.Invocation_FINALIZING,
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
 			So(err, ShouldBeNil)
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.TryFinalizeInvocation{
+				{InvocationId: "u-inv"},
+			})
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-inv",
-				State:     pb.Invocation_ACTIVE,
 				CreatedBy: "user:someone@example.com",
 
 				// we use Spanner commit time, so skip the check

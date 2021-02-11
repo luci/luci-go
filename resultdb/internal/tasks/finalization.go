@@ -58,6 +58,13 @@ func StartInvocationFinalization(ctx context.Context, id invocations.ID) {
 		"InvocationId": id,
 		"State":        pb.Invocation_FINALIZING,
 	}))
+	EnqueueFinalizationTask(ctx, id)
+}
+
+// EnqueueFinalizationTask equeues an async task to transition the invocation
+// FINALIZING to FINALIZED and perform other finalization steps, if the
+// invocation is ready.
+func EnqueueFinalizationTask(ctx context.Context, id invocations.ID) {
 	if UseFinalizationTQ.Enabled(ctx) {
 		tq.MustAddTask(ctx, &tq.Task{
 			Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
