@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3fd1a91d_8b2191b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-11T23:04:29Z",
+      "side": 1,
+      "message": "I forgot to add v1 message -\u003e v2 message conversion. Fixed. Now all test pass, even in infra/infra.",
+      "revId": "f7262d437ea8eaa42374a5fd4d6d9ba3c8a079b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ba4d6022_7a114cda",
@@ -48,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "544aecb1_add3b787",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-11T23:04:29Z",
+      "side": 1,
+      "message": "what Vadim says \u003d\u003e the strictly diff should be constant, but surrounding text may indeed vary.",
+      "parentUuid": "19386848_a3b9e4ce",
+      "range": {
+        "startLine": 51,
+        "startChar": 3,
+        "endLine": 51,
+        "endChar": 18
+      },
+      "revId": "f7262d437ea8eaa42374a5fd4d6d9ba3c8a079b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7a823a7c_3075716c",
@@ -61,6 +102,24 @@
       "writtenOn": "2021-02-11T16:44:28Z",
       "side": 1,
       "message": "may as well make these stringbuilders",
+      "revId": "f7262d437ea8eaa42374a5fd4d6d9ba3c8a079b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ccb8f35c_a604d56f",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-11T23:04:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a823a7c_3075716c",
       "revId": "f7262d437ea8eaa42374a5fd4d6d9ba3c8a079b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
