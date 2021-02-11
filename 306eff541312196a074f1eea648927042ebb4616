@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b498814b_f9972d14",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-11T07:37:01Z",
+      "side": 1,
+      "message": "Answered in a different comment.",
+      "parentUuid": "700349f0_fcb201e8",
+      "revId": "306eff541312196a074f1eea648927042ebb4616",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "34deb418_49106067",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-02-11T04:23:51Z",
       "side": 1,
       "message": "how come this wasn\u0027t caught by tests?",
+      "revId": "306eff541312196a074f1eea648927042ebb4616",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "344df10f_20a46e08",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-11T07:37:01Z",
+      "side": 1,
+      "message": "In unit-tests, it correctly loads the field value from datastore.GetTestable(), where it failed from the real datastore.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/rpc/update_build_test.go;l\u003d409\n\nI believe that this is a bug. filed crbug.com/1177190.",
+      "parentUuid": "34deb418_49106067",
       "revId": "306eff541312196a074f1eea648927042ebb4616",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
