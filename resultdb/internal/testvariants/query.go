@@ -336,6 +336,7 @@ var testVariantsWithUnexpectedResultsSQL = `
 			VariantHash,
 			ANY_VALUE(Variant) Variant,
 			COUNTIF(IsUnexpected) num_unexpected,
+			COUNTIF(Status=5) num_skipped,
 			COUNT(TestId) num_total,
 			ARRAY_AGG(STRUCT(
 				InvocationId,
@@ -369,10 +370,11 @@ var testVariantsWithUnexpectedResultsSQL = `
 			tv.VariantHash,
 			tv.Variant,
 			CASE
-				WHEN exonerated.TestId IS NOT NULL THEN 3 -- "EXONERATED"
-				WHEN num_unexpected = 0 THEN 16 -- "EXPECTED", but should never happen in this query
-				WHEN num_unexpected = num_total THEN 1 -- "UNEXPECTED"
-				ELSE 2 --"FLAKY"
+				WHEN exonerated.TestId IS NOT NULL THEN 40 -- "EXONERATED"
+				WHEN num_unexpected = 0 THEN 50 -- "EXPECTED", but should never happen in this query
+				WHEN num_skipped = num_unexpected AND num_skipped = num_total THEN 20 -- "UNEXPECTEDLY_SKIPPED"
+				WHEN num_unexpected = num_total THEN 10 -- "UNEXPECTED"
+				ELSE 30 --"FLAKY"
 			END TvStatus,
 			ARRAY(
 				SELECT AS STRUCT *
