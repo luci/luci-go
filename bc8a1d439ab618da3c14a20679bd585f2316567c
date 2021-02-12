@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8799c5d5_e523377c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T20:02:32Z",
+      "side": 1,
+      "message": "lgtm; I suspect you\u0027ll be flipping between this and the previous version directly in pantheon, right?",
+      "revId": "bc8a1d439ab618da3c14a20679bd585f2316567c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
