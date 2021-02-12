@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
 
@@ -57,7 +58,7 @@ var nullLogdogEnv = environ.New([]string{
 	bootstrap.EnvCoordinatorHost + "=test.example.com",
 })
 
-func commonOptions() (ctx context.Context, o *Options, tdir string, closer func()) {
+func commonOptions() (ctx context.Context, o *Options, tdir string, fake streamclient.Fake, closer func()) {
 	ctx, _ = testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
 	// luciexe protocol requires the 'host' application to manage the tempdir.
@@ -82,9 +83,13 @@ func commonOptions() (ctx context.Context, o *Options, tdir string, closer func(
 		panic(err)
 	}
 
+	fake = streamclient.NewFake()
+
 	o = &Options{
 		Env: nullLogdogEnv.Clone(),
 	}
+	o.Env.Set(bootstrap.EnvStreamServerPath, fake.StreamServerPath())
+
 	return
 }
 
@@ -129,7 +134,7 @@ func TestOptionsGeneral(t *testing.T) {
 
 func TestOptionsNamespace(t *testing.T) {
 	Convey(`test Options.Namespace`, t, func() {
-		ctx, o, _, closer := commonOptions()
+		ctx, o, _, _, closer := commonOptions()
 		defer closer()
 
 		nowP, _ := ptypes.TimestampProto(clock.Now(ctx))
@@ -212,7 +217,7 @@ func TestOptionsNamespace(t *testing.T) {
 
 func TestOptionsCacheDir(t *testing.T) {
 	Convey(`Options.CacheDir`, t, func() {
-		ctx, o, tdir, closer := commonOptions()
+		ctx, o, tdir, _, closer := commonOptions()
 		defer closer()
 
 		Convey(`default`, func() {
@@ -258,7 +263,7 @@ func TestOptionsCacheDir(t *testing.T) {
 
 func TestOptionsCollectOutput(t *testing.T) {
 	Convey(`Options.CollectOutput`, t, func() {
-		ctx, o, tdir, closer := commonOptions()
+		ctx, o, tdir, _, closer := commonOptions()
 		defer closer()
 
 		Convey(`default`, func() {
@@ -371,7 +376,7 @@ func TestOptionsCollectOutput(t *testing.T) {
 
 func TestOptionsEnv(t *testing.T) {
 	Convey(`Env`, t, func() {
-		ctx, o, _, closer := commonOptions()
+		ctx, o, _, _, closer := commonOptions()
 		defer closer()
 
 		Convey(`default`, func() {
@@ -396,7 +401,7 @@ func TestOptionsEnv(t *testing.T) {
 
 func TestOptionsStdio(t *testing.T) {
 	Convey(`stdio`, t, func() {
-		ctx, o, _, closer := commonOptions()
+		ctx, o, _, _, closer := commonOptions()
 		defer closer()
 
 		Convey(`default`, func() {
@@ -424,7 +429,7 @@ func TestOptionsStdio(t *testing.T) {
 
 func TestOptionsExtraDirs(t *testing.T) {
 	Convey(`tempDir+workDir`, t, func() {
-		ctx, o, tdir, closer := commonOptions()
+		ctx, o, tdir, _, closer := commonOptions()
 		defer closer()
 
 		Convey(`provided BaseDir`, func() {
