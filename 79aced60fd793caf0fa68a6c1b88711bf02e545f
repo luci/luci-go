@@ -43,6 +43,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "910ca3dd_1ed058d5",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-12T02:02:02Z",
+      "side": 1,
+      "message": "I think it\u0027s better to add the event handler to connectedCallback() then remove it in disconnectedCallback().",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 25
+      },
+      "revId": "79aced60fd793caf0fa68a6c1b88711bf02e545f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d21255c_64ac0907",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-12T02:02:02Z",
+      "side": 1,
+      "message": "\u003d\u003d\u003d for strict equal.",
+      "range": {
+        "startLine": 116,
+        "startChar": 34,
+        "endLine": 116,
+        "endChar": 36
+      },
+      "revId": "79aced60fd793caf0fa68a6c1b88711bf02e545f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0d9dc8c0_28133860",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 2
