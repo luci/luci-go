@@ -269,6 +269,30 @@
       },
       "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b494ec83_c12c2bda",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T22:30:07Z",
+      "side": 1,
+      "message": "read it, very 👍",
+      "parentUuid": "fd40fdbd_a441d241",
+      "range": {
+        "startLine": 109,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 0
+      },
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
