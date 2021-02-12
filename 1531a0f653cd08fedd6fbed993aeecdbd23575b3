@@ -162,6 +162,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f21dea35_f995c759",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T03:41:09Z",
+      "side": 1,
+      "message": "clInfo contains more than triage result, so I\u0027ve spun off triagedCL into separate struct and embedded it into clInfo. PTAL.",
+      "parentUuid": "254c1006_ff7668d2",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "1531a0f653cd08fedd6fbed993aeecdbd23575b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3074672a_04dcf3bd",
         "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
         "patchSetId": 1
