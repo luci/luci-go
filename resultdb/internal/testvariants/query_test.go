@@ -96,6 +96,8 @@ func TestQueryTestVariants(t *testing.T) {
 				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
 				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
 			),
+			insert.TestResults("inv1", "Tx", nil, pb.TestStatus_SKIP),
+			insert.TestResults("inv1", "Tz", nil, pb.TestStatus_SKIP, pb.TestStatus_SKIP),
 
 			insert.TestExonerations("inv0", "T1", nil, 1),
 		)...)
@@ -125,17 +127,35 @@ func TestQueryTestVariants(t *testing.T) {
 			}),
 		)
 
+		// Tx has an expected skip so it should be FLAKY instead of UNEXPECTEDLY_SKIPPED.
+		testutil.MustApply(ctx,
+			spanutil.InsertMap("TestResults", map[string]interface{}{
+				"InvocationId":    invocations.ID("inv1"),
+				"TestId":          "Tx",
+				"ResultId":        "1",
+				"Variant":         nil,
+				"VariantHash":     pbutil.VariantHash(nil),
+				"CommitTimestamp": spanner.CommitTimestamp,
+				"IsUnexpected":    false,
+				"Status":          pb.TestStatus_SKIP,
+				"RunDurationUsec": pbutil.MustDuration(duration).Microseconds(),
+				"StartTime":       startTime,
+			}),
+		)
+
 		Convey(`Unexpected works`, func() {
 			tvs, _ := mustFetch(q)
 			tvStrings := getTVStrings(tvs)
 			So(tvStrings, ShouldResemble, []string{
-				"1/T4/c467ccce5a16dc72",
-				"1/T5/e3b0c44298fc1c14",
-				"1/Ty/e3b0c44298fc1c14",
-				"2/T2/e3b0c44298fc1c14",
-				"2/T5/c467ccce5a16dc72",
-				"2/T8/e3b0c44298fc1c14",
-				"3/T1/e3b0c44298fc1c14",
+				"10/T4/c467ccce5a16dc72",
+				"10/T5/e3b0c44298fc1c14",
+				"10/Ty/e3b0c44298fc1c14",
+				"20/Tz/e3b0c44298fc1c14",
+				"30/T2/e3b0c44298fc1c14",
+				"30/T5/c467ccce5a16dc72",
+				"30/T8/e3b0c44298fc1c14",
+				"30/Tx/e3b0c44298fc1c14",
+				"40/T1/e3b0c44298fc1c14",
 			})
 
 			So(tvs[0].Results, ShouldResemble, []*uipb.TestResultBundle{
@@ -152,7 +172,7 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 				},
 			})
-			So(tvs[6].Exonerations[0], ShouldResemble, &pb.TestExoneration{
+			So(tvs[8].Exonerations[0], ShouldResemble, &pb.TestExoneration{
 				ExplanationHtml: "explanation 0",
 			})
 			So(len(tvs[2].Results), ShouldEqual, 10)
@@ -162,10 +182,10 @@ func TestQueryTestVariants(t *testing.T) {
 			q.PageToken = pagination.Token("EXPECTED", "", "")
 			tvs, _ := mustFetch(q)
 			So(getTVStrings(tvs), ShouldResemble, []string{
-				"16/T3/e3b0c44298fc1c14",
-				"16/T6/e3b0c44298fc1c14",
-				"16/T7/e3b0c44298fc1c14",
-				"16/T9/e3b0c44298fc1c14",
+				"50/T3/e3b0c44298fc1c14",
+				"50/T6/e3b0c44298fc1c14",
+				"50/T7/e3b0c44298fc1c14",
+				"50/T9/e3b0c44298fc1c14",
 			})
 			So(len(tvs[0].Results), ShouldEqual, 2)
 		})
@@ -179,29 +199,34 @@ func TestQueryTestVariants(t *testing.T) {
 			}
 
 			q.PageSize = 15
-			nextToken := page("", 6, []string{
-				"1/T4/c467ccce5a16dc72",
-				"1/T5/e3b0c44298fc1c14",
-				"1/Ty/e3b0c44298fc1c14",
-				"2/T2/e3b0c44298fc1c14",
-				"2/T5/c467ccce5a16dc72",
-				"2/T8/e3b0c44298fc1c14",
-				"3/T1/e3b0c44298fc1c14",
+			nextToken := page("", 8, []string{
+				"10/T4/c467ccce5a16dc72",
+				"10/T5/e3b0c44298fc1c14",
+				"10/Ty/e3b0c44298fc1c14",
+				"20/Tz/e3b0c44298fc1c14",
+				"30/T2/e3b0c44298fc1c14",
+				"30/T5/c467ccce5a16dc72",
+				"30/T8/e3b0c44298fc1c14",
+				"30/Tx/e3b0c44298fc1c14",
+				"40/T1/e3b0c44298fc1c14",
 			})
 			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
 			nextToken = page(nextToken, 1, []string{
-				"16/T3/e3b0c44298fc1c14",
+				"50/T3/e3b0c44298fc1c14",
 			})
 			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T5", "e3b0c44298fc1c14"))
 
 			nextToken = page(nextToken, 2, []string{
-				"16/T6/e3b0c44298fc1c14",
-				"16/T7/e3b0c44298fc1c14",
+				"50/T6/e3b0c44298fc1c14",
+				"50/T7/e3b0c44298fc1c14",
 			})
 			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T8", "e3b0c44298fc1c14"))
 
-			nextToken = page(nextToken, 1, []string{"16/T9/e3b0c44298fc1c14"})
+			nextToken = page(nextToken, 1, []string{"50/T9/e3b0c44298fc1c14"})
+			So(nextToken, ShouldEqual, "CghFWFBFQ1RFRAoCVHoKEGUzYjBjNDQyOThmYzFjMTQ=")
+
+			nextToken = page(nextToken, 0, []string{})
 			So(nextToken, ShouldEqual, "")
 		})
 
