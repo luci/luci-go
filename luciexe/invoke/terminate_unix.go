@@ -25,7 +25,7 @@ import (
 
 func setSysProcAttr(_ *exec.Cmd) {}
 
-func (s *Subprocess) terminiate() error {
+func (s *Subprocess) terminate() error {
 	if err := s.cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		return errors.Annotate(err, "send SIGTERM").Err()
 	}
