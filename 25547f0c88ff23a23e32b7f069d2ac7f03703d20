@@ -72,6 +72,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac772ff0_62a554dd",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-12T19:11:46Z",
+      "side": 1,
+      "message": "That sounds good :-)\n\nStill LGTM",
+      "parentUuid": "6f6521a7_7e208ee4",
+      "revId": "25547f0c88ff23a23e32b7f069d2ac7f03703d20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "43a3e1eb_a0122fd7",
