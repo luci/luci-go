@@ -59,6 +59,7 @@ var nullLogdogEnv = environ.New([]string{
 
 func commonOptions() (ctx context.Context, o *Options, tdir string, closer func()) {
 	ctx, _ = testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+	ctx = lucictx.SetDeadline(ctx, nil)
 
 	// luciexe protocol requires the 'host' application to manage the tempdir.
 	// In this context the test binary is the host. It's more
@@ -85,6 +86,7 @@ func commonOptions() (ctx context.Context, o *Options, tdir string, closer func(
 	o = &Options{
 		Env: nullLogdogEnv.Clone(),
 	}
+
 	return
 }
 

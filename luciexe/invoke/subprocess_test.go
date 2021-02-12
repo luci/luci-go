@@ -29,11 +29,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/lucictx"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -53,6 +55,7 @@ func init() {
 		fmt.Fprintln(os.Stderr, "ERROR: TIMER ENDED")
 		os.Exit(1)
 	case "signal":
+		fmt.Fprintf(os.Stderr, "signal subprocess started\n")
 		signalCh := make(chan os.Signal, 1)
 		signal.Notify(signalCh, signals.Interrupts()...)
 		touch := func(name string) error {
@@ -66,6 +69,7 @@ func init() {
 			fmt.Fprintf(os.Stderr, "ERROR: creating file %s\n", err)
 			os.Exit(unexpectedErrorExitCode)
 		}
+		fmt.Fprintf(os.Stderr, "touched %s\n", os.Args[1])
 		select {
 		case <-signalCh:
 			os.Exit(terminateExitCode)
@@ -112,7 +116,7 @@ func TestSubprocess(t *testing.T) {
 		selfArgs := []string{os.Args[0]}
 
 		Convey(`defaults`, func() {
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, nil)
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
 			So(err, ShouldBeNil)
 			So(sp.Step, ShouldBeNil)
 			build, err := sp.Wait()
@@ -122,7 +126,7 @@ func TestSubprocess(t *testing.T) {
 
 		Convey(`exiterr`, func() {
 			o.Env.Set(selfTestEnvvar, "exiterr")
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, nil)
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
 			So(err, ShouldBeNil)
 			So(sp.Step, ShouldBeNil)
 			build, err := sp.Wait()
@@ -132,7 +136,7 @@ func TestSubprocess(t *testing.T) {
 
 		Convey(`collect`, func() {
 			o.CollectOutput = true
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, nil)
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
 			So(err, ShouldBeNil)
 			So(sp.Step, ShouldBeNil)
 			build, err := sp.Wait()
@@ -145,6 +149,7 @@ func TestSubprocess(t *testing.T) {
 			o.CollectOutput = true
 			initialBuildTime := time.Date(2020, time.January, 2, 3, 4, 5, 6, time.UTC)
 			ctx, _ := testclock.UseTime(ctx, initialBuildTime)
+
 			inputBuild := &bbpb.Build{
 				Id:              11,
 				Status:          bbpb.Status_CANCELED,
@@ -160,7 +165,7 @@ func TestSubprocess(t *testing.T) {
 					Logs: []*bbpb.Log{{Name: "stdout"}},
 				},
 			}
-			sp, err := Start(ctx, selfArgs, inputBuild, o, nil)
+			sp, err := Start(ctx, selfArgs, inputBuild, o)
 			So(err, ShouldBeNil)
 			build, err := sp.Wait()
 			So(err, ShouldBeNil)
@@ -180,7 +185,7 @@ func TestSubprocess(t *testing.T) {
 			start := time.Now()
 
 			o.Env.Set(selfTestEnvvar, "hang")
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o, nil)
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
 			So(err, ShouldBeNil)
 			cancel()
 			_, err = sp.Wait()
@@ -189,14 +194,24 @@ func TestSubprocess(t *testing.T) {
 			So(time.Now(), ShouldHappenWithin, time.Second, start)
 		})
 
+		Convey(`cancel context before Start`, func() {
+			ctx, cancel := context.WithCancel(ctx)
+			cancel()
+			_, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			So(err, ShouldErrLike, "prior to starting subprocess: context canceled")
+		})
+
 		Convey(`deadline`, func() {
 			o.Env.Set(selfTestEnvvar, "signal")
-			deadlineEventCh := make(chan lucictx.DeadlineEvent, 1)
-			sendEvent := func(evt lucictx.DeadlineEvent) {
-				deadlineEventCh <- evt
-			}
+
+			ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+			ctx, cancel := clock.WithTimeout(ctx, 130*time.Second)
+
+			ctx, shutdown := lucictx.TrackSoftDeadline(ctx, 0)
+			defer shutdown()
+
 			readyFile := path.Join(tdir, "readyToCatchSignal")
-			sp, err := Start(ctx, append(selfArgs, readyFile), &bbpb.Build{Id: 1}, o, deadlineEventCh)
+			sp, err := Start(ctx, append(selfArgs, readyFile), &bbpb.Build{Id: 1}, o)
 			So(err, ShouldBeNil)
 			timer := time.After(time.Minute)
 			for {
@@ -208,18 +223,24 @@ func TestSubprocess(t *testing.T) {
 				}
 				if err == nil {
 					break
+				} else {
+					time.Sleep(time.Second)
 				}
 			}
 			defer os.Remove(readyFile)
+
 			Convey(`interrupt`, func() {
-				go sendEvent(lucictx.InterruptEvent)
+				shutdown()
+
 				bld, err := sp.Wait()
 				So(err, ShouldErrLike, "luciexe process is interrupted")
 				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
 				So(bld, ShouldResembleProto, &bbpb.Build{})
 			})
+
 			Convey(`timeout`, func() {
-				go sendEvent(lucictx.TimeoutEvent)
+				tc.Add(100 * time.Second) // hits soft deadline
+
 				bld, err := sp.Wait()
 				So(err, ShouldErrLike, "luciexe process timed out")
 				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
@@ -227,8 +248,10 @@ func TestSubprocess(t *testing.T) {
 					StatusDetails: &bbpb.StatusDetails{Timeout: &bbpb.StatusDetails_Timeout{}},
 				})
 			})
+
 			Convey(`closure`, func() {
-				go sendEvent(lucictx.ClosureEvent)
+				cancel()
+
 				bld, err := sp.Wait()
 				So(err, ShouldErrLike, "luciexe process's context is cancelled")
 				// The exit code for killed process varies on different platform.
