@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54f89cb5_4ca06600",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T20:50:33Z",
+      "side": 1,
+      "message": "This will probably win the most difficult CL to review of 2021 for me.\n\nLGTM overall with minor questions.",
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bac84e17_7951455e",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T20:50:33Z",
+      "side": 1,
+      "message": "👍for example and 👍for simplification.",
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5976a4ae_3efe0089",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T20:50:33Z",
+      "side": 1,
+      "message": "nit: why not ...%s %s\", reserveGracePeriod, d.GacePeriodDuration() ?",
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d7932e63_dddabcbd",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T20:50:33Z",
+      "side": 1,
+      "message": "1. Why seconds not supported?\n2. How about panicing if reserveGracePeriod has fractions of a sec?",
+      "range": {
+        "startLine": 187,
+        "startChar": 4,
+        "endLine": 187,
+        "endChar": 15
+      },
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0455ae6d_7539bb41",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T20:50:33Z",
+      "side": 1,
+      "message": "I don\u0027t grasp why is this necessary. Why is wait() insufficient to do this?\nI suspect you could be optimizing for early fail, but I don\u0027t see why it\u0027d be frequent or critical enough to worry. What am I missing?",
+      "range": {
+        "startLine": 109,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 0
+      },
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
