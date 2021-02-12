@@ -498,6 +498,8 @@ type GitilesCommit struct {
 	Id string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
 	// Commit ref, e.g. "refs/heads/master".
 	// NOT a branch name: if specified, must start with "refs/".
+	// If id is set, ref SHOULD also be set, so that git clients can
+	// know how to obtain the commit by id.
 	Ref string `protobuf:"bytes,4,opt,name=ref,proto3" json:"ref,omitempty"`
 	// Defines a total order of commits on the ref. Requires ref field.
 	// Typically 1-based, monotonically increasing, contiguous integer
