@@ -16,6 +16,24 @@
       "message": "lgtm; I suspect you\u0027ll be flipping between this and the previous version directly in pantheon, right?",
       "revId": "bc8a1d439ab618da3c14a20679bd585f2316567c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f0a9878_80b972fb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-12T20:04:40Z",
+      "side": 1,
+      "message": "Yes. I will migrate traffic to the new version, and then migrate it back to the previous version *1 minute* after the first traffic migration started.",
+      "parentUuid": "8799c5d5_e523377c",
+      "revId": "bc8a1d439ab618da3c14a20679bd585f2316567c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
