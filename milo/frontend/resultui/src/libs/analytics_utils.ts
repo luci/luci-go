@@ -19,10 +19,12 @@ export enum GA_CATEGORIES {
   RELATED_BUILD_TAB = 'Related Builds Tab',
   TIMELINE_TAB = 'Timeline Tab',
   BLAMELIST_TAB = 'Blamelist Tab',
+  STEP_LINKS = 'Step Links',
 }
 
 export enum GA_ACTIONS {
   TAB_VISITED = 'Tab Visited',
+  CLICK = 'Click',
 }
 
 export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
