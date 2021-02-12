@@ -249,7 +249,7 @@ func ensureBQTable(ctx context.Context, t table, newSchema bigquery.Schema) erro
 		switch {
 		case ok && apiErr.Code == http.StatusNotFound:
 			// Table doesn't exist. Create it and cache its existence for 5 minutes.
-			return nil, 5 * time.Minute, createBQTable(ctx, t)
+			return nil, 5 * time.Minute, createBQTable(ctx, t, newSchema)
 
 		case ok && apiErr.Code == http.StatusForbidden:
 			// No read table permission.
@@ -267,13 +267,13 @@ func ensureBQTable(ctx context.Context, t table, newSchema bigquery.Schema) erro
 	return err
 }
 
-func createBQTable(ctx context.Context, t table) error {
+func createBQTable(ctx context.Context, t table, newSchema bigquery.Schema) error {
 	err := t.Create(ctx, &bigquery.TableMetadata{
 		TimePartitioning: &bigquery.TimePartitioning{
 			Field:      "partition_time",
 			Expiration: partitionExpirationTime,
 		},
-		Schema: testResultRowSchema,
+		Schema: newSchema,
 	})
 	apiErr, ok := err.(*googleapi.Error)
 	switch {
