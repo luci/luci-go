@@ -43,26 +43,6 @@ func CurrentMaxShard(ctx context.Context) (int, error) {
 	return int(ret), err
 }
 
-// ReadTestResultCount returns the total number of test results of requested
-// invocations.
-func ReadTestResultCount(ctx context.Context, ids IDSet) (int64, error) {
-	if len(ids) == 0 {
-		return 0, nil
-	}
-
-	st := spanner.NewStatement(`
-		SELECT SUM(TestResultCount)
-		FROM Invocations
-		WHERE InvocationId IN UNNEST(@invIDs)
-	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"invIDs": ids,
-	})
-	var count spanner.NullInt64
-	err := spanutil.QueryFirstRow(ctx, st, &count)
-	return count.Int64, err
-}
-
 // TokenToMap parses a page token to a map.
 // The first component of the token is expected to be an invocation ID.
 // Convenient to initialize Spanner statement parameters.

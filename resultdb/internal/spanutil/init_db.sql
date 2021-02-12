@@ -73,9 +73,6 @@ CREATE TABLE Invocations (
   -- Value of Invocation.producer_resource. See its documentation.
   ProducerResource STRING(MAX),
 
-  -- Counter of TesultResults that belongs to this invocation directly.
-  TestResultCount INT64,
-
   -- If this invocation is to be queried (e.g. for test results history) by an
   -- ordinal range, such as a commit range, set the following two fields for
   -- indexing.
