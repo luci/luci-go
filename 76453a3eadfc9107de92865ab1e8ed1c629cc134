@@ -16,6 +16,24 @@
       "message": "PTAL.\n\nFor context, the change was made in https://crrev.com/c/2211222. It looks correct that id and ref should be mutually exclusive, but I believe that we need to update some recipes before enforcing the constraints.",
       "revId": "76453a3eadfc9107de92865ab1e8ed1c629cc134",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b1927ff_d7988509",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-12T21:25:23Z",
+      "side": 1,
+      "message": "example task\n: https://chromium-swarm.appspot.com/task?id\u003d51b0c73de69dbe10\u0026o\u003dtrue\u0026w\u003dtrue\n\nIt has both id and ref in `input.gitilesCommit`",
+      "parentUuid": "eeb6dbec_be070f72",
+      "revId": "76453a3eadfc9107de92865ab1e8ed1c629cc134",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
