@@ -46,18 +46,20 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 var UseFinalizationTQ = experiments.Register("rdb-use-tq-finalization")
 
 // StartInvocationFinalization changes invocation state to FINALIZING
-// and enqueues a TryFinalizeInvocation task.
+// if updateInv is set, and enqueues a TryFinalizeInvocation task.
 //
 // The caller is responsible for ensuring that the invocation is active.
 //
 // TODO(nodir): this package is not a great place for this function, but there
 // is no better package at the moment. Keep it here for now, but consider a
 // new package as the code base grows.
-func StartInvocationFinalization(ctx context.Context, id invocations.ID) {
-	span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
-		"InvocationId": id,
-		"State":        pb.Invocation_FINALIZING,
-	}))
+func StartInvocationFinalization(ctx context.Context, id invocations.ID, updateInv bool) {
+	if updateInv {
+		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+			"InvocationId": id,
+			"State":        pb.Invocation_FINALIZING,
+		}))
+	}
 	if UseFinalizationTQ.Enabled(ctx) {
 		tq.MustAddTask(ctx, &tq.Task{
 			Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
