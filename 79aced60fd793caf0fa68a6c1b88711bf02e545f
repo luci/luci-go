@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "03f47fdd_62439c6b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-12T02:47:01Z",
+      "side": 1,
+      "message": "I guess you want to refer to the exit page: https://screenshot.googleplex.com/BGus6sau57HHCa2? Searching around, I can see that\n\n\"The opposite of a landing page, an exit page on Google Analytics refers to the last page a user accesses before their session ends or they leave the site. The Exit Pages section of Google Analytics therefore allows you to see which pages people most frequently end their sessions on or leave the site after viewing.\"\n\n\nBecause most links in Milo has target\u003d\"_blank\", they open in new window, and the sessions do not end when they do that. So I don\u0027t think it is captured.\n\nhttps://analytics.google.com/analytics/web/#/report/content-exit-pages/a55762617w149032268p153926381/_u.date00\u003d20210211\u0026_u.date01\u003d20210212\u0026explorer-table.plotKeys\u003d%5B%5D\u0026explorer-table.rowStart\u003d0\u0026explorer-table.rowCount\u003d10/ does not capture log links when I clicked around.",
+      "parentUuid": "748e5fc8_c225d09c",
+      "revId": "79aced60fd793caf0fa68a6c1b88711bf02e545f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f0e16baf_5587577f",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 2
