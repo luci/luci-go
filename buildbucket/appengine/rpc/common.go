@@ -210,16 +210,16 @@ func validateCommit(cm *pb.GitilesCommit) error {
 		return errors.Reason("host is required").Err()
 	case cm.GetProject() == "":
 		return errors.Reason("project is required").Err()
-	case cm.GetId() != "":
-		switch {
-		case cm.Ref != "" || cm.Position != 0:
-			return errors.Reason("id is mutually exclusive with (ref and position)").Err()
-		case !sha1Regex.MatchString(cm.Id):
-			return errors.Reason("id must match %q", sha1Regex).Err()
-		}
 	case cm.GetRef() != "":
 		if !strings.HasPrefix(cm.Ref, "refs/") {
 			return errors.Reason("ref must match refs/.*").Err()
+		}
+	case cm.GetId() != "":
+		switch {
+		case cm.Position != 0:
+			return errors.Reason("position requires ref").Err()
+		case !sha1Regex.MatchString(cm.Id):
+			return errors.Reason("id must match %q", sha1Regex).Err()
 		}
 	default:
 		return errors.Reason("one of id or ref is required").Err()
