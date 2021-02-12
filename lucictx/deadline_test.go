@@ -115,7 +115,7 @@ func TestDeadline(t *testing.T) {
 	// not Parallel because this uses the global mock signalNotify.
 	// t.Parallel()
 
-	Convey(`AdjustDeadline`, t, func() {
+	Convey(`TrackSoftDeadline`, t, func() {
 		t0 := testclock.TestTimeUTC
 		ctx, tc := testclock.UseTime(context.Background(), t0)
 		ctx, cancel := context.WithCancel(ctx)
@@ -127,7 +127,7 @@ func TestDeadline(t *testing.T) {
 		ctx = Set(ctx, "deadline", nil)
 
 		Convey(`Empty context`, func() {
-			cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
+			ac, shutdown := TrackSoftDeadline(ctx, 5*time.Second)
 			defer shutdown()
 
 			deadline, ok := ac.Deadline()
@@ -137,8 +137,8 @@ func TestDeadline(t *testing.T) {
 			// however, Interrupt/SIGTERM handler is still installed
 			mockGenerateInterrupt()
 
-			// cleanup will happen, but context won't.
-			So(<-cleanup, ShouldEqual, InterruptEvent)
+			// soft deadline will happen, but context.Done won't.
+			So(<-SoftDeadlineDone(ac), ShouldEqual, InterruptEvent)
 			So(ac, shouldWaitForNotDone)
 
 			// Advance the clock by 25s, and presto
@@ -150,7 +150,7 @@ func TestDeadline(t *testing.T) {
 			ctx, cancel := clock.WithDeadline(ctx, t0.Add(100*time.Second))
 			defer cancel()
 
-			cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
+			ac, shutdown := TrackSoftDeadline(ctx, 5*time.Second)
 			defer shutdown()
 
 			hardDeadline, ok := ac.Deadline()
@@ -167,16 +167,16 @@ func TestDeadline(t *testing.T) {
 			expect.SetSoftDeadline(t0.Add(70 * time.Second))
 			So(got, ShouldResembleProto, expect)
 			shutdown()
-			<-cleanup // force monitor to make timer before we increment the clock
+			<-SoftDeadlineDone(ac) // force monitor to make timer before we increment the clock
 			tc.Add(25 * time.Second)
 			<-ac.Done()
 		})
 
 		Convey(`deadline context reserve`, func() {
-			ctx, cancel := clock.WithDeadline(ctx, t0.Add(100*time.Second))
+			ctx, cancel := clock.WithDeadline(ctx, t0.Add(95*time.Second))
 			defer cancel()
 
-			cleanup, ac, shutdown := AdjustDeadline(ctx, 5*time.Second, 0)
+			ac, shutdown := TrackSoftDeadline(ctx, 0)
 			defer shutdown()
 
 			deadline, ok := ac.Deadline()
@@ -191,19 +191,33 @@ func TestDeadline(t *testing.T) {
 			expect.SetSoftDeadline(t0.Add(65 * time.Second))
 			So(got, ShouldResembleProto, expect)
 			shutdown()
-			<-cleanup // force monitor to make timer before we increment the clock
+			<-SoftDeadlineDone(ac) // force monitor to make timer before we increment the clock
 			tc.Add(30 * time.Second)
 			<-ac.Done()
 		})
 
 		Convey(`Deadline in LUCI_CONTEXT`, func() {
 			externalSoftDeadline := t0.Add(100 * time.Second)
+
+			// Note, LUCI_CONTEXT asserts that non-zero SoftDeadlines must be enforced
+			// by 'an external process', so we mock that with the goroutine here.
+			//
+			// Must do clock.After outside goroutine to force this time calculation to
+			// happen before we start manipulating `tc`.
+			externalTimeout := clock.After(ctx, 100*time.Second)
+			go func() {
+				if (<-externalTimeout).Err == nil {
+					mockGenerateInterrupt()
+				}
+			}()
+
 			dl := &Deadline{GracePeriod: 40}
 			dl.SetSoftDeadline(externalSoftDeadline) // 100s into the future
-			ctx = SetDeadline(ctx, dl)
+
+			ctx := SetDeadline(ctx, dl)
 
 			Convey(`no deadline in context`, func() {
-				cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
+				ac, shutdown := TrackSoftDeadline(ctx, 5*time.Second)
 				defer shutdown()
 
 				softDeadline := GetDeadline(ac).SoftDeadlineTime()
@@ -218,7 +232,7 @@ func TestDeadline(t *testing.T) {
 
 				Convey(`natural expiration`, func() {
 					tc.Add(100 * time.Second)
-					So(<-cleanup, ShouldEqual, TimeoutEvent) // cleanup unblocks
+					So(<-SoftDeadlineDone(ac), ShouldEqual, TimeoutEvent)
 					So(ac, shouldWaitForNotDone)
 
 					tc.Add(35 * time.Second)
@@ -231,7 +245,7 @@ func TestDeadline(t *testing.T) {
 
 				Convey(`signal`, func() {
 					mockGenerateInterrupt()
-					So(<-cleanup, ShouldEqual, InterruptEvent) // cleanup unblocks on signal
+					So(<-SoftDeadlineDone(ac), ShouldEqual, InterruptEvent)
 
 					So(ac, shouldWaitForNotDone)
 
@@ -241,52 +255,19 @@ func TestDeadline(t *testing.T) {
 					// should still have 65s before the soft deadline
 					So(tc.Now(), ShouldHappenWithin, time.Millisecond, softDeadline.Add(-65*time.Second))
 				})
-			})
 
-			Convey(`reduce deadline by more than grace_period`, func() {
-				cleanup, ac, shutdown := AdjustDeadline(ctx, 50*time.Second, time.Second)
-				defer shutdown()
-
-				softDeadline := GetDeadline(ac).SoftDeadlineTime()
-				So(softDeadline, ShouldHappenWithin, time.Millisecond, externalSoftDeadline.Add(-50*time.Second))
-
-				hardDeadline, ok := ac.Deadline()
-				So(ok, ShouldBeTrue)
-				So(hardDeadline, ShouldHappenWithin, time.Millisecond, externalSoftDeadline.Add((-50+39)*time.Second))
-
-				Convey(`natural expiration`, func() {
-					tc.Add(50 * time.Second)
-					So(<-cleanup, ShouldEqual, TimeoutEvent) // cleanup unblocks
-					So(ac, shouldWaitForNotDone)
-
-					tc.Add(39 * time.Second)
+				Convey(`cancel context`, func() {
+					cancel()
+					So(<-SoftDeadlineDone(ac), ShouldEqual, ClosureEvent)
 					<-ac.Done()
-
-					// We should have ended right around the deadline; there's some slop
-					// in the clock package though, and this doesn't seem to be zero.
-					So(tc.Now(), ShouldHappenWithin, time.Millisecond, hardDeadline)
 				})
-
-				Convey(`signal`, func() {
-					mockGenerateInterrupt()
-					So(<-cleanup, ShouldEqual, InterruptEvent) // cleanup unblocks on signal
-
-					So(ac, shouldWaitForNotDone)
-
-					tc.Add(39 * time.Second)
-					<-ac.Done()
-
-					// Should have about 11s of time left before the soft deadline.
-					So(tc.Now(), ShouldHappenWithin, time.Millisecond, softDeadline.Add(-11*time.Second))
-				})
-
 			})
 
 			Convey(`earlier deadline in context`, func() {
 				ctx, cancel := clock.WithDeadline(ctx, externalSoftDeadline.Add(-50*time.Second))
 				defer cancel()
 
-				cleanup, ac, shutdown := AdjustDeadline(ctx, 0, 5*time.Second)
+				ac, shutdown := TrackSoftDeadline(ctx, 5*time.Second)
 				defer shutdown()
 
 				hardDeadline, ok := ac.Deadline()
@@ -295,7 +276,7 @@ func TestDeadline(t *testing.T) {
 
 				Convey(`natural expiration`, func() {
 					tc.Add(10 * time.Second)
-					So(<-cleanup, ShouldEqual, TimeoutEvent) // cleanup unblocks
+					So(<-SoftDeadlineDone(ac), ShouldEqual, TimeoutEvent)
 					So(ac, shouldWaitForNotDone)
 
 					tc.Add(35 * time.Second)
@@ -308,7 +289,7 @@ func TestDeadline(t *testing.T) {
 
 				Convey(`signal`, func() {
 					mockGenerateInterrupt()
-					So(<-cleanup, ShouldEqual, InterruptEvent) // cleanup unblocks on signal
+					So(<-SoftDeadlineDone(ac), ShouldEqual, InterruptEvent)
 
 					So(ac, shouldWaitForNotDone)
 
@@ -320,73 +301,6 @@ func TestDeadline(t *testing.T) {
 				})
 			})
 
-		})
-	})
-}
-
-func TestDeadlineHelpers(t *testing.T) {
-	t.Parallel()
-
-	Convey(`Deadline helpers`, t, func() {
-		t0 := testclock.TestTimeUTC
-		ctx, tc := testclock.UseTime(context.Background(), t0)
-
-		check := func(ctx context.Context, softExpect, hardExpect bool) {
-			soft, hard := CheckDeadlines(ctx)
-			So(soft, ShouldEqual, softExpect)
-			So(hard, ShouldEqual, hardExpect)
-		}
-
-		Convey(`InGracePeriod`, func() {
-			Convey(`with deadline`, func() {
-				dl := &Deadline{GracePeriod: 30}
-				dl.SetSoftDeadline(t0.Add(10 * time.Minute))
-				ctx = SetDeadline(ctx, dl)
-
-				Convey(`out of grace period`, func() {
-					check(ctx, false, false)
-				})
-
-				Convey(`in grace period`, func() {
-					check(ctx, false, false)
-					tc.Add((time.Minute * 10) - time.Second)
-					check(ctx, false, false)
-					tc.Add(time.Second)
-					check(ctx, true, false)
-					tc.Add(time.Second * 100)
-					check(ctx, true, true)
-				})
-
-			})
-
-			Convey(`with context deadline`, func() {
-				ctx, cancel := clock.WithDeadline(ctx, t0.Add(10*time.Minute))
-				defer cancel()
-
-				Convey(`out of grace period`, func() {
-					check(ctx, false, false)
-				})
-
-				Convey(`in of grace period`, func() {
-					check(ctx, false, false)
-					// the default grace period is 30s, so "grace period" starts at
-					// 10m - 30s
-					tc.Add((time.Minute * 10) - DefaultGracePeriod - time.Second)
-					check(ctx, false, false)
-					tc.Add(time.Second)
-					check(ctx, true, false)
-					tc.Add(time.Second * 100)
-					check(ctx, true, true)
-				})
-			})
-
-			Convey(`with no deadline at all`, func() {
-				Convey(`out of grace period`, func() {
-					check(ctx, false, false)
-					tc.Add(time.Hour)
-					check(ctx, false, false)
-				})
-			})
 		})
 	})
 }

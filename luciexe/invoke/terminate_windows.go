@@ -33,7 +33,7 @@ func setSysProcAttr(c *exec.Cmd) {
 	}
 }
 
-func (s *Subprocess) terminiate() error {
+func (s *Subprocess) terminate() error {
 	err := windows.GenerateConsoleCtrlEvent(windows.CTRL_BREAK_EVENT, uint32(s.cmd.Process.Pid))
 	return errors.Annotate(err, "send CTRL-BREAK event").Err()
 }

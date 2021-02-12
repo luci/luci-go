@@ -183,8 +183,16 @@ func mainImpl() int {
 			BaseDir:  hostOpts.BaseDir,
 			CacheDir: input.CacheDir,
 		}
-		reserve := calcDeadlineReserve(ctx)
-		deadlineEventCh, dctx, shutdown := lucictx.AdjustDeadline(ctx, reserve, 500*time.Millisecond)
+		// Buildbucket assigns some grace period to the surrounding task which is
+		// more than what the user requested in `input.Build.GracePeriod`. We
+		// reserve the difference here so the user task only gets what they asked
+		// for.
+		deadline := lucictx.GetDeadline(ctx)
+		toReserve := deadline.GracePeriodDuration() - input.Build.GracePeriod.AsDuration()
+		logging.Infof(
+			ctx, "Reserving %s out of %s of grace_period from LUCI_CONTEXT.",
+			toReserve, lucictx.GetDeadline(ctx).GracePeriodDuration())
+		dctx, shutdown := lucictx.TrackSoftDeadline(ctx, toReserve)
 		go func() {
 			select {
 			case <-shutdownCh:
@@ -192,12 +200,7 @@ func mainImpl() int {
 			case <-dctx.Done():
 			}
 		}()
-		if newSoftDeadline := lucictx.GetDeadline(dctx).SoftDeadlineTime(); !newSoftDeadline.IsZero() {
-			logging.Infof(dctx,
-				"attempted to reserve %s from soft deadline for bbagent cleanup; new soft deadline: %s",
-				reserve, newSoftDeadline)
-		}
-		subp, err := invoke.Start(dctx, exeArgs, input.Build, invokeOpts, deadlineEventCh)
+		subp, err := invoke.Start(dctx, exeArgs, input.Build, invokeOpts)
 		if err != nil {
 			return err
 		}

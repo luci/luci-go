@@ -17,7 +17,6 @@ package invoke
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os/exec"
 	"sync"
 	"sync/atomic"
@@ -53,23 +52,6 @@ type Subprocess struct {
 	firstDeadlineEvent atomic.Value // stores lucictx.DeadlineEvent
 }
 
-// Terminate sends SIGTERM on unix or CTRL+BREAK on windows to the luciexe
-// process.
-func (s *Subprocess) Terminate() error {
-	if s != nil && s.cmd != nil && s.cmd.Process != nil {
-		return s.terminiate()
-	}
-	return nil
-}
-
-// Kill kills the luciexe process.
-func (s *Subprocess) Kill() error {
-	if s != nil && s.cmd != nil && s.cmd.Process != nil {
-		return s.cmd.Process.Kill()
-	}
-	return nil
-}
-
 // Start launches a binary implementing the luciexe protocol and returns
 // immediately with a *Subprocess.
 //
@@ -78,12 +60,6 @@ func (s *Subprocess) Kill() error {
 //  * luciexeArgs[0] must be the full absolute path to the luciexe binary.
 //  * input must be the Build message you wish to pass to the luciexe binary.
 //  * opts is optional (may be nil to take all defaults)
-//  * deadlineEvtCh is optional. When supplied, it must be the cleanup channel
-//    returned by calling `lucictx.AdjustDeadline` in the outer layer. While
-//    the luciexe subprocess is running, if
-//      - `InterruptEvent` or `TimeoutEvent` is received, the subprocess will
-//         be terminated.
-//      - `ClosureEvent` is received, the subprocess will be killed.
 //
 // Callers MUST call Wait and/or cancel the context or this will leak handles
 // for the process' stdout/stderr.
@@ -94,7 +70,7 @@ func (s *Subprocess) Kill() error {
 // The caller SHOULD immediately take Subprocess.Step, append it to the current
 // Build state, and send that (e.g. using `exe.BuildSender`). Otherwise this
 // luciexe's steps will not show up in the Build.
-func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options, deadlineEvtCh <-chan lucictx.DeadlineEvent) (*Subprocess, error) {
+func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options) (*Subprocess, error) {
 	initialBuildData, err := proto.Marshal(mkInitialBuild(ctx, input))
 	if err != nil {
 		return nil, errors.Annotate(err, "marshalling initial Build").Err()
@@ -129,6 +105,21 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 	cmd.Stdout = launchOpts.stdout
 	cmd.Stderr = launchOpts.stderr
 	setSysProcAttr(cmd)
+
+	// NOTE: Technically this is racy; if `ctx` expires immediately after we check
+	// this, then we'll return no error, but CommandContext will kill the process
+	// straight away.
+	//
+	// However, in tests, when you've misconfigured the Deadline on ctx (e.g.
+	// using a fake clock), this check is generally not racy, and can provide
+	// a very valuable hint that's clearer than getting an error from Wait().
+	if err := ctx.Err(); err != nil {
+		// clean up stdout/stderr
+		close(closeChannels)
+		<-allClosed
+		return nil, errors.Annotate(err, "prior to starting subprocess").Err()
+	}
+
 	if err := cmd.Start(); err != nil {
 		// clean up stdout/stderr
 		close(closeChannels)
@@ -146,41 +137,23 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 		allClosed:     allClosed,
 	}
 
-	if deadlineEvtCh != nil {
+	if deadlineEvtCh := lucictx.SoftDeadlineDone(ctx); deadlineEvtCh != nil {
 		go func() {
 			select {
 			case <-closeChannels:
 				// luciexe subprocess exits normally
-			case firstEvt := <-deadlineEvtCh:
-				s.firstDeadlineEvent.Store(firstEvt)
-				logging.Warningf(ctx, "Received %s", firstEvt)
-				terminateSent := false
-				evt := firstEvt
-				for {
-					switch evt {
-					case lucictx.InterruptEvent, lucictx.TimeoutEvent:
-						if !terminateSent {
-							if err := s.Terminate(); err != nil {
-								logging.Errorf(ctx, "failed to terminate luciexe subprocess, reason: %s", err)
-								break
-							}
-							terminateSent = true
-						}
-					case lucictx.ClosureEvent:
-						if err := s.Kill(); err != nil {
-							logging.Errorf(ctx, "failed to kill luciexe subprocess, reason: %s", err)
-						}
-						// Try kill only once even if it fails. By the time a ClosureEvent
-						// event is received, if `lucictx.AdjustDeadline()` is applied
-						// correctly, ctx should be cancelled already, thus the subprocess
-						// should have been killed already as it is launched via
-						// `exec.CommandContext`.
-						return
-					default:
-						panic(fmt.Sprintf("impossible DeadlineEvent %s", evt))
+			case evt := <-deadlineEvtCh:
+				s.firstDeadlineEvent.Store(evt)
+				logging.Warningf(ctx, "got SoftDeadline event %s", evt)
+
+				if evt == lucictx.InterruptEvent || evt == lucictx.TimeoutEvent {
+					logging.Infof(ctx, "sending Terminate")
+					if err := s.terminate(); err != nil {
+						logging.Errorf(ctx, "failed to terminate luciexe subprocess, reason: %s", err)
 					}
-					evt = <-deadlineEvtCh
 				}
+				// if evt == lucictx.ClosureEvent, it means that ctx.Done() is closed,
+				// which means that CommandContext has already sent Kill to the process.
 			}
 		}()
 	}
@@ -207,11 +180,7 @@ func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 			}
 			// If our process saw a timeout or we think we're in the grace period now,
 			// then we indicate that here.
-			setTimeout := s.firstDeadlineEvent.Load() == lucictx.TimeoutEvent
-			if !setTimeout {
-				setTimeout, _ = lucictx.CheckDeadlines(s.ctx)
-			}
-			if setTimeout {
+			if s.firstDeadlineEvent.Load() == lucictx.TimeoutEvent {
 				proto.Merge(s.build, &bbpb.Build{
 					StatusDetails: &bbpb.StatusDetails{
 						Timeout: &bbpb.StatusDetails_Timeout{},
@@ -232,7 +201,7 @@ func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 					errMsg = "luciexe process's context is cancelled"
 				}
 				if s.err != nil {
-					s.err = errors.Annotate(s.err, "%s; luciexe error:", errMsg).Err()
+					s.err = errors.Annotate(s.err, "%s; luciexe error", errMsg).Err()
 				} else {
 					s.err = errors.New(errMsg)
 				}
