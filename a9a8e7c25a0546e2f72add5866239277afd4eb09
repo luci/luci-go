@@ -52,6 +52,24 @@
       "parentUuid": "6b57ce3b_8eb43e58",
       "revId": "a9a8e7c25a0546e2f72add5866239277afd4eb09",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7e7adbb_c9aa3a35",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-12T06:45:00Z",
+      "side": 1,
+      "message": "\u003e Clicking on the step entry is suppose to expand the entry. If there\u0027s a link, it will open the link instead.\n\u003e Probably not a big deal though.\n\nYes, I also think it\u0027s not a big deal.",
+      "parentUuid": "5a807e13_60446422",
+      "revId": "a9a8e7c25a0546e2f72add5866239277afd4eb09",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
