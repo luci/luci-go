@@ -16,6 +16,23 @@
       "message": "nice",
       "revId": "a7a511407eb31222b36f9e4fc25ff6d4f720ea66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "713b2c03_222f6a8b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-12T07:36:26Z",
+      "side": 1,
+      "message": "Should I wait for UI to add UNEXPECTEDLY_SKIPPED before landing this change? Otherwise those results will disappear from the UI. @Weiwei",
+      "revId": "a7a511407eb31222b36f9e4fc25ff6d4f720ea66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
