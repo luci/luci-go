@@ -157,6 +157,44 @@ func TestUpdateProjectJobs(t *testing.T) {
 			So(len(tq.GetScheduledTasks()), ShouldEqual, 1) // no new tasks
 		})
 
+		Convey("adding a very infrequent job", func() {
+			jobDef.Schedule = "59 23 31 12 *" // every Dec 31st.
+			nextTick := time.Date(epoch.Year(), time.December, 31, 23, 59, 00, 0, time.UTC)
+			So(nextTick.Sub(epoch), ShouldBeGreaterThan, 30*24*time.Hour)
+
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			// Added.
+			So(allJobs(c), ShouldResemble, []Job{
+				{
+					JobID:     "proj/1",
+					ProjectID: "proj",
+					RealmID:   "proj:testing",
+					Revision:  "rev1",
+					Enabled:   true,
+					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+					Schedule:  "59 23 31 12 *",
+					Cron: cron.State{
+						Enabled:    true,
+						Generation: 2,
+						LastRewind: epoch,
+						LastTick: cron.TickLaterAction{
+							When:      nextTick,
+							TickNonce: 6278013164014963328,
+						},
+					},
+					Task:                jobDef.Task,
+					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
+				},
+			})
+
+			// The first tick is scheduled with ETA substantially before actual next
+			// tick.
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
+				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
+			})
+			So(tq.GetScheduledTasks()[0].Task.Delay, ShouldBeLessThan, 30*24*time.Hour)
+		})
+
 		Convey("adding a job with txn retry", func() {
 			// Simulate the transaction retry.
 			datastore.GetTestable(c).SetTransactionRetryCount(2)
@@ -1024,7 +1062,6 @@ func TestAbortJob(t *testing.T) {
 			// start.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				panic("must not be called")
-				return nil
 			}
 			tasks, _, err := tq.RunSimulation(c, nil)
 			So(err, ShouldBeNil)

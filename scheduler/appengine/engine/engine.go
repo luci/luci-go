@@ -967,7 +967,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 				m.Enable()
 			}
 			if job.EffectiveSchedule() != oldEffectiveSchedule {
-				logging.Infof(c, "Job's schedule changed: %q -> %q", job.EffectiveSchedule(), oldEffectiveSchedule)
+				logging.Infof(c, "Job's schedule changed: %q -> %q", oldEffectiveSchedule, job.EffectiveSchedule())
 				m.OnScheduleChange()
 			}
 			return nil

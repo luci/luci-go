@@ -226,6 +226,10 @@ func (m *Machine) OnTimerTick(tickNonce int64) error {
 		return nil
 	}
 
+	// For ticks in the future more than Task Queue limit, OnTimerTick will be
+	// called much earlier than the actual tick, so emit a new TickLaterAction
+	// with a new Nonce.
+	//
 	// Report error (to trigger a retry) if the tick happened unexpectedly soon.
 	// Allow up to 50ms clock drift, but correct it to be 0. This is important for
 	// getting the correct next tick time from an absolute schedule. If we pass
@@ -236,10 +240,15 @@ func (m *Machine) OnTimerTick(tickNonce int64) error {
 	// Note that m.Now is part of inputs and must not be mutated. We propagate
 	// the corrected time via the call stack.
 	now := m.Now
-	switch delay := now.Sub(m.State.LastTick.When); {
-	case delay < -50*time.Millisecond:
-		return fmt.Errorf("tick happened %s before it was expected", -delay)
-	case delay < 0:
+	switch remaining := m.State.LastTick.When.Sub(now); {
+	case remaining > time.Second:
+		m.State.Generation = m.nextGen()
+		m.State.LastTick.TickNonce = m.Nonce()
+		m.Actions = append(m.Actions, m.State.LastTick)
+		return nil
+	case remaining > 50*time.Millisecond:
+		return fmt.Errorf("tick happened %s before it was expected", remaining)
+	case remaining > 0:
 		now = m.State.LastTick.When
 	}
 

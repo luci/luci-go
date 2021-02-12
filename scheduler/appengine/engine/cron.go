@@ -17,6 +17,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/appengine/tq"
@@ -25,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/gae/service/info"
 
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
@@ -66,13 +68,32 @@ func pokeCron(c context.Context, job *Job, disp *tq.Dispatcher, cb func(m *cron.
 	for _, action := range machine.Actions {
 		switch a := action.(type) {
 		case cron.TickLaterAction:
-			logging.Infof(c, "Scheduling tick %d after %s", a.TickNonce, a.When.Sub(now))
+			delay := a.When.Sub(now)
+			// Some very infrequent schedules may have next tick weeks in the future.
+			// However, Task Queue limits tasks to at most 30 days in the future.
+			// Thus, waiting may be done via a chain of several TQ tasks. To allow
+			// cron.Machine.OnTimerTick to distinguish such chains from accidentally
+			// too early execution of a specific TQ task, ensure intermediate TQ tasks
+			// are at least 1 hour before actual tick.
+			maxDelay := 15 * 24 * time.Hour // conservative 15 days.
+			fudge := 1 * time.Hour
+			if strings.HasSuffix(info.AppID(c), "-dev") {
+				// Use lower numbers on -dev to exercise this codepath frequently.
+				maxDelay = 2 * time.Minute
+				fudge = 1 * time.Minute
+			}
+			if delay > maxDelay+fudge {
+				logging.Infof(c, "Scheduling intermediary tick %d after %s instead of intended %s", a.TickNonce, maxDelay, delay)
+				delay = maxDelay
+			} else {
+				logging.Infof(c, "Scheduling tick %d after %s", a.TickNonce, delay)
+			}
 			tasks = append(tasks, &tq.Task{
 				Payload: &internal.CronTickTask{
 					JobId:     job.JobID,
 					TickNonce: a.TickNonce,
 				},
-				ETA: a.When,
+				Delay: delay,
 			})
 		case cron.StartInvocationAction:
 			trigger := cronTrigger(a, now)
