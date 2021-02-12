@@ -20,6 +20,41 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "9d1042c9_00de191a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T21:44:25Z",
+      "side": 1,
+      "message": "Hopefully lol",
+      "parentUuid": "54f89cb5_4ca06600",
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc64bf9a_0a13a983",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T21:44:25Z",
+      "side": 1,
+      "message": "Thanks for the review! ",
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "bac84e17_7951455e",
         "filename": "lucictx/deadline.go",
         "patchSetId": 11
@@ -52,6 +87,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab3c6f90_5a8f9d0e",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T21:44:25Z",
+      "side": 1,
+      "message": "good thought; done.",
+      "parentUuid": "5976a4ae_3efe0089",
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d7932e63_dddabcbd",
@@ -77,6 +130,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "77891635_f10578b0",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T21:44:25Z",
+      "side": 1,
+      "message": "I think this may be a misunderstanding; time.Duration.Seconds() returns a float64 (so fractional seconds are definitely supported)",
+      "parentUuid": "d7932e63_dddabcbd",
+      "range": {
+        "startLine": 187,
+        "startChar": 4,
+        "endLine": 187,
+        "endChar": 15
+      },
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0455ae6d_7539bb41",
         "filename": "luciexe/invoke/subprocess.go",
         "patchSetId": 11
@@ -88,6 +165,30 @@
       "writtenOn": "2021-02-12T20:50:33Z",
       "side": 1,
       "message": "I don\u0027t grasp why is this necessary. Why is wait() insufficient to do this?\nI suspect you could be optimizing for early fail, but I don\u0027t see why it\u0027d be frequent or critical enough to worry. What am I missing?",
+      "range": {
+        "startLine": 109,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 0
+      },
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3c39164_27f223cd",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T21:44:25Z",
+      "side": 1,
+      "message": "You\u0027re right in general, but I lost a couple hours last night scratching my head over the tests; Wait() just told me that the process died because the context was canceled, but I was expecting a timeout. I didn\u0027t expect Start to return without error when ctx was _already_ expired going into it. Adding this case here will make it crystal clear for future test authors to figure out what\u0027s going on.",
+      "parentUuid": "0455ae6d_7539bb41",
       "range": {
         "startLine": 109,
         "startChar": 0,
