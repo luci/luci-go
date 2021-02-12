@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "302ceb1e_545a2969",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-12T02:25:39Z",
+      "side": 1,
+      "message": "need to update all these numbers\n\nalternatively pass them as params, e.g. @exonerated\nand the param as\n \n  \"exonerated\": myEnum.Exonerated,",
+      "range": {
+        "startLine": 373,
+        "startChar": 44,
+        "endLine": 373,
+        "endChar": 45
+      },
+      "revId": "8a196df226f826eb4df902a5dcfccf76a5c29ba5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
