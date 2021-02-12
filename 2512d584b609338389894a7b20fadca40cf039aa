@@ -16,6 +16,24 @@
       "message": "iiuc, this means that if ref is set, then the id won\u0027t be validated at all? that doesn\u0027t sound right... if the id is set then it should at least conform to the regex, right?",
       "revId": "2512d584b609338389894a7b20fadca40cf039aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92925f64_ca4d2df9",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-12T22:16:59Z",
+      "side": 1,
+      "message": "yes. That\u0027s what py does so, actually.",
+      "parentUuid": "04490171_729ab9fe",
+      "revId": "2512d584b609338389894a7b20fadca40cf039aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
