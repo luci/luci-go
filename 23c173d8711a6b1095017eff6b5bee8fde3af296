@@ -16,6 +16,24 @@
       "message": "It makes sense to have an ID and also a ref; This would allow the bot to correctly fetch the commit\u0027s ref in order to check out the commit ID.\n\nCan you clarify that this is explicitly a supported and expected case in the .proto file for GitilesCommit?",
       "revId": "23c173d8711a6b1095017eff6b5bee8fde3af296",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84285977_2085bfb6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-12T21:57:02Z",
+      "side": 1,
+      "message": "The proto doesn\u0027t mention about whether id and ref should or should not be together.\n\nI updated the proto to state that ref SHOULD be set, if id was set.",
+      "parentUuid": "d79a8c96_c0385fb6",
+      "revId": "23c173d8711a6b1095017eff6b5bee8fde3af296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
