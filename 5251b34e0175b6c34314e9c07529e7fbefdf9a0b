@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "5251b34e0175b6c34314e9c07529e7fbefdf9a0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56c03f39_69d0cfba",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-12T00:48:57Z",
+      "side": 1,
+      "message": "i think unexpected_skipped should go right after UNEXPECTED. It would be more consistent with what we have today (they are part of unexpected). Another argument is that it is more rare event than flaky and exonerated tests. We have the latter all the time, while unexpected skips usually happens when a swarming task times out or something.\n\nit looks like we made a design mistake here, or in the SQL query. The results are oredered by enum numbers, and we didn\u0027t leave any space between enum members. I think we can still fix this problem because all users of this API use JSON which returns strings for enums. In other words, changing the enum numbers retroactively is not a breaking changes.\n\nI suggest leaving some space in between, e.g. UNEXPECTED \u003d 10, UNEXPECTEDLY_SKIPPED\u003d20, FLAKY\u003d30, etc.",
+      "revId": "5251b34e0175b6c34314e9c07529e7fbefdf9a0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b439d275_90e8da8d",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-12T00:48:57Z",
+      "side": 1,
+      "message": "seems redundant?",
+      "range": {
+        "startLine": 375,
+        "startChar": 9,
+        "endLine": 375,
+        "endChar": 42
+      },
+      "revId": "5251b34e0175b6c34314e9c07529e7fbefdf9a0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
