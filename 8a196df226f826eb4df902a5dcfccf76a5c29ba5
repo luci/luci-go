@@ -22,6 +22,30 @@
       },
       "revId": "8a196df226f826eb4df902a5dcfccf76a5c29ba5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34290729_584758e4",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-12T07:11:36Z",
+      "side": 1,
+      "message": "Ah, I changed them locally but forgot to upload the new patch... \n\nAnd I like passing them as params. Done",
+      "parentUuid": "302ceb1e_545a2969",
+      "range": {
+        "startLine": 373,
+        "startChar": 44,
+        "endLine": 373,
+        "endChar": 45
+      },
+      "revId": "8a196df226f826eb4df902a5dcfccf76a5c29ba5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
