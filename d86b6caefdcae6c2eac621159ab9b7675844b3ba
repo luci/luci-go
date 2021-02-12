@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0bb5a3fd_9d33ba92",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-12T03:17:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "216832e3_5d81ccd3",
+      "revId": "d86b6caefdcae6c2eac621159ab9b7675844b3ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b0627ba_962b9c1e",
@@ -59,6 +77,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "be5e3981_29f140a3",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-12T03:17:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b0627ba_962b9c1e",
+      "range": {
+        "startLine": 108,
+        "startChar": 92,
+        "endLine": 108,
+        "endChar": 101
+      },
+      "revId": "d86b6caefdcae6c2eac621159ab9b7675844b3ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7ce264c2_a7e71a5a",
@@ -72,6 +114,24 @@
       "writtenOn": "2021-02-11T21:46:09Z",
       "side": 1,
       "message": "we should really get rid of tasks.UseFinalizationTQ. It is a long overdue, and now are adding more code because this dead code is still not deleted",
+      "revId": "d86b6caefdcae6c2eac621159ab9b7675844b3ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b266e06b_4d2d642f",
+        "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-12T03:17:14Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7ce264c2_a7e71a5a",
       "revId": "d86b6caefdcae6c2eac621159ab9b7675844b3ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
