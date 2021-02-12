@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce6cec5e_ba58474d",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T09:21:49Z",
+      "side": 0,
+      "message": "this is no longer needed; SoftDeadlineDone is a better way to do what this was attempting.",
+      "revId": "ca65e67ac95fbd37c1203985f0c6d936021a267e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e25eb3a_51fd42eb",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T09:21:49Z",
+      "side": 0,
+      "message": "note that the previous implementation was a busy loop; This is greatly simplified now. When we get woken up by a interrupt or timeout, we send terminate, and then we can end this goroutine, since CommandContext will take care of the kill.",
+      "revId": "ca65e67ac95fbd37c1203985f0c6d936021a267e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
