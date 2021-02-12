@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "319a11c2_244aeab9",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-12T01:58:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "56c03f39_69d0cfba",
+      "revId": "5251b34e0175b6c34314e9c07529e7fbefdf9a0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b439d275_90e8da8d",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-02-12T00:48:57Z",
       "side": 1,
       "message": "seems redundant?",
+      "range": {
+        "startLine": 375,
+        "startChar": 9,
+        "endLine": 375,
+        "endChar": 42
+      },
+      "revId": "5251b34e0175b6c34314e9c07529e7fbefdf9a0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be3bca54_54f15aa9",
+        "filename": "resultdb/internal/testvariants/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-12T01:58:52Z",
+      "side": 1,
+      "message": "I want to prevent the case where a test variant is skipped both unexpectedly and expectedly. \n\nI\u0027m not sure if it\u0027s ever possible in reality, but logically it\u0027s possible.",
+      "parentUuid": "b439d275_90e8da8d",
       "range": {
         "startLine": 375,
         "startChar": 9,
