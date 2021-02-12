@@ -36,9 +36,6 @@ func bbCommonFromTaskRequest(bb *job.Buildbucket, r *swarming.SwarmingRpcsNewTas
 	})
 	bb.EnvPrefixes = strListPairs(ts.Properties.EnvPrefixes)
 
-	bb.GracePeriod = ptypes.DurationProto(
-		time.Second * time.Duration(ts.Properties.GracePeriodSecs))
-
 	bb.BbagentArgs.Build.SchedulingTimeout = ptypes.DurationProto(
 		time.Second * time.Duration(r.ExpirationSecs))
 	bb.BotPingTolerance = ptypes.DurationProto(

@@ -37,7 +37,6 @@ message Buildbucket {
   repeated swarming.v1.StringListPair env_prefixes = 4;
   repeated string extra_tags = 5;
 
-  google.protobuf.Duration grace_period = 6;
   google.protobuf.Duration bot_ping_tolerance = 7;
 
   swarming.v1.Containment containment = 8;

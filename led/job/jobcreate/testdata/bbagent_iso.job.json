@@ -214,7 +214,6 @@
         ]
       }
     ],
-    "grace_period": "30s",
     "bot_ping_tolerance": "1200s",
     "containment": {
 
