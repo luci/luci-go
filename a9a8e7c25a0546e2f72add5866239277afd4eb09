@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4c17b95_9278d976",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-12T02:11:45Z",
+      "side": 1,
+      "message": "renderMarkdown is also used to display content for step\u0027s summary, which is split into header and body.\nNot sure if we want to support links in step\u0027s header.\n\nDemo: https://weiweilin-dot-luci-milo.appspot.com/ui/p/turquoise/builders/global.try/smart_display_max_eng.sherlock-release/b8855650516912764848/steps?succeeded\u003dtrue\u0026debug\u003dfalse",
+      "revId": "a9a8e7c25a0546e2f72add5866239277afd4eb09",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
