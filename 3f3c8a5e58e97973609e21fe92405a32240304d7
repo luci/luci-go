@@ -152,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1acc4eb_e32a1e28",
+        "filename": "lucictx/deadline.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T22:09:40Z",
+      "side": 1,
+      "message": "yup, i keep forgetting this. Sorry.",
+      "parentUuid": "77891635_f10578b0",
+      "range": {
+        "startLine": 187,
+        "startChar": 4,
+        "endLine": 187,
+        "endChar": 15
+      },
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0455ae6d_7539bb41",
@@ -189,6 +213,30 @@
       "side": 1,
       "message": "You\u0027re right in general, but I lost a couple hours last night scratching my head over the tests; Wait() just told me that the process died because the context was canceled, but I was expecting a timeout. I didn\u0027t expect Start to return without error when ctx was _already_ expired going into it. Adding this case here will make it crystal clear for future test authors to figure out what\u0027s going on.",
       "parentUuid": "0455ae6d_7539bb41",
+      "range": {
+        "startLine": 109,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 0
+      },
+      "revId": "3f3c8a5e58e97973609e21fe92405a32240304d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72500ec9_4a0526df",
+        "filename": "luciexe/invoke/subprocess.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-12T22:09:40Z",
+      "side": 1,
+      "message": "this makes perfect sense. IMO, worth adding a comment for future readers.",
+      "parentUuid": "d3c39164_27f223cd",
       "range": {
         "startLine": 109,
         "startChar": 0,
