@@ -16,6 +16,7 @@ package componentactor
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,10 +35,56 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestDepsTriage(t *testing.T) {
-	// This test may hang with infinite recursion due to proto comparison.
-	// If this fails, run it with -test.timeout=100ms while debugging.
+func shouldResembleTriagedDeps(actual interface{}, expected ...interface{}) string {
+	if len(expected) != 1 {
+		return fmt.Sprintf("expected 1 value, got %d", len(expected))
+	}
+	exp := expected[0] // this may be nil
+	a, ok := actual.(*triagedDeps)
+	if !ok {
+		return fmt.Sprintf("Wrong actual type %T, must be %T", actual, a)
+	}
+	if err := ShouldHaveSameTypeAs(actual, exp); err != "" {
+		return err
+	}
+	b := exp.(*triagedDeps)
+	if a == b {
+		return ""
+	}
 
+	buf := strings.Builder{}
+	for _, err := range []string{
+		ShouldResemble(a.lastTriggered, b.lastTriggered),
+		ShouldResembleProto(a.notYetLoaded, b.notYetLoaded),
+		ShouldResembleProto(a.submitted, b.submitted),
+		ShouldResembleProto(a.unwatched, b.unwatched),
+		ShouldResembleProto(a.wrongConfigGroup, b.wrongConfigGroup),
+		ShouldResembleProto(a.incompatMode, b.incompatMode),
+	} {
+		if err != "" {
+			buf.WriteRune(' ')
+			buf.WriteString(err)
+		}
+	}
+	return strings.TrimSuffix(buf.String(), " ")
+}
+
+func TestShouldResembleTriagedDeps(t *testing.T) {
+	t.Parallel()
+
+	Convey("shouldResembleTriagedDeps works", t, func() {
+		So(&triagedDeps{}, shouldResembleTriagedDeps, &triagedDeps{})
+		So(&triagedDeps{
+			wrongConfigGroup: []*changelist.Dep{{Clid: 1}},
+			submitted:        []*changelist.Dep{{Clid: 2}},
+		}, shouldResembleTriagedDeps, &triagedDeps{
+			wrongConfigGroup: []*changelist.Dep{{Clid: 1}},
+			submitted:        []*changelist.Dep{{Clid: 2}},
+		})
+	})
+}
+
+func TestDepsTriage(t *testing.T) {
 	t.Parallel()
 
 	Convey("Component's PCL deps triage", t, func() {
@@ -71,17 +118,6 @@ func TestDepsTriage(t *testing.T) {
 			return td
 		}
 
-		assertEqual := func(a, b *triagedDeps) {
-			So(a.lastTriggered, ShouldResemble, b.lastTriggered)
-
-			So(a.notYetLoaded, ShouldResembleProto, b.notYetLoaded)
-			So(a.submitted, ShouldResembleProto, b.submitted)
-
-			So(a.unwatched, ShouldResembleProto, b.unwatched)
-			So(a.wrongConfigGroup, ShouldResembleProto, b.wrongConfigGroup)
-			So(a.incompatMode, ShouldResembleProto, b.incompatMode)
-		}
-
 		Convey("Singluar and Combinable behave the same", func() {
 			sameTests := func(name string, cgIdx int32) {
 				Convey(name, func() {
@@ -90,7 +126,7 @@ func TestDepsTriage(t *testing.T) {
 							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}},
 						}
 						td := triage(sup.pb.Pcls[0], cgIdx)
-						assertEqual(td, &triagedDeps{})
+						So(td, shouldResembleTriagedDeps, &triagedDeps{})
 						So(td.OK(), ShouldBeTrue)
 					})
 
@@ -105,7 +141,7 @@ func TestDepsTriage(t *testing.T) {
 								}},
 						}
 						td := triage(sup.PCL(33), cgIdx)
-						assertEqual(td, &triagedDeps{
+						So(td, shouldResembleTriagedDeps, &triagedDeps{
 							lastTriggered: epoch.Add(3 * time.Second),
 						})
 						So(td.OK(), ShouldBeTrue)
@@ -123,7 +159,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := triage(pcl33, cgIdx)
-						assertEqual(td, &triagedDeps{notYetLoaded: pcl33.GetDeps()})
+						So(td, shouldResembleTriagedDeps, &triagedDeps{notYetLoaded: pcl33.GetDeps()})
 						So(td.OK(), ShouldBeTrue)
 					})
 
@@ -139,7 +175,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := triage(pcl33, cgIdx)
-						assertEqual(td, &triagedDeps{unwatched: pcl33.GetDeps()})
+						So(td, shouldResembleTriagedDeps, &triagedDeps{unwatched: pcl33.GetDeps()})
 						So(td.OK(), ShouldBeFalse)
 					})
 
@@ -151,7 +187,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := triage(pcl33, cgIdx)
-						assertEqual(td, &triagedDeps{submitted: pcl33.GetDeps()})
+						So(td, shouldResembleTriagedDeps, &triagedDeps{submitted: pcl33.GetDeps()})
 						So(td.OK(), ShouldBeTrue)
 					})
 
@@ -167,7 +203,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := triage(pcl33, cgIdx)
-						assertEqual(td, &triagedDeps{
+						So(td, shouldResembleTriagedDeps, &triagedDeps{
 							lastTriggered:    epoch.Add(3 * time.Second),
 							wrongConfigGroup: pcl33.GetDeps(),
 						})
@@ -202,14 +238,14 @@ func TestDepsTriage(t *testing.T) {
 			Convey("dry run doesn't care about deps' triggers", func() {
 				pcl33 := sup.PCL(33)
 				td := triage(pcl33, singIdx)
-				assertEqual(td, &triagedDeps{
+				So(td, shouldResembleTriagedDeps, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 				})
 			})
 			Convey("full run considers any dep incompatible", func() {
 				pcl32 := sup.PCL(32)
 				td := triage(pcl32, singIdx)
-				assertEqual(td, &triagedDeps{
+				So(td, shouldResembleTriagedDeps, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
 					incompatMode:  pcl32.GetDeps(),
 				})
@@ -242,14 +278,14 @@ func TestDepsTriage(t *testing.T) {
 				pcl32 := sup.PCL(32)
 				Convey("ok", func() {
 					td := triage(pcl32, combIdx)
-					assertEqual(td, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
+					So(td, shouldResembleTriagedDeps, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
 				})
 
 				Convey("... not full runs", func() {
 					// TODO(tandrii): this can and should be supported.
 					sup.PCL(31).Trigger.Mode = string(run.FullRun)
 					td := triage(pcl32, combIdx)
-					assertEqual(td, &triagedDeps{
+					So(td, shouldResembleTriagedDeps, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 						incompatMode:  pcl32.GetDeps(),
 					})
@@ -262,12 +298,12 @@ func TestDepsTriage(t *testing.T) {
 						pcl.Trigger.Mode = string(run.FullRun)
 					}
 					td := triage(pcl33, combIdx)
-					assertEqual(td, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
+					So(td, shouldResembleTriagedDeps, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
 				})
 				Convey("... not dry runs", func() {
 					sup.PCL(32).Trigger.Mode = string(run.FullRun)
 					td := triage(pcl33, combIdx)
-					assertEqual(td, &triagedDeps{
+					So(td, shouldResembleTriagedDeps, &triagedDeps{
 						lastTriggered: epoch.Add(3 * time.Second),
 						incompatMode:  []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
 					})
