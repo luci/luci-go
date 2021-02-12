@@ -70,6 +70,30 @@
       },
       "revId": "57f835b8ff7186a707eaabf8e2342875c0ed3c47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c0de05e_99cac6a2",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-12T07:10:31Z",
+      "side": 1,
+      "message": "Thank you, Weiwei. Your information is very helpful. Just to be sure, I\u0027ve also called removeEventListener in disconnectedCallback.",
+      "parentUuid": "3f8223f8_e4f71ce5",
+      "range": {
+        "startLine": 113,
+        "startChar": 9,
+        "endLine": 113,
+        "endChar": 25
+      },
+      "revId": "57f835b8ff7186a707eaabf8e2342875c0ed3c47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
