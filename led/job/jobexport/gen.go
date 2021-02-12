@@ -23,6 +23,8 @@ package jobexport
 // When doing this make sure to inspect the diff of the .swarm.json files to
 // ensure they're correct.
 
-//go:generate cp ../jobcreate/testdata/bbagent.job.json testdata/
-//go:generate cp ../jobcreate/testdata/raw.job.json testdata/
+//go:generate cp ../jobcreate/testdata/bbagent_cas.job.json testdata/
+//go:generate cp ../jobcreate/testdata/bbagent_iso.job.json testdata/
+//go:generate cp ../jobcreate/testdata/raw_cas.job.json testdata/
+//go:generate cp ../jobcreate/testdata/raw_iso.job.json testdata/
 //go:generate go test -train

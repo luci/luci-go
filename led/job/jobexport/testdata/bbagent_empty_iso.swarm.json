@@ -179,7 +179,7 @@
           }
         ],
         "execution_timeout_secs": "1800",
-        "grace_period_secs": "30"
+        "grace_period_secs": "180"
       }
     },
     {
@@ -349,7 +349,7 @@
           }
         ],
         "execution_timeout_secs": "1800",
-        "grace_period_secs": "30"
+        "grace_period_secs": "180"
       }
     }
   ],

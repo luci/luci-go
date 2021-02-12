@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	"go.chromium.org/luci/common/clock"
@@ -395,7 +396,11 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 
 		EnvPaths:         bb.EnvPrefixes,
 		ExecutionTimeout: bb.BbagentArgs.Build.ExecutionTimeout,
-		GracePeriod:      bb.GracePeriod,
+
+		// TODO(iannucci): When build creation is done in Go, share this 3 minute
+		// constant between here and there.  Or, better, implement CreateBuild so we
+		// don't have to do this at all.
+		GracePeriod: durationpb.New(bb.BbagentArgs.Build.GracePeriod.AsDuration() + (3 * time.Minute)),
 	}
 
 	if bb.Containment.GetContainmentType() != swarmingpb.Containment_NOT_SPECIFIED {
