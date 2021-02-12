@@ -38,6 +38,19 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// isValidCreateState returns false if invocations cannot be created in the
+// given state `s`.
+func isValidCreateState(s pb.Invocation_State) bool {
+	switch s {
+	default:
+		return false
+	case pb.Invocation_STATE_UNSPECIFIED:
+	case pb.Invocation_ACTIVE:
+	case pb.Invocation_FINALIZING:
+	}
+	return true
+}
+
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
 func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 	internal.AssertUTC(now)
@@ -89,6 +102,10 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		if err := validateInvocationDeadline(inv.Deadline, now); err != nil {
 			return errors.Annotate(err, "invocation: deadline").Err()
 		}
+	}
+
+	if !isValidCreateState(inv.GetState()) {
+		return errors.Reason("invocation.state: cannot be created in the state %s", inv.GetState()).Err()
 	}
 
 	for i, bqExport := range inv.GetBigqueryExports() {

@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -113,7 +114,14 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 		}
 		if !deduped {
 			span.BufferWrite(ctx, ms...)
+			// Enqueue any finalization tasks in the same transaction.
+			for _, req := range reqs {
+				if req.Invocation.State == pb.Invocation_FINALIZING {
+					tasks.StartInvocationFinalization(ctx, invocations.ID(req.InvocationId), false)
+				}
+			}
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -135,11 +143,19 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 	ms := make([]*spanner.Mutation, 0, len(reqs))
 	// Compute mutations
 	for _, req := range reqs {
+		newInvState := req.Invocation.GetState()
+		if newInvState == pb.Invocation_STATE_UNSPECIFIED {
+			newInvState = pb.Invocation_ACTIVE
+		}
+		if newInvState != pb.Invocation_ACTIVE && newInvState != pb.Invocation_FINALIZING {
+			// validateCreateInvocationRequest should have rejected any other states.
+			panic("do not create invocations in states other than active or finalizing")
+		}
 
 		// Prepare the invocation we will save to spanner.
 		inv := &pb.Invocation{
 			Name:             invocations.ID(req.InvocationId).Name(),
-			State:            pb.Invocation_ACTIVE,
+			State:            newInvState,
 			Deadline:         req.Invocation.GetDeadline(),
 			Tags:             req.Invocation.GetTags(),
 			BigqueryExports:  req.Invocation.GetBigqueryExports(),
