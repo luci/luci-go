@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05f2de81_69daa7e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-12T01:01:34Z",
+      "side": 1,
+      "message": "this looks very generic. Are you sure GA doesn\u0027t already have that.\nlast time I looked at GA, I believe it had this statistics, for navigation out of the page, i.e. GA tells you where your users leave to",
+      "revId": "79aced60fd793caf0fa68a6c1b88711bf02e545f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0e16baf_5587577f",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-12T01:01:34Z",
+      "side": 1,
+      "message": "\u0027\n\nfor consistency\n\nsame below",
+      "range": {
+        "startLine": 113,
+        "startChar": 26,
+        "endLine": 113,
+        "endChar": 27
+      },
+      "revId": "79aced60fd793caf0fa68a6c1b88711bf02e545f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d9dc8c0_28133860",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-12T01:01:34Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 123,
+        "startChar": 7,
+        "endLine": 123,
+        "endChar": 9
+      },
+      "revId": "79aced60fd793caf0fa68a6c1b88711bf02e545f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
