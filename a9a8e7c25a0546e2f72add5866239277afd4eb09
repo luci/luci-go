@@ -16,6 +16,24 @@
       "message": "renderMarkdown is also used to display content for step\u0027s summary, which is split into header and body.\nNot sure if we want to support links in step\u0027s header.\n\nDemo: https://weiweilin-dot-luci-milo.appspot.com/ui/p/turquoise/builders/global.try/smart_display_max_eng.sherlock-release/b8855650516912764848/steps?succeeded\u003dtrue\u0026debug\u003dfalse",
       "revId": "a9a8e7c25a0546e2f72add5866239277afd4eb09",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b57ce3b_8eb43e58",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-12T02:37:56Z",
+      "side": 1,
+      "message": "\u003e renderMarkdown is also used to display content for step\u0027s summary, which is split into header and body.\n\u003e Not sure if we want to support links in step\u0027s header.\n\u003e \n\u003e Demo: https://weiweilin-dot-luci-milo.appspot.com/ui/p/turquoise/builders/global.try/smart_display_max_eng.sherlock-release/b8855650516912764848/steps?succeeded\u003dtrue\u0026debug\u003dfalse\n\nI don\u0027t see why not. Do you have any concerns?",
+      "parentUuid": "c4c17b95_9278d976",
+      "revId": "a9a8e7c25a0546e2f72add5866239277afd4eb09",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
