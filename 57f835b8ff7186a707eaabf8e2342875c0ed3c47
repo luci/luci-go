@@ -22,6 +22,30 @@
       },
       "revId": "57f835b8ff7186a707eaabf8e2342875c0ed3c47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "445923da_c63280a3",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-12T02:56:37Z",
+      "side": 1,
+      "message": "From Weiwei\u0027s comment, it looks like it will be remove automatically. Weiwei, is it correct?",
+      "parentUuid": "9e31fb0f_de9f1d2a",
+      "range": {
+        "startLine": 113,
+        "startChar": 9,
+        "endLine": 113,
+        "endChar": 25
+      },
+      "revId": "57f835b8ff7186a707eaabf8e2342875c0ed3c47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
