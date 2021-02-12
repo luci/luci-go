@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38d492e5_9723577e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T18:56:47Z",
+      "side": 1,
+      "message": "\"FAIL\tgo.chromium.org/luci/resultdb/internal/services/recorder\"\n\n😐",
+      "revId": "61f6df04c1e5081b3b4cf2075375067e5113aba7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
