@@ -128,13 +128,27 @@ func TestValidateTags(t *testing.T) {
 		})
 
 		Convey("id", func() {
-			cm := &pb.GitilesCommit{
-				Host:    "host",
-				Project: "project",
-				Id:      "id",
-			}
-			err := validateCommit(cm)
-			So(err, ShouldErrLike, "id must match")
+			Convey("invalid id", func() {
+				cm := &pb.GitilesCommit{
+					Host:    "host",
+					Project: "project",
+					Id:      "id",
+				}
+				err := validateCommit(cm)
+				// sha1
+				So(err, ShouldErrLike, "id must match")
+			})
+
+			Convey("position", func() {
+				cm := &pb.GitilesCommit{
+					Host:     "host",
+					Project:  "project",
+					Id:       "id",
+					Position: 1,
+				}
+				err := validateCommit(cm)
+				So(err, ShouldErrLike, "position requires ref")
+			})
 		})
 
 		Convey("ref", func() {
@@ -147,37 +161,13 @@ func TestValidateTags(t *testing.T) {
 			So(err, ShouldErrLike, "ref must match")
 		})
 
-		Convey("mutual exclusion", func() {
-			Convey("ref", func() {
-				cm := &pb.GitilesCommit{
-					Host:    "host",
-					Project: "project",
-					Id:      "id",
-					Ref:     "ref",
-				}
-				err := validateCommit(cm)
-				So(err, ShouldErrLike, "id is mutually exclusive with (ref and position)")
-			})
-
-			Convey("position", func() {
-				cm := &pb.GitilesCommit{
-					Host:     "host",
-					Project:  "project",
-					Id:       "id",
-					Position: 1,
-				}
-				err := validateCommit(cm)
-				So(err, ShouldErrLike, "id is mutually exclusive with (ref and position)")
-			})
-
-			Convey("neither", func() {
-				cm := &pb.GitilesCommit{
-					Host:    "host",
-					Project: "project",
-				}
-				err := validateCommit(cm)
-				So(err, ShouldErrLike, "one of")
-			})
+		Convey("neither id nor ref", func() {
+			cm := &pb.GitilesCommit{
+				Host:    "host",
+				Project: "project",
+			}
+			err := validateCommit(cm)
+			So(err, ShouldErrLike, "one of")
 		})
 
 		Convey("valid", func() {
