@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eeb6dbec_be070f72",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-12T21:23:54Z",
+      "side": 1,
+      "message": "PTAL.\n\nFor context, the change was made in https://crrev.com/c/2211222. It looks correct that id and ref should be mutually exclusive, but I believe that we need to update some recipes before enforcing the constraints.",
+      "revId": "76453a3eadfc9107de92865ab1e8ed1c629cc134",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
