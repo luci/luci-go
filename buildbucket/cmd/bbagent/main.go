@@ -31,7 +31,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -224,16 +223,7 @@ func mainImpl() int {
 		// fatal error is received.
 		stopped := false
 		fatalPred := func(err error) bool {
-			// TODO(crbug.com/1140612): Figure out a better solution to handle the
-			// InvalidArgument error at the beginning of the build when build status
-			// hasn't switched to STARTED yet.
-			// Possible solution: keep calling GetBuild and start shuttling the build
-			// once GetBuild returns STARTED status. For now, simply tolerate such
-			// error.
-			if grpcutil.Code(err) == codes.InvalidArgument && !strings.Contains(err.Error(), "cannot update steps of a SCHEDULED build") {
-				return true
-			}
-			return false
+			return grpcutil.Code(err) == codes.InvalidArgument
 		}
 		for {
 			select {
