@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04490171_729ab9fe",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T22:07:41Z",
+      "side": 1,
+      "message": "iiuc, this means that if ref is set, then the id won\u0027t be validated at all? that doesn\u0027t sound right... if the id is set then it should at least conform to the regex, right?",
+      "revId": "2512d584b609338389894a7b20fadca40cf039aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
