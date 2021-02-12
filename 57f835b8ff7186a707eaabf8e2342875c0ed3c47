@@ -46,6 +46,30 @@
       },
       "revId": "57f835b8ff7186a707eaabf8e2342875c0ed3c47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f8223f8_e4f71ce5",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-12T05:39:49Z",
+      "side": 1,
+      "message": "I think the event listener should be GCed automatically since the component should have limit lifetime.\n\nI did some testing to verify this.\nHere\u0027s how I tested it.\n1. Setup a global weakSet variable\n```\n(window as any).weakSet \u003d new WeakSet\u003c() \u003d\u003e void\u003e();\n```\n2. Add a dummy event listener to a component when it\u0027s first updated.\n```\n  firstUpdated() {\n    const handler \u003d () \u003d\u003e {};\n    console.log(\u0027adding handler\u0027);\n    ((window as any).weakSet as WeakSet\u003c() \u003d\u003e void\u003e).add(handler);\n    this.addEventListener(\u0027click\u0027, handler);\n  }\n```\n3. Click on the UI several times to run `firstUpdated` multiple times.\n4. console.log(window.weakSet) multiple times and see if the handlers are GCed.\n\nThe result is that window.weakSet will have multiple handlers for a period of time.\nAfter a while (or after manually triggering GC), the number of handlers will drop to 1.\nSo the event handlers are removed automatically.\n\nBut I\u0027m not sure why there\u0027s still one handler instance in the GC map.\nMy guess would be somehow lit-element cache the component somewhere so it can be reused in the future?",
+      "parentUuid": "445923da_c63280a3",
+      "range": {
+        "startLine": 113,
+        "startChar": 9,
+        "endLine": 113,
+        "endChar": 25
+      },
+      "revId": "57f835b8ff7186a707eaabf8e2342875c0ed3c47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
