@@ -16,6 +16,23 @@
       "message": "Ok, finally... PTAL, I think I got all the races",
       "revId": "8b09e2b9e5463eb077868b29d1b24071f107a941",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6a7564c_578e6b15",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-12T18:17:27Z",
+      "side": 1,
+      "message": "I actually realized I could safely reserve grace period in this CL, since the updated led has already been rolled everywhere.",
+      "revId": "8b09e2b9e5463eb077868b29d1b24071f107a941",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
