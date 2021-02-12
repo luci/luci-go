@@ -34,6 +34,24 @@
       "parentUuid": "04490171_729ab9fe",
       "revId": "2512d584b609338389894a7b20fadca40cf039aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50f78a76_9702fecd",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-12T22:31:38Z",
+      "side": 1,
+      "message": "Updated to use if instead of switch for better readability.\nPTAL.",
+      "parentUuid": "92925f64_ca4d2df9",
+      "revId": "2512d584b609338389894a7b20fadca40cf039aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
