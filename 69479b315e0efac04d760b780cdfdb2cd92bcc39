@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "70ca386d_ed9b41f3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-12T19:15:09Z",
+      "side": 1,
+      "message": "Looks good; I haven\u0027t looked in detail at the tests yet, so if you wait I\u0027ll take another look; otherwise if you\u0027d like to submit I think that\u0027s alright too.",
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1f2b9b8_c77fea7f",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-12T19:15:09Z",
+      "side": 1,
+      "message": "one more closing parenthesis :-)",
+      "range": {
+        "startLine": 69,
+        "startChar": 40,
+        "endLine": 69,
+        "endChar": 55
+      },
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dfe98177_030f6ce9",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-12T19:15:09Z",
+      "side": 1,
+      "message": "triagedCL",
+      "range": {
+        "startLine": 85,
+        "startChar": 17,
+        "endLine": 85,
+        "endChar": 26
+      },
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ffe779a_28051c0b",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-12T19:15:09Z",
+      "side": 1,
+      "message": "What does this do? Does it change anything?",
+      "range": {
+        "startLine": 106,
+        "startChar": 7,
+        "endLine": 106,
+        "endChar": 15
+      },
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "95874ee1_6ee13b15",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-12T19:15:09Z",
+      "side": 1,
+      "message": "Do the ShouldResemble functions return string? That\u0027s intesting.",
+      "range": {
+        "startLine": 57,
+        "startChar": 23,
+        "endLine": 57,
+        "endChar": 29
+      },
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
