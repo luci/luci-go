@@ -51,13 +51,6 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 		return nil, err
 	}
 
-	if totalNum == 0 {
-		totalNum, err = invocations.ReadTestResultCount(ctx, invs)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &pb.QueryTestResultStatisticsResponse{
 		TotalTestResults: totalNum,
 	}, nil

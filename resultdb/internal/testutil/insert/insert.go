@@ -50,7 +50,6 @@ func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[st
 		"ExpectedTestResultsExpirationTime": future,
 		"CreateTime":                        spanner.CommitTimestamp,
 		"Deadline":                          future,
-		"TestResultCount":                   0,
 	}
 
 	if state == pb.Invocation_FINALIZED {

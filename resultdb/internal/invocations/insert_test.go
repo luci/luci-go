@@ -33,7 +33,6 @@ func insertInvocation(id ID, extraValues map[string]interface{}) *spanner.Mutati
 		"ExpectedTestResultsExpirationTime": future,
 		"CreateTime":                        spanner.CommitTimestamp,
 		"Deadline":                          future,
-		"TestResultCount":                   0,
 	}
 	updateDict(values, extraValues)
 

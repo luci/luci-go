@@ -61,18 +61,15 @@ func TestQueryTestResultStatistics(t *testing.T) {
 				}),
 			insert.Invocation(
 				"b", pb.Invocation_FINALIZED, map[string]interface{}{
-					"TestResultCount": 5,
-					"Realm":           "otherproject:testrealm",
+					"Realm": "otherproject:testrealm",
 				}),
 			insert.Invocation(
 				"c", pb.Invocation_FINALIZED, map[string]interface{}{
-					"TestResultCount": 10,
-					"Realm":           "otherproject:testrealm",
+					"Realm": "otherproject:testrealm",
 				}),
 			insert.Invocation(
 				"d", pb.Invocation_FINALIZED, map[string]interface{}{
-					"TestResultCount": 20,
-					"Realm":           "otherproject:testrealm",
+					"Realm": "otherproject:testrealm",
 				}),
 			insert.Inclusion("a", "b"),
 			insert.Inclusion("a", "c"),
