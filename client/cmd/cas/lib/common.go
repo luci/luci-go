@@ -60,17 +60,16 @@ func (c *commonFlags) Init(authFlags AuthFlags) {
 }
 
 func (c *commonFlags) Parse() error {
-	// extract glog flag used in remote-apis-sdks
-	logtostderr := flag.Lookup("logtostderr")
-	if logtostderr == nil {
-		return errors.Reason("logtostderr flag for glog not found").Err()
-	}
-	v := flag.Lookup("v")
-	if v == nil {
-		return errors.Reason("v flag for glog not found").Err()
-	}
-
 	if c.logConfig.Level == logging.Debug {
+		// extract glog flag used in remote-apis-sdks
+		logtostderr := flag.Lookup("logtostderr")
+		if logtostderr == nil {
+			return errors.Reason("logtostderr flag for glog not found").Err()
+		}
+		v := flag.Lookup("v")
+		if v == nil {
+			return errors.Reason("v flag for glog not found").Err()
+		}
 		logtostderr.Value.Set("true")
 		v.Value.Set("9")
 	}
