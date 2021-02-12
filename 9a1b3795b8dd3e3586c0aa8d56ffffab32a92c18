@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10afbad4_0f3cd3f1",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-12T22:32:44Z",
+      "side": 1,
+      "message": "does code does not run if Ref is set, e.g. L222 check is skipped.\n\nthere is a reason why most validation code uses if statements, as opposed to switches.",
+      "range": {
+        "startLine": 220,
+        "startChar": 1,
+        "endLine": 220,
+        "endChar": 23
+      },
+      "revId": "9a1b3795b8dd3e3586c0aa8d56ffffab32a92c18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f9f1aaf_4c2e2b3e",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-12T22:32:44Z",
+      "side": 1,
+      "message": "why duplicate the logic?",
+      "range": {
+        "startLine": 224,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 60
+      },
+      "revId": "9a1b3795b8dd3e3586c0aa8d56ffffab32a92c18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
