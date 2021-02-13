@@ -16,6 +16,24 @@
       "message": "👍 i wonder why we didn\u0027t do this the first time. Because we didn\u0027t have separate final call?",
       "revId": "fe65b6578e5b2bee3e5883ac42fdea3fb9b05413",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "805b63b4_e279b643",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-13T00:45:13Z",
+      "side": 1,
+      "message": "I think so? I think it was just some temporary confusion :)",
+      "parentUuid": "62985e50_7f47d7dc",
+      "revId": "fe65b6578e5b2bee3e5883ac42fdea3fb9b05413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
