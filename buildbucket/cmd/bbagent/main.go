@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -175,6 +176,7 @@ func mainImpl() int {
 
 	shutdownCh := make(chan struct{})
 	var statusDetails *bbpb.StatusDetails
+	var subprocErr error
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
@@ -203,10 +205,11 @@ func mainImpl() int {
 		if err != nil {
 			return err
 		}
+
 		var build *bbpb.Build
-		build, err = subp.Wait()
+		build, subprocErr = subp.Wait()
 		statusDetails = build.StatusDetails
-		return err
+		return nil
 	})
 	if err != nil {
 		check(errors.Annotate(err, "could not start luciexe host environment").Err())
@@ -273,6 +276,21 @@ func mainImpl() int {
 	if bbErr != nil {
 		logging.Errorf(cctx, "Failed to report error %s to Buildbucket due to %s", err, bbErr)
 		retcode = 2
+	}
+
+	if retcode == 0 && subprocErr != nil {
+		errors.Walk(subprocErr, func(err error) bool {
+			exit, ok := err.(*exec.ExitError)
+			if ok {
+				retcode = exit.ExitCode()
+				logging.Infof(cctx, "Returning exit code from user subprocess: %d", retcode)
+			}
+			return !ok
+		})
+		if retcode == 0 {
+			retcode = 3
+			logging.Errorf(cctx, "Non retcode-containing error from user subprocess: %s", subprocErr)
+		}
 	}
 
 	return retcode
