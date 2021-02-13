@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "33d41395_9608e400",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-13T00:34:47Z",
+      "side": 1,
+      "message": "temporary",
+      "range": {
+        "startLine": 89,
+        "startChar": 62,
+        "endLine": 89,
+        "endChar": 70
+      },
+      "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5e1fcf0e_9e24f9ff",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 2
@@ -44,6 +67,47 @@
         "endLine": 94,
         "endChar": 30
       },
+      "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1409c3c_7e3c8c3f",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-13T00:34:47Z",
+      "side": 1,
+      "message": "Looks like no: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/grpc/appstatus/status.go;l\u003d70?q\u003dappstatus\u0026ss\u003dchromium",
+      "parentUuid": "5e1fcf0e_9e24f9ff",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 94,
+        "endChar": 30
+      },
+      "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f866e4e4_0cd3bf6f",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-13T00:34:47Z",
+      "side": 1,
+      "message": "Can we log that we\u0027re masking this error?",
       "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
