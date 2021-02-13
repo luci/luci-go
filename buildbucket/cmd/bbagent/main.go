@@ -98,11 +98,24 @@ func mainImpl() int {
 	// Build state.
 	//
 	// We enable them again after the user process has finished.
-	bbclientRetriesEnabled := false
+	bbclientRetriesEnabled := true
 	bbclient, secrets, err := newBuildsClient(ctx, input.Build.Infra.Buildbucket, &bbclientRetriesEnabled)
 	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
+
+	// We send a single status=STARTED here, and will send the final build status
+	// after the user executable completes.
+	_, err = bbclient.UpdateBuild(
+		metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken)),
+		&bbpb.UpdateBuildRequest{
+			Build:      &bbpb.Build{Status: bbpb.Status_STARTED},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+		})
+	if err != nil {
+		logging.Errorf(ctx, "Failed to report status STARTED to Buildbucket due to %s", err)
+		return 1
+	}
 
 	var (
 		cctx   context.Context

@@ -23,7 +23,6 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/buildbucket"
@@ -143,16 +142,12 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client BuildsClie
 		if b.Meta != nil {
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
 		} else {
-			build := proto.Clone(b.Data[0].(proto.Message)).(*bbpb.Build)
-			// We always set status=STARTED; bbagent will do one final send after the
-			// dispatcher channel is closed which includes the real final status.
-			build.Status = bbpb.Status_STARTED
+			build := b.Data[0].(*bbpb.Build)
 			req = &bbpb.UpdateBuildRequest{
 				Build: build,
 				UpdateMask: &field_mask.FieldMask{
 					Paths: []string{
 						"build.steps",
-						"build.status",
 						"build.output",
 						"build.summary_markdown",
 					},
