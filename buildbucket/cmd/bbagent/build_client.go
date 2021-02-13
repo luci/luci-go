@@ -143,18 +143,20 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client BuildsClie
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
 		} else {
 			build := b.Data[0].(*bbpb.Build)
+			// We always set status=STARTED; bbagent will do one final send after the
+			// dispatcher channel is closed which includes the real final status.
+			build.Status = bbpb.Status_STARTED
 			req = &bbpb.UpdateBuildRequest{
 				Build: build,
 				UpdateMask: &field_mask.FieldMask{
 					Paths: []string{
 						"build.steps",
+						"build.status",
 						"build.output",
 						"build.summary_markdown",
 					},
 				},
 			}
-			// We never include status here; bbagent will do one final send after the
-			// dispatcher channel is closed which includes status.
 			if len(build.Tags) > 0 {
 				req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.tags")
 			}

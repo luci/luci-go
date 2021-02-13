@@ -31,7 +31,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -219,26 +218,15 @@ func mainImpl() int {
 	)
 
 	go func() {
-		// Monitors the `dispatcherErrCh` and checks for fatal error determined by
-		// `fatalPred`. Stops the build shuttling and shuts down the luciexe if a
-		// fatal error is received.
+		// Monitors the `dispatcherErrCh` and checks for fatal error.
+		//
+		// Stops the build shuttling and shuts down the luciexe if a fatal error is
+		// received.
 		stopped := false
-		fatalPred := func(err error) bool {
-			// TODO(crbug.com/1140612): Figure out a better solution to handle the
-			// InvalidArgument error at the beginning of the build when build status
-			// hasn't switched to STARTED yet.
-			// Possible solution: keep calling GetBuild and start shuttling the build
-			// once GetBuild returns STARTED status. For now, simply tolerate such
-			// error.
-			if grpcutil.Code(err) == codes.InvalidArgument && !strings.Contains(err.Error(), "cannot update steps of a SCHEDULED build") {
-				return true
-			}
-			return false
-		}
 		for {
 			select {
 			case err := <-dispatcherErrCh:
-				if !stopped && fatalPred(err) {
+				if !stopped && grpcutil.Code(err) == codes.InvalidArgument {
 					close(shutdownCh)
 					fatalUpdateBuildErrorSlot.Store(err)
 					stopped = true
