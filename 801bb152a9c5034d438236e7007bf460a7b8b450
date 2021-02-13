@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7b442f9d_20c07d2f",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T19:49:01Z",
+      "side": 1,
+      "message": "1. comment is now wrong\n2. you didn\u0027t disable retries on L119.",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 31
+      },
+      "revId": "801bb152a9c5034d438236e7007bf460a7b8b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
