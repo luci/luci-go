@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e1fcf0e_9e24f9ff",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-13T00:32:16Z",
+      "side": 1,
+      "message": "I don\u0027t need to check for nil, right?",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 94,
+        "endChar": 30
+      },
+      "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
