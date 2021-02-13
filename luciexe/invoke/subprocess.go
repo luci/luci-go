@@ -190,16 +190,21 @@ func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 		}()
 
 		defer func() {
-			if evt := s.firstDeadlineEvent.Load(); evt != nil {
-				var errMsg string
-				switch {
-				case evt == lucictx.InterruptEvent:
-					errMsg = "luciexe process is interrupted"
-				case evt == lucictx.TimeoutEvent:
-					errMsg = "luciexe process timed out"
-				case evt == lucictx.ClosureEvent:
-					errMsg = "luciexe process's context is cancelled"
-				}
+			var errMsg string
+
+			// We need to check both evt and ctxErr since they can race.
+			ctxErr := s.ctx.Err()
+			evt := s.firstDeadlineEvent.Load()
+			switch {
+			case evt == lucictx.InterruptEvent:
+				errMsg = "luciexe process is interrupted"
+			case evt == lucictx.TimeoutEvent || ctxErr == context.DeadlineExceeded:
+				errMsg = "luciexe process timed out"
+			case evt == lucictx.ClosureEvent || ctxErr == context.Canceled:
+				errMsg = "luciexe process's context is cancelled"
+			}
+
+			if errMsg != "" {
 				if s.err != nil {
 					s.err = errors.Annotate(s.err, "%s; luciexe error", errMsg).Err()
 				} else {
