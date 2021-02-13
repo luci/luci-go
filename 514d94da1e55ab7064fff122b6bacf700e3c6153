@@ -26,6 +26,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a43b6e12_c0f9bcbb",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:41:33Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 90,
+        "startChar": 16,
+        "endLine": 90,
+        "endChar": 18
+      },
+      "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "944d1e43_dece0baa",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:41:33Z",
+      "side": 1,
+      "message": "completely",
+      "range": {
+        "startLine": 93,
+        "startChar": 25,
+        "endLine": 93,
+        "endChar": 34
+      },
+      "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5e1fcf0e_9e24f9ff",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 2
@@ -108,6 +154,24 @@
       "writtenOn": "2021-02-13T00:34:47Z",
       "side": 1,
       "message": "Can we log that we\u0027re masking this error?",
+      "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63b4c9b6_fa2d8dad",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:41:33Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "f866e4e4_0cd3bf6f",
       "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
