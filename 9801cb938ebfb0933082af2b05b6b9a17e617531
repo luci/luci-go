@@ -22,6 +22,30 @@
       },
       "revId": "9801cb938ebfb0933082af2b05b6b9a17e617531",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26b92bdd_ecd7ca76",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-13T00:49:00Z",
+      "side": 1,
+      "message": "I\u0027d rather pessimistic that UpdateBuild() will 100% be in Go soooon. :(\n:fighercross:",
+      "parentUuid": "1656e416_adc614b9",
+      "range": {
+        "startLine": 93,
+        "startChar": 11,
+        "endLine": 93,
+        "endChar": 55
+      },
+      "revId": "9801cb938ebfb0933082af2b05b6b9a17e617531",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
