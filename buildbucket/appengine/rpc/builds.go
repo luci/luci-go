@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -79,7 +80,21 @@ func getBuildsSubMask(fields *field_mask.FieldMask) (*mask.Mask, error) {
 // TODO(crbug/1042991): Remove once methods are implemented.
 func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	err = commonPostlude(ctx, methodName, rsp, err)
-	if methodName == "GetBuild" || methodName == "SearchBuilds" || methodName == "Batch" || methodName == "UpdateBuild" {
+	if methodName == "GetBuild" || methodName == "SearchBuilds" || methodName == "Batch" {
+		return err
+	}
+	if methodName == "UpdateBuild" {
+		// override the error code w/ "FailedPrecondition", if InvalidArgument.
+		// kitchen aborts the execution if it receives InvalidArgument for UpdateBuild().
+		// It causes a Swarming task frozen, and this override is a temporal solution
+		// to trigger it retry on UpdateBuild failures.
+		//
+		// TODO(crbug.com/1110990) - remove this hack once UpdateBuild() is 100% served
+		// by Go or kitchen is completed replaced by bbagent.
+		st, ok := appstatus.Get(err)
+		if ok && st.Code() == codes.InvalidArgument {
+			return status.Errorf(codes.FailedPrecondition, "%s", err)
+		}
 		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
