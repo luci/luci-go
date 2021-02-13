@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "01605029_cd690d31",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:00:03Z",
+      "side": 1,
+      "message": "Yes, please take a look. IMO, tests cases are actually more important here,\nthough 2 CLs after this are the most important.",
+      "parentUuid": "70ca386d_ed9b41f3",
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e1f2b9b8_c77fea7f",
@@ -41,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "74bc580c_c5ef1610",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:00:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1f2b9b8_c77fea7f",
+      "range": {
+        "startLine": 69,
+        "startChar": 40,
+        "endLine": 69,
+        "endChar": 55
+      },
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dfe98177_030f6ce9",
@@ -54,6 +96,30 @@
       "writtenOn": "2021-02-12T19:15:09Z",
       "side": 1,
       "message": "triagedCL",
+      "range": {
+        "startLine": 85,
+        "startChar": 17,
+        "endLine": 85,
+        "endChar": 26
+      },
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d52996df_13229eb8",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:00:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dfe98177_030f6ce9",
       "range": {
         "startLine": 85,
         "startChar": 17,
@@ -89,6 +155,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "dbee4dd1_c4ed97e2",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:00:03Z",
+      "side": 1,
+      "message": "it\u0027s a noop for ease of reading of actual clauses below. Added comment.",
+      "parentUuid": "2ffe779a_28051c0b",
+      "range": {
+        "startLine": 106,
+        "startChar": 7,
+        "endLine": 106,
+        "endChar": 15
+      },
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "95874ee1_6ee13b15",
         "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls_test.go",
         "patchSetId": 3
@@ -100,6 +190,30 @@
       "writtenOn": "2021-02-12T19:15:09Z",
       "side": 1,
       "message": "Do the ShouldResemble functions return string? That\u0027s intesting.",
+      "range": {
+        "startLine": 57,
+        "startChar": 23,
+        "endLine": 57,
+        "endChar": 29
+      },
+      "revId": "69479b315e0efac04d760b780cdfdb2cd92bcc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29b63849_1ffe20db",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:00:03Z",
+      "side": 1,
+      "message": "Yeah. But the evil is that it can also return a json-serialized struct as a string... and then opportunistically decipher it as json. :seenoevilmonkey:",
+      "parentUuid": "95874ee1_6ee13b15",
       "range": {
         "startLine": 57,
         "startChar": 23,
