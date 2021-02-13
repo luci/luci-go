@@ -22,6 +22,30 @@
       },
       "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0111f0b3_c08b7e5f",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-13T00:34:24Z",
+      "side": 1,
+      "message": "https://pkg.go.dev/go.chromium.org/luci/grpc/appstatus#Get says ok is false if err is nil.",
+      "parentUuid": "5e1fcf0e_9e24f9ff",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 94,
+        "endChar": 30
+      },
+      "revId": "514d94da1e55ab7064fff122b6bacf700e3c6153",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
