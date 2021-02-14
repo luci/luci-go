@@ -16,6 +16,46 @@
       "message": "Ok, now it should be good.\n\n(Planning on working on a integration testing suite or something to get better coverage on this in the coming week)",
       "revId": "c7bacf7c8948ec97e204c66235780545f186eb94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb4aa242_6c46e51c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-14T21:53:59Z",
+      "side": 1,
+      "message": "lgtm, submitting, but left a suggestion.",
+      "revId": "c7bacf7c8948ec97e204c66235780545f186eb94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75a332c6_4cf46e78",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-14T21:53:59Z",
+      "side": 1,
+      "message": "btw, consider keeping it as a pointer here -- avoids accidental \n   bbclientRetriesEnabled :\u003d false\nand also helps reader grasp the mechanism faster.",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 95,
+        "endChar": 31
+      },
+      "revId": "c7bacf7c8948ec97e204c66235780545f186eb94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
