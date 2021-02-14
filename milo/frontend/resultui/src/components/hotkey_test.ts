@@ -14,6 +14,7 @@
 
 import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
+import { customElement, LitElement } from 'lit-element';
 import sinon from 'sinon';
 
 import './hotkey';
@@ -24,22 +25,55 @@ function simulateKeyStroke(target: EventTarget, key: string) {
   target.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, composed: true, keyCode: key.toUpperCase().charCodeAt(0)} as KeyboardEventInit));
 }
 
+@customElement('milo-hotkey-test-wrapper')
+class WrapperElement extends LitElement {
+  protected render() {
+    return html`
+      <input id="input">
+      <select id="select"></select>
+      <textarea id="textarea">
+    `;
+  }
+}
+
 describe('hotkey_test', () => {
   let hotkeyEle: HotkeyElement;
   let childEle: Element;
+  let inputEle: HTMLInputElement;
+  let selectEle: HTMLSelectElement;
+  let textareaEle: HTMLTextAreaElement;
+  let wrappedInputEle: HTMLInputElement;
+  let wrappedSelectEle: HTMLSelectElement;
+  let wrappedTextareaEle: HTMLTextAreaElement;
   const handlerSpy = sinon.spy();
   const handlerSpy2 = sinon.spy();
 
   before(async() => {
-    hotkeyEle = await fixture<HotkeyElement>(html`
-      <milo-hotkey
-        key="a"
-        .handler=${handlerSpy}
-      >
-        <div id="child"></div>
-      </milo-hotkey>
+    const parentEle = await fixture<HotkeyElement>(html`
+      <div>
+        <milo-hotkey
+          id="hotkey"
+          key="a"
+          .handler=${handlerSpy}
+        >
+          <div id="child"></div>
+        </milo-hotkey>
+        <input id="input">
+        <select id="select"></select>
+        <textarea id="textarea"></textarea>
+        <milo-hotkey-test-wrapper id="wrapped"></milo-hotkey-test-wrapper>
+      </div>
     `);
-    childEle = hotkeyEle.querySelector('#child')!;
+    hotkeyEle = parentEle.querySelector('#hotkey')!;
+    childEle = parentEle.querySelector('#child')!;
+    inputEle = parentEle.querySelector('#input')!;
+    selectEle = parentEle.querySelector('#select')!;
+    textareaEle = parentEle.querySelector('#textarea')!;
+
+    const wrapped = parentEle.querySelector<WrapperElement>('#wrapped')!;
+    wrappedInputEle = wrapped.shadowRoot!.querySelector('#input')!;
+    wrappedSelectEle = wrapped.shadowRoot!.querySelector('#select')!;
+    wrappedTextareaEle = wrapped.shadowRoot!.querySelector('#textarea')!;
   });
   after(fixtureCleanup);
 
@@ -70,6 +104,20 @@ describe('hotkey_test', () => {
 
     simulateKeyStroke(document, 'b');
     assert.equal(handlerSpy.callCount, 3);
+    assert.equal(handlerSpy2.callCount, 1);
+  });
+
+  it('should not trigger the handler when the target element is INPUT/SELECT/TEXTAREA', () => {
+    simulateKeyStroke(inputEle, 'b');
+    simulateKeyStroke(selectEle, 'b');
+    simulateKeyStroke(textareaEle, 'b');
+    assert.equal(handlerSpy2.callCount, 1);
+  });
+
+  it('should not trigger the handler when the target element is INPUT/SELECT/TEXTAREA in a web component', () => {
+    simulateKeyStroke(wrappedInputEle, 'b');
+    simulateKeyStroke(wrappedSelectEle, 'b');
+    simulateKeyStroke(wrappedTextareaEle, 'b');
     assert.equal(handlerSpy2.callCount, 1);
   });
 

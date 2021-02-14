@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Hotkeys, { KeyHandler } from 'hotkeys-js';
+import Hotkeys, { HotkeysEvent, KeyHandler } from 'hotkeys-js';
 import { customElement, html, LitElement, property, PropertyValues } from 'lit-element';
 
+// Let individual hotkey element set the filters instead.
+Hotkeys.filter = () => true;
 
 /**
  * Register a global keydown event listener.
@@ -26,8 +28,20 @@ export class HotkeyElement extends LitElement {
   @property() key!: string;
   handler!: KeyHandler;
 
+  // By default, prevent hotkeys from reacting to events from input related elements
+  // enclosed in shadow DOM.
+  filter = (keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {
+    const tagName = (keyboardEvent.composedPath()[0] as Partial<HTMLElement>).tagName || '';
+    return !['INPUT', 'SELECT', 'TEXTAREA'].includes(tagName);
+  }
+
   // Use _ prefix to prevent typo when assigning property in lit-html template.
-  private readonly _handle: KeyHandler = (...params) => this.handler(...params);
+  private readonly _handle = (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => {
+    if (!this.filter(keyboardEvent, hotkeysEvent)) {
+      return;
+    }
+    this.handler(keyboardEvent, hotkeysEvent);
+  }
 
   shouldUpdate(changedProperties: PropertyValues) {
     if (!this.isConnected) {

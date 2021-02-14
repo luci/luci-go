@@ -12,12 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Hotkeys from 'hotkeys-js';
-
 import './routes';
-
-// Prevent hotkeys from reacting to events from input related elements enclosed in shadow DOM.
-Hotkeys.filter = (e) => {
-  const tagName = (e.composedPath()[0] as Partial<HTMLElement>).tagName || '';
-  return !['INPUT', 'SELECT', 'TEXTAREA'].includes(tagName);
-};
