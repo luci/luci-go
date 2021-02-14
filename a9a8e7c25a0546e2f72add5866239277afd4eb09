@@ -70,6 +70,24 @@
       "parentUuid": "5a807e13_60446422",
       "revId": "a9a8e7c25a0546e2f72add5866239277afd4eb09",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23f44d42_a399f6e8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-14T22:27:49Z",
+      "side": 1,
+      "message": "Could you give me a LGTM?",
+      "parentUuid": "b7e7adbb_c9aa3a35",
+      "revId": "a9a8e7c25a0546e2f72add5866239277afd4eb09",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
