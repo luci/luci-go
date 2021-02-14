@@ -22,6 +22,7 @@ import { computed, observable } from 'mobx';
 import '../components/copy_to_clipboard';
 import '../components/log';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
@@ -106,6 +107,29 @@ Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
         ${displayDuration(this.step.duration)}
       </span>
     `;
+  }
+
+  private onMouseClick(e: MouseEvent) {
+    // We need to get composedPath instead of target because if links are
+    // in shadowDOM, target will be redirected
+    if (e.composedPath().length === 0) {
+      return;
+    }
+    const target = e.composedPath()[0] as Element;
+    if (target.tagName === 'A') {
+      const href = target.getAttribute('href') || '';
+      trackEvent(GA_CATEGORIES.STEP_LINKS, GA_ACTIONS.CLICK, href);
+    }
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener('click', this.onMouseClick);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener("click", this.onMouseClick)
   }
 
   protected render() {
