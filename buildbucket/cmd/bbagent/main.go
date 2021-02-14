@@ -92,33 +92,18 @@ func mainImpl() int {
 	input, err := bbinput.Parse(args[0])
 	check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
 
-	bbclientRetriesEnabled := true
+	// We start with retries disabled because the dispatcher.Channel will handle
+	// them during the execution of the user process; In particular we want
+	// dispatcher.Channel to be able to move on to a newer version of the Build if
+	// it encounters transient errors, rather than retrying a potentially stale
+	// Build state.
+	//
+	// We enable them again after the user process has finished.
+	bbclientRetriesEnabled := false
 	bbclient, secrets, err := newBuildsClient(ctx, input.Build.Infra.Buildbucket, &bbclientRetriesEnabled)
 	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
-
-	// We send a single status=STARTED here, and will send the final build status
-	// after the user executable completes.
-	_, err = bbclient.UpdateBuild(
-		metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken)),
-		&bbpb.UpdateBuildRequest{
-			Build:      &bbpb.Build{Status: bbpb.Status_STARTED},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
-		})
-	if err != nil {
-		logging.Errorf(ctx, "Failed to report status STARTED to Buildbucket due to %s", err)
-		return 1
-	}
-
-	// We start with disable retries for the main build updates because the
-	// dispatcher.Channel will handle them during the execution of the user
-	// process; In particular we want dispatcher.Channel to be able to move on to
-	// a newer version of the Build if it encounters transient errors, rather than
-	// retrying a potentially stale Build state.
-	//
-	// We enable them again after the user process has finished.
-	bbclientRetriesEnabled = false
 
 	var (
 		cctx   context.Context
