@@ -22,6 +22,30 @@
       },
       "revId": "801bb152a9c5034d438236e7007bf460a7b8b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "716fdc31_41e8e09d",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-14T16:56:22Z",
+      "side": 1,
+      "message": "And I set autosubmit #facepalm",
+      "parentUuid": "7b442f9d_20c07d2f",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 31
+      },
+      "revId": "801bb152a9c5034d438236e7007bf460a7b8b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
