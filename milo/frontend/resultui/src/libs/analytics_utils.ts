@@ -30,7 +30,8 @@ export enum GA_ACTIONS {
 export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
   // See https://developers.google.com/analytics/devguides/collection/analyticsjs/events?hl=en#event_fields
   // for more information
-  ga('send', {
+  // Use window.ga? instead of ga, so this function doesn't fail when executed in the test environment.
+  window.ga?.('send', {
     hitType: 'event',
     eventCategory: category,
     eventAction: action,
