@@ -126,6 +126,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ebba20bd_803f169d",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-15T05:48:37Z",
+      "side": 1,
+      "message": "Added test cases.\nAlso, intentionally made those test cases not very strict (e.g. the order isn\u0027t enforced), so updating the implementation (e.g. add new queries, update suggestion algorithm) doesn\u0027t break the tests.",
+      "parentUuid": "3ff2888d_4f32c7df",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a2508e8e_438717ea",
         "filename": "milo/frontend/resultui/src/libs/search_query.ts",
         "patchSetId": 4
