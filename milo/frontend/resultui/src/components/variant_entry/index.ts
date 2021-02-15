@@ -253,6 +253,9 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     .flaky {
       color: var(--warning-color);
     }
+    span.flaky {
+      color: var(--warning-text-color);
+    }
     #identifier {
       overflow: hidden;
       grid-row: 1;
