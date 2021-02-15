@@ -16,6 +16,103 @@
       "message": "Demo: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results",
       "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b193516_532e9bbb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-15T01:22:16Z",
+      "side": 1,
+      "message": "I like the auto suggestion. I only have some small comments:\n- I think it would be better if we can show the list of suggestions when the user press the down button, when the search box is empty, so they know which filter we are supporting.\n- Look like there is a bug: https://screenshot.googleplex.com/7rvxoowe4nFMDjd, when the count is not updated (but it seems not related to this CL)",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "68547876_3e6832d7",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-15T01:22:16Z",
+      "side": 1,
+      "message": "I think it would be nice to have some tests for this.",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a2508e8e_438717ea",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-15T01:22:16Z",
+      "side": 1,
+      "message": "Remove this?",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1315d5b0_ede4d391",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-15T01:22:16Z",
+      "side": 1,
+      "message": "As you use these in more than one place, is it possible to use a common const for them?",
+      "range": {
+        "startLine": 72,
+        "startChar": 6,
+        "endLine": 72,
+        "endChar": 138
+      },
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4bd54838_eb346de7",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-15T01:22:16Z",
+      "side": 1,
+      "message": "I guess you mean \"Exclude tests\"?",
+      "range": {
+        "startLine": 80,
+        "startChar": 45,
+        "endLine": 80,
+        "endChar": 63
+      },
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
