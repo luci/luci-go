@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6369a37_e0d7a6b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-15T04:27:20Z",
+      "side": 1,
+      "message": "\u003e Although this may make sense when we only support a limited number of filters, it won\u0027t scale when we have more. I don\u0027t think it adds a lot of value than the current implementation (you need to type in just one character to invoke the auto-complete dropdown). I\u0027ll add a link to explain the query syntax in a future CL.\n\nI think what I am concerning about is not that the users need to type one character, but about how would they know if we do *not* support a filter. They need to type a character to trigger the auto suggest, but the auto suggest will be based on the character that they type.\n\nBut I agree that this is probably not a big deal though. I saw you created a bug for adding instructions of the search bar. I think it\u0027s good enough,",
+      "parentUuid": "36b2e129_8b80b3be",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "68547876_3e6832d7",
@@ -84,6 +102,24 @@
       "side": 1,
       "message": "I can\u0027t think of a great way of testing this without\n1. basically re-implementing the same logic in tests, or\n2. making the test very fragile, the test is likely to break whenever we update the implementation.\n\nBecause, after all, the returned value are just suggestions. The returned value can be different but still be considered correct.",
       "parentUuid": "68547876_3e6832d7",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ff2888d_4f32c7df",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-15T04:27:20Z",
+      "side": 1,
+      "message": "I am not sure what you meant by \"basically re-implementing the same logic in tests\"? In the tests we only need to assert the returned value is correct given the subQuery right? E.g.(I\u0027m omitting the \"explanation\" part here)\n\nSubquery: \"random\" -\u003e [\"ID:random\",\"-ID:random\"]\nSubquery: \"Abort\" -\u003e [\"RStatus:Abort\", \"-RStatus:Abort\", \"ID:Abort\",\"-ID:Abort\"]",
+      "parentUuid": "f7d8b6ac_834780c0",
       "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
