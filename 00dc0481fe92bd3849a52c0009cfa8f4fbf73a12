@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e74bca0b_966a96cc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-15T19:23:59Z",
+      "side": 1,
+      "message": "lgtm % clarification to my earlier suggstion",
+      "revId": "00dc0481fe92bd3849a52c0009cfa8f4fbf73a12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c08d6adc_7b34ef5a",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-15T19:23:59Z",
+      "side": 1,
+      "message": "fwiw, I was/am thinking that this is clearer / less likely to acquire a bug in future modifications to this long function:\n\nbbclientRetriesEnabled :\u003d new(true)\nbbclient, secrets, err :\u003d newBuildsClient(ctx, input.Build.Infra.Buildbucket, bbclientRetriesEnabled)\n\n...\n*bbclientRetriesEnabled \u003d false",
+      "range": {
+        "startLine": 104,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 103
+      },
+      "revId": "00dc0481fe92bd3849a52c0009cfa8f4fbf73a12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
