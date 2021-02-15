@@ -129,22 +129,26 @@ export class TestResultsTabElement extends MobxLitElement {
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has('expected')) {
-      this.configsStore.userConfigs.tests.showExpectedVariant = searchParams.get('expected') === 'true';
+    if (searchParams.has('unexpected')) {
+      this.configsStore.userConfigs.tests.showUnexpectedVariant = searchParams.get('unexpected') === 'true';
+    }
+    if (searchParams.has('flaky')) {
+      this.configsStore.userConfigs.tests.showFlakyVariant = searchParams.get('flaky') === 'true';
     }
     if (searchParams.has('exonerated')) {
       this.configsStore.userConfigs.tests.showExoneratedVariant = searchParams.get('exonerated') === 'true';
     }
-    if (searchParams.has('flaky')) {
-      this.configsStore.userConfigs.tests.showFlakyVariant = searchParams.get('flaky') === 'true';
+    if (searchParams.has('expected')) {
+      this.configsStore.userConfigs.tests.showExpectedVariant = searchParams.get('expected') === 'true';
     }
     // Update the querystring when filters are updated.
     this.disposers.push(reaction(
       () => {
         const newSearchParams = new URLSearchParams({
-          expected: String(this.configsStore.userConfigs.tests.showExpectedVariant),
-          exonerated: String(this.configsStore.userConfigs.tests.showExoneratedVariant),
+          unexpected: String(this.configsStore.userConfigs.tests.showUnexpectedVariant),
           flaky: String(this.configsStore.userConfigs.tests.showFlakyVariant),
+          exonerated: String(this.configsStore.userConfigs.tests.showExoneratedVariant),
+          expected: String(this.configsStore.userConfigs.tests.showExpectedVariant),
         });
         return newSearchParams.toString();
       },
