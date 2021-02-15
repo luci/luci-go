@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Suggestion } from '../components/auto_complete';
 import { TestVariant } from '../services/resultdb';
 
 const SPECIAL_QUERY_RE = /^(?<neg>-?)(?<type>[a-zA-Z]+):(?<value>.+)$/;
@@ -38,4 +39,49 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
     }
   });
   return (v) => filters.every((f) => f(v));
+}
+
+const QUERY_SUGGESTIONS = [
+  {value: 'RStatus:Pass', explanation: 'Include only tests with at least one passed run'},
+  {value: '-RStatus:Pass', explanation: 'Exclude tests with at least one passed run'},
+  {value: 'RStatus:Fail', explanation: 'Include only tests with at least one failed run'},
+  {value: '-RStatus:Fail', explanation: 'Exclude tests with at least one failed run'},
+  {value: 'RStatus:Crash', explanation: 'Include only tests with at least one crashed run'},
+  {value: '-RStatus:Crash', explanation: 'Exclude tests with at least one crashed run'},
+  {value: 'RStatus:Abort', explanation: 'Include only tests with at least one aborted run'},
+  {value: '-RStatus:Abort', explanation: 'Exclude tests with at least one aborted run'},
+  {value: 'RStatus:Skip', explanation: 'Include only tests with at least one skipped run'},
+  {value: '-RStatus:Skip', explanation: 'Exclude tests with at least one skipped run'},
+];
+
+function getIdQuerySuggestion(substr: string, neg: boolean): Suggestion {
+  return {
+    value: `${neg ? '-' : ''}ID:${substr}`,
+    explanation: `${neg ? 'Exclude' : 'Include only'} tests with the specified substring in their ID (case insensitive)`,
+  };
+}
+
+export function suggestSearchQuery(subQuery: string): readonly Suggestion[] {
+  if (subQuery === '') {
+    return [];
+  }
+
+  const match = subQuery.match(/^(?<neg>-?)ID:(?<substr>.*)/);
+  if (match) {
+    if (match.groups!['neg'] === '-') {
+      return [getIdQuerySuggestion(match.groups!['substr'], true)];
+    }
+    return [
+      getIdQuerySuggestion(match.groups!['substr'], false),
+      getIdQuerySuggestion(match.groups!['substr'], true),
+    ];
+  }
+
+  const subQueryUpper = subQuery.toUpperCase();
+  const suggestions = QUERY_SUGGESTIONS.filter(({value}) => value.toUpperCase().includes(subQueryUpper));
+  suggestions.push(
+    getIdQuerySuggestion(subQuery, false),
+    getIdQuerySuggestion(subQuery, true),
+  );
+  return suggestions;
 }

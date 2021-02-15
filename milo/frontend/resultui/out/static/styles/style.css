@@ -49,6 +49,6 @@ html {
 
   --divider-color: #dddddd;
   --active-color: #007bff;
-  --light-active-color: #66ccff;
+  --light-active-color: #d9edfc;
   --mdc-theme-primary: var(--active-color);
 }

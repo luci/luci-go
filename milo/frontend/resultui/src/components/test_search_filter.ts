@@ -14,9 +14,13 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
-import { observable } from 'mobx';
+import { computed, observable } from 'mobx';
 
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
+import { suggestSearchQuery } from '../libs/search_query';
+import './auto_complete';
+import { Suggestion } from './auto_complete';
+import './hotkey';
 
 export interface TestFilter {
   showExpected: boolean;
@@ -31,6 +35,18 @@ export interface TestFilter {
 @consumeInvocationState
 export class TestSearchFilterElement extends MobxLitElement {
   @observable.ref invocationState!: InvocationState;
+  @observable.ref searchText!: string;
+
+  @computed private get lastSubQuery() {
+    return this.invocationState.searchText.split(' ').pop() || '';
+  }
+  @computed private get queryPrefix() {
+    const searchTextPrefixLen = this.invocationState.searchText.length - this.lastSubQuery.length;
+    return this.invocationState.searchText.slice(0, searchTextPrefixLen);
+  }
+  @computed private get suggestions() {
+    return suggestSearchQuery(this.lastSubQuery);
+  }
 
   protected render() {
     return html`
@@ -41,33 +57,24 @@ export class TestSearchFilterElement extends MobxLitElement {
           setTimeout(() => this.shadowRoot?.getElementById('search-box')?.focus());
         }}
       >
-        <input
+        <milo-auto-complete
           id="search-box"
-          placeholder="Press / to search test results..."
           .value=${this.invocationState.searchText}
-          @input=${(e: InputEvent) => this.invocationState.searchText = (e.target as HTMLInputElement).value}
+          .placeHolder=${'Press / to search test results...'}
+          .suggestions=${this.suggestions}
+          .onValueUpdate=${(newVal: string) => this.invocationState.searchText = newVal}
+          .onSuggestionSelected=${(suggestion: Suggestion) => {
+            this.invocationState.searchText = this.queryPrefix + suggestion.value + ' ';
+          }}
         >
+        </milo-auto-complete>
       </milo-hotkey>
     `;
   }
 
   static styles = css`
-    :host {
-      display: inline-block;
-    }
-
     #search-box {
       margin-left: 5px;
-      display: inline-block;
-      width: 350px;
-      padding: .3rem .5rem;
-      font-size: 1rem;
-      color: var(--light-text-color);
-      background-clip: padding-box;
-      border: 1px solid var(--divider-color);
-      border-radius: .25rem;
-      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-      text-overflow: ellipsis;
     }
   `;
 }
