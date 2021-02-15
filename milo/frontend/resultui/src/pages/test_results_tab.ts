@@ -431,6 +431,9 @@ export class TestResultsTabElement extends MobxLitElement {
     .flaky {
       color: var(--warning-color);
     }
+    span.flaky {
+      color: var(--warning-text-color);
+    }
 
     .list-entry {
       margin: 5px;

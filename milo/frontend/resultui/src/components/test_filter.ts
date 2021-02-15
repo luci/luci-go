@@ -77,7 +77,7 @@ export class TestFilterElement extends MobxLitElement {
           }}
           .checked=${this.testFilters.showFlakyVariant}
         >
-        <label for="flaky" style="color: var(--warning-color);">Flaky (${this.flakyVariantCount})</label>
+        <label for="flaky" style="color: var(--warning-text-color);">Flaky (${this.flakyVariantCount})</label>
       </div class="filter">
       <div class="filter">
         <input
@@ -110,8 +110,9 @@ export class TestFilterElement extends MobxLitElement {
     :host {
       display: inline-block;
     }
-    mwc-formfield > mwc-checkbox {
-      margin-right: -10px;
+    input[type="checkbox"] {
+      transform: translateY(1px);
+      margin-right: 3px;
     }
     .filter {
       display: inline-block;

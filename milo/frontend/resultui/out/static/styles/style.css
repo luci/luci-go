@@ -28,14 +28,15 @@ html {
   --greyed-out-text-color: #808080;
   --active-text-color: #0000ff;
 
-  --exonerated-color: #ff33d2;
-  --success-color: #33ac71;
-  --failure-color: #d23f31;
-  --warning-color: #ffc107;
-  --scheduled-color: #6c757d;
+  --exonerated-color: #df20b6;
+  --success-color: #169c16;
+  --failure-color: #d23a2d;
+  --warning-text-color: #ff9900;
+  --warning-color: #ffae00;
+  --scheduled-color: #73808c;
   --started-color: #ff8000;
-  --critical-failure-color: #6f42c1;
-  --canceled-color: #0082fc;
+  --critical-failure-color: #6c40bf;
+  --canceled-color: #0084ff;
 
   --scheduled-bg-color: #b7c1c9;
   --started-bg-color: #ffd1a2;
