@@ -16,6 +16,29 @@
       "message": "This is mostly taken from the style suggestions to the test history view.\nDemo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results?unexpected\u003dtrue\u0026flaky\u003dtrue\u0026exonerated\u003dtrue\u0026expected\u003dtrue\n",
       "revId": "d3be252f73bd005ec0015730b3864b2f9c55ff20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7299684b_4d12c0b2",
+        "filename": "milo/frontend/resultui/out/static/styles/style.css",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-15T05:46:19Z",
+      "side": 1,
+      "message": "nits: extra space",
+      "range": {
+        "startLine": 16,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 1
+      },
+      "revId": "d3be252f73bd005ec0015730b3864b2f9c55ff20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
