@@ -300,7 +300,7 @@ type Gerrit struct {
 	//          * message (current CL description)
 	//  * labels
 	//      * optional
-	//      * all
+	//      * all (only if vote != 0)
 	//          * user
 	//              * id
 	//              * email (may be not set)
@@ -309,6 +309,10 @@ type Gerrit struct {
 	//      * id
 	//      * date
 	//      * message
+	//      * author
+	//        * id
+	//      * realauthor
+	//        * id
 	//  * updated
 	//  * created
 	Info *gerrit.ChangeInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`

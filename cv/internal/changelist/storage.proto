@@ -97,7 +97,7 @@ message Gerrit {
   //          * message (current CL description)
   //  * labels
   //      * optional
-  //      * all
+  //      * all (only if vote != 0)
   //          * user
   //              * id
   //              * email (may be not set)
@@ -106,6 +106,10 @@ message Gerrit {
   //      * id
   //      * date
   //      * message
+  //      * author
+  //        * id
+  //      * realauthor
+  //        * id
   //  * updated
   //  * created
   gerrit.ChangeInfo info = 1;
