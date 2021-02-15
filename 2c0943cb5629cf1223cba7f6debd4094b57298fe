@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "36b2e129_8b80b3be",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-15T04:10:16Z",
+      "side": 1,
+      "message": "\u003e I think it would be better if we can show the list of suggestions when the user press the down button, when the search box is empty, so they know which filter we are supporting.\n\nAlthough this may make sense when we only support a limited number of filters, it won\u0027t scale when we have more. I don\u0027t think it adds a lot of value than the current implementation (you need to type in just one character to invoke the auto-complete dropdown). I\u0027ll add a link to explain the query syntax in a future CL.\nMonorial doesn\u0027t do this either.\n\n\u003e Look like there is a bug: https://screenshot.googleplex.com/7rvxoowe4nFMDjd, when the count is not updated (but it seems not related to this CL)\nI\u0027ll fix that in a following CL.",
+      "parentUuid": "4b193516_532e9bbb",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "68547876_3e6832d7",
@@ -54,6 +72,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f7d8b6ac_834780c0",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-15T04:10:16Z",
+      "side": 1,
+      "message": "I can\u0027t think of a great way of testing this without\n1. basically re-implementing the same logic in tests, or\n2. making the test very fragile, the test is likely to break whenever we update the implementation.\n\nBecause, after all, the returned value are just suggestions. The returned value can be different but still be considered correct.",
+      "parentUuid": "68547876_3e6832d7",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a2508e8e_438717ea",
         "filename": "milo/frontend/resultui/src/libs/search_query.ts",
         "patchSetId": 4
@@ -65,6 +101,24 @@
       "writtenOn": "2021-02-15T01:22:16Z",
       "side": 1,
       "message": "Remove this?",
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4920f610_51a4022c",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-15T04:10:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2508e8e_438717ea",
       "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -92,6 +146,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa2eb6ef_8e869870",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-15T04:10:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1315d5b0_ede4d391",
+      "range": {
+        "startLine": 72,
+        "startChar": 6,
+        "endLine": 72,
+        "endChar": 138
+      },
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4bd54838_eb346de7",
@@ -105,6 +183,30 @@
       "writtenOn": "2021-02-15T01:22:16Z",
       "side": 1,
       "message": "I guess you mean \"Exclude tests\"?",
+      "range": {
+        "startLine": 80,
+        "startChar": 45,
+        "endLine": 80,
+        "endChar": 63
+      },
+      "revId": "2c0943cb5629cf1223cba7f6debd4094b57298fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e74d7c4_02c7e23a",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-15T04:10:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4bd54838_eb346de7",
       "range": {
         "startLine": 80,
         "startChar": 45,
