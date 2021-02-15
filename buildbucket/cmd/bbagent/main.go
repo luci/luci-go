@@ -40,12 +40,10 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -92,18 +90,40 @@ func mainImpl() int {
 	input, err := bbinput.Parse(args[0])
 	check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
 
-	// We start with retries disabled because the dispatcher.Channel will handle
-	// them during the execution of the user process; In particular we want
-	// dispatcher.Channel to be able to move on to a newer version of the Build if
-	// it encounters transient errors, rather than retrying a potentially stale
-	// Build state.
+	// bbclientRetriesEnabled is a passed-py-pointer value which we use to turn
+	// retries on and off during the build.
+	//
+	// We start with retries enabled to send the initial status==STARTED update,
+	// but then disable retries for the main build updates because the
+	// dispatcher.Channel will handle them during the execution of the user
+	// process; In particular we want dispatcher.Channel to be able to move on to
+	// a newer version of the Build if it encounters transient errors, rather than
+	// retrying a potentially stale Build state.
 	//
 	// We enable them again after the user process has finished.
-	bbclientRetriesEnabled := false
+	bbclientRetriesEnabled := true
 	bbclient, secrets, err := newBuildsClient(ctx, input.Build.Infra.Buildbucket, &bbclientRetriesEnabled)
 	check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
+
+	// We send a single status=STARTED here, and will send the final build status
+	// after the user executable completes.
+	_, err = bbclient.UpdateBuild(
+		ctx,
+		&bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id:     input.Build.Id,
+				Status: bbpb.Status_STARTED,
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+		})
+	if err != nil {
+		logging.Errorf(ctx, "Failed to report status STARTED to Buildbucket due to %s", err)
+		return 1
+	}
+
+	bbclientRetriesEnabled = false // dispatcher.Channel will handle retries
 
 	var (
 		cctx   context.Context
@@ -119,7 +139,7 @@ func mainImpl() int {
 	defer cancel()
 
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
-	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, secrets, bbclient))
+	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient))
 	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
 	defer buildsCh.CloseAndDrain(cctx)
 
@@ -129,6 +149,7 @@ func mainImpl() int {
 		if err != nil {
 			logging.Errorf(cctx, err.Error())
 			buildsCh.C <- &bbpb.Build{
+				Id:              input.Build.Id,
 				Status:          bbpb.Status_INFRA_FAILURE,
 				SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
 			}
@@ -268,7 +289,7 @@ func mainImpl() int {
 	}
 	bbclientRetriesEnabled = true
 	_, bbErr := bbclient.UpdateBuild(
-		metadata.NewOutgoingContext(cctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken)),
+		cctx,
 		&bbpb.UpdateBuildRequest{
 			Build:      finalBuild,
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: updateMask},
