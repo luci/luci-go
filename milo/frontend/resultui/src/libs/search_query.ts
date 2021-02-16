@@ -27,21 +27,38 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
     const {neg, type, value} = match?.groups! || {neg: '', type: 'ID', value: query};
     const negate = neg === '-';
     switch (type) {
+      // Whether the test variant has the specified status.
+      case 'STATUS': {
+        const statuses = value.split(',');
+        return (v: TestVariant) => negate !== statuses.includes(v.status);
+      }
       // Whether there's at least one a test result of the specified status.
-      case 'RSTATUS':
+      case 'RSTATUS': {
         const statuses = value.split(',');
         return (v: TestVariant) => negate !== (v.results || []).some((r) => statuses.includes(r.result.status));
       // Whether the test ID contains the query as a substring (case insensitive).
-      case 'ID':
+      }
+      case 'ID': {
         return (v: TestVariant) => negate !== v.testId.toUpperCase().includes(value);
-      default:
+      }
+      default: {
         throw new Error(`invalid query type: ${type}`);
+      }
     }
   });
   return (v) => filters.every((f) => f(v));
 }
 
 const QUERY_SUGGESTIONS = [
+  {value: 'Status:UNEXPECTED', explanation: 'Include only tests that are unexpected'},
+  {value: '-Status:UNEXPECTED', explanation: 'Exclude tests that are unexpected'},
+  {value: 'Status:FLAKY', explanation: 'Include only tests that are flaky'},
+  {value: '-Status:FLAKY', explanation: 'Exclude tests that are flaky'},
+  {value: 'Status:EXONERATED', explanation: 'Include only tests that are exonerated'},
+  {value: '-Status:EXONERATED', explanation: 'Exclude tests that are exonerated'},
+  {value: 'Status:EXPECTED', explanation: 'Include only tests that are expected'},
+  {value: '-Status:EXPECTED', explanation: 'Exclude tests that are expected'},
+
   {value: 'RStatus:Pass', explanation: 'Include only tests with at least one passed run'},
   {value: '-RStatus:Pass', explanation: 'Exclude tests with at least one passed run'},
   {value: 'RStatus:Fail', explanation: 'Include only tests with at least one failed run'},
