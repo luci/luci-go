@@ -78,10 +78,21 @@ function getIdQuerySuggestion(substr: string, neg: boolean): Suggestion {
   };
 }
 
-export function suggestSearchQuery(subQuery: string): readonly Suggestion[] {
-  if (subQuery === '') {
-    return [];
+export function suggestSearchQuery(query: string): readonly Suggestion[] {
+  if (query === '') {
+    // Return some example queries when the query is empty.
+    return [
+      {value: 'Status:UNEXPECTED,FLAKY,EXONERATED', explanation: 'Include only tests that matches the filter'},
+      {value: '-Status:EXPECTED', explanation: 'Use \'-\' prefix to exclude tests that matches the filter'},
+      {value: 'Status:UNEXPECTED,FLAKY,EXONERATED -RStatus:Skipped', explanation: 'Combine (conjunctive) multiple filters'},
+
+      {value: 'Status:UNEXPECTED,FLAKY', explanation: 'Include only tests that have the specified status'},
+      {value: 'RStatus:Fail,Crash', explanation: 'Include only tests with at least one run of the specified status'},
+      {value: 'ID:test-id-substr', explanation: 'Include only tests with the specified substring in their ID (case insensitive)'},
+    ];
   }
+
+  const subQuery = query.split(' ').pop()!;
 
   const match = subQuery.match(/^(?<neg>-?)ID:(?<substr>.*)/);
   if (match) {
