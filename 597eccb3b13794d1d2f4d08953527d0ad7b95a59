@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f8d572f_7df3099f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T19:26:16Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "597eccb3b13794d1d2f4d08953527d0ad7b95a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49a68cef_6fe38fb0",
+        "filename": "cv/internal/cvtesting/benchmarks/cl_1k.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T19:26:16Z",
+      "side": 1,
+      "message": "Optionally add some of the the comments from the CL description into this file.",
+      "revId": "597eccb3b13794d1d2f4d08953527d0ad7b95a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4daace8_7b572ea7",
+        "filename": "cv/internal/cvtesting/benchmarks/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T19:26:16Z",
+      "side": 1,
+      "message": "Optionally it could also be described as:\n\n     // Package benchmarks contains benchmarks for heavy CV use-cases.\n     //\n     // Benchmarks are run manually be executing the .sh files or by\n     // running `go test -bench\u003d\u003cbenchmark func name\u003e -benchtime\u003d\u003ctime limit\u003e`\n\nJust to make clear that this code doesn\u0027t do anything on its own and isn\u0027t part of the code executed in the service itself.",
+      "revId": "597eccb3b13794d1d2f4d08953527d0ad7b95a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
