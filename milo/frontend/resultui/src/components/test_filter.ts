@@ -41,6 +41,9 @@ export class TestFilterElement extends MobxLitElement {
   @computed private get unexpectedVariantCount() {
     return this.invocationState.testLoader?.unexpectedVariantCount || '0+';
   }
+  @computed private get unexpectedlySkippedVariantCount() {
+    return this.invocationState.testLoader?.unexpectedlySkippedVariantCount || '0+';
+  }
   @computed private get flakyVariantCount() {
     return this.invocationState.testLoader?.flakyVariantCount || '0+';
   }
@@ -66,6 +69,18 @@ export class TestFilterElement extends MobxLitElement {
           .checked=${this.testFilters.showUnexpectedVariant}
         >
         <label for="unexpected" style="color: var(--failure-color);">Unexpected (${this.unexpectedVariantCount})</label>
+      </div class="filter">
+      <div class="filter">
+        <input
+          type="checkbox"
+          id="unexpectedly-skipped"
+          @change=${(v: MouseEvent) => {
+            this.testFilters.showUnexpectedlySkippedVariant = (v.target as HTMLInputElement).checked;
+            this.configsStore.save();
+          }}
+          .checked=${this.testFilters.showUnexpectedlySkippedVariant}
+        >
+        <label for="unexpectedly-skipped" style="color: var(--critical-failure-color);">Skipped (${this.unexpectedlySkippedVariantCount})</label>
       </div class="filter">
       <div class="filter">
         <input
