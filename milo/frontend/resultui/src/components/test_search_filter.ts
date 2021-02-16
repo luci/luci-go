@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, customElement, html } from 'lit-element';
+import { customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
@@ -71,10 +71,4 @@ export class TestSearchFilterElement extends MobxLitElement {
       </milo-hotkey>
     `;
   }
-
-  static styles = css`
-    #search-box {
-      margin-left: 5px;
-    }
-  `;
 }
