@@ -43,7 +43,25 @@ service Migration {
   // ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
   //
   // If Run was given to CQDaemon by CV, then reported Run will contain CV's id.
+  //
+  // DEPRECATED.
   rpc ReportFinishedRun(ReportFinishedRunRequest) returns (google.protobuf.Empty);
+
+  // ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
+  // verifying.
+  //
+  // Only called iff run was given to CQDaemon by CV via FetchActiveRuns.
+  rpc ReportVerifiedRun(ReportVerifiedRunRequest) returns (google.protobuf.Empty);
+
+  // PostUniqueGerritComment posts a unique per run comment to Gerrit.
+  //
+  // Only called iff the run was given to CQDaemon by CV.
+  // Use-cases:
+  //  * CQDaemon linter posting a warning/error.
+  //  * GerritCQAbility verifier posting error on each of Run's CL before
+  //    failing entire attempt.
+  //
+  rpc PostUniqueGerritComment(PostUniqueGerritCommentRequest) returns (google.protobuf.Empty);
 
   // ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
   // CQDaemon.
@@ -60,6 +78,39 @@ message ReportRunsRequest {
 
 message ReportFinishedRunRequest {
   Run run = 1;
+}
+
+message ReportVerifiedRunRequest {
+  Run run = 1;
+
+  // Action that CV SHOULD do on a Run.
+  //
+  // Should instead of must because CV may be alreayd finalizing the Run.
+  //
+  // In pure CQDaemon, the action would have been done by CQDaemon itself.
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+    ACTION_SUBMIT = 1; // requires a full run
+    ACTION_DRY_RUN_OK = 2; // requires a dry run
+    ACTION_FAIL = 3; // final_message must be set
+  }
+  Action action = 2;
+  // Final message to post to Gerrit in case of ACTION_FAIL.
+  string final_message = 3;
+}
+
+message PostUniqueGerritCommentRequest {
+  // CV's run ID. It starts with LUCI project/.
+  string run_id = 1;
+  // Gerrit host.
+  string host = 2;
+  int64 change = 3;
+  // String comment to post.
+  string comment = 4;
+  // If true, send email to:
+  //   * OWNER_REVIEWERS if full run
+  //   * OWNER+all CQ voters if dry run
+  bool send_email = 5;
 }
 
 message ReportUsedNetrcRequest {
