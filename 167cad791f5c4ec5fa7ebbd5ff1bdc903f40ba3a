@@ -16,6 +16,109 @@
       "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6669/test-results\n",
       "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40750a80_b218ad6c",
+        "filename": "milo/frontend/resultui/src/components/auto_complete.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-16T21:47:13Z",
+      "side": 1,
+      "message": "I suggest we should not use \"i\" as an argument name (it\u0027s fine as a local variable name though), as it is not declarative. Maybe \"suggestionIndex\"?",
+      "range": {
+        "startLine": 106,
+        "startChar": 51,
+        "endLine": 106,
+        "endChar": 52
+      },
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de3ead5f_b1204182",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-16T21:47:13Z",
+      "side": 1,
+      "message": "I think an alternative here is to have a field \"is_header\", and if a suggestion is a header, we can make it bold.\n\nSo this will become:\n{is_header: true, explanation: \u0027Filter Syntax\u0027}\n\nThe advantage is that it is a bit easier to read (i.e. we do not need to have a convention that value\u003d\u003d\u003dnull is header, and explanation can be pure string)\n\nI just feel a bit weird when in getIdQuerySuggestion we put the styling in \"display\", but here we incorporate it in explanation.",
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3174fdb0_fa9adeef",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-16T21:47:13Z",
+      "side": 1,
+      "message": "I think Filter types is more important than filter syntax. I think we should move this section on top.\n\nAnd perhaps we should reword \"Filter Syntax\" to \"Advanced Syntax\"?, and only cover the advanced type (i.e. remove line 88)?",
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f48ab2d_0e1b0747",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-16T21:47:13Z",
+      "side": 1,
+      "message": "Suggest we list the possible values here: Status:\u003cUNEXPECTED|FLAKY|EXONERATED|EXPECTED\u003e",
+      "range": {
+        "startLine": 96,
+        "startChar": 15,
+        "endLine": 96,
+        "endChar": 38
+      },
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba84250b_9cb7fae2",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-16T21:47:13Z",
+      "side": 1,
+      "message": "Same",
+      "range": {
+        "startLine": 97,
+        "startChar": 15,
+        "endLine": 97,
+        "endChar": 33
+      },
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
