@@ -585,6 +585,14 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 		ft := f.Type
 
 		name := f.Tag.Get("gae")
+		if t := string(f.Tag); name == "" && strings.Contains(t, `gae:`) && !strings.Contains(t, `gae:"`) {
+			// Catch typos like
+			//   struct { F int `gae:f,noindex` }
+			// which should be
+			//   struct { F int `gae:"f,noindex"` }
+			c.problem = me("struct tag is invalid: %q (did you mean `gae:\"...\"`?)", f.Tag)
+			return
+		}
 		opts := ""
 		if i := strings.Index(name, ","); i != -1 {
 			name, opts = name[:i], name[i+1:]
