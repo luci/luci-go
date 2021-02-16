@@ -75,8 +75,9 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 	tok, err := client.GenerateAccessToken(ctx, p.actAs, p.scopes, nil, 0)
 	if err == nil {
 		return &Token{
-			Token: *tok,
-			Email: p.Email(),
+			Token:   *tok,
+			IDToken: NoIDToken,
+			Email:   p.Email(),
 		}, nil
 	}
 	// Any 4** HTTP response is a fatal error. Everything else is transient.

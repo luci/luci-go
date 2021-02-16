@@ -100,6 +100,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
+	"go.chromium.org/luci/auth/internal"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
@@ -124,6 +125,11 @@ type CommandParams struct {
 	// number of backends. Just add all necessary scopes to AuthOptions.Scopes,
 	// no need to expose a flag.
 	UseScopeFlags bool
+
+	// UseIDTokenFlags specifies whether to register flags related to ID tokens.
+	//
+	// This is primarily used by `luci-auth` executable.
+	UseIDTokenFlags bool
 }
 
 // Flags defines command line flags related to authentication.
@@ -135,6 +141,9 @@ type Flags struct {
 	scopes        string // value of -scopes
 	scopesIAM     bool   // value of -scopes-iam
 	scopesContext bool   // value of -scopes-context
+
+	hasIDTokenFlags bool // true if registered -use-id-token flag
+	useIDToken      bool
 }
 
 // Register adds auth related flags to a FlagSet.
@@ -147,7 +156,7 @@ func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 		"Path to JSON file with service account credentials to use.")
 }
 
-// registerScopesFlags can be called after Register to add scope-related flags.
+// registerScopesFlags adds scope-related flags.
 func (fl *Flags) registerScopesFlags(f *flag.FlagSet) {
 	fl.hasScopeFlags = true
 	f.StringVar(&fl.scopes, "scopes", strings.Join(fl.defaults.Scopes, " "),
@@ -158,28 +167,36 @@ func (fl *Flags) registerScopesFlags(f *flag.FlagSet) {
 		"When set, use scopes needed to run `context` subcommand. Overrides -scopes when present.")
 }
 
+// registerIDTokenFlags adds flags related to ID tokens.
+func (fl *Flags) registerIDTokenFlags(f *flag.FlagSet) {
+	fl.hasIDTokenFlags = true
+	f.BoolVar(&fl.useIDToken, "use-id-token", false,
+		"When set, use ID tokens instead of OAuth2 access tokens. Some backends may require them.")
+}
+
 // Options returns auth.Options populated based on parsed command line flags.
 func (fl *Flags) Options() (auth.Options, error) {
 	opts := fl.defaults
 	opts.ServiceAccountJSONPath = fl.serviceAccountJSON
 
-	if !fl.hasScopeFlags {
-		return opts, nil
+	if fl.hasScopeFlags {
+		if fl.scopesIAM && fl.scopesContext {
+			return auth.Options{}, fmt.Errorf("-scopes-iam and -scopes-context can't be used together")
+		}
+		switch {
+		case fl.scopesIAM:
+			opts.Scopes = append([]string(nil), scopesIAM...)
+		case fl.scopesContext:
+			opts.Scopes = append([]string(nil), scopesContext...)
+		default:
+			opts.Scopes = strings.Split(fl.scopes, " ")
+		}
+		sort.Strings(opts.Scopes)
 	}
 
-	if fl.scopesIAM && fl.scopesContext {
-		return auth.Options{}, fmt.Errorf("-scopes-iam and -scopes-context can't be used together")
+	if fl.hasIDTokenFlags {
+		opts.UseIDTokens = fl.useIDToken
 	}
-
-	switch {
-	case fl.scopesIAM:
-		opts.Scopes = append([]string(nil), scopesIAM...)
-	case fl.scopesContext:
-		opts.Scopes = append([]string(nil), scopesContext...)
-	default:
-		opts.Scopes = strings.Split(fl.scopes, " ")
-	}
-	sort.Strings(opts.Scopes)
 
 	return opts, nil
 }
@@ -232,6 +249,9 @@ func (c *commandRunBase) registerBaseFlags(params CommandParams) {
 	c.Flags.BoolVar(&c.verbose, "verbose", false, "More verbose logging.")
 	if c.params.UseScopeFlags {
 		c.flags.registerScopesFlags(&c.Flags)
+	}
+	if c.params.UseIDTokenFlags {
+		c.flags.registerIDTokenFlags(&c.Flags)
 	}
 }
 
@@ -328,7 +348,7 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
 		return ExitCodeBadLogin
 	}
-	return checkToken(ctx, authenticator)
+	return checkToken(ctx, &opts, authenticator)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -426,7 +446,7 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 		fmt.Fprintln(os.Stderr, err)
 		return ExitCodeInternalError
 	}
-	return checkToken(ctx, authenticator)
+	return checkToken(ctx, &opts, authenticator)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -446,8 +466,8 @@ func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  params.Advanced,
 		UsageLine: params.Name,
-		ShortDesc: "prints an access token",
-		LongDesc:  "Refreshes an access token (if necessary) and prints it or writes it to a JSON file.",
+		ShortDesc: "prints an access or ID token",
+		LongDesc:  "Refreshes the token (if necessary) and prints it or writes it to a JSON file.",
 		CommandRun: func() subcommands.CommandRun {
 			c := &tokenRun{}
 			c.registerBaseFlags(params)
@@ -687,37 +707,50 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 // checkToken prints information about the token carried by the authenticator.
 //
 // Prints errors to stderr and returns corresponding process exit code.
-func checkToken(ctx context.Context, a *auth.Authenticator) int {
-	// Grab the active access token.
+func checkToken(ctx context.Context, opts *auth.Options, a *auth.Authenticator) int {
+	// Grab the active token.
 	tok, err := a.GetAccessToken(time.Minute)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Can't grab an access token: %s\n", err)
 		return ExitCodeNoValidToken
 	}
 
-	// Ask Google endpoint for details of the token.
-	info, err := googleoauth.GetTokenInfo(ctx, googleoauth.TokenInfoParams{
-		AccessToken: tok.AccessToken,
-	})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to call token info endpoint: %s\n", err)
-		if err == googleoauth.ErrBadToken {
+	if opts.UseIDTokens {
+		// When using ID tokens, decode the claims and show some interesting ones.
+		claims, err := internal.ParseIDTokenClaims(tok.AccessToken)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to decode ID token: %s\n", err)
 			return ExitCodeNoValidToken
 		}
-		return ExitCodeInternalError
-	}
-
-	// Email is set only if the token has userinfo.email scope.
-	if info.Email != "" {
-		fmt.Printf("Logged in as %s.\n\n", info.Email)
+		fmt.Printf("Logged in as %s.\n\n", claims.Email)
+		fmt.Printf("ID token details:\n")
+		fmt.Printf("  Issuer: %s\n", claims.Iss)
+		fmt.Printf("  Subject: %s\n", claims.Sub)
+		fmt.Printf("  Audience: %s\n", claims.Aud)
 	} else {
-		fmt.Printf("Logged in as uid %q.\n\n", info.Sub)
-	}
-	fmt.Printf("OAuth token details:\n")
-	fmt.Printf("  Client ID: %s\n", info.Aud)
-	fmt.Printf("  Scopes:\n")
-	for _, scope := range strings.Split(info.Scope, " ") {
-		fmt.Printf("    %s\n", scope)
+		// When using access tokens, ask the Google endpoint for details of the
+		// token.
+		info, err := googleoauth.GetTokenInfo(ctx, googleoauth.TokenInfoParams{
+			AccessToken: tok.AccessToken,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to call token info endpoint: %s\n", err)
+			if err == googleoauth.ErrBadToken {
+				return ExitCodeNoValidToken
+			}
+			return ExitCodeInternalError
+		}
+		if info.Email != "" {
+			fmt.Printf("Logged in as %s.\n\n", info.Email)
+		} else {
+			fmt.Printf("Logged in as uid %q.\n\n", info.Sub)
+		}
+		fmt.Printf("OAuth token details:\n")
+		fmt.Printf("  Client ID: %s\n", info.Aud)
+		fmt.Printf("  Scopes:\n")
+		for _, scope := range strings.Split(info.Scope, " ") {
+			fmt.Printf("    %s\n", scope)
+		}
 	}
 
 	return ExitCodeSuccess
