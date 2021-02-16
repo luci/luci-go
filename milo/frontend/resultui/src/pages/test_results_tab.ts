@@ -179,6 +179,15 @@ export class TestResultsTabElement extends MobxLitElement {
         true,
       )}
       ${this.renderVariants(
+        TestVariantStatus.UNEXPECTEDLY_SKIPPED,
+        this.invocationState.filteredUnexpectedlySkippedVariants,
+        this.invocationState.testLoader?.unexpectedlySkippedVariantCount || '0+',
+        this.configsStore.userConfigs.tests.showUnexpectedlySkippedVariant,
+        (display) => this.configsStore.userConfigs.tests.showUnexpectedlySkippedVariant = display,
+        this.invocationState.testLoader?.loadedAllUnexpectedlySkippedVariants || false,
+        true,
+      )}
+      ${this.renderVariants(
         TestVariantStatus.FLAKY,
         this.invocationState.filteredFlakyVariants,
         this.invocationState.testLoader?.flakyVariantCount || '0+',
@@ -419,20 +428,23 @@ export class TestResultsTabElement extends MobxLitElement {
       overflow: hidden;
     }
 
-    .exonerated {
-      color: var(--exonerated-color);
-    }
-    .expected {
-      color: var(--success-color);
-    }
     .unexpected {
       color: var(--failure-color);
+    }
+    .unexpectedly-skipped {
+      color: var(--critical-failure-color);
     }
     .flaky {
       color: var(--warning-color);
     }
     span.flaky {
       color: var(--warning-text-color);
+    }
+    .exonerated {
+      color: var(--exonerated-color);
+    }
+    .expected {
+      color: var(--success-color);
     }
 
     .list-entry {
