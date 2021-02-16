@@ -281,6 +281,10 @@ type InvalidTagged5 struct {
 	V []InvalidTaggedSub
 }
 
+type InvalidTagged6 struct {
+	I int `json:"f" gae:f,noindex`
+}
+
 type Inner1 struct {
 	W int32
 	X string
@@ -1204,6 +1208,11 @@ var testCases = []testCase{
 		desc:   "invalid tagged5",
 		src:    &InvalidTagged5{I: 19, V: []InvalidTaggedSub{{1}}},
 		plsErr: `struct tag has repeated property name: "V.I"`,
+	},
+	{
+		desc:   "invalid tagged6",
+		src:    &InvalidTagged6{I: 19},
+		plsErr: `struct tag is invalid: "json:\"f\" gae:f,noindex" (did you mean` + " `gae:\"...\"`?)",
 	},
 	{
 		desc: "doubler",
