@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout, fixtureCleanup } from '@open-wc/testing-helpers/index-no-side-effects';
-import { fixture, html } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { css, customElement, LitElement } from 'lit-element';
 

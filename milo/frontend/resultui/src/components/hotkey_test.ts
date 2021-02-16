@@ -64,16 +64,16 @@ describe('hotkey_test', () => {
         <milo-hotkey-test-wrapper id="wrapped"></milo-hotkey-test-wrapper>
       </div>
     `);
-    hotkeyEle = parentEle.querySelector('#hotkey')!;
+    hotkeyEle = parentEle.querySelector<HotkeyElement>('#hotkey')!;
     childEle = parentEle.querySelector('#child')!;
-    inputEle = parentEle.querySelector('#input')!;
-    selectEle = parentEle.querySelector('#select')!;
-    textareaEle = parentEle.querySelector('#textarea')!;
+    inputEle = parentEle.querySelector<HTMLInputElement>('#input')!;
+    selectEle = parentEle.querySelector<HTMLSelectElement>('#select')!;
+    textareaEle = parentEle.querySelector<HTMLTextAreaElement>('#textarea')!;
 
     const wrapped = parentEle.querySelector<WrapperElement>('#wrapped')!;
-    wrappedInputEle = wrapped.shadowRoot!.querySelector('#input')!;
-    wrappedSelectEle = wrapped.shadowRoot!.querySelector('#select')!;
-    wrappedTextareaEle = wrapped.shadowRoot!.querySelector('#textarea')!;
+    wrappedInputEle = wrapped.shadowRoot!.querySelector<HTMLInputElement>('#input')!;
+    wrappedSelectEle = wrapped.shadowRoot!.querySelector<HTMLSelectElement>('#select')!;
+    wrappedTextareaEle = wrapped.shadowRoot!.querySelector<HTMLTextAreaElement>('#textarea')!;
   });
   after(fixtureCleanup);
 
