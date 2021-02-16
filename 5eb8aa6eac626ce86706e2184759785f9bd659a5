@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4bee4097_57512c19",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:53:35Z",
+      "side": 1,
+      "message": "spelling",
+      "range": {
+        "startLine": 95,
+        "startChar": 11,
+        "endLine": 95,
+        "endChar": 21
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0dfa284_051751c1",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:53:35Z",
+      "side": 1,
+      "message": "spelling",
+      "range": {
+        "startLine": 150,
+        "startChar": 46,
+        "endLine": 150,
+        "endChar": 51
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a466a100_6d430aac",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:53:35Z",
+      "side": 1,
+      "message": "My reading of this is that despite the above description of a proof, if there\u0027s a bug in expandCombo then maybe missingDeps should return true and in that case we\u0027ll panic, is that right?",
+      "range": {
+        "startLine": 159,
+        "startChar": 21,
+        "endLine": 159,
+        "endChar": 32
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "852bae75_74eb2012",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:53:35Z",
+      "side": 1,
+      "message": "And similarly, this is another safety check and if there are no bugs then len(cgIndexes) will always be 1, right?",
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0f60cd2_1b589884",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:53:35Z",
+      "side": 1,
+      "message": "Possible rephrasing: \"if clid is a dep that\u0027s not yet loaded\"",
+      "range": {
+        "startLine": 215,
+        "startChar": 21,
+        "endLine": 215,
+        "endChar": 50
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b779331_94878739",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:53:35Z",
+      "side": 1,
+      "message": "In this function name and the next, \"...DueTo...\" sounds slightly better to me.",
+      "range": {
+        "startLine": 237,
+        "startChar": 24,
+        "endLine": 237,
+        "endChar": 27
+      },
+      "revId": "5eb8aa6eac626ce86706e2184759785f9bd659a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
