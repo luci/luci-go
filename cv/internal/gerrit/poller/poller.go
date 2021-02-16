@@ -258,7 +258,9 @@ func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
 	if err := gobmap.Update(ctx, s.LuciProject); err != nil {
 		return err
 	}
-	s.SubPollers = &SubPollers{SubPollers: partitionConfig(cgs)}
+	proposed := partitionConfig(cgs)
+	toUse, _ := reuseIfPossible(s.SubPollers.GetSubPollers(), proposed)
+	s.SubPollers = &SubPollers{SubPollers: toUse}
 	return nil
 }
 
