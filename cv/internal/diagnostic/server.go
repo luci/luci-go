@@ -97,7 +97,7 @@ func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLReq
 	var eid changelist.ExternalID
 	switch {
 	case req.GetId() != 0:
-		cl.ID = common.CLID(req.GetId())
+		cl = &changelist.CL{ID: common.CLID(req.GetId())}
 		err = datastore.Get(ctx, cl)
 	case req.GetExternalId() != "":
 		eid = changelist.ExternalID(req.GetExternalId())
