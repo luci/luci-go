@@ -106,6 +106,7 @@ export class LeftPanelElement extends MobxLitElement {
       border-bottom: 10px solid transparent;
       height: 80px;
       width: 0;
+      z-index: 1;
     }
     #expand-column {
       height: 100%;
