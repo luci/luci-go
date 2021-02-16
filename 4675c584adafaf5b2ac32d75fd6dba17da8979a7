@@ -16,6 +16,52 @@
       "message": "PTAL \u0026\u0026 I welcome your critique.",
       "revId": "4675c584adafaf5b2ac32d75fd6dba17da8979a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0432499c_0c7fde98",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-16T18:14:35Z",
+      "side": 1,
+      "message": "seems redundant with kind_regexp?",
+      "range": {
+        "startLine": 89,
+        "startChar": 13,
+        "endLine": 89,
+        "endChar": 17
+      },
+      "revId": "4675c584adafaf5b2ac32d75fd6dba17da8979a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "798c3375_9acb9846",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-16T18:14:35Z",
+      "side": 1,
+      "message": "not sure about this default.\n\ni think we will allow [reuse only in certain kinds] more often than [deny reuse only in certain kinds], e.g. in rts case, I\u0027d have to append a different default:\n\n  {deny: false, kind: \"rts\"}\n  {deny: true}\n\nWDYT about changing the semantics to:\n\n  - if empty, reuse is allowed\n  - otherwise, reuse is allowed only if the rules say so\n\nfor RTS:\n\n  {kind: \"rts\", allow: true}\n\n--\n\nbut I don\u0027t feel strongly",
+      "range": {
+        "startLine": 102,
+        "startChar": 22,
+        "endLine": 102,
+        "endChar": 39
+      },
+      "revId": "4675c584adafaf5b2ac32d75fd6dba17da8979a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
