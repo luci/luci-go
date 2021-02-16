@@ -139,11 +139,14 @@ export class AutoCompleteElement extends MobxLitElement {
     :host {
       display: inline-block;
       position: relative;
+      box-sizing: border-box;
+      width: 100%;
     }
 
     #search-box {
       display: inline-block;
-      width: 350px;
+      width: 100%;
+      box-sizing: border-box;
       padding: .3rem .5rem;
       font-size: 1rem;
       color: var(--light-text-color);
