@@ -21,7 +21,7 @@ import (
 )
 
 func CrashingFunction() {
-	panic(nil)
+	panic("boom")
 }
 
 func ExampleIsPanicking() {
@@ -50,6 +50,9 @@ func ExampleIsPanicking() {
 		} else {
 			fmt.Println("stack trace originates from CrashingFunction")
 		}
+		// But recover ourselves to make sure ExampleIsPanicking actually passes
+		// instead of crashing with an unrecovered panic.
+		recover()
 	}()
 
 	if IsPanicking(0) {
