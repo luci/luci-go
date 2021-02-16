@@ -39,6 +39,30 @@
       },
       "revId": "00dc0481fe92bd3849a52c0009cfa8f4fbf73a12",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4028596_dd1eb75d",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-16T21:31:37Z",
+      "side": 1,
+      "message": "Turns out this is a PITA, and I can make much better refactoring here later; Will follow this up with some refactors to simplify this function, including this client situation.",
+      "parentUuid": "c08d6adc_7b34ef5a",
+      "range": {
+        "startLine": 104,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 103
+      },
+      "revId": "00dc0481fe92bd3849a52c0009cfa8f4fbf73a12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
