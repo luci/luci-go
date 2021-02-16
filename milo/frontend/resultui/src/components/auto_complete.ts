@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable, reaction } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 export interface Suggestion {
   readonly value: string;
@@ -28,7 +28,7 @@ export interface Suggestion {
  */
 @customElement('milo-auto-complete')
 export class AutoCompleteElement extends MobxLitElement {
-  @observable.ref value!: string;
+  @observable.ref value = '';
   @observable.ref placeHolder = '';
   @observable.ref suggestions: readonly Suggestion[] = [];
 
@@ -41,13 +41,24 @@ export class AutoCompleteElement extends MobxLitElement {
 
   // -1 means nothing is selected.
   @observable.ref private selectedIndex = -1;
-  @observable.ref private showSuggestions = true;
+  @observable.ref private showSuggestions = false;
+  @observable.ref private focused = false;
 
   private get searchBox() {
     return this.shadowRoot!.getElementById('search-box')!;
   }
   private get dropdownContainer() {
     return this.shadowRoot!.getElementById('dropdown-container')!;
+  }
+  @computed private get hint() {
+    if (this.focused && this.suggestions.length > 0) {
+      if (this.showSuggestions) {
+        return 'Use ↑ and ↓ to select, ⏎ to confirm, esc to dismiss suggestions';
+      } else {
+        return 'Press ↓ to see suggestions';
+      }
+    }
+    return this.placeHolder;
   }
 
   protected updated() {
@@ -63,7 +74,9 @@ export class AutoCompleteElement extends MobxLitElement {
       () => this.suggestions,
       () => {
         this.selectedIndex = -1;
-        this.showSuggestions = true;
+        if (this.value !== '') {
+          this.showSuggestions = true;
+        }
       },
     );
 
@@ -76,10 +89,15 @@ export class AutoCompleteElement extends MobxLitElement {
     super.disconnectedCallback();
   }
 
+  private clearSuggestion() {
+    this.showSuggestions = false;
+    this.selectedIndex = -1;
+  }
+
   private externalClickHandler = (e: MouseEvent) => {
     // If user clicks on other elements, dismiss the dropdown.
     if (!e.composedPath().some((t) => t === this.searchBox || t === this.dropdownContainer)) {
-      this.showSuggestions = false;
+      this.clearSuggestion();
     }
   }
 
@@ -87,12 +105,17 @@ export class AutoCompleteElement extends MobxLitElement {
     return html`
       <input
         id="search-box"
-        placeholder=${this.placeHolder}
+        placeholder=${this.hint}
         .value=${this.value}
         @input=${(e: InputEvent) => this.onValueUpdate((e.target as HTMLInputElement).value)}
+        @focus=${() => this.focused = true}
+        @blur=${() => this.focused = false}
         @keydown=${(e: KeyboardEvent) => {
           switch (e.code) {
             case 'ArrowDown':
+              if (!this.showSuggestions) {
+                this.showSuggestions = true;
+              }
               if (this.selectedIndex < this.suggestions.length - 1) {
                 this.selectedIndex++;
               }
@@ -103,16 +126,19 @@ export class AutoCompleteElement extends MobxLitElement {
               }
               break;
             case 'Escape':
-              this.showSuggestions = false;
+              this.clearSuggestion();
               break;
             case 'Enter':
-              if (this.selectedIndex !== -1) {
+              if (this.selectedIndex === -1) {
+                this.clearSuggestion();
+              } else {
                 this.onSuggestionSelected(this.suggestions[this.selectedIndex]);
               }
               break;
             default:
-              break;
+              return;
           }
+          e.preventDefault();
         }}
       >
       <div id="dropdown-container" style=${styleMap({display: this.showSuggestions && this.suggestions.length > 0 ? '' : 'none'})}>
