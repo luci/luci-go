@@ -29,15 +29,17 @@ import { TestNode } from './test_node';
  */
 export const enum LoadingStage {
   LoadingUnexpected = 0,
-  LoadingFlaky = 1,
-  LoadingExonerated = 2,
-  LoadingExpected = 3,
-  Done = 4,
+  LoadingUnexpectedlySkipped = 1,
+  LoadingFlaky = 2,
+  LoadingExonerated = 3,
+  LoadingExpected = 4,
+  Done = 5,
 }
 
 const VARIANT_STATUS_LOADING_STAGE_MAP = Object.freeze({
   [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: LoadingStage.LoadingUnexpected,
   [TestVariantStatus.UNEXPECTED]: LoadingStage.LoadingUnexpected,
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: LoadingStage.LoadingUnexpectedlySkipped,
   [TestVariantStatus.FLAKY]: LoadingStage.LoadingFlaky,
   [TestVariantStatus.EXONERATED]: LoadingStage.LoadingExonerated,
   [TestVariantStatus.EXPECTED]: LoadingStage.LoadingExpected,
@@ -63,12 +65,14 @@ export class TestLoader {
   @observable.ref private _stage = LoadingStage.LoadingUnexpected;
 
   @observable.shallow readonly unexpectedTestVariants: TestVariant[] = [];
+  @observable.shallow readonly unexpectedlySkippedTestVariants: TestVariant[] = [];
   @observable.shallow readonly flakyTestVariants: TestVariant[] = [];
   @observable.shallow readonly exoneratedTestVariants: TestVariant[] = [];
   @observable.shallow readonly expectedTestVariants: TestVariant[] = [];
 
   @computed get loadedAllVariants() { return this.stage === LoadingStage.Done; }
   @computed get loadedAllUnexpectedVariants() { return this.stage > LoadingStage.LoadingUnexpected; }
+  @computed get loadedAllUnexpectedlySkippedVariants() { return this.stage > LoadingStage.LoadingUnexpectedlySkipped; }
   @computed get loadedAllFlakyVariants() { return this.stage > LoadingStage.LoadingFlaky; }
   @computed get loadedAllExoneratedVariants() { return this.stage > LoadingStage.LoadingExonerated; }
   @computed get loadedAllExpectedVariants() { return this.stage > LoadingStage.LoadingExpected; }
@@ -161,6 +165,10 @@ export class TestLoader {
         case TestVariantStatus.UNEXPECTED:
           this._stage = LoadingStage.LoadingUnexpected;
           this.unexpectedTestVariants.push(testVariant);
+          break;
+        case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
+          this._stage = LoadingStage.LoadingUnexpectedlySkipped;
+          this.unexpectedlySkippedTestVariants.push(testVariant);
           break;
         case TestVariantStatus.FLAKY:
           this._stage = LoadingStage.LoadingFlaky;
