@@ -22,7 +22,6 @@ import { computed, observable, reaction } from 'mobx';
 
 import '../components/hotkey';
 import '../components/left_panel';
-import '../components/test_filter';
 import '../components/test_nav_tree';
 import '../components/test_search_filter';
 import '../components/variant_entry';
@@ -238,10 +237,13 @@ export class TestResultsTabElement extends MobxLitElement {
       <div class="section-header">
         ${VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE[status]} (${variantCountLabel})
         <span
-          class="load-more active-text"
-          style=${styleMap({'display': fullyLoaded ? 'none' : ''})}>
-          ${this.renderLoadMoreForSection(status)}
-        </span>
+          class="active-text"
+          @click=${() => toggleDisplay(!display)}
+        >[${display ? 'hide' : 'show'}]</span>
+        <span
+          class="active-text"
+          style=${styleMap({'display': fullyLoaded ? 'none' : ''})}
+        >${this.renderLoadMoreForSection(status)}</span>
       </div>
       ${repeat(
         (display ? variants : []).map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [TestVariant | undefined, TestVariant, TestVariant | undefined]),
@@ -271,7 +273,6 @@ export class TestResultsTabElement extends MobxLitElement {
         ${variants.length} hidden
         <span class=${VARIANT_STATUS_CLASS_MAP[status]}>${VARIANT_STATUS_DISPLAY_MAP[status]}</span>
         test results.
-        <span class="active-text" @click=${() => toggleDisplay(!display)}>Show</span>
       </div>
       <hr class="divider">
     `;
@@ -329,8 +330,7 @@ export class TestResultsTabElement extends MobxLitElement {
   protected render() {
     return html`
       <div id="header">
-        <milo-test-filter></milo-test-filter>
-        <div class="filters-container-delimiter"></div>
+        <div id="search-label">Search:</div>
         <milo-test-search-filter></milo-test-search-filter>
         <milo-hotkey key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button
@@ -356,17 +356,17 @@ export class TestResultsTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: auto auto 1fr auto;
+      grid-template-columns: auto 1fr auto;
       grid-gap: 5px;
       height: 30px;
       padding: 5px 10px 3px 10px;
     }
-
-    milo-test-filter {
-      margin: 5px;
-      margin-bottom: 0px;
+    #search-label {
+      margin: auto;
     }
-
+    milo-test-search-filter {
+      max-width: 800px;
+    }
     mwc-button {
       margin-top: 1px;
     }
@@ -388,7 +388,7 @@ export class TestResultsTabElement extends MobxLitElement {
     #test-result-view {
       flex: 1;
       overflow-y: auto;
-      padding-top: 5px;
+      margin-top: 5px;
       outline: none;
     }
     milo-variant-entry {
@@ -398,12 +398,10 @@ export class TestResultsTabElement extends MobxLitElement {
     .section-header {
       font-size: 16px;
       font-weight: bold;
-      margin: 5px 5px 10px;
-    }
-
-    .load-more {
-      font-size: 14px;
-      font-weight: normal;
+      padding: 5px;
+      position: sticky;
+      background-color: white;
+      top: 0px;
     }
 
     .divider {
@@ -437,6 +435,8 @@ export class TestResultsTabElement extends MobxLitElement {
     .active-text {
       color: var(--active-text-color);
       cursor: pointer;
+      font-size: 14px;
+      font-weight: normal;
     }
     .inline-icon {
       color: var(--default-text-color);
