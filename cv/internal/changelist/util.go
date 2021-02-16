@@ -140,13 +140,18 @@ func (s *Snapshot) PanicIfNotValid() {
 // NOTE: keep this function actions in sync with storage.proto doc for
 // Gerrit.info field.
 func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
-	cleanUser := func(u *gerritpb.AccountInfo) {
+	const keepEmail = true
+	const removeEmail = false
+	cleanUser := func(u *gerritpb.AccountInfo, email bool) {
 		if u == nil {
 			return
 		}
 		u.SecondaryEmails = nil
 		u.Name = ""
 		u.Username = ""
+		if email == removeEmail {
+			u.Email = ""
+		}
 	}
 
 	cleanRevision := func(r *gerritpb.RevisionInfo) {
@@ -164,18 +169,25 @@ func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 		if m == nil {
 			return
 		}
-		cleanUser(m.GetAuthor())
-		cleanUser(m.GetRealAuthor())
+		cleanUser(m.GetAuthor(), removeEmail)
+		cleanUser(m.GetRealAuthor(), removeEmail)
 	}
 
 	cleanLabel := func(l *gerritpb.LabelInfo) {
 		if l == nil {
 			return
 		}
+		all := l.GetAll()[:0]
 		for _, a := range l.GetAll() {
-			cleanUser(a.GetUser())
+			if a.GetValue() == 0 {
+				continue
+			}
+			cleanUser(a.GetUser(), keepEmail)
+			all = append(all, a)
 		}
+		l.All = all
 	}
+
 	for _, r := range ci.GetRevisions() {
 		cleanRevision(r)
 	}
@@ -185,7 +197,7 @@ func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 	for _, l := range ci.GetLabels() {
 		cleanLabel(l)
 	}
-	cleanUser(ci.GetOwner())
+	cleanUser(ci.GetOwner(), keepEmail)
 }
 
 // OwnerIdentity is the identity of a user owning this CL.
