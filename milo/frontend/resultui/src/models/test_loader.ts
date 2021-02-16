@@ -73,24 +73,6 @@ export class TestLoader {
   @computed get loadedAllExoneratedVariants() { return this.stage > LoadingStage.LoadingExonerated; }
   @computed get loadedAllExpectedVariants() { return this.stage > LoadingStage.LoadingExpected; }
 
-  // Utility methods for displaying user-friendly counts of variants with each status.
-  @computed get unexpectedVariantCount() {
-    const count = this.unexpectedTestVariants.length || 0;
-    return `${count}${this.stage <= LoadingStage.LoadingUnexpected ? '+' : ''}`;
-  }
-  @computed get flakyVariantCount() {
-    const count = this.flakyTestVariants.length || 0;
-    return `${count}${this.stage <= LoadingStage.LoadingFlaky ? '+' : ''}`;
-  }
-  @computed get exoneratedVariantCount() {
-    const count = this.exoneratedTestVariants.length || 0;
-    return `${count}${this.stage <= LoadingStage.LoadingExonerated ? '+' : ''}`;
-  }
-  @computed get expectedVariantCount() {
-    const count = this.expectedTestVariants.length || 0;
-    return `${count}${this.stage <= LoadingStage.LoadingExpected ? '+' : ''}`;
-  }
-
   // undefined means the end has been reached.
   // empty string is the token for the first page.
   private nextPageToken: string | undefined = '';
