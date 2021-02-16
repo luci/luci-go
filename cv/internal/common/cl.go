@@ -43,13 +43,17 @@ func (p *CLIDs) Dedupe() {
 		return
 	}
 	sort.Slice(clids, func(i, j int) bool { return clids[i] < clids[j] })
-	n := 0
-	for i := 1; i < len(clids); i++ {
-		if clids[i] == clids[n] {
+	n, prev, skipped := 0, clids[0], false
+	for _, id := range clids[1:] {
+		if id == prev {
+			skipped = true
 			continue
 		}
 		n++
-		clids[n] = clids[i]
+		if skipped {
+			clids[n] = id
+			prev = id
+		}
 	}
 	*p = clids[:n+1]
 }
