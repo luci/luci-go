@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9e72a0c9_6fb6e5c8",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:56:11Z",
+      "side": 1,
+      "message": "A \"component\" is also a set of related CLs that are processed together...\n\nMy understanding right now is that a \"combo\" is a group CLs that go together in a Run, and a \"component\" is a group of CLs that *might* go together in a Run, and the combo is a subset of the component of the component actor. Is that right?\n \nIs there any clarifying note that may be added here to clarify the difference between combo and component?",
+      "range": {
+        "startLine": 165,
+        "startChar": 3,
+        "endLine": 165,
+        "endChar": 8
+      },
+      "revId": "4b9ab8df2c15c5595751dfa07ee56c2cdf3cb0fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
