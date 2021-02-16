@@ -27,6 +27,10 @@ const suggestions = [
   {value: 'suggestion 1', explanation: 'explanation 1'},
   {value: 'suggestion 2', explanation: 'explanation 2'},
   {value: 'suggestion 3', explanation: 'explanation 3'},
+  {value: null, explanation: 'header'},
+  {value: 'suggestion 4', explanation: 'explanation 4'},
+  {value: 'suggestion 5', explanation: 'explanation 5'},
+  {value: null, explanation: 'header'},
 ];
 
 describe('auto_complete_test', () => {
@@ -65,5 +69,36 @@ describe('auto_complete_test', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
     assert.strictEqual(suggestionSpy.getCall(2).args[0], suggestions[0]);
+  });
+
+  it('should skip suggestions without a value', () => {
+    autoSuggestionEle.suggestions = suggestions.slice();
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'Enter');
+    assert.strictEqual(suggestionSpy.getCall(3).args[0], suggestions[4]);
+
+    simulateKeyStroke(inputEle, 'ArrowUp');
+    simulateKeyStroke(inputEle, 'Enter');
+    assert.strictEqual(suggestionSpy.getCall(4).args[0], suggestions[2]);
+  });
+
+  it('should not navigate beyond boundary', () => {
+    autoSuggestionEle.suggestions = suggestions.slice();
+    for (let i = 0; i < suggestions.length * 2; ++i) {
+      simulateKeyStroke(inputEle, 'ArrowDown');
+    }
+    simulateKeyStroke(inputEle, 'Enter');
+    const lastSelectableSuggestion = suggestions.slice().reverse().find((s) => s.value !== null);
+    assert.strictEqual(suggestionSpy.getCall(5).args[0], lastSelectableSuggestion);
+
+    const firstSelectableSuggestion = suggestions.find((s) => s.value !== null);
+    for (let i = 0; i < suggestions.length * 2; ++i) {
+      simulateKeyStroke(inputEle, 'ArrowUp');
+    }
+    simulateKeyStroke(inputEle, 'Enter');
+    assert.strictEqual(suggestionSpy.getCall(6).args[0], firstSelectableSuggestion);
   });
 });
