@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.bq;
 
+import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/bq/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
@@ -59,4 +60,11 @@ message TextArtifactRow {
   // Encoded as UTF-8. Invalid characters are replaced with the replacement
   // character (U+FFFD).
   string content = 7;
+
+  // Partition_time is used to partition the table.
+  // It is the time when exported invocation was created in Spanner.
+  // https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
+  // mentions "The partitioning column must be a top-level field."
+  // So we keep this column here instead of adding the CreateTime to Invocation.
+  google.protobuf.Timestamp partition_time = 8;
 }
