@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e3a0df5a_ba0c2bf6",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-16T16:28:54Z",
+      "side": 1,
+      "message": "PTAL \u0026\u0026 I welcome your critique.",
+      "revId": "4675c584adafaf5b2ac32d75fd6dba17da8979a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
