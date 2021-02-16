@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9537ec0_0f391a6b",
+        "filename": "milo/frontend/resultui/src/components/auto_complete.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-16T23:56:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40750a80_b218ad6c",
+      "range": {
+        "startLine": 106,
+        "startChar": 51,
+        "endLine": 106,
+        "endChar": 52
+      },
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "de3ead5f_b1204182",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a41e3a4c_62f7f256",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-16T23:56:25Z",
+      "side": 1,
+      "message": "Updated to use \u0027isHeader\u0027 to differentiate between SuggestionHeader and SuggestionEntry.\nUpdated to use `display` instead of `explanation` to display headers.",
+      "parentUuid": "de3ead5f_b1204182",
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3174fdb0_fa9adeef",
@@ -71,6 +113,24 @@
       "writtenOn": "2021-02-16T21:47:13Z",
       "side": 1,
       "message": "I think Filter types is more important than filter syntax. I think we should move this section on top.\n\nAnd perhaps we should reword \"Filter Syntax\" to \"Advanced Syntax\"?, and only cover the advanced type (i.e. remove line 88)?",
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0076a8e7_f9d5cf96",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-16T23:56:25Z",
+      "side": 1,
+      "message": "I agree that filter type is more important, but \u0027filter type\u0027 will keep growing while \u0027advanced syntax\u0027 will most likely remain unchanged as a small list.\nIf we put the \u0027filter type\u0027 on the top, I\u0027m worried that users may not notice there\u0027s another section after we add more filter types.\n\nI renamed to \u0027Advanced Syntax\u0027 and removed some simple entries. This makes it even smaller so\nhopefully putting it before \u0027Filter types\u0027 won\u0027t cause too much distraction.",
+      "parentUuid": "3174fdb0_fa9adeef",
       "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -98,6 +158,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "66be9604_f81d1e7d",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-16T23:56:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f48ab2d_0e1b0747",
+      "range": {
+        "startLine": 96,
+        "startChar": 15,
+        "endLine": 96,
+        "endChar": 38
+      },
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ba84250b_9cb7fae2",
@@ -111,6 +195,30 @@
       "writtenOn": "2021-02-16T21:47:13Z",
       "side": 1,
       "message": "Same",
+      "range": {
+        "startLine": 97,
+        "startChar": 15,
+        "endLine": 97,
+        "endChar": 33
+      },
+      "revId": "167cad791f5c4ec5fa7ebbd5ff1bdc903f40ba3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3764ec6c_689e5efa",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-16T23:56:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba84250b_9cb7fae2",
       "range": {
         "startLine": 97,
         "startChar": 15,
