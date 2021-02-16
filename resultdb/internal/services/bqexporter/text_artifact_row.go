@@ -82,16 +82,17 @@ type textArtifactRowInput struct {
 func (i *textArtifactRowInput) row() protoiface.MessageV1 {
 	_, testID, resultID, artifactID := artifacts.MustParseName(i.a.Name)
 	expRec := invocationProtoToRecord(i.exported)
-	parRect := invocationProtoToRecord(i.parent)
+	parRec := invocationProtoToRecord(i.parent)
 
 	return &bqpb.TextArtifactRow{
-		Exported:   expRec,
-		Parent:     parRect,
-		TestId:     testID,
-		ResultId:   resultID,
-		ArtifactId: artifactID,
-		ShardId:    i.shardID,
-		Content:    i.content,
+		Exported:      expRec,
+		Parent:        parRec,
+		TestId:        testID,
+		ResultId:      resultID,
+		ArtifactId:    artifactID,
+		ShardId:       i.shardID,
+		Content:       i.content,
+		PartitionTime: i.exported.CreateTime,
 	}
 }
 
