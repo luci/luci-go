@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a16170df_252fe6f5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-16T18:40:17Z",
+      "side": 1,
+      "message": "ah, that CL which you LGTM-ed earlier needs to be deployed (when I shared link it was a tainted version)",
+      "parentUuid": "c78c822a_bef005fe",
+      "revId": "fa2225a72679228d858ea1a52ad55d2a1d659f06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f53e17c2_022caf89",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
