@@ -50,6 +50,24 @@
       "message": "Quick Go question, why/how does this assert that space is reused / no mallocs are done?",
       "revId": "025bdeb1b703b6632f0a18480005f998759667a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08f06c6b_c8c2a512",
+        "filename": "cv/internal/common/i64_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-16T23:02:05Z",
+      "side": 1,
+      "message": "well, it\u0027s doesn\u0027t strictly assert it, since I can\u0027t compare slice pointers,\nbut its\u0027 a very strong inference because iff this is true, it means initial slice of `v` has been modified and its first N elements have exact same values as `v1`, hence most likely underlying slice storage was re-used.",
+      "parentUuid": "4fa3ad9e_52f5c933",
+      "revId": "025bdeb1b703b6632f0a18480005f998759667a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
