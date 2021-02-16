@@ -22,6 +22,30 @@
       },
       "revId": "fa2225a72679228d858ea1a52ad55d2a1d659f06",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "491ccae9_cd35128e",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-16T20:06:29Z",
+      "side": 0,
+      "message": "Yes, it wasn\u0027t used in CV. The comment was copy-pasted from CQDaemon.",
+      "parentUuid": "870e49a3_5167b20f",
+      "range": {
+        "startLine": 164,
+        "startChar": 64,
+        "endLine": 165,
+        "endChar": 64
+      },
+      "revId": "fa2225a72679228d858ea1a52ad55d2a1d659f06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
