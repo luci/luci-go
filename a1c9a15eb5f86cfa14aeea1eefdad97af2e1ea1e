@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7eb5f76_e341c8bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-16T03:28:07Z",
+      "side": 1,
+      "message": "This also reduces the noise in the URL.\n\nDemo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6685/test-results?q\u003d",
+      "revId": "a1c9a15eb5f86cfa14aeea1eefdad97af2e1ea1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
