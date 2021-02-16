@@ -63,6 +63,30 @@
       },
       "revId": "3cfe68422de6578aceeea1196cb25befc1ab105b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07b87d6a_eceeeae8",
+        "filename": "gae/service/datastore/pls_impl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 588,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-16T22:14:09Z",
+      "side": 1,
+      "message": "yes, i am ware it\u0027s not 100% panacea. Improved with Contains instead of Prefix.\n\nAs for panic, yes, but I think I applies to most \n  c.problem \u003d me(\"struct ...\nin this function.\nStill, panic-ing will require changing tests, for which I didn\u0027t mean to sign up.",
+      "parentUuid": "0e821e5e_072c47c4",
+      "range": {
+        "startLine": 588,
+        "startChar": 47,
+        "endLine": 588,
+        "endChar": 56
+      },
+      "revId": "3cfe68422de6578aceeea1196cb25befc1ab105b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
