@@ -34,6 +34,64 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Output_Retry int32
+
+const (
+	Output_OUTPUT_RETRY_UNSPECIFIED Output_Retry = 0
+	// Default. Allow CQ to retry if CQ deems it necessary and possible based on
+	// all factors, such as the applicable project's CQ config.
+	//
+	// Does NOT force CQ to retry this build.
+	Output_OUTPUT_RETRY_ALLOWED Output_Retry = 1
+	// Denies retries regardless of other factors.
+	//
+	// This is equivalent to setting legacy top-level `"do_not_retry": true`
+	// output property.
+	// TODO(tandrii): deprecate and remove the legacy property.
+	Output_OUTPUT_RETRY_DENIED Output_Retry = 2
+)
+
+// Enum value maps for Output_Retry.
+var (
+	Output_Retry_name = map[int32]string{
+		0: "OUTPUT_RETRY_UNSPECIFIED",
+		1: "OUTPUT_RETRY_ALLOWED",
+		2: "OUTPUT_RETRY_DENIED",
+	}
+	Output_Retry_value = map[string]int32{
+		"OUTPUT_RETRY_UNSPECIFIED": 0,
+		"OUTPUT_RETRY_ALLOWED":     1,
+		"OUTPUT_RETRY_DENIED":      2,
+	}
+)
+
+func (x Output_Retry) Enum() *Output_Retry {
+	p := new(Output_Retry)
+	*p = x
+	return p
+}
+
+func (x Output_Retry) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Output_Retry) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_enumTypes[0].Descriptor()
+}
+
+func (Output_Retry) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_enumTypes[0]
+}
+
+func (x Output_Retry) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Output_Retry.Descriptor instead.
+func (Output_Retry) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_rawDescGZIP(), []int{1, 0}
+}
+
 // Input provides CQ metadata for CQ-triggered tryjob.
 type Input struct {
 	state         protoimpl.MessageState
@@ -119,6 +177,191 @@ func (x *Input) GetTopLevel() bool {
 	return false
 }
 
+// Output provides build-specific instructions back to CQ.
+//
+// Unless stated otherwise, each Output message field can be set even on builds
+// not triggered directly or indirectly by CQ itself. For example, `git cl try`
+// or Gerrit UI can be used to trigger a build directly, which can then instruct
+// CQ not to retry it.
+//
+// CQ periodically checks the Output of a still running builds, too,
+// and may act on the Output even before a build is completed.
+type Output struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Buildbucket build IDs which this build has triggered for CQ to wait on.
+	//
+	// Required when using triggered_by builders in project's CQ config.
+	// This is useful to allow the triggering builder to finish without waiting
+	// for its child builds, which can be efficiently done by CQ.
+	//
+	// This is equivalent to setting legacy top-level "triggered_build_ids" output
+	// property.
+	// TODO(tandrii): deprecate and remove the legacy property.
+	TriggeredBuildIds []int64 `protobuf:"varint,1,rep,packed,name=triggered_build_ids,json=triggeredBuildIds,proto3" json:"triggered_build_ids,omitempty"`
+	// Retry controls whether this build can be retried by CQ.
+	Retry Output_Retry `protobuf:"varint,2,opt,name=retry,proto3,enum=cq.recipe.Output_Retry" json:"retry,omitempty"`
+	// Reuse controls whether this build can be re-used by a later CQ run.
+	//
+	// The order matters: the first matching Reuse message wins.
+	// If none matched, reuse is allowed.
+	//
+	// Even if reuse is allowed here, reuse is still subject to other restrictions
+	// in applicable project's CQ config.
+	Reuse []*Output_Reuse `protobuf:"bytes,3,rep,name=reuse,proto3" json:"reuse,omitempty"`
+}
+
+func (x *Output) Reset() {
+	*x = Output{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Output) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Output) ProtoMessage() {}
+
+func (x *Output) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Output.ProtoReflect.Descriptor instead.
+func (*Output) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Output) GetTriggeredBuildIds() []int64 {
+	if x != nil {
+		return x.TriggeredBuildIds
+	}
+	return nil
+}
+
+func (x *Output) GetRetry() Output_Retry {
+	if x != nil {
+		return x.Retry
+	}
+	return Output_OUTPUT_RETRY_UNSPECIFIED
+}
+
+func (x *Output) GetReuse() []*Output_Reuse {
+	if x != nil {
+		return x.Reuse
+	}
+	return nil
+}
+
+type Output_Reuse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Kind of Runs for which this Reuse block applies.
+	// Exactly one required.
+	//
+	// Types that are assignable to RunKind:
+	//	*Output_Reuse_Kind
+	//	*Output_Reuse_KindRegexp
+	RunKind isOutput_Reuse_RunKind `protobuf_oneof:"run_kind"`
+	// If deny is true, then reuse of this build in future Runs of the matched
+	// kind is not allowed.
+	Deny bool `protobuf:"varint,3,opt,name=deny,proto3" json:"deny,omitempty"` // TODO(crbug/753103): add reuse duration or deadline.
+}
+
+func (x *Output_Reuse) Reset() {
+	*x = Output_Reuse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Output_Reuse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Output_Reuse) ProtoMessage() {}
+
+func (x *Output_Reuse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Output_Reuse.ProtoReflect.Descriptor instead.
+func (*Output_Reuse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (m *Output_Reuse) GetRunKind() isOutput_Reuse_RunKind {
+	if m != nil {
+		return m.RunKind
+	}
+	return nil
+}
+
+func (x *Output_Reuse) GetKind() string {
+	if x, ok := x.GetRunKind().(*Output_Reuse_Kind); ok {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Output_Reuse) GetKindRegexp() string {
+	if x, ok := x.GetRunKind().(*Output_Reuse_KindRegexp); ok {
+		return x.KindRegexp
+	}
+	return ""
+}
+
+func (x *Output_Reuse) GetDeny() bool {
+	if x != nil {
+		return x.Deny
+	}
+	return false
+}
+
+type isOutput_Reuse_RunKind interface {
+	isOutput_Reuse_RunKind()
+}
+
+type Output_Reuse_Kind struct {
+	// Lowercase run kind. E.g. "dryrun", "fullrun".
+	Kind string `protobuf:"bytes,1,opt,name=kind,proto3,oneof"`
+}
+
+type Output_Reuse_KindRegexp struct {
+	// Regular expression with implicit $...^ wrapping. E.g. ".+" will match
+	// all kinds of Runs.
+	KindRegexp string `protobuf:"bytes,2,opt,name=kind_regexp,json=kindRegexp,proto3,oneof"`
+}
+
+func (*Output_Reuse_Kind) isOutput_Reuse_RunKind() {}
+
+func (*Output_Reuse_KindRegexp) isOutput_Reuse_RunKind() {}
+
 var File_go_chromium_org_luci_cv_api_recipe_v1_cq_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_rawDesc = []byte{
@@ -133,10 +376,32 @@ var file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_rawDesc = []byte{
 	0x65, 0x6e, 0x74, 0x61, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0c, 0x65, 0x78, 0x70,
 	0x65, 0x72, 0x69, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x6c, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x6f, 0x70,
 	0x5f, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08, 0x74, 0x6f,
-	0x70, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72,
-	0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63,
-	0x76, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x72, 0x65, 0x63, 0x69, 0x70, 0x65, 0x2f, 0x76, 0x31, 0x3b,
-	0x72, 0x65, 0x63, 0x69, 0x70, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x70, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x22, 0xd2, 0x02, 0x0a, 0x06, 0x4f, 0x75, 0x74, 0x70, 0x75,
+	0x74, 0x12, 0x2e, 0x0a, 0x13, 0x74, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x65, 0x64, 0x5f, 0x62,
+	0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x03, 0x52, 0x11,
+	0x74, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x65, 0x64, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64,
+	0x73, 0x12, 0x2d, 0x0a, 0x05, 0x72, 0x65, 0x74, 0x72, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x17, 0x2e, 0x63, 0x71, 0x2e, 0x72, 0x65, 0x63, 0x69, 0x70, 0x65, 0x2e, 0x4f, 0x75, 0x74,
+	0x70, 0x75, 0x74, 0x2e, 0x52, 0x65, 0x74, 0x72, 0x79, 0x52, 0x05, 0x72, 0x65, 0x74, 0x72, 0x79,
+	0x12, 0x2d, 0x0a, 0x05, 0x72, 0x65, 0x75, 0x73, 0x65, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x17, 0x2e, 0x63, 0x71, 0x2e, 0x72, 0x65, 0x63, 0x69, 0x70, 0x65, 0x2e, 0x4f, 0x75, 0x74, 0x70,
+	0x75, 0x74, 0x2e, 0x52, 0x65, 0x75, 0x73, 0x65, 0x52, 0x05, 0x72, 0x65, 0x75, 0x73, 0x65, 0x1a,
+	0x60, 0x0a, 0x05, 0x52, 0x65, 0x75, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x12, 0x21,
+	0x0a, 0x0b, 0x6b, 0x69, 0x6e, 0x64, 0x5f, 0x72, 0x65, 0x67, 0x65, 0x78, 0x70, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0a, 0x6b, 0x69, 0x6e, 0x64, 0x52, 0x65, 0x67, 0x65, 0x78,
+	0x70, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x65, 0x6e, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52,
+	0x04, 0x64, 0x65, 0x6e, 0x79, 0x42, 0x0a, 0x0a, 0x08, 0x72, 0x75, 0x6e, 0x5f, 0x6b, 0x69, 0x6e,
+	0x64, 0x22, 0x58, 0x0a, 0x05, 0x52, 0x65, 0x74, 0x72, 0x79, 0x12, 0x1c, 0x0a, 0x18, 0x4f, 0x55,
+	0x54, 0x50, 0x55, 0x54, 0x5f, 0x52, 0x45, 0x54, 0x52, 0x59, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
+	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x18, 0x0a, 0x14, 0x4f, 0x55, 0x54, 0x50,
+	0x55, 0x54, 0x5f, 0x52, 0x45, 0x54, 0x52, 0x59, 0x5f, 0x41, 0x4c, 0x4c, 0x4f, 0x57, 0x45, 0x44,
+	0x10, 0x01, 0x12, 0x17, 0x0a, 0x13, 0x4f, 0x55, 0x54, 0x50, 0x55, 0x54, 0x5f, 0x52, 0x45, 0x54,
+	0x52, 0x59, 0x5f, 0x44, 0x45, 0x4e, 0x49, 0x45, 0x44, 0x10, 0x02, 0x42, 0x2e, 0x5a, 0x2c, 0x67,
+	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
+	0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x72, 0x65, 0x63, 0x69, 0x70,
+	0x65, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x63, 0x69, 0x70, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -151,16 +416,22 @@ func file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_rawDescGZIP() []byte {
 	return file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_goTypes = []interface{}{
-	(*Input)(nil), // 0: cq.recipe.Input
+	(Output_Retry)(0),    // 0: cq.recipe.Output.Retry
+	(*Input)(nil),        // 1: cq.recipe.Input
+	(*Output)(nil),       // 2: cq.recipe.Output
+	(*Output_Reuse)(nil), // 3: cq.recipe.Output.Reuse
 }
 var file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: cq.recipe.Output.retry:type_name -> cq.recipe.Output.Retry
+	3, // 1: cq.recipe.Output.reuse:type_name -> cq.recipe.Output.Reuse
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_init() }
@@ -181,19 +452,48 @@ func file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Output); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Output_Reuse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
+	file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes[2].OneofWrappers = []interface{}{
+		(*Output_Reuse_Kind)(nil),
+		(*Output_Reuse_KindRegexp)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   1,
+			NumEnums:      1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_depIdxs,
+		EnumInfos:         file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_cv_api_recipe_v1_cq_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_cv_api_recipe_v1_cq_proto = out.File
