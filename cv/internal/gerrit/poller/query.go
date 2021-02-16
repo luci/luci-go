@@ -119,6 +119,17 @@ func (q *singleQuery) full(ctx context.Context) error {
 	case err2 != nil:
 		return err2
 	}
+
+	cur := uniqueSortedIDsOf(changes)
+	if diff := common.DifferenceSorted(q.sp.Changes, cur); len(diff) != 0 {
+		// `diff` changes are no longer matching the limited query,
+		// so they probably updated since.
+		if err := scheduleRefreshTasks(ctx, q.luciProject, q.sp.GetHost(), diff); err != nil {
+			return err
+		}
+	}
+
+	q.sp.Changes = cur
 	q.sp.LastFullTime = timestamppb.New(started)
 	q.sp.LastIncrTime = nil
 	return nil
@@ -138,7 +149,11 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 		}
 	}
 	after := lastInc.AsTime().Add(-incrementalPollOverlap)
-	changes, err := q.fetch(ctx, after, buildQuery(q.sp, queryLimited))
+	// Unlike the full poll, query for all changes regardless of status or CQ
+	// vote. This ensures that CV notices quickly when previously NEW & CQ-ed
+	// change has either CQ vote removed OR status changed (e.g. submitted or
+	// abandoned).
+	changes, err := q.fetch(ctx, after, buildQuery(q.sp, queryAll))
 	// There can be partial result even if err != nil.
 	switch err2 := q.scheduleTasks(ctx, changes, false); {
 	case err != nil:
@@ -146,6 +161,8 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 	case err2 != nil:
 		return err2
 	}
+
+	q.sp.Changes = common.UnionSorted(q.sp.Changes, uniqueSortedIDsOf(changes))
 	q.sp.LastIncrTime = timestamppb.New(started)
 	return nil
 }
@@ -192,6 +209,28 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 					Change:        c.GetNumber(),
 					UpdatedHint:   c.GetUpdated(),
 					ForceNotifyPm: forceNotifyPM,
+				}
+				return updater.Schedule(ctx, payload)
+			}
+		}
+	})
+	if errs != nil {
+		return common.MostSevereError(errs.(errors.MultiError))
+	}
+	return nil
+}
+
+func scheduleRefreshTasks(ctx context.Context, luciProject, host string, changes []int64) error {
+	logging.Debugf(ctx, "scheduling %d CLUpdate tasks for no longer matched CLs", len(changes))
+	errs := parallel.WorkPool(10, func(work chan<- func() error) {
+		for _, c := range changes {
+			c := c
+			work <- func() error {
+				payload := &updater.RefreshGerritCL{
+					LuciProject:   luciProject,
+					Host:          host,
+					Change:        c,
+					ForceNotifyPm: true,
 				}
 				return updater.Schedule(ctx, payload)
 			}
@@ -261,4 +300,16 @@ func buildQuery(sp *SubPoller, kind queryKind) string {
 		buf.WriteRune(')')
 	}
 	return buf.String()
+}
+
+func uniqueSortedIDsOf(changes []*gerritpb.ChangeInfo) []int64 {
+	if len(changes) == 0 {
+		return nil
+	}
+
+	out := make([]int64, len(changes))
+	for i, c := range changes {
+		out[i] = c.GetNumber()
+	}
+	return common.UniqueSorted(out)
 }

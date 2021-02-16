@@ -24,18 +24,19 @@ import (
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
-
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	pt "go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -263,6 +264,7 @@ func TestPoller(t *testing.T) {
 						OrProjects:   []string{gRepo},
 						LastFullTime: fullPollStamp,
 						LastIncrTime: timestamppb.New(ct.Clock.Now()),
+						Changes:      []int64{31, 32},
 					}})
 					// 1 for the future poll + 2 immediate to update CLs 31, 32.
 					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+2)
@@ -295,6 +297,7 @@ func TestPoller(t *testing.T) {
 							Host:         gHost,
 							OrProjects:   []string{gRepo},
 							LastFullTime: timestamppb.New(ct.Clock.Now()),
+							Changes:      []int64{31, 32, 33, 34},
 						}})
 						// 1 task for the future poll + 1 task per CL due to forceNotifyPM,
 						// which disables de-duplication.
@@ -304,11 +307,55 @@ func TestPoller(t *testing.T) {
 						So(getCL(gHost, 34), ShouldNotBeNil)
 						So(getCL(gHost, 32).EVersion, ShouldEqual, 2) // was updated.
 
-						Convey("next full poll tasks must not be de-duped", func() {
+						Convey("next full poll task must not be de-duped", func() {
 							ct.Clock.Add(fullPollInterval)
 							ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 							So(mustGetState(lProject).SubPollers.GetSubPollers()[0].GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 							So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+4)
+						})
+
+						Convey("full poll schedules tasks for no longer found changes", func() {
+							ct.Clock.Add(fullPollInterval)
+
+							ct.GFake.MutateChange(gHost, 33, func(c *gf.Change) {
+								gf.Updated(ct.Clock.Now())(c.Info)
+								c.Info.Labels = nil // no more CQ vote.
+							})
+							ct.GFake.MutateChange(gHost, 34, func(c *gf.Change) {
+								gf.Updated(ct.Clock.Now())(c.Info)
+								gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
+							})
+
+							ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
+							So(mustGetState(lProject).SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
+								{
+									Host:         gHost,
+									OrProjects:   []string{gRepo},
+									LastFullTime: timestamppb.New(ct.Clock.Now()),
+									LastIncrTime: nil,
+									Changes:      []int64{31, 32},
+								},
+							})
+
+							So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+4)
+							tasks := ct.TQ.Tasks().SortByETA()
+							// The latest task must be the next poll.
+							So(tasks[4].Class, ShouldResemble, task.ClassID)
+							// The prior 4 tasks must be for CL refresh, with 31|32 having
+							// updated hint, but not 33,34.
+							for _, t := range tasks[:4] {
+								So(t.Class, ShouldResemble, updater.TaskClassID)
+								u := t.Payload.(*updater.RefreshGerritCL)
+								So(u.GetHost(), ShouldEqual, gHost)
+								So(u.GetLuciProject(), ShouldEqual, lProject)
+								So(u.GetForceNotifyPm(), ShouldBeTrue)
+								if n := u.GetChange(); n == 31 || n == 32 {
+									So(u.GetUpdatedHint(), ShouldResembleProto, getCL(gHost, int(n)).Snapshot.GetExternalUpdateTime())
+								} else {
+									// No longer matched CLs.
+									So(u.GetUpdatedHint(), ShouldBeNil)
+								}
+							}
 						})
 					})
 				})
@@ -316,6 +363,9 @@ func TestPoller(t *testing.T) {
 
 			Convey("notices updated config, updates SubPollers state", func() {
 				before := mustGetState(lProject)
+				before.SubPollers.SubPollers[0].Changes = []int64{31, 32}
+				So(datastore.Put(ctx, before), ShouldBeNil)
+
 				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
@@ -333,10 +383,41 @@ func TestPoller(t *testing.T) {
 						OrProjects:   []string{gRepo},
 						LastFullTime: fullPollStamp,                   // same as before
 						LastIncrTime: timestamppb.New(ct.Clock.Now()), // new incremental poll
+						Changes:      []int64{31, 32},                 // same as before
 					},
 				})
 				So(watchedBy(ctx, gHost, "shared/001", "refs/heads/main").
 					HasOnlyProject(lProject), ShouldBeTrue)
+
+				Convey("if SubPollers state can't be re-used, schedules CL update events", func() {
+					ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
+					after := mustGetState(lProject)
+					So(after.SubPollers.GetSubPollers(), ShouldResembleProto, []*SubPoller{
+						{
+							Host:         gHost,
+							OrProjects:   []string{"another/repo"},
+							LastFullTime: timestamppb.New(ct.Clock.Now()),
+						},
+					})
+
+					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+2)
+					tasks := ct.TQ.Tasks().SortByETA()
+					// The latest task must be the next poll.
+					So(tasks[2].Class, ShouldResemble, task.ClassID)
+					// The prior tasks must be for CL refresh.
+					for _, t := range tasks[:2] {
+						So(t.Class, ShouldResemble, updater.TaskClassID)
+						u := t.Payload.(*updater.RefreshGerritCL)
+						So(before.SubPollers.SubPollers[0].Changes, ShouldContain, u.GetChange())
+						So(u, ShouldResembleProto, &updater.RefreshGerritCL{
+							LuciProject:   lProject,
+							Host:          gHost,
+							Change:        u.GetChange(),
+							ForceNotifyPm: true,
+						})
+					}
+				})
 			})
 
 			Convey("disabled project => remove poller state & stop task chain", func() {

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
 	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
