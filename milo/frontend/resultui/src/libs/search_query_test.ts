@@ -175,6 +175,19 @@ describe('parseSearchQuery', () => {
 });
 
 describe('suggestSearchQuery', () => {
+  it('should give user some suggestions when the query is empty', () => {
+    const suggestions1 = suggestSearchQuery('');
+    assert.notStrictEqual(suggestions1.length, 0);
+  });
+
+  it('should give user suggestions based on the last sub-query', () => {
+    const suggestions1 = suggestSearchQuery('unexpected Pass');
+    assert.notStrictEqual(suggestions1.find((s) => s.value === 'RStatus:Pass'), undefined);
+    assert.notStrictEqual(suggestions1.find((s) => s.value === '-RStatus:Pass'), undefined);
+    assert.strictEqual(suggestions1.find((s) => s.value === 'Status:UNEXPECTED'), undefined);
+    assert.strictEqual(suggestions1.find((s) => s.value === '-Status:UNEXPECTED'), undefined);
+  });
+
   it('should suggest run status query with matching status', () => {
     const suggestions1 = suggestSearchQuery('Pass');
     assert.notStrictEqual(suggestions1.find((s) => s.value === 'RStatus:Pass'), undefined);
