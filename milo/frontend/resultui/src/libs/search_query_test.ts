@@ -175,6 +175,24 @@ describe('parseSearchQuery', () => {
 });
 
 describe('suggestSearchQuery', () => {
+  it('should give user some suggestions when the query is empty', () => {
+    const suggestions1 = suggestSearchQuery('');
+    assert.notStrictEqual(suggestions1.length, 0);
+  });
+
+  it('should not give suggestions when the sub-query is empty', () => {
+    const suggestions1 = suggestSearchQuery('Status:UNEXPECTED ');
+    assert.strictEqual(suggestions1.length, 0);
+  });
+
+  it('should give user suggestions based on the last sub-query', () => {
+    const suggestions1 = suggestSearchQuery('unexpected Pass');
+    assert.notStrictEqual(suggestions1.find((s) => s.value === 'RStatus:Pass'), undefined);
+    assert.notStrictEqual(suggestions1.find((s) => s.value === '-RStatus:Pass'), undefined);
+    assert.strictEqual(suggestions1.find((s) => s.value === 'Status:UNEXPECTED'), undefined);
+    assert.strictEqual(suggestions1.find((s) => s.value === '-Status:UNEXPECTED'), undefined);
+  });
+
   it('should suggest run status query with matching status', () => {
     const suggestions1 = suggestSearchQuery('Pass');
     assert.notStrictEqual(suggestions1.find((s) => s.value === 'RStatus:Pass'), undefined);
@@ -269,7 +287,7 @@ describe('suggestSearchQuery', () => {
     const suggestions1 = suggestSearchQuery('ID:pass');
     assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:pass'), undefined);
     assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:pass'), undefined);
-    assert.strictEqual(suggestions1.find((s) => !s.value.startsWith('ID:') && !s.value.startsWith('-ID:')), undefined);
+    assert.strictEqual(suggestions1.find((s) => !s.value?.startsWith('ID:') && !s.value?.startsWith('-ID:')), undefined);
 
     const suggestions2 = suggestSearchQuery('-ID:pass');
     // When user explicitly typed negative query, don't suggest positive query.
