@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca255f56_e2a1ff12",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-16T19:14:26Z",
+      "side": 1,
+      "message": "lgtm otherwise",
+      "revId": "3cfe68422de6578aceeea1196cb25befc1ab105b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c1528182_5e0bec8d",
@@ -14,6 +31,30 @@
       "writtenOn": "2021-02-16T19:13:48Z",
       "side": 1,
       "message": "Note that this won\u0027t catch everything; e.g.\n\n  F int `json:\"narf\" gae:narf`\n\nMaybe\n\n   \"gae:\" in t and \"gae:\\\"\" not in t?",
+      "range": {
+        "startLine": 588,
+        "startChar": 47,
+        "endLine": 588,
+        "endChar": 56
+      },
+      "revId": "3cfe68422de6578aceeea1196cb25befc1ab105b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e821e5e_072c47c4",
+        "filename": "gae/service/datastore/pls_impl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 588,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-16T19:14:26Z",
+      "side": 1,
+      "message": "Also imo this should be a panic. There\u0027s no possible way that this could be handled by the calling code.",
+      "parentUuid": "c1528182_5e0bec8d",
       "range": {
         "startLine": 588,
         "startChar": 47,
