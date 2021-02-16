@@ -172,7 +172,6 @@ export class TestResultsTabElement extends MobxLitElement {
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTED,
         this.invocationState.filteredUnexpectedVariants,
-        this.invocationState.testLoader?.unexpectedVariantCount || '0+',
         this.configsStore.userConfigs.tests.showUnexpectedVariant,
         (display) => this.configsStore.userConfigs.tests.showUnexpectedVariant = display,
         this.invocationState.testLoader?.loadedAllUnexpectedVariants || false,
@@ -181,7 +180,6 @@ export class TestResultsTabElement extends MobxLitElement {
       ${this.renderVariants(
         TestVariantStatus.FLAKY,
         this.invocationState.filteredFlakyVariants,
-        this.invocationState.testLoader?.flakyVariantCount || '0+',
         this.configsStore.userConfigs.tests.showFlakyVariant,
         (display) => this.configsStore.userConfigs.tests.showFlakyVariant = display,
         this.invocationState.testLoader?.loadedAllFlakyVariants || false,
@@ -189,7 +187,6 @@ export class TestResultsTabElement extends MobxLitElement {
       ${this.renderVariants(
         TestVariantStatus.EXONERATED,
         this.invocationState.filteredExoneratedVariants,
-        this.invocationState.testLoader?.exoneratedVariantCount || '0+',
         this.configsStore.userConfigs.tests.showExoneratedVariant,
         (display) => this.configsStore.userConfigs.tests.showExoneratedVariant = display,
         this.invocationState.testLoader?.loadedAllExoneratedVariants || false,
@@ -197,7 +194,6 @@ export class TestResultsTabElement extends MobxLitElement {
       ${this.renderVariants(
         TestVariantStatus.EXPECTED,
         this.invocationState.filteredExpectedVariants,
-        this.invocationState.testLoader?.expectedVariantCount || '0+',
         this.configsStore.userConfigs.tests.showExpectedVariant,
         (display) => this.configsStore.userConfigs.tests.showExpectedVariant = display,
         this.invocationState.testLoader?.loadedAllExpectedVariants || false,
@@ -232,15 +228,15 @@ export class TestResultsTabElement extends MobxLitElement {
   private renderVariants(
     status: TestVariantStatus,
     variants: TestVariant[],
-    variantCountDisplay: string,
     display: boolean,
     toggleDisplay: (display: boolean) => void,
     fullyLoaded: boolean,
     expandFirst = false,
   ) {
+    const variantCountLabel = `${variants.length}${fullyLoaded ? '' : '+'}`;
     return html`
       <div class="section-header">
-        ${VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE[status]} (${variantCountDisplay})
+        ${VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE[status]} (${variantCountLabel})
         <span
           class="load-more active-text"
           style=${styleMap({'display': fullyLoaded ? 'none' : ''})}>
