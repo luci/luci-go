@@ -226,6 +226,7 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 	}
 	if len(tr.pokeEvents) > 0 {
 		// TODO(tandrii,yiwzhang): implement poke.
+		// TODO(crbug/1178658): trigger CL updater to refetch Run's CLs.
 		ret = append(ret, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: rs})
 	}
 
