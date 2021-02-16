@@ -37,14 +37,19 @@ const expiryRandInterval = 30 * time.Second
 const (
 	// NoEmail indicates an OAuth2 token is not associated with an email.
 	//
-	// See Token below. We need this special value to distinguish "an email can not
-	// possibly be fetched ever" from "the cached token doesn't have an email yet"
-	// cases.
+	// See Token below. We need this special value to distinguish "an email can
+	// not possibly be fetched ever" from "the cached token doesn't have an email
+	// yet" cases.
 	NoEmail = "-"
 
 	// UnknownEmail indicates an OAuth2 token may potentially be associated with
 	// an email, but we haven't tried to fetch the email yet.
 	UnknownEmail = ""
+
+	// NoIDToken indicates it was impossible to obtain an ID token, e.g. no
+	// "openid" scope in the refresh token or the provider doesn't support ID
+	// tokens at all.
+	NoIDToken = "-"
 )
 
 var (
@@ -63,7 +68,7 @@ var (
 	ErrBadCredentials = errors.New("invalid or unavailable service account credentials")
 )
 
-// Token is an oauth2.Token with an email that corresponds to it.
+// Token is an oauth2.Token with an email and ID token that correspond to it.
 //
 // Email may be an empty string, in which case we assume the email hasn't been
 // fetched yet. It can also be a special NoEmail string, which means the token
@@ -72,7 +77,8 @@ var (
 type Token struct {
 	oauth2.Token
 
-	Email string // an email or NoEmail or empty string (aka UnknownEmail)
+	IDToken string // an ID token derived directly from the access token or NoIDToken
+	Email   string // an email or NoEmail or empty string (aka UnknownEmail)
 }
 
 // TokenProvider knows how to mint new tokens or refresh existing ones.
@@ -259,7 +265,10 @@ func EqualTokens(a, b *Token) bool {
 	if b == nil {
 		b = &Token{}
 	}
-	return a.AccessToken == b.AccessToken && a.Expiry.Equal(b.Expiry) && a.Email == b.Email
+	return a.AccessToken == b.AccessToken &&
+		a.Expiry.Equal(b.Expiry) &&
+		a.IDToken == b.IDToken &&
+		a.Email == b.Email
 }
 
 // isBadTokenError sniffs out HTTP 400/401 from token source errors.

@@ -120,8 +120,9 @@ func (p *serviceAccountTokenProvider) MintToken(ctx context.Context, base *Token
 			email = NoEmail
 		}
 		return &Token{
-			Token: *newTok,
-			Email: email,
+			Token:   *newTok,
+			IDToken: NoIDToken,
+			Email:   email,
 		}, nil
 	case transient.Tag.In(err):
 		logging.Warningf(ctx, "Error when creating access token - %s", err)

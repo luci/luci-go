@@ -102,6 +102,7 @@ func TestDiskTokenCache(t *testing.T) {
         "access_token": "def",
         "expiry": "2016-02-03T05:05:06.000000007Z"
       },
+      "id_token": "",
       "email": "a@example.com",
       "last_update": "2016-02-03T04:05:06.000000007Z",
       "abc": "def",
@@ -203,6 +204,7 @@ func TestDiskTokenCache(t *testing.T) {
         "access_token": "xyz",
         "expiry": "2016-02-03T05:05:06.000000007Z"
       },
+      "id_token": "",
       "email": "a@example.com",
       "last_update": "2016-02-03T04:05:06.000000007Z",
       "extra": "zzz"
@@ -215,6 +217,7 @@ func TestDiskTokenCache(t *testing.T) {
         "access_token": "zzz",
         "expiry": "2016-02-03T07:00:00Z"
       },
+      "id_token": "",
       "email": "a@example.com",
       "last_update": "2016-02-03T06:00:00Z"
     },
@@ -226,6 +229,7 @@ func TestDiskTokenCache(t *testing.T) {
         "access_token": "def",
         "expiry": "2016-02-03T07:00:00Z"
       },
+      "id_token": "",
       "email": "a@example.com",
       "last_update": "2016-02-03T05:00:00Z"
     }
@@ -246,6 +250,7 @@ func TestDiskTokenCache(t *testing.T) {
         "access_token": "xyz",
         "expiry": "2016-02-03T05:05:06.000000007Z"
       },
+      "id_token": "",
       "email": "a@example.com",
       "last_update": "2016-02-03T04:05:06.000000007Z",
       "extra": "zzz"
@@ -258,6 +263,7 @@ func TestDiskTokenCache(t *testing.T) {
         "access_token": "zzz",
         "expiry": "2016-02-03T07:00:00Z"
       },
+      "id_token": "",
       "email": "a@example.com",
       "last_update": "2016-02-03T06:00:00Z"
     },
@@ -269,6 +275,7 @@ func TestDiskTokenCache(t *testing.T) {
         "access_token": "def",
         "expiry": "2016-02-03T07:00:00Z"
       },
+      "id_token": "",
       "email": "a@example.com",
       "last_update": "2016-02-03T05:00:00Z"
     }

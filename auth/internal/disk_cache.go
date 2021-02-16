@@ -92,6 +92,7 @@ type cacheFile struct {
 type cacheFileEntry struct {
 	key        CacheKey
 	token      oauth2.Token
+	idToken    string
 	email      string
 	lastUpdate time.Time
 
@@ -107,6 +108,7 @@ func (e *cacheFileEntry) structure() []keyPtr {
 	return []keyPtr{
 		{"key", &e.key},
 		{"token", &e.token},
+		{"id_token", &e.idToken},
 		{"email", &e.email},
 		{"last_update", &e.lastUpdate},
 	}
@@ -392,8 +394,9 @@ func (c *DiskTokenCache) GetToken(key *CacheKey) (*Token, error) {
 	for _, entry := range cache.Cache {
 		if EqualCacheKeys(&entry.key, key) {
 			return &Token{
-				Token: entry.token,
-				Email: entry.email,
+				Token:   entry.token,
+				IDToken: entry.idToken,
+				Email:   entry.email,
 			}, nil
 		}
 	}
@@ -410,6 +413,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 		for _, entry := range cache.Cache {
 			if EqualCacheKeys(&entry.key, key) {
 				entry.token = token
+				entry.idToken = tok.IDToken
 				entry.email = tok.Email
 				entry.lastUpdate = now
 				return true
@@ -418,6 +422,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 		cache.Cache = append(cache.Cache, &cacheFileEntry{
 			key:        *key,
 			token:      token,
+			idToken:    tok.IDToken,
 			email:      tok.Email,
 			lastUpdate: now,
 		})
