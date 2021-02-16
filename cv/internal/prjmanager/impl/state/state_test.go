@@ -1007,7 +1007,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(run789)}
 			pbBefore := backupPB(state)
 
-			cat := state.categorizeCLs()
+			cat := state.categorizeCLs(ctx)
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   mkClidsSet(cls[5], cls[6], cls[7], cls[8], cls[9]),
@@ -1025,7 +1025,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(run56)}
 			pb := backupPB(state)
 
-			cat := state.categorizeCLs()
+			cat := state.categorizeCLs(ctx)
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   mkClidsSet(cls[3], cls[5], cls[6]),
 				deps:     mkClidsSet(cls[2]),
@@ -1062,7 +1062,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
 			pb := backupPB(state)
 
-			cat := state.categorizeCLs()
+			cat := state.categorizeCLs(ctx)
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   mkClidsSet(cls[11], cls[13]),
 				deps:     clidsSet{},
@@ -1102,7 +1102,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
 			pb := backupPB(state)
 
-			cat := state.categorizeCLs()
+			cat := state.categorizeCLs(ctx)
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   clidsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
 				deps:     clidsSet{},
@@ -1127,8 +1127,52 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			So(state.PB, ShouldResembleProto, pb)
 		})
 
+		Convey("prunes PCLs with expired triggers", func() {
+			makePCL := func(i int64, t time.Time, deps ...*changelist.Dep) *prjpb.PCL {
+				return &prjpb.PCL{
+					Clid:     i,
+					Eversion: 1,
+					Status:   prjpb.PCL_OK,
+					Deps:     deps,
+					Trigger: &run.Trigger{
+						GerritAccountId: 1,
+						Mode:            string(run.DryRun),
+						Time:            timestamppb.New(t),
+					},
+				}
+			}
+			state.PB.Pcls = []*prjpb.PCL{
+				makePCL(1, ct.Clock.Now().Add(-time.Minute), &changelist.Dep{Clid: int64(cls[4].ID)}),
+				makePCL(2, ct.Clock.Now().Add(-common.MaxTriggerAge+time.Second)),
+				makePCL(3, ct.Clock.Now().Add(-common.MaxTriggerAge)),
+			}
+			cat := state.categorizeCLs(ctx)
+			So(cat, ShouldResemble, &categorizedCLs{
+				active:   clidsSet{1: struct{}{}, 2: struct{}{}},
+				deps:     clidsSet{cls[4].ID: struct{}{}},
+				unloaded: clidsSet{cls[4].ID: struct{}{}},
+				unused:   clidsSet{3: struct{}{}},
+			})
+
+			Convey("and doesn't promote unloaded to active if trigger has expired", func() {
+				// Keep CQ+2 vote, but make it timestamp really old.
+				infoRef := cls[4].Snapshot.GetGerrit().GetInfo()
+				infoRef.Labels = nil
+				gf.CQ(2, ct.Clock.Now().Add(-common.MaxTriggerAge), gf.U("user-1"))(infoRef)
+				So(datastore.Put(ctx, cls[4]), ShouldBeNil)
+
+				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
+				So(cat, ShouldResemble, &categorizedCLs{
+					active:   clidsSet{1: struct{}{}, 2: struct{}{}},
+					deps:     clidsSet{cls[4].ID: struct{}{}},
+					unloaded: clidsSet{},
+					unused:   clidsSet{3: struct{}{}},
+				})
+			})
+		})
+
 		Convey("noop", func() {
-			cat := state.categorizeCLs()
+			cat := state.categorizeCLs(ctx)
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
 				active:   clidsSet{},
