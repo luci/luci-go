@@ -241,20 +241,23 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
       grid-row: 1;
       grid-column: 1;
     }
-    .exonerated {
-      color: var(--exonerated-color);
-    }
-    .expected {
-      color: var(--success-color);
-    }
     .unexpected {
       color: var(--failure-color);
+    }
+    .unexpectedly-skipped {
+      color: var(--critical-failure-color);
     }
     .flaky {
       color: var(--warning-color);
     }
     span.flaky {
       color: var(--warning-text-color);
+    }
+    .exonerated {
+      color: var(--exonerated-color);
+    }
+    .expected {
+      color: var(--success-color);
     }
     #identifier {
       overflow: hidden;
