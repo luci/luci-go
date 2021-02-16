@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "870e49a3_5167b20f",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:57:08Z",
+      "side": 0,
+      "message": "So current_revision hash wasn\u0027t used?",
+      "range": {
+        "startLine": 164,
+        "startChar": 64,
+        "endLine": 165,
+        "endChar": 64
+      },
+      "revId": "fa2225a72679228d858ea1a52ad55d2a1d659f06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
