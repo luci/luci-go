@@ -35,7 +35,6 @@ export interface TestFilter {
 @consumeInvocationState
 export class TestSearchFilterElement extends MobxLitElement {
   @observable.ref invocationState!: InvocationState;
-  @observable.ref searchText!: string;
 
   @computed private get lastSubQuery() {
     return this.invocationState.searchText.split(' ').pop() || '';
@@ -45,7 +44,7 @@ export class TestSearchFilterElement extends MobxLitElement {
     return this.invocationState.searchText.slice(0, searchTextPrefixLen);
   }
   @computed private get suggestions() {
-    return suggestSearchQuery(this.lastSubQuery);
+    return suggestSearchQuery(this.invocationState.searchText);
   }
 
   protected render() {

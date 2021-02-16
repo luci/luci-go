@@ -83,8 +83,6 @@ describe('Test Results Tab', () => {
       },
     } as AppState;
     const configsStore = new UserConfigsStore();
-    configsStore.userConfigs.tests.showUnexpectedVariant = false;
-    configsStore.userConfigs.tests.showFlakyVariant = true;
 
     const invocationState = new InvocationState(appState);
     invocationState.invocationId = 'invocation-id';
