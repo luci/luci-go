@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "225f6243_9fffac75",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-16T18:47:55Z",
+      "side": 1,
+      "message": "Got it.\n\nAnyway the code change in this CL LGTM",
+      "parentUuid": "a16170df_252fe6f5",
+      "revId": "fa2225a72679228d858ea1a52ad55d2a1d659f06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f53e17c2_022caf89",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
