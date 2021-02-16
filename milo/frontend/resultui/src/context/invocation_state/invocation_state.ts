@@ -29,6 +29,12 @@ import { AppState } from '../app_state/app_state';
 export class InvocationState {
   @observable.ref invocationId = '';
   @observable.ref initialized = false;
+
+  @observable.ref showUnexpectedVariant = true;
+  @observable.ref showFlakyVariant = true;
+  @observable.ref showExoneratedVariant = true;
+  @observable.ref showExpectedVariant = true;
+
   @observable.ref searchText = '';
 
   @observable.ref searchFilter = (_v: TestVariant) => true;
