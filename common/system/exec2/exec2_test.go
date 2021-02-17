@@ -22,9 +22,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/system/environ"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func build(src, tmpdir string) (string, error) {
@@ -104,9 +105,9 @@ func TestExec(t *testing.T) {
 			select {
 			case err := <-errCh:
 				if runtime.GOOS == "windows" {
-					So(err, ShouldBeError, "exit status 2")
+					So(err, ShouldErrLike, "exit status")
 				} else {
-					So(err, ShouldBeError, "signal: terminated")
+					So(err, ShouldErrLike, "signal: terminated")
 				}
 			case <-time.After(time.Minute):
 				Print(err)
@@ -114,7 +115,7 @@ func TestExec(t *testing.T) {
 			}
 
 			if runtime.GOOS == "windows" {
-				So(cmd.ProcessState.ExitCode(), ShouldEqual, 2)
+				So(cmd.ProcessState.ExitCode(), ShouldEqual, 0xC000013A)
 			} else {
 				So(cmd.ProcessState.ExitCode(), ShouldEqual, -1)
 			}
