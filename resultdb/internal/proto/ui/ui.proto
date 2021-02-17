@@ -106,12 +106,14 @@ enum TestVariantStatus {
   // This is only used when filtering variants.
   TEST_VARIANT_STATUS_UNSPECIFIED = 0;
   // The test variant has no exonerations, and all results are unexpected.
-  UNEXPECTED = 1;
+  UNEXPECTED = 10;
+  // The test variant has no exonerations, and all results are unexpectedly skipped.
+  UNEXPECTEDLY_SKIPPED = 20;
   // The test variant has no exonerations, and has both expected and unexpected
   // results.
-  FLAKY = 2;
+  FLAKY = 30;
   // The test variant has one or more test exonerations.
-  EXONERATED = 3;
+  EXONERATED = 40;
   // The test variant has no exonerations, and all results are expected.
-  EXPECTED = 16;
+  EXPECTED = 50;
 }
