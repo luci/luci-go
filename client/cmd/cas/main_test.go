@@ -20,7 +20,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -55,7 +54,7 @@ func TestArchiveAndDownloadCommand(t *testing.T) {
 
 	Convey("archive", t, func() {
 		uploadDir := t.TempDir()
-		ioutil.WriteFile(filepath.Join(uploadDir, "foo"), []byte("hi"), 0600)
+		os.WriteFile(filepath.Join(uploadDir, "foo"), []byte("hi"), 0600)
 
 		outDir := t.TempDir()
 		digestPath := filepath.Join(outDir, "out.digest")
@@ -71,7 +70,7 @@ func TestArchiveAndDownloadCommand(t *testing.T) {
 		}
 		So(runCmd(t, "archive", archiveFlags...), ShouldEqual, 0)
 
-		digestBytes, err := ioutil.ReadFile(digestPath)
+		digestBytes, err := os.ReadFile(digestPath)
 		So(err, ShouldBeNil)
 		digest := string(digestBytes)
 		So(digest, ShouldEqual, "1ec750cf7c4ebc220a753a705229574873b3c650b939cf4a69df1af84b40b981/77")

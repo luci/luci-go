@@ -18,7 +18,6 @@ package diff
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -112,7 +111,7 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 	pairs := make([]*configPair, 0, len(cfgs))
 	fail := false
 	for _, path := range cfgs {
-		blob, err := ioutil.ReadFile(path)
+		blob, err := os.ReadFile(path)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			fail = true
@@ -172,7 +171,7 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 	usingTemp := outputDir == ""
 	if usingTemp {
 		var err error
-		outputDir, err = ioutil.TempDir("", "lucicfg")
+		outputDir, err = os.MkdirTemp("", "lucicfg")
 		if err != nil {
 			return err
 		}
@@ -185,7 +184,7 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 		return err
 	}
 	for _, pair := range pairs {
-		if err := ioutil.WriteFile(filepath.Join(old, pair.name), pair.original, 0666); err != nil {
+		if err := os.WriteFile(filepath.Join(old, pair.name), pair.original, 0666); err != nil {
 			return err
 		}
 	}
@@ -196,7 +195,7 @@ func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []
 		return err
 	}
 	for _, pair := range pairs {
-		if err := ioutil.WriteFile(filepath.Join(new, pair.name), pair.generated, 0666); err != nil {
+		if err := os.WriteFile(filepath.Join(new, pair.name), pair.generated, 0666); err != nil {
 			return err
 		}
 	}

@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -61,7 +60,7 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 		enc.SetIndent("", "  ")
 		So(enc.Encode(ret), ShouldBeNil)
 	} else {
-		current, err := ioutil.ReadFile(outFile)
+		current, err := os.ReadFile(outFile)
 		So(err, ShouldBeNil)
 
 		actual, err := json.MarshalIndent(ret, "", "  ")

@@ -94,7 +94,7 @@ func TestDownload(t *testing.T) {
 	ctx := makeTestContext()
 
 	Convey("With temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
+		tempDir, err := os.MkdirTemp("", "cipd_test")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 		tempFile := filepath.Join(tempDir, "pkg")

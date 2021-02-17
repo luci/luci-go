@@ -15,7 +15,6 @@
 package lucicfg
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -28,14 +27,14 @@ func TestFindTrackedFiles(t *testing.T) {
 	t.Parallel()
 
 	Convey("With a bunch of files", t, func() {
-		tmp, err := ioutil.TempDir("", "lucicfg")
+		tmp, err := os.MkdirTemp("", "lucicfg")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmp)
 
 		touch := func(p string) {
 			p = filepath.Join(tmp, filepath.FromSlash(p))
 			So(os.MkdirAll(filepath.Dir(p), 0700), ShouldBeNil)
-			So(ioutil.WriteFile(p, nil, 0600), ShouldBeNil)
+			So(os.WriteFile(p, nil, 0600), ShouldBeNil)
 		}
 
 		files := []string{

@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -122,7 +121,7 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 			outcome(path, outcomeUnformatted, nil)
 			return nil
 		}
-		if err := ioutil.WriteFile(path, formatted, 0666); err != nil {
+		if err := os.WriteFile(path, formatted, 0666); err != nil {
 			outcome(path, outcomeFailed, err)
 			return errors.NewMultiError(err)
 		}

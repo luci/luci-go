@@ -16,7 +16,6 @@ package lib
 
 import (
 	"encoding/base64"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -383,7 +382,7 @@ func TestProcessTriggerOptions_SecretBytesPath(t *testing.T) {
 		dir := t.TempDir()
 		secretBytes := []byte("this is secret!")
 		secretBytesPath := filepath.Join(dir, "secret_bytes")
-		err := ioutil.WriteFile(secretBytesPath, secretBytes, 0600)
+		err := os.WriteFile(secretBytesPath, secretBytes, 0600)
 		So(err, ShouldBeEmpty)
 
 		c := triggerRun{}

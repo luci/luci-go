@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -41,7 +40,7 @@ func TestProtocol(t *testing.T) {
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 	Convey("With server", t, func(c C) {
-		stateDir, err := ioutil.TempDir("", "gsutil_auth")
+		stateDir, err := os.MkdirTemp("", "gsutil_auth")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(stateDir)
 

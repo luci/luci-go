@@ -19,7 +19,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"go/build"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -77,7 +76,7 @@ func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 // discovery.RegisterDescriptorSetCompressed(serviceNames, compressedDescBytes)
 // in an init function.
 func genDiscoveryFile(target string, descFile string, protos []string) error {
-	descBytes, err := ioutil.ReadFile(descFile)
+	descBytes, err := os.ReadFile(descFile)
 	if err != nil {
 		return err
 	}
@@ -136,7 +135,7 @@ func genDiscoveryFile(target string, descFile string, protos []string) error {
 		os.Stdout.Write(src)
 		return err
 	}
-	return ioutil.WriteFile(target, formatted, 0666)
+	return os.WriteFile(target, formatted, 0666)
 }
 
 // asByteArray converts blob to a valid []byte Go literal.

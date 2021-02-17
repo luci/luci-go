@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -315,7 +314,7 @@ func loadProtoDescription(dir string, importPaths []string) (*descriptorpb.FileD
 		return nil, errors.Annotate(err, "could make path %q absolute", dir).Err()
 	}
 
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +349,7 @@ func loadProtoDescription(dir string, importPaths []string) (*descriptorpb.FileD
 		return nil, errors.Annotate(err, "protoc run failed").Err()
 	}
 
-	descBytes, err := ioutil.ReadFile(descFile)
+	descBytes, err := os.ReadFile(descFile)
 	if err != nil {
 		return nil, err
 	}

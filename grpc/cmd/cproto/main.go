@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -203,7 +202,7 @@ func run(ctx context.Context, goPath []string, dir string) error {
 	// Compile all .proto files.
 	descPath := *descFile
 	if descPath == "" {
-		tmpDir, err := ioutil.TempDir("", "")
+		tmpDir, err := os.MkdirTemp("", "")
 		if err != nil {
 			return err
 		}

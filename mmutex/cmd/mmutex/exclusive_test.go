@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -31,7 +30,7 @@ import (
 
 func TestExclusive(t *testing.T) {
 	Convey("RunExclusive", t, func() {
-		lockFileDir, err := ioutil.TempDir("", "")
+		lockFileDir, err := os.MkdirTemp("", "")
 		So(err, ShouldBeNil)
 		defer os.Remove(lockFileDir)
 		env := subcommands.Env{
@@ -42,7 +41,7 @@ func TestExclusive(t *testing.T) {
 		}
 
 		Convey("executes the command", func() {
-			tempDir, err := ioutil.TempDir("", "")
+			tempDir, err := os.MkdirTemp("", "")
 			So(err, ShouldBeNil)
 			defer os.Remove(tempDir)
 

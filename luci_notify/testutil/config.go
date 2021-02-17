@@ -16,7 +16,6 @@ package testutil
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/golang/protobuf/proto"
@@ -32,7 +31,7 @@ func LoadProjectConfig(filename string) (*notifyConfig.ProjectConfig, error) {
 		return nil, err
 	}
 	fullname := fmt.Sprintf("%s/../api/config/testdata/%s.cfg", dir, filename)
-	buf, err := ioutil.ReadFile(fullname)
+	buf, err := os.ReadFile(fullname)
 	if err != nil {
 		return nil, err
 	}

@@ -109,7 +109,7 @@ func (u *ArtifactUploader) UploadFromFile(ctx context.Context, name, contentType
 		smallFS = DefaultMaxInMemoryFileSize
 	}
 	if st.Size() <= smallFS {
-		contents, err := ioutil.ReadFile(path)
+		contents, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Annotate(err, "failed to read file contents").Err()
 		}

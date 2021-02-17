@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 
@@ -37,13 +37,13 @@ func TestV1(t *testing.T) {
 
 	Convey("BuildToV2", t, func() {
 		// Read test cases.
-		inputBytes, err := ioutil.ReadFile("testdata/v1_builds.json")
+		inputBytes, err := os.ReadFile("testdata/v1_builds.json")
 		So(err, ShouldBeNil)
 		var input []*v1.LegacyApiCommonBuildMessage
 		err = json.Unmarshal(inputBytes, &input)
 		So(err, ShouldBeNil)
 
-		expectedBytes, err := ioutil.ReadFile("testdata/v2_builds.json")
+		expectedBytes, err := os.ReadFile("testdata/v2_builds.json")
 		So(err, ShouldBeNil)
 		var expectedRawMsgs []json.RawMessage
 		err = json.Unmarshal(expectedBytes, &expectedRawMsgs)

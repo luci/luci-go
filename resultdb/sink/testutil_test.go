@@ -16,7 +16,6 @@ package sink
 
 import (
 	"context"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -60,7 +59,7 @@ func testServerConfig(recorder pb.RecorderClient, addr, tk string) ServerConfig 
 }
 
 func testArtifactWithFile(writer func(f *os.File)) *sinkpb.Artifact {
-	f, err := ioutil.TempFile("", "test-artifact")
+	f, err := os.CreateTemp("", "test-artifact")
 	So(err, ShouldBeNil)
 	defer f.Close()
 	writer(f)

@@ -19,7 +19,6 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"sync"
@@ -267,7 +266,7 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 		panic("impossible")
 	}
 
-	stateBytes, err := ioutil.ReadFile(statePath)
+	stateBytes, err := os.ReadFile(statePath)
 	sync := false
 	switch {
 	case os.IsNotExist(err):

@@ -184,7 +184,7 @@ func playAnnotationScript(t *testing.T, name string, st *State) (string, error) 
 
 func loadStepProto(t *testing.T, test string, s *Step) *annopb.Step {
 	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(string(s.LogNameBase))))
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Errorf("Failed to read annopb.Step proto [%s]: %v", path, err)
 		return nil
@@ -200,7 +200,7 @@ func loadStepProto(t *testing.T, test string, s *Step) *annopb.Step {
 
 func writeStepProto(test string, s *Step) (string, error) {
 	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(string(s.LogNameBase))))
-	return path, ioutil.WriteFile(path, []byte(proto.MarshalTextString(s.Proto())), 0644)
+	return path, os.WriteFile(path, []byte(proto.MarshalTextString(s.Proto())), 0644)
 }
 
 func loadLogText(t *testing.T, test, name string) []string {
@@ -222,7 +222,7 @@ func loadLogText(t *testing.T, test, name string) []string {
 
 func writeLogText(test, name string, text []string) (string, error) {
 	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.txt", normalize(test), normalize(name)))
-	return path, ioutil.WriteFile(path, []byte(strings.Join(text, "\n")), 0644)
+	return path, os.WriteFile(path, []byte(strings.Join(text, "\n")), 0644)
 }
 
 // testCallbacks implements the Callbacks interface, retaining all callback
