@@ -24,8 +24,7 @@ import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_IC
 
 import '../../components/lazy_list';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { ID_SEG_REGEX } from '../../models/test_node';
-import { TestVariant } from '../../services/resultdb';
+import { ID_SEG_REGEX, TestVariant } from '../../services/resultdb';
 import '../copy_to_clipboard';
 import { OnEnterList } from '../lazy_list';
 import './result_entry';

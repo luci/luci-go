@@ -17,7 +17,6 @@ import { Router } from '@vaadin/router';
 import { customElement, html, LitElement } from 'lit-element';
 
 import '../../components/commit_entry';
-import '../../components/dot_spinner';
 import '../../components/hotkey';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/app_state/user_configs';
 import { BuildState, consumeBuildState } from '../../context/build_state/build_state';

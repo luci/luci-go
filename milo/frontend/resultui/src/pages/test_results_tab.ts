@@ -20,9 +20,8 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
+import '../components/dot_spinner';
 import '../components/hotkey';
-import '../components/left_panel';
-import '../components/test_nav_tree';
 import '../components/test_search_filter';
 import '../components/variant_entry';
 import { VariantEntryElement } from '../components/variant_entry';
@@ -31,7 +30,6 @@ import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE } from '../libs/constants';
-import { TestNode } from '../models/test_node';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
 /**
@@ -114,7 +112,6 @@ export class TestResultsTabElement extends MobxLitElement {
         if (!testLoader) {
           return;
         }
-        this.invocationState.selectedNode = testLoader.node;
         // The previous instance of the test results tab could've triggered
         // the loading operation already. In that case we don't want to load
         // more test results.
@@ -302,22 +299,16 @@ export class TestResultsTabElement extends MobxLitElement {
     }
 
     return html`
-      <milo-left-panel>
-        ${state.testLoader === null ? '' : html`
-        <milo-test-nav-tree
-          .testLoader=${state.testLoader}
-          .onSelectedNodeChanged=${(node: TestNode) => state.selectedNode = node}
-        ></milo-test-nav-tree>
-        `}
-      </milo-left-panel>
       <milo-hotkey
         key="space,shift+space,up,down,pageup,pagedown"
         style="display: none;"
         .handler=${() => this.shadowRoot!.getElementById('test-result-view')!.focus()}
       ></milo-hotkey>
-      <milo-lazy-list id="test-result-view" .growth=${300} tabindex="-1" style=${styleMap({'display': state.testLoader?.firstRequestSent ? '' : 'none'})}>
-        ${this.renderAllVariants()}
-      </milo-lazy-list>
+      <milo-lazy-list
+        id="test-result-view"
+        .growth=${300} tabindex="-1"
+        style=${styleMap({'display': state.testLoader?.firstRequestSent ? '' : 'none'})}
+      >${this.renderAllVariants()}</milo-lazy-list>
     `;
   }
 
@@ -375,6 +366,7 @@ export class TestResultsTabElement extends MobxLitElement {
       display: flex;
       border-top: 1px solid var(--divider-color);
       overflow-y: hidden;
+      padding-left: 10px;
     }
     #no-invocation {
       padding: 10px;
