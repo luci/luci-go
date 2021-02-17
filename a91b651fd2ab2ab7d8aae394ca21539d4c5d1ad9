@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "21207f74_f621f246",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T22:26:24Z",
+      "side": 1,
+      "message": "nit: what I was trying to say in the comment that this is not necessary, because L89 would panic anyway",
+      "range": {
+        "startLine": 85,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 3
+      },
+      "revId": "a91b651fd2ab2ab7d8aae394ca21539d4c5d1ad9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
