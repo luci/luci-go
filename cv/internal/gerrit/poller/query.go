@@ -16,6 +16,7 @@ package poller
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -82,7 +83,6 @@ func subpoll(ctx context.Context, luciProject string, sp *SubPoller) error {
 	q := singleQuery{
 		luciProject: luciProject,
 		sp:          sp,
-		query:       buildQuery(sp),
 	}
 	var err error
 	if q.client, err = gerrit.CurrentClient(ctx, sp.GetHost(), luciProject); err != nil {
@@ -101,7 +101,6 @@ func subpoll(ctx context.Context, luciProject string, sp *SubPoller) error {
 type singleQuery struct {
 	luciProject string
 	sp          *SubPoller
-	query       string
 	client      gerrit.QueryClient
 }
 
@@ -112,7 +111,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 	})
 	started := clock.Now(ctx)
 	after := started.Add(-maxChangeAge)
-	changes, err := q.fetch(ctx, after)
+	changes, err := q.fetch(ctx, after, buildQuery(q.sp, queryLimited))
 	// There can be partial result even if err != nil.
 	switch err2 := q.scheduleTasks(ctx, changes, true); {
 	case err != nil:
@@ -139,7 +138,7 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 		}
 	}
 	after := lastInc.AsTime().Add(-incrementalPollOverlap)
-	changes, err := q.fetch(ctx, after)
+	changes, err := q.fetch(ctx, after, buildQuery(q.sp, queryLimited))
 	// There can be partial result even if err != nil.
 	switch err2 := q.scheduleTasks(ctx, changes, false); {
 	case err != nil:
@@ -151,7 +150,7 @@ func (q *singleQuery) incremental(ctx context.Context) error {
 	return nil
 }
 
-func (q *singleQuery) fetch(ctx context.Context, after time.Time) ([]*gerritpb.ChangeInfo, error) {
+func (q *singleQuery) fetch(ctx context.Context, after time.Time, query string) ([]*gerritpb.ChangeInfo, error) {
 	opts := gerritutil.PagingListChangesOptions{
 		Limit:                  changesPerPoll,
 		PageSize:               pageSize,
@@ -162,7 +161,7 @@ func (q *singleQuery) fetch(ctx context.Context, after time.Time) ([]*gerritpb.C
 		Options: []gerritpb.QueryOption{
 			gerritpb.QueryOption_SKIP_MERGEABLE,
 		},
-		Query: q.query,
+		Query: query,
 	}
 	resp, err := gerritutil.PagingListChanges(ctx, q.client, &req, opts)
 	switch grpcutil.Code(err) {
@@ -204,11 +203,27 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 	return nil
 }
 
-func buildQuery(sp *SubPoller) string {
+type queryKind int
+
+const (
+	queryLimited queryKind = iota
+	queryAll
+)
+
+// buildQuery returns query string.
+//
+// If queryLimited, unlike queryAll, searches for NEW CLs with CQ vote.
+func buildQuery(sp *SubPoller, kind queryKind) string {
 	buf := strings.Builder{}
-	buf.WriteString("status:NEW ")
-	// TODO(tandrii): make label optional to support Tricium use-case.
-	buf.WriteString("label:Commit-Queue>0 ")
+	switch kind {
+	case queryLimited:
+		buf.WriteString("status:NEW ")
+		// TODO(tandrii): make label optional to support Tricium use-case.
+		buf.WriteString("label:Commit-Queue>0 ")
+	case queryAll:
+	default:
+		panic(fmt.Errorf("unknown queryKind %d", kind))
+	}
 	// TODO(crbug/1163177): specify `branch:` search term to restrict search to
 	// specific refs. This requires changing partitioning poller into subpollers,
 	// but will provide more targeted queries, reducing load on CV & Gerrit.
