@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0aa92f63_a169d3d3",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T04:58:19Z",
+      "side": 1,
+      "message": "nit: maybe add a comment: // 4 weeks",
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3e4ed4d_be37b9a0",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T04:58:19Z",
+      "side": 1,
+      "message": "BuilderStat",
+      "range": {
+        "startLine": 81,
+        "startChar": 50,
+        "endLine": 81,
+        "endChar": 57
+      },
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "46891b7f_ccc9c524",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T04:58:19Z",
+      "side": 1,
+      "message": "I feel like these Gets are unnecessary in this function (and in L87).\nif it is not initialized, then we should \"fail fast\".\nWith these gets, we\u0027d generate \"::\" string, and the failure won\u0027t even happen.\nPanic (caused by accessing a field of a nil) would be better",
+      "range": {
+        "startLine": 85,
+        "startChar": 21,
+        "endLine": 85,
+        "endChar": 24
+      },
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6837bd1_3410e59e",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T04:58:19Z",
+      "side": 1,
+      "message": "high contention\n\nit is more than RPCs. If everyone is trying to update the same entity, there will be high contention, and the calls will be serialized.",
+      "range": {
+        "startLine": 101,
+        "startChar": 57,
+        "endLine": 101,
+        "endChar": 77
+      },
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a53beef_c8d0d7fa",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T04:58:19Z",
+      "side": 1,
+      "message": "nit: remove, this is unnecessary (based on my English knowledge)",
+      "range": {
+        "startLine": 102,
+        "startChar": 69,
+        "endLine": 102,
+        "endChar": 77
+      },
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
