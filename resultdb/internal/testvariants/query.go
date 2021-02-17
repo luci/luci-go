@@ -270,7 +270,13 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 	}
 
 	q.params = map[string]interface{}{
-		"invIDs": q.InvocationIDs,
+		"invIDs":              q.InvocationIDs,
+		"skipStatus":          int(pb.TestStatus_SKIP),
+		"unexpected":          int(uipb.TestVariantStatus_UNEXPECTED),
+		"unexpectedlySkipped": int(uipb.TestVariantStatus_UNEXPECTEDLY_SKIPPED),
+		"flaky":               int(uipb.TestVariantStatus_FLAKY),
+		"exonerated":          int(uipb.TestVariantStatus_EXONERATED),
+		"expected":            int(uipb.TestVariantStatus_EXPECTED),
 	}
 	var expected bool
 	switch parts, err := pagination.ParseToken(q.PageToken); {
@@ -336,6 +342,7 @@ var testVariantsWithUnexpectedResultsSQL = `
 			VariantHash,
 			ANY_VALUE(Variant) Variant,
 			COUNTIF(IsUnexpected) num_unexpected,
+			COUNTIF(Status=@skipStatus) num_skipped,
 			COUNT(TestId) num_total,
 			ARRAY_AGG(STRUCT(
 				InvocationId,
@@ -369,10 +376,11 @@ var testVariantsWithUnexpectedResultsSQL = `
 			tv.VariantHash,
 			tv.Variant,
 			CASE
-				WHEN exonerated.TestId IS NOT NULL THEN 3 -- "EXONERATED"
-				WHEN num_unexpected = 0 THEN 16 -- "EXPECTED", but should never happen in this query
-				WHEN num_unexpected = num_total THEN 1 -- "UNEXPECTED"
-				ELSE 2 --"FLAKY"
+				WHEN exonerated.TestId IS NOT NULL THEN @exonerated
+				WHEN num_unexpected = 0 THEN @expected -- should never happen in this query
+				WHEN num_skipped = num_unexpected AND num_skipped = num_total THEN @unexpectedlySkipped
+				WHEN num_unexpected = num_total THEN @unexpected
+				ELSE @flaky
 			END TvStatus,
 			ARRAY(
 				SELECT AS STRUCT *

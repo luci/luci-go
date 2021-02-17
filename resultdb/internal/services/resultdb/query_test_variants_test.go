@@ -79,9 +79,9 @@ func TestQueryTestVariants(t *testing.T) {
 				return tvStrings
 			}
 			So(getTVStrings(res.TestVariants), ShouldResemble, []string{
-				"1/T2/e3b0c44298fc1c14",
-				"2/T1/c467ccce5a16dc72",
-				"3/T1/e3b0c44298fc1c14",
+				"10/T2/e3b0c44298fc1c14",
+				"30/T1/c467ccce5a16dc72",
+				"40/T1/e3b0c44298fc1c14",
 			})
 		})
 	})
