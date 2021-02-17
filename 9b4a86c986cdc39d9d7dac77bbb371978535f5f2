@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "da8356a4_4441e387",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-17T21:53:30Z",
+      "side": 1,
+      "message": "testing gerrit.",
+      "revId": "9b4a86c986cdc39d9d7dac77bbb371978535f5f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0cfb6475_0bdd5b0e",
@@ -14,6 +31,30 @@
       "writtenOn": "2021-02-17T21:21:06Z",
       "side": 1,
       "message": "nit: I would rename this rpc to PostGerritMessage.\n\n1. Removing Unique for brevity as currently, there\u0027s no rpc that posts Gerrit msg without guaranteeing uniqueness. We can add a doc describe such behavior of this rpc instead.\n2. Using Message instead of Comment because I believe in the Gerrit world, Comment and Message are two different things. I think the intention here is to post ChangeMessageInfo[1] instead of CommentInfo[2].\n\n[1]: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-message-info\n[2]: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#comment-info",
+      "range": {
+        "startLine": 64,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 29
+      },
+      "revId": "9b4a86c986cdc39d9d7dac77bbb371978535f5f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45d08039_1ab515e1",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-17T21:53:30Z",
+      "side": 1,
+      "message": "2. You are 100% right.\n1. OK, I don\u0027t have a preference.",
+      "parentUuid": "0cfb6475_0bdd5b0e",
       "range": {
         "startLine": 64,
         "startChar": 6,
