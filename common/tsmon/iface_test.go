@@ -16,7 +16,6 @@ package tsmon
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -137,7 +136,7 @@ func TestInitializeFromFlags(t *testing.T) {
 		})
 
 		Convey("with region in config and hostname in a flag", func() {
-			tf, err := ioutil.TempFile("", "config_test")
+			tf, err := os.CreateTemp("", "config_test")
 			if err != nil {
 				t.Fail()
 			}

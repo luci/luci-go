@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"hash"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -218,7 +217,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 	// Build the wheel in a temporary directory, then copy it into outDir. This
 	// will stop wheel builds from stepping on each other or inheriting each
 	// others' state accidentally.
-	tdir, err := ioutil.TempDir(t.TempDir(), "vpython_venv_wheel")
+	tdir, err := os.MkdirTemp(t.TempDir(), "vpython_venv_wheel")
 	if err != nil {
 		return "", errors.Annotate(err, "failed to create tempdir").Err()
 	}
@@ -354,7 +353,7 @@ var testCIPDClientOptions = cipd.ClientOptions{
 }
 
 func cacheFromCIPDLocked(ctx context.Context, t *testing.T, cachePath, name, hash, pkg, version string) error {
-	tdir, err := ioutil.TempDir(t.TempDir(), "vpython_venv_cipd")
+	tdir, err := os.MkdirTemp(t.TempDir(), "vpython_venv_cipd")
 	if err != nil {
 		return errors.Annotate(err, "failed to create tempdir").Err()
 	}

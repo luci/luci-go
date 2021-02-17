@@ -15,7 +15,7 @@
 package lucicfg
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"go.starlark.net/starlark"
@@ -34,7 +34,7 @@ var testProtoLoader *starlarkproto.Loader
 
 func init() {
 	// See testdata/gen.go for where this file is generated.
-	blob, err := ioutil.ReadFile("testdata/misc/support/test_descpb.bin")
+	blob, err := os.ReadFile("testdata/misc/support/test_descpb.bin")
 	if err != nil {
 		panic(err)
 	}

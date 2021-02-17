@@ -15,7 +15,6 @@
 package testfs
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -58,7 +57,7 @@ func Build(base string, layout map[string]string) error {
 			if err := filesystem.MakeDirs(filepath.Dir(path)); err != nil {
 				return err
 			}
-			if err := ioutil.WriteFile(path, []byte(content), 0644); err != nil {
+			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 				return err
 			}
 		}
@@ -98,7 +97,7 @@ func Collect(base string) (map[string]string, error) {
 			return errors.Reason("unknown file info is detected for %s: %v", path, info).Err()
 		}
 
-		buf, err := ioutil.ReadFile(filepath.Join(base, path))
+		buf, err := os.ReadFile(filepath.Join(base, path))
 		if err != nil {
 			return errors.Annotate(err, "failed to read: %s", filepath.Join(base, path)).Err()
 		}

@@ -16,7 +16,7 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -65,7 +65,7 @@ func TestBQSchemaUpdater(t *testing.T) {
 		}
 	})
 	Convey("Schema", t, func() {
-		descBytes, err := ioutil.ReadFile("testdata/event.desc")
+		descBytes, err := os.ReadFile("testdata/event.desc")
 		So(err, ShouldBeNil)
 		var desc descriptorpb.FileDescriptorSet
 		So(proto.Unmarshal(descBytes, &desc), ShouldBeNil)

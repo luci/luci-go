@@ -15,7 +15,6 @@
 package interpreter
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,7 +36,7 @@ func TestLoaders(t *testing.T) {
 	t.Parallel()
 
 	Convey("FileSystemLoader", t, func() {
-		tmp, err := ioutil.TempDir("", "starlark")
+		tmp, err := os.MkdirTemp("", "starlark")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmp)
 
@@ -46,7 +45,7 @@ func TestLoaders(t *testing.T) {
 		put := func(path, body string) {
 			path = filepath.Join(tmp, filepath.FromSlash(path))
 			So(os.MkdirAll(filepath.Dir(path), 0700), ShouldBeNil)
-			So(ioutil.WriteFile(path, []byte(body), 0600), ShouldBeNil)
+			So(os.WriteFile(path, []byte(body), 0600), ShouldBeNil)
 		}
 
 		Convey("Works", func() {

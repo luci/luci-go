@@ -15,7 +15,7 @@
 package flagpb
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -31,7 +31,7 @@ func TestUnmarshal(t *testing.T) {
 	t.Parallel()
 
 	Convey("Unmarshal", t, func() {
-		descFileBytes, err := ioutil.ReadFile("unmarshal_test.desc")
+		descFileBytes, err := os.ReadFile("unmarshal_test.desc")
 		So(err, ShouldBeNil)
 
 		var desc descriptorpb.FileDescriptorSet

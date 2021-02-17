@@ -431,7 +431,7 @@ func TestOptions(t *testing.T) {
 	t.Parallel()
 
 	Convey("With temp dir", t, func() {
-		tmpDir, err := ioutil.TempDir("", "luci-server-test")
+		tmpDir, err := os.MkdirTemp("", "luci-server-test")
 		So(err, ShouldBeNil)
 		Reset(func() { os.RemoveAll(tmpDir) })
 
@@ -442,7 +442,7 @@ func TestOptions(t *testing.T) {
 			}`
 
 			opts := Options{AuthDBPath: filepath.Join(tmpDir, "authdb.textpb")}
-			So(ioutil.WriteFile(opts.AuthDBPath, []byte(body), 0600), ShouldBeNil)
+			So(os.WriteFile(opts.AuthDBPath, []byte(body), 0600), ShouldBeNil)
 
 			testRequestHandler(&opts, func(rc *router.Context) {
 				db := auth.GetState(rc.Context).DB()
@@ -798,7 +798,7 @@ func tempJSONFile(body interface{}) (out *os.File, err error) {
 			os.Remove(f.Name())
 		}
 	}()
-	f, err = ioutil.TempFile("", "luci-server-test")
+	f, err = os.CreateTemp("", "luci-server-test")
 	if err != nil {
 		return nil, err
 	}

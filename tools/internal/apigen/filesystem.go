@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"go/build"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,7 +101,7 @@ func ensureDirectory(path string) error {
 
 // copyFile copies the contents of a single file to a destination.
 func copyFile(src, dst string, relPath string, edit editFunc) error {
-	data, err := ioutil.ReadFile(src)
+	data, err := os.ReadFile(src)
 	if err != nil {
 		return fmt.Errorf("failed to read source: %s", err)
 	}
@@ -117,5 +116,5 @@ func copyFile(src, dst string, relPath string, edit editFunc) error {
 	if data == nil {
 		return nil
 	}
-	return ioutil.WriteFile(dst, data, 0644)
+	return os.WriteFile(dst, data, 0644)
 }

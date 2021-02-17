@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"runtime/pprof"
@@ -131,7 +130,7 @@ func (c *downloadRun) outputResults(cache *cache.Cache, initStats initCacheStats
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal result json").Err()
 	}
-	if err := ioutil.WriteFile(c.resultJSON, resultJSON, 0664); err != nil {
+	if err := os.WriteFile(c.resultJSON, resultJSON, 0664); err != nil {
 		return errors.Annotate(err, "failed to write result json to %s", c.resultJSON).Err()
 	}
 
@@ -204,7 +203,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 			filesData += "\n"
 		}
 
-		if err := ioutil.WriteFile(c.outputFiles, []byte(filesData), 0664); err != nil {
+		if err := os.WriteFile(c.outputFiles, []byte(filesData), 0664); err != nil {
 			return errors.Annotate(err, "failed to call WriteFile(%s, ...)", c.outputFiles).Err()
 		}
 	}

@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,13 +31,13 @@ func TestFileSource(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Works", t, func(c C) {
-		tempDir, err := ioutil.TempDir("", "file_secret_test")
+		tempDir, err := os.MkdirTemp("", "file_secret_test")
 		c.So(err, ShouldBeNil)
 		c.Reset(func() { os.RemoveAll(tempDir) })
 
 		read := func(body string) (*Secret, error) {
 			path := filepath.Join(tempDir, "secret.json")
-			So(ioutil.WriteFile(path, []byte(body), 0600), ShouldBeNil)
+			So(os.WriteFile(path, []byte(body), 0600), ShouldBeNil)
 			So(err, ShouldBeNil)
 			return (&FileSource{Path: path}).ReadSecret(ctx)
 		}

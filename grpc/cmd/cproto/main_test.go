@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"flag"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -47,7 +46,7 @@ func TestMain(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		runOn := func(sourceDir string, test func(tmpDir string)) {
-			tmpGoPath, err := ioutil.TempDir("", "cproto-test")
+			tmpGoPath, err := os.MkdirTemp("", "cproto-test")
 			So(err, ShouldBeNil)
 			defer os.RemoveAll(tmpGoPath)
 
@@ -94,15 +93,15 @@ func TestMain(t *testing.T) {
 					for _, golden := range goldenFiles {
 						gotFile := strings.TrimSuffix(filepath.Base(golden), ".golden") + ".go"
 						gotFile = filepath.Join(tmpDir, gotFile)
-						got, err := ioutil.ReadFile(gotFile)
+						got, err := os.ReadFile(gotFile)
 						So(err, ShouldBeNil)
 
 						if *train {
-							err := ioutil.WriteFile(golden, got, 0777)
+							err := os.WriteFile(golden, got, 0777)
 							So(err, ShouldBeNil)
 						}
 
-						want, err := ioutil.ReadFile(golden)
+						want, err := os.ReadFile(golden)
 						So(err, ShouldBeNil)
 
 						So(string(got), ShouldEqual, string(want))
@@ -114,9 +113,9 @@ func TestMain(t *testing.T) {
 }
 
 func copyFile(src, dest string) error {
-	data, err := ioutil.ReadFile(src)
+	data, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(dest, data, 0666)
+	return os.WriteFile(dest, data, 0666)
 }

@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,7 +33,7 @@ func TestMain(t *testing.T) {
 	t.Parallel()
 
 	Convey("svxmux", t, func() {
-		tmpDir, err := ioutil.TempDir("", "")
+		tmpDir, err := os.MkdirTemp("", "")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmpDir)
 
@@ -53,10 +52,10 @@ func TestMain(t *testing.T) {
 			)
 			So(err, ShouldBeNil)
 
-			want, err := ioutil.ReadFile(goldenFile)
+			want, err := os.ReadFile(goldenFile)
 			So(err, ShouldBeNil)
 
-			got, err := ioutil.ReadFile(output)
+			got, err := os.ReadFile(output)
 			So(err, ShouldBeNil)
 
 			So(string(got), ShouldEqual, string(want))

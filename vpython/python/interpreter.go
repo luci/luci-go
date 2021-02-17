@@ -16,7 +16,6 @@ package python
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"sync"
@@ -85,7 +84,7 @@ func (i *Interpreter) MkIsolatedCommand(c context.Context, target Target, args .
 	cl.AddSingleFlag("E") // Don't use PYTHON* environment variables.
 	cl.AddSingleFlag("s") // Don't use user 'site.py'.
 	cmd := exec.CommandContext(c, i.Python, cl.BuildArgs()...)
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		panic(errors.Annotate(err, "creating IsolatedCommand's directory").Err())
 	}

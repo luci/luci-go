@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -151,7 +150,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 		return nil
 	}
 	logging.Infof(ctx, "consolidating RBE-CAS sources...")
-	tdir, err := ioutil.TempDir("", "led-consolidate-rbe-cas")
+	tdir, err := os.MkdirTemp("", "led-consolidate-rbe-cas")
 	if err != nil {
 		return errors.Annotate(err, "failed to create tempdir in consolidation step").Err()
 	}
