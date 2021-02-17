@@ -16,6 +16,116 @@
       "message": "Can we MR to correct these in the datastore so we don\u0027t have to port the translation logic?",
       "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ace4f54_569d0f64",
+        "filename": "buildbucket/appengine/model/sequence.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T20:14:59Z",
+      "side": 1,
+      "message": "bulkproc.py is written for Build entities. Adapting it to number sequences will probably be more code than this (and you already wrote it). Up to you.",
+      "parentUuid": "58e1814b_577f3233",
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a00330de_f6772cce",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T20:14:59Z",
+      "side": 1,
+      "message": "unnecessary. L190 will suffice",
+      "range": {
+        "startLine": 187,
+        "startChar": 0,
+        "endLine": 189,
+        "endChar": 3
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3ed60d4_38ff9b7a",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T20:14:59Z",
+      "side": 1,
+      "message": "0, len(reqs))\n\nperhaps",
+      "range": {
+        "startLine": 224,
+        "startChar": 30,
+        "endLine": 224,
+        "endChar": 32
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30202127_61d7403d",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T20:14:59Z",
+      "side": 1,
+      "message": "readability: This is a bit long to read. maybe make a variable for this (bucket_id), or perhaps dedupe L160 into a new func bucketID(builderIDProto) -\u003e string?",
+      "range": {
+        "startLine": 245,
+        "startChar": 10,
+        "endLine": 245,
+        "endChar": 91
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "024add36_a0b35d10",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T20:14:59Z",
+      "side": 1,
+      "message": "not sure we have the guarantee that config exists, so perhaps GetBuildNumbers()",
+      "range": {
+        "startLine": 245,
+        "startChar": 124,
+        "endLine": 245,
+        "endChar": 136
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
