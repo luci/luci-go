@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4530fff7_7eb6ec72",
+        "filename": "resultdb/sink/proto/v1/test_result.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-17T19:53:49Z",
+      "side": 1,
+      "message": "I think it\u0027d be still good to reserve the field number as well to prevent it from being used.\n\n```\nreserved 10;\nreserved \"test_location\";\n```",
+      "range": {
+        "startLine": 31,
+        "startChar": 2,
+        "endLine": 31,
+        "endChar": 27
+      },
+      "revId": "f13ac42efa2a59b3cfea1c1d51734a6ba0a8852b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
