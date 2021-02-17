@@ -17,19 +17,24 @@
 package spantest
 
 import (
+	"bufio"
 	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	spandb "cloud.google.com/go/spanner/admin/database/apiv1"
+	spanins "cloud.google.com/go/spanner/admin/instance/apiv1"
 	"google.golang.org/api/option"
 	dbpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
+	inspb "google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -105,27 +110,24 @@ func (cfg *TempDBConfig) readDDLStatements() ([]string, error) {
 }
 
 // adminClient returns a Spanner admin client, it must be closed when done.
-func adminClient(ctx context.Context, creds credentials.PerRPCCredentials) (*spandb.DatabaseAdminClient, error) {
-	return spandb.NewDatabaseAdminClient(ctx,
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+func adminClient(ctx context.Context, opts []option.ClientOption) (*spandb.DatabaseAdminClient, error) {
+	return spandb.NewDatabaseAdminClient(ctx, opts...)
 }
 
 // TempDB is a temporary Spanner database.
 type TempDB struct {
-	Name  string
-	creds credentials.PerRPCCredentials
+	Name string
+	opts []option.ClientOption
 }
 
 // Client returns a spanner client connected to the database.
 func (db *TempDB) Client(ctx context.Context) (*spanner.Client, error) {
-	return spanner.NewClient(ctx, db.Name,
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(db.creds)),
-	)
+	return spanner.NewClient(ctx, db.Name, db.opts...)
 }
 
 // Drop deletes the database.
 func (db *TempDB) Drop(ctx context.Context) error {
-	client, err := adminClient(ctx, db.creds)
+	client, err := adminClient(ctx, db.opts)
 	if err != nil {
 		return err
 	}
@@ -136,7 +138,7 @@ func (db *TempDB) Drop(ctx context.Context) error {
 	})
 }
 
-var dbNameAlphabetInversedRe = regexp.MustCompile(`[^\w]+`)
+var nameAlphabetInversedRe = regexp.MustCompile(`[^\w]+`)
 
 // NewTempDB creates a temporary database with a random name.
 // The caller is responsible for calling Drop on the returned TempDB to
@@ -147,30 +149,37 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 		instanceName = chromeinfra.TestSpannerInstance
 	}
 
-	creds, err := cfg.credentials(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	initStatements, err := cfg.readDDLStatements()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read %q", cfg.InitScriptPath).Err()
 	}
 
-	client, err := adminClient(ctx, creds)
+	// Use Spanner emulator if available.
+	// TODO(crbug.com/1066993): require Spanner emulator.
+	var opts []option.ClientOption
+	if emulatorAddr := os.Getenv("SPANNER_EMULATOR_HOST"); emulatorAddr != "" {
+		opts = append(
+			opts,
+			option.WithEndpoint(emulatorAddr),
+			option.WithGRPCDialOption(grpc.WithInsecure()),
+			option.WithoutAuthentication(),
+		)
+	} else {
+		creds, err := cfg.credentials(ctx)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	}
+
+	client, err := adminClient(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer client.Close()
 
 	// Generate a random database name.
-	var random uint32
-	if err := binary.Read(rand.Reader, binary.LittleEndian, &random); err != nil {
-		panic(err)
-	}
-	dbName := fmt.Sprintf("tmp%s-%d", time.Now().Format("20060102-"), random)
-	dbName = SanitizeDBName(dbName)
-
+	dbName := tempName()
 	dbOp, err := client.CreateDatabase(ctx, &dbpb.CreateDatabaseRequest{
 		Parent:          instanceName,
 		CreateStatement: "CREATE DATABASE " + dbName,
@@ -185,20 +194,177 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 	}
 
 	return &TempDB{
-		Name:  db.Name,
-		creds: creds,
+		Name: db.Name,
+		opts: opts,
 	}, nil
 }
 
-// SanitizeDBName tranforms name to a valid one.
+// SanitizeName transforms name to a valid one.
 // If name is already valid, returns it without changes.
-func SanitizeDBName(name string) string {
+func SanitizeName(name string) string {
 	name = strings.ToLower(name)
-	name = dbNameAlphabetInversedRe.ReplaceAllLiteralString(name, "_")
+	name = nameAlphabetInversedRe.ReplaceAllLiteralString(name, "a")
 	const maxLen = 30
 	if len(name) > maxLen {
 		name = name[:maxLen]
 	}
-	name = strings.TrimRight(name, "_")
+	name = strings.TrimRight(name, "a")
 	return name
+}
+
+// NewTempInstance creates a temporary instance with a random name.
+func NewTempInstance(ctx context.Context, projectName string) (string, error) {
+	if projectName == "" {
+		// TODO(crbug.com/1066993): add the default to chromeinfra.
+		projectName = "projects/chops-spanner-testing"
+	}
+	errAnnotation := "failed to create instance"
+	emulatorAddr := os.Getenv("SPANNER_EMULATOR_HOST")
+	if emulatorAddr == "" {
+		return "", errors.Annotate(fmt.Errorf("cloud spanner emulator address not found"), errAnnotation).Err()
+	}
+
+	opts := []option.ClientOption{
+		option.WithEndpoint(emulatorAddr),
+		option.WithGRPCDialOption(grpc.WithInsecure()),
+		option.WithoutAuthentication(),
+	}
+	client, err := spanins.NewInstanceAdminClient(ctx, opts...)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	// Generate a random database name.
+	insId := tempName()
+	insOp, err := client.CreateInstance(ctx, &inspb.CreateInstanceRequest{
+		Parent:     projectName,
+		InstanceId: insId,
+		Instance: &inspb.Instance{
+			Config:      "spanner-emulator",
+			DisplayName: insId,
+			NodeCount:   int32(1),
+		},
+	})
+	if err != nil {
+		return "", errors.Annotate(err, errAnnotation).Err()
+	}
+
+	ins, err := insOp.Wait(ctx)
+	if err != nil {
+		return "", errors.Annotate(err, errAnnotation).Err()
+	}
+	if ins.State != inspb.Instance_READY {
+		return "", errors.Annotate(fmt.Errorf("instance is not ready, got state %v", ins.State), errAnnotation).Err()
+	}
+
+	return ins.Name, nil
+}
+
+func tempName() string {
+	var random uint32
+	if err := binary.Read(rand.Reader, binary.LittleEndian, &random); err != nil {
+		panic(err)
+	}
+	name := fmt.Sprintf("tmp%s-%d", time.Now().Format("20060102-"), random)
+	return SanitizeName(name)
+}
+
+// stopSpannerEmulator stops Cloud Spanner Emulator when all temporary gcloud
+// config has been removed.
+func stopSpannerEmulator() {
+	files, err := ioutil.ReadDir(os.TempDir())
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for _, f := range files {
+		if strings.HasPrefix(f.Name(), "gcloud_config") {
+			fmt.Println("not ready to stop emulator yet")
+			return
+		}
+	}
+
+	fmt.Println("Stopping Cloud Spanner Emulator")
+	exec.Command("pkill", "-f", "cloud_spanner_emulator").Run()
+}
+
+// StartSpannerEmulator starts Cloud Spanner Emulator if there's not one already
+// running.
+func StartSpannerEmulator(ctx context.Context) (func(), error) {
+	// Check if there's a running emulator instance.
+	o, err := exec.Command("/bin/sh",
+		"-c", "ps -aux | grep [c]loud_spanner_emulator").Output()
+
+	// There's a running instance, bail out.
+	if err == nil {
+		fmt.Println(string(o))
+		return func() {
+			stopSpannerEmulator()
+		}, nil
+	}
+
+	switch exiterr, _ := err.(*exec.ExitError); {
+	case exiterr.ExitCode() == 1:
+		// No running instance, we'll create one.
+	default:
+		return func() {
+			fmt.Println(err)
+			stopSpannerEmulator()
+		}, nil
+	}
+
+	fmt.Println("Starting Cloud Spanner Emulator")
+	cmd := exec.Command("gcloud", "beta", "emulators", "spanner", "start")
+	out, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan error, 0)
+	go func() {
+		defer close(c)
+		scanner := bufio.NewScanner(out)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "Cloud Spanner emulator running.") {
+				return
+			}
+		}
+		c <- scanner.Err()
+	}()
+
+	if err = cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	select {
+	case err = <-c:
+	case <-ctx.Done():
+		err = fmt.Errorf("deadline exceeded")
+	}
+	return func() {
+		stopSpannerEmulator()
+	}, err
+}
+
+// CreateSpannerEmulatorConfig creates a temporary CLOUDSDK_CONFIG then creates
+// a temporary gcloud config for the emulator.
+//
+// It returns the temporary directory for later clean up.
+func CreateSpannerEmulatorConfig() (string, error) {
+	tdir, err := ioutil.TempDir("", "gcloud_config")
+	if err != nil {
+		return "", err
+	}
+
+	os.Setenv("CLOUDSDK_CONFIG", tdir)
+	cmd := exec.Command(
+		"/bin/sh",
+		"-c",
+		"gcloud config configurations create spanner-emulator;"+
+			" gcloud config set auth/disable_credentials true;"+
+			" gcloud config set project chops-spanner-testing;"+
+			" gcloud config set api_endpoint_overrides/spanner http://localhost:9020/;")
+	return tdir, cmd.Run()
 }
