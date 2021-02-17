@@ -76,18 +76,17 @@ export class TestResultsTabElement extends MobxLitElement {
 
   @computed
   private get totalDisplayedVariantCount() {
-    const filters = this.configsStore.userConfigs.tests;
     let count = 0;
-    if (filters.showUnexpectedVariant) {
+    if (this.invocationState.showUnexpectedVariants) {
       count += this.invocationState.filteredUnexpectedVariants.length;
     }
-    if (filters.showFlakyVariant) {
+    if (this.invocationState.showFlakyVariants) {
       count += this.invocationState.filteredFlakyVariants.length;
     }
-    if (filters.showExoneratedVariant) {
+    if (this.invocationState.showExoneratedVariants) {
       count += this.invocationState.filteredExoneratedVariants.length;
     }
-    if (filters.showExpectedVariant) {
+    if (this.invocationState.showExpectedVariants) {
       count += this.invocationState.filteredExpectedVariants.length;
     }
 
@@ -128,26 +127,14 @@ export class TestResultsTabElement extends MobxLitElement {
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has('unexpected')) {
-      this.configsStore.userConfigs.tests.showUnexpectedVariant = searchParams.get('unexpected') === 'true';
-    }
-    if (searchParams.has('flaky')) {
-      this.configsStore.userConfigs.tests.showFlakyVariant = searchParams.get('flaky') === 'true';
-    }
-    if (searchParams.has('exonerated')) {
-      this.configsStore.userConfigs.tests.showExoneratedVariant = searchParams.get('exonerated') === 'true';
-    }
-    if (searchParams.has('expected')) {
-      this.configsStore.userConfigs.tests.showExpectedVariant = searchParams.get('expected') === 'true';
+    if (searchParams.has('q')) {
+      this.invocationState.searchText = searchParams.get('q')!;
     }
     // Update the querystring when filters are updated.
     this.disposers.push(reaction(
       () => {
         const newSearchParams = new URLSearchParams({
-          unexpected: String(this.configsStore.userConfigs.tests.showUnexpectedVariant),
-          flaky: String(this.configsStore.userConfigs.tests.showFlakyVariant),
-          exonerated: String(this.configsStore.userConfigs.tests.showExoneratedVariant),
-          expected: String(this.configsStore.userConfigs.tests.showExpectedVariant),
+          q: this.invocationState.searchText,
         });
         return newSearchParams.toString();
       },
@@ -171,37 +158,37 @@ export class TestResultsTabElement extends MobxLitElement {
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTED,
         this.invocationState.filteredUnexpectedVariants,
-        this.configsStore.userConfigs.tests.showUnexpectedVariant,
-        (display) => this.configsStore.userConfigs.tests.showUnexpectedVariant = display,
+        this.invocationState.showUnexpectedVariants,
+        (display) => this.invocationState.showUnexpectedVariants = display,
         this.invocationState.testLoader?.loadedAllUnexpectedVariants || false,
         true,
       )}
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTEDLY_SKIPPED,
         this.invocationState.filteredUnexpectedlySkippedVariants,
-        this.configsStore.userConfigs.tests.showUnexpectedlySkippedVariant,
-        (display) => this.configsStore.userConfigs.tests.showUnexpectedlySkippedVariant = display,
+        this.invocationState.showUnexpectedlySkippedVariants,
+        (display) => this.invocationState.showUnexpectedlySkippedVariants = display,
         this.invocationState.testLoader?.loadedAllUnexpectedlySkippedVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.FLAKY,
         this.invocationState.filteredFlakyVariants,
-        this.configsStore.userConfigs.tests.showFlakyVariant,
-        (display) => this.configsStore.userConfigs.tests.showFlakyVariant = display,
+        this.invocationState.showFlakyVariants,
+        (display) => this.invocationState.showFlakyVariants = display,
         this.invocationState.testLoader?.loadedAllFlakyVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXONERATED,
         this.invocationState.filteredExoneratedVariants,
-        this.configsStore.userConfigs.tests.showExoneratedVariant,
-        (display) => this.configsStore.userConfigs.tests.showExoneratedVariant = display,
+        this.invocationState.showExoneratedVariants,
+        (display) => this.invocationState.showExoneratedVariants = display,
         this.invocationState.testLoader?.loadedAllExoneratedVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXPECTED,
         this.invocationState.filteredExpectedVariants,
-        this.configsStore.userConfigs.tests.showExpectedVariant,
-        (display) => this.configsStore.userConfigs.tests.showExpectedVariant = display,
+        this.invocationState.showExpectedVariants,
+        (display) => this.invocationState.showExpectedVariants = display,
         this.invocationState.testLoader?.loadedAllExpectedVariants || false,
       )}
     `;
