@@ -62,6 +62,24 @@
       "message": "PTAL.\n\nThe newest version works but is not ideal and may be flaky.\n\nIdeally I want to only start one emulator, create one gcloud config, and stop that emulator after all tests completes. But I can\u0027t figure out how to share the variables across packages.\n\nI\u0027m also thinking about moving all spanner integration tests into one package, but I\u0027m not sure if it\u0027s a good idea and I haven\u0027t tried it yet.\n",
       "revId": "3a6b150c56abce86da22191f1ed694b7e4a04fd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "74772434_8eccecc8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 14
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-17T19:33:11Z",
+      "side": 1,
+      "message": "Another alternative is we add steps in recipe to start and stop the emulator. And when do local test, we can use the makefile.",
+      "parentUuid": "c0e5cb22_6e8a2f61",
+      "revId": "3a6b150c56abce86da22191f1ed694b7e4a04fd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
