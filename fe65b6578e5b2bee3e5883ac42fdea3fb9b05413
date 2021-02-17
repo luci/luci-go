@@ -34,6 +34,24 @@
       "parentUuid": "62985e50_7f47d7dc",
       "revId": "fe65b6578e5b2bee3e5883ac42fdea3fb9b05413",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "99940397_388dc5c8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-17T19:05:42Z",
+      "side": 1,
+      "message": "yeah.. I also wonder I made this ugly hack.. part of it is probably because I don\u0027t know the cascading effect of not having swarming notification to update the build status to STARTED.",
+      "parentUuid": "805b63b4_e279b643",
+      "revId": "fe65b6578e5b2bee3e5883ac42fdea3fb9b05413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
