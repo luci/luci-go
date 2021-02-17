@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { html } from 'lit-html';
 import { Suggestion } from '../components/auto_complete';
 import { TestVariant } from '../services/resultdb';
 
@@ -71,14 +72,32 @@ const QUERY_SUGGESTIONS = [
   {value: '-RStatus:Skip', explanation: 'Exclude tests with at least one skipped run'},
 ];
 
-function getIdQuerySuggestion(substr: string, neg: boolean): Suggestion {
+function getIdQuerySuggestion(substr: string, neg: boolean, bold: boolean): Suggestion {
   return {
     value: `${neg ? '-' : ''}ID:${substr}`,
+    display: bold ? html`<strong>${neg ? '-' : ''}ID:</strong>${substr}` : undefined,
     explanation: `${neg ? 'Exclude' : 'Include only'} tests with the specified substring in their ID (case insensitive)`,
   };
 }
 
-export function suggestSearchQuery(subQuery: string): readonly Suggestion[] {
+export function suggestSearchQuery(query: string): readonly Suggestion[] {
+  if (query === '') {
+    // Return some example queries when the query is empty.
+    return [
+      {isHeader: true, display: html`<strong>Advanced Syntax</strong>`},
+      {value: '-Status:EXPECTED', explanation: 'Use \'-\' prefix to exclude tests that matches the filter'},
+      {value: 'Status:UNEXPECTED -RStatus:Skipped', explanation: 'Combine (conjunctive) multiple filters'},
+
+      // Put this section behind `Advanced Syntax` so `Advanced Syntax` won't
+      // be hidden after the size of supported filter types grows.
+      {isHeader: true, display: html`<strong>Supported Filter Types</strong>`},
+      {value: 'ID:test-id-substr', explanation: 'Include only tests with the specified substring in their ID (case insensitive). `ID:` is optional'},
+      {value: 'Status:UNEXPECTED,FLAKY,EXONERATED,EXPECTED', explanation: 'Include only tests that have the specified status'},
+      {value: 'RStatus:Pass,Fail,Crash,Abort,Skip', explanation: 'Include only tests with at least one run of the specified status'},
+    ];
+  }
+
+  const subQuery = query.split(' ').pop()!;
   if (subQuery === '') {
     return [];
   }
@@ -86,19 +105,31 @@ export function suggestSearchQuery(subQuery: string): readonly Suggestion[] {
   const match = subQuery.match(/^(?<neg>-?)ID:(?<substr>.*)/);
   if (match) {
     if (match.groups!['neg'] === '-') {
-      return [getIdQuerySuggestion(match.groups!['substr'], true)];
+      return [getIdQuerySuggestion(match.groups!['substr'], true, true)];
     }
     return [
-      getIdQuerySuggestion(match.groups!['substr'], false),
-      getIdQuerySuggestion(match.groups!['substr'], true),
+      getIdQuerySuggestion(match.groups!['substr'], false, true),
+      getIdQuerySuggestion(match.groups!['substr'], true, true),
     ];
   }
 
   const subQueryUpper = subQuery.toUpperCase();
-  const suggestions = QUERY_SUGGESTIONS.filter(({value}) => value.toUpperCase().includes(subQueryUpper));
+  const suggestions = QUERY_SUGGESTIONS
+    .map<Suggestion>(({value, explanation}) => {
+      const matchIndex = value.toUpperCase().search(subQueryUpper);
+      if (matchIndex === -1) {
+        return {value, explanation};
+      }
+      // Highlight the matched portion.
+      const prefix = value.slice(0, matchIndex);
+      const matched = value.slice(matchIndex, matchIndex + subQuery.length);
+      const suffix = value.slice(matchIndex + subQuery.length);
+      return {value, explanation, display: html`${prefix}<strong>${matched}</strong>${suffix}`};
+    })
+    .filter(({display}) => display);
   suggestions.push(
-    getIdQuerySuggestion(subQuery, false),
-    getIdQuerySuggestion(subQuery, true),
+    getIdQuerySuggestion(subQuery, false, false),
+    getIdQuerySuggestion(subQuery, true, false),
   );
   return suggestions;
 }

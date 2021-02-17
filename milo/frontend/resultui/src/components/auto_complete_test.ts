@@ -16,23 +16,27 @@ import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-ef
 import { assert } from 'chai';
 import sinon, { SinonSpy } from 'sinon';
 
-import { AutoCompleteElement, Suggestion } from './auto_complete';
+import { AutoCompleteElement, Suggestion, SuggestionEntry } from './auto_complete';
 
 function simulateKeyStroke(target: EventTarget, code: string) {
   target.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, composed: true, code} as KeyboardEventInit));
   target.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, composed: true, code} as KeyboardEventInit));
 }
 
-const suggestions = [
+const suggestions: Suggestion[] = [
   {value: 'suggestion 1', explanation: 'explanation 1'},
   {value: 'suggestion 2', explanation: 'explanation 2'},
   {value: 'suggestion 3', explanation: 'explanation 3'},
+  {isHeader: true, display: 'header'},
+  {value: 'suggestion 4', explanation: 'explanation 4'},
+  {value: 'suggestion 5', explanation: 'explanation 5'},
+  {isHeader: true, display: 'header'},
 ];
 
 describe('auto_complete_test', () => {
   let autoSuggestionEle: AutoCompleteElement;
   let inputEle: HTMLInputElement;
-  let suggestionSpy: SinonSpy<[Suggestion], void>;
+  let suggestionSpy: SinonSpy<[SuggestionEntry], void>;
   before(async () => {
     autoSuggestionEle = await fixture<AutoCompleteElement>(html`
       <milo-auto-complete
@@ -47,7 +51,7 @@ describe('auto_complete_test', () => {
   });
   after(fixtureCleanup);
 
-  it('should be able to select suggestion with key stokes', () => {
+  it('should be able to select suggestion with key strokes', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
@@ -65,5 +69,41 @@ describe('auto_complete_test', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
     assert.strictEqual(suggestionSpy.getCall(2).args[0], suggestions[0]);
+  });
+
+  it('should skip suggestion headers when selecting with key strokes', () => {
+    autoSuggestionEle.suggestions = suggestions.slice();
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'Enter');
+    assert.strictEqual(suggestionSpy.getCall(3).args[0], suggestions[4]);
+
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    simulateKeyStroke(inputEle, 'ArrowUp');
+    simulateKeyStroke(inputEle, 'Enter');
+    assert.strictEqual(suggestionSpy.getCall(4).args[0], suggestions[2]);
+  });
+
+  it('should not navigate beyond boundary', () => {
+    autoSuggestionEle.suggestions = suggestions.slice();
+    for (let i = 0; i < suggestions.length * 2; ++i) {
+      simulateKeyStroke(inputEle, 'ArrowDown');
+    }
+    simulateKeyStroke(inputEle, 'Enter');
+    const lastSelectableSuggestion = suggestions.slice().reverse().find((s) => !s.isHeader);
+    assert.strictEqual(suggestionSpy.getCall(5).args[0], lastSelectableSuggestion);
+
+    const firstSelectableSuggestion = suggestions.find((s) => !s.isHeader);
+    simulateKeyStroke(inputEle, 'ArrowDown');
+    for (let i = 0; i < suggestions.length * 2; ++i) {
+      simulateKeyStroke(inputEle, 'ArrowUp');
+    }
+    simulateKeyStroke(inputEle, 'Enter');
+    assert.strictEqual(suggestionSpy.getCall(6).args[0], firstSelectableSuggestion);
   });
 });
