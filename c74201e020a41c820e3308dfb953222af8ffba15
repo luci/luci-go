@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6710/test-results?q\u003d",
       "revId": "c74201e020a41c820e3308dfb953222af8ffba15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0b4ba1e_c167592a",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-17T02:46:40Z",
+      "side": 1,
+      "message": "Perhaps not in this CL, but I think rewording this to \"Include only unexpectedly skipped tests\" makes it more concise",
+      "range": {
+        "startLine": 56,
+        "startChar": 55,
+        "endLine": 56,
+        "endChar": 103
+      },
+      "revId": "c74201e020a41c820e3308dfb953222af8ffba15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
