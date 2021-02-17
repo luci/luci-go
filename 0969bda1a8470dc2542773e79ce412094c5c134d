@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fd26c3b_1d78923d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-17T01:55:47Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-3-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results\n\nNote:\nThe following files are no longer used by not removed.\n1. left_panel.ts. This is a reusable component.\n2. test_nodes.ts. This can be adapted to construct a group-tree.\nSince those files are not imported, they don\u0027t affect the bundle size.",
+      "revId": "0969bda1a8470dc2542773e79ce412094c5c134d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
