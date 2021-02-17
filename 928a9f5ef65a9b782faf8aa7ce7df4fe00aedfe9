@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1300d532_f6a9c335",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-17T05:10:38Z",
+      "side": 1,
+      "message": "Since this will already be used as a callback, we can just arrow function syntax so we dont need to call .bind(this) every time.\n\nprivate variantRenderedCallback \u003d () \u003d\u003e {...}",
+      "revId": "928a9f5ef65a9b782faf8aa7ce7df4fe00aedfe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "801a0e44_cba3c862",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-17T05:10:38Z",
+      "side": 1,
+      "message": "I think we also want to handle the case when there are no variant in the first page (when there are only expected variant).",
+      "revId": "928a9f5ef65a9b782faf8aa7ce7df4fe00aedfe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
