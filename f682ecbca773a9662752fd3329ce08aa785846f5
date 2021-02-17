@@ -16,6 +16,29 @@
       "message": "still LGTM",
       "revId": "f682ecbca773a9662752fd3329ce08aa785846f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5b4e43c_6a6473d0",
+        "filename": "resultdb/sink/proto/v1/test_result.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T20:01:52Z",
+      "side": 1,
+      "message": "curious, does the following work?\n\n  reserved 10, \"test_location\";\n\nsuch that they are grouped together, and we no longer need the comment",
+      "range": {
+        "startLine": 31,
+        "startChar": 2,
+        "endLine": 32,
+        "endChar": 27
+      },
+      "revId": "f682ecbca773a9662752fd3329ce08aa785846f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
