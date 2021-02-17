@@ -15,7 +15,7 @@
 package cli
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
@@ -32,7 +32,7 @@ func TestPropertiesFlag(t *testing.T) {
 		f := PropertiesFlag(props)
 
 		Convey("File", func() {
-			file, err := ioutil.TempFile("", "")
+			file, err := os.CreateTemp("", "")
 			So(err, ShouldBeNil)
 			defer file.Close()
 

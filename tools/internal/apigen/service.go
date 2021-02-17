@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -108,7 +107,7 @@ func loadService(c context.Context, path string) (service, error) {
 		return nil, fmt.Errorf("unable to stat YAML config at [%s]: %s", yamlPath, err)
 	}
 
-	configData, err := ioutil.ReadFile(yamlPath)
+	configData, err := os.ReadFile(yamlPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read YAML config at [%s]: %s", yamlPath, err)
 	}
@@ -199,7 +198,7 @@ func (s *discoveryTranslateService) run(c context.Context, f serviceRunFunc) err
 		return fmt.Errorf("failed to get absolute path [%s]: %s", s.dir, err)
 	}
 
-	d, err := ioutil.TempDir(p, "apigen_service")
+	d, err := os.MkdirTemp(p, "apigen_service")
 	if err != nil {
 		return err
 	}
@@ -238,7 +237,7 @@ func (s *discoveryTranslateService) run(c context.Context, f serviceRunFunc) err
 }
 
 func checkBuild(c context.Context, dir string) error {
-	d, err := ioutil.TempDir(dir, "apigen_service")
+	d, err := os.MkdirTemp(dir, "apigen_service")
 	if err != nil {
 		return err
 	}

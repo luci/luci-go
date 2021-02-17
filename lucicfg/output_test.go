@@ -16,7 +16,6 @@ package lucicfg
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -30,7 +29,7 @@ func TestOutput(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("With temp dir", t, func() {
-		tmp, err := ioutil.TempDir("", "lucicfg")
+		tmp, err := os.MkdirTemp("", "lucicfg")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmp)
 
@@ -39,13 +38,13 @@ func TestOutput(t *testing.T) {
 		}
 
 		read := func(p string) string {
-			body, err := ioutil.ReadFile(path(p))
+			body, err := os.ReadFile(path(p))
 			So(err, ShouldBeNil)
 			return string(body)
 		}
 
 		write := func(p, body string) {
-			So(ioutil.WriteFile(path(p), []byte(body), 0600), ShouldBeNil)
+			So(os.WriteFile(path(p), []byte(body), 0600), ShouldBeNil)
 		}
 
 		original := map[string][]byte{

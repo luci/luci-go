@@ -31,7 +31,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"sync"
@@ -252,7 +251,7 @@ func (l *lctx) export(dir string) (Exported, error) {
 func dropToDisk(sections map[string]*json.RawMessage, dir string) (string, error) {
 	// Note: this makes a file in 0600 mode. This is what we want, the context
 	// may have secrets.
-	f, err := ioutil.TempFile(dir, "luci_context.")
+	f, err := os.CreateTemp(dir, "luci_context.")
 	if err != nil {
 		return "", errors.Annotate(err, "creating luci_context file").Err()
 	}

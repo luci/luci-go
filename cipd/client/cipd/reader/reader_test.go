@@ -193,7 +193,7 @@ func TestPackageReading(t *testing.T) {
 
 	Convey("OpenInstanceFile works", t, func() {
 		// Open temp file.
-		tempFile, err := ioutil.TempFile("", "cipdtest")
+		tempFile, err := os.CreateTemp("", "cipdtest")
 		So(err, ShouldBeNil)
 		tempFilePath := tempFile.Name()
 		defer os.Remove(tempFilePath)

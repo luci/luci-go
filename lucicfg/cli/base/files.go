@@ -15,7 +15,6 @@
 package base
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -56,6 +55,6 @@ func ExpandDirectories(paths []string) ([]string, error) {
 
 // PathLoader is an interpreter.Loader that loads files using file system paths.
 func PathLoader(path string) (starlark.StringDict, string, error) {
-	body, err := ioutil.ReadFile(path)
+	body, err := os.ReadFile(path)
 	return nil, string(body), err
 }

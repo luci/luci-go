@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -299,7 +298,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	// If an empty BaseDir was specified, use a temporary directory and clean it
 	// up on completion.
 	if a.opts.EnvConfig.BaseDir == "" {
-		tdir, err := ioutil.TempDir("", "vpython")
+		tdir, err := os.MkdirTemp("", "vpython")
 		if err != nil {
 			return errors.Annotate(err, "failed to create temporary directory").Err()
 		}

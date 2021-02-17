@@ -16,7 +16,6 @@ package lib
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -39,7 +38,7 @@ func TestShared(t *testing.T) {
 	}
 
 	Convey("RunShared", t, func() {
-		lockFileDir, err := ioutil.TempDir("", "")
+		lockFileDir, err := os.MkdirTemp("", "")
 		So(err, ShouldBeNil)
 		defer os.Remove(lockFileDir)
 		env := subcommands.Env{

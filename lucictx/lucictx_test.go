@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,7 +30,7 @@ import (
 )
 
 func rawctx(content string) func() {
-	tf, err := ioutil.TempFile(os.TempDir(), "lucictx_test.")
+	tf, err := os.CreateTemp(os.TempDir(), "lucictx_test.")
 	if err != nil {
 		panic(err)
 	}
@@ -152,7 +151,7 @@ func TestLUCIContextMethods(t *testing.T) {
 				So(ok, ShouldBeTrue)
 
 				// There's a valid JSON there.
-				blob, err := ioutil.ReadFile(path)
+				blob, err := os.ReadFile(path)
 				So(err, ShouldBeNil)
 				So(string(blob), ShouldEqual, `{"hi": {"hello_there": 10}}`)
 
@@ -203,7 +202,7 @@ func TestLUCIContextMethods(t *testing.T) {
 			})
 
 			Convey("ExportInto creates new files", func() {
-				tmp, err := ioutil.TempDir("", "luci_ctx")
+				tmp, err := os.MkdirTemp("", "luci_ctx")
 				So(err, ShouldBeNil)
 				defer func() {
 					os.RemoveAll(tmp)

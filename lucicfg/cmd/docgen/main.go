@@ -21,7 +21,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,7 +84,7 @@ func run(templates, starlark, outDir string) error {
 }
 
 func generate(gen *docgen.Generator, in, out string) error {
-	body, err := ioutil.ReadFile(in)
+	body, err := os.ReadFile(in)
 	if err != nil {
 		return err
 	}
@@ -93,7 +92,7 @@ func generate(gen *docgen.Generator, in, out string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(out, output, 0666)
+	return os.WriteFile(out, output, 0666)
 }
 
 func sourceProvider(root string) func(string) (string, error) {
@@ -113,7 +112,7 @@ func sourceProvider(root string) func(string) (string, error) {
 		}
 
 		fmt.Printf("  loading %q\n", module)
-		body, err := ioutil.ReadFile(filepath.Join(root, pkg, path))
+		body, err := os.ReadFile(filepath.Join(root, pkg, path))
 		if err != nil {
 			return "", err
 		}

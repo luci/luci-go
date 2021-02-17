@@ -16,7 +16,6 @@ package filesystem
 
 import (
 	"context"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -29,7 +28,7 @@ import (
 )
 
 func withFolder(files map[string]string, cb func(folder string)) {
-	folder, err := ioutil.TempDir("", "fs_test_")
+	folder, err := os.MkdirTemp("", "fs_test_")
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +42,7 @@ func withFolder(files map[string]string, cb func(folder string)) {
 		if err := os.MkdirAll(filepath.Dir(fpath), 0777); err != nil {
 			panic(err)
 		}
-		if err := ioutil.WriteFile(fpath, []byte(content), 0666); err != nil {
+		if err := os.WriteFile(fpath, []byte(content), 0666); err != nil {
 			panic(err)
 		}
 	}
@@ -281,7 +280,7 @@ func TestFSImpl(t *testing.T) {
 				},
 			})
 
-			err = ioutil.WriteFile(
+			err = os.WriteFile(
 				filepath.Join(folder, filepath.FromSlash("projects/doodly/refs/otherref/file.cfg")),
 				[]byte("blarg"),
 				0666)

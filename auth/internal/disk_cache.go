@@ -241,7 +241,7 @@ func (c *DiskTokenCache) writeCacheFile(path string, cache *cacheFile) error {
 		logging.WithError(err).Warningf(c.Context, "Failed to mkdir token cache dir")
 		// carry on, TempFile will fail too.
 	}
-	tmp, err := ioutil.TempFile(c.SecretsDir, "tokens.json.*")
+	tmp, err := os.CreateTemp(c.SecretsDir, "tokens.json.*")
 	if err != nil {
 		return err
 	}

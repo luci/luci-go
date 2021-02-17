@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -39,7 +38,7 @@ type stateInToken struct {
 //
 // In case of problems, logs errors and returns default structs.
 func readTokenFile(ctx context.Context, path string) (*tokenserver.TokenFile, *stateInToken) {
-	blob, err := ioutil.ReadFile(path)
+	blob, err := os.ReadFile(path)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			logging.Warningf(ctx, "Failed to read token file from %q - %s", path, err)

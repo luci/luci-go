@@ -102,14 +102,14 @@ func testCache(t *testing.T, c *Cache) isolated.HexDigests {
 		So(c.Hardlink(file2Digest, dest, os.FileMode(0600)), ShouldBeNil)
 		// See comment about the fact that it may or may not work.
 		_ = c.Hardlink(file2Digest, dest, os.FileMode(0600))
-		actual, err = ioutil.ReadFile(dest)
+		actual, err = os.ReadFile(dest)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, file2Content)
 
 		dest = filepath.Join(td, "hardlink")
 		So(c.AddWithHardlink(hardlinkDigest, bytes.NewBuffer(hardlinkContent), dest, os.ModePerm),
 			ShouldBeNil)
-		actual, err = ioutil.ReadFile(dest)
+		actual, err = os.ReadFile(dest)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, hardlinkContent)
 
@@ -148,8 +148,8 @@ func TestNew(t *testing.T) {
 		dir := t.TempDir()
 		state := filepath.Join(dir, "state.json")
 		invalid := filepath.Join(dir, "invalid file")
-		So(ioutil.WriteFile(state, []byte("invalid"), os.ModePerm), ShouldBeNil)
-		So(ioutil.WriteFile(invalid, []byte("invalid"), os.ModePerm), ShouldBeNil)
+		So(os.WriteFile(state, []byte("invalid"), os.ModePerm), ShouldBeNil)
+		So(os.WriteFile(invalid, []byte("invalid"), os.ModePerm), ShouldBeNil)
 
 		c, err := New(Policies{}, dir, isolated.GetHash(isolatedclient.DefaultNamespace))
 		So(err, ShouldNotBeNil)
@@ -211,7 +211,7 @@ func TestNew(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(c, ShouldNotBeNil)
 		perm := os.ModePerm
-		So(ioutil.WriteFile(c.itemPath(onDiskDigest), onDiskContent, perm), ShouldBeNil)
+		So(os.WriteFile(c.itemPath(onDiskDigest), onDiskContent, perm), ShouldBeNil)
 
 		So(c.GetUsed(), ShouldBeEmpty)
 		So(c.Hardlink(notOnDiskDigest, filepath.Join(dir, "not_on_disk"), perm), ShouldNotBeNil)
@@ -233,7 +233,7 @@ func TestNew(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		empty := filepath.Join(dir, "empty")
-		So(ioutil.WriteFile(empty, nil, 0600), ShouldBeNil)
+		So(os.WriteFile(empty, nil, 0600), ShouldBeNil)
 
 		emptyHash := isolated.HashBytes(h, nil)
 
@@ -245,7 +245,7 @@ func TestNew(t *testing.T) {
 		So(c.AddFileWithoutValidation(emptyHash, empty), ShouldBeNil)
 
 		empty2 := filepath.Join(dir, "empty2")
-		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
+		So(os.WriteFile(empty2, nil, 0600), ShouldBeNil)
 		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
 	})
 }

@@ -46,7 +46,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -853,7 +852,7 @@ func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs fs.Fil
 	}
 
 	verFile := version.GetVersionFile(clientExe)
-	if data, err := ioutil.ReadFile(verFile); err == nil && bytes.Equal(expect, data) {
+	if data, err := os.ReadFile(verFile); err == nil && bytes.Equal(expect, data) {
 		return // up to date
 	}
 

@@ -15,7 +15,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -91,7 +91,7 @@ type staticNameComponent struct {
 //
 // It should be a config.Config proto encoded using jsonpb.
 func LoadConfig(path string) (*Config, error) {
-	blob, err := ioutil.ReadFile(path)
+	blob, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

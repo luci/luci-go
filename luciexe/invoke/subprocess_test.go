@@ -97,7 +97,7 @@ func init() {
 			if err != nil {
 				panic(err)
 			}
-			if err := ioutil.WriteFile(*out, outData, 0666); err != nil {
+			if err := os.WriteFile(*out, outData, 0666); err != nil {
 				panic(err)
 			}
 		}

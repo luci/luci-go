@@ -16,7 +16,6 @@ package lib
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,7 +38,7 @@ func TestMain(t *testing.T) {
 	})
 
 	Convey("computeMutexPaths returns empty strings when lock dir doesn't exist", t, func() {
-		tempDir, err := ioutil.TempDir("", "")
+		tempDir, err := os.MkdirTemp("", "")
 		So(err, ShouldBeNil)
 		So(os.Remove(tempDir), ShouldBeNil)
 
@@ -53,7 +52,7 @@ func TestMain(t *testing.T) {
 	})
 
 	Convey("computeMutexPaths returns env variable based path", t, func() {
-		tempDir, err := ioutil.TempDir("", "")
+		tempDir, err := os.MkdirTemp("", "")
 		defer os.Remove(tempDir)
 		So(err, ShouldBeNil)
 
