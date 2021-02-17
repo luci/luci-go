@@ -39,6 +39,30 @@
       },
       "revId": "c74201e020a41c820e3308dfb953222af8ffba15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d263b6d_49d7a434",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-17T03:38:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e0b4ba1e_c167592a",
+      "range": {
+        "startLine": 56,
+        "startChar": 55,
+        "endLine": 56,
+        "endChar": 103
+      },
+      "revId": "c74201e020a41c820e3308dfb953222af8ffba15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
