@@ -76,6 +76,9 @@ export class TestLoader {
   @computed get loadedAllFlakyVariants() { return this.stage > LoadingStage.LoadingFlaky; }
   @computed get loadedAllExoneratedVariants() { return this.stage > LoadingStage.LoadingExonerated; }
   @computed get loadedAllExpectedVariants() { return this.stage > LoadingStage.LoadingExpected; }
+  @computed get firstPageLoaded() {
+    return this.unexpectedTestVariants.length > 0 || this.loadedAllUnexpectedVariants;
+  }
 
   // undefined means the end has been reached.
   // empty string is the token for the first page.
