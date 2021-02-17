@@ -51,6 +51,24 @@
       "parentUuid": "713b2c03_222f6a8b",
       "revId": "a7a511407eb31222b36f9e4fc25ff6d4f720ea66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "194015bd_795dd3ca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-17T22:46:44Z",
+      "side": 1,
+      "message": "The UI change has been deployed to prod.",
+      "parentUuid": "b5fc1fcd_2aca3b7d",
+      "revId": "a7a511407eb31222b36f9e4fc25ff6d4f720ea66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
