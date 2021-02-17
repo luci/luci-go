@@ -1,0 +1,492 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3778af0d_242b6812",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "do still need this function? it matches spandb.NewDatabaseAdminClient",
+      "range": {
+        "startLine": 111,
+        "startChar": 5,
+        "endLine": 111,
+        "endChar": 16
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22c27d9d_98e578bd",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "why do we need check env if we create the emulator ourselves?\nshould NewTempDB be a function in Emulator struct?",
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4aa44b10_8a71107e",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "remove\n\nbut stepping back, how is this supposed to work with chops-spanner-testing? if everyone is creating the same db, they will fail",
+      "range": {
+        "startLine": 179,
+        "startChar": 36,
+        "endLine": 179,
+        "endChar": 41
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aadf8db4_7c55bfe1",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "using a Cloud Spanner Emulator\n\nor something like that. Otherwise this reads like an actual instance",
+      "range": {
+        "startLine": 196,
+        "startChar": 66,
+        "endLine": 196,
+        "endChar": 67
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1c9eba0c_0a038a50",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "maybe dedupe with above",
+      "range": {
+        "startLine": 208,
+        "startChar": 9,
+        "endLine": 212,
+        "endChar": 2
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d558d5d8_014e8bda",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "i don\u0027t see randomness here, or db creation\n\n\"randomness\" comment also applies to the function comment",
+      "range": {
+        "startLine": 219,
+        "startChar": 15,
+        "endLine": 219,
+        "endChar": 21
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6f0be2f_21b70301",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "just 1",
+      "range": {
+        "startLine": 227,
+        "startChar": 16,
+        "endLine": 227,
+        "endChar": 24
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "14472080_1d6235f2",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "how does it know that this is the same emulator? another process might have created this file.\nalso the scope of this files doesn\u0027t seem to match the emulator? it might be something unrelated to emulator\n\nstepping back, why do we need to wait for this?",
+      "range": {
+        "startLine": 254,
+        "startChar": 0,
+        "endLine": 257,
+        "endChar": 3
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e3f815b4_39bff9df",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "this kills all instances of emulator, created by other unrelated processes.\nwhy not kill only the process that *we* have created, by canceling its context?",
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7391c956_cff72532",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "doc comment",
+      "range": {
+        "startLine": 264,
+        "startChar": 5,
+        "endLine": 264,
+        "endChar": 13
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "625fcede_e2506079",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "why not a regular function?\n\n  func (e* Emulator) Stop() { ... }",
+      "range": {
+        "startLine": 267,
+        "startChar": 1,
+        "endLine": 267,
+        "endChar": 16
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c69982d_669692f9",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "SRP concern. This should be somewhere in the callsite, I think.",
+      "range": {
+        "startLine": 273,
+        "startChar": 0,
+        "endLine": 273,
+        "endChar": 24
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17be4a69_1995334d",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 291,
+        "startChar": 21,
+        "endLine": 291,
+        "endChar": 24
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1f2aee2_e2f31346",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "please `select` with context cancelation, otherwise this goroutine might never exit",
+      "range": {
+        "startLine": 301,
+        "startChar": 2,
+        "endLine": 301,
+        "endChar": 20
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5eaf492_00f8d285",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "comma?",
+      "range": {
+        "startLine": 316,
+        "startChar": 66,
+        "endLine": 316,
+        "endChar": 67
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8f0d36a_2b388bdf",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "It returns the directory with the configuration. The caller is responsible for deleting it when the configuration is no longer needed.",
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5114f252_ecc1891a",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "ioutil was recently deprecated\nhttps://pkg.go.dev/io/ioutil",
+      "range": {
+        "startLine": 321,
+        "startChar": 14,
+        "endLine": 321,
+        "endChar": 20
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a5d95cb_9c3bd16c",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "if your intention is to set env for the subprocess, then let\u0027s use https://pkg.go.dev/os/exec#Cmd.Env instead",
+      "range": {
+        "startLine": 326,
+        "startChar": 1,
+        "endLine": 327,
+        "endChar": 50
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05416f73_582f8e79",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "does this matter for emulator?",
+      "range": {
+        "startLine": 333,
+        "startChar": 5,
+        "endLine": 333,
+        "endChar": 52
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e57f71c8_7066a281",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "do we land this CL only after we ensure that gcloud is present in $PATH on CI/CQ and dev machines?",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 53
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d254d701_4b058c18",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 156,
+        "startChar": 66,
+        "endLine": 156,
+        "endChar": 79
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75560e2b_f59997b6",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T19:57:45Z",
+      "side": 1,
+      "message": "cfgDir\n\nit is true that it is temporary, but the main thing about it is that it contains configs",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 157,
+        "endChar": 6
+      },
+      "revId": "824ae2b34264bbf8618b4f2cb42ac4bbc796b356",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
