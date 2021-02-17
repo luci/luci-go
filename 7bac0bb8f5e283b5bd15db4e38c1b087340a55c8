@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53a8ca4f_2718bf22",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-17T00:03:19Z",
+      "side": 1,
+      "message": "Remove auto-submit since I\u0027ll need to rebase it after landing the CL to support UNEXPECTED_SKIPPED.",
+      "revId": "7bac0bb8f5e283b5bd15db4e38c1b087340a55c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
