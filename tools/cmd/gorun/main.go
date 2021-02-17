@@ -23,6 +23,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,7 +40,7 @@ func mainImpl(args []string) (int, error) {
 	pkg, args := args[0], args[1:]
 
 	// Create a temporary output directory to build into.
-	tmpdir, err := os.MkdirTemp("", "luci-gorun")
+	tmpdir, err := ioutil.TempDir("", "luci-gorun")
 	if err != nil {
 		return 1, errors.Annotate(err, "failed to create temporary directory").Err()
 	}

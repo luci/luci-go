@@ -30,7 +30,7 @@ func TestScanFileSystem(t *testing.T) {
 	t.Parallel()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := os.MkdirTemp("", "cipd_test")
+		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
@@ -210,7 +210,7 @@ func TestWrapFile(t *testing.T) {
 	t.Parallel()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := os.MkdirTemp("", "cipd_test")
+		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
@@ -306,7 +306,7 @@ func mkDir(root string, path string) {
 func writeFile(root string, path string, data string, mode os.FileMode) {
 	abs := filepath.Join(root, filepath.FromSlash(path))
 	os.MkdirAll(filepath.Dir(abs), 0777)
-	err := os.WriteFile(abs, []byte(data), mode)
+	err := ioutil.WriteFile(abs, []byte(data), mode)
 	if err != nil {
 		panic("Failed to write a temp file")
 	}
@@ -439,14 +439,14 @@ func TestExistingDestination(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := os.MkdirTemp("", "cipd_test")
+		tempDir, err := ioutil.TempDir("", "cipd_test")
 		destDir := filepath.Join(tempDir, "dest")
 		So(err, ShouldBeNil)
 		dest := ExistingDestination(destDir, nil)
 		defer os.RemoveAll(tempDir)
 
 		readFromDest := func(name string) string {
-			b, err := os.ReadFile(filepath.Join(destDir, name))
+			b, err := ioutil.ReadFile(filepath.Join(destDir, name))
 			So(err, ShouldBeNil)
 			return string(b)
 		}
@@ -517,7 +517,7 @@ func TestNewDestination(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := os.MkdirTemp("", "cipd_test")
+		tempDir, err := ioutil.TempDir("", "cipd_test")
 		destDir := filepath.Join(tempDir, "dest")
 		So(err, ShouldBeNil)
 		dest := NewDestination(destDir, nil)
@@ -585,7 +585,7 @@ func TestNewDestination(t *testing.T) {
 			// Create dest directory manually with some stuff.
 			err := os.Mkdir(destDir, 0777)
 			So(err, ShouldBeNil)
-			err = os.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
+			err = ioutil.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
 			So(err, ShouldBeNil)
 
 			// Now deploy something to it.
@@ -601,7 +601,7 @@ func TestNewDestination(t *testing.T) {
 			// Create dest directory manually with some stuff.
 			err := os.Mkdir(destDir, 0777)
 			So(err, ShouldBeNil)
-			err = os.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
+			err = ioutil.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
 			So(err, ShouldBeNil)
 
 			// Now attempt deploy something to it, but roll back.

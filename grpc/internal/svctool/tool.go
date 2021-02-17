@@ -25,6 +25,7 @@ import (
 	"go/format"
 	"go/token"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -209,7 +210,7 @@ func (t *Tool) Run(c context.Context, f Generator) error {
 	}
 
 	// Write to file.
-	return os.WriteFile(outputName, src, 0644)
+	return ioutil.WriteFile(outputName, src, 0644)
 }
 
 // Main does some setup (arg parsing, logging), calls t.Run, prints any errors

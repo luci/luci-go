@@ -20,7 +20,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"flag"
-	"os"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -70,7 +70,7 @@ func TestArchiveDownload(t *testing.T) {
 		So(ar.paths.Set(uploaded+":."), ShouldBeNil)
 		So(ar.doArchive(ctx), ShouldBeNil)
 
-		digest, err := os.ReadFile(ar.dumpDigest)
+		digest, err := ioutil.ReadFile(ar.dumpDigest)
 		So(err, ShouldBeNil)
 
 		var dr downloadRun

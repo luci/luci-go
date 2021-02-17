@@ -15,8 +15,9 @@
 package descutil
 
 import (
-	"os"
 	"testing"
+
+	"io/ioutil"
 
 	"google.golang.org/protobuf/proto"
 	pb "google.golang.org/protobuf/types/descriptorpb"
@@ -28,7 +29,7 @@ func TestUtil(t *testing.T) {
 	t.Parallel()
 
 	Convey("Util", t, func() {
-		descFileBytes, err := os.ReadFile("util_test.desc")
+		descFileBytes, err := ioutil.ReadFile("util_test.desc")
 		So(err, ShouldBeNil)
 
 		var desc pb.FileDescriptorSet

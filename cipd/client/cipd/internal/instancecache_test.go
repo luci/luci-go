@@ -37,7 +37,7 @@ func TestInstanceCache(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("InstanceCache", t, func(c C) {
-		tempDir, err := os.MkdirTemp("", "instanceche_test")
+		tempDir, err := ioutil.TempDir("", "instanceche_test")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 

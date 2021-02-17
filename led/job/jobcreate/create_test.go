@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -33,7 +34,7 @@ import (
 var train = flag.Bool("train", false, "If set, write testdata/*out.json")
 
 func readTestFixture(fixtureBaseName string) *job.Definition {
-	data, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", fixtureBaseName))
+	data, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", fixtureBaseName))
 	So(err, ShouldBeNil)
 
 	req := &swarming.SwarmingRpcsNewTaskRequest{}
@@ -58,7 +59,7 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 
 		So(marshaler.Marshal(oFile, jd), ShouldBeNil)
 	} else {
-		current, err := os.ReadFile(outFile)
+		current, err := ioutil.ReadFile(outFile)
 		So(err, ShouldBeNil)
 
 		actual, err := marshaler.MarshalToString(jd)

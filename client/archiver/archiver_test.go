@@ -17,8 +17,8 @@ package archiver
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -57,13 +57,13 @@ func TestArchiverFile(t *testing.T) {
 		namespace := isolatedclient.DefaultNamespace
 		a := New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 
-		fEmpty, err := os.CreateTemp("", "archiver")
+		fEmpty, err := ioutil.TempFile("", "archiver")
 		So(err, ShouldBeNil)
 		item1 := a.PushFile(fEmpty.Name(), fEmpty.Name(), 0)
 		So(item1.DisplayName, ShouldResemble, fEmpty.Name())
-		fFoo, err := os.CreateTemp("", "archiver")
+		fFoo, err := ioutil.TempFile("", "archiver")
 		So(err, ShouldBeNil)
-		So(os.WriteFile(fFoo.Name(), []byte("foo"), 0600), ShouldBeNil)
+		So(ioutil.WriteFile(fFoo.Name(), []byte("foo"), 0600), ShouldBeNil)
 		item2 := a.PushFile(fFoo.Name(), fFoo.Name(), 0)
 		// Push the same file another time. It'll get linked to the first.
 		item3 := a.PushFile(fFoo.Name(), fFoo.Name(), 0)
@@ -146,7 +146,7 @@ func TestArchiverCancel(t *testing.T) {
 		So(item1.DisplayName, ShouldResemble, "foo")
 
 		fileName := filepath.Join(tmpDir, "existent")
-		So(os.WriteFile(fileName, []byte("foo"), 0600), ShouldBeNil)
+		So(ioutil.WriteFile(fileName, []byte("foo"), 0600), ShouldBeNil)
 		item2 := a.PushFile("existent", fileName, 0)
 		item1.WaitForHashed()
 		item2.WaitForHashed()

@@ -17,6 +17,7 @@ package deployer
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -38,7 +39,7 @@ func TestMultipleDeployProcesses(t *testing.T) {
 
 	const procs = 30
 
-	tempDir, err := os.MkdirTemp("", "cipd_test")
+	tempDir, err := ioutil.TempDir("", "cipd_test")
 	if err != nil {
 		t.Fatalf("TempDir: %s", err)
 	}

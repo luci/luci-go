@@ -201,7 +201,7 @@ func (f *fsImpl) Root() string {
 func (f *fsImpl) CaseSensitive() (bool, error) {
 	f.once.Do(func() {
 		f.caseSens, f.caseSensErr = func() (sens bool, err error) {
-			tmp, err := os.CreateTemp(f.root, ".test_case.*.tmp")
+			tmp, err := ioutil.TempFile(f.root, ".test_case.*.tmp")
 			if err != nil {
 				return false, fmt.Errorf("cannot create a file to test case-sensitivity of %q - %s", f.root, err)
 			}
@@ -654,7 +654,7 @@ func pseudoRand() string {
 	return digest[:12]
 }
 
-// TempDir is like os.MkdirTemp(dir, ""), but uses shorter path suffixes.
+// TempDir is like ioutil.TempDir(dir, ""), but uses shorter path suffixes.
 //
 // Path length is constraint resource of Windows.
 //

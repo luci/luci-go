@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -90,7 +91,7 @@ func expectFileName(name string) string {
 
 func load(name string) ([]byte, error) {
 	filename := expectFileName(name)
-	return os.ReadFile(filename)
+	return ioutil.ReadFile(filename)
 }
 
 // mustWrite Writes a buffer into an expectation file.  Should always work or
@@ -98,7 +99,7 @@ func load(name string) ([]byte, error) {
 // not during tests.
 func mustWrite(name string, buf []byte) {
 	filename := expectFileName(name)
-	err := os.WriteFile(filename, buf, 0644)
+	err := ioutil.WriteFile(filename, buf, 0644)
 	if err != nil {
 		panic(err)
 	}

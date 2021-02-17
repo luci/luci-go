@@ -21,7 +21,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"regexp"
 	"strings"
 	"time"
@@ -87,7 +87,7 @@ func (cfg *TempDBConfig) readDDLStatements() ([]string, error) {
 		return nil, nil
 	}
 
-	contents, err := os.ReadFile(cfg.InitScriptPath)
+	contents, err := ioutil.ReadFile(cfg.InitScriptPath)
 	if err != nil {
 		return nil, err
 	}

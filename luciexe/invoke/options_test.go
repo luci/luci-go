@@ -16,6 +16,7 @@ package invoke
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -74,8 +75,8 @@ func commonOptions() (ctx context.Context, o *Options, tdir string, closer func(
 	}
 
 	var err error
-	if tdir, err = os.MkdirTemp("", "luciexe_test"); err != nil {
-		closer() // want to do cleanup if os.MkdirTemp failed
+	if tdir, err = ioutil.TempDir("", "luciexe_test"); err != nil {
+		closer() // want to do cleanup if ioutil.TempDir failed
 		So(err, ShouldBeNil)
 	}
 	if err := os.Setenv(tempEnvVar, tdir); err != nil {
@@ -249,7 +250,7 @@ func TestOptionsCacheDir(t *testing.T) {
 
 			Convey(`bad override (not a dir)`, func() {
 				o.CacheDir = filepath.Join(tdir, "cache")
-				So(os.WriteFile(o.CacheDir, []byte("not a dir"), 0666), ShouldBeNil)
+				So(ioutil.WriteFile(o.CacheDir, []byte("not a dir"), 0666), ShouldBeNil)
 				_, _, err := o.rationalize(ctx)
 				So(err, ShouldErrLike, "checking CacheDir: path is not a directory")
 			})
@@ -281,14 +282,14 @@ func TestOptionsCollectOutput(t *testing.T) {
 			Convey(`already exists`, func() {
 				outPath := filepath.Join(tdir, "output.pb")
 				o.CollectOutputPath = outPath
-				So(os.WriteFile(outPath, nil, 0666), ShouldBeNil)
+				So(ioutil.WriteFile(outPath, nil, 0666), ShouldBeNil)
 				_, _, err := o.rationalize(ctx)
 				So(err, ShouldErrLike, "CollectOutputPath points to an existing file")
 			})
 
 			Convey(`parent is not a dir`, func() {
 				parDir := filepath.Join(tdir, "parent")
-				So(os.WriteFile(parDir, nil, 0666), ShouldBeNil)
+				So(ioutil.WriteFile(parDir, nil, 0666), ShouldBeNil)
 				o.CollectOutputPath = filepath.Join(parDir, "out.pb")
 
 				_, _, err := o.rationalize(ctx)
@@ -314,7 +315,7 @@ func TestOptionsCollectOutput(t *testing.T) {
 				_, err = luciexe.ReadBuildFile(lo.collectPath)
 				So(err, ShouldErrLike, "opening build file")
 
-				So(os.WriteFile(lo.args[1], expectedData, 0666), ShouldBeNil)
+				So(ioutil.WriteFile(lo.args[1], expectedData, 0666), ShouldBeNil)
 
 				build, err := luciexe.ReadBuildFile(lo.collectPath)
 				So(err, ShouldBeNil)
@@ -445,7 +446,7 @@ func TestOptionsExtraDirs(t *testing.T) {
 
 		Convey(`provided BaseDir is not a directory`, func() {
 			o.BaseDir = filepath.Join(tdir, "base")
-			So(os.WriteFile(o.BaseDir, []byte("not a dir"), 0666), ShouldBeNil)
+			So(ioutil.WriteFile(o.BaseDir, []byte("not a dir"), 0666), ShouldBeNil)
 			_, _, err := o.rationalize(ctx)
 			So(err, ShouldErrLike, "checking BaseDir: path is not a directory")
 		})

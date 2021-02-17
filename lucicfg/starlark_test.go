@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -53,7 +53,7 @@ func TestAllStarlark(t *testing.T) {
 		Skip:     "support",
 
 		Executor: func(t *testing.T, path string, predeclared starlark.StringDict) error {
-			blob, err := os.ReadFile(path)
+			blob, err := ioutil.ReadFile(path)
 			if err != nil {
 				return err
 			}

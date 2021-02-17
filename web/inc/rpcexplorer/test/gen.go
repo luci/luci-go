@@ -30,7 +30,7 @@ import (
 )
 
 func run() error {
-	descFile, err := os.CreateTemp("", "desc")
+	descFile, err := ioutil.TempFile("", "desc")
 	if err != nil {
 		return err
 	}

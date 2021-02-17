@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -103,7 +104,7 @@ func ReadConfigSet(dir, name string) (ConfigSet, error) {
 		if err != nil || !info.Mode().IsRegular() {
 			return err
 		}
-		content, err := os.ReadFile(p)
+		content, err := ioutil.ReadFile(p)
 		if err != nil {
 			return err
 		}

@@ -16,7 +16,7 @@ package descutil
 
 import (
 	"bytes"
-	"os"
+	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -31,11 +31,11 @@ func TestPrinter(t *testing.T) {
 	t.Parallel()
 
 	Convey("Printer", t, func() {
-		protoFile, err := os.ReadFile("util_test.proto")
+		protoFile, err := ioutil.ReadFile("util_test.proto")
 		So(err, ShouldBeNil)
 		protoFileLines := strings.Split(string(protoFile), "\n")
 
-		descFileBytes, err := os.ReadFile("util_test.desc")
+		descFileBytes, err := ioutil.ReadFile("util_test.desc")
 		So(err, ShouldBeNil)
 
 		var desc descriptorpb.FileDescriptorSet

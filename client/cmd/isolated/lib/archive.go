@@ -135,7 +135,7 @@ func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats 
 
 	item.WaitForHashed()
 	if len(c.dumpHash) != 0 {
-		if err = os.WriteFile(c.dumpHash, []byte(item.Digest()), 0644); err != nil {
+		if err = ioutil.WriteFile(c.dumpHash, []byte(item.Digest()), 0644); err != nil {
 			return
 		}
 	}

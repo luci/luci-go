@@ -16,6 +16,7 @@ package gsutil
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,7 +28,7 @@ func TestBoto(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func(c C) {
-		tmpDir, err := os.MkdirTemp("", "luci_boto_test")
+		tmpDir, err := ioutil.TempDir("", "luci_boto_test")
 		So(err, ShouldBeNil)
 		Reset(func() { os.RemoveAll(tmpDir) })
 
@@ -38,7 +39,7 @@ func TestBoto(t *testing.T) {
 		}
 
 		read := func() string {
-			buf, err := os.ReadFile(filepath.Join(tmpDir, ".boto"))
+			buf, err := ioutil.ReadFile(filepath.Join(tmpDir, ".boto"))
 			So(err, ShouldBeNil)
 			return string(buf)
 		}

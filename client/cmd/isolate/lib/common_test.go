@@ -16,6 +16,7 @@ package lib
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -268,6 +269,6 @@ func mustMarshal(p proto.Message) []byte {
 
 func writeFile(dir, name string, content []byte) string {
 	p := filepath.Join(dir, name)
-	So(os.WriteFile(p, content, 0600), ShouldBeNil)
+	So(ioutil.WriteFile(p, content, 0600), ShouldBeNil)
 	return p
 }

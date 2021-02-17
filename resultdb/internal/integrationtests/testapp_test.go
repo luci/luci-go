@@ -17,6 +17,7 @@ package integrationtests
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -63,7 +64,7 @@ func startTestApp(ctx context.Context) (*testApp, error) {
 }
 
 func newTestApp(ctx context.Context) (t *testApp, err error) {
-	tempDir, err := os.MkdirTemp("", "resultdb-integration-test")
+	tempDir, err := ioutil.TempDir("", "resultdb-integration-test")
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func newTestApp(ctx context.Context) (t *testApp, err error) {
 		}
 	`
 	authDBPath := filepath.Join(tempDir, "authdb.txt")
-	if err := os.WriteFile(authDBPath, []byte(authDBTextProto), 0666); err != nil {
+	if err := ioutil.WriteFile(authDBPath, []byte(authDBTextProto), 0666); err != nil {
 		return nil, err
 	}
 

@@ -15,6 +15,7 @@
 package filesystem
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -105,7 +106,7 @@ func TestTouch(t *testing.T) {
 		Convey(`Can update a populated file timestamp`, func() {
 			path := filepath.Join(tdir, "touch")
 
-			So(os.WriteFile(path, []byte("sup"), 0644), ShouldBeNil)
+			So(ioutil.WriteFile(path, []byte("sup"), 0644), ShouldBeNil)
 			st, err := os.Lstat(path)
 			So(err, ShouldBeNil)
 			initialModTime := st.ModTime()
@@ -116,7 +117,7 @@ func TestTouch(t *testing.T) {
 
 			So(st.ModTime(), ShouldHappenBefore, initialModTime)
 
-			content, err := os.ReadFile(path)
+			content, err := ioutil.ReadFile(path)
 			So(err, ShouldBeNil)
 			So(content, ShouldResemble, []byte("sup"))
 		})
@@ -140,7 +141,7 @@ func TestMakeReadOnly(t *testing.T) {
 			if err := os.MkdirAll(base, 0755); err != nil {
 				t.Fatalf("failed to populate directory [%s]: %s", base, err)
 			}
-			if err := os.WriteFile(path, []byte("junk"), 0644); err != nil {
+			if err := ioutil.WriteFile(path, []byte("junk"), 0644); err != nil {
 				t.Fatalf("failed to create file [%s]: %s", path, err)
 			}
 		}
@@ -196,7 +197,7 @@ func TestRemoveAll(t *testing.T) {
 				if err := os.MkdirAll(base, 0755); err != nil {
 					t.Fatalf("failed to populate directory [%s]: %s", base, err)
 				}
-				if err := os.WriteFile(path, []byte("junk"), 0644); err != nil {
+				if err := ioutil.WriteFile(path, []byte("junk"), 0644); err != nil {
 					t.Fatalf("failed to create file [%s]: %s", path, err)
 				}
 			}
@@ -264,7 +265,7 @@ func TestRenamingRemoveAll(t *testing.T) {
 		if err := os.MkdirAll(fooDir, 0755); err != nil {
 			t.Fatalf("failed to populate directory [%s]: %s", fooDir, err)
 		}
-		if err := os.WriteFile(fooBarFile, []byte("junk"), 0644); err != nil {
+		if err := ioutil.WriteFile(fooBarFile, []byte("junk"), 0644); err != nil {
 			t.Fatalf("failed to create file [%s]: %s", fooBarFile, err)
 		}
 
@@ -302,14 +303,14 @@ func TestReadableCopy(t *testing.T) {
 		out := filepath.Join(dir, "out")
 		in := filepath.Join(dir, "in")
 		content := []byte("test")
-		So(os.WriteFile(in, content, 0644), ShouldBeNil)
+		So(ioutil.WriteFile(in, content, 0644), ShouldBeNil)
 
 		// Change umask on unix so that test is not affected by default umask.
 		old := umask(022)
 		So(ReadableCopy(out, in), ShouldBeNil)
 		umask(old)
 
-		buf, err := os.ReadFile(out)
+		buf, err := ioutil.ReadFile(out)
 		So(err, ShouldBeNil)
 		So(buf, ShouldResemble, content)
 
@@ -328,14 +329,14 @@ func TestCopy(t *testing.T) {
 		out := filepath.Join(dir, "out")
 		in := filepath.Join(dir, "in")
 		content := []byte("test")
-		So(os.WriteFile(in, content, 0o644), ShouldBeNil)
+		So(ioutil.WriteFile(in, content, 0o644), ShouldBeNil)
 
 		// Change umask on unix so that test is not affected by default umask.
 		old := umask(0o22)
 		So(Copy(out, in, 0o644), ShouldBeNil)
 		umask(old)
 
-		buf, err := os.ReadFile(out)
+		buf, err := ioutil.ReadFile(out)
 		So(err, ShouldBeNil)
 		So(buf, ShouldResemble, content)
 
@@ -354,7 +355,7 @@ func TestHardlinkRecursively(t *testing.T) {
 	t.Parallel()
 
 	checkFile := func(path, content string) {
-		buf, err := os.ReadFile(path)
+		buf, err := ioutil.ReadFile(path)
 		So(err, ShouldBeNil)
 		So(string(buf), ShouldResemble, content)
 	}
@@ -365,8 +366,8 @@ func TestHardlinkRecursively(t *testing.T) {
 		src2 := filepath.Join(src1, "src2")
 		So(os.MkdirAll(src2, 0755), ShouldBeNil)
 
-		So(os.WriteFile(filepath.Join(src1, "file1"), []byte("test1"), 0644), ShouldBeNil)
-		So(os.WriteFile(filepath.Join(src2, "file2"), []byte("test2"), 0644), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(src1, "file1"), []byte("test1"), 0644), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(src2, "file2"), []byte("test2"), 0644), ShouldBeNil)
 
 		So(os.Symlink(filepath.Join("src2", "file2"), filepath.Join(src1, "link")), ShouldBeNil)
 
@@ -388,7 +389,7 @@ func TestHardlinkRecursively(t *testing.T) {
 		nested := filepath.Join(top, "nested")
 		So(os.MkdirAll(nested, 0755), ShouldBeNil)
 
-		So(os.WriteFile(filepath.Join(nested, "file"), []byte("test"), 0644), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(nested, "file"), []byte("test"), 0644), ShouldBeNil)
 
 		dstTop := filepath.Join(dir, "dst")
 		So(HardlinkRecursively(top, dstTop), ShouldBeNil)
@@ -443,7 +444,7 @@ func TestIsEmptyDir(t *testing.T) {
 		nonEmptyDir := filepath.Join(dir, "non-empty")
 		So(MakeDirs(nonEmptyDir), ShouldBeNil)
 		file1 := filepath.Join(nonEmptyDir, "file1")
-		So(os.WriteFile(file1, []byte("test1"), 0644), ShouldBeNil)
+		So(ioutil.WriteFile(file1, []byte("test1"), 0644), ShouldBeNil)
 
 		isEmpty, err = IsEmptyDir(nonEmptyDir)
 		So(err, ShouldBeNil)
@@ -469,7 +470,7 @@ func TestIsDir(t *testing.T) {
 		So(b, ShouldBeFalse)
 
 		file := filepath.Join(dir, "file")
-		So(os.WriteFile(file, []byte(""), 0644), ShouldBeNil)
+		So(ioutil.WriteFile(file, []byte(""), 0644), ShouldBeNil)
 		b, err = IsDir(file)
 		So(err, ShouldBeNil)
 		So(b, ShouldBeFalse)

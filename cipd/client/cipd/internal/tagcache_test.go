@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -48,7 +49,7 @@ func TestTagCacheWorks(t *testing.T) {
 	}
 
 	Convey("with temp dir", t, func() {
-		tempDir, err := os.MkdirTemp("", "instanceche_test")
+		tempDir, err := ioutil.TempDir("", "instanceche_test")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 

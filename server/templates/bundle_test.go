@@ -17,6 +17,7 @@ package templates
 import (
 	"bytes"
 	"context"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -45,14 +46,14 @@ content {{.arg1}} {{.arg2}}
 	})
 
 	Convey("FileSystemLoader works", t, func(conv C) {
-		dir, err := os.MkdirTemp("", "luci-go-templates")
+		dir, err := ioutil.TempDir("", "luci-go-templates")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(dir)
 
 		for k, v := range assets {
 			path := filepath.Join(dir, filepath.FromSlash(k))
 			So(os.MkdirAll(filepath.Dir(path), 0777), ShouldBeNil)
-			So(os.WriteFile(path, []byte(v), 0666), ShouldBeNil)
+			So(ioutil.WriteFile(path, []byte(v), 0666), ShouldBeNil)
 		}
 
 		loaderTest(conv, FileSystemLoader(dir))

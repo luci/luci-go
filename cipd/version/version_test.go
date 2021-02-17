@@ -16,6 +16,7 @@ package version
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"testing"
@@ -51,7 +52,7 @@ func TestEvalSymlinksAndAbs(t *testing.T) {
 
 	Convey(`evalSymlinksAndAbs`, t, func() {
 		Convey(`works`, func() {
-			dir, err := os.MkdirTemp("", "")
+			dir, err := ioutil.TempDir("", "")
 			So(err, ShouldBeNil)
 			defer os.RemoveAll(dir)
 

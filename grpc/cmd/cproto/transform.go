@@ -19,7 +19,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"strings"
 	"text/template"
 	"unicode/utf8"
@@ -81,7 +81,7 @@ func (t *transformer) transformGoFile(filename string) error {
 		return err
 	}
 
-	return os.WriteFile(filename, formatted, 0666)
+	return ioutil.WriteFile(filename, formatted, 0666)
 }
 
 func (t *transformer) transformFile(file *ast.File) error {

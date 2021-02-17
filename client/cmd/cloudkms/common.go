@@ -92,7 +92,7 @@ func readInput(file string) ([]byte, error) {
 	if file == "-" {
 		return ioutil.ReadAll(os.Stdin)
 	}
-	return os.ReadFile(file)
+	return ioutil.ReadFile(file)
 }
 
 func readInputFd(file string) (*os.File, error) {
@@ -107,7 +107,7 @@ func writeOutput(file string, data []byte) error {
 		_, err := os.Stdout.Write(data)
 		return err
 	}
-	return os.WriteFile(file, data, 0664)
+	return ioutil.WriteFile(file, data, 0664)
 }
 
 // cryptoKeysPathComponents are the path components necessary for API calls related to

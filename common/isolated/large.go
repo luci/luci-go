@@ -19,7 +19,6 @@ import (
 	"compress/zlib"
 	"encoding/json"
 	"io/ioutil"
-	"os"
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
@@ -131,7 +130,7 @@ func WriteStats(path string, hot, cold []int64) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal stats json").Err()
 	}
-	if err := os.WriteFile(path, statsJSON, 0600); err != nil {
+	if err := ioutil.WriteFile(path, statsJSON, 0600); err != nil {
 		return errors.Annotate(err, "failed to write stats json").Err()
 	}
 

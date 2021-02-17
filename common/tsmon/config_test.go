@@ -15,6 +15,7 @@
 package tsmon
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -37,7 +38,7 @@ func TestLoadConfig(t *testing.T) {
 	})
 
 	Convey("Empty file", t, func() {
-		tf, err := os.CreateTemp("", "config_test")
+		tf, err := ioutil.TempFile("", "config_test")
 		if err != nil {
 			t.Fail()
 		}
@@ -54,7 +55,7 @@ func TestLoadConfig(t *testing.T) {
 	})
 
 	Convey("Full file", t, func() {
-		tf, err := os.CreateTemp("", "config_test")
+		tf, err := ioutil.TempFile("", "config_test")
 		if err != nil {
 			t.Fail()
 		}

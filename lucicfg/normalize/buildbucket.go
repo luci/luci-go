@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,7 +43,7 @@ func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
 	}
 
 	// 'flatten_buildbucket_cfg' wants a real file as input.
-	f, err := os.CreateTemp("", "lucicfg")
+	f, err := ioutil.TempFile("", "lucicfg")
 	if err != nil {
 		return err
 	}

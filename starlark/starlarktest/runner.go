@@ -21,6 +21,7 @@ package starlarktest
 import (
 	"fmt"
 	"go/build"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -108,7 +109,7 @@ func defaultExecutor(t *testing.T, path string, predeclared starlark.StringDict)
 	th := starlark.Thread{}
 	HookThread(&th, t)
 
-	code, err := os.ReadFile(path)
+	code, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}

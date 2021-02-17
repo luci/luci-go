@@ -16,6 +16,7 @@ package archiver
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -125,7 +126,7 @@ func TestPushDirectory(t *testing.T) {
 		if err := os.MkdirAll(filepath.Dir(outOfTreeFile), 0700); err != nil {
 			t.Fail()
 		}
-		if err := os.WriteFile(outOfTreeFile, []byte(outOfTreeContents), mode); err != nil {
+		if err := ioutil.WriteFile(outOfTreeFile, []byte(outOfTreeContents), mode); err != nil {
 			t.Fail()
 		}
 
@@ -279,7 +280,7 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, namespace stri
 			continue
 		}
 		fullPath := filepath.Join(root, node.relPath)
-		So(os.WriteFile(fullPath, []byte(node.contents), mode), ShouldBeNil)
+		So(ioutil.WriteFile(fullPath, []byte(node.contents), mode), ShouldBeNil)
 	}
 
 	fItems, symItems, err := PushDirectory(a, root, "")

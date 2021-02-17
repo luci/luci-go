@@ -321,7 +321,7 @@ func (d *Cache) add(digest isolated.HexDigest, src io.Reader, cb func() error) e
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
-	tmp, err := os.CreateTemp(d.path, string(digest)+".*.tmp")
+	tmp, err := ioutil.TempFile(d.path, string(digest)+".*.tmp")
 	if err != nil {
 		return errors.Annotate(err, "failed to create tempfile for %s", digest).Err()
 	}

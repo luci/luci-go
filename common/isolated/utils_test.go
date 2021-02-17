@@ -17,6 +17,7 @@ package isolated
 import (
 	"bytes"
 	"crypto"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -56,7 +57,7 @@ func TestHashBytes(t *testing.T) {
 }
 
 func TestHashFile(t *testing.T) {
-	f, err := os.CreateTemp("", "isolated")
+	f, err := ioutil.TempFile("", "isolated")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -16,6 +16,7 @@ package filesystem
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -201,7 +202,7 @@ func RenamingRemoveAll(path, renameToDir string) (renamedToPath string, err erro
 	if renameToDir == "" {
 		renameToDir = pathParentDir
 	}
-	renameToDir, err = os.MkdirTemp(renameToDir, ".trash-")
+	renameToDir, err = ioutil.TempDir(renameToDir, ".trash-")
 	if err != nil {
 		err = RemoveAll(path)
 		return

@@ -292,7 +292,7 @@ func (a Application) Run(c context.Context) error {
 
 // generateAPI generates and installs a single directory item's API.
 func (a *Application) generateAPI(c context.Context, item *directoryItem, discoveryURL *url.URL, dst string) error {
-	tmpdir, err := os.MkdirTemp(os.TempDir(), "apigen")
+	tmpdir, err := ioutil.TempDir(os.TempDir(), "apigen")
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (a *Application) generateAPI(c context.Context, item *directoryItem, discov
 
 	gendir := augPath(tmpdir, "gen")
 	headerPath := augPath(tmpdir, "header.txt")
-	if err := os.WriteFile(headerPath, []byte(a.license), 0644); err != nil {
+	if err := ioutil.WriteFile(headerPath, []byte(a.license), 0644); err != nil {
 		return err
 	}
 
