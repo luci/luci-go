@@ -70,7 +70,6 @@ describe('InvocationState', () => {
     const invocationState = new InvocationState(appState);
     invocationState.invocationId = 'invocation-id';
     await invocationState.testLoader!.loadNextPage();
-    invocationState.selectedNode = invocationState.testLoader!.node;
     after(() => invocationState.dispose());
 
     it('should not filter out anything when search text is empty', () => {

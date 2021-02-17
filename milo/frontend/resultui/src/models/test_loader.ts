@@ -20,7 +20,6 @@
 import { action, computed, observable } from 'mobx';
 
 import { QueryTestVariantsRequest, TestVariant, TestVariantStatus, UISpecificService } from '../services/resultdb';
-import { TestNode } from './test_node';
 
 /**
  * The stage of the next test variant. The stage can be
@@ -82,7 +81,6 @@ export class TestLoader {
   private nextPageToken: string | undefined = '';
 
   constructor(
-    readonly node: TestNode,
     private readonly req: QueryTestVariantsRequest,
     private readonly uiSpecificService: UISpecificService,
   ) {}
@@ -185,7 +183,6 @@ export class TestLoader {
         default:
           break;
       }
-      this.node.addTestId(testVariant.testId);
     }
   }
 }

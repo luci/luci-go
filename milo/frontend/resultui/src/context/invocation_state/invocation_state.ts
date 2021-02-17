@@ -19,7 +19,6 @@ import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 import { consumeContext, provideContext } from '../../libs/context';
 import { parseSearchQuery } from '../../libs/search_query';
 import { TestLoader } from '../../models/test_loader';
-import { TestNode } from '../../models/test_node';
 import { Invocation, TestVariant } from '../../services/resultdb';
 import { AppState } from '../app_state/app_state';
 
@@ -39,10 +38,6 @@ export class InvocationState {
   @observable.ref searchText = '';
 
   @observable.ref searchFilter = (_v: TestVariant) => true;
-
-  private filterVariant(variant: TestVariant): boolean {
-    return variant.testId.startsWith(this.selectedNode.path) && this.searchFilter(variant);
-  }
 
   private disposer = () => {};
   constructor(private appState: AppState) {
@@ -99,37 +94,35 @@ export class InvocationState {
     return this.invocationRes.value;
   }
 
-  @observable.ref selectedNode!: TestNode;
-
   @computed({keepAlive: true})
   get testLoader(): TestLoader | null {
     if (this.isDisposed || !this.invocationName || !this.appState.uiSpecificService) {
       return null;
     }
-    return new TestLoader(TestNode.newRoot(), {invocations: [this.invocationName]}, this.appState.uiSpecificService);
+    return new TestLoader({invocations: [this.invocationName]}, this.appState.uiSpecificService);
   }
 
   @computed get filteredUnexpectedVariants() {
     return (this.testLoader?.unexpectedTestVariants || [])
-      .filter(v => this.filterVariant(v));
+      .filter(v => this.searchFilter(v));
   }
 
   @computed get filteredUnexpectedlySkippedVariants() {
     return (this.testLoader?.unexpectedlySkippedTestVariants || [])
-      .filter(v => this.filterVariant(v));
+      .filter(v => this.searchFilter(v));
   }
 
   @computed get filteredFlakyVariants() {
     return (this.testLoader?.flakyTestVariants || [])
-      .filter(v => this.filterVariant(v));
+      .filter(v => this.searchFilter(v));
   }
   @computed get filteredExoneratedVariants() {
     return (this.testLoader?.exoneratedTestVariants || [])
-      .filter(v => this.filterVariant(v));
+      .filter(v => this.searchFilter(v));
   }
   @computed get filteredExpectedVariants() {
     return (this.testLoader?.expectedTestVariants || [])
-      .filter(v => this.filterVariant(v));
+      .filter(v => this.searchFilter(v));
   }
 }
 
