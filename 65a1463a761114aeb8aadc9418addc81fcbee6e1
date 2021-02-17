@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c8853f5_fb6612af",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-17T17:36:38Z",
+      "side": 1,
+      "message": "lgtm; Is there a way we can easily add a presubmit check to prevent these from being added again?\n\nIt looks like the golang wiki recommends staticcheck for this (https://github.com/golang/go/wiki/Deprecated -\u003e https://staticcheck.io/docs/checks#SA1019)",
+      "revId": "65a1463a761114aeb8aadc9418addc81fcbee6e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
