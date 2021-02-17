@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "01c0a18e_ba0c9805",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-17T21:59:56Z",
+      "side": 1,
+      "message": "I was going to say optionally you could note where else there are duplicates, or where it was copied from... the reason being that if someone discovers they want to modify one copy (e.g. due to bug or performance etc.) then they\u0027ll probably want to find other copies.\n\nProbably not important since the probability of needing to modify is low but worth considering.",
+      "parentUuid": "1808ea5f_d0e8fef9",
+      "revId": "025bdeb1b703b6632f0a18480005f998759667a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ff4af668_ed5323cf",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -84,6 +102,24 @@
       "side": 1,
       "message": "well, it\u0027s doesn\u0027t strictly assert it, since I can\u0027t compare slice pointers,\nbut its\u0027 a very strong inference because iff this is true, it means initial slice of `v` has been modified and its first N elements have exact same values as `v1`, hence most likely underlying slice storage was re-used.",
       "parentUuid": "4fa3ad9e_52f5c933",
+      "revId": "025bdeb1b703b6632f0a18480005f998759667a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a639092_a2ef8b0b",
+        "filename": "cv/internal/common/i64_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-17T21:59:56Z",
+      "side": 1,
+      "message": "OK, so it sounds like this test will probably fail sometimes but not all of the time if the code under test is incorrect. Which seems OK but could warrant a comment.",
+      "parentUuid": "08f06c6b_c8c2a512",
       "revId": "025bdeb1b703b6632f0a18480005f998759667a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
