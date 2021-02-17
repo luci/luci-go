@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "acbc6693_7c639c9e",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T23:35:38Z",
+      "side": 1,
+      "message": "maybe just \n\n  (?i)$...^\n\n?",
+      "range": {
+        "startLine": 88,
+        "startChar": 31,
+        "endLine": 89,
+        "endChar": 56
+      },
+      "revId": "95acf86cc03ce941277873abfd75528fdb0a2e9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1bc55b55_1e2cd24c",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-17T23:35:38Z",
+      "side": 1,
+      "message": "this is a bit confusing example because this could be achieved simpler:\n\n  {kind_regexp: \"dryrun\"}\n\ndo you have an example where the non-trivial is unavoidable?",
+      "range": {
+        "startLine": 113,
+        "startChar": 5,
+        "endLine": 116,
+        "endChar": 80
+      },
+      "revId": "95acf86cc03ce941277873abfd75528fdb0a2e9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
