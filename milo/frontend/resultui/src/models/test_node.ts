@@ -14,22 +14,7 @@
 
 import { action, computed, observable } from 'mobx';
 
-import { TestVariant } from '../services/resultdb';
-
-
-/**
- * Regex for extracting segments from a test ID.
- */
-// Use /[a-zA-Z0-9_-]*([^a-zA-Z0-9_-]|$)/g instead of
-// /[a-zA-Z0-9_-]+([^a-zA-Z0-9_-]|$)/g so testIds ending with /[^a-zA-Z0-9_-]/
-// will get their own leaves.
-// This ensures only leaf nodes can have directly associated tests.
-// Without this, nodes may be incorrectly elided when there's a testId that
-// ends with /[^a-zA-Z0-9_-]/.
-// For example, when we add 'parent:' and 'parent:child' to the tree,
-// 'child' will be incorrectly elided into 'parent:',
-// even though 'parent:' contains two different testIds.
-export const ID_SEG_REGEX = /[a-zA-Z0-9_-]*([^a-zA-Z0-9_-]|$)/g;
+import { ID_SEG_REGEX, TestVariant } from '../services/resultdb';
 
 /**
  * Contains test results and exonerations, grouped by variant,
