@@ -16,7 +16,11 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
+	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -24,6 +28,10 @@ import (
 
 // BuilderKind is the kind of the Builder entity.
 const BuilderKind = "Bucket.Builder"
+
+// BuilderExpirationDuration is the duration when builds aren't scheduled on a
+// given builder, the builder in BuilderStat will be deleted.
+const BuilderExpirationDuration = 4 * 7 * 24 * time.Hour
 
 // Builder is a Datastore entity that stores builder configuration.
 // It is a child of Bucket entity.
@@ -51,4 +59,59 @@ func BuilderKey(ctx context.Context, project, bucket, builder string) *datastore
 		ID:     builder,
 		Parent: BucketKey(ctx, project, bucket),
 	})
+}
+
+// BuilderStat represents a builder Datastore entity which is used internally for metrics.
+//
+// The builder will be registered automatically by scheduling a build,
+// and unregistered automatically by not scheduling builds for BuilderExpirationDuration.
+//
+// Note: due to the historical reason, the entity kind is Builder.
+type BuilderStat struct {
+	_kind string `gae:"$kind,Builder"`
+
+	// ID is a string with format "{project}:{bucket}:{builder}".
+	ID string `gae:"$id"`
+
+	// LastScheduled is the last time we received a valid build scheduling request
+	// for this builder. Probabilistically update when scheduling a build.
+	LastScheduled time.Time `gae:"last_scheduled"`
+}
+
+// UpdateBuilderStat updates or creates datastore Builder entities
+func UpdateBuilderStat(ctx context.Context, builds []*Build, scheduledTime time.Time) error {
+	builders := make([]*BuilderStat, len(builds))
+	for i, b := range builds {
+		builder := b.Proto.GetBuilder()
+		builders[i] = &BuilderStat{
+			ID: fmt.Sprintf("%s:%s:%s", builder.GetProject(), builder.GetBucket(), builder.GetBuilder()),
+		}
+	}
+
+	if err := GetIgnoreMissing(ctx, builders); err != nil {
+		return err
+	}
+
+	var toPut []*BuilderStat
+	for _, builder := range builders {
+		if builder.LastScheduled.IsZero() {
+			builder.LastScheduled = scheduledTime
+			toPut = append(toPut, builder)
+		} else {
+			// Probabilistically update Builder entities to avoid many datastore calls.
+			// The longer an entity isn't updated, the greater its probability becomes.
+			sinceLastUpdate := scheduledTime.Sub(builder.LastScheduled)
+			updateProbability := sinceLastUpdate.Seconds() / 3600.0
+			if rand.Float64() < updateProbability {
+				builder.LastScheduled = scheduledTime
+				toPut = append(toPut, builder)
+			}
+		}
+	}
+	if len(toPut) > 0 {
+		if err := datastore.Put(ctx, toPut); err != nil {
+			return errors.Annotate(err, "error putting BuilderStat").Err()
+		}
+	}
+	return nil
 }
