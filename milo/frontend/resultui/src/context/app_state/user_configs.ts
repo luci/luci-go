@@ -26,12 +26,6 @@ export interface UserConfigs {
     showSucceededSteps: boolean;
     showDebugLogs: boolean;
   };
-  tests: {
-    showUnexpectedVariant: boolean;
-    showFlakyVariant: boolean;
-    showExoneratedVariant: boolean;
-    showExpectedVariant: boolean;
-  };
   defaultBuildPageTabName: string;
 }
 
@@ -42,12 +36,6 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   steps: Object.freeze({
     showSucceededSteps: true,
     showDebugLogs: false,
-  }),
-  tests: Object.freeze({
-    showUnexpectedVariant: true,
-    showFlakyVariant: true,
-    showExoneratedVariant: true,
-    showExpectedVariant: false,
   }),
   defaultBuildPageTabName: 'build-overview',
 });
