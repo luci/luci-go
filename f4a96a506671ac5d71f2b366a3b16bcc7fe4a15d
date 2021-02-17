@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "89213be0_a5d5a8a5",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-17T08:42:39Z",
+      "side": 1,
+      "message": "Personally I find \"is the duration when builds aren\u0027t scheduled\" slightly confusing. I would write something like:\n\"BuilderExpirationDuration is the maximum duration a builder can go without having a build scheduled before its BuilderStat may be deleted.\"\n\nBut I don\u0027t know if mine is less confusing.",
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0aa92f63_a169d3d3",
         "filename": "buildbucket/appengine/model/builder.go",
         "patchSetId": 4
@@ -66,6 +83,76 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0cd4cb3f_df5c86cc",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-17T08:42:39Z",
+      "side": 1,
+      "message": "b.Proto can\u0027t be nil regardless, the Proto field of Build structs is not a pointer type so you never need a first-level Get.",
+      "parentUuid": "46891b7f_ccc9c524",
+      "range": {
+        "startLine": 85,
+        "startChar": 21,
+        "endLine": 85,
+        "endChar": 24
+      },
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ccf8abf0_7f4afb65",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-17T08:42:39Z",
+      "side": 1,
+      "message": "\"stats\" or \"builderStats\", because \"builders\" generally refers to Builder structs in this file.",
+      "range": {
+        "startLine": 86,
+        "startChar": 2,
+        "endLine": 86,
+        "endChar": 10
+      },
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "839e05c0_d6e9f57e",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-17T08:42:39Z",
+      "side": 1,
+      "message": "And here I\u0027d use \"s\" or \"stat\".",
+      "range": {
+        "startLine": 96,
+        "startChar": 8,
+        "endLine": 96,
+        "endChar": 15
+      },
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f6837bd1_3410e59e",
         "filename": "buildbucket/appengine/model/builder.go",
         "patchSetId": 4
@@ -82,6 +169,29 @@
         "startChar": 57,
         "endLine": 101,
         "endChar": 77
+      },
+      "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ef7f780_d99df341",
+        "filename": "buildbucket/appengine/model/builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-17T08:42:39Z",
+      "side": 1,
+      "message": "BuilderStat.",
+      "range": {
+        "startLine": 101,
+        "startChar": 31,
+        "endLine": 101,
+        "endChar": 38
       },
       "revId": "f4a96a506671ac5d71f2b366a3b16bcc7fe4a15d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
