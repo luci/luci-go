@@ -39,3 +39,55 @@ func UniqueSorted(v []int64) []int64 {
 	}
 	return v[:n+1]
 }
+
+// DifferenceSorted returns all int64s in the first slice and not the second.
+//
+// Both slices must be sorted. Doesn't modify input slices.
+func DifferenceSorted(a, b []int64) []int64 {
+	var diff []int64
+	for {
+		if len(b) == 0 {
+			return append(diff, a...)
+		}
+		if len(a) == 0 {
+			return diff
+		}
+		x, y := a[0], b[0]
+		switch {
+		case x == y:
+			a, b = a[1:], b[1:]
+		case x < y:
+			diff = append(diff, x)
+			a = a[1:]
+		default:
+			b = b[1:]
+		}
+	}
+}
+
+// UnionSorted returns sorted unique int64s from two slices.
+//
+// Both slices must be sorted and unique. Doesn't modify input slices.
+func UnionSorted(a, b []int64) []int64 {
+	u := make([]int64, 0, len(a)+len(b))
+	for {
+		if len(b) == 0 {
+			return append(u, a...)
+		}
+		if len(a) == 0 {
+			return append(u, b...)
+		}
+		x, y := a[0], b[0]
+		switch {
+		case x == y:
+			a, b = a[1:], b[1:]
+			u = append(u, x)
+		case x < y:
+			u = append(u, x)
+			a = a[1:]
+		default:
+			u = append(u, y)
+			b = b[1:]
+		}
+	}
+}
