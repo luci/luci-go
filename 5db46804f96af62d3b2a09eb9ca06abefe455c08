@@ -16,6 +16,24 @@
       "message": "LGTM. Perhaps we want to increase the left padding a bit, as after we remove the navigation bar, everything is quite close to the left edge.",
       "revId": "5db46804f96af62d3b2a09eb9ca06abefe455c08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5aa15ebe_2e836db9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-17T03:43:14Z",
+      "side": 1,
+      "message": "Added padding.",
+      "parentUuid": "a9e67af2_db40fe1e",
+      "revId": "5db46804f96af62d3b2a09eb9ca06abefe455c08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
