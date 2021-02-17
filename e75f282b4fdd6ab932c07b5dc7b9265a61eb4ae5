@@ -22,6 +22,30 @@
       },
       "revId": "e75f282b4fdd6ab932c07b5dc7b9265a61eb4ae5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e1179f50_c4549b69",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-17T22:08:10Z",
+      "side": 1,
+      "message": "Will be in next CL.",
+      "parentUuid": "6ef5f876_e02adc67",
+      "range": {
+        "startLine": 129,
+        "startChar": 55,
+        "endLine": 129,
+        "endChar": 64
+      },
+      "revId": "e75f282b4fdd6ab932c07b5dc7b9265a61eb4ae5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
