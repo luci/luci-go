@@ -22,39 +22,42 @@ export const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Finalized]: 'finalized',
 };
 
-
 export const VARIANT_STATUS_DISPLAY_MAP = Object.freeze({
   [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
+  [TestVariantStatus.UNEXPECTED]: 'unexpected',
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'unexpectedly skipped',
+  [TestVariantStatus.FLAKY]: 'flaky',
   [TestVariantStatus.EXONERATED]: 'exonerated',
   [TestVariantStatus.EXPECTED]: 'expected',
-  [TestVariantStatus.UNEXPECTED]: 'unexpected',
-  [TestVariantStatus.FLAKY]: 'flaky',
 });
 
 export const VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE = Object.freeze({
   [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'Unspecified',
+  [TestVariantStatus.UNEXPECTED]: 'Unexpected',
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'Unexpectedly Skipped',
+  [TestVariantStatus.FLAKY]: 'Flaky',
   [TestVariantStatus.EXONERATED]: 'Exonerated',
   [TestVariantStatus.EXPECTED]: 'Expected',
-  [TestVariantStatus.UNEXPECTED]: 'Unexpected',
-  [TestVariantStatus.FLAKY]: 'Flaky',
 });
 
 // Just so happens to be the same as VARIANT_STATUS_DISPLAY_MAP.
 export const VARIANT_STATUS_CLASS_MAP = Object.freeze({
   [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
+  [TestVariantStatus.UNEXPECTED]: 'unexpected',
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'unexpectedly-skipped',
+  [TestVariantStatus.FLAKY]: 'flaky',
   [TestVariantStatus.EXONERATED]: 'exonerated',
   [TestVariantStatus.EXPECTED]: 'expected',
-  [TestVariantStatus.UNEXPECTED]: 'unexpected',
-  [TestVariantStatus.FLAKY]: 'flaky',
 });
 
 export const VARIANT_STATUS_ICON_MAP = Object.freeze({
   [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
+  [TestVariantStatus.UNEXPECTED]: 'error',
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'report',
+  [TestVariantStatus.FLAKY]: 'warning',
   // TODO(weiweilin): find an appropriate icon for exonerated
   [TestVariantStatus.EXONERATED]: 'check',
   [TestVariantStatus.EXPECTED]: 'check',
-  [TestVariantStatus.FLAKY]: 'warning',
-  [TestVariantStatus.UNEXPECTED]: 'error',
 });
 
 

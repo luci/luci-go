@@ -107,6 +107,11 @@ export class InvocationState {
       .filter(v => this.filterVariant(v));
   }
 
+  @computed get filteredUnexpectedlySkippedVariants() {
+    return (this.testLoader?.unexpectedlySkippedTestVariants || [])
+      .filter(v => this.filterVariant(v));
+  }
+
   @computed get filteredFlakyVariants() {
     return (this.testLoader?.flakyTestVariants || [])
       .filter(v => this.filterVariant(v));

@@ -28,6 +28,7 @@ export interface UserConfigs {
   };
   tests: {
     showUnexpectedVariant: boolean;
+    showUnexpectedlySkippedVariant: boolean;
     showFlakyVariant: boolean;
     showExoneratedVariant: boolean;
     showExpectedVariant: boolean;
@@ -45,6 +46,7 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   }),
   tests: Object.freeze({
     showUnexpectedVariant: true,
+    showUnexpectedlySkippedVariant: true,
     showFlakyVariant: true,
     showExoneratedVariant: true,
     showExpectedVariant: false,
