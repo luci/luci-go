@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "84f8d61f_c543bdfc",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-17T05:00:43Z",
+      "side": 1,
+      "message": "I have updated it to track from onBeforeEnter",
+      "parentUuid": "45855ff6_2f8216f8",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 111,
+        "endChar": 41
+      },
+      "revId": "43f0e094b2d2a1aa0182e9a3c3bbadb941290897",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "94945c45_e473ebd8",
@@ -71,6 +95,24 @@
       "writtenOn": "2021-02-17T03:58:05Z",
       "side": 1,
       "message": "This is not true. Tests may not be rendered to screen because their are controlled by the lazy-list.\n\nI think it\u0027s more accurate to track the event in the first variant entry.",
+      "revId": "43f0e094b2d2a1aa0182e9a3c3bbadb941290897",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ec82725_87786c4f",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-17T05:00:43Z",
+      "side": 1,
+      "message": "Updated to track when the first variant entry is loaded",
+      "parentUuid": "94945c45_e473ebd8",
       "revId": "43f0e094b2d2a1aa0182e9a3c3bbadb941290897",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
