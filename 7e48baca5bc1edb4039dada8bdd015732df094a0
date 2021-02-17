@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "7e48baca5bc1edb4039dada8bdd015732df094a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf664dda_1c378bb3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-17T19:46:13Z",
+      "side": 1,
+      "message": "lgtm % one alternative",
+      "revId": "7e48baca5bc1edb4039dada8bdd015732df094a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1300f8d_6900deee",
+        "filename": "resultdb/sink/proto/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-17T19:46:13Z",
+      "side": 1,
+      "message": "I wonder reserved could be better.\n\n```\n// deprecated. use test_metadata.\n// crbug/1137513 for context.\nreserved \"test_location\"\n```",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 71
+      },
+      "revId": "7e48baca5bc1edb4039dada8bdd015732df094a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
