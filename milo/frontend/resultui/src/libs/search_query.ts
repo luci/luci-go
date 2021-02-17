@@ -53,6 +53,8 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
 const QUERY_SUGGESTIONS = [
   {value: 'Status:UNEXPECTED', explanation: 'Include only tests that are unexpected'},
   {value: '-Status:UNEXPECTED', explanation: 'Exclude tests that are unexpected'},
+  {value: 'Status:UNEXPECTEDLY_SKIPPED', explanation: 'Include only tests that are unexpectedly skipped'},
+  {value: '-Status:UNEXPECTEDLY_SKIPPED', explanation: 'Exclude tests that are unexpectedly skipped'},
   {value: 'Status:FLAKY', explanation: 'Include only tests that are flaky'},
   {value: '-Status:FLAKY', explanation: 'Exclude tests that are flaky'},
   {value: 'Status:EXONERATED', explanation: 'Include only tests that are exonerated'},
@@ -92,7 +94,7 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
       // be hidden after the size of supported filter types grows.
       {isHeader: true, display: html`<strong>Supported Filter Types</strong>`},
       {value: 'ID:test-id-substr', explanation: 'Include only tests with the specified substring in their ID (case insensitive). `ID:` is optional'},
-      {value: 'Status:UNEXPECTED,FLAKY,EXONERATED,EXPECTED', explanation: 'Include only tests that have the specified status'},
+      {value: 'Status:UNEXPECTED,UNEXPECTEDLY_SKIPPED,FLAKY,EXONERATED,EXPECTED', explanation: 'Include only tests that have the specified status'},
       {value: 'RStatus:Pass,Fail,Crash,Abort,Skip', explanation: 'Include only tests with at least one run of the specified status'},
     ];
   }
