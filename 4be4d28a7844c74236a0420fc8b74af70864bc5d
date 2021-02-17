@@ -33,6 +33,24 @@
       "message": "Sorry was linked from other CL; forgot to copy link here: https://ci.chromium.org/p/infradata-gae/builders/ci/gae-deploy/b8855016563325063184",
       "revId": "4be4d28a7844c74236a0420fc8b74af70864bc5d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c2c69a9_2ce21c28",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-17T23:33:49Z",
+      "side": 1,
+      "message": "Thanks, I missed the link in original CL.",
+      "parentUuid": "5623826e_f41783dd",
+      "revId": "4be4d28a7844c74236a0420fc8b74af70864bc5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
