@@ -66,17 +66,17 @@ func TestArchive(t *testing.T) {
 
 		barData := []byte("foo")
 		bozData := []byte("foo2")
-		So(os.WriteFile(filepath.Join(baseDir, "bar"), barData, 0600), ShouldBeNil)
-		So(os.WriteFile(filepath.Join(secondDir, "boz"), bozData, 0600), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(baseDir, "bar"), barData, 0600), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(secondDir, "boz"), bozData, 0600), ShouldBeNil)
 		winLinkData := []byte("no link on Windows")
 		if !isWindows() {
 			So(os.Symlink(filepath.Join("base", "bar"), filepath.Join(tmpDir, "link")), ShouldBeNil)
 			So(os.Symlink("bar", filepath.Join(baseDir, "relativelink")), ShouldBeNil)
 			So(os.Symlink(filepath.Join(baseDir, "bar"), filepath.Join(subDir, "abslink")), ShouldBeNil)
 		} else {
-			So(os.WriteFile(filepath.Join(tmpDir, "link"), winLinkData, 0600), ShouldBeNil)
-			So(os.WriteFile(filepath.Join(baseDir, "relativelink"), winLinkData, 0600), ShouldBeNil)
-			So(os.WriteFile(filepath.Join(subDir, "abslink"), winLinkData, 0600), ShouldBeNil)
+			So(ioutil.WriteFile(filepath.Join(tmpDir, "link"), winLinkData, 0600), ShouldBeNil)
+			So(ioutil.WriteFile(filepath.Join(baseDir, "relativelink"), winLinkData, 0600), ShouldBeNil)
+			So(ioutil.WriteFile(filepath.Join(subDir, "abslink"), winLinkData, 0600), ShouldBeNil)
 		}
 
 		var buf bytes.Buffer
@@ -223,7 +223,7 @@ func TestArchiveFail(t *testing.T) {
 			So(item1.DisplayName, ShouldResemble, "foo")
 
 			fileName := filepath.Join(tmpDir, "existent")
-			So(os.WriteFile(fileName, []byte("foo"), 0600), ShouldBeNil)
+			So(ioutil.WriteFile(fileName, []byte("foo"), 0600), ShouldBeNil)
 			item2 := a.PushFile("existent", fileName, 0)
 			item1.WaitForHashed()
 			item2.WaitForHashed()
@@ -264,7 +264,7 @@ func TestArchiveFail(t *testing.T) {
 
 			// This will trigger an eventual Cancel().
 			fileName := filepath.Join(tmpDir, "existent")
-			So(os.WriteFile(fileName, []byte("foo"), 0600), ShouldBeNil)
+			So(ioutil.WriteFile(fileName, []byte("foo"), 0600), ShouldBeNil)
 			item := a.PushFile("existent", fileName, 0)
 			item.WaitForHashed()
 			So(item.Error(), ShouldResemble, nil)
@@ -299,7 +299,7 @@ func filesArchiveExpect(h crypto.Hash, dir string, files ...string) *archiveExpe
 		}
 
 		So(err, ShouldBeNil)
-		data, err := os.ReadFile(path)
+		data, err := ioutil.ReadFile(path)
 		So(err, ShouldBeNil)
 		mode := int(fi.Mode() & os.ModePerm)
 		i.Files[file] = isolated.BasicFile(isolated.HashBytes(h, data), mode, int64(len(data)))

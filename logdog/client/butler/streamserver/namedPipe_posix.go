@@ -18,6 +18,7 @@ package streamserver
 
 import (
 	"context"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -39,7 +40,7 @@ const maxPOSIXNamedSocketLength = 104
 // server.
 func newStreamServer(ctx context.Context, path string) (*StreamServer, error) {
 	if path == "" {
-		tFile, err := os.CreateTemp("", "ld")
+		tFile, err := ioutil.TempFile("", "ld")
 		if err != nil {
 			return nil, err
 		}

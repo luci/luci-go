@@ -17,7 +17,7 @@ package lib
 import (
 	"context"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
@@ -140,7 +140,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	logging.Infof(ctx, "UploadIfMissing took %s, moved %d bytes", time.Since(start), moved)
 
 	if dd := c.dumpDigest; dd != "" {
-		if err := os.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
+		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
 			return errors.Annotate(err, "failed to dump digest").Err()
 		}
 	} else {

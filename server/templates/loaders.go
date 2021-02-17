@@ -17,6 +17,7 @@ package templates
 import (
 	"context"
 	"html/template"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -128,7 +129,7 @@ func readFilesInDir(dir string, out map[string]string) error {
 		if err != nil || info.IsDir() {
 			return err
 		}
-		body, err := os.ReadFile(path)
+		body, err := ioutil.ReadFile(path)
 		if err == nil {
 			out[path] = string(body)
 		}

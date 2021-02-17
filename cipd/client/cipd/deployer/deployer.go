@@ -717,7 +717,7 @@ func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, e
 	if err != nil {
 		return nil, err
 	}
-	return os.CreateTemp(dir, prefix)
+	return ioutil.TempFile(dir, prefix)
 }
 
 func (d *deployerImpl) TempDir(ctx context.Context, prefix string, mode os.FileMode) (string, error) {
@@ -1010,7 +1010,7 @@ func (d *deployerImpl) getCurrentInstanceID(packageDir string) (string, error) {
 	var err error
 	if runtime.GOOS == "windows" {
 		var bytes []byte
-		bytes, err = os.ReadFile(filepath.Join(packageDir, currentTxt))
+		bytes, err = ioutil.ReadFile(filepath.Join(packageDir, currentTxt))
 		if err == nil {
 			current = strings.TrimSpace(string(bytes))
 		}

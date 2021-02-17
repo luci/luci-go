@@ -20,6 +20,7 @@ import (
 	"crypto"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -212,7 +213,7 @@ func copySmallFilesFromCache(kvs *embeddedkvs.KVS, smallFiles map[string][]*clie
 			if file.IsExecutable {
 				mode = 0o700
 			}
-			if err := os.WriteFile(file.Path, value, os.FileMode(mode)); err != nil {
+			if err := ioutil.WriteFile(file.Path, value, os.FileMode(mode)); err != nil {
 				return errors.Annotate(err, "failed to write file").Err()
 			}
 		}

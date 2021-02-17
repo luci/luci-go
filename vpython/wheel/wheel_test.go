@@ -16,7 +16,7 @@ package wheel
 
 import (
 	"fmt"
-	"os"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -183,7 +183,7 @@ func TestWriteRequirementsFile(t *testing.T) {
 			wheelCryptography})
 		So(err, ShouldBeNil)
 
-		content, err := os.ReadFile(req)
+		content, err := ioutil.ReadFile(req)
 		So(err, ShouldBeNil)
 		So(content, ShouldResemble, []byte(""+
 			"MarkupSafe==0.23\n"+

@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -1011,7 +1012,7 @@ func writeFile(path string, data []byte, mode os.FileMode) error {
 	if err := filesystem.RemoveAll(path); err != nil {
 		return err
 	}
-	if err := os.WriteFile(path, data, mode); err != nil {
+	if err := ioutil.WriteFile(path, data, mode); err != nil {
 		return errors.Annotate(err, "could not write file contents").InternalReason("path(%q)", path).Err()
 	}
 	return nil

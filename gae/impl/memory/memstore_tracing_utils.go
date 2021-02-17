@@ -18,6 +18,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -49,7 +50,7 @@ func wrapTracingMemStore(store memStore) memStore {
 	} else {
 		logMemCollectionOnce.Do(func() {
 			var err error
-			logMemCollectionFolderTmp, err = os.MkdirTemp(*logMemCollectionFolder, "luci-gae-store_trace")
+			logMemCollectionFolderTmp, err = ioutil.TempDir(*logMemCollectionFolder, "luci-gae-store_trace")
 			if err != nil {
 				panic(err)
 			}

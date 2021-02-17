@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -181,7 +182,7 @@ func (o Output) Compare(dir string, semantic bool) (changed, unchanged []string,
 		path := filepath.Join(dir, filepath.FromSlash(name))
 
 		same := true
-		switch existing, err := os.ReadFile(path); {
+		switch existing, err := ioutil.ReadFile(path); {
 		case os.IsNotExist(err):
 			same = false // new output file
 		case err != nil:
@@ -229,7 +230,7 @@ func (o Output) Write(dir string) (changed, unchanged []string, err error) {
 		if blob, err = o.Data[name].Bytes(); err != nil {
 			return
 		}
-		if err = os.WriteFile(path, blob, 0666); err != nil {
+		if err = ioutil.WriteFile(path, blob, 0666); err != nil {
 			return
 		}
 	}
@@ -243,7 +244,7 @@ func (o Output) Write(dir string) (changed, unchanged []string, err error) {
 func (o Output) Read(dir string) error {
 	for name := range o.Data {
 		path := filepath.Join(dir, filepath.FromSlash(name))
-		blob, err := os.ReadFile(path)
+		blob, err := ioutil.ReadFile(path)
 		if err != nil {
 			return errors.Annotate(err, "reading %q", name).Err()
 		}
@@ -307,7 +308,7 @@ func (o Output) DiscardChangesToUntracked(ctx context.Context, tracked []string,
 			continue
 		}
 
-		switch body, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path))); {
+		switch body, err := ioutil.ReadFile(filepath.Join(dir, filepath.FromSlash(path))); {
 		case err == nil:
 			o.Data[path] = BlobDatum(body)
 		case os.IsNotExist(err):

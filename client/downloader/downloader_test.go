@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -132,7 +133,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		So(d.Wait(), ShouldBeNil)
 		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
 
-		b, err := os.ReadFile(filepath.Join(tmpDir, onePath))
+		b, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
 		So(err, ShouldBeNil)
 		So(b, ShouldResemble, data1)
 
@@ -141,7 +142,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		// to ignore effect of umask, only check executable bit.
 		So(fi.Mode()&0111, ShouldEqual, 0)
 
-		b, err = os.ReadFile(filepath.Join(tmpDir, twoPath))
+		b, err = ioutil.ReadFile(filepath.Join(tmpDir, twoPath))
 		So(err, ShouldBeNil)
 		So(b, ShouldResemble, data2)
 
@@ -150,11 +151,11 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		// to ignore effect of umask, only check executable bit.
 		So(fi.Mode()&0011, ShouldEqual, 0)
 
-		b, err = os.ReadFile(filepath.Join(tmpDir, lolPath))
+		b, err = ioutil.ReadFile(filepath.Join(tmpDir, lolPath))
 		So(err, ShouldBeNil)
 		So(b, ShouldResemble, data1)
 
-		b, err = os.ReadFile(filepath.Join(tmpDir, oloPath))
+		b, err = ioutil.ReadFile(filepath.Join(tmpDir, oloPath))
 		So(err, ShouldBeNil)
 		So(b, ShouldResemble, data2)
 
@@ -171,7 +172,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		_, err = os.Stat(filepath.Join(tmpDir, "tar", "win", "path"))
 		So(err, ShouldBeNil)
 
-		_, err = os.ReadFile(filepath.Join(tmpDir, tardataname))
+		_, err = ioutil.ReadFile(filepath.Join(tmpDir, tardataname))
 		So(os.IsNotExist(err), ShouldBeTrue)
 
 		if runtime.GOOS != "windows" {
@@ -339,7 +340,7 @@ func TestFetchAndMap(t *testing.T) {
 		So(stats.ItemsCold, ShouldResemble, []byte{120, 156, 226, 249, 162, 15, 8, 0, 0, 255, 255, 2, 62, 1, 48})
 		So(stats.ItemsHot, ShouldResemble, []byte(nil))
 
-		buf, err := os.ReadFile(filepath.Join(isolatedDir, onePath))
+		buf, err := ioutil.ReadFile(filepath.Join(isolatedDir, onePath))
 		So(err, ShouldBeNil)
 		So(buf, ShouldResemble, data1)
 

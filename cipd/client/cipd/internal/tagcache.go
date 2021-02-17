@@ -17,6 +17,7 @@ package internal
 import (
 	"bytes"
 	"context"
+	"io/ioutil"
 	"os"
 	"sort"
 	"sync"
@@ -343,7 +344,7 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 		return nil, err
 	}
 
-	blob, err := os.ReadFile(path)
+	blob, err := ioutil.ReadFile(path)
 	switch {
 	case os.IsNotExist(err):
 		return &messages.TagCache{}, nil

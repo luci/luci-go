@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -304,7 +305,7 @@ func (r *streamRun) getLocationTags(ctx context.Context) (*sinkpb.LocationTags, 
 	if r.locTagsFile == "" {
 		return nil, nil
 	}
-	f, err := os.ReadFile(r.locTagsFile)
+	f, err := ioutil.ReadFile(r.locTagsFile)
 	switch {
 	case os.IsNotExist(err):
 		logging.Warningf(ctx, "rdb-stream: %s doesn not exist", r.locTagsFile)

@@ -23,7 +23,7 @@ package assets
 
 import (
 	"go/build"
-	"os"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 )
@@ -40,7 +40,7 @@ func TestAssets(t *testing.T) {
 	for name := range Assets() {
 		GetAsset(name) // for code coverage
 		path := filepath.Join(pkg.Dir, filepath.FromSlash(name))
-		blob, err := os.ReadFile(path)
+		blob, err := ioutil.ReadFile(path)
 		if err != nil {
 			t.Errorf("can't read file with assets %q (%s) - %s", name, path, err)
 			fail = true

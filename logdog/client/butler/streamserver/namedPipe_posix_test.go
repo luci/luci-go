@@ -18,6 +18,7 @@ package streamserver
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,7 @@ import (
 
 func withTempDir(t *testing.T, fn func(string)) func() {
 	return func() {
-		tdir, err := os.MkdirTemp("", "butler_test")
+		tdir, err := ioutil.TempDir("", "butler_test")
 		if err != nil {
 			t.Fatalf("failed to create temporary directory: %s", err)
 		}

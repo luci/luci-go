@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -264,7 +265,7 @@ func (c *Subcommand) writeJSONOutput(result interface{}, err error) error {
 		return err
 	}
 
-	if e := os.WriteFile(c.jsonOutput, buf.Bytes(), 0666); e != nil {
+	if e := ioutil.WriteFile(c.jsonOutput, buf.Bytes(), 0666); e != nil {
 		if err == nil {
 			err = e
 		} else {

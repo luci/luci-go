@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -209,7 +210,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 // ProcessIsolate parses an isolate file, returning the list of dependencies
 // (both files and directories), the root directory and the initial Isolated struct.
 func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated, error) {
-	content, err := os.ReadFile(opts.Isolate)
+	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
 		return nil, "", nil, err
 	}
@@ -235,7 +236,7 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 // simpler in that it returns a list of dependency *relative* paths and the
 // root directory, which are the necessary input to upload to RBE-CAS.
 func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
-	content, err := os.ReadFile(opts.Isolate)
+	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
 		return nil, "", err
 	}
@@ -327,7 +328,7 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 		return nil, err
 	}
 
-	if err := os.WriteFile(opts.Isolated, raw.Bytes(), 0644); err != nil {
+	if err := ioutil.WriteFile(opts.Isolated, raw.Bytes(), 0644); err != nil {
 		return nil, err
 	}
 	return arch.Push(displayName, isolatedclient.NewBytesSource(raw.Bytes()), 0), nil

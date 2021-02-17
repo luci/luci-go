@@ -21,6 +21,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -1912,8 +1913,8 @@ indexes:
 			writePath2 := filepath.Join(filepath.Dir(sameLevelDir), "index.yaml")
 
 			setup := func() {
-				os.WriteFile(writePath1, []byte(yaml1), 0600)
-				os.WriteFile(writePath2, []byte(yaml2), 0600)
+				ioutil.WriteFile(writePath1, []byte(yaml1), 0600)
+				ioutil.WriteFile(writePath2, []byte(yaml2), 0600)
 			}
 
 			cleanup := func() {
@@ -1932,7 +1933,7 @@ indexes:
 			writePath := filepath.Join(filepath.Dir(filepath.Dir(sameLevelDir)), "index.yaml")
 
 			setup := func() {
-				os.WriteFile(writePath, []byte(yaml2), 0600)
+				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
 			}
 
 			cleanup := func() {
@@ -1947,14 +1948,14 @@ indexes:
 		})
 
 		Convey("finds YAML file given a relative path", func() {
-			writeDir, err := os.MkdirTemp(filepath.Dir(sameLevelDir), "temp-test-datastore-")
+			writeDir, err := ioutil.TempDir(filepath.Dir(sameLevelDir), "temp-test-datastore-")
 			if err != nil {
 				panic(err)
 			}
 			writePath := filepath.Join(writeDir, "index.yml")
 
 			setup := func() {
-				os.WriteFile(writePath, []byte(yaml2), 0600)
+				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
 			}
 
 			cleanup := func() {
@@ -1972,7 +1973,7 @@ indexes:
 			writePath := filepath.Join(sameLevelDir, "index.yaml")
 
 			setup := func() {
-				os.WriteFile(writePath, []byte(yaml2), 0600)
+				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
 			}
 
 			cleanup := func() {

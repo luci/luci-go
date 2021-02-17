@@ -21,7 +21,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"sync"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
@@ -64,11 +64,11 @@ type X509Signer struct {
 //
 // Returns X509Signer that is ready for work.
 func LoadX509Signer(privateKeyPath, certPath string) (*X509Signer, error) {
-	pkey, err := os.ReadFile(privateKeyPath)
+	pkey, err := ioutil.ReadFile(privateKeyPath)
 	if err != nil {
 		return nil, err
 	}
-	cert, err := os.ReadFile(certPath)
+	cert, err := ioutil.ReadFile(certPath)
 	if err != nil {
 		return nil, err
 	}

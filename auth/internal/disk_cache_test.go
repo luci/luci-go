@@ -16,6 +16,7 @@ package internal
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,7 +33,7 @@ import (
 func TestDiskTokenCache(t *testing.T) {
 	t.Parallel()
 
-	tmp, err := os.MkdirTemp("", "disk_token_cache")
+	tmp, err := ioutil.TempDir("", "disk_token_cache")
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +68,7 @@ func TestDiskTokenCache(t *testing.T) {
 			"last_update": "2021-02-08T23:18:00.463912Z"
 		}
 		`
-		So(os.WriteFile(cacheFile, []byte(testData), 0600), ShouldBeNil)
+		So(ioutil.WriteFile(cacheFile, []byte(testData), 0600), ShouldBeNil)
 
 		cache := &DiskTokenCache{
 			Context:    ctx,
@@ -89,7 +90,7 @@ func TestDiskTokenCache(t *testing.T) {
 		}), ShouldBeNil)
 
 		// Check "random_stuff" and "abc" were preserved by the update.
-		blob, err := os.ReadFile(cacheFile)
+		blob, err := ioutil.ReadFile(cacheFile)
 		So(err, ShouldBeNil)
 		So(string(blob), ShouldEqual, `{
   "cache": [
@@ -172,8 +173,8 @@ func TestDiskTokenCache(t *testing.T) {
 		}
 		`
 
-		So(os.WriteFile(oldCacheFile, []byte(oldCacheFileData), 0600), ShouldBeNil)
-		So(os.WriteFile(newCacheFile, []byte(newCacheFileData), 0600), ShouldBeNil)
+		So(ioutil.WriteFile(oldCacheFile, []byte(oldCacheFileData), 0600), ShouldBeNil)
+		So(ioutil.WriteFile(newCacheFile, []byte(newCacheFileData), 0600), ShouldBeNil)
 
 		cache := &DiskTokenCache{
 			Context:    ctx,
@@ -191,7 +192,7 @@ func TestDiskTokenCache(t *testing.T) {
 			Email: "a@example.com",
 		}), ShouldBeNil)
 
-		updatedOld, err := os.ReadFile(oldCacheFile)
+		updatedOld, err := ioutil.ReadFile(oldCacheFile)
 		So(err, ShouldBeNil)
 		So(string(updatedOld), ShouldEqual, `{
   "cache": [
@@ -237,7 +238,7 @@ func TestDiskTokenCache(t *testing.T) {
 }`)
 
 		// tokens.json is almost identical, except last_update is newer.
-		updatedNew, err := os.ReadFile(newCacheFile)
+		updatedNew, err := ioutil.ReadFile(newCacheFile)
 		So(err, ShouldBeNil)
 		So(string(updatedNew), ShouldEqual, `{
   "cache": [

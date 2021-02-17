@@ -15,6 +15,7 @@
 package interpreter
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,7 +40,7 @@ func FileSystemLoader(root string) Loader {
 		if strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 			return nil, "", errors.New("outside the package root")
 		}
-		body, err := os.ReadFile(abs)
+		body, err := ioutil.ReadFile(abs)
 		if os.IsNotExist(err) {
 			return nil, "", ErrNoModule
 		}

@@ -17,6 +17,7 @@
 package streamclient
 
 import (
+	"io/ioutil"
 	"net"
 	"os"
 	"testing"
@@ -33,7 +34,7 @@ func TestUnixClient(t *testing.T) {
 		ctx, cancel := mkTestCtx()
 		defer cancel()
 
-		f, err := os.CreateTemp("", "")
+		f, err := ioutil.TempFile("", "")
 		So(err, ShouldBeNil)
 		name := f.Name()
 		So(f.Close(), ShouldBeNil)

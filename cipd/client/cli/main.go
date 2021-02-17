@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -237,7 +238,7 @@ func (c *cipdSubcommand) writeJSONOutput(result interface{}, err error) error {
 		return err
 	}
 
-	e = os.WriteFile(c.jsonOutput, out, 0666)
+	e = ioutil.WriteFile(c.jsonOutput, out, 0666)
 	if e != nil {
 		if err == nil {
 			err = e
@@ -1163,7 +1164,7 @@ func saveVersionsFile(path string, v ensure.VersionsFile) error {
 	if err := v.Serialize(&buf); err != nil {
 		return err
 	}
-	return os.WriteFile(path, buf.Bytes(), 0666)
+	return ioutil.WriteFile(path, buf.Bytes(), 0666)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1214,7 +1215,7 @@ func (c *createRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, error) {
-	f, err := os.CreateTemp("", "cipd_pkg")
+	f, err := ioutil.TempFile("", "cipd_pkg")
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -1391,7 +1392,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 		resolved.ServiceURL = clientOpts.resolvedServiceURL()
 		resolved.ParanoidMode = ""
 		if err = resolved.Serialize(&buf); err == nil {
-			err = os.WriteFile(ensureFileOut, buf.Bytes(), 0666)
+			err = ioutil.WriteFile(ensureFileOut, buf.Bytes(), 0666)
 		}
 	}
 
@@ -3052,7 +3053,7 @@ func (c *selfupdateRollRun) Run(a subcommands.Application, args []string, env su
 	}
 
 	if c.version != "" {
-		if err := os.WriteFile(c.versionFile, []byte(c.version+"\n"), 0666); err != nil {
+		if err := ioutil.WriteFile(c.versionFile, []byte(c.version+"\n"), 0666); err != nil {
 			return c.done(nil, err)
 		}
 	}
@@ -3075,7 +3076,7 @@ func generateClientDigests(ctx context.Context, client cipd.Client, path, versio
 	if err := digests.Serialize(&buf, version, versionFileName); err != nil {
 		return nil, err
 	}
-	if err := os.WriteFile(path, buf.Bytes(), 0666); err != nil {
+	if err := ioutil.WriteFile(path, buf.Bytes(), 0666); err != nil {
 		return nil, err
 	}
 
@@ -3104,7 +3105,7 @@ func checkClientDigests(ctx context.Context, client cipd.Client, path, version s
 
 // loadClientVersion reads a version string from a file.
 func loadClientVersion(path string) (string, error) {
-	blob, err := os.ReadFile(path)
+	blob, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", err
 	}

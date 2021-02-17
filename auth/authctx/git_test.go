@@ -15,6 +15,7 @@
 package authctx
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -26,13 +27,13 @@ func TestGitConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		tmp, err := os.MkdirTemp("", "")
+		tmp, err := ioutil.TempDir("", "")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmp)
 
 		gen := func(name string, cfg gitConfig) string {
 			So(cfg.Write(filepath.Join(tmp, name)), ShouldBeNil)
-			body, err := os.ReadFile(filepath.Join(tmp, name))
+			body, err := ioutil.ReadFile(filepath.Join(tmp, name))
 			So(err, ShouldBeNil)
 			return string(body)
 		}
