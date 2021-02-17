@@ -56,6 +56,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1acd6e96_a2a54149",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-17T22:59:20Z",
+      "side": 1,
+      "message": "Such comments become obsolete really quickly.",
+      "parentUuid": "01c0a18e_ba0c9805",
+      "revId": "025bdeb1b703b6632f0a18480005f998759667a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ff4af668_ed5323cf",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -120,6 +138,24 @@
       "side": 1,
       "message": "OK, so it sounds like this test will probably fail sometimes but not all of the time if the code under test is incorrect. Which seems OK but could warrant a comment.",
       "parentUuid": "08f06c6b_c8c2a512",
+      "revId": "025bdeb1b703b6632f0a18480005f998759667a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d11f8a6_7a04472f",
+        "filename": "cv/internal/common/i64_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-17T22:59:20Z",
+      "side": 1,
+      "message": "well, this is true about almost all tests we write: we aren\u0027t supposed to guarantee that code is correct, only that it\u0027s mostly correct by catching typical bugs earlier",
+      "parentUuid": "2a639092_a2ef8b0b",
       "revId": "025bdeb1b703b6632f0a18480005f998759667a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
