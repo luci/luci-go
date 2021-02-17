@@ -28,7 +28,7 @@ option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 // in ../../v1/test_result.proto.
 // See its comments for details.
 message TestResult {
-  reserved 10; // test_location
+  reserved "test_location";
 
   // Equivalent of luci.resultdb.v1.TestResult.TestId.
   string test_id = 1;
