@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98a60489_94e7df24",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-17T21:49:10Z",
+      "side": 1,
+      "message": "This breaks deployment of most of our GAE apps since they run on go113: https://ci.chromium.org/p/infradata-gae/builders/ci/gae-deploy/b8855016563325063184\n\nI think we need either partially or completely revert this CL.",
+      "revId": "de9f64c7f96f24183324d596062250647b2c4700",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
