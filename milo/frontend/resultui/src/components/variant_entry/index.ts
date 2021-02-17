@@ -68,6 +68,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   }
 
   @observable.ref private shouldRenderContent = false;
+  @observable.ref renderCallback: Function | null = null;
 
   /**
    * Common prefix between this.variant.testId and this.prevTestId.
@@ -148,6 +149,12 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
         `)}
       </div>
     `;
+  }
+
+  protected updated() {
+    if (!this.prerender && this.renderCallback) {
+      this.renderCallback();
+    }
   }
 
   protected render() {

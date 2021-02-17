@@ -15,6 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
 import '@material/mwc-icon';
+import { BeforeEnterObserver } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
@@ -28,17 +29,19 @@ import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
+import { generateRandomLabel, GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE } from '../libs/constants';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
 /**
  * Display a list of test results.
  */
-export class TestResultsTabElement extends MobxLitElement {
+export class TestResultsTabElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
+  private enterTimestamp: number = 0;
+  private sentLoadingTimeToGA: boolean = false;
 
   private disposers: Array<() => void> = [];
   private async loadNextPage() {
@@ -72,6 +75,10 @@ export class TestResultsTabElement extends MobxLitElement {
     }
   }
 
+  onBeforeEnter() {
+    this.enterTimestamp = Date.now();
+  }
+
   @computed
   private get totalDisplayedVariantCount() {
     let count = 0;
@@ -103,6 +110,13 @@ export class TestResultsTabElement extends MobxLitElement {
     super.connectedCallback();
     this.appState.selectedTabId = 'test-results';
     trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED);
+
+    // If first page of test results has already been loaded when connected
+    // (happens when users switch tabs), we don't want to track the loading
+    // time (only a few ms in this case)
+    if (this.invocationState.testLoader?.firstPageLoaded) {
+      this.sentLoadingTimeToGA = true;
+    }
 
     // When a new test loader is received, load the first page and reset the
     // selected node.
@@ -215,6 +229,31 @@ export class TestResultsTabElement extends MobxLitElement {
     `: html ``;
   }
 
+  private sendLoadingTimeToGA() {
+    if (this.sentLoadingTimeToGA) {
+      return;
+    }
+    this.sentLoadingTimeToGA = true;
+    const prefix = "testresults_" + this.invocationState.invocationId;
+    trackEvent(
+      GA_CATEGORIES.TEST_RESULTS_TAB,
+      GA_ACTIONS.LOADING_TIME,
+      generateRandomLabel(prefix),
+      Date.now() - this.enterTimestamp,
+    );
+  }
+
+  private variantRenderedCallback = () => {
+    this.sendLoadingTimeToGA();
+  }
+
+  protected updated() {
+    // If first page is empty, we will not get variantRenderedCallback
+    if (this.invocationState.testLoader?.firstPageIsEmpty) {
+      this.sendLoadingTimeToGA();
+    }
+  }
+
   private renderVariants(
     status: TestVariantStatus,
     variants: TestVariant[],
@@ -247,6 +286,7 @@ export class TestResultsTabElement extends MobxLitElement {
           .expanded=${this.totalDisplayedVariantCount === 1 || (prev === undefined && expandFirst)}
           .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
           .prerender=${true}
+          .renderCallback=${this.variantRenderedCallback}
         ></milo-variant-entry>
       `)}
       <div

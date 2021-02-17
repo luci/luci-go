@@ -75,6 +75,16 @@ export class TestLoader {
   @computed get loadedAllFlakyVariants() { return this.stage > LoadingStage.LoadingFlaky; }
   @computed get loadedAllExoneratedVariants() { return this.stage > LoadingStage.LoadingExonerated; }
   @computed get loadedAllExpectedVariants() { return this.stage > LoadingStage.LoadingExpected; }
+  @computed get firstPageLoaded() {
+    return this.unexpectedTestVariants.length > 0 || this.loadedAllUnexpectedVariants;
+  }
+  @computed get firstPageIsEmpty() {
+    return this.loadedAllUnexpectedVariants &&
+      this.unexpectedTestVariants.length === 0 &&
+      this.unexpectedlySkippedTestVariants.length === 0 &&
+      this.flakyTestVariants.length === 0 &&
+      this.exoneratedTestVariants.length === 0;
+  }
 
   // undefined means the end has been reached.
   // empty string is the token for the first page.
