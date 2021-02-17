@@ -29,7 +29,7 @@ import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
+import { generateRandomLabel, GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE } from '../libs/constants';
 import { TestNode } from '../models/test_node';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
@@ -41,6 +41,8 @@ export class TestResultsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
+  private connectedTimestamp: number = 0;
+  private sentLoadingTimeToGA: boolean = false;
 
   private disposers: Array<() => void> = [];
   private async loadNextPage() {
@@ -106,6 +108,14 @@ export class TestResultsTabElement extends MobxLitElement {
     super.connectedCallback();
     this.appState.selectedTabId = 'test-results';
     trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED);
+    this.connectedTimestamp = Date.now();
+
+    // If first page of test results has already been loaded when connected
+    // (happens when users switch tabs), we don't want to track the loading
+    // time (only a few ms in this case)
+    if (this.invocationState.testLoader?.firstPageLoaded) {
+      this.sentLoadingTimeToGA = true;
+    }
 
     // When a new test loader is received, load the first page and reset the
     // selected node.
@@ -222,6 +232,24 @@ export class TestResultsTabElement extends MobxLitElement {
       </div>
       <hr class="divider">
     `: html ``;
+  }
+
+  protected updated() {
+    if (this.sentLoadingTimeToGA) {
+      return;
+    }
+    // If firstPageLoaded = true, meaningful data has been shown to the users.
+    // We should record the loading time at this point.
+    if (this.invocationState.testLoader?.firstPageLoaded) {
+      this.sentLoadingTimeToGA = true;
+      const prefix = "testresults_" + this.invocationState.invocationId;
+      trackEvent(
+        GA_CATEGORIES.TEST_RESULTS_TAB,
+        GA_ACTIONS.LOADING_TIME,
+        generateRandomLabel(prefix),
+        Date.now() - this.connectedTimestamp,
+      );
+    }
   }
 
   private renderVariants(

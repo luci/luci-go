@@ -25,6 +25,7 @@ export enum GA_CATEGORIES {
 export enum GA_ACTIONS {
   TAB_VISITED = 'Tab Visited',
   CLICK = 'Click',
+  LOADING_TIME = 'Loading Time',
 }
 
 export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
@@ -39,4 +40,10 @@ export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: 
     eventValue: value,
     transport: 'beacon',
   });
+}
+
+// Sometimes we need to have a unique label in order to access to the raw value
+// data. Otherwise, value data will be aggregated into categories/actions
+export function generateRandomLabel(prefix: string): string {
+  return prefix + "_" + Math.random().toString(36).substr(2, 8);
 }
