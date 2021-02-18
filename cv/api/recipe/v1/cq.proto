@@ -41,3 +41,81 @@ message Input {
   // and which (top_level=True) CQ would cancel itself.
   bool top_level = 4;
 }
+
+// Output provides build-specific instructions back to CQ.
+//
+// Unless stated otherwise, each Output message field can be set even on builds
+// not triggered directly or indirectly by CQ itself. For example, `git cl try`
+// or Gerrit UI can be used to trigger a build directly, which can then instruct
+// CQ not to retry it.
+//
+// CQ periodically checks the Output of still running builds, too,
+// and may act on the Output even before a build is completed.
+message Output {
+
+  // Buildbucket build IDs which this build has triggered for CQ to wait on.
+  //
+  // Required when using triggered_by builders in project's CQ config.
+  // This is useful to allow the triggering builder to finish without waiting
+  // for its child builds, which can be efficiently done by CQ.
+  //
+  // This is equivalent to setting legacy top-level "triggered_build_ids" output
+  // property.
+  // TODO(tandrii): deprecate and remove the legacy property.
+  repeated int64 triggered_build_ids = 1;
+
+  enum Retry {
+    OUTPUT_RETRY_UNSPECIFIED = 0;
+    // Default. Allow CQ to retry the build.
+    //
+    // Does NOT force CQ to retry this build, since it depends on other factors,
+    // such as the applicable project's CQ config.
+    OUTPUT_RETRY_ALLOWED = 1;
+    // Denies retries regardless of other factors.
+    //
+    // This is equivalent to setting legacy top-level `"do_not_retry": true`
+    // output property.
+    // TODO(tandrii): deprecate and remove the legacy property.
+    OUTPUT_RETRY_DENIED = 2;
+  }
+  // Retry controls whether this build can be retried by CQ.
+  Retry retry = 2;
+
+  message Reuse {
+    // Regular expression for kinds of Runs for which this Reuse block applies.
+    // Required.
+    //
+    // Implicitly wrapped with (?i)$...^  (= complete case-insensitive match).
+    //
+    // For example,
+    //   ".+" will match all kinds of Runs,
+    //   "dryrun" and "fullrun" will match only Dry and Full runs, respectively.
+    string kind_regexp = 1;
+    // If deny is true, then reuse of this build in the future Runs of the
+    // matched kind is not allowed.
+    //
+    // If false, then reuse is allowed. It's useful to stop the matching in case
+    // of several Reuse messages.
+    bool deny = 2;
+    // TODO(crbug/753103): add reuse duration or deadline.
+  }
+  // Reuse restricts potential reuse of this build by a later CQ run.
+  //
+  // NOTE: even if reuse is not restricted here, reuse is still subject to other
+  // restrictions in applicable project's CQ config.
+  //
+  // If empty (default), reuse is *allowed*.
+  //
+  // If specified, the order matters: the first matching Reuse message wins.
+  // If specified and no Reuse match the run, reuse is *not allowed*.
+  //
+  // Examples:
+  //
+  //  1. To prohibit reuse only for Full runs, do:
+  //     {kind_regexp: "fullrun" deny: true}
+  //     {kind_regexp: ".+"      deny: false}
+  //
+  //  2. To prohibit reuse for everything except Dry Runs, do:
+  //     {kind_regexp: "dryrun"}
+  repeated Reuse reuse = 3;
+}
