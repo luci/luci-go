@@ -11,6 +11,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // DiagnosticClient is the client API for Diagnostic service.
@@ -21,6 +22,10 @@ type DiagnosticClient interface {
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
 	// GetCL returns current CL state.
 	GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error)
+	// DeleteProjectEvents delets all outstanding project events.
+	// Must be called with stopped TQs.
+	// TODO(tandrii): delete this Temporary API.
+	DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error)
 }
 
 type diagnosticClient struct {
@@ -49,6 +54,15 @@ func (c *diagnosticClient) GetCL(ctx context.Context, in *GetCLRequest, opts ...
 	return out, nil
 }
 
+func (c *diagnosticClient) DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error) {
+	out := new(DeleteProjectEventsResponse)
+	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/DeleteProjectEvents", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DiagnosticServer is the server API for Diagnostic service.
 // All implementations must embed UnimplementedDiagnosticServer
 // for forward compatibility
@@ -57,6 +71,10 @@ type DiagnosticServer interface {
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
 	// GetCL returns current CL state.
 	GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error)
+	// DeleteProjectEvents delets all outstanding project events.
+	// Must be called with stopped TQs.
+	// TODO(tandrii): delete this Temporary API.
+	DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error)
 	mustEmbedUnimplementedDiagnosticServer()
 }
 
@@ -69,6 +87,9 @@ func (UnimplementedDiagnosticServer) GetProject(context.Context, *GetProjectRequ
 }
 func (UnimplementedDiagnosticServer) GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCL not implemented")
+}
+func (UnimplementedDiagnosticServer) DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectEvents not implemented")
 }
 func (UnimplementedDiagnosticServer) mustEmbedUnimplementedDiagnosticServer() {}
 
@@ -119,6 +140,24 @@ func _Diagnostic_GetCL_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Diagnostic_DeleteProjectEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteProjectEventsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DiagnosticServer).DeleteProjectEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/diagnostic.Diagnostic/DeleteProjectEvents",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiagnosticServer).DeleteProjectEvents(ctx, req.(*DeleteProjectEventsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Diagnostic_ServiceDesc is the grpc.ServiceDesc for Diagnostic service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -133,6 +172,10 @@ var Diagnostic_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCL",
 			Handler:    _Diagnostic_GetCL_Handler,
+		},
+		{
+			MethodName: "DeleteProjectEvents",
+			Handler:    _Diagnostic_DeleteProjectEvents_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
