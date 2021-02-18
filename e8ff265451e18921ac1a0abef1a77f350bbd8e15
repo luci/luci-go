@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b89523ea_094ab98e",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T22:54:19Z",
+      "side": 1,
+      "message": "btw, shall this be removed, Yuanjun?",
+      "revId": "e8ff265451e18921ac1a0abef1a77f350bbd8e15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
