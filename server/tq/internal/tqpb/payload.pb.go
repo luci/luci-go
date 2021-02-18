@@ -21,10 +21,9 @@
 package tqpb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -36,10 +35,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
-
 // Payload is stored inside reminder records.
 //
 // It is prepared by the dispatcher and consumed by the sweeper and submitters.
@@ -49,8 +44,8 @@ type Payload struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Fields used for monitoring and logging only.
-	TaskClass string               `protobuf:"bytes,1,opt,name=task_class,json=taskClass,proto3" json:"task_class,omitempty"` // corresponding TaskClass.ID
-	Created   *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`                      // when AddTask was called
+	TaskClass string                 `protobuf:"bytes,1,opt,name=task_class,json=taskClass,proto3" json:"task_class,omitempty"` // corresponding TaskClass.ID
+	Created   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`                      // when AddTask was called
 	// Actual payload. We store them as blobs to avoid depending on Google Cloud
 	// raw *.proto files which are not quite trivial to link to without Bazel.
 	//
@@ -99,7 +94,7 @@ func (x *Payload) GetTaskClass() string {
 	return ""
 }
 
-func (x *Payload) GetCreated() *timestamp.Timestamp {
+func (x *Payload) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Created
 	}
@@ -186,8 +181,8 @@ func file_go_chromium_org_luci_server_tq_internal_tqpb_payload_proto_rawDescGZIP
 
 var file_go_chromium_org_luci_server_tq_internal_tqpb_payload_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_go_chromium_org_luci_server_tq_internal_tqpb_payload_proto_goTypes = []interface{}{
-	(*Payload)(nil),             // 0: luci.server.tq.internal.Payload
-	(*timestamp.Timestamp)(nil), // 1: google.protobuf.Timestamp
+	(*Payload)(nil),               // 0: luci.server.tq.internal.Payload
+	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_server_tq_internal_tqpb_payload_proto_depIdxs = []int32{
 	1, // 0: luci.server.tq.internal.Payload.created:type_name -> google.protobuf.Timestamp
