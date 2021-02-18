@@ -22,6 +22,30 @@
       },
       "revId": "852b025f09994fe661cfec31ad96e4c051c98389",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5b8029d_9e6d86c7",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T00:01:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed508365_0b0bfe63",
+      "range": {
+        "startLine": 119,
+        "startChar": 38,
+        "endLine": 119,
+        "endChar": 42
+      },
+      "revId": "852b025f09994fe661cfec31ad96e4c051c98389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
