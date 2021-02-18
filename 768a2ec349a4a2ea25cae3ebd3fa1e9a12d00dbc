@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "087dc78d_1ae2c2a4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-18T20:33:55Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "768a2ec349a4a2ea25cae3ebd3fa1e9a12d00dbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b02c369d_21f34eae",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-18T20:33:55Z",
+      "side": 1,
+      "message": "nice!",
+      "range": {
+        "startLine": 156,
+        "startChar": 0,
+        "endLine": 156,
+        "endChar": 98
+      },
+      "revId": "768a2ec349a4a2ea25cae3ebd3fa1e9a12d00dbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
