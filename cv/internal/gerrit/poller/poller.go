@@ -18,7 +18,6 @@ package poller
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -131,7 +130,7 @@ func schedule(ctx context.Context, luciProject string, after time.Time) error {
 	if now := clock.Now(ctx); after.IsZero() || now.After(after) {
 		after = now
 	}
-	offset := projectOffset(luciProject, pollInterval)
+	offset := common.ProjectOffset("gerrit-poller", pollInterval, luciProject)
 	offset = offset.Truncate(time.Millisecond) // more readable logs
 	eta := after.UTC().Truncate(pollInterval).Add(offset)
 	for !eta.After(after) {
@@ -151,28 +150,6 @@ func schedule(ctx context.Context, luciProject string, after time.Time) error {
 	}
 	logging.Debugf(ctx, "scheduled next poll for %q at %s", luciProject, eta)
 	return nil
-}
-
-// projectOffset chooses an offset per LUCI project in [0..pollInterval) range
-// and aims for uniform distribution across LUCI projects.
-func projectOffset(luciProject string, pollInterval time.Duration) time.Duration {
-	// Basic idea: interval/N*random(0..N), but deterministic on luciProject.
-	// Use fast hash function, as we don't need strong collision resistance.
-	h := fnv.New32a()
-	h.Write([]byte(luciProject))
-	r := h.Sum32()
-
-	i := int64(pollInterval)
-	// Avoid losing precision for low pollInterval values by first shifting them
-	// the more significant bits.
-	shifted := 0
-	for i < (int64(1) << 55) {
-		i = i << 7
-		shifted += 7
-	}
-	// i = i / N * r, where N = 2^32 since r is (0..2^32-1).
-	i = (i >> 32) * int64(r)
-	return time.Duration(i >> shifted)
 }
 
 // state persists poller's state in datastore.
