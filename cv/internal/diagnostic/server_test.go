@@ -18,6 +18,12 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestParseGerritURL(t *testing.T) {
@@ -51,5 +57,43 @@ func TestParseGerritURL(t *testing.T) {
 		eid, err = parseGerritURL("chromium-review.googlesource.com/2652967")
 		So(err, ShouldBeNil)
 		So(string(eid), ShouldEqual, "gerrit/chromium-review.googlesource.com/2652967")
+	})
+}
+
+func TestDeleteProjectEvents(t *testing.T) {
+	t.Parallel()
+
+	Convey("DeleteProjectEvents works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:       "user:admin@example.com",
+			IdentityGroups: []string{allowGroup},
+		})
+
+		const lProject = "luci"
+		So(prjmanager.NotifyCLUpdated(ctx, lProject, common.CLID(1), 1), ShouldBeNil)
+		So(prjmanager.NotifyCLUpdated(ctx, lProject, common.CLID(2), 1), ShouldBeNil)
+		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+
+		d := DiagnosticServer{}
+
+		Convey("All", func() {
+			resp, err := d.DeleteProjectEvents(ctx, &diagnosticpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
+			So(err, ShouldBeNil)
+			So(resp.GetEvents(), ShouldResemble, map[string]int64{"*prjpb.Event_ClUpdated": 2, "*prjpb.Event_NewConfig": 1})
+		})
+
+		Convey("Limited", func() {
+			resp, err := d.DeleteProjectEvents(ctx, &diagnosticpb.DeleteProjectEventsRequest{Project: lProject, Limit: 2})
+			So(err, ShouldBeNil)
+			sum := int64(0)
+			for _, v := range resp.GetEvents() {
+				sum += v
+			}
+			So(sum, ShouldEqual, 2)
+		})
 	})
 }
