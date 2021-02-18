@@ -88,7 +88,7 @@ func TestLoadFromConfig(t *testing.T) {
 		Convey("basic load", func() {
 			file, err := LoadFile(templateContent)
 			So(err, ShouldBeNil)
-			So(file, ShouldResemble, &File{Template: map[string]*File_Template{
+			So(file, ShouldResembleProto, &File{Template: map[string]*File_Template{
 				"hardcode": {
 					Doc:  "it's hard-coded",
 					Body: `{"woot": ["sauce"]}`,
