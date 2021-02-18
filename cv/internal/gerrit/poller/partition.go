@@ -15,10 +15,12 @@
 package poller
 
 import (
+	"crypto/sha256"
 	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"gopkg.in/src-d/go-git.v4/utils/binary"
 
 	"go.chromium.org/luci/cv/internal/config"
 )
@@ -122,4 +124,43 @@ func partitionHostRepos(host string, repos []string, maxReposPerQuery int) []*Su
 		subpollers = append(subpollers, sp)
 		remainingRepos = remainingRepos[len(sp.GetOrProjects()):]
 	}
+}
+
+func reuseIfPossible(old, proposed []*SubPoller) (use, discarded []*SubPoller) {
+	// Crypto quality hash is used to to infer equality.
+	//
+	// Each string is emitted as (<len>, string).
+	// List of OrProjects is prefixed by its length.
+	hash := func(s *SubPoller) string {
+		h := sha256.New224()
+		writeStr := func(s string) {
+			binary.WriteVariableWidthInt(h, int64(len(s)))
+			h.Write([]byte(s))
+		}
+		writeStr(s.GetHost())
+		writeStr(s.GetCommonProjectPrefix())
+		binary.WriteVariableWidthInt(h, int64(len(s.GetOrProjects())))
+		for _, p := range s.GetOrProjects() {
+			writeStr(p)
+		}
+		return string(h.Sum(nil))
+	}
+
+	m := make(map[string]*SubPoller, len(old))
+	for _, o := range old {
+		m[hash(o)] = o
+	}
+	for _, p := range proposed {
+		h := hash(p)
+		if o, exists := m[h]; exists {
+			use = append(use, o)
+			delete(m, h)
+		} else {
+			use = append(use, p)
+		}
+	}
+	for _, o := range m {
+		discarded = append(discarded, o)
+	}
+	return
 }

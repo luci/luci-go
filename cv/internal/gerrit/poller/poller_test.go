@@ -314,7 +314,7 @@ func TestPoller(t *testing.T) {
 				})
 			})
 
-			Convey("notices updated config and resets SubPollers state", func() {
+			Convey("notices updated config, updates SubPollers state", func() {
 				before := mustGetState(lProject)
 				repos := append(sharedPrefixRepos("shared", minReposPerPrefixQuery+10), gRepo)
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, repos...))
@@ -328,9 +328,11 @@ func TestPoller(t *testing.T) {
 						LastFullTime:        timestamppb.New(ct.Clock.Now()),
 					},
 					{
+						// Re-used SubPoller state.
 						Host:         gHost,
 						OrProjects:   []string{gRepo},
-						LastFullTime: timestamppb.New(ct.Clock.Now()),
+						LastFullTime: fullPollStamp,                   // same as before
+						LastIncrTime: timestamppb.New(ct.Clock.Now()), // new incremental poll
 					},
 				})
 				So(watchedBy(ctx, gHost, "shared/001", "refs/heads/main").
