@@ -34,6 +34,11 @@ service Diagnostic {
 
   // GetCL returns current CL state.
   rpc GetCL(GetCLRequest) returns (GetCLResponse);
+
+  // DeleteProjectEvents delets all outstanding project events.
+  // Must be called with stopped TQs.
+  // TODO(tandrii): delete this Temporary API.
+  rpc DeleteProjectEvents(DeleteProjectEventsRequest) returns (DeleteProjectEventsResponse);
 }
 
 message GetProjectRequest {
@@ -72,4 +77,13 @@ message GetCLResponse {
   cv.changelist.ApplicableConfig applicable_config = 4;
   cv.changelist.DependentMeta dependent_meta = 5;
   repeated string incomplete_runs = 6;
+}
+
+message DeleteProjectEventsRequest {
+  string project = 1;
+  int32 limit = 2;
+}
+
+message DeleteProjectEventsResponse {
+  map<string, int64> events = 1;
 }

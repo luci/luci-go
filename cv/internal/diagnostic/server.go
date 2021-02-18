@@ -16,6 +16,7 @@ package diagnostic
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -26,6 +27,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -139,6 +142,51 @@ func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLReq
 		IncompleteRuns:   runs,
 	}
 	return resp, nil
+}
+
+// Copy from dsset.
+type itemEntity struct {
+	_kind string `gae:"$kind,dsset.Item"`
+
+	ID     string         `gae:"$id"`
+	Parent *datastore.Key `gae:"$parent"`
+	Value  []byte         `gae:",noindex"`
+}
+
+func (d *DiagnosticServer) DeleteProjectEvents(ctx context.Context, req *diagnosticpb.DeleteProjectEventsRequest) (resp *diagnosticpb.DeleteProjectEventsResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = d.checkAllowed(ctx); err != nil {
+		return
+	}
+	logging.Warningf(ctx, "%s is calling DeleteProjectEvents API %s", auth.CurrentIdentity(ctx), req)
+
+	switch {
+	case req.GetProject() == "":
+		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+	case req.GetLimit() <= 0:
+		return nil, status.Errorf(codes.InvalidArgument, "limit must be >0")
+	}
+
+	parent := datastore.MakeKey(ctx, prjmanager.ProjectKind, req.GetProject())
+	q := datastore.NewQuery("dsset.Item").Ancestor(parent).Limit(req.GetLimit())
+	var entities []*itemEntity
+	if err := datastore.GetAll(ctx, q, &entities); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch up to %d events", req.GetLimit()).Tag(transient.Tag).Err()
+	}
+
+	stats := make(map[string]int64, 10)
+	for _, e := range entities {
+		pb := &prjpb.Event{}
+		if err := proto.Unmarshal(e.Value, pb); err != nil {
+			stats["<unknown>"]++
+		} else {
+			stats[fmt.Sprintf("%T", pb.GetEvent())]++
+		}
+	}
+	if err := datastore.Delete(ctx, entities); err != nil {
+		return nil, errors.Annotate(err, "failed to delete %d events", len(entities)).Tag(transient.Tag).Err()
+	}
+	return &diagnosticpb.DeleteProjectEventsResponse{Events: stats}, nil
 }
 
 func (_ *DiagnosticServer) checkAllowed(ctx context.Context) error {
