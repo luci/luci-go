@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc97b661_27f64e8f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T20:31:33Z",
+      "side": 1,
+      "message": "PTAL again.",
+      "revId": "959effa50b25ec0f807600257fe02d39a9222788",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4564ae19_cc74025b",
@@ -18,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c3a228b_7c3de71e",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T20:31:33Z",
+      "side": 1,
+      "message": "Done, thank you very much. Also added log.",
+      "parentUuid": "4564ae19_cc74025b",
+      "revId": "959effa50b25ec0f807600257fe02d39a9222788",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c2f1456_881d8d7a",
@@ -31,6 +66,30 @@
       "writtenOn": "2021-02-18T18:35:09Z",
       "side": 1,
       "message": "use :\u003d cause you are anyway annotating in the next line",
+      "range": {
+        "startLine": 156,
+        "startChar": 8,
+        "endLine": 156,
+        "endChar": 9
+      },
+      "revId": "959effa50b25ec0f807600257fe02d39a9222788",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb4683ad_8d2e879c",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T20:31:33Z",
+      "side": 1,
+      "message": "ok, but I don\u0027t why it\u0027s any better. It doesn\u0027t really matter.",
+      "parentUuid": "9c2f1456_881d8d7a",
       "range": {
         "startLine": 156,
         "startChar": 8,
@@ -64,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec4bc15a_cc9319b9",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T20:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "daaccc4e_26afae67",
+      "range": {
+        "startLine": 163,
+        "startChar": 9,
+        "endLine": 163,
+        "endChar": 10
+      },
+      "revId": "959effa50b25ec0f807600257fe02d39a9222788",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "11319de1_c13522b8",
@@ -77,6 +160,30 @@
       "writtenOn": "2021-02-18T18:35:09Z",
       "side": 1,
       "message": "Name is copy paste leftover :)",
+      "range": {
+        "startLine": 64,
+        "startChar": 9,
+        "endLine": 64,
+        "endChar": 29
+      },
+      "revId": "959effa50b25ec0f807600257fe02d39a9222788",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "61550512_ce394481",
+        "filename": "cv/internal/diagnostic/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T20:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11319de1_c13522b8",
       "range": {
         "startLine": 64,
         "startChar": 9,
