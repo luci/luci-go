@@ -16,6 +16,24 @@
       "message": "btw, shall this be removed, Yuanjun?",
       "revId": "e8ff265451e18921ac1a0abef1a77f350bbd8e15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "576288ab_aee0df5b",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-18T22:56:13Z",
+      "side": 1,
+      "message": "yeah, let\u0027s remove it. I\u0027ll send a CL.",
+      "parentUuid": "b89523ea_094ab98e",
+      "revId": "e8ff265451e18921ac1a0abef1a77f350bbd8e15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
