@@ -11,11 +11,10 @@
 package annopb
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	srcman "go.chromium.org/luci/common/proto/srcman"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -26,10 +25,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // Status is the expressed root step of this step or substep.
 type Status int32
@@ -247,9 +242,9 @@ type Step struct {
 	StderrStream *LogdogStream `protobuf:"bytes,7,opt,name=stderr_stream,json=stderrStream,proto3" json:"stderr_stream,omitempty"`
 	// When the step started, expressed as an RFC3339 string using Z (UTC)
 	// timezone.
-	Started *timestamp.Timestamp `protobuf:"bytes,8,opt,name=started,proto3" json:"started,omitempty"`
+	Started *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=started,proto3" json:"started,omitempty"`
 	// When the step ended, expressed as an RFC3339 string using Z (UTC) timezone.
-	Ended *timestamp.Timestamp `protobuf:"bytes,9,opt,name=ended,proto3" json:"ended,omitempty"`
+	Ended *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=ended,proto3" json:"ended,omitempty"`
 	// Arbitrary lines of component text. Each string here is a consecutive line,
 	// and should not contain newlines.
 	Text []string `protobuf:"bytes,20,rep,name=text,proto3" json:"text,omitempty"`
@@ -349,14 +344,14 @@ func (x *Step) GetStderrStream() *LogdogStream {
 	return nil
 }
 
-func (x *Step) GetStarted() *timestamp.Timestamp {
+func (x *Step) GetStarted() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Started
 	}
 	return nil
 }
 
-func (x *Step) GetEnded() *timestamp.Timestamp {
+func (x *Step) GetEnded() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Ended
 	}
@@ -1191,22 +1186,22 @@ func file_go_chromium_org_luci_luciexe_legacy_annotee_proto_annotations_proto_ra
 var file_go_chromium_org_luci_luciexe_legacy_annotee_proto_annotations_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_go_chromium_org_luci_luciexe_legacy_annotee_proto_annotations_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_go_chromium_org_luci_luciexe_legacy_annotee_proto_annotations_proto_goTypes = []interface{}{
-	(Status)(0),                 // 0: annotation.Status
-	(FailureDetails_Type)(0),    // 1: annotation.FailureDetails.Type
-	(*FailureDetails)(nil),      // 2: annotation.FailureDetails
-	(*Step)(nil),                // 3: annotation.Step
-	(*AnnotationLink)(nil),      // 4: annotation.AnnotationLink
-	(*LogdogStream)(nil),        // 5: annotation.LogdogStream
-	(*IsolateObject)(nil),       // 6: annotation.IsolateObject
-	(*DMLink)(nil),              // 7: annotation.DMLink
-	(*Step_Command)(nil),        // 8: annotation.Step.Command
-	(*Step_Substep)(nil),        // 9: annotation.Step.Substep
-	(*Step_Progress)(nil),       // 10: annotation.Step.Progress
-	(*Step_Property)(nil),       // 11: annotation.Step.Property
-	nil,                         // 12: annotation.Step.SourceManifestsEntry
-	nil,                         // 13: annotation.Step.Command.EnvironEntry
-	(*timestamp.Timestamp)(nil), // 14: google.protobuf.Timestamp
-	(*srcman.ManifestLink)(nil), // 15: srcman.ManifestLink
+	(Status)(0),                   // 0: annotation.Status
+	(FailureDetails_Type)(0),      // 1: annotation.FailureDetails.Type
+	(*FailureDetails)(nil),        // 2: annotation.FailureDetails
+	(*Step)(nil),                  // 3: annotation.Step
+	(*AnnotationLink)(nil),        // 4: annotation.AnnotationLink
+	(*LogdogStream)(nil),          // 5: annotation.LogdogStream
+	(*IsolateObject)(nil),         // 6: annotation.IsolateObject
+	(*DMLink)(nil),                // 7: annotation.DMLink
+	(*Step_Command)(nil),          // 8: annotation.Step.Command
+	(*Step_Substep)(nil),          // 9: annotation.Step.Substep
+	(*Step_Progress)(nil),         // 10: annotation.Step.Progress
+	(*Step_Property)(nil),         // 11: annotation.Step.Property
+	nil,                           // 12: annotation.Step.SourceManifestsEntry
+	nil,                           // 13: annotation.Step.Command.EnvironEntry
+	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
+	(*srcman.ManifestLink)(nil),   // 15: srcman.ManifestLink
 }
 var file_go_chromium_org_luci_luciexe_legacy_annotee_proto_annotations_proto_depIdxs = []int32{
 	1,  // 0: annotation.FailureDetails.type:type_name -> annotation.FailureDetails.Type

@@ -55,12 +55,14 @@ type SubPoller struct {
 	LastFullTime *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=last_full_time,json=lastFullTime,proto3" json:"last_full_time,omitempty"`
 	// When the last incremental poll was started.
 	LastIncrTime *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=last_incr_time,json=lastIncrTime,proto3" json:"last_incr_time,omitempty"`
-	// Changes are changes which were matched by sub-poller last.
+	// Changes are changes which were last observed by the SubPoller.
 	//
 	// These are not CL IDs, but Gerrit change numbers.
 	//
-	// Reset by full poll.
-	// Updated by incremental poll.
+	// The full poll resets.
+	// The incremental poll adds newly discovered CLs.
+	//
+	// Sorted.
 	Changes []int64 `protobuf:"varint,13,rep,packed,name=changes,proto3" json:"changes,omitempty"`
 }
 
