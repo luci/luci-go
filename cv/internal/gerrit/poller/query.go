@@ -37,9 +37,6 @@ import (
 )
 
 const (
-	// maxChangeAge limits search only to changes updated at most this long ago.
-	maxChangeAge = 24 * 7 * time.Hour
-
 	// fullPollInterval is between querying Gerrit for all changes relevant to CV as
 	// if from scratch.
 	fullPollInterval = time.Hour
@@ -110,7 +107,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 		"poll":        "full",
 	})
 	started := clock.Now(ctx)
-	after := started.Add(-maxChangeAge)
+	after := started.Add(-common.MaxTriggerAge)
 	changes, err := q.fetch(ctx, after, buildQuery(q.sp, queryLimited))
 	// There can be partial result even if err != nil.
 	switch err2 := q.scheduleTasks(ctx, changes, true); {

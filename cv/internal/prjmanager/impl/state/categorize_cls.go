@@ -17,8 +17,12 @@ package state
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -26,9 +30,8 @@ type categorizedCLs struct {
 	// active CLs must remain in PCLs.
 	//
 	// A CL is active iff either:
-	//   * it has non-nil .Trigger and is watched by this LUCI project
-	//     (see `isActiveStandalonePCL`);
-	//     TODO(crbug/1178658): deal with expired triggers.
+	//   * it has non-nil .Trigger within `common.MaxTriggerAge` and is watched by
+	//     this LUCI project (see `isActiveStandalonePCL`);
 	//   * OR it belongs to an incomplete Run.
 	//     NOTE: In this case, CL may be no longer watched by this project or even
 	//     be with status=DELETED. Such state may temporary arise due to changes
@@ -56,16 +59,25 @@ type categorizedCLs struct {
 // isActiveStandalonePCL returns true if PCL is active on its own.
 //
 // See categorizedCLs.active spec.
-func isActiveStandalonePCL(pcl *prjpb.PCL) bool {
-	return pcl.GetStatus() == prjpb.PCL_OK && pcl.GetTrigger() != nil
+func isActiveStandalonePCL(pcl *prjpb.PCL, now time.Time) bool {
+	if pcl.GetStatus() != prjpb.PCL_OK {
+		return false
+	}
+	t := pcl.GetTrigger()
+	if t == nil {
+		return false
+	}
+	cutoff := now.Add(-common.MaxTriggerAge)
+	return t.GetTime().AsTime().After(cutoff)
 }
 
 // categorizeCLs computes categorizedCLs based on current State.
 //
 // The resulting categorizeCLs spans not just PCLs, but also CreatedRuns, since
 // newly created Runs may reference CLs not yet tracked in PCLs.
-func (s *State) categorizeCLs() *categorizedCLs {
+func (s *State) categorizeCLs(ctx context.Context) *categorizedCLs {
 	s.ensurePCLIndex()
+	now := clock.Now(ctx)
 
 	// reduce typing and redundant !=nil check in GetPcls().
 	pcls := s.PB.GetPcls()
@@ -98,7 +110,7 @@ func (s *State) categorizeCLs() *categorizedCLs {
 	}
 	for _, pcl := range pcls {
 		id := pcl.GetClid()
-		if isActiveStandalonePCL(pcl) {
+		if isActiveStandalonePCL(pcl, now) {
 			res.active.addI64(id)
 		}
 	}
@@ -181,6 +193,7 @@ func (s *State) loadUnloadedCLsOnce(ctx context.Context, cat *categorizedCLs) er
 	if err := s.evalCLsFromDS(ctx, cls); err != nil {
 		return err
 	}
+	now := clock.Now(ctx)
 	// This is inefficient, since this could have been done only for loaded CLs.
 	// Consider adding callback to the evalCLsFromDS.
 	for _, pcl := range s.PB.GetPcls() {
@@ -191,7 +204,7 @@ func (s *State) loadUnloadedCLsOnce(ctx context.Context, cat *categorizedCLs) er
 		cat.unloaded.delI64(id)
 		if !cat.active.hasI64(id) {
 			// CL was a mere dep before, but its details weren't known.
-			if !isActiveStandalonePCL(pcl) {
+			if !isActiveStandalonePCL(pcl, now) {
 				continue // pcl was and remains just a dep.
 			} else {
 				// Promote CL to active.

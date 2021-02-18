@@ -332,7 +332,7 @@ func (s *State) ExecDeferred(ctx context.Context) (*State, SideEffect, error) {
 	if s.PB.GetDirtyComponents() || len(s.PB.GetCreatedPruns()) > 0 {
 		s = s.cloneShallow()
 		mutated = true
-		cat := s.categorizeCLs()
+		cat := s.categorizeCLs(ctx)
 		if err := s.loadActiveIntoPCLs(ctx, cat); err != nil {
 			return nil, nil, err
 		}
