@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22a644ed_3ac5da5c",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-02-18T16:10:37Z",
+      "side": 1,
+      "message": "224? Why? It\u0027s really a bad one.",
+      "range": {
+        "startLine": 135,
+        "startChar": 14,
+        "endLine": 135,
+        "endChar": 20
+      },
+      "revId": "692d800e81b5913569c596ca2c40c5cd5d1ce472",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
