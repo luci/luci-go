@@ -383,6 +383,8 @@ func (rb *RunBuilder) computeCLsDigest() {
 		}
 	})
 	separator := []byte{0}
+	// TODO(tandrii): 224 bit mode gives us nothing extra, better to use entire
+	// 256 and iff we need, truncate it to whatever length we want at the end.
 	h := sha256.New224()
 	for i, t := range triples {
 		if i > 0 {

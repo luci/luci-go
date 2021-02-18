@@ -132,7 +132,7 @@ func reuseIfPossible(old, proposed []*SubPoller) (use, discarded []*SubPoller) {
 	// Each string is emitted as (<len>, string).
 	// List of OrProjects is prefixed by its length.
 	hash := func(s *SubPoller) string {
-		h := sha256.New224()
+		h := sha256.New()
 
 		buf := make([]byte, 10) // varint uint64 will definitely fit.
 		writeInt := func(l int) {
