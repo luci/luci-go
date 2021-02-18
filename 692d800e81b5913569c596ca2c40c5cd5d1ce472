@@ -46,6 +46,30 @@
       },
       "revId": "692d800e81b5913569c596ca2c40c5cd5d1ce472",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37405aea_dd2ff30e",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-02-18T18:13:09Z",
+      "side": 1,
+      "message": "\"Bad\" is a too strong term. It\u0027s rarely used in practice and I prefer to stay in beaten path unless there\u0027s a strong compatibility reason.",
+      "parentUuid": "f58c3233_21ff17cb",
+      "range": {
+        "startLine": 135,
+        "startChar": 14,
+        "endLine": 135,
+        "endChar": 20
+      },
+      "revId": "692d800e81b5913569c596ca2c40c5cd5d1ce472",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
