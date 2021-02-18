@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c60df94b_cdc5a784",
+        "filename": "buildbucket/appengine/model/sequence.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-18T08:01:20Z",
+      "side": 1,
+      "message": "It\u0027s overhead on every sequence number generation though. Deferred decision for now (leaving TODO).",
+      "parentUuid": "5ace4f54_569d0f64",
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a00330de_f6772cce",
@@ -59,6 +77,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f8c9fb9_eeb22ff3",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-18T08:01:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a00330de_f6772cce",
+      "range": {
+        "startLine": 187,
+        "startChar": 0,
+        "endLine": 189,
+        "endChar": 3
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c3ed60d4_38ff9b7a",
@@ -72,6 +114,30 @@
       "writtenOn": "2021-02-17T20:14:59Z",
       "side": 1,
       "message": "0, len(reqs))\n\nperhaps",
+      "range": {
+        "startLine": 224,
+        "startChar": 30,
+        "endLine": 224,
+        "endChar": 32
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ac4f1fa_cbd6c5a8",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-18T08:01:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3ed60d4_38ff9b7a",
       "range": {
         "startLine": 224,
         "startChar": 30,
@@ -123,6 +189,54 @@
         "startChar": 124,
         "endLine": 245,
         "endChar": 136
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b953fa26_c73e31c5",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-18T08:01:20Z",
+      "side": 1,
+      "message": "fetchBuilderConfigs requires existence at L174. Though in Python, it may not exist because it\u0027s unified code for the v1 API which doesn\u0027t require that builders exist.",
+      "parentUuid": "024add36_a0b35d10",
+      "range": {
+        "startLine": 245,
+        "startChar": 124,
+        "endLine": 245,
+        "endChar": 136
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b02f77f_d8973d5b",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-18T08:01:20Z",
+      "side": 1,
+      "message": "Added var for now. I was considering refactoring this map into a struct instead so users wouldn\u0027t need to manually call a func to compute the bucket every time (just pass the config to look up).",
+      "parentUuid": "30202127_61d7403d",
+      "range": {
+        "startLine": 245,
+        "startChar": 10,
+        "endLine": 245,
+        "endChar": 91
       },
       "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
