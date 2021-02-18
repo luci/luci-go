@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4118930_37216bf1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-18T18:50:09Z",
+      "side": 1,
+      "message": "ha! I thought it is intentional for better readability when I review the code",
+      "revId": "3114de11ce213bee7b9cfd0ae8cb2edc746d99bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
