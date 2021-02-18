@@ -343,12 +343,7 @@ func (ac *artifactCreator) verifyStateBeforeWriting(ctx context.Context) (sameAl
 // verifyState checks if the Spanner state is compatible with creation of the
 // artifact. If an identical artifact already exists, sameAlreadyExists is true.
 func (ac *artifactCreator) verifyState(ctx context.Context) (sameAlreadyExists bool, err error) {
-	var (
-		invState       pb.Invocation_State
-		hash           spanner.NullString
-		size           spanner.NullInt64
-		artifactExists bool
-	)
+	var invState pb.Invocation_State
 
 	// Read the state concurrently.
 	err = parallel.FanOutIn(func(work chan<- func() error) {
@@ -357,40 +352,45 @@ func (ac *artifactCreator) verifyState(ctx context.Context) (sameAlreadyExists b
 			return
 		}
 
-		work <- func() error {
-			key := ac.invID.Key(ac.localParentID, ac.artifactID)
-			err := spanutil.ReadRow(ctx, "Artifacts", key, map[string]interface{}{
-				"RBECASHash": &hash,
-				"Size":       &size,
-			})
-			artifactExists = err == nil
-			if spanner.ErrCode(err) == codes.NotFound {
-				// This is expected.
-				return nil
-			}
-			return err
+		work <- func() (err error) {
+			sameAlreadyExists, err = ac.checkDuplicate(ctx)
+			return
 		}
 	})
-
-	// Interpret the state.
-	switch {
-	case err != nil:
+	if err != nil {
 		return false, err
-
-	case invState != pb.Invocation_ACTIVE:
+	}
+	if invState != pb.Invocation_ACTIVE {
 		return false, appstatus.Errorf(codes.FailedPrecondition, "%s is not active", ac.invID.Name())
+	}
+	return
+}
 
-	case hash.Valid && hash.StringVal == ac.hash && size.Valid && size.Int64 == ac.size:
-		// The same artifact already exists.
-		return true, nil
+// checkDuplicate returns whether there is an artifact with the same key, hash, and size.
+// If there is an artifact w/ the same key, but w/ a different hash or size, this returns
+// an error.
+func (ac *artifactCreator) checkDuplicate(ctx context.Context) (bool, error) {
+	var hash spanner.NullString
+	var size spanner.NullInt64
 
-	case artifactExists:
+	key := ac.invID.Key(ac.localParentID, ac.artifactID)
+	err := spanutil.ReadRow(ctx, "Artifacts", key, map[string]interface{}{
+		"RBECASHash": &hash,
+		"Size":       &size,
+	})
+	if err == nil {
+		if hash.Valid && hash.StringVal == ac.hash && size.Valid && size.Int64 == ac.size {
+			// The same artifact already exists.
+			return true, nil
+		}
 		// A different artifact already exists.
 		return false, appstatus.Errorf(codes.AlreadyExists, "artifact %q already exists", ac.artifactName)
-
-	default:
+	}
+	if spanner.ErrCode(err) == codes.NotFound {
+		// This is expected.
 		return false, nil
 	}
+	return false, err
 }
 
 // digestVerifier is an io.Reader that also verifies the digest.

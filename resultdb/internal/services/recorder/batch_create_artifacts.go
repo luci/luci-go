@@ -20,7 +20,9 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -80,13 +82,50 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest) ([]*ar
 	return ret, nil
 }
 
+// verifyBatchArtifactsState verifies the current state of the artifacts and the invocation.
+func verifyBatchArtifactsState(ctx context.Context, arts []*artifactCreator) ([]*artifactCreator, error) {
+	var invState pb.Invocation_State
+	if len(arts) == 0 {
+		return nil, nil
+	}
+
+	// Read the state concurrently.
+	inv := arts[0].invID
+	ret := make([]*artifactCreator, 0, len(arts))
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (err error) {
+			invState, err = invocations.ReadState(ctx, inv)
+			return
+		}
+
+		for _, a := range arts {
+			work <- func() (err error) {
+				exists, err := a.checkDuplicate(ctx)
+				if err == nil && !exists {
+					ret = append(ret, a)
+				}
+				return err
+			}
+		}
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	if invState != pb.Invocation_ACTIVE {
+		return nil, appstatus.Errorf(codes.FailedPrecondition, "%s is not active", inv.Name())
+	}
+	return ret, nil
+}
+
 // BatchCreateArtifacts implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
 	token, err := extractUpdateToken(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	arts, err := parseBatchCreateArtifactsRequest(in)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
@@ -94,9 +133,12 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	if len(arts) == 0 {
 		return nil, nil
 	}
-
 	if err := validateInvocationToken(ctx, token, arts[0].invID); err != nil {
 		return nil, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+	}
+	_, err = verifyBatchArtifactsState(ctx, arts)
+	if err != nil {
+		return nil, err
 	}
 
 	return nil, nil
