@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -96,6 +97,23 @@ func TestRead(t *testing.T) {
 				ContentType: "text/plain",
 				SizeBytes:   54,
 			})
+		})
+	})
+}
+
+func TestExist(t *testing.T) {
+	Convey(`TestExist`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		Convey(`Exists`, func() {
+			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "a", map[string]interface{}{
+				"ContentType": "text/plain",
+				"Hash":        "a123",
+				"Size":        "54",
+			}))
+			ex, err := Exist(ctx, invocations.ID("inv"), "tr/t/r", "a", "a123", 54)
+			So(err, ShouldBeNil)
+			So(ex, ShouldBeTrue)
 		})
 	})
 }
