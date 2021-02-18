@@ -16,6 +16,24 @@
       "message": "Integration tests are failing?\n`cas: failed to create cas client: failed to create client: retry budget exhausted (6 attempts): context deadline exceeded`\nhttps://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8854973250338160144/+/u/go_test/stdout#L1717_30",
       "revId": "f8d9186a9bd99a349e5a92573357bad9ed3d9979",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a49fd27_b6c91f28",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-18T08:40:52Z",
+      "side": 1,
+      "message": "Yes, I filed https://crbug.com/1179629 for that.",
+      "parentUuid": "fff9ddc4_69b27b1f",
+      "revId": "f8d9186a9bd99a349e5a92573357bad9ed3d9979",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
