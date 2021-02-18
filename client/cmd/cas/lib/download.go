@@ -308,6 +308,7 @@ func cacheOutputFiles(diskcache *cache.Cache, kvs *embeddedkvs.KVS, outputs map[
 func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
+	ctx = contextWithMetadata(ctx)
 
 	d, err := digest.NewFromString(r.digest)
 	if err != nil {

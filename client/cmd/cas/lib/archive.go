@@ -107,6 +107,7 @@ func getRoot(paths isolated.ScatterGather) (string, error) {
 func (c *archiveRun) doArchive(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
+	ctx = contextWithMetadata(ctx)
 
 	root, err := getRoot(c.paths)
 	if err != nil {
