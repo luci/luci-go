@@ -93,6 +93,11 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 }
 
 func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLRequest) (resp *diagnosticpb.GetCLResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = d.checkAllowed(ctx); err != nil {
+		return
+	}
+
 	var cl *changelist.CL
 	var eid changelist.ExternalID
 	switch {
