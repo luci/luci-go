@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ed8ea18f_8c3e2bd6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-18T21:05:40Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "768a2ec349a4a2ea25cae3ebd3fa1e9a12d00dbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b02c369d_21f34eae",
         "filename": "cv/internal/diagnostic/server.go",
         "patchSetId": 2
