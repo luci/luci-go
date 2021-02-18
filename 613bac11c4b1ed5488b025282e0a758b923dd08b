@@ -50,6 +50,63 @@
       "message": "lgtm % question re: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2696336/comment/8c4ec533_a2be1376/",
       "revId": "613bac11c4b1ed5488b025282e0a758b923dd08b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3daf9083_77a3383c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-18T21:05:05Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "613bac11c4b1ed5488b025282e0a758b923dd08b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bb46009_bb1c3358",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-18T21:05:05Z",
+      "side": 1,
+      "message": "Deprecated because it will be replaced by ReportVerifiedRun?",
+      "revId": "613bac11c4b1ed5488b025282e0a758b923dd08b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d86ca629_72bde464",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-18T21:05:05Z",
+      "side": 1,
+      "message": "Nit: run_id or maybe RunId",
+      "range": {
+        "startLine": 117,
+        "startChar": 22,
+        "endLine": 117,
+        "endChar": 27
+      },
+      "revId": "613bac11c4b1ed5488b025282e0a758b923dd08b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
