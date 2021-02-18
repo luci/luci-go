@@ -128,7 +128,7 @@ func main() {
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "Batch", makeOverride(100, 100))
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "CancelBuild", makeOverride(0, 0))
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 0))
-		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "UpdateBuild", makeOverride(1, 50))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "UpdateBuild", makeOverride(20, 50))
 		return nil
 	})
 }
