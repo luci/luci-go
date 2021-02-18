@@ -88,3 +88,21 @@ func (c *commonFlags) Parse() error {
 func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
 	return c.logConfig.Set(ctx)
 }
+
+func contextWithMetadata(ctx context.Context) context.Context {
+	ctx, err := client.ContextWithMetadata(ctx, &client.ContextMetadata{
+		ToolName: "cas",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	m, err := client.GetContextMetadata(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	logging.Infof(ctx, "context metadata: %#+v", *m)
+
+	return ctx
+}
