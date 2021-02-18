@@ -22,6 +22,30 @@
       },
       "revId": "692d800e81b5913569c596ca2c40c5cd5d1ce472",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f58c3233_21ff17cb",
+        "filename": "cv/internal/gerrit/poller/partition.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T16:38:38Z",
+      "side": 1,
+      "message": "I choose the smallest without much other thought.  Why bad?\n\nNow that you mentioned it I did read a bit, I see that there is 0 efficiency gain in using sha224 vs 256. So, I\u0027ll gladly change to 256 in a follow up.\n\nBut why bad?",
+      "parentUuid": "22a644ed_3ac5da5c",
+      "range": {
+        "startLine": 135,
+        "startChar": 14,
+        "endLine": 135,
+        "endChar": 20
+      },
+      "revId": "692d800e81b5913569c596ca2c40c5cd5d1ce472",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
