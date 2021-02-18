@@ -259,7 +259,12 @@ func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
 		return err
 	}
 	proposed := partitionConfig(cgs)
-	toUse, _ := reuseIfPossible(s.SubPollers.GetSubPollers(), proposed)
+	toUse, discarded := reuseIfPossible(s.SubPollers.GetSubPollers(), proposed)
+	for _, d := range discarded {
+		if err := scheduleRefreshTasks(ctx, s.LuciProject, d.GetHost(), d.Changes); err != nil {
+			return err
+		}
+	}
 	s.SubPollers = &SubPollers{SubPollers: toUse}
 	return nil
 }

@@ -28,6 +28,7 @@ type categorizedCLs struct {
 	// A CL is active iff either:
 	//   * it has non-nil .Trigger and is watched by this LUCI project
 	//     (see `isActiveStandalonePCL`);
+	//     TODO(crbug/1178658): deal with expired triggers.
 	//   * OR it belongs to an incomplete Run.
 	//     NOTE: In this case, CL may be no longer watched by this project or even
 	//     be with status=DELETED. Such state may temporary arise due to changes

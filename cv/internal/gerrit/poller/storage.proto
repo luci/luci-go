@@ -37,6 +37,16 @@ message SubPoller {
   google.protobuf.Timestamp last_full_time = 11;
   // When the last incremental poll was started.
   google.protobuf.Timestamp last_incr_time = 12;
+
+  // Changes are changes which were last observed by the SubPoller.
+  //
+  // These are not CL IDs, but Gerrit change numbers.
+  //
+  // The full poll resets.
+  // The incremental poll adds newly discovered CLs.
+  //
+  // Sorted.
+  repeated int64 changes = 13;
 }
 
 message SubPollers {

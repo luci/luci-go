@@ -207,9 +207,9 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			f.toUpdate.ApplicableConfig = acfg
 		}
 		if acfg.HasOnlyProject(f.luciProject) && f.priorCL.Snapshot.GetLuciProject() != f.luciProject {
-			// Snapshot cosnidered up-to-date, but fethed in the context of a wrong project.
-			// Must re-fetch. It's OK to re-use prior snapshot so long read access to
-			// Gerrit is verified.
+			// Snapshot considered up-to-date, but fetched in the context of a wrong project.
+			// Must re-fetch. It's OK to re-use prior snapshot so long as read access
+			// to Gerrit is verified.
 			logging.Warningf(ctx, "%s switches from %q to %q LUCI project",
 				f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
 			err = f.fetchExisting(ctx)
