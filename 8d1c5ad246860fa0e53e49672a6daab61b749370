@@ -22,6 +22,30 @@
       },
       "revId": "8d1c5ad246860fa0e53e49672a6daab61b749370",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "70a21bc9_9e1a47fa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-18T00:34:27Z",
+      "side": 1,
+      "message": "Yup. I\u0027m sure there are better ways, but it\u0027s not essential right now.",
+      "parentUuid": "be631c5b_cc6b16c5",
+      "range": {
+        "startLine": 9,
+        "startChar": 32,
+        "endLine": 10,
+        "endChar": 18
+      },
+      "revId": "8d1c5ad246860fa0e53e49672a6daab61b749370",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
