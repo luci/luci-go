@@ -76,9 +76,12 @@ func TestReportTestResults(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer closeSinkServer(ctx, sink)
 
-			_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{
+			req := &sinkpb.ReportTestResultsRequest{
 				TestResults: []*sinkpb.TestResult{tr},
-			})
+			}
+			// Clone because the RPC impl mutates the request objects.
+			req = proto.Clone(req).(*sinkpb.ReportTestResultsRequest)
+			_, err = sink.ReportTestResults(ctx, req)
 			So(err, ShouldBeNil)
 
 			closeSinkServer(ctx, sink)
