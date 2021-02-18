@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be631c5b_cc6b16c5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-18T00:23:52Z",
+      "side": 1,
+      "message": "if I understand the math correctly, we are expecting on average 1.5 poke for every 10 minutes if common.ProjectOffset is generating an evenly distributed random number. Is that right?",
+      "range": {
+        "startLine": 9,
+        "startChar": 32,
+        "endLine": 10,
+        "endChar": 18
+      },
+      "revId": "8d1c5ad246860fa0e53e49672a6daab61b749370",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
