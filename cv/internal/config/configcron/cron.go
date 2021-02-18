@@ -16,10 +16,11 @@ package configcron
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -122,12 +123,28 @@ func refreshProject(ctx context.Context, project string, disable bool) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to %s project %q", action, project).Err()
 	}
-	// TODO(crbug/1158500): replace with time-based decision s.t. we can guarantee
-	// that PM will be invoked and hence can do alerting if it's not the case.
-	if mathrand.Float32(ctx) >= 0.9 { // ~10% chance.
-		if err := prjmanager.Poke(ctx, project); err != nil {
-			return err
-		}
+	if !disable {
+		return maybePokePM(ctx, project)
+	}
+	return nil
+}
+
+const pokePMInterval = 10 * time.Minute
+
+func maybePokePM(ctx context.Context, project string) error {
+	now := clock.Now(ctx).UTC()
+	offset := common.ProjectOffset("cron-poke", pokePMInterval, project)
+	nextPokeETA := now.Truncate(pokePMInterval).Add(offset)
+	if nextPokeETA.Before(now) {
+		nextPokeETA = nextPokeETA.Add(pokePMInterval)
+	}
+
+	// Cron runs every minute on average and triggers RefreshProjectConfigTask,
+	// which may be delayed, so send iff it's less than 1.5 minutes before next
+	// poke. This will sometimes result in 2 pokes sent instead of 1, but pokes
+	// are less likely to not be sent at all.
+	if nextPokeETA.Sub(now) < 90*time.Second {
+		return prjmanager.Poke(ctx, project)
 	}
 	return nil
 }
