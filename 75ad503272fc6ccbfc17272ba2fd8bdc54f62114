@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a82888c0_d5306889",
+        "filename": "buildbucket/appengine/model/sequence.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-18T17:46:28Z",
+      "side": 1,
+      "message": "where is the overhead? sprintf?",
+      "parentUuid": "c60df94b_cdc5a784",
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a00330de_f6772cce",
@@ -237,6 +255,30 @@
         "startChar": 10,
         "endLine": 245,
         "endChar": 91
+      },
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2436dec7_74ee11b4",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-18T17:46:28Z",
+      "side": 1,
+      "message": "i see - this code will never serve \"v1 mode\".\n\nbut we also need buildbucket to support \"dynamic builders\" - which means a builder does not have to be pre-configured to schedule a build there. More like Swarming, where you don\u0027t have preconfigure anything because the request will be self-sufficient. The context is \n1) https://groups.google.com/a/google.com/g/luci-eng/c/VUlqpfxzT2Q/m/ndNjY6e2BQAJ\n2) Skia builds that don\u0027t define builders in advance\n3) go/rbe-convergence\nThe solution is something like CreateBuild() RPC which accepts Build entity. \n\nmy point is, there will be cases where the builder config doesn\u0027t exist. When we start implementing that, we will need to hunt for all places in code which assume builder config exists, such as this. So maybe we can help our future selves by avoiding them, especially when the cost is 5 more characters :)",
+      "parentUuid": "b953fa26_c73e31c5",
+      "range": {
+        "startLine": 245,
+        "startChar": 124,
+        "endLine": 245,
+        "endChar": 136
       },
       "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
