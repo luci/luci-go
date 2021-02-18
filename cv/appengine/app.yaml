@@ -3,6 +3,8 @@ runtime: go115
 
 instance_class: F4
 
+max_instances: 20
+
 automatic_scaling:
   max_concurrent_requests: 80
 
