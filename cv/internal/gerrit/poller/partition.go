@@ -16,11 +16,11 @@ package poller
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"gopkg.in/src-d/go-git.v4/utils/binary"
 
 	"go.chromium.org/luci/cv/internal/config"
 )
@@ -133,13 +133,21 @@ func reuseIfPossible(old, proposed []*SubPoller) (use, discarded []*SubPoller) {
 	// List of OrProjects is prefixed by its length.
 	hash := func(s *SubPoller) string {
 		h := sha256.New224()
+
+		buf := make([]byte, 10) // varint uint64 will definitely fit.
+		writeInt := func(l int) {
+			n := binary.PutUvarint(buf, uint64(l))
+			h.Write(buf[:n])
+		}
+
 		writeStr := func(s string) {
-			binary.WriteVariableWidthInt(h, int64(len(s)))
+			writeInt(len(s))
 			h.Write([]byte(s))
 		}
+
 		writeStr(s.GetHost())
 		writeStr(s.GetCommonProjectPrefix())
-		binary.WriteVariableWidthInt(h, int64(len(s.GetOrProjects())))
+		writeInt(len(s.GetOrProjects()))
 		for _, p := range s.GetOrProjects() {
 			writeStr(p)
 		}
