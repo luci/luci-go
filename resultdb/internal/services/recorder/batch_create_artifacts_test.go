@@ -128,5 +128,12 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
 		})
+
+		Convey("finalized invocation", func() {
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+			_, err = recorder.BatchCreateArtifacts(ctx, bReq)
+			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `inv is not active`)
+		})
 	})
 }
