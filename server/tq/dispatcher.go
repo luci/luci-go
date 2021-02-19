@@ -430,8 +430,14 @@ type ExecutionInfo struct {
 	// failed attempt.
 	ExecutionCount int
 
-	taskRetryReason       string // X-CloudTasks-TaskRetryReason
-	taskPreviousResponse  string // X-CloudTasks-TaskPreviousResponse
+	// taskRetryCount, unlike ExecutionCount does include attempts where the task
+	// failed due to 5XX error codes and never reached the execution phase.
+	taskRetryCount int // X-CloudTasks-TaskRetryCount
+
+	taskRetryReason      string    // X-CloudTasks-TaskRetryReason
+	taskPreviousResponse string    // X-CloudTasks-TaskPreviousResponse
+	taskETA              time.Time // X-CloudTasks-TaskETA
+
 	submitterTraceContext string // see TraceContextHeader
 }
 
@@ -1287,10 +1293,24 @@ func parseHeaders(h http.Header) ExecutionInfo {
 		execCount, _ = strconv.ParseInt(count, 10, 32)
 	}
 
+	var retryCount int64
+	if count := magicHeader("TaskRetryCount"); count != "" {
+		retryCount, _ = strconv.ParseInt(count, 10, 32)
+	}
+
+	var eta time.Time
+	if etaText := magicHeader("TaskETA"); etaText != "" {
+		var secs int64
+		secs, _ = strconv.ParseInt(etaText, 10, 64)
+		eta = time.Unix(secs, 0)
+	}
+
 	return ExecutionInfo{
 		ExecutionCount:        int(execCount),
 		taskRetryReason:       magicHeader("TaskRetryReason"),
 		taskPreviousResponse:  magicHeader("TaskPreviousResponse"),
+		taskRetryCount:        int(retryCount),
+		taskETA:               eta,
 		submitterTraceContext: h.Get(TraceContextHeader),
 	}
 }
