@@ -86,6 +86,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "afe943e2_d22373bd",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T15:55:44Z",
+      "side": 1,
+      "message": "Yes, but I can\u0027t kill it yet.",
+      "parentUuid": "2bb46009_bb1c3358",
+      "revId": "613bac11c4b1ed5488b025282e0a758b923dd08b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d86ca629_72bde464",
@@ -99,6 +117,30 @@
       "writtenOn": "2021-02-18T21:05:05Z",
       "side": 1,
       "message": "Nit: run_id or maybe RunId",
+      "range": {
+        "startLine": 117,
+        "startChar": 22,
+        "endLine": 117,
+        "endChar": 27
+      },
+      "revId": "613bac11c4b1ed5488b025282e0a758b923dd08b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e41020c9_9f8e51c3",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T15:55:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d86ca629_72bde464",
       "range": {
         "startLine": 117,
         "startChar": 22,
