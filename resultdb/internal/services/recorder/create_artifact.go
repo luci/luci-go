@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 
-	"cloud.google.com/go/spanner"
 	"github.com/google/uuid"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
@@ -343,54 +342,25 @@ func (ac *artifactCreator) verifyStateBeforeWriting(ctx context.Context) (sameAl
 // verifyState checks if the Spanner state is compatible with creation of the
 // artifact. If an identical artifact already exists, sameAlreadyExists is true.
 func (ac *artifactCreator) verifyState(ctx context.Context) (sameAlreadyExists bool, err error) {
-	var (
-		invState       pb.Invocation_State
-		hash           spanner.NullString
-		size           spanner.NullInt64
-		artifactExists bool
-	)
-
 	// Read the state concurrently.
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {
-			invState, err = invocations.ReadState(ctx, ac.invID)
+			invState, err := invocations.ReadState(ctx, ac.invID)
+			if err == nil && invState != pb.Invocation_ACTIVE {
+				return appstatus.Errorf(codes.FailedPrecondition, "%s is not active", ac.invID.Name())
+			}
 			return
 		}
 
-		work <- func() error {
-			key := ac.invID.Key(ac.localParentID, ac.artifactID)
-			err := spanutil.ReadRow(ctx, "Artifacts", key, map[string]interface{}{
-				"RBECASHash": &hash,
-				"Size":       &size,
-			})
-			artifactExists = err == nil
-			if spanner.ErrCode(err) == codes.NotFound {
-				// This is expected.
-				return nil
-			}
-			return err
+		work <- func() (err error) {
+			sameAlreadyExists, err = artifacts.Exist(ctx, ac.invID, ac.localParentID, ac.artifactID, ac.hash, ac.size)
+			return
 		}
 	})
-
-	// Interpret the state.
-	switch {
-	case err != nil:
+	if err != nil {
 		return false, err
-
-	case invState != pb.Invocation_ACTIVE:
-		return false, appstatus.Errorf(codes.FailedPrecondition, "%s is not active", ac.invID.Name())
-
-	case hash.Valid && hash.StringVal == ac.hash && size.Valid && size.Int64 == ac.size:
-		// The same artifact already exists.
-		return true, nil
-
-	case artifactExists:
-		// A different artifact already exists.
-		return false, appstatus.Errorf(codes.AlreadyExists, "artifact %q already exists", ac.artifactName)
-
-	default:
-		return false, nil
 	}
+	return
 }
 
 // digestVerifier is an io.Reader that also verifies the digest.
