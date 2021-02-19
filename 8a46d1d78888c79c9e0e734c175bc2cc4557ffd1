@@ -1384,6 +1384,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "95084973_0a42f2e9",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-19T04:48:45Z",
+      "side": 1,
+      "message": "You are absolutely right. I thought of this once before but totally forget about it during the implementation and somehow my mind didn\u0027t click while reading your comment.\n\nYes, CV should try to post the message even if it finds trigger has been removed. Made the change in new PS and added a test.",
+      "parentUuid": "c094f335_a25ebb25",
+      "range": {
+        "startLine": 309,
+        "startChar": 37,
+        "endLine": 309,
+        "endChar": 50
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7decf320_e2dba963",
@@ -1709,6 +1733,30 @@
       "side": 1,
       "message": "new CL LGTM, but you didn\u0027t the code from this CL.",
       "parentUuid": "e050d329_49508e24",
+      "range": {
+        "startLine": 38,
+        "startChar": 16,
+        "endLine": 38,
+        "endChar": 47
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad520959_b2bfbfb4",
+        "filename": "cv/internal/gerrit/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-19T04:48:45Z",
+      "side": 1,
+      "message": "\u003e but you didn\u0027t the code from this CL.\n\nwhat do you mean?",
+      "parentUuid": "169923b9_9f6cc3d5",
       "range": {
         "startLine": 38,
         "startChar": 16,
