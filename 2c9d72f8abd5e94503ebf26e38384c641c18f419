@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "33e9e535_4145f92b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T14:53:44Z",
+      "side": 1,
+      "message": "after more consideration, I think it\u0027s fine.\n(1) is inevitable. Might as well get newer proto earlier.\n(2) is still valid, but one can still revert by hand, so probably OK.",
+      "parentUuid": "f21b9ee2_b17cbbfb",
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "537c9532_a0a15a83",
@@ -54,6 +72,40 @@
       "writtenOn": "2021-02-19T14:50:43Z",
       "side": 1,
       "message": "this stack trace isn\u0027t very important for this commit message, But I don\u0027t feel strongly.",
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e29012a0_0e594fbe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T14:53:44Z",
+      "side": 1,
+      "message": "Robbie, do you have thoughts?",
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bbff892_043f8a63",
+        "filename": "vpython/venv/assets/assets_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T14:53:44Z",
+      "side": 1,
+      "message": "ah, that\u0027s why it changed.",
       "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
