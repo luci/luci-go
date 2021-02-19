@@ -12,6 +12,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // AdmissionsClient is the client API for Admissions service.
@@ -33,7 +34,7 @@ func NewAdmissionsClient(cc grpc.ClientConnInterface) AdmissionsClient {
 }
 
 func (c *admissionsClient) ListAdmissions(ctx context.Context, in *ListAdmissionsRequest, opts ...grpc.CallOption) (Admissions_ListAdmissionsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Admissions_serviceDesc.Streams[0], "/cipd.plugin.Admissions/ListAdmissions", opts...)
+	stream, err := c.cc.NewStream(ctx, &Admissions_ServiceDesc.Streams[0], "/cipd.plugin.Admissions/ListAdmissions", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +105,7 @@ type UnsafeAdmissionsServer interface {
 }
 
 func RegisterAdmissionsServer(s grpc.ServiceRegistrar, srv AdmissionsServer) {
-	s.RegisterService(&_Admissions_serviceDesc, srv)
+	s.RegisterService(&Admissions_ServiceDesc, srv)
 }
 
 func _Admissions_ListAdmissions_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -146,7 +147,10 @@ func _Admissions_ResolveAdmission_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Admissions_serviceDesc = grpc.ServiceDesc{
+// Admissions_ServiceDesc is the grpc.ServiceDesc for Admissions service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Admissions_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "cipd.plugin.Admissions",
 	HandlerType: (*AdmissionsServer)(nil),
 	Methods: []grpc.MethodDesc{
