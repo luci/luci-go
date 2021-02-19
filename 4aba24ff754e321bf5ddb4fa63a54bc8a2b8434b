@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "641e0ea1_d9acc61d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-19T02:41:43Z",
+      "side": 1,
+      "message": "strictly speaking, the equivalent of the py _pre_put_hook() could be to set UpdateTime in https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/model/build.go;l\u003d122-129",
+      "range": {
+        "startLine": 282,
+        "startChar": 0,
+        "endLine": 284,
+        "endChar": 26
+      },
+      "revId": "4aba24ff754e321bf5ddb4fa63a54bc8a2b8434b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "2639c8a4_2680d219",
