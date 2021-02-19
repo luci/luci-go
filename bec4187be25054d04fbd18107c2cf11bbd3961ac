@@ -16,6 +16,395 @@
       "message": "This version may only work on linux, but not on mac/win, because https://screenshot.googleplex.com/BcvKikzP3wbVngU\n\nSo I made sure testing with real Spanner still works.",
       "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a26d5bb_3e292105",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "better!",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26157415_b6c86874",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "nit: fits one line?",
+      "range": {
+        "startLine": 160,
+        "startChar": 11,
+        "endLine": 163,
+        "endChar": 3
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34279f6c_d2d297bb",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "https://pkg.go.dev/path/filepath#Join",
+      "range": {
+        "startLine": 232,
+        "startChar": 17,
+        "endLine": 232,
+        "endChar": 28
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da8b8af4_a1bbb0b0",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "nit: combine?",
+      "range": {
+        "startLine": 233,
+        "startChar": 1,
+        "endLine": 234,
+        "endChar": 5
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4d9dd4f_2f627509",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "maybe tell the user what to do - install the emulator? maybe add a link to instructions",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "14048808_2a7004fa",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "err is not checked for nil",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24ab7209_84d3f308",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "StartEmulator\n\nthis whole package is about spanner. Also the struct is called Emulator.",
+      "range": {
+        "startLine": 251,
+        "startChar": 5,
+        "endLine": 251,
+        "endChar": 25
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0593939f_27c83a68",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "the caller already knows that this func is starting an emulator, because that\u0027s how the function is called. The annotation should tell the caller something that it *doesn\u0027t* know, e.g. \"failed to find emulator\" or \"picking port\"",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f731ab1f_642a5c18",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "would we need this if we canceled the context?",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ad0aed4_44b1eac3",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "a more standard way to a kill process is to cancel its contenxt, \nhttps://pkg.go.dev/os/exec#CommandContext\nwas this considered?\n\nthen we wouldn\u0027t need emulator.once too",
+      "range": {
+        "startLine": 277,
+        "startChar": 3,
+        "endLine": 279,
+        "endChar": 21
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f18f7d56_baf1e50a",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "is there a reason this is not a part of StartSpannerEmulator? then the temp dir can be deleted in Stop()",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9120ebc5_3cdce0d1",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "a few problems\n1) these side effects are not documented in this function\n2) they are also not undone by anything\n3) why is setting emulator host is in this function to begin with? This func seems to be about config. We know the hostport in StartSpannerEmulator already.\n4) this is global mutable state, which is sort of no-no. I see we read this value above from env. Why not read it from a field or something?\n\nfor example, Emulator could have a function DBClient(). Then NewTempDB could accept it instead of creating one. Then in spannerTestMain(), if we choose to use emulator, we use its client. Otherwise we connect to an actual instance.\n\n----------------",
+      "range": {
+        "startLine": 295,
+        "startChar": 0,
+        "endLine": 299,
+        "endChar": 54
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11f01e15_bfba4201",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "maybe just NewInstance.\nThis is emulator, so it is temp by definition.",
+      "range": {
+        "startLine": 311,
+        "startChar": 26,
+        "endLine": 311,
+        "endChar": 41
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f85393cf_e4c14ecc",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 312,
+        "startChar": 1,
+        "endLine": 312,
+        "endChar": 8
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2928c620_b19ed471",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50b976fc_8af4eec2",
+        "filename": "common/system/port/port.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "please extract to a separate CL",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6b49904_dee409e5",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "to run",
+      "range": {
+        "startLine": 57,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 19
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7cd39072_553febf6",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "runIntegrationTests()",
+      "range": {
+        "startLine": 68,
+        "startChar": 8,
+        "endLine": 68,
+        "endChar": 47
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bfeb4ed1_e5358ab9",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:09Z",
+      "side": 1,
+      "message": "it is still mystery to me where this config dir is used. It passed only to CLOUDSDK_CONFIG envvar, but I don\u0027t see it being used in spanner package https://source.corp.google.com/search?q\u003dCLOUDSDK_CONFIG%20lang:go%20f:spanner\n\nwhat happens if you don\u0027t create the config?",
+      "range": {
+        "startLine": 168,
+        "startChar": 3,
+        "endLine": 168,
+        "endChar": 9
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
