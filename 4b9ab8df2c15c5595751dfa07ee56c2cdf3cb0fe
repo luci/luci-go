@@ -22,6 +22,30 @@
       },
       "revId": "4b9ab8df2c15c5595751dfa07ee56c2cdf3cb0fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f13239d7_687a0625",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T17:19:41Z",
+      "side": 1,
+      "message": "You grasped it exactly right, I was hoping you can come up with a better name than \"comBo\" which sounds almost like \"comPonent\" 😊",
+      "parentUuid": "9e72a0c9_6fb6e5c8",
+      "range": {
+        "startLine": 165,
+        "startChar": 3,
+        "endLine": 165,
+        "endChar": 8
+      },
+      "revId": "4b9ab8df2c15c5595751dfa07ee56c2cdf3cb0fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
