@@ -103,7 +103,9 @@ func main(ctx context.Context, args []string, stdin io.Reader, inputMsg proto.Me
 
 	opts := []StartOption{
 		OptParseProperties(inputMsg),
-		OptOutputProperties(writeFnptr, mergeFnptr),
+	}
+	if writeFnptr != nil || mergeFnptr != nil {
+		opts = append(opts, OptOutputProperties(writeFnptr, mergeFnptr))
 	}
 
 	outputFile, strict, help := parseArgs(args)
