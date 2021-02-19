@@ -962,12 +962,11 @@ func (s *Server) ListenAndServe() error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(ports))
 	for i, port := range ports {
-		logging.Infof(s.Context, "Serving %s", port.nameForLog())
 		i := i
 		port := port
 		go func() {
 			defer wg.Done()
-			if err := s.serveLoop(port.httpServer()); err != http.ErrServerClosed {
+			if err := s.serveLoop(port.httpServer(s.Context)); err != http.ErrServerClosed {
 				logging.WithError(err).Errorf(s.Context, "Server %s failed", port.nameForLog())
 				errs[i] = err
 				s.Shutdown() // close all other servers
@@ -989,6 +988,18 @@ func (s *Server) ListenAndServe() error {
 		return errs
 	}
 	return nil
+}
+
+// WaitForMainAddress waits until the server is listening for traffic on the
+// `main` port (or `ctx.Done()`).
+//
+// You need to call ListenAndServe (likely in a goroutine) before this can
+// return successfully.
+//
+// Returns the bound address and `ok==true` on success, `nil, false` if ctx
+// ends.
+func (s *Server) WaitForMainAddress(ctx context.Context) (bound net.Addr, ok bool) {
+	return s.mainPort.WaitForBoundAddress(ctx)
 }
 
 // Shutdown gracefully stops the server if it was running.
@@ -1014,7 +1025,7 @@ func (s *Server) Shutdown() {
 		port := port
 		go func() {
 			defer wg.Done()
-			port.httpServer().Shutdown(s.Context)
+			port.httpServer(s.Context).Shutdown(s.Context)
 		}()
 	}
 	wg.Wait()

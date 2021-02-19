@@ -15,11 +15,14 @@
 package server
 
 import (
+	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -49,6 +52,9 @@ type Port struct {
 	mu      sync.Mutex
 	srv     *http.Server              // lazy-initialized in httpServer()
 	perHost map[string]*router.Router // routers added in VirtualHost(...)
+
+	boundAddr    net.Addr
+	boundAddrSet chan struct{} // closed when boundAddr is assigned
 }
 
 // VirtualHost returns a router (registering it if necessary) used for requests
@@ -99,7 +105,7 @@ func (p *Port) nameForLog() string {
 //
 // Once this function is called, no more virtual hosts can be added to the
 // server (an attempt to do so causes a panic).
-func (p *Port) httpServer() *http.Server {
+func (p *Port) httpServer(ctx context.Context) *http.Server {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -112,9 +118,51 @@ func (p *Port) httpServer() *http.Server {
 			Addr:     p.opts.ListenAddr,
 			Handler:  p.initHandlerLocked(),
 			ErrorLog: nil, // TODO(vadimsh): Log via 'logging' package.
+			BaseContext: func(boundListener net.Listener) context.Context {
+				p.mu.Lock()
+				if p.boundAddr != nil {
+					panic(errors.Reason(
+						"Port.boundAddr set multiple times: prev:%q now:%q",
+						p.boundAddr, boundListener.Addr()).Err())
+				}
+				p.boundAddr = boundListener.Addr()
+				p.mu.Unlock()
+
+				if p.opts.Name != "" {
+					logging.Infof(ctx, "Serving %s [%s]", p.boundAddr, p.opts.Name)
+				} else {
+					logging.Infof(ctx, "Serving %s", p.boundAddr)
+				}
+
+				close(p.boundAddrSet)
+				return context.Background()
+			},
 		}
 	}
+	if p.boundAddrSet == nil {
+		p.boundAddrSet = make(chan struct{})
+	}
 	return p.srv
+}
+
+// WaitForBoundAddress will wait until this Port is listening for incoming
+// traffic (or until `ctx.Done()`).
+//
+// Returns the bound address and `ok==true` on success, `nil, false` if ctx
+// ends.
+func (p *Port) WaitForBoundAddress(ctx context.Context) (bound net.Addr, ok bool) {
+	p.mu.Lock()
+	if p.boundAddrSet == nil {
+		p.boundAddrSet = make(chan struct{})
+	}
+	p.mu.Unlock()
+
+	select {
+	case <-ctx.Done():
+		return nil, false
+	case <-p.boundAddrSet:
+		return p.boundAddr, true
+	}
 }
 
 // initHandlerLocked initializes the top-level router for the server.
