@@ -57,6 +57,7 @@ var _ gerrit.Client = (*Client)(nil)
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
 func (client *Client) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
+	client.f.recordRequest(in)
 	if in.GetOffset() != 0 {
 		return nil, status.New(codes.Unimplemented, "Offset is not supported by GerritFake").Err()
 	}
@@ -106,6 +107,7 @@ func (client *Client) ListChanges(ctx context.Context, in *gerritpb.ListChangesR
 func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
+	client.f.recordRequest(in)
 
 	change, err := client.getChangeEnforceACLsLocked(in.GetNumber())
 	if err != nil {
@@ -123,6 +125,7 @@ func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeReque
 func (client *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error) {
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
+	client.f.recordRequest(in)
 
 	change, err := client.getChangeEnforceACLsLocked(in.GetNumber())
 	if err != nil {
@@ -183,6 +186,7 @@ func (client *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRel
 func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error) {
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
+	client.f.recordRequest(in)
 
 	change, err := client.getChangeEnforceACLsLocked(in.GetNumber())
 	if err != nil {
@@ -213,6 +217,7 @@ func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesReque
 func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
 	client.f.m.Lock()
 	defer client.f.m.Unlock()
+	client.f.recordRequest(in)
 
 	ch, found := client.f.cs[key(client.host, int(in.GetNumber()))]
 	if !found {
