@@ -278,13 +278,13 @@ func ACLPublic() AccessCheck {
 }
 
 // ACLGrant grants a permission to given projects.
-func ACLGrant(op Operation, luciProjects ...string) AccessCheck {
+func ACLGrant(op Operation, code codes.Code, luciProjects ...string) AccessCheck {
 	ps := stringset.NewFromSlice(luciProjects...)
 	return func(o Operation, p string) *status.Status {
 		if ps.Has(p) && o == op {
 			return status.New(codes.OK, "")
 		}
-		return status.New(codes.NotFound, "")
+		return status.New(code, "")
 	}
 }
 
@@ -467,18 +467,24 @@ func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
 		if ci.GetLabels() == nil {
 			ci.Labels = map[string]*gerritpb.LabelInfo{}
 		}
-		li, ok := ci.GetLabels()[label]
-		if !ok {
+		switch li, ok := ci.GetLabels()[label]; {
+		case !ok && ai.Value != 0:
 			ci.GetLabels()[label] = &gerritpb.LabelInfo{
-				Value: int32(value),
-				All:   []*gerritpb.ApprovalInfo{ai},
+				All: []*gerritpb.ApprovalInfo{ai},
 			}
-			return
+		case ok:
+			for i := range li.GetAll() {
+				if li.All[i].GetUser().GetAccountId() == ai.GetUser().GetAccountId() {
+					if ai.Value == 0 {
+						li.All = append(li.All[:i], li.All[i+1:]...)
+					} else {
+						li.All[i] = ai
+					}
+					return
+				}
+			}
+			li.All = append(li.GetAll(), ai)
 		}
-		if li.GetValue() < int32(value) {
-			li.Value = int32(value)
-		}
-		li.All = append(li.GetAll(), ai)
 	}
 }
 

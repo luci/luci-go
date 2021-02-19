@@ -29,6 +29,7 @@ import (
 // by faking or mocking only relevant methods.
 type Client interface {
 	CLReaderClient
+	CLWriterClient
 	QueryClient
 }
 
@@ -75,6 +76,14 @@ type CLReaderClient interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
 	ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error)
+}
+
+// CLWriterClient defines a subset of Gerrit API used by CV to mutate CL.
+type CLWriterClient interface {
+	// Set various review bits on a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
+	SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error)
 }
 
 // QueryClient defines a subset of Gerrit API used by CV to query for CLs.

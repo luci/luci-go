@@ -16,6 +16,7 @@ package gerritfake
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,8 +26,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritutil "go.chromium.org/luci/common/api/gerrit"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -197,6 +200,52 @@ func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesReque
 	return ret, nil
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Write RPCs
+
+// Set various review bits on a change.
+//
+// Currently, only support following functionalities:
+//  - Post Message.
+//  - Set votes on a label (by project itself or on behalf of other user)
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
+func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
+	client.f.m.Lock()
+	defer client.f.m.Unlock()
+
+	ch, found := client.f.cs[key(client.host, int(in.GetNumber()))]
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "change %s/%d not found", client.host, in.GetNumber())
+	}
+	if err := client.setReviewEnforceACLs(in, ch); err != nil {
+		return nil, err
+	}
+
+	if in.Message != "" {
+		ch.Info.Messages = append(ch.Info.Messages, &gerritpb.ChangeMessageInfo{
+			Id:      strconv.Itoa(len(ch.Info.Messages)),
+			Author:  U(client.luciProject),
+			Date:    timestamppb.New(clock.Now(ctx)),
+			Message: in.Message,
+		})
+	}
+
+	if len(in.Labels) > 0 {
+		for label, val := range in.Labels {
+			if in.OnBehalfOf == 0 {
+				Vote(label, int(val), clock.Now(ctx), U(client.luciProject))(ch.Info)
+			} else {
+				Vote(label, int(val), clock.Now(ctx), U(fmt.Sprintf("user-%d", in.OnBehalfOf)))(ch.Info)
+			}
+		}
+	}
+	return &gerritpb.ReviewResult{Labels: in.GetLabels()}, nil
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Helper methods
+
 // visitNodesDFS visits all nodes reachable from the current node via depth
 // first search.
 //
@@ -229,6 +278,26 @@ func (client *Client) getChangeEnforceACLsLocked(change int64) (*Change, error) 
 		return nil, status.Err()
 	}
 	return ch, nil
+}
+
+func (client *Client) setReviewEnforceACLs(in *gerritpb.SetReviewRequest, ch *Change) error {
+	if in.Message != "" {
+		if status := ch.ACLs(OpReview, client.luciProject); status.Code() != codes.OK {
+			return status.Err()
+		}
+	}
+	if len(in.Labels) > 0 {
+		if in.OnBehalfOf == 0 {
+			if status := ch.ACLs(OpReview, client.luciProject); status.Code() != codes.OK {
+				return status.Err()
+			}
+		} else {
+			if status := ch.ACLs(OpAlterVotesOfOthers, client.luciProject); status.Code() != codes.OK {
+				return status.Err()
+			}
+		}
+	}
+	return nil
 }
 
 func applyChangeOpts(change *Change, opts []gerritpb.QueryOption) *gerritpb.ChangeInfo {
