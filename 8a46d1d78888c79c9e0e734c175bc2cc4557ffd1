@@ -1765,6 +1765,30 @@
       },
       "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "816caef1_b90103d3",
+        "filename": "cv/internal/gerrit/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T17:36:49Z",
+      "side": 1,
+      "message": "I meant\n\n  but you didn\u0027t REMOVE the code from this CL.\n\nBut I looked at wrong patchset.",
+      "parentUuid": "ad520959_b2bfbfb4",
+      "range": {
+        "startLine": 38,
+        "startChar": 16,
+        "endLine": 38,
+        "endChar": 47
+      },
+      "revId": "8a46d1d78888c79c9e0e734c175bc2cc4557ffd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

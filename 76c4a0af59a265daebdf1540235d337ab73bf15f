@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3007ca0f_7aeeca78",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T17:36:49Z",
+      "side": 1,
+      "message": "nit: votes\n\nWhile I know today it\u0027s ApprovalInfo, it won\u0027t remember this after 1 year.",
+      "range": {
+        "startLine": 304,
+        "startChar": 1,
+        "endLine": 304,
+        "endChar": 4
+      },
+      "revId": "76c4a0af59a265daebdf1540235d337ab73bf15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de7aa825_92b8e333",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T17:36:49Z",
+      "side": 1,
+      "message": "proto.Clone(req)",
+      "range": {
+        "startLine": 87,
+        "startChar": 33,
+        "endLine": 87,
+        "endChar": 36
+      },
+      "revId": "76c4a0af59a265daebdf1540235d337ab73bf15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
