@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/strpair"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -371,7 +370,9 @@ func TestGetBuildForUpdate(t *testing.T) {
 }
 
 func TestUpdateBuild(t *testing.T) {
-	t.Parallel()
+	// Non-parallel due to manipulation of GlobalBuildUpdateTimeClock
+	// t.Parallel()
+
 	tk := "a token"
 	getBuildWithDetails := func(ctx context.Context, bid int64) *model.Build {
 		b, err := getBuild(ctx, bid)
@@ -404,6 +405,10 @@ func TestUpdateBuild(t *testing.T) {
 		ctx = txndefer.FilterRDS(ctx)
 		ctx, sch := tq.TestingContext(ctx, nil)
 
+		t0 := testclock.TestRecentTimeUTC
+		ctx, tclock := testclock.UseTime(ctx, t0)
+		defer model.OverrideGlobalBuildUpdateTimeClock(tclock)()
+
 		// helper function to call UpdateBuild.
 		updateBuild := func(ctx context.Context, req *pb.UpdateBuildRequest) error {
 			_, err := srv.UpdateBuild(ctx, req)
@@ -422,7 +427,7 @@ func TestUpdateBuild(t *testing.T) {
 				},
 				Status: pb.Status_STARTED,
 			},
-			CreateTime:  testclock.TestRecentTimeUTC,
+			CreateTime:  t0,
 			UpdateToken: tk,
 		}
 		So(datastore.Put(ctx, build), ShouldBeNil)
@@ -463,6 +468,20 @@ func TestUpdateBuild(t *testing.T) {
 			}
 		})
 
+		Convey("build.update_time is always updated", func() {
+			So(updateBuild(ctx, req), ShouldBeNil)
+			b, err := getBuild(ctx, req.Build.Id)
+			So(err, ShouldBeNil)
+			So(b.Proto.UpdateTime, ShouldResembleProto, timestamppb.New(t0))
+
+			tclock.Add(time.Second)
+
+			So(updateBuild(ctx, req), ShouldBeNil)
+			b, err = getBuild(ctx, req.Build.Id)
+			So(err, ShouldBeNil)
+			So(b.Proto.UpdateTime, ShouldResembleProto, timestamppb.New(t0.Add(time.Second)))
+		})
+
 		Convey("build.output.properties", func() {
 			props, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
 			So(err, ShouldBeNil)
@@ -484,9 +503,6 @@ func TestUpdateBuild(t *testing.T) {
 		})
 
 		Convey("build.steps", func() {
-			now := testclock.TestRecentTimeLocal
-			ctx, _ = testclock.UseTime(ctx, now)
-
 			step := &pb.Step{
 				Name:      "step",
 				StartTime: &timestamppb.Timestamp{Seconds: 1},
@@ -547,7 +563,7 @@ func TestUpdateBuild(t *testing.T) {
 						Name:      step.Name,
 						Status:    pb.Status_CANCELED,
 						StartTime: step.StartTime,
-						EndTime:   google.NewTimestamp(now),
+						EndTime:   timestamppb.New(t0),
 					}
 					So(b.Proto.Steps[0], ShouldResembleProto, expected)
 				})

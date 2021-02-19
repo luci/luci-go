@@ -19,8 +19,10 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
@@ -117,6 +119,30 @@ func (b *Build) Load(p datastore.PropertyMap) error {
 	return datastore.GetPLS(b).Load(p)
 }
 
+var buildUpdateTimeClock = clock.GetSystemClock()
+
+// OverrideGlobalBuildUpdateTimeClock allows you to override the clock used
+// for setting the Build.Proto.UpdateTime field.
+//
+// This should only be used in tests, though use appropriate caution since this
+// is a global variable.
+//
+// Overriding with `nil` will result in UpdateTime not being manipulated at all.
+//
+// Returns a function to undo the manipulation.
+//
+// Example Usage:
+//
+//    ctx, testClock := testclock.UseTime(ctx, ...)
+//    defer OverrideGlobalBuildUpdateTimeClock(testClock)()
+func OverrideGlobalBuildUpdateTimeClock(c clock.Clock) (undo func()) {
+	oldVal := buildUpdateTimeClock
+	buildUpdateTimeClock = c
+	return func() {
+		buildUpdateTimeClock = oldVal
+	}
+}
+
 // Save returns the datastore.PropertyMap representation of this build. Mutates
 // this entity to reflect computed datastore fields in the returned PropertyMap.
 func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
@@ -127,6 +153,9 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	b.Incomplete = !protoutil.IsEnded(b.Proto.Status)
 	b.Project = b.Proto.Builder.Project
 	b.Status = b.Proto.Status
+	if c := buildUpdateTimeClock; c != nil {
+		b.Proto.UpdateTime = timestamppb.New(c.Now())
+	}
 	p, err := datastore.GetPLS(b).Save(withMeta)
 	if err != nil {
 		return nil, err
