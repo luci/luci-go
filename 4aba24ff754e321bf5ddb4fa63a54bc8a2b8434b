@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2639c8a4_2680d219",
+        "filename": "buildbucket/appengine/rpc/update_build_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T01:55:35Z",
+      "side": 1,
+      "message": "yikes, this boilerplate is copied everywhere? 😞\nWe\u0027ve made a cvtesting to avoid this.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/cvtesting/util.go;l\u003d97?q\u003dcvtesting\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 397,
+        "startChar": 0,
+        "endLine": 405,
+        "endChar": 0
+      },
+      "revId": "4aba24ff754e321bf5ddb4fa63a54bc8a2b8434b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
