@@ -379,21 +379,6 @@
               "location": "query",
               "type": "string"
             },
-            "is_mp": {
-              "default": "NONE",
-              "enum": [
-                "FALSE",
-                "NONE",
-                "TRUE"
-              ],
-              "enumDescriptions": [
-                "",
-                "",
-                ""
-              ],
-              "location": "query",
-              "type": "string"
-            },
             "limit": {
               "default": "200",
               "format": "int64",
@@ -1613,6 +1598,12 @@
         "bot_version": {
           "type": "string"
         },
+        "cas_viewer_server": {
+          "type": "string"
+        },
+        "chops_git_version": {
+          "type": "string"
+        },
         "default_isolate_namespace": {
           "type": "string"
         },
@@ -1626,6 +1617,9 @@
           "type": "string"
         },
         "machine_provider_template": {
+          "type": "string"
+        },
+        "project_id": {
           "type": "string"
         },
         "server_version": {
@@ -1897,6 +1891,10 @@
         },
         "realm": {
           "type": "string"
+        },
+        "resultdb": {
+          "$ref": "SwarmingRpcsResultDBCfg",
+          "description": "Swarming:ResultDB integration configuration for a task. See NewTaskRequest.resultdb for more details."
         },
         "service_account": {
           "type": "string"
