@@ -134,6 +134,118 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
+	Convey("generateBuildNumbers", t, func() {
+		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		Convey("one", func() {
+			blds := []*model.Build{
+				{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				},
+			}
+			err := generateBuildNumbers(ctx, blds)
+			So(err, ShouldBeNil)
+			So(blds, ShouldResemble, []*model.Build{
+				{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Number: 1,
+					},
+					Tags: []string{
+						"build_address:luci.project.bucket/builder/1",
+					},
+				},
+			})
+		})
+
+		Convey("many", func() {
+			blds := []*model.Build{
+				{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+					},
+				},
+				{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+					},
+				},
+				{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+					},
+				},
+			}
+			err := generateBuildNumbers(ctx, blds)
+			So(err, ShouldBeNil)
+			So(blds, ShouldResemble, []*model.Build{
+				{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Number: 1,
+					},
+					Tags: []string{
+						"build_address:luci.project.bucket/builder1/1",
+					},
+				},
+				{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+						Number: 1,
+					},
+					Tags: []string{
+						"build_address:luci.project.bucket/builder2/1",
+					},
+				},
+				{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Number: 2,
+					},
+					Tags: []string{
+						"build_address:luci.project.bucket/builder1/2",
+					},
+				},
+			})
+		})
+	})
+
 	Convey("scheduleRequestFromTemplate", t, func() {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -1113,6 +1225,9 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
+						Config: pb.Builder{
+							BuildNumbers: pb.Toggle_YES,
+						},
 					}), ShouldBeNil)
 
 					rsp, err := srv.ScheduleBuild(ctx, req)
@@ -1123,8 +1238,9 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Id:    1,
-						Input: &pb.Build_Input{},
+						Id:     1,
+						Input:  &pb.Build_Input{},
+						Number: 1,
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
@@ -1202,6 +1318,9 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
+						Config: pb.Builder{
+							BuildNumbers: pb.Toggle_YES,
+						},
 					}), ShouldBeNil)
 
 					rsp, err := srv.ScheduleBuild(ctx, req)
@@ -1212,8 +1331,9 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Id:    1,
-						Input: &pb.Build_Input{},
+						Id:     1,
+						Input:  &pb.Build_Input{},
+						Number: 1,
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
