@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/mask"
@@ -33,10 +34,16 @@ import (
 )
 
 func TestBuild(t *testing.T) {
-	t.Parallel()
+	// Non-parallel due to manipulation of GlobalBuildUpdateTimeClock
+	// t.Parallel()
 
 	Convey("Build", t, func() {
 		ctx := memory.Use(context.Background())
+		ctx, tclock := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		defer OverrideGlobalBuildUpdateTimeClock(tclock)()
+
+		t0pb := timestamppb.New(tclock.Now())
+
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		m := mask.All(&pb.Build{})
@@ -79,7 +86,8 @@ func TestBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Status: pb.Status_SUCCESS,
+				Status:     pb.Status_SUCCESS,
+				UpdateTime: t0pb,
 			})
 		})
 

@@ -19,10 +19,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
@@ -124,7 +124,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		bld.StatusChangedTime = clock.Now(ctx).UTC()
 
 		bld.Proto.CanceledBy = string(auth.CurrentIdentity(ctx))
-		bld.Proto.EndTime = google.NewTimestamp(bld.StatusChangedTime)
+		bld.Proto.EndTime = timestamppb.New(bld.StatusChangedTime)
 		bld.Proto.Status = pb.Status_CANCELED
 		bld.Proto.SummaryMarkdown = req.SummaryMarkdown
 

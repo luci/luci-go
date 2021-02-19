@@ -30,6 +30,11 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func init() {
+	// By default cause Build.Proto.UpdateTime fields to be unset
+	model.OverrideGlobalBuildUpdateTimeClock(nil)
+}
+
 func TestValidateTags(t *testing.T) {
 	t.Parallel()
 
