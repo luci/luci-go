@@ -348,8 +348,10 @@ func (s *State) ExecDeferred(ctx context.Context) (*State, SideEffect, error) {
 		// Since no changes are required, there is no need to re-evaluate
 		// earliestDecisionTime.
 		return s, nil, nil
-	case components != nil && !mutated:
+	case !mutated:
 		s = s.cloneShallow()
+		fallthrough
+	default:
 		s.PB.Components = components
 	}
 	if len(actions) > 0 {
