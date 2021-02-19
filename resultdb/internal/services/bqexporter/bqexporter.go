@@ -253,7 +253,7 @@ func ensureBQTable(ctx context.Context, t table, newSchema bigquery.Schema) erro
 
 		case ok && apiErr.Code == http.StatusForbidden:
 			// No read table permission.
-			return tasks.PermanentFailure.Apply(err), time.Minute, nil
+			return tq.Fatal.Apply(err), time.Minute, nil
 
 		case err != nil:
 			return nil, 0, err
@@ -282,7 +282,7 @@ func createBQTable(ctx context.Context, t table, newSchema bigquery.Schema) erro
 		return nil
 	case ok && apiErr.Code == http.StatusForbidden:
 		// No create table permission.
-		return tasks.PermanentFailure.Apply(err)
+		return tq.Fatal.Apply(err)
 	case err != nil:
 		return err
 	default:
@@ -381,7 +381,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 			defer b.batchSem.Release(1)
 			err := b.insertRowsWithRetries(ctx, ins, rows, errorLogger)
 			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "accessDenied") {
-				err = tasks.PermanentFailure.Apply(err)
+				err = tq.Fatal.Apply(err)
 			}
 			return err
 		})
