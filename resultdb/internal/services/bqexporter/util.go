@@ -23,9 +23,9 @@ import (
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -57,7 +57,7 @@ func getInvocationIDSet(ctx context.Context, invID invocations.ID) (invocations.
 	invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invID))
 	if err != nil {
 		if invocations.TooManyTag.In(err) {
-			err = tasks.PermanentFailure.Apply(err)
+			err = tq.Fatal.Apply(err)
 		}
 		return nil, err
 	}
