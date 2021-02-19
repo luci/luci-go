@@ -164,8 +164,8 @@ func TestPoller(t *testing.T) {
 		const gHost = "chromium-review.example.com"
 		const gRepo = "infra/infra"
 
-		mustGetState := func(lProject string) *state {
-			st := &state{LuciProject: lProject}
+		mustGetState := func(lProject string) *State {
+			st := &State{LuciProject: lProject}
 			So(datastore.Get(ctx, st), ShouldBeNil)
 			return st
 		}
@@ -175,7 +175,7 @@ func TestPoller(t *testing.T) {
 			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
 			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
-			So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+			So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
 		Convey("with existing project config, establishes task chain", func() {
@@ -391,7 +391,7 @@ func TestPoller(t *testing.T) {
 				ct.Cfg.Disable(ctx, lProject)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
-				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+				So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 				ensureNotWatched(ctx, gHost, gRepo, "refs/heads/main")
 				ensureNotWatched(ctx, gHost, "shared/001", "refs/heads/main")
 			})
@@ -400,7 +400,7 @@ func TestPoller(t *testing.T) {
 				ct.Cfg.Delete(ctx, lProject)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 				So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
-				So(datastore.Get(ctx, &state{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+				So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 				ensureNotWatched(ctx, gHost, gRepo, "refs/heads/main")
 				ensureNotWatched(ctx, gHost, "shared/001", "refs/heads/main")
 			})
