@@ -33,6 +33,24 @@
       "message": "Good catch. Does this mean that this would have been retried over an over?",
       "revId": "4352ca72378aa4e6a5108f54544620995b9bcbc9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fb7a4f0_5dd7103e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T20:44:53Z",
+      "side": 1,
+      "message": "yes, until this fix is applied.\nit would also dos/spam our task handlers, they wouldn\u0027t process the tasks that they actually can process.",
+      "parentUuid": "9cd49139_e1058496",
+      "revId": "4352ca72378aa4e6a5108f54544620995b9bcbc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
