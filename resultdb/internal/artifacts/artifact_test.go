@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -96,6 +98,54 @@ func TestRead(t *testing.T) {
 				ContentType: "text/plain",
 				SizeBytes:   54,
 			})
+		})
+	})
+}
+
+func TestExist(t *testing.T) {
+	Convey(`TestExist`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		defer cancel()
+
+		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+
+		Convey(`Exists`, func() {
+			spanutil.InsertMap("Artifacts", map[string]interface{}{
+				"InvocationId": invocations.ID("inv"),
+				"ParentId":     "",
+				"ArtifactId":   "a",
+				"RBECASHash":   "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"Size":         54,
+			})
+			/*testutil.MustApply(ctx, insert.Artifact(invocations.ID("inv"), "tr/t/r", "a", map[string]interface{}{
+				"ContentType": "text/plain",
+				"RBECASHash":  "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"Size":        54,
+			}))(*/
+
+			Convey(`with the same hash and size`, func() {
+				ctx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
+				ex, err := Exist(ctx, invocations.ID("inv"), "", "a", "a123", 54)
+				So(err, ShouldBeNil)
+				So(ex, ShouldBeTrue)
+			})
+			/*
+				Convey(`with a different hash`, func() {
+					_, err := Exist(ctx, invocations.ID("inv"), "tr/t/r", "a", "b321", 54)
+					So(err, ShouldErrLike, codes.AlreadyExists, `exists w/ a different hash or size`)
+				})
+
+				Convey(`with a different size`, func() {
+					_, err := Exist(ctx, invocations.ID("inv"), "tr/t/r", "a", "a123", 1024)
+					So(err, ShouldErrLike, codes.AlreadyExists, `exists w/ a different hash or size`)
+				})*/
+		})
+
+		Convey(`Does not exist`, func() {
+			ex, err := Exist(ctx, invocations.ID("inv"), "tr/t/r", "a", "a123", 54)
+			So(err, ShouldBeNil)
+			So(ex, ShouldBeFalse)
 		})
 	})
 }
