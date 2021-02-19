@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff3d4499_d7004af2",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T17:09:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2201624_98e60d5b",
+      "range": {
+        "startLine": 126,
+        "startChar": 22,
+        "endLine": 126,
+        "endChar": 23
+      },
+      "revId": "3722503490e606e9e943081b948d881ddd144aef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bea5f2ac_77403c0c",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-02-19T00:26:30Z",
       "side": 1,
       "message": "I think it should be TrimPrefix since you write a space before you write a string.",
+      "range": {
+        "startLine": 70,
+        "startChar": 16,
+        "endLine": 70,
+        "endChar": 26
+      },
+      "revId": "3722503490e606e9e943081b948d881ddd144aef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "858e9e12_4f47b81b",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T17:09:18Z",
+      "side": 1,
+      "message": "True about prefix, but I also need to trim suffix since some Should... emit spaces at the end.\nSo, TrimSpace FTW!",
+      "parentUuid": "bea5f2ac_77403c0c",
       "range": {
         "startLine": 70,
         "startChar": 16,
