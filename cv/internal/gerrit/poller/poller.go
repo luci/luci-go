@@ -68,7 +68,7 @@ func poll(ctx context.Context, luciProject string, eta time.Time) error {
 		if err := gobmap.Update(ctx, luciProject); err != nil {
 			return err
 		}
-		if err = datastore.Delete(ctx, &state{LuciProject: luciProject}); err != nil {
+		if err = datastore.Delete(ctx, &State{LuciProject: luciProject}); err != nil {
 			return errors.Annotate(err, "failed to disable poller for %q", luciProject).Err()
 		}
 		return nil
@@ -152,8 +152,8 @@ func schedule(ctx context.Context, luciProject string, after time.Time) error {
 	return nil
 }
 
-// state persists poller's state in datastore.
-type state struct {
+// State persists poller's State in datastore.
+type State struct {
 	_kind string `gae:"$kind,GerritPoller"`
 
 	// Project is the name of the LUCI Project for which poller is working.
@@ -177,7 +177,7 @@ type state struct {
 
 // pollWithConfig performs the poll and if necessary updates to newest project config.
 func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) error {
-	stateBefore := state{LuciProject: luciProject}
+	stateBefore := State{LuciProject: luciProject}
 	switch err := datastore.Get(ctx, &stateBefore); {
 	case err != nil && err != datastore.ErrNoSuchEntity:
 		return errors.Annotate(err, "failed to get poller state for %q", luciProject).Tag(
@@ -225,7 +225,7 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 
 // updateConfig fetches latest config and updates poller's state
 // in RAM only.
-func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
+func updateConfig(ctx context.Context, s *State, meta config.Meta) error {
 	s.ConfigHash = meta.Hash()
 	cgs, err := meta.GetConfigGroups(ctx)
 	if err != nil {
@@ -247,11 +247,11 @@ func updateConfig(ctx context.Context, s *state, meta config.Meta) error {
 }
 
 // save saves state of poller after the poll.
-func save(ctx context.Context, modified *state) error {
+func save(ctx context.Context, modified *State) error {
 	var innerErr error
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		latest := state{LuciProject: modified.LuciProject}
+		latest := State{LuciProject: modified.LuciProject}
 		switch err = datastore.Get(ctx, &latest); {
 		case err == datastore.ErrNoSuchEntity:
 			if modified.EVersion > 0 {

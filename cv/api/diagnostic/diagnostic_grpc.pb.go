@@ -22,7 +22,9 @@ type DiagnosticClient interface {
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
 	// GetCL returns current CL state.
 	GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error)
-	// DeleteProjectEvents delets all outstanding project events.
+	// GetPoller returns current Poller state.
+	GetPoller(ctx context.Context, in *GetPollerRequest, opts ...grpc.CallOption) (*GetPollerResponse, error)
+	// DeleteProjectEvents deletes all outstanding project events.
 	// Must be called with stopped TQs.
 	// TODO(tandrii): delete this Temporary API.
 	DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error)
@@ -54,6 +56,15 @@ func (c *diagnosticClient) GetCL(ctx context.Context, in *GetCLRequest, opts ...
 	return out, nil
 }
 
+func (c *diagnosticClient) GetPoller(ctx context.Context, in *GetPollerRequest, opts ...grpc.CallOption) (*GetPollerResponse, error) {
+	out := new(GetPollerResponse)
+	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/GetPoller", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *diagnosticClient) DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error) {
 	out := new(DeleteProjectEventsResponse)
 	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/DeleteProjectEvents", in, out, opts...)
@@ -71,7 +82,9 @@ type DiagnosticServer interface {
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
 	// GetCL returns current CL state.
 	GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error)
-	// DeleteProjectEvents delets all outstanding project events.
+	// GetPoller returns current Poller state.
+	GetPoller(context.Context, *GetPollerRequest) (*GetPollerResponse, error)
+	// DeleteProjectEvents deletes all outstanding project events.
 	// Must be called with stopped TQs.
 	// TODO(tandrii): delete this Temporary API.
 	DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error)
@@ -87,6 +100,9 @@ func (UnimplementedDiagnosticServer) GetProject(context.Context, *GetProjectRequ
 }
 func (UnimplementedDiagnosticServer) GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCL not implemented")
+}
+func (UnimplementedDiagnosticServer) GetPoller(context.Context, *GetPollerRequest) (*GetPollerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPoller not implemented")
 }
 func (UnimplementedDiagnosticServer) DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectEvents not implemented")
@@ -140,6 +156,24 @@ func _Diagnostic_GetCL_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Diagnostic_GetPoller_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPollerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DiagnosticServer).GetPoller(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/diagnostic.Diagnostic/GetPoller",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiagnosticServer).GetPoller(ctx, req.(*GetPollerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Diagnostic_DeleteProjectEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteProjectEventsRequest)
 	if err := dec(in); err != nil {
@@ -172,6 +206,10 @@ var Diagnostic_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCL",
 			Handler:    _Diagnostic_GetCL_Handler,
+		},
+		{
+			MethodName: "GetPoller",
+			Handler:    _Diagnostic_GetPoller_Handler,
 		},
 		{
 			MethodName: "DeleteProjectEvents",

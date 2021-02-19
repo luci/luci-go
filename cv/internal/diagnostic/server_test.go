@@ -16,6 +16,7 @@ package diagnostic
 
 import (
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -127,6 +129,42 @@ func TestGetCL(t *testing.T) {
 			resp, err := d.GetCL(ctx, &diagnosticpb.GetCLRequest{Id: 123})
 			So(err, ShouldBeNil)
 			So(resp.GetExternalId(), ShouldEqual, "gerrit/x-review/44")
+		})
+	})
+}
+
+func TestGetPoller(t *testing.T) {
+	t.Parallel()
+
+	Convey("GetPoller works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "luci"
+		d := DiagnosticServer{}
+
+		Convey("without access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+			})
+			_, err := d.GetPoller(ctx, &diagnosticpb.GetPollerRequest{Project: lProject})
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("with access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+			now := ct.Clock.Now().UTC().Truncate(time.Second)
+			So(datastore.Put(ctx, &poller.State{
+				LuciProject: lProject,
+				UpdateTime:  now,
+			}), ShouldBeNil)
+			resp, err := d.GetPoller(ctx, &diagnosticpb.GetPollerRequest{Project: lProject})
+			So(err, ShouldBeNil)
+			So(resp.GetUpdateTime().AsTime(), ShouldResemble, now)
 		})
 	})
 }
