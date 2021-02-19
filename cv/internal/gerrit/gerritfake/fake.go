@@ -457,8 +457,14 @@ func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
 		if when, ok = timeAndUser[0].(time.Time); !ok {
 			panic(fmt.Errorf("expected time.Time, got %T", timeAndUser[0]))
 		}
-		if who, ok = timeAndUser[1].(*gerritpb.AccountInfo); !ok {
-			panic(fmt.Errorf("expected *gerritpb.AccountInfo, got %T", timeAndUser[1]))
+
+		switch v := timeAndUser[1].(type) {
+		case *gerritpb.AccountInfo:
+			who = v
+		case string:
+			who = U(v)
+		default:
+			panic(fmt.Errorf("expected *gerritpb.AccountInfo or string, got %T", v))
 		}
 	}
 
