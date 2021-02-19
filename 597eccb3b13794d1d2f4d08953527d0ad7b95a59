@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4bb8e889_c56b2e97",
+        "filename": "cv/internal/cvtesting/benchmarks/cl_1k.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T15:48:03Z",
+      "side": 1,
+      "message": "CL description is summary of cl_1k_test.go file, which should be read to grasp what\u0027s going on.\nOTOH, This file isn\u0027t supposed to be read.",
+      "parentUuid": "49a68cef_6fe38fb0",
+      "revId": "597eccb3b13794d1d2f4d08953527d0ad7b95a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4c854576_02de89a8",
@@ -75,6 +93,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab68c242_cb27a7cc",
+        "filename": "cv/internal/cvtesting/benchmarks/cl_1k_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T15:48:03Z",
+      "side": 1,
+      "message": "indeed!",
+      "parentUuid": "4c854576_02de89a8",
+      "range": {
+        "startLine": 166,
+        "startChar": 14,
+        "endLine": 166,
+        "endChar": 17
+      },
+      "revId": "597eccb3b13794d1d2f4d08953527d0ad7b95a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b4daace8_7b572ea7",
@@ -88,6 +130,24 @@
       "writtenOn": "2021-02-16T19:26:16Z",
       "side": 1,
       "message": "Optionally it could also be described as:\n\n     // Package benchmarks contains benchmarks for heavy CV use-cases.\n     //\n     // Benchmarks are run manually be executing the .sh files or by\n     // running `go test -bench\u003d\u003cbenchmark func name\u003e -benchtime\u003d\u003ctime limit\u003e`\n\nJust to make clear that this code doesn\u0027t do anything on its own and isn\u0027t part of the code executed in the service itself.",
+      "revId": "597eccb3b13794d1d2f4d08953527d0ad7b95a59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96ec26b3_fff37ca1",
+        "filename": "cv/internal/cvtesting/benchmarks/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T15:48:03Z",
+      "side": 1,
+      "message": "done % added motivation behind -benchtime",
+      "parentUuid": "b4daace8_7b572ea7",
       "revId": "597eccb3b13794d1d2f4d08953527d0ad7b95a59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
