@@ -108,3 +108,26 @@ func Read(ctx context.Context, name string) (*pb.Artifact, error) {
 		return ret, nil
 	}
 }
+
+// Exist returns whether there exists an artifact with the same identity. If the hash and size
+// of the extising row don't match with the given hash and size, it returns an error.
+func Exist(ctx context.Context, invID invocations.ID, parentID, artID, hash string, size int64) (bool, error) {
+	var eHash spanner.NullString
+	var eSize spanner.NullInt64
+	err := spanutil.ReadRow(ctx, "Artifacts", invID.Key(parentID, artID), map[string]interface{}{
+		"RBECASHash": &hash,
+		"Size":       &size,
+	})
+	if spanner.ErrCode(err) == codes.NotFound {
+		return false, nil
+	}
+	if err == nil {
+		if eHash.Valid && eHash.StringVal == hash && eSize.Valid && eSize.Int64 == size {
+			// the same artifact already exists.
+			return true, nil
+		}
+		msg := "artifact (%q, %q, %q) exists w/ a different hash or size"
+		return true, appstatus.Errorf(codes.AlreadyExists, msg, invID, parentID, artID)
+	}
+	return false, err
+}
