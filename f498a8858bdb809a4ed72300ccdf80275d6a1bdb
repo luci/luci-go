@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a25e5057_f173602a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-19T18:48:58Z",
+      "side": 1,
+      "message": "😄",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 13
+      },
+      "revId": "f498a8858bdb809a4ed72300ccdf80275d6a1bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad495ec1_35720c9c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-19T18:48:58Z",
+      "side": 1,
+      "message": "lgtm % 1 nit",
+      "revId": "f498a8858bdb809a4ed72300ccdf80275d6a1bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ad54493_637da7b0",
+        "filename": "cv/api/diagnostic/diagnostic.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-19T18:48:58Z",
+      "side": 1,
+      "message": "why? isn\u0027t it already included in the PState (L96 in server.go)?",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 21
+      },
+      "revId": "f498a8858bdb809a4ed72300ccdf80275d6a1bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
