@@ -32,12 +32,10 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -341,7 +339,6 @@ func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, sched := tq.TestingContext(ctx, nil)
-		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{

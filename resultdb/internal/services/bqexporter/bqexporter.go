@@ -42,15 +42,16 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+
+	// Add support for Spanner transactions in TQ.
+	_ "go.chromium.org/luci/server/tq/txn/spanner"
 )
 
 const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
@@ -59,12 +60,6 @@ var bqTableCache = caching.RegisterLRUCache(50)
 
 // Options is bqexporter configuration.
 type Options struct {
-	// How often to query for tasks.
-	TaskQueryInterval time.Duration
-
-	// How long to lease a task for.
-	TaskLeaseDuration time.Duration
-
 	// Whether to use InsertIDs in BigQuery Streaming Inserts.
 	UseInsertIDs bool
 
@@ -79,13 +74,6 @@ type Options struct {
 
 	// Maximum rate for BigQuery Streaming Inserts.
 	RateLimit rate.Limit
-
-	// Number of invocations to export concurrently.
-	// This number should be small (e.g. 10) if this ResultDB instance mostly
-	// exports huge invocations (10k-100k results per invocation), and it should
-	// be large (e.g. 100) if exports small invocations (1000 results per
-	// invocation).
-	TaskWorkers int
 
 	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
 	// storage. Example: "projects/luci-resultdb/instances/artifacts".
@@ -105,9 +93,6 @@ func DefaultOptions() Options {
 		MaxBatchSizeApprox:      6 * 1024 * 1024,        // 6 MiB
 		MaxBatchTotalSizeApprox: 2 * 1024 * 1024 * 1024, // 2 GiB
 		RateLimit:               100,
-		TaskLeaseDuration:       10 * time.Minute,
-		TaskQueryInterval:       5 * time.Second,
-		TaskWorkers:             10,
 	}
 }
 
@@ -137,9 +122,6 @@ var Tasks = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/bqexporter", // for routing to "bqexporter" service
 })
 
-// UseTQ experiment enables using server/tq for bq export tasks.
-var UseTQ = experiments.Register("rdb-use-tq-bq-export")
-
 // InitServer initializes a bqexporter server.
 func InitServer(srv *server.Server, opts Options) error {
 	if opts.ArtifactRBEInstance == "" {
@@ -156,22 +138,6 @@ func InitServer(srv *server.Server, opts Options) error {
 		batchSem:     semaphore.NewWeighted(int64(opts.MaxBatchTotalSizeApprox / opts.MaxBatchSizeApprox)),
 		rbecasClient: bytestream.NewByteStreamClient(conn),
 	}
-
-	d := tasks.Dispatcher{
-		Workers:       opts.TaskWorkers,
-		LeaseDuration: opts.TaskLeaseDuration,
-		QueryInterval: opts.TaskQueryInterval,
-	}
-	srv.RunInBackground("bqexport", func(ctx context.Context) {
-		d.Run(ctx, tasks.BQExport, func(ctx context.Context, invID invocations.ID, payload []byte) error {
-			bqExport := &pb.BigQueryExport{}
-			if err := proto.Unmarshal(payload, bqExport); err != nil {
-				return err
-			}
-			return b.exportResultsToBigQuery(ctx, invID, bqExport)
-		})
-	})
-
 	Tasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationToBQ)
 		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)

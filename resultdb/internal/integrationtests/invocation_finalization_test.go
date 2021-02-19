@@ -19,10 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -33,10 +31,6 @@ func TestInvocationFinalization(t *testing.T) {
 	// https://crbug.com/1116284
 	SkipConvey(`ShouldFinalize`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-
-		// Note: testing only new TQ-based code path. The old one will be removed
-		// soon, it's fine not to test it. We "know" it works.
-		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
 
 		// Cancel the test after 20 sec.
 		ctx, cancel := context.WithTimeout(ctx, 20*time.Second)

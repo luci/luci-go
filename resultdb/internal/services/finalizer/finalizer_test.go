@@ -18,16 +18,11 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/server/experiments"
-	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -111,11 +106,6 @@ func TestFinalizeInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, sched := tq.TestingContext(ctx, nil)
 
-		// Note: testing only new TQ-based code path. The old one will be removed
-		// soon, it's fine not to test it. We "know" it works.
-		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
-		ctx = experiments.Enable(ctx, bqexporter.UseTQ)
-
 		// This is flaky https://crbug.com/1042602#c19
 		SkipConvey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
@@ -152,21 +142,6 @@ func TestFinalizeInvocation(t *testing.T) {
 				{InvocationId: "finalizing1"},
 				{InvocationId: "finalizing2"},
 			})
-
-			// No InvocationTasks enqueued, using TQ now.
-			st := spanner.NewStatement(`
-				SELECT InvocationId
-				FROM InvocationTasks
-				WHERE TaskType = @taskType
-			`)
-			st.Params["taskType"] = string(tasks.TryFinalizeInvocation)
-			var count int
-			err = span.Query(span.Single(ctx), st).Do(func(*spanner.Row) error {
-				count++
-				return nil
-			})
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 0)
 		})
 
 		// This is flaky https://crbug.com/1042602#c17
@@ -194,21 +169,6 @@ func TestFinalizeInvocation(t *testing.T) {
 				{InvocationId: "x", BqExport: &pb.BigQueryExport{Dataset: "dataset", Project: "project2", Table: "table1"}},
 				{InvocationId: "x", BqExport: &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table"}},
 			})
-
-			// No InvocationTasks enqueued, using TQ now.
-			st := spanner.NewStatement(`
-				SELECT InvocationId
-				FROM InvocationTasks
-				WHERE TaskType = @taskType
-			`)
-			st.Params["taskType"] = string(tasks.BQExport)
-			var count int
-			err = span.Query(span.Single(ctx), st).Do(func(*spanner.Row) error {
-				count++
-				return nil
-			})
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 0)
 		})
 	})
 }
