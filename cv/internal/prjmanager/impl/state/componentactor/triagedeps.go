@@ -15,6 +15,7 @@
 package componentactor
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -182,5 +183,37 @@ func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep
 		return
 	default:
 		panic(fmt.Errorf("unknown dependent mode %v", tr))
+	}
+}
+
+// iterateNotSubmitted calls clbk per each dep which isn't submitted.
+//
+// Must be called only if all deps are OK (submitted or notYetLoaded is fine)
+// and with the same PCL as was used to construct the triagedDeps.
+func (t *triagedDeps) iterateNotSubmitted(pcl *prjpb.PCL, clbk func(dep *changelist.Dep)) {
+	if !t.OK() {
+		panic(fmt.Errorf("iterateNotSubmitted called on non-OK triagedDeps (PCL %d)", pcl.GetClid()))
+	}
+	// Because construction of triagedDeps is in order of PCL's Deps, the
+	// submitted must be a sub-sequence of Deps and we can compare just Dep
+	// pointers.
+	all, subs := pcl.GetDeps(), t.submitted
+	for {
+		switch {
+		case len(subs) == 0:
+			for _, dep := range all {
+				clbk(dep)
+			}
+			return
+		case len(all) == 0:
+			panic(errors.New("must not happen because submitted must be a subset of all deps (wrong PCL?)"))
+		default:
+			if all[0] == subs[0] {
+				subs = subs[1:]
+			} else {
+				clbk(all[0])
+			}
+			all = all[1:]
+		}
 	}
 }
