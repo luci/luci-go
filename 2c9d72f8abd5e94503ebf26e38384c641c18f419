@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "9007ca41_64b87ded",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-19T18:03:22Z",
+      "side": 1,
+      "message": "Yeah I think this is OK",
+      "parentUuid": "33e9e535_4145f92b",
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "537c9532_a0a15a83",
         "filename": "/COMMIT_MSG",
         "patchSetId": 9
@@ -49,6 +67,30 @@
       "writtenOn": "2021-02-19T14:50:43Z",
       "side": 1,
       "message": "well, Mode.VM isn\u0027t a proto message, but a struct which inside contains a proto message. This can\u0027t be compared with either ShouldResemble nor SHouldResembleProto. This is why I started writing custom ShouldResembleMyTYpe functions 😞",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 69
+      },
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4f6f35c_4e24727c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-19T18:03:22Z",
+      "side": 1,
+      "message": "Yep, this will need a custom comparison function until the general problem is solved :/",
+      "parentUuid": "537c9532_a0a15a83",
       "range": {
         "startLine": 15,
         "startChar": 0,
@@ -89,6 +131,23 @@
       "writtenOn": "2021-02-19T14:53:44Z",
       "side": 1,
       "message": "Robbie, do you have thoughts?",
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f32f0c08_4a21270a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-19T18:03:22Z",
+      "side": 1,
+      "message": "lgtm",
       "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
