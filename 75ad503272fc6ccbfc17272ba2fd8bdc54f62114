@@ -108,6 +108,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cef436e_166dfa60",
+        "filename": "buildbucket/appengine/model/sequence.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T16:21:52Z",
+      "side": 1,
+      "message": "i looked at the python code - now I understand what you are talking about.\n\n_migrate_entity_async was written 2y ago. It is very likely that all sequences we care about were already migrated.\nFor that not to be the case, there must be a builder that we didn\u0027t use for 2y, and will start scheduling builds again. This is far fetched.",
+      "parentUuid": "eab2c6e2_7d963174",
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a00330de_f6772cce",
