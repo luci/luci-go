@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -177,18 +178,48 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 	return cfgs, nil
 }
 
+// generateBuildNumbers mutates the given builds, setting build numbers and
+// build address tags.
+func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
+	seq := make(map[string][]*model.Build)
+	for _, b := range builds {
+		name := fmt.Sprintf("%s/%s/%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket, b.Proto.Builder.Builder)
+		seq[name] = append(seq[name], b)
+	}
+	return parallel.WorkPool(64, func(work chan<- func() error) {
+		for name, blds := range seq {
+			name := name
+			blds := blds
+			work <- func() error {
+				n, err := model.GenerateSequenceNumbers(ctx, name, len(blds))
+				if err != nil {
+					return err
+				}
+				for i, b := range blds {
+					b.Proto.Number = n + int32(i)
+					addr := fmt.Sprintf("build_address:luci.%s.%s/%s/%d", b.Proto.Builder.Project, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, b.Proto.Number)
+					b.Tags = append(b.Tags, addr)
+					sort.Strings(b.Tags)
+				}
+				return nil
+			}
+		}
+	})
+}
+
 // scheduleBuilds handles requests to schedule builds. Requests must be
 // validated and authorized.
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
 	// TODO(crbug/1042991): Deduplicate request IDs.
 
 	// Bucket -> Builder -> *pb.Builder.
-	_, err := fetchBuilderConfigs(ctx, reqs)
+	cfgs, err := fetchBuilderConfigs(ctx, reqs)
 	if err != nil {
 		return nil, errors.Annotate(err, "error fetching builders").Err()
 	}
 
 	blds := make([]*model.Build, len(reqs))
+	nums := make([]*model.Build, 0, len(reqs))
 	for i := range blds {
 		// TODO(crbug/1042991): Generate build IDs.
 		// TODO(crbug/1042991): Fill in relevant proto fields from the builder config.
@@ -209,10 +240,16 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		if len(exp) > 6 {
 			return nil, appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", i).Err())
 		}
+		bucket := fmt.Sprintf("%s/%s", blds[i].Proto.Builder.Project, blds[i].Proto.Builder.Bucket)
+		if cfgs[bucket][blds[i].Proto.Builder.Builder].GetBuildNumbers() == pb.Toggle_YES {
+			nums = append(nums, blds[i])
+		}
+	}
+	if err := generateBuildNumbers(ctx, nums); err != nil {
+		return nil, errors.Annotate(err, "error generating build numbers").Err()
 	}
 
 	// TODO(crbug/1150607): Create ResultDB invocations.
-	// TODO(crbug/1042991): Generate build numbers.
 	// TODO(crbug/1042991): Update Builders in the datastore to point to the latest build.
 
 	err = parallel.FanOutIn(func(work chan<- func() error) {
