@@ -25,8 +25,10 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
+	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
 
@@ -50,11 +52,20 @@ const (
 	// This could be mitigated by using different Redis databases in different
 	// test binaries, but the default limit is only 16.
 	RedisTestEnvVar = "INTEGRATION_TESTS_REDIS"
+
+	// EmulatorEnvVar is the name of the environment variable which controls
+	// whether running spanner tests using Cloud Spanner Emulator.
+	// The value must be "1" to use emulator.
+	EmulatorEnvVar = "SPANNER_EMULATOR"
 )
 
 // runIntegrationTests returns true if integration tests should run.
 func runIntegrationTests() bool {
 	return os.Getenv(IntegrationTestEnvVar) == "1"
+}
+
+func runIntegrationTestsWithEmulator() bool {
+	return os.Getenv(IntegrationTestEnvVar) == "1" && os.Getenv(EmulatorEnvVar) == "1"
 }
 
 // ConnectToRedis returns true if tests should connect to Redis.
@@ -139,6 +150,48 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 	testing.Init()
 
 	if runIntegrationTests() {
+		ctx := context.Background()
+		start := clock.Now(ctx)
+		var instanceName string
+
+		if runIntegrationTestsWithEmulator() {
+			// Start Cloud Spanner Emulator.
+			emulator, err := spantest.StartSpannerEmulator(ctx)
+			if err != nil {
+				return 0, err
+			}
+			defer emulator.Stop()
+			fmt.Printf("started cloud emulatorlator in %s\n", time.Since(start))
+			start = clock.Now(ctx)
+
+			// Create a temp dir for gcloud config then create a config for emulator run.
+			cfgDir, err := emulator.CreateSpannerEmulatorConfig()
+			if err != nil {
+				return 0, err
+			}
+			defer func() {
+				switch removeErr := filesystem.RemoveAll(cfgDir); {
+				case removeErr == nil:
+					fmt.Println("gcloud config removed")
+				case err == nil:
+					err = removeErr
+
+				default:
+					fmt.Fprintf(os.Stderr, "failed to remove the temporary config directory: %s\n", removeErr)
+				}
+			}()
+			fmt.Printf("created a temporary gcloud config in %s\n", time.Since(start))
+			start = clock.Now(ctx)
+
+			// Create a Spanner instance.
+			instanceName, err = emulator.NewTempInstance(ctx, "")
+			if err != nil {
+				return 0, err
+			}
+			fmt.Printf("created a temporary Spanner instance %s in %s\n", instanceName, time.Since(start))
+			start = clock.Now(ctx)
+		}
+
 		// Find init_db.sql
 		initScriptPath, err := findInitScript()
 		if err != nil {
@@ -146,9 +199,7 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 		}
 
 		// Create a Spanner database.
-		ctx := context.Background()
-		start := time.Now()
-		db, err := spantest.NewTempDB(ctx, spantest.TempDBConfig{InitScriptPath: initScriptPath})
+		db, err := spantest.NewTempDB(ctx, spantest.TempDBConfig{InitScriptPath: initScriptPath, InstanceName: instanceName})
 		if err != nil {
 			return 0, errors.Annotate(err, "failed to create a temporary Spanner database").Err()
 		}
