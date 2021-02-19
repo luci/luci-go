@@ -130,7 +130,7 @@ func TestQuest(t *testing.T) {
 			ds.GetTestable(c).CatchupIndexes()
 			as = nil
 			So(ds.GetAll(c, QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
-			So(as, ShouldResemble, []*Attempt{
+			So(as, ShouldResembleProto, []*Attempt{
 				{ID: *dm.NewAttemptID("1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw", 2)},
 				{ID: *dm.NewAttemptID("1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw", 1)},
 			})
