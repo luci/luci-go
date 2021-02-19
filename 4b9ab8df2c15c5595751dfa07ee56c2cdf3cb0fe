@@ -46,6 +46,30 @@
       },
       "revId": "4b9ab8df2c15c5595751dfa07ee56c2cdf3cb0fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4699d6fd_e6d165ab",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stageruns.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-19T20:52:45Z",
+      "side": 1,
+      "message": "Hmm, as far as name goes...\n\nFortunately it\u0027s a private struct so easy to rename later. You could potentially go with something verbose like actualRunCLGroup, or maybe runCLGroup.\n\nBut either way, I think you could also just change the comment to say \"combo is a set of related CLs that will actually go together in a Run. The CLs in a combo are a subset of those from the component.\"",
+      "parentUuid": "f13239d7_687a0625",
+      "range": {
+        "startLine": 165,
+        "startChar": 3,
+        "endLine": 165,
+        "endChar": 8
+      },
+      "revId": "4b9ab8df2c15c5595751dfa07ee56c2cdf3cb0fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
