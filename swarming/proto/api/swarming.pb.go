@@ -21,15 +21,14 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	_struct "github.com/golang/protobuf/ptypes/struct"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -40,10 +39,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // BotStatusType is one of the states the bot can be in.
 //
@@ -716,11 +711,11 @@ type BotEventsRequest struct {
 	// Optional. Earliest time to return bot event. Inclusive.
 	//
 	// If not specified, pagination is done until all events are returned.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,4,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Optional. Most recent time to return bot event. Exclusive.
 	//
 	// If not specified, defaults to the current time.
-	EndTime *timestamp.Timestamp `protobuf:"bytes,5,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	EndTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 }
 
 func (x *BotEventsRequest) Reset() {
@@ -776,14 +771,14 @@ func (x *BotEventsRequest) GetPageToken() string {
 	return ""
 }
 
-func (x *BotEventsRequest) GetStartTime() *timestamp.Timestamp {
+func (x *BotEventsRequest) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *BotEventsRequest) GetEndTime() *timestamp.Timestamp {
+func (x *BotEventsRequest) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EndTime
 	}
@@ -1140,7 +1135,7 @@ type BotInfo struct {
 	//
 	// Anything that is usable by multiple customers should eventually be moved to
 	// a new field below.
-	Supplemental *_struct.Struct `protobuf:"bytes,1,opt,name=supplemental,proto3" json:"supplemental,omitempty"`
+	Supplemental *structpb.Struct `protobuf:"bytes,1,opt,name=supplemental,proto3" json:"supplemental,omitempty"`
 	// Bot's version. An opaque value.
 	//
 	// This value is Swarming instance and configuration dependent. Bot are
@@ -1175,7 +1170,7 @@ type BotInfo struct {
 	// This can be the DUT (Device Under Test) or other peripherals.
 	Devices []*PhysicalEntity `protobuf:"bytes,9,rep,name=devices,proto3" json:"devices,omitempty"`
 	// This field is used in BOT_MISSING event to know the timestamp of the last activity.
-	LastSeenTs *timestamp.Timestamp `protobuf:"bytes,10,opt,name=last_seen_ts,json=lastSeenTs,proto3" json:"last_seen_ts,omitempty"`
+	LastSeenTs *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_seen_ts,json=lastSeenTs,proto3" json:"last_seen_ts,omitempty"`
 }
 
 func (x *BotInfo) Reset() {
@@ -1210,7 +1205,7 @@ func (*BotInfo) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_swarming_proto_api_swarming_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *BotInfo) GetSupplemental() *_struct.Struct {
+func (x *BotInfo) GetSupplemental() *structpb.Struct {
 	if x != nil {
 		return x.Supplemental
 	}
@@ -1273,7 +1268,7 @@ func (x *BotInfo) GetDevices() []*PhysicalEntity {
 	return nil
 }
 
-func (x *BotInfo) GetLastSeenTs() *timestamp.Timestamp {
+func (x *BotInfo) GetLastSeenTs() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastSeenTs
 	}
@@ -1302,7 +1297,7 @@ type PhysicalEntity struct {
 	//
 	// Anything that is usable by multiple customers should eventually be moved to
 	// a new field below.
-	Supplemental *_struct.Struct `protobuf:"bytes,2,opt,name=supplemental,proto3" json:"supplemental,omitempty"`
+	Supplemental *structpb.Struct `protobuf:"bytes,2,opt,name=supplemental,proto3" json:"supplemental,omitempty"`
 	// IP address as visible by the bot process (bot_main) itself.
 	//
 	// In the case of the host, it will be one of the IP addresses assigned to it.
@@ -1353,7 +1348,7 @@ func (x *PhysicalEntity) GetName() string {
 	return ""
 }
 
-func (x *PhysicalEntity) GetSupplemental() *_struct.Struct {
+func (x *PhysicalEntity) GetSupplemental() *structpb.Struct {
 	if x != nil {
 		return x.Supplemental
 	}
@@ -1373,9 +1368,9 @@ type CASStats struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NumberItems int64                `protobuf:"varint,1,opt,name=number_items,json=numberItems,proto3" json:"number_items,omitempty"`
-	Size        int64                `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
-	OldestTime  *timestamp.Timestamp `protobuf:"bytes,3,opt,name=oldest_time,json=oldestTime,proto3" json:"oldest_time,omitempty"`
+	NumberItems int64                  `protobuf:"varint,1,opt,name=number_items,json=numberItems,proto3" json:"number_items,omitempty"`
+	Size        int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	OldestTime  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=oldest_time,json=oldestTime,proto3" json:"oldest_time,omitempty"`
 }
 
 func (x *CASStats) Reset() {
@@ -1424,7 +1419,7 @@ func (x *CASStats) GetSize() int64 {
 	return 0
 }
 
-func (x *CASStats) GetOldestTime() *timestamp.Timestamp {
+func (x *CASStats) GetOldestTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.OldestTime
 	}
@@ -1437,9 +1432,9 @@ type NamedCacheStats struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name        string               `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Size        int64                `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
-	LastUseTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=last_use_time,json=lastUseTime,proto3" json:"last_use_time,omitempty"`
+	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Size        int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	LastUseTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_use_time,json=lastUseTime,proto3" json:"last_use_time,omitempty"`
 }
 
 func (x *NamedCacheStats) Reset() {
@@ -1488,7 +1483,7 @@ func (x *NamedCacheStats) GetSize() int64 {
 	return 0
 }
 
-func (x *NamedCacheStats) GetLastUseTime() *timestamp.Timestamp {
+func (x *NamedCacheStats) GetLastUseTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastUseTime
 	}
@@ -1501,10 +1496,10 @@ type CIPDPackageCacheStats struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name        string               `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Version     string               `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	Size        int64                `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
-	LastUseTime *timestamp.Timestamp `protobuf:"bytes,4,opt,name=last_use_time,json=lastUseTime,proto3" json:"last_use_time,omitempty"`
+	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Version     string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	Size        int64                  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	LastUseTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_use_time,json=lastUseTime,proto3" json:"last_use_time,omitempty"`
 }
 
 func (x *CIPDPackageCacheStats) Reset() {
@@ -1560,7 +1555,7 @@ func (x *CIPDPackageCacheStats) GetSize() int64 {
 	return 0
 }
 
-func (x *CIPDPackageCacheStats) GetLastUseTime() *timestamp.Timestamp {
+func (x *CIPDPackageCacheStats) GetLastUseTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastUseTime
 	}
@@ -1576,7 +1571,7 @@ type BotEvent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	EventTime *timestamp.Timestamp `protobuf:"bytes,1,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
+	EventTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
 	// Snapshot of the Bot that had this event.
 	//
 	// Eventually we'd want to only snapshot the difference from the previous
@@ -1622,7 +1617,7 @@ func (*BotEvent) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_swarming_proto_api_swarming_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *BotEvent) GetEventTime() *timestamp.Timestamp {
+func (x *BotEvent) GetEventTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EventTime
 	}
@@ -2193,14 +2188,14 @@ type TaskProperties struct {
 	Containment *Containment `protobuf:"bytes,12,opt,name=containment,proto3" json:"containment,omitempty"` // Not used yet. https://crbug.com/808836
 	// Maximum number of seconds the task can run before its process is forcibly
 	// terminated and the task results in TIMED_OUT.
-	ExecutionTimeout *duration.Duration `protobuf:"bytes,13,opt,name=execution_timeout,json=executionTimeout,proto3" json:"execution_timeout,omitempty"`
+	ExecutionTimeout *durationpb.Duration `protobuf:"bytes,13,opt,name=execution_timeout,json=executionTimeout,proto3" json:"execution_timeout,omitempty"`
 	// Maximum number of seconds the task may be silent (no output to stdout nor
 	// stderr) before it is considered hung and it forcibly terminated early and
 	// the task results in TIMED_OUT_SILENCE.
-	IoTimeout *duration.Duration `protobuf:"bytes,14,opt,name=io_timeout,json=ioTimeout,proto3" json:"io_timeout,omitempty"`
+	IoTimeout *durationpb.Duration `protobuf:"bytes,14,opt,name=io_timeout,json=ioTimeout,proto3" json:"io_timeout,omitempty"`
 	// Number of second to give the child process after a SIGTERM before sending a
 	// SIGKILL. See ../../doc/Bot.md#timeout-handling
-	GracePeriod *duration.Duration `protobuf:"bytes,15,opt,name=grace_period,json=gracePeriod,proto3" json:"grace_period,omitempty"`
+	GracePeriod *durationpb.Duration `protobuf:"bytes,15,opt,name=grace_period,json=gracePeriod,proto3" json:"grace_period,omitempty"`
 	// True if the task does not access any service through the network and is
 	// believed to be certain to produce the same output given the same input. In
 	// the case of a successful task, previous results will be reused if possible,
@@ -2337,21 +2332,21 @@ func (x *TaskProperties) GetContainment() *Containment {
 	return nil
 }
 
-func (x *TaskProperties) GetExecutionTimeout() *duration.Duration {
+func (x *TaskProperties) GetExecutionTimeout() *durationpb.Duration {
 	if x != nil {
 		return x.ExecutionTimeout
 	}
 	return nil
 }
 
-func (x *TaskProperties) GetIoTimeout() *duration.Duration {
+func (x *TaskProperties) GetIoTimeout() *durationpb.Duration {
 	if x != nil {
 		return x.IoTimeout
 	}
 	return nil
 }
 
-func (x *TaskProperties) GetGracePeriod() *duration.Duration {
+func (x *TaskProperties) GetGracePeriod() *durationpb.Duration {
 	if x != nil {
 		return x.GracePeriod
 	}
@@ -2391,7 +2386,7 @@ type TaskSlice struct {
 	Properties *TaskProperties `protobuf:"bytes,1,opt,name=properties,proto3" json:"properties,omitempty"`
 	// If this task slice is not scheduled after waiting this long, the next one
 	// will be processed.
-	Expiration *duration.Duration `protobuf:"bytes,2,opt,name=expiration,proto3" json:"expiration,omitempty"`
+	Expiration *durationpb.Duration `protobuf:"bytes,2,opt,name=expiration,proto3" json:"expiration,omitempty"`
 	// When a task is scheduled and there are currently no bots available to run
 	// the task, the TaskSlice can either be PENDING, or be denied immediately.
 	// When denied, the next TaskSlice is enqueued, and if there's no following
@@ -2446,7 +2441,7 @@ func (x *TaskSlice) GetProperties() *TaskProperties {
 	return nil
 }
 
-func (x *TaskSlice) GetExpiration() *duration.Duration {
+func (x *TaskSlice) GetExpiration() *durationpb.Duration {
 	if x != nil {
 		return x.Expiration
 	}
@@ -2505,7 +2500,7 @@ type TaskRequest struct {
 	// properties separately.
 	ServiceAccount string `protobuf:"bytes,3,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty"`
 	// When the task was created.
-	CreateTime *timestamp.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// Task name for display purpose.
 	//
 	// Note: this value is not indexed. If you want to be able to query for tasks
@@ -2562,7 +2557,7 @@ type TaskRequest struct {
 	// After the delay specified here, the server will claim the bot to
 	// be dead and will forcibly abort the task as BOT_DIED. This is to
 	// catch system wide issues like a BSOD.
-	BotPingTolerance *duration.Duration `protobuf:"bytes,12,opt,name=bot_ping_tolerance,json=botPingTolerance,proto3" json:"bot_ping_tolerance,omitempty"`
+	BotPingTolerance *durationpb.Duration `protobuf:"bytes,12,opt,name=bot_ping_tolerance,json=botPingTolerance,proto3" json:"bot_ping_tolerance,omitempty"`
 }
 
 func (x *TaskRequest) Reset() {
@@ -2618,7 +2613,7 @@ func (x *TaskRequest) GetServiceAccount() string {
 	return ""
 }
 
-func (x *TaskRequest) GetCreateTime() *timestamp.Timestamp {
+func (x *TaskRequest) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreateTime
 	}
@@ -2695,7 +2690,7 @@ func (x *TaskRequest) GetPubsubNotification() *PubSub {
 	return nil
 }
 
-func (x *TaskRequest) GetBotPingTolerance() *duration.Duration {
+func (x *TaskRequest) GetBotPingTolerance() *durationpb.Duration {
 	if x != nil {
 		return x.BotPingTolerance
 	}
@@ -2823,25 +2818,25 @@ type TaskResult struct {
 
 	Request *TaskRequest `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
 	// Time the task was requested.
-	CreateTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// Time the task started being run by a bot, before RUNNING_OVERHEAD_SETUP.
 	//
 	// Doing "start_time - create_time" gives the task pending time.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Time when the task was abandoned instead of normal completion.
 	//
 	// This happens for example when a task was KILLED, this then represents the
 	// time a client requested the task to be killed, which is before end_time.
 	// Same for TIMED_OUT state, this then represents the time when the bot
 	// decided to abort the task.
-	AbandonTime *timestamp.Timestamp `protobuf:"bytes,4,opt,name=abandon_time,json=abandonTime,proto3" json:"abandon_time,omitempty"`
+	AbandonTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=abandon_time,json=abandonTime,proto3" json:"abandon_time,omitempty"`
 	// Time the task completed and teared down, after RUNNING_OVERHEAD_TEARDOWN.
 	//
 	// Doing "end_time - start_time" will not lead to the exact task duration,
 	// since this time frame includes overheads.
-	EndTime *timestamp.Timestamp `protobuf:"bytes,5,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	EndTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Duration of the task. This excludes overheads.
-	Duration *duration.Duration `protobuf:"bytes,6,opt,name=duration,proto3" json:"duration,omitempty"`
+	Duration *durationpb.Duration `protobuf:"bytes,6,opt,name=duration,proto3" json:"duration,omitempty"`
 	// Current state of the task (e.g. PENDING, RUNNING, COMPLETED, EXPIRED, etc).
 	State TaskState `protobuf:"varint,7,opt,name=state,proto3,enum=swarming.v1.TaskState" json:"state,omitempty"`
 	// The category of the current task state. This is primarily useful to
@@ -2953,35 +2948,35 @@ func (x *TaskResult) GetRequest() *TaskRequest {
 	return nil
 }
 
-func (x *TaskResult) GetCreateTime() *timestamp.Timestamp {
+func (x *TaskResult) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreateTime
 	}
 	return nil
 }
 
-func (x *TaskResult) GetStartTime() *timestamp.Timestamp {
+func (x *TaskResult) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *TaskResult) GetAbandonTime() *timestamp.Timestamp {
+func (x *TaskResult) GetAbandonTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.AbandonTime
 	}
 	return nil
 }
 
-func (x *TaskResult) GetEndTime() *timestamp.Timestamp {
+func (x *TaskResult) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EndTime
 	}
 	return nil
 }
 
-func (x *TaskResult) GetDuration() *duration.Duration {
+func (x *TaskResult) GetDuration() *durationpb.Duration {
 	if x != nil {
 		return x.Duration
 	}
@@ -3176,7 +3171,7 @@ type TaskPerformance struct {
 	CostUsd float32 `protobuf:"fixed32,1,opt,name=cost_usd,json=costUsd,proto3" json:"cost_usd,omitempty"`
 	// Overhead that is caused by the bot server that is not accounted for by the
 	// other overheads.
-	OtherOverhead *duration.Duration `protobuf:"bytes,2,opt,name=other_overhead,json=otherOverhead,proto3" json:"other_overhead,omitempty"`
+	OtherOverhead *durationpb.Duration `protobuf:"bytes,2,opt,name=other_overhead,json=otherOverhead,proto3" json:"other_overhead,omitempty"`
 	// Task environment setup overhead. This is the task state
 	// RUNNING_OVERHEAD_SETUP.
 	Setup *TaskOverheadStats `protobuf:"bytes,3,opt,name=setup,proto3" json:"setup,omitempty"`
@@ -3224,7 +3219,7 @@ func (x *TaskPerformance) GetCostUsd() float32 {
 	return 0
 }
 
-func (x *TaskPerformance) GetOtherOverhead() *duration.Duration {
+func (x *TaskPerformance) GetOtherOverhead() *durationpb.Duration {
 	if x != nil {
 		return x.OtherOverhead
 	}
@@ -3252,7 +3247,7 @@ type TaskOverheadStats struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Duration of this overhead.
-	Duration *duration.Duration `protobuf:"bytes,1,opt,name=duration,proto3" json:"duration,omitempty"`
+	Duration *durationpb.Duration `protobuf:"bytes,1,opt,name=duration,proto3" json:"duration,omitempty"`
 	// CAS entries that were not present in the local or remote cache and had to
 	// be sent across the network.
 	Cold *CASEntriesStats `protobuf:"bytes,2,opt,name=cold,proto3" json:"cold,omitempty"`
@@ -3292,7 +3287,7 @@ func (*TaskOverheadStats) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_swarming_proto_api_swarming_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *TaskOverheadStats) GetDuration() *duration.Duration {
+func (x *TaskOverheadStats) GetDuration() *durationpb.Duration {
 	if x != nil {
 		return x.Duration
 	}
@@ -3979,9 +3974,9 @@ var file_go_chromium_org_luci_swarming_proto_api_swarming_proto_goTypes = []inte
 	(*TaskOverheadStats)(nil),        // 29: swarming.v1.TaskOverheadStats
 	(*CASEntriesStats)(nil),          // 30: swarming.v1.CASEntriesStats
 	(*ResultDBCfg)(nil),              // 31: swarming.v1.ResultDBCfg
-	(*timestamp.Timestamp)(nil),      // 32: google.protobuf.Timestamp
-	(*_struct.Struct)(nil),           // 33: google.protobuf.Struct
-	(*duration.Duration)(nil),        // 34: google.protobuf.Duration
+	(*timestamppb.Timestamp)(nil),    // 32: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),          // 33: google.protobuf.Struct
+	(*durationpb.Duration)(nil),      // 34: google.protobuf.Duration
 }
 var file_go_chromium_org_luci_swarming_proto_api_swarming_proto_depIdxs = []int32{
 	32, // 0: swarming.v1.BotEventsRequest.start_time:type_name -> google.protobuf.Timestamp
