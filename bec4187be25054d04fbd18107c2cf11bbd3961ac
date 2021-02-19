@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29617672_b19079b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-19T22:56:54Z",
+      "side": 1,
+      "message": "This version may only work on linux, but not on mac/win, because https://screenshot.googleplex.com/BcvKikzP3wbVngU\n\nSo I made sure testing with real Spanner still works.",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
