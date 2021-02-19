@@ -283,7 +283,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		// output.properties
 		if buildMask.MustIncludes("output.properties") == mask.IncludeEntirely {
 			prop := model.DSStruct{}
-			if req.Build.Output.Properties != nil {
+			if req.Build.Output.GetProperties() != nil {
 				prop = model.DSStruct{*req.Build.Output.Properties}
 			}
 			toSave = append(toSave, &model.BuildOutputProperties{

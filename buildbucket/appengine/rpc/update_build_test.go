@@ -436,6 +436,33 @@ func TestUpdateBuild(t *testing.T) {
 			So(updateBuild(ctx, req), ShouldHaveRPCCode, codes.PermissionDenied)
 		})
 
+		Convey("open mask, empty request", func() {
+			validMasks := []struct {
+				name string
+				err  string
+			}{
+				{"build.output", ""},
+				{"build.output.properties", ""},
+				{"build.status", "invalid status STATUS_UNSPECIFIED"},
+				{"build.status_details", ""},
+				{"build.steps", ""},
+				{"build.summary_markdown", ""},
+				{"build.tags", ""},
+				{"build.output.gitiles_commit", "ref is required"},
+			}
+			for _, test := range validMasks {
+				Convey(test.name, func() {
+					req.UpdateMask.Paths[0] = test.name
+					err := updateBuild(ctx, req)
+					if test.err == "" {
+						So(err, ShouldBeNil)
+					} else {
+						So(err, ShouldErrLike, test.err)
+					}
+				})
+			}
+		})
+
 		Convey("build.output.properties", func() {
 			props, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
 			So(err, ShouldBeNil)
