@@ -33,6 +33,24 @@
       "message": "so this was segfaulting before, right?",
       "revId": "cca141aca3dc1742cb8121a781409a7ecc4ec253",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c5536a6_8289295e",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-19T17:54:58Z",
+      "side": 1,
+      "message": "yeah, nil panic; I noticed it in bbagent tests",
+      "parentUuid": "014f3dcf_4cbe940d",
+      "revId": "cca141aca3dc1742cb8121a781409a7ecc4ec253",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
