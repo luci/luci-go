@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c69ec0b8_0e6a4af4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-19T21:58:58Z",
+      "side": 1,
+      "message": "I saw these when going over the documentation, I may have mistakenly concluded that these were not available when server/tq was first implemented.",
+      "parentUuid": "1d90598a_194b7c01",
+      "revId": "0bfb00b5335451e4ca5261f4ca115aa22fd0b4ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fa6ef6f0_af4d7d11",
@@ -71,6 +89,30 @@
       "writtenOn": "2021-02-19T21:48:34Z",
       "side": 1,
       "message": "why do we need this? per vadim\u0027s comment on a bug, cloud task ETA isn\u0027t useful for monitoring purpose, as it changes.",
+      "range": {
+        "startLine": 439,
+        "startChar": 35,
+        "endLine": 439,
+        "endChar": 55
+      },
+      "revId": "0bfb00b5335451e4ca5261f4ca115aa22fd0b4ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a2e79589_32453721",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-19T21:58:58Z",
+      "side": 1,
+      "message": "I missed that comment. If so, then this is useless.",
+      "parentUuid": "a6e0bfb7_4475d087",
       "range": {
         "startLine": 439,
         "startChar": 35,
