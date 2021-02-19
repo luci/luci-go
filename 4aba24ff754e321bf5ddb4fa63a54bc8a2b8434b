@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "082e11bf_a7c25887",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-19T02:46:28Z",
+      "side": 1,
+      "message": "Hm... that\u0027s true... I\u0027ll look into this, but I feel like it\u0027s going to be difficult to test.",
+      "parentUuid": "641e0ea1_d9acc61d",
+      "range": {
+        "startLine": 282,
+        "startChar": 0,
+        "endLine": 284,
+        "endChar": 26
+      },
+      "revId": "4aba24ff754e321bf5ddb4fa63a54bc8a2b8434b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "2639c8a4_2680d219",
