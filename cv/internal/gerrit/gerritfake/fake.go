@@ -23,10 +23,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -56,6 +55,10 @@ type Fake struct {
 	//
 	// childrenOf[X] can be read as "changes which depend on X non-transitively".
 	childrenOf map[string][]string
+
+	// requests are all incoming requests that this Fake has received.
+	requests   []proto.Message
+	requestsMu sync.RWMutex
 }
 
 func (f *Fake) Install(ctx context.Context) context.Context {
@@ -66,6 +69,22 @@ func (f *Fake) Install(ctx context.Context) context.Context {
 		}
 		return &Client{f: f, luciProject: luciProject, host: gerritHost}, nil
 	})
+}
+
+// Requests returns a shallow copy of all incoming requests this fake has
+// received.
+func (f *Fake) Requests() []proto.Message {
+	f.requestsMu.RLock()
+	defer f.requestsMu.RUnlock()
+	cpy := make([]proto.Message, len(f.requests))
+	copy(cpy, f.requests)
+	return cpy
+}
+
+func (f *Fake) recordRequest(req proto.Message) {
+	f.requestsMu.Lock()
+	defer f.requestsMu.Unlock()
+	f.requests = append(f.requests, proto.Clone(req))
 }
 
 // Change = change details + ACLs.
