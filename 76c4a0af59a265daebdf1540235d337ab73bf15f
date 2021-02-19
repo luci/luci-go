@@ -45,6 +45,30 @@
       },
       "revId": "76c4a0af59a265daebdf1540235d337ab73bf15f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "531fc549_cac97436",
+        "filename": "cv/internal/gerrit/gerritfake/fake.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-19T19:32:51Z",
+      "side": 1,
+      "message": "Good point! I did it in the call site. It makes sense to do it here instead.",
+      "parentUuid": "de7aa825_92b8e333",
+      "range": {
+        "startLine": 87,
+        "startChar": 33,
+        "endLine": 87,
+        "endChar": 36
+      },
+      "revId": "76c4a0af59a265daebdf1540235d337ab73bf15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
