@@ -231,6 +231,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1da56389_e296eaf9",
+        "filename": "cv/api/migration/migration.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-19T18:51:03Z",
+      "side": 1,
+      "message": "the comment makes sense. lgtm",
+      "parentUuid": "640c1d2e_d9442657",
+      "range": {
+        "startLine": 101,
+        "startChar": 55,
+        "endLine": 101,
+        "endChar": 63
+      },
+      "revId": "9b4a86c986cdc39d9d7dac77bbb371978535f5f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0f7353b0_dabe32cb",
