@@ -107,6 +107,71 @@ func updateConfigToNoFallabck(ctx context.Context, ct *ctest) config.Meta {
 	return ct.Cfg.MustExist(ctx, ct.lProject)
 }
 
+func TestEndToEndSingleCL(t *testing.T) {
+	t.Parallel()
+
+	Convey("State mutations work end to end on a single CL", t, func() {
+		ct := ctest{
+			lProject: "test",
+			gHost:    "c-review.example.com",
+		}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		cfg1 := &cfgpb.Config{}
+		So(prototext.Unmarshal([]byte(cfgText1), cfg1), ShouldBeNil)
+
+		ct.Cfg.Create(ctx, ct.lProject, cfg1)
+		meta := ct.Cfg.MustExist(ctx, ct.lProject)
+		So(gobmap.Update(ctx, ct.lProject), ShouldBeNil)
+
+		state := NewInitial(ct.lProject)
+		state, sideEffect, err := state.UpdateConfig(ctx)
+		So(err, ShouldBeNil)
+		So(sideEffect, ShouldHaveSameTypeAs, &UpdateIncompleteRunsConfig{})
+
+		ci101 := gf.CI(
+			101, gf.PS(1), gf.Ref("refs/heads/main"), gf.Project("repo/a"),
+			gf.Owner("user-1"),
+			gf.CQ(+2, ct.Clock.Now(), gf.U("user-1")), gf.Updated(ct.Clock.Now()),
+		)
+
+		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci101})
+		cl101 := ct.runCLUpdater(ctx, 101)
+		state, sideEffect, err = state.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
+			{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
+		})
+		So(err, ShouldBeNil)
+		So(sideEffect, ShouldBeNil)
+
+		state, sideEffect, err = state.ExecDeferred(ctx)
+		So(err, ShouldBeNil)
+		So(sideEffect, ShouldBeNil)
+		So(state.PB, ShouldResembleProto, &prjpb.PState{
+			LuciProject:      ct.lProject,
+			Status:           prjpb.Status_STARTED,
+			ConfigGroupNames: []string{"g0", "g1"},
+			ConfigHash:       meta.Hash(),
+			NextEvalTime:     nil,
+			DirtyComponents:  false,
+			Pcls: []*prjpb.PCL{
+				{
+					Clid:               int64(cl101.ID),
+					Eversion:           int64(cl101.EVersion),
+					ConfigGroupIndexes: []int32{0},
+					Status:             prjpb.PCL_OK,
+					Trigger:            trigger.Find(ci101),
+				},
+			},
+			Components: []*prjpb.Component{
+				{
+					Clids: []int64{int64(cl101.ID)},
+				},
+			},
+		})
+	})
+}
+
 func TestUpdateConfig(t *testing.T) {
 	t.Parallel()
 
