@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -103,6 +104,9 @@ func (p *luciTSTokenProvider) MintToken(ctx context.Context, base *Token) (*Toke
 			PerRPCTimeout: 5 * time.Second, // the call should be fast
 		},
 	})
+
+	// TODO(crbug.com/1179629): pRPC doesn't handle outgoing meatadata well.
+	ctx = metadata.NewOutgoingContext(ctx, nil)
 
 	resp, err := client.MintServiceAccountToken(ctx, &minter.MintServiceAccountTokenRequest{
 		TokenKind:           minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
