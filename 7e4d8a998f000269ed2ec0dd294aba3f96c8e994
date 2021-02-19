@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc85d5e4_11bd008f",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T01:53:30Z",
+      "side": 1,
+      "message": "not necessary",
+      "range": {
+        "startLine": 283,
+        "startChar": 39,
+        "endLine": 283,
+        "endChar": 46
+      },
+      "revId": "7e4d8a998f000269ed2ec0dd294aba3f96c8e994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a29b4cd6_0ddba3e5",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T01:53:30Z",
+      "side": 1,
+      "message": "nice simplification.",
+      "revId": "7e4d8a998f000269ed2ec0dd294aba3f96c8e994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
