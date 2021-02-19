@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/tumble"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/smartystreets/goconvey/convey"
 )
 
 // Setup creates a new combination of testing and context objects:
@@ -501,6 +500,6 @@ func WalkShouldReturn(c context.Context, s dm.DepsServer, keepTimestamps ...bool
 		if nilExpect := assertions.ShouldErrLike(err, nil); nilExpect != "" {
 			return nilExpect
 		}
-		return convey.ShouldResemble(normalize(ret), e)
+		return assertions.ShouldResembleProto(normalize(ret), e)
 	}
 }
