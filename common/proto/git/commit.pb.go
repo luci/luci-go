@@ -21,10 +21,9 @@
 package git
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -35,10 +34,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 type Commit_TreeDiff_ChangeType int32
 
@@ -203,9 +198,9 @@ type Commit_User struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name  string               `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Email string               `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Time  *timestamp.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Email string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Time  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
 }
 
 func (x *Commit_User) Reset() {
@@ -254,7 +249,7 @@ func (x *Commit_User) GetEmail() string {
 	return ""
 }
 
-func (x *Commit_User) GetTime() *timestamp.Timestamp {
+func (x *Commit_User) GetTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Time
 	}
@@ -447,7 +442,7 @@ var file_go_chromium_org_luci_common_proto_git_commit_proto_goTypes = []interfac
 	(*Commit)(nil),                  // 1: git.Commit
 	(*Commit_User)(nil),             // 2: git.Commit.User
 	(*Commit_TreeDiff)(nil),         // 3: git.Commit.TreeDiff
-	(*timestamp.Timestamp)(nil),     // 4: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),   // 4: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_common_proto_git_commit_proto_depIdxs = []int32{
 	2, // 0: git.Commit.author:type_name -> git.Commit.User
