@@ -33,6 +33,23 @@
       "message": "+one more reviewer for this large CL",
       "revId": "8d867c1dbde360ce931632db37f433495f457a82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a1447d1_ba8eb083",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-19T23:27:26Z",
+      "side": 1,
+      "message": "I will wait for bqexporter to stabilize in production.",
+      "revId": "8d867c1dbde360ce931632db37f433495f457a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
