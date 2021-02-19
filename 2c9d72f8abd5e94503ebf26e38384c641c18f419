@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f21b9ee2_b17cbbfb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T14:50:43Z",
+      "side": 1,
+      "message": "fwiw, this may be counter-productive for 2 reasons (at least this is why I didn\u0027t do this):\n\n1. Some tests may be comparing proto types with ShouldResemble. After regen, the tests may still work so long as both messages were instantiated directly without any unmarshaling involved, e.g.:  \n  act :\u003d pb.Msg{A:1,B:\"blah\"}\n  exp :\u003d pb.Msg{A:1,B:\"blah\"}\n  So(act, ShouldResemble, exp)  // OK\nhowever, when the someone edits code later, the test may OOM.\n\n2. It\u0027s possible that this introduces some breakage. Unlikely, but possible. Since this was regenerated all at once, it\u0027d be harder to revert in order to fix.",
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "537c9532_a0a15a83",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T14:50:43Z",
+      "side": 1,
+      "message": "well, Mode.VM isn\u0027t a proto message, but a struct which inside contains a proto message. This can\u0027t be compared with either ShouldResemble nor SHouldResembleProto. This is why I started writing custom ShouldResembleMyTYpe functions 😞",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 69
+      },
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9513eb1_56959088",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T14:50:43Z",
+      "side": 1,
+      "message": "this stack trace isn\u0027t very important for this commit message, But I don\u0027t feel strongly.",
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
