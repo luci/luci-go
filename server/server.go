@@ -207,6 +207,7 @@ type Options struct {
 	InternalRequestTimeout time.Duration // how long "/internal/*" HTTP handlers are allowed to run, 10 min by default
 	ShutdownDelay          time.Duration // how long to wait after SIGTERM before shutting down
 
+	NoAuthSystem     bool               // disables auth subsystem and all components which rely on it
 	ClientAuth       clientauth.Options // base settings for client auth options
 	TokenCacheDir    string             // where to cache auth tokens (optional)
 	AuthDBPath       string             // if set, load AuthDB from a file
@@ -462,6 +463,8 @@ func (o *Options) shouldEnableTracing() bool {
 		return false // nowhere to upload traces to
 	case !o.Prod && o.TraceSampling == "":
 		return false // in dev mode don't upload samples by default
+	case o.NoAuthSystem:
+		return false // auth is disabled so we can't upload samples
 	default:
 		return !o.testDisableTracing
 	}
@@ -1382,6 +1385,10 @@ func (s *Server) initLogging() {
 // The rest of the auth initialization (the part that needs tsmon) happens in
 // initAuthFinish after tsmon is initialized.
 func (s *Server) initAuthStart() error {
+	if s.Options.NoAuthSystem {
+		return nil
+	}
+
 	// Make a transport that appends information about the server as User-Agent.
 	ua := s.Options.userAgent()
 	rootTransport := clientauth.NewModifyingTransport(http.DefaultTransport, func(req *http.Request) error {
@@ -1461,6 +1468,9 @@ func (s *Server) initAuthStart() error {
 //
 // It is called after tsmon is initialized.
 func (s *Server) initAuthFinish() error {
+	if s.Options.NoAuthSystem {
+		return nil
+	}
 	// We should be able to make authenticated requests now and can construct
 	// an IAM client used by SignBytes implementation.
 	asSelf, err := auth.GetRPCTransport(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
@@ -1677,6 +1687,9 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 
 // initTSMon initializes time series monitoring state.
 func (s *Server) initTSMon() error {
+	if s.Options.NoAuthSystem {
+		return nil
+	}
 	// We keep tsmon always enabled (flushing to /dev/null if no -ts-mon-* flags
 	// are set) so that tsmon's in-process store is populated, and metrics there
 	// can be examined via /admin/tsmon. This is useful when developing/debugging
@@ -1814,6 +1827,9 @@ func (s *Server) initProfiling() error {
 	case s.Options.ProfilingServiceID == "" && s.Options.TsMonJobName == "":
 		logging.Infof(s.Context, "Stackdriver profiler is disabled: neither -profiling-service-id nor -ts-mon-job-name are set")
 		return nil
+	case s.Options.NoAuthSystem:
+		logging.Infof(s.Context, "Stackdriver profiler is disabled: auth subsystem is disabled")
+		return nil
 	}
 
 	// Prefer ProfilingServiceID if given, fall back to TsMonJobName. Replace
@@ -1878,6 +1894,9 @@ func (s *Server) initMainPort() error {
 		// responses is done by GAE itself and doing it in our code would be
 		// wasteful.
 		EnableCompression: !s.Options.GAE,
+	}
+	if s.Options.NoAuthSystem {
+		s.PRPC.Authenticator = prpc.NoAuthentication
 	}
 	discovery.Enable(s.PRPC)
 	s.PRPC.InstallHandlers(s.Routes, router.MiddlewareChain{})
