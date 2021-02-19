@@ -43,7 +43,32 @@ service Migration {
   // ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
   //
   // If Run was given to CQDaemon by CV, then reported Run will contain CV's id.
+  //
+  // DEPRECATED in favor of ReportVerifiedRun.
   rpc ReportFinishedRun(ReportFinishedRunRequest) returns (google.protobuf.Empty);
+
+  // ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
+  // verifying.
+  //
+  // Only called iff run was given to CQDaemon by CV via FetchActiveRuns.
+  rpc ReportVerifiedRun(ReportVerifiedRunRequest) returns (google.protobuf.Empty);
+
+  // PostGerritMessage posts a unique per run message to Gerrit.
+  //
+  // Best effort, since Gerrit doesn't provide for idempotent or conditional
+  // (etag like) updates.
+  //
+  // Use-cases:
+  //  * CQDaemon linter posting a warning/error.
+  //  * GerritCQAbility verifier posting error on each of Run's CL before
+  //    failing entire attempt.
+  //
+  // Error handling:
+  //  * If presumably transient Gerrit error, fails with Internal error (for
+  //    simplicity). CQDaemon will have to retry.
+  //  * If Gerrit error is 403, 404 or 412 (Precondition error), responds with
+  //    corresponding gRPC code.
+  rpc PostGerritMessage(PostGerritMessageRequest) returns (PostGerritMessageResponse);
 
   // ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
   // CQDaemon.
@@ -60,6 +85,60 @@ message ReportRunsRequest {
 
 message ReportFinishedRunRequest {
   Run run = 1;
+}
+
+message ReportVerifiedRunRequest {
+  Run run = 1;
+
+  // Action that CV SHOULD do on a Run.
+  //
+  // Should instead of must because CV may be already finalizing the Run.
+  //
+  // In pure CQDaemon, the action would have been done by CQDaemon itself.
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+    ACTION_SUBMIT = 1; // requires a full run
+    ACTION_DRY_RUN_OK = 2; // requires a dry run
+    ACTION_FAIL = 3; // final_message must be set
+  }
+  Action action = 11;
+  // Final message to post to Gerrit in case of ACTION_FAIL.
+  string final_message = 12;
+
+  // If true, CQDaemon is sending this for the sake of the test, notably before
+  // CQDaemon starts getting CV's runs. Thus, Run's CV's ID may be unset.
+  //
+  // This is used to test codepath calling ReportVerifiedRun in the CQDaemon
+  // before the switch to CV Runs.
+  bool test_mode = 21;
+}
+
+message PostGerritMessageRequest {
+  // CV's run ID. May be not set iff CQDaemon does this before it takes Runs
+  // from CV.
+  string run_id = 1;
+  // LUCI Project. If run_id is specified, this is redundant.
+  string project = 2;
+  // CQD native Run identifier.
+  string attempt_key = 3;
+
+  // Gerrit host.
+  string host = 11;
+  int64 change = 12;
+  // String comment to post.
+  string comment = 13;
+  // If true, send email to:
+  //   * OWNER_REVIEWERS if full run
+  //   * OWNER+all CQ voters if dry run
+  bool send_email = 14;
+}
+
+message PostGerritMessageResponse {
+  // If posting succeeded, this is set to the update time of a Gerrit change.
+  //
+  // TODO(tandrii): verify if this is actually required for CQDaemon,
+  // as getting this timestamp requires 1 extra RPC.
+  google.protobuf.Timestamp gerrit_update_time = 1;
 }
 
 message ReportUsedNetrcRequest {
