@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "680ae344_6ef15807",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T17:05:52Z",
+      "side": 1,
+      "message": "Yep. purgeIndex was my first appraoch.",
+      "parentUuid": "8cf4265a_000c7ef6",
+      "range": {
+        "startLine": 76,
+        "startChar": 52,
+        "endLine": 76,
+        "endChar": 62
+      },
+      "revId": "5ae98d4256472938900f99661a3323d66a33109f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "141095d0_74fcfba4",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-18T02:11:16Z",
       "side": 1,
       "message": "Del",
+      "range": {
+        "startLine": 189,
+        "startChar": 23,
+        "endLine": 189,
+        "endChar": 27
+      },
+      "revId": "5ae98d4256472938900f99661a3323d66a33109f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "81e49559_204faf25",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagedeps.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T17:05:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "141095d0_74fcfba4",
       "range": {
         "startLine": 189,
         "startChar": 23,
