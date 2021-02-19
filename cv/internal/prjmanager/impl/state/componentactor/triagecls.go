@@ -15,6 +15,8 @@
 package componentactor
 
 import (
+	"fmt"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -45,6 +47,9 @@ func (a *Actor) triageCLs() {
 				a.reverseDeps[did] = append(a.reverseDeps[did], clid)
 			})
 		case info.purgeReason != nil:
+			if a.toPurge == nil {
+				a.toPurge = make(map[int64]struct{}, 1)
+			}
 			a.toPurge[clid] = struct{}{}
 		}
 	}
@@ -53,12 +58,16 @@ func (a *Actor) triageCLs() {
 // clInfo represents a CL in the Actor's component.
 type clInfo struct {
 	pcl *prjpb.PCL
-
 	// runIndexes are indexes of Component.PRuns which references this CL.
 	runIndexes []int32
 	// purgingCL is set if CL is already being purged.
 	purgingCL *prjpb.PurgingCL
 
+	triagedCL
+}
+
+// triagedCL is the result of CL triage (see triageCL()).
+type triagedCL struct {
 	// deps are triaged deps, set only if CL is watched by exactly 1 config group.
 	// of the current project.
 	deps *triagedDeps
@@ -73,8 +82,9 @@ type clInfo struct {
 	ready bool
 }
 
-// triageCL updates clInfo expecting runIndexes and purginCL to be already set.
+// triageCL sets triagedCL part of clInfo.
 //
+// Expects non-triagedCL part of clInfo to be arleady set.
 // panics iff component is not in a valid state.
 func (a *Actor) triageCL(clid int64, info *clInfo) {
 	switch {
@@ -91,13 +101,104 @@ func (a *Actor) triageCL(clid int64, info *clInfo) {
 }
 
 func (a *Actor) triageCLInRun(clid int64, info *clInfo) {
-	// TODO: implement
+	pcl := info.pcl
+	switch s := pcl.GetStatus(); {
+	case (false || // false is a noop for ease of reading
+		s == prjpb.PCL_DELETED ||
+		s == prjpb.PCL_UNWATCHED ||
+		s == prjpb.PCL_UNKNOWN ||
+		pcl.GetSubmitted() ||
+		pcl.GetTrigger() == nil):
+		// This is expected while Run is being finalized iff PM sees updates to a
+		// CL before OnRunFinished event.
+		return
+	case len(pcl.GetConfigGroupIndexes()) != 1:
+		// This is expected if project config has changed, but Run's reaction to it via
+		// OnRunFinished event hasn't yet reached PM.
+		return
+	case s != prjpb.PCL_OK:
+		panic(fmt.Errorf("PCL has unrecognized status %s", s))
+	}
+
+	cgIndex := pcl.GetConfigGroupIndexes()[0]
+	info.deps = a.triageDeps(pcl, cgIndex)
+	// A purging CL must not be "ready" to avoid creating new Runs with them.
+	if info.deps.OK() && info.purgingCL == nil {
+		info.ready = true
+	}
 }
 
 func (a *Actor) triageCLInPurge(clid int64, info *clInfo) {
-	// TODO: implement
+	// The PM hasn't noticed yet the completion of the async purge.
+	// The result of purging is modified CL, which may be observed by PM earlier
+	// than completion of purge.
+	//
+	// Thus, consider these CLs in potential Run Creation, but don't mark them
+	// ready in oder to avoid creating new Runs.
+	pcl := info.pcl
+	switch s := pcl.GetStatus(); s {
+	case prjpb.PCL_DELETED, prjpb.PCL_UNWATCHED, prjpb.PCL_UNKNOWN:
+		// Likely purging effect is already visible.
+		return
+	case prjpb.PCL_OK:
+		// OK.
+	default:
+		panic(fmt.Errorf("PCL has unrecognized status %s", s))
+	}
+
+	switch {
+	case pcl.GetSubmitted():
+		// Someone already submitted CL while purging was ongoing.
+		return
+	case pcl.GetTrigger() == nil:
+		// Likely purging effect is already visible.
+		return
+	}
+
+	cgIndexes := pcl.GetConfigGroupIndexes()
+	switch len(cgIndexes) {
+	case 0:
+		panic(fmt.Errorf("PCL %d without ConfigGroup index not possible for CL not referenced by any Runs (partitioning bug?)", clid))
+	case 1:
+		info.deps = a.triageDeps(pcl, cgIndexes[0])
+		// info.deps.OK() may be true, for example if user has already corrected the
+		// mistake that previously reulted in purging op. However, don't mark CL
+		// ready until purging op completes or expires.
+	}
 }
 
 func (a *Actor) triageCLNew(clid int64, info *clInfo) {
-	// TODO: implement
+	pcl := info.pcl
+	assumption := "not possible for CL not referenced by any Runs (partitioning bug?)"
+	switch s := pcl.GetStatus(); s {
+	case prjpb.PCL_DELETED, prjpb.PCL_UNWATCHED, prjpb.PCL_UNKNOWN:
+		panic(fmt.Errorf("PCL %d status %s %s", clid, s, assumption))
+	case prjpb.PCL_OK:
+		// OK.
+	default:
+		panic(fmt.Errorf("PCL has unrecognized status %s", s))
+	}
+
+	switch {
+	case pcl.GetSubmitted():
+		panic(fmt.Errorf("PCL %d submitted %s", clid, assumption))
+	case pcl.GetTrigger() == nil:
+		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
+	}
+
+	cgIndexes := pcl.GetConfigGroupIndexes()
+	switch len(cgIndexes) {
+	case 0:
+		panic(fmt.Errorf("PCL %d without ConfigGroup index %s", clid, assumption))
+	case 1:
+		if info.deps = a.triageDeps(pcl, cgIndexes[0]); info.deps.OK() {
+			info.ready = true
+		} else {
+			// TODO: fill in the cause.
+			info.purgeReason = &prjpb.PurgeCLTask_Reason{}
+		}
+	default:
+		// TODO: fill in the cause.
+		info.purgeReason = &prjpb.PurgeCLTask_Reason{}
+	}
 }
