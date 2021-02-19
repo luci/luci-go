@@ -90,6 +90,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eab2c6e2_7d963174",
+        "filename": "buildbucket/appengine/model/sequence.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-19T07:49:44Z",
+      "side": 1,
+      "message": "Er, old naming scheme.",
+      "parentUuid": "69130620_425842e1",
+      "revId": "75ad503272fc6ccbfc17272ba2fd8bdc54f62114",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a00330de_f6772cce",
