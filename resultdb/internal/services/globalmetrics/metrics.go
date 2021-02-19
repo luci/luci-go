@@ -18,15 +18,11 @@ package globalmetrics
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
 
@@ -43,21 +39,6 @@ var (
 		"resultdb/expired_results/pending_invocations",
 		"Number of pending invocations where expired results were not yet purged",
 		nil)
-
-	oldestTaskMetric = metric.NewInt(
-		"resultdb/task/oldest_create_time",
-		"The creation Unix timestamp of the oldest task.",
-		&types.MetricMetadata{Units: types.Seconds},
-		field.String("type")) // tasks.Type
-
-	taskCountMetric = metric.NewInt(
-		"resultdb/task/count",
-		"Current number of tasks.",
-		nil,
-		field.String("type")) // tasks.Type
-
-	tsLock    sync.Mutex
-	taskStats = map[string]*taskStat{}
 )
 
 // Options is global metrics server configuration.
@@ -73,59 +54,9 @@ func InitServer(srv *server.Server, opts Options) {
 		interval = 5 * time.Minute
 	}
 
-	srv.RunInBackground("resultdb.tasks", func(ctx context.Context) {
-		cron.Run(ctx, interval, updateTaskStats)
-	})
-
 	srv.RunInBackground("resultdb.oldest_expired_result", func(ctx context.Context) {
 		cron.Run(ctx, interval, updateExpiredResultsMetrics)
 	})
-}
-
-func updateTaskStats(ctx context.Context) error {
-	tsLock.Lock()
-	defer tsLock.Unlock()
-	// reset the count of each taskType, so that the count of a type will continue being
-	// reported with 0 even if the type is not present in the output of the Spanner query.
-	for _, stat := range taskStats {
-		stat.count = 0
-	}
-
-	st := spanner.NewStatement(`
-		SELECT TaskType, MIN(CreateTime), COUNT(*)
-		FROM InvocationTasks
-		GROUP BY TaskType
-	`)
-
-	var b spanutil.Buffer
-	err := spanutil.Query(span.Single(ctx), st, func(row *spanner.Row) error {
-		var taskType string
-		var minCreateTime time.Time
-		var count int64
-		if err := b.FromSpanner(row, &taskType, &minCreateTime, &count); err != nil {
-			return err
-		}
-
-		if stat, ok := taskStats[taskType]; ok {
-			stat.count = count
-			stat.oldestCreateTime = minCreateTime
-		} else {
-			taskStats[taskType] = &taskStat{count, minCreateTime}
-		}
-		return nil
-	})
-
-	for taskType, stat := range taskStats {
-		// delete the stream of the task type from oldestTaskMetric, if count == 0.
-		if stat.count == 0 {
-			tsmon.Store(ctx).Del(ctx, oldestTaskMetric, []interface{}{taskType})
-		} else {
-			oldestTaskMetric.Set(ctx, stat.oldestCreateTime.Unix(), taskType)
-		}
-		// update the count metric always.
-		taskCountMetric.Set(ctx, stat.count, taskType)
-	}
-	return err
 }
 
 func updateExpiredResultsMetrics(ctx context.Context) error {
@@ -162,9 +93,4 @@ func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInv
 	err = spanutil.QueryFirstRow(span.Single(ctx), st, &earliest, &pendingInvocationsCount)
 	oldestResult = earliest.Time
 	return
-}
-
-type taskStat struct {
-	count            int64
-	oldestCreateTime time.Time
 }

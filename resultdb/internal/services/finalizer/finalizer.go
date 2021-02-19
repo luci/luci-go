@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
@@ -41,39 +40,9 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// Options is finalizer server configuration.
-type Options struct {
-	// How often to query for tasks.
-	TaskQueryInterval time.Duration
-
-	// How long to lease a task for.
-	TaskLeaseDuration time.Duration
-
-	// Number of tasks to process concurrently.
-	TaskWorkers int
-}
-
-// DefaultOptions returns Options with default values.
-func DefaultOptions() Options {
-	return Options{
-		TaskQueryInterval: 5 * time.Second,
-		TaskLeaseDuration: time.Minute,
-		TaskWorkers:       10,
-	}
-}
-
 // InitServer initializes a finalizer server.
-func InitServer(srv *server.Server, opts Options) {
-	d := tasks.Dispatcher{
-		QueryInterval: opts.TaskQueryInterval,
-		LeaseDuration: opts.TaskLeaseDuration,
-		Workers:       opts.TaskWorkers,
-	}
-	srv.RunInBackground("finalize", func(ctx context.Context) {
-		d.Run(ctx, tasks.TryFinalizeInvocation, func(ctx context.Context, invID invocations.ID, payload []byte) error {
-			return tryFinalizeInvocation(ctx, invID)
-		})
-	})
+func InitServer(srv *server.Server) {
+	// init() below takes care of everything.
 }
 
 func init() {
@@ -286,32 +255,20 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 
 			// Enqueue tasks to try to finalize invocations that include ours.
 			work <- func() error {
-				if tasks.UseFinalizationTQ.Enabled(ctx) {
-					parentInvs, err := parentsInFinalizingState(ctx, invID)
-					if err != nil {
-						return err
-					}
-					// Note that AddTask in a Spanner transaction is essentially
-					// a BufferWrite (no RPCs inside), it's fine to call it sequentially
-					// and panic on errors.
-					for _, id := range parentInvs {
-						tq.MustAddTask(ctx, &tq.Task{
-							Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
-							Title:   string(id),
-						})
-					}
-				} else {
-					if err := insertNextFinalizationTasks(ctx, invID); err != nil {
-						return err
-					}
+				parentInvs, err := parentsInFinalizingState(ctx, invID)
+				if err != nil {
+					return err
 				}
-				if bqexporter.UseTQ.Enabled(ctx) {
-					return bqexporter.Schedule(ctx, invID)
+				// Note that MustAddTask in a Spanner transaction is essentially
+				// a BufferWrite (no RPCs inside), it's fine to call it sequentially
+				// and panic on errors.
+				for _, id := range parentInvs {
+					tq.MustAddTask(ctx, &tq.Task{
+						Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
+						Title:   string(id),
+					})
 				}
-				// Enqueue tasks to export the invocation to BigQuery.
-				// Note: this cannot be done in parallel with insertNextFinalizationTasks
-				// because a Spanner session can process only one DML query at a time.
-				return insertBigQueryTasks(ctx, invID)
+				return bqexporter.Schedule(ctx, invID)
 			}
 
 			// Update the invocation state.
@@ -359,55 +316,4 @@ func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []
 		return nil
 	})
 	return ids, err
-}
-
-// insertNextFinalizationTasks, for each FINALIZING invocation that directly
-// includes ours, schedules a task to try to finalize it.
-func insertNextFinalizationTasks(ctx context.Context, invID invocations.ID) error {
-	// Note: its OK not to schedule a task for active invocations because
-	// state transition ACTIVE->FINALIZING includes creating a finalization
-	// task.
-	// Note: Spanner currently does not support PENDING_COMMIT_TIMESTAMP()
-	// in "INSERT INTO ... SELECT" queries.
-	st := spanner.NewStatement(`
-		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, CreateTime, ProcessAfter)
-		SELECT @taskType, FORMAT("%s/%s", @invID, including.InvocationId), including.InvocationId, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
-		FROM IncludedInvocations@{FORCE_INDEX=ReversedIncludedInvocations} incl
-		JOIN Invocations including ON incl.InvocationId = including.InvocationId
-		WHERE IncludedInvocationId = @invID AND including.State = @finalizing
-	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"taskType":   string(tasks.TryFinalizeInvocation),
-		"invID":      invID.RowID(),
-		"finalizing": pb.Invocation_FINALIZING,
-	})
-	count, err := span.Update(ctx, st)
-	if err != nil {
-		return errors.Annotate(err, "failed to insert further finalizing tasks").Err()
-	}
-	logging.Infof(ctx, "Inserted %d %s tasks", count, tasks.TryFinalizeInvocation)
-	return nil
-}
-
-// insertBigQueryTasks inserts a bq_export invocation task for each element
-// of Invocations.BigQueryExports array in the specified invocation.
-func insertBigQueryTasks(ctx context.Context, invID invocations.ID) error {
-	// Note: Spanner currently does not support PENDING_COMMIT_TIMESTAMP()
-	// in "INSERT INTO ... SELECT" queries.
-	st := spanner.NewStatement(`
-		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, Payload, CreateTime, ProcessAfter)
-		SELECT @taskType, FORMAT("%s:%d",  @invID, i), @invID, payload, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
-		FROM Invocations inv, UNNEST(inv.BigQueryExports) payload WITH OFFSET AS i
-		WHERE inv.InvocationId = @invID
-	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"taskType": string(tasks.BQExport),
-		"invID":    invID.RowID(),
-	})
-	count, err := span.Update(ctx, st)
-	if err != nil {
-		return errors.Annotate(err, "failed to insert bq_export tasks").Err()
-	}
-	logging.Infof(ctx, "Inserted %d %s tasks", count, tasks.BQExport)
-	return nil
 }

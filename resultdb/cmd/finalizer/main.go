@@ -23,7 +23,7 @@ import (
 
 func main() {
 	internal.Main(func(srv *server.Server) error {
-		finalizer.InitServer(srv, finalizer.DefaultOptions())
+		finalizer.InitServer(srv)
 		return nil
 	})
 }

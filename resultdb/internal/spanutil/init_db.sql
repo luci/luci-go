@@ -263,32 +263,6 @@ CREATE TABLE TestExonerations (
 ) PRIMARY KEY (InvocationId, TestId, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
--- Stores tasks to perform on invocations.
--- E.g. to export an invocation to a BigQuery table.
-CREATE TABLE InvocationTasks (
-  -- Type of the task. See "taskType" type in the Go code for examples.
-  TaskType STRING(16) NOT NULL,
-
-  -- Id of the task.
-  TaskId STRING(MAX) NOT NULL,
-
-  -- ID of the invocation to process.
-  InvocationId STRING(MAX) NOT NULL,
-
-  -- Depends on task type. See "taskType" type in the Go code for examples.
-  Payload BYTES(MAX),
-
-  -- When the task was created.
-  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-
-  -- When to process the task.
-  -- ProcessAfter can be set to NOW indicating the invocation can be processed
-  -- or a future time indicating the invocation is not available to process yet.
-  -- ProcessAfter can be reset to a future time by a worker when it starts to
-  -- work on this task to prevent other workers picking up the same one.
-  ProcessAfter TIMESTAMP
-) PRIMARY KEY (TaskType, TaskId);
-
 -- Stores transactional tasks reminders.
 -- See https://go.chromium.org/luci/server/tq. Scanned by tq-sweeper-spanner.
 CREATE TABLE TQReminders (
