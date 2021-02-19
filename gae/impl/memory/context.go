@@ -19,6 +19,7 @@ import (
 	"errors"
 	"strings"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	ds "go.chromium.org/luci/gae/service/datastore"
 )
@@ -164,7 +165,8 @@ func UseInfo(c context.Context, aid string) context.Context {
 //   * go.chromium.org/luci/gae/service/memcache
 //   * go.chromium.org/luci/gae/service/taskqueue
 //   * go.chromium.org/luci/gae/service/user
-//   * go.chromium.org/luci/common/logger (using memlogger)
+//   * go.chromium.org/luci/common/logger
+//     (using memlogger, if logging isn't set up already in c)
 //
 // The application id wil be set to 'aid', and will not be modifiable in this
 // context. If 'aid' contains a "~" character, it will be treated as the
@@ -177,7 +179,9 @@ func UseInfo(c context.Context, aid string) context.Context {
 //
 // Using this more than once per context.Context will cause a panic.
 func UseWithAppID(c context.Context, aid string) context.Context {
-	c = memlogger.Use(c)
+	if logging.GetFactory(c) == nil {
+		c = memlogger.Use(c)
+	}
 	c = UseInfo(c, aid) // Panics if UseWithAppID is called twice.
 	return useMod(useMail(useUser(useTQ(useRDS(useMC(c))))))
 }
