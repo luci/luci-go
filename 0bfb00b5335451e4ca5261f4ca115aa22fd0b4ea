@@ -16,6 +16,69 @@
       "message": "I expect these headers to be present now as per https://screenshot.googleplex.com/ks2Xmtmdewq6tXs",
       "revId": "0bfb00b5335451e4ca5261f4ca115aa22fd0b4ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d90598a_194b7c01",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T21:48:34Z",
+      "side": 1,
+      "message": "code is lgtm, but motivation is not clear to me.",
+      "revId": "0bfb00b5335451e4ca5261f4ca115aa22fd0b4ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa6ef6f0_af4d7d11",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T21:48:34Z",
+      "side": 1,
+      "message": "1. I see this is copy-pasta from the cloud doc, but I am not able to grasp what \"execution phase\" is. Do you?\n2. Why do we need this for monitoring instead of the Execution count we already have?",
+      "range": {
+        "startLine": 433,
+        "startChar": 0,
+        "endLine": 435,
+        "endChar": 50
+      },
+      "revId": "0bfb00b5335451e4ca5261f4ca115aa22fd0b4ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6e0bfb7_4475d087",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-19T21:48:34Z",
+      "side": 1,
+      "message": "why do we need this? per vadim\u0027s comment on a bug, cloud task ETA isn\u0027t useful for monitoring purpose, as it changes.",
+      "range": {
+        "startLine": 439,
+        "startChar": 35,
+        "endLine": 439,
+        "endChar": 55
+      },
+      "revId": "0bfb00b5335451e4ca5261f4ca115aa22fd0b4ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
