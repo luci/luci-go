@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedCrimson struct {
@@ -178,7 +178,7 @@ func (s *DecoratedCrimson) CreateMachine(ctx context.Context, req *CreateMachine
 	return
 }
 
-func (s *DecoratedCrimson) DeleteMachine(ctx context.Context, req *DeleteMachineRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedCrimson) DeleteMachine(ctx context.Context, req *DeleteMachineRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "DeleteMachine", req)
@@ -263,7 +263,7 @@ func (s *DecoratedCrimson) CreateNIC(ctx context.Context, req *CreateNICRequest)
 	return
 }
 
-func (s *DecoratedCrimson) DeleteNIC(ctx context.Context, req *DeleteNICRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedCrimson) DeleteNIC(ctx context.Context, req *DeleteNICRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "DeleteNIC", req)
@@ -484,7 +484,7 @@ func (s *DecoratedCrimson) UpdateVM(ctx context.Context, req *UpdateVMRequest) (
 	return
 }
 
-func (s *DecoratedCrimson) DeleteHost(ctx context.Context, req *DeleteHostRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedCrimson) DeleteHost(ctx context.Context, req *DeleteHostRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "DeleteHost", req)
