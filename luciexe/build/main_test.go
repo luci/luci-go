@@ -95,7 +95,7 @@ func TestMain(t *testing.T) {
 
 		Convey(`good`, func() {
 			Convey(`simple`, func() {
-				err := main(ctx, args, stdin, imsg, &setOut, nil, func(ctx context.Context, args []string, st *State) error {
+				err := main(ctx, args, stdin, imsg, nil, nil, func(ctx context.Context, args []string, st *State) error {
 					So(args, ShouldBeNil)
 					return nil
 				})
