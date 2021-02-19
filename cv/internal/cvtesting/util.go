@@ -94,8 +94,6 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	// memory.Use interferes with logging context, so always set it after
-	// datastore setup.
 	if testing.Verbose() {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 	}
