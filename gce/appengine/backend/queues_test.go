@@ -157,7 +157,7 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v, ShouldResemble, &model.VM{
+					So(v, ShouldResembleProto, &model.VM{
 						ID: "id",
 						Attributes: config.VM{
 							Disk: []*config.Disk{
@@ -198,7 +198,7 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v, ShouldResemble, &model.VM{
+					So(v, ShouldResembleProto, &model.VM{
 						ID: "id",
 						Attributes: config.VM{
 							Zone: "zone",
@@ -227,7 +227,7 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Attributes, ShouldResemble, config.VM{
+					So(v.Attributes, ShouldResembleProto, config.VM{
 						Disk: []*config.Disk{
 							{
 								Type: "zone/type",

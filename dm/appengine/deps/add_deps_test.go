@@ -102,7 +102,7 @@ func TestAddDeps(t *testing.T) {
 					rsp.Result.PurgeTimestamps()
 					exAttempt := dm.NewAttemptFinished(dm.NewJsonResult(`{"done":true}`))
 					exAttempt.Data.NumExecutions = 1
-					So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
+					So(rsp, ShouldResembleProto, &dm.EnsureGraphDataRsp{
 						Accepted: true,
 						Result: &dm.GraphData{Quests: map[string]*dm.Quest{
 							toQuest: {
