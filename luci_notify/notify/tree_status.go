@@ -382,6 +382,7 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 
 // Want more messages? CLs welcome!
 var messages = []string{
+	"('o')",
 	"(｡>﹏<｡)",
 	"☃",
 	"☀ Tree is open ☀",
