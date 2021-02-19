@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "c22d876a_db5f0051",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-19T00:48:14Z",
+      "side": 1,
+      "message": "ty!",
+      "parentUuid": "7a93b9b0_8afa87e7",
+      "revId": "15230d04972b2346fb49ab5d1fb208cd6559cca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b4b67957_c8977379",
         "filename": "cv/internal/gerrit/gerritfake/client.go",
         "patchSetId": 1
