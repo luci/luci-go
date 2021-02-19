@@ -27,7 +27,30 @@ type MigrationClient interface {
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
 	//
 	// If Run was given to CQDaemon by CV, then reported Run will contain CV's id.
+	//
+	// DEPRECATED in favor of ReportVerifiedRun.
 	ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
+	// verifying.
+	//
+	// Only called iff run was given to CQDaemon by CV via FetchActiveRuns.
+	ReportVerifiedRun(ctx context.Context, in *ReportVerifiedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// PostGerritMessage posts a unique per run message to Gerrit.
+	//
+	// Best effort, since Gerrit doesn't provide for idempotent or conditional
+	// (etag like) updates.
+	//
+	// Use-cases:
+	//  * CQDaemon linter posting a warning/error.
+	//  * GerritCQAbility verifier posting error on each of Run's CL before
+	//    failing entire attempt.
+	//
+	// Error handling:
+	//  * If presumably transient Gerrit error, fails with Internal error (for
+	//    simplicity). CQDaemon will have to retry.
+	//  * If Gerrit error is 403, 404 or 412 (Precondition error), responds with
+	//    corresponding gRPC code.
+	PostGerritMessage(ctx context.Context, in *PostGerritMessageRequest, opts ...grpc.CallOption) (*PostGerritMessageResponse, error)
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
 	ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*empty.Empty, error)
@@ -56,6 +79,24 @@ func (c *migrationClient) ReportRuns(ctx context.Context, in *ReportRunsRequest,
 func (c *migrationClient) ReportFinishedRun(ctx context.Context, in *ReportFinishedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/migration.Migration/ReportFinishedRun", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *migrationClient) ReportVerifiedRun(ctx context.Context, in *ReportVerifiedRunRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/migration.Migration/ReportVerifiedRun", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *migrationClient) PostGerritMessage(ctx context.Context, in *PostGerritMessageRequest, opts ...grpc.CallOption) (*PostGerritMessageResponse, error) {
+	out := new(PostGerritMessageResponse)
+	err := c.cc.Invoke(ctx, "/migration.Migration/PostGerritMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +133,30 @@ type MigrationServer interface {
 	// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
 	//
 	// If Run was given to CQDaemon by CV, then reported Run will contain CV's id.
+	//
+	// DEPRECATED in favor of ReportVerifiedRun.
 	ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error)
+	// ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
+	// verifying.
+	//
+	// Only called iff run was given to CQDaemon by CV via FetchActiveRuns.
+	ReportVerifiedRun(context.Context, *ReportVerifiedRunRequest) (*empty.Empty, error)
+	// PostGerritMessage posts a unique per run message to Gerrit.
+	//
+	// Best effort, since Gerrit doesn't provide for idempotent or conditional
+	// (etag like) updates.
+	//
+	// Use-cases:
+	//  * CQDaemon linter posting a warning/error.
+	//  * GerritCQAbility verifier posting error on each of Run's CL before
+	//    failing entire attempt.
+	//
+	// Error handling:
+	//  * If presumably transient Gerrit error, fails with Internal error (for
+	//    simplicity). CQDaemon will have to retry.
+	//  * If Gerrit error is 403, 404 or 412 (Precondition error), responds with
+	//    corresponding gRPC code.
+	PostGerritMessage(context.Context, *PostGerritMessageRequest) (*PostGerritMessageResponse, error)
 	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
 	// CQDaemon.
 	ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*empty.Empty, error)
@@ -111,6 +175,12 @@ func (UnimplementedMigrationServer) ReportRuns(context.Context, *ReportRunsReque
 }
 func (UnimplementedMigrationServer) ReportFinishedRun(context.Context, *ReportFinishedRunRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportFinishedRun not implemented")
+}
+func (UnimplementedMigrationServer) ReportVerifiedRun(context.Context, *ReportVerifiedRunRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportVerifiedRun not implemented")
+}
+func (UnimplementedMigrationServer) PostGerritMessage(context.Context, *PostGerritMessageRequest) (*PostGerritMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostGerritMessage not implemented")
 }
 func (UnimplementedMigrationServer) ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportUsedNetrc not implemented")
@@ -167,6 +237,42 @@ func _Migration_ReportFinishedRun_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Migration_ReportVerifiedRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportVerifiedRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigrationServer).ReportVerifiedRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/migration.Migration/ReportVerifiedRun",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigrationServer).ReportVerifiedRun(ctx, req.(*ReportVerifiedRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Migration_PostGerritMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostGerritMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigrationServer).PostGerritMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/migration.Migration/PostGerritMessage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigrationServer).PostGerritMessage(ctx, req.(*PostGerritMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Migration_ReportUsedNetrc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportUsedNetrcRequest)
 	if err := dec(in); err != nil {
@@ -217,6 +323,14 @@ var Migration_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportFinishedRun",
 			Handler:    _Migration_ReportFinishedRun_Handler,
+		},
+		{
+			MethodName: "ReportVerifiedRun",
+			Handler:    _Migration_ReportVerifiedRun_Handler,
+		},
+		{
+			MethodName: "PostGerritMessage",
+			Handler:    _Migration_PostGerritMessage_Handler,
 		},
 		{
 			MethodName: "ReportUsedNetrc",
