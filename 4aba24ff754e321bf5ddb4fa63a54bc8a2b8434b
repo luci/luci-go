@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "98645432_53448bb2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-19T03:04:41Z",
+      "side": 1,
+      "message": "Ok, PTAL again. Now with global YOLO mode 😜\n\n(but this is definitely closer to the python behavior, so probably it\u0027s safer)",
+      "revId": "4aba24ff754e321bf5ddb4fa63a54bc8a2b8434b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "641e0ea1_d9acc61d",
