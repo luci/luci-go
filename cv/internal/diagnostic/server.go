@@ -22,9 +22,11 @@ import (
 	"strconv"
 
 	"golang.org/x/sync/errgroup"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -37,6 +39,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -66,7 +69,7 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 		return
 	})
 
-	resp = &diagnosticpb.GetProjectResponse{}
+	resp = &diagnosticpb.GetProjectResponse{Project: req.GetProject()}
 	eg.Go(func() error {
 		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, prjmanager.ProjectKind, req.GetProject()))
 		if err != nil {
@@ -140,6 +143,32 @@ func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLReq
 		ApplicableConfig: cl.ApplicableConfig,
 		DependentMeta:    cl.DependentMeta,
 		IncompleteRuns:   runs,
+	}
+	return resp, nil
+}
+
+func (d *DiagnosticServer) GetPoller(ctx context.Context, req *diagnosticpb.GetPollerRequest) (resp *diagnosticpb.GetPollerResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = d.checkAllowed(ctx); err != nil {
+		return
+	}
+	if req.GetProject() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+	}
+
+	s := poller.State{LuciProject: req.GetProject()}
+	switch err := datastore.Get(ctx, &s); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.NotFound, "poller not found")
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to fetch poller state")
+	}
+	resp = &diagnosticpb.GetPollerResponse{
+		Project:    s.LuciProject,
+		Eversion:   s.EVersion,
+		ConfigHash: s.ConfigHash,
+		UpdateTime: timestamppb.New(s.UpdateTime),
+		Subpollers: s.SubPollers,
 	}
 	return resp, nil
 }
