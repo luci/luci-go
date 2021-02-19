@@ -273,7 +273,7 @@ func TestConfig(t *testing.T) {
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
-					So(cfg, ShouldResemble, &config.Config{
+					So(cfg, ShouldResembleProto, &config.Config{
 						Prefix: "prefix",
 						Owner: []string{
 							"owners",
