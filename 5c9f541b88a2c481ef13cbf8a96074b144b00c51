@@ -16,6 +16,23 @@
       "message": "Please review. I explained my thinking in the bug comment - https://crbug.com/1172373. ",
       "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e919ce05_dd91a324",
+        "filename": "common/logging/sdlogger/logger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-20T10:03:37Z",
+      "side": 1,
+      "message": "It\u0027s hard to write unit tests for this piece of code as errorreport.Client is a struct of an interface. Unable to mock it. So I think we can skip the unit tests. I tested it in dev which worked well. Even if the client is not set in Context, it will just skip and won\u0027t cause any errors.",
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
