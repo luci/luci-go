@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -379,5 +380,21 @@ func TestBatch(t *testing.T) {
 			So(actualRes, ShouldBeNil)
 			So(err, ShouldErrLike, "code = Internal desc = failed to get Py BB RPC transport")
 		})
+	})
+}
+
+func TestSwitch(t *testing.T) {
+	t.Parallel()
+
+	Convey("test pointer struct", t, func() {
+		ctx := memory.Use(context.Background())
+		builder := &model.Builder{ID: "me"}
+		ctx = context.WithValue(ctx, "bPointer", builder)
+		actualB, ok := ctx.Value("bPointer").(*model.Builder)
+		fmt.Println(ok)
+		fmt.Println(actualB)
+		So(actualB, ShouldNotBeNil)
+		aaa := ctx.Value("b").(*model.Builder)
+		So(aaa, ShouldNotBeNil)
 	})
 }

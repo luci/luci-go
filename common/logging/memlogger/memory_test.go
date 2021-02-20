@@ -17,12 +17,14 @@ package memlogger
 import (
 	"bytes"
 	"context"
+	"log"
 	"sync"
 	"testing"
 
 	cv "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/logging"
+	"cloud.google.com/go/errorreporting"
 )
 
 func TestLogger(t *testing.T) {
@@ -201,6 +203,27 @@ func TestLoggerAssertion(t *testing.T) {
 			m := &MemLogger{}
 
 			cv.So(ShouldHaveLog(m), cv.ShouldNotEqual, "")
+		})
+	})
+}
+
+func TestTest(t *testing.T) {
+	t.Parallel()
+	cv.Convey("Zero", t, func() {
+		var l MemLogger
+		l.Debugf("test %s", logging.Debug)
+		l.Infof("test %s", logging.Info)
+
+		cv.So(&l, ShouldHaveLog, logging.Debug, "test debug")
+		cv.So(&l, ShouldHaveLog, logging.Info, "test info")
+		errorClient, err := errorreporting.NewClient(ctx, projectID, errorreporting.Config{
+			ServiceName: "myservice",
+			OnError: func(err error) {
+				log.Printf("Could not log error: %v", err)
+			},
+		})
+		errorClient.Report(errorreporting.Entry{
+			Error: err,
 		})
 	})
 }

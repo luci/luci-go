@@ -72,6 +72,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"cloud.google.com/go/errorreporting"
 	"cloud.google.com/go/profiler"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
@@ -135,6 +136,12 @@ var (
 		"server/version",
 		"Version of the running container image (taken from -container-image-id).",
 		nil)
+
+	// TODO(crbug.com/1172373): temporary feature flag in developing stage; remove it after this feature is done.
+	// errorReportAllowlist specifies which cloud projects are allowed to use the error reporting.
+	errorReportAllowlist = map[string]bool{
+		"cr-buildbucket-dev": true,
+	}
 )
 
 // cloudRegionFromGAERegion maps GAE region codes (e.g. `s`) to corresponding
@@ -737,6 +744,7 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 	host.invalid = true // break `host` to make sure modules do not retain it
 
+	srv.initErrorReporting()
 	return srv, nil
 }
 
@@ -1805,13 +1813,7 @@ func (s *Server) initProfiling() error {
 		return nil
 	}
 
-	// Prefer ProfilingServiceID if given, fall back to TsMonJobName. Replace
-	// forbidden '/' symbol.
-	serviceID := s.Options.ProfilingServiceID
-	if serviceID == "" {
-		serviceID = s.Options.TsMonJobName
-	}
-	serviceID = strings.ReplaceAll(serviceID, "/", "-")
+	serviceID := s.getServiceID()
 
 	cfg := profiler.Config{
 		ProjectID:      s.Options.CloudProject,
@@ -1840,6 +1842,18 @@ func (s *Server) initProfiling() error {
 
 	logging.Infof(s.Context, "Setting up Stackdriver profiler (service %q, version %q)", cfg.Service, cfg.ServiceVersion)
 	return nil
+}
+
+// getServiceID get the service id from either ProfilingServiceID or TsMonJobName.
+func (s *Server) getServiceID() string {
+	// Prefer ProfilingServiceID if given, fall back to TsMonJobName. Replace
+	// forbidden '/' symbol.
+	serviceID := s.Options.ProfilingServiceID
+	if serviceID == "" {
+		serviceID = s.Options.TsMonJobName
+	}
+	serviceID = strings.ReplaceAll(serviceID, "/", "-")
+	return serviceID
 }
 
 // initMainPort initializes the server on options.HTTPAddr port.
@@ -1933,6 +1947,30 @@ func (s *Server) initAdminPort() error {
 		}
 	})
 	return nil
+}
+
+func (s *Server) initErrorReporting() {
+	if _, ok := errorReportAllowlist[s.Options.CloudProject]; !ok {
+		logging.Infof(s.Context, "This project is not allowed to use the error reporting")
+		return
+	}
+
+	erc, err := errorreporting.NewClient(s.Context, s.Options.CloudProject, errorreporting.Config{
+		ServiceName: s.getServiceID(),
+		OnError: func(err error) {
+			logging.Warningf(s.Context, "Error Reporting could not log error: %v", err)
+		},
+	})
+	if err != nil {
+		logging.Warningf(s.Context, "Fail to Initialize the error reporting client - %v", err)
+		return
+	}
+	s.Context = logging.SetErrReportClient(s.Context, erc)
+	s.RegisterCleanup(func(ctx context.Context) {
+		if erc := logging.GetErrReportClient(ctx); erc != nil {
+			erc.Close()
+		}
+	})
 }
 
 // startRequestSpan opens a new per-request trace span.

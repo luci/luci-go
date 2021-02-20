@@ -26,10 +26,13 @@ package sdlogger
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/errorreporting"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
@@ -219,6 +222,18 @@ func (l *jsonLogger) Errorf(format string, args ...interface{}) {
 }
 
 func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
+	// Send error to Error Reporting. Append the trace id to make it easier to
+	// find its logs during the request life span when debugging in Cloud Logs Explorer.
+	if lvl == logging.Error {
+		erc := logging.GetErrReportClient(l.ctx)
+		if erc != nil {
+			erc.Report(errorreporting.Entry{
+				Error: errors.New(fmt.Sprintf(format, args...) + " (Log Trace ID: " + l.prototype.TraceID + ")"),
+			})
+			erc.Flush()
+		}
+	}
+
 	if !logging.IsLogging(l.ctx, lvl) {
 		return
 	}
