@@ -353,6 +353,9 @@ func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, 
 	if req.SubstringQuery != "" {
 		params.Add("q", req.SubstringQuery)
 	}
+	if req.Base != "" {
+		params.Add("base", req.Base)
+	}
 	path := fmt.Sprintf("/changes/%s/revisions/%s/files/", gerritChangeIDForRouting(req.Number, req.Project), req.RevisionId)
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
 		return nil, errors.Annotate(err, "list files").Err()
