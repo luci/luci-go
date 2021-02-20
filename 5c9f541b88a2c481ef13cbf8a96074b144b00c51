@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27cb12e0_f8b21da8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-20T10:00:34Z",
+      "side": 1,
+      "message": "Please review. I explained my thinking in the bug comment - https://crbug.com/1172373. ",
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
