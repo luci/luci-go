@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79ebefb0_1b5993bb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-20T00:37:43Z",
+      "side": 1,
+      "message": "I\u0027m not fan of this approach, seems too roundabout to me.\n\nHow about:\na) Split srv.ListenAndServe() in serveLoop into separate Listen, followed by Serve (with listening address sent to a channel or something in between).\nb) Or just make public/cleanup the API to supply preconfigured listeners to the server, just like its own unit tests do: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/server/server_test.go#660",
+      "revId": "22d7f0bfbcdb338b0a6faad1550e1bfbe85cc6a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
