@@ -182,7 +182,10 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		// dependency of another CL.
 		err = f.fetchNew(ctx)
 
-	case f.updatedHint.IsZero() || f.updatedHint.After(f.priorCL.Snapshot.GetExternalUpdateTime().AsTime()):
+	case f.updatedHint.IsZero():
+		logging.Debugf(ctx, "force updating %s", f)
+		fallthrough
+	case f.updatedHint.After(f.priorCL.Snapshot.GetExternalUpdateTime().AsTime()):
 		// Either force update or updatedHint is after the snapshot we already have.
 
 		// NOTE: ideally, we'd check whether the current project is watching the
@@ -230,6 +233,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		}
 		return nil
 	default:
+		logging.Debugf(ctx, "proceeding to update %s, last known EVersion: %d", f, f.priorCLEversion)
 		return changelist.Update(
 			ctx,
 			f.externalID, f.clidIfKnown(),
@@ -802,6 +806,13 @@ func (f *fetcher) priorSnapshot() *changelist.Snapshot {
 		return f.priorCL.Snapshot
 	}
 	return nil
+}
+
+func (f *fetcher) priorCLEversion() int {
+	if f.priorCL != nil {
+		return f.priorCL.EVersion
+	}
+	return 0
 }
 
 func (f *fetcher) mustHaveCurrentRevision() string {
