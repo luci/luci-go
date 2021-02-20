@@ -16,6 +16,24 @@
       "message": "What is your end goal? This is too crude and a lot of stuff would break in weird ways. See server_test.go for a way to prepare fake environment for the server that I feel is less fragile. I think it might be best just extract newTestServer from there into a servertest API (or something), since it already does a lot things that you seem to be needing.\n\nAnother related thought is to avoid messing with server.Server in tests that don\u0027t test features that depend on server.Server. If you need just to test pRPC APIs, setup a plain prpc.Server, etc.\n",
       "revId": "f49d9e32bf8239550891b380c5c2a6427c209242",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ede2881_9d58179b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-20T01:20:26Z",
+      "side": 1,
+      "message": "Yeah sorry, I had that thought right after I uploaded this and meant to comment.\n\nI\u0027m going to try with just prpc.Server",
+      "parentUuid": "de5c9192_ba4a3148",
+      "revId": "f49d9e32bf8239550891b380c5c2a6427c209242",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
