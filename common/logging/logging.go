@@ -26,7 +26,11 @@
 // is running.
 package logging
 
-import "context"
+import (
+	"context"
+
+	"cloud.google.com/go/errorreporting"
+)
 
 // Logger interface is ultimately implemented by underlying logging libraries
 // (like go-logging or GAE logging). It is the least common denominator among
@@ -70,6 +74,7 @@ const (
 	loggerKey key = iota
 	fieldsKey
 	levelKey
+	errorReportingKey
 )
 
 // SetFactory sets the Logger factory for this context.
@@ -94,4 +99,17 @@ func Get(c context.Context) Logger {
 		return f(c)
 	}
 	return Null
+}
+
+// SetErrReportClient sets the error reporting client to this context.
+func SetErrReportClient(c context.Context, erc *errorreporting.Client) context.Context {
+	return context.WithValue(c, errorReportingKey, erc)
+}
+
+// GetErrReportClient gets the current error reporting client from this context.
+func GetErrReportClient(c context.Context) *errorreporting.Client {
+	if erc, ok := c.Value(errorReportingKey).(*errorreporting.Client); ok {
+		return erc
+	}
+	return nil
 }
