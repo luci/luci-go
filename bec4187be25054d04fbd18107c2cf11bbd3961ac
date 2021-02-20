@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a26e5e2e_70f5ca5d",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26157415_b6c86874",
+      "range": {
+        "startLine": 160,
+        "startChar": 11,
+        "endLine": 163,
+        "endChar": 3
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "34279f6c_d2d297bb",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-02-19T23:27:09Z",
       "side": 1,
       "message": "https://pkg.go.dev/path/filepath#Join",
+      "range": {
+        "startLine": 232,
+        "startChar": 17,
+        "endLine": 232,
+        "endChar": 28
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6dde5c8a_4059e3e9",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34279f6c_d2d297bb",
       "range": {
         "startLine": 232,
         "startChar": 17,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "464f22e1_a11dd883",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da8b8af4_a1bbb0b0",
+      "range": {
+        "startLine": 233,
+        "startChar": 1,
+        "endLine": 234,
+        "endChar": 5
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e4d9dd4f_2f627509",
@@ -121,6 +193,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "74893afc_0ce8689b",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4d9dd4f_2f627509",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "14048808_2a7004fa",
@@ -134,6 +224,24 @@
       "writtenOn": "2021-02-19T23:27:09Z",
       "side": 1,
       "message": "err is not checked for nil",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5269572_76180cdf",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14048808_2a7004fa",
       "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -161,6 +269,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "434ed18f_68d026bd",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24ab7209_84d3f308",
+      "range": {
+        "startLine": 251,
+        "startChar": 5,
+        "endLine": 251,
+        "endChar": 25
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0593939f_27c83a68",
@@ -178,6 +310,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7649ee6a_d4b84b27",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0593939f_27c83a68",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f731ab1f_642a5c18",
@@ -191,6 +341,24 @@
       "writtenOn": "2021-02-19T23:27:09Z",
       "side": 1,
       "message": "would we need this if we canceled the context?",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c870175a_928283a2",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Yes without this the test would hang.",
+      "parentUuid": "f731ab1f_642a5c18",
       "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -218,6 +386,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "815ef630_1120b27e",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ad0aed4_44b1eac3",
+      "range": {
+        "startLine": 277,
+        "startChar": 3,
+        "endLine": 279,
+        "endChar": 21
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f18f7d56_baf1e50a",
@@ -235,6 +427,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3ee23d0_c5471bab",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Oh yeah. Done.",
+      "parentUuid": "f18f7d56_baf1e50a",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9120ebc5_3cdce0d1",
@@ -248,6 +458,30 @@
       "writtenOn": "2021-02-19T23:27:09Z",
       "side": 1,
       "message": "a few problems\n1) these side effects are not documented in this function\n2) they are also not undone by anything\n3) why is setting emulator host is in this function to begin with? This func seems to be about config. We know the hostport in StartSpannerEmulator already.\n4) this is global mutable state, which is sort of no-no. I see we read this value above from env. Why not read it from a field or something?\n\nfor example, Emulator could have a function DBClient(). Then NewTempDB could accept it instead of creating one. Then in spannerTestMain(), if we choose to use emulator, we use its client. Otherwise we connect to an actual instance.\n\n----------------",
+      "range": {
+        "startLine": 295,
+        "startChar": 0,
+        "endLine": 299,
+        "endChar": 54
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "838a4e05_70ae6f06",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9120ebc5_3cdce0d1",
       "range": {
         "startLine": 295,
         "startChar": 0,
@@ -281,6 +515,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8018d674_80c13470",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11f01e15_bfba4201",
+      "range": {
+        "startLine": 311,
+        "startChar": 26,
+        "endLine": 311,
+        "endChar": 41
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f85393cf_e4c14ecc",
@@ -294,6 +552,30 @@
       "writtenOn": "2021-02-19T23:27:09Z",
       "side": 1,
       "message": "inline",
+      "range": {
+        "startLine": 312,
+        "startChar": 1,
+        "endLine": 312,
+        "endChar": 8
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fbe7c21a_8fdc1520",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f85393cf_e4c14ecc",
       "range": {
         "startLine": 312,
         "startChar": 1,
@@ -321,6 +603,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "175ffa56_e18bfb38",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2928c620_b19ed471",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "50b976fc_8af4eec2",
@@ -338,6 +638,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "542df895_957631fa",
+        "filename": "common/system/port/port.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "50b976fc_8af4eec2",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c6b49904_dee409e5",
@@ -351,6 +669,30 @@
       "writtenOn": "2021-02-19T23:27:09Z",
       "side": 1,
       "message": "to run",
+      "range": {
+        "startLine": 57,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 19
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6d377cd_f4eb8a0e",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6b49904_dee409e5",
       "range": {
         "startLine": 57,
         "startChar": 12,
@@ -384,6 +726,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ea62e69_cb81a976",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7cd39072_553febf6",
+      "range": {
+        "startLine": 68,
+        "startChar": 8,
+        "endLine": 68,
+        "endChar": 47
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bfeb4ed1_e5358ab9",
@@ -397,6 +763,30 @@
       "writtenOn": "2021-02-19T23:27:09Z",
       "side": 1,
       "message": "it is still mystery to me where this config dir is used. It passed only to CLOUDSDK_CONFIG envvar, but I don\u0027t see it being used in spanner package https://source.corp.google.com/search?q\u003dCLOUDSDK_CONFIG%20lang:go%20f:spanner\n\nwhat happens if you don\u0027t create the config?",
+      "range": {
+        "startLine": 168,
+        "startChar": 3,
+        "endLine": 168,
+        "endChar": 9
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49f23d5c_4ad94595",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-20T05:20:36Z",
+      "side": 1,
+      "message": "So if we don\u0027t create a temporary directory for the config, the config will be created in the same directory with the default config. And then we\u0027ll have to switch back and forth between the default config and this emulator config.\n\nHmm.. Maybe it\u0027s OK to not use a temp dir. because the emulator config is actually static (I was thinking we need to set the rest port dynamically). Then we can change the process to:\n- If testing with real Spanner: run \"gcloud config configurations activate default\"\n- If testing with emulator:\n  - list config and look for spanner-emulator config, if not found, create it\n  - run \"gcloud config configurations activate gcloud config configurations activate default\"",
+      "parentUuid": "bfeb4ed1_e5358ab9",
       "range": {
         "startLine": 168,
         "startChar": 3,
