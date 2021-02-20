@@ -60,7 +60,7 @@ var tmplQueryArtifacts = template.Must(template.New("artifactQuery").Parse(`
 @{USE_ADDITIONAL_PARALLELISM=TRUE}
 WITH VariantsWithUnexpectedResults AS (
 	SELECT DISTINCT TestId, VariantHash
-	FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+	FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
 	WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 ),
 FilteredTestResults AS (
