@@ -20,6 +20,7 @@ import { observable } from 'mobx';
 
 import { AppState, provideAppState } from '../context/app_state/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
+import { genFeedbackUrl } from '../libs/utils';
 import './signin';
 import { UserUpdateEvent } from './signin';
 
@@ -30,14 +31,6 @@ const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
       .then(resolve, reject);
   });
 });
-
-function genFeedbackUrl() {
-  const feedbackComment = encodeURIComponent(
-`From Link: ${document.location.href}
-Please enter a description of the problem, with repro steps if applicable.
-`);
-  return `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2,Type-Bug&comment=${feedbackComment}`;
-}
 
 /**
  * Renders page header, including a sign-in widget, a settings button, and a

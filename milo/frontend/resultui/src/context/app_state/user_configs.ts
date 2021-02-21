@@ -26,6 +26,7 @@ export interface UserConfigs {
     showSucceededSteps: boolean;
     showDebugLogs: boolean;
   };
+  showFeedbackDialog: boolean;
   defaultBuildPageTabName: string;
 }
 
@@ -33,6 +34,7 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   hints: {
     showTestResultsHint: true,
   },
+  showFeedbackDialog: true,
   steps: Object.freeze({
     showSucceededSteps: true,
     showDebugLogs: false,
