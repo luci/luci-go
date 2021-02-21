@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7856c578_c3376bac",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 1090,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-21T14:07:35Z",
+      "side": 1,
+      "message": "Do you know if it can it be ps# (e.g. \"1\") instead of a full hash? If yes, please note that here, as it\u0027ll make API much easier to use.",
+      "range": {
+        "startLine": 1089,
+        "startChar": 49,
+        "endLine": 1090,
+        "endChar": 34
+      },
+      "revId": "e4c3ea967e1fd53a6c6b9474d460159545b57118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
