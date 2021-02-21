@@ -96,6 +96,7 @@ func init() {
 		ID:        task.ClassID,
 		Prototype: &task.PollGerritTask{},
 		Queue:     "poll-gerrit",
+		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*task.PollGerritTask)
 			err := poll(ctx, task.GetLuciProject(), task.GetEta().AsTime())

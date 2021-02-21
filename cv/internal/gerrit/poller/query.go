@@ -52,7 +52,7 @@ const (
 
 	// changesPerPoll is how many changes CV will process per poll.
 	//
-	// A value that's too low here will first affects full polls, since they have
+	// A value that's too low here will first affect full polls, since they have
 	// to (re-)process all interesting changes watched by a LUCI project.
 	//
 	// 10k is OK to fetch sequentially and keep in RAM without OOM-ing,
