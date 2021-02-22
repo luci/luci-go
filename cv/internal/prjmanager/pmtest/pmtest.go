@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -128,6 +129,15 @@ func AssertReceivedRunFinished(ctx context.Context, runID common.RunID) {
 			RunFinished: &prjpb.RunFinished{
 				RunId: string(runID),
 			},
+		},
+	})
+}
+
+// AssertCLsUpdated asserts all events exist in the project Eventbox.
+func AssertReceivedCLsNotified(ctx context.Context, project string, cls []*changelist.CL) {
+	AssertInEventbox(ctx, project, &prjpb.Event{
+		Event: &prjpb.Event_ClsUpdated{
+			ClsUpdated: prjpb.MakeCLsUpdated(cls),
 		},
 	})
 }
