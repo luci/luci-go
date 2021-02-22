@@ -196,6 +196,7 @@ func TestExternalID(t *testing.T) {
 			So(change, ShouldEqual, 12)
 
 		})
+
 		Convey("Invalid GobID", func() {
 			_, _, err := ExternalID("meh").ParseGobID()
 			So(err, ShouldErrLike, "is not a valid GobID")
@@ -203,6 +204,31 @@ func TestExternalID(t *testing.T) {
 			_, _, err = ExternalID("gerrit/x/y").ParseGobID()
 			So(err, ShouldErrLike, "is not a valid GobID")
 		})
+
+	})
+}
+
+func TestLookup(t *testing.T) {
+	t.Parallel()
+
+	Convey("Lookup works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		const n = 10
+		ids := make([]common.CLID, n)
+		eids := make([]ExternalID, n)
+		for i := range eids {
+			eids[i] = MustGobID("x-review.example.com", int64(i+1))
+			if i%2 == 0 {
+				cl, err := eids[i].GetOrInsert(ctx, func(*CL) {})
+				So(err, ShouldBeNil)
+				ids[i] = cl.ID
+			}
+		}
+
+		actual, err := Lookup(ctx, eids)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, ids)
 	})
 }
 
