@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -90,8 +91,11 @@ func Schedule(ctx context.Context, p *RefreshGerritCL) error {
 		updatedHint = t.AsTime().UTC()
 		task.Title += fmt.Sprintf("/u-%s", updatedHint.Format(time.RFC3339))
 	}
+	if p.GetForceNotifyPm() {
+		task.Title += "/forceNotify"
+	}
 
-	// If done within transaction, can't use de-dup.
+	// If done within transaction or if must notify PM, can't use de-dup.
 	if datastore.CurrentTransaction(ctx) == nil && !p.GetForceNotifyPm() {
 		ts := updatedHint
 		if updatedHint.IsZero() {
@@ -100,8 +104,9 @@ func Schedule(ctx context.Context, p *RefreshGerritCL) error {
 		task.DeduplicationKey = strings.Join([]string{
 			"v0",
 			p.GetLuciProject(),
-			p.GetHost(), strconv.FormatInt(p.GetChange(), 16),
-			strconv.FormatInt(ts.Unix(), 16),
+			p.GetHost(),
+			strconv.FormatInt(p.GetChange(), 16),
+			strconv.FormatInt(ts.UnixNano(), 16),
 		}, "\n")
 	}
 	return tq.AddTask(ctx, task)
