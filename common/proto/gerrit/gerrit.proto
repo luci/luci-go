@@ -1084,6 +1084,12 @@ message ListFilesRequest {
   // For merge commits only, this requests a diff of files against a parent
   // revision. Use value 1 to compare against a CL's target ref.
   int64 parent = 5;
+
+  // Can either be a revision id or a patchset number. It changes the response
+  // to return a map of the files which are different in this commit compared
+  // to the given revision. The revision must correspond to a patch set in the
+  // change.
+  string base = 6;
 }
 
 // Information about the files in a change.
