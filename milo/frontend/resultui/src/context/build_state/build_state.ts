@@ -52,7 +52,7 @@ export class BuildState {
   }
 
   @computed
-  get buildReq(): IPromiseBasedObservable<Build> {
+  get build$(): IPromiseBasedObservable<Build> {
     if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
@@ -71,10 +71,10 @@ export class BuildState {
 
   @computed
   get build(): BuildExt | null {
-    if (this.buildReq.state !== FULFILLED) {
+    if (this.build$.state !== FULFILLED) {
       return null;
     }
-    return new BuildExt(this.buildReq.value);
+    return new BuildExt(this.build$.value);
   }
 
   @computed

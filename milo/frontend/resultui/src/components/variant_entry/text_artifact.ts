@@ -36,7 +36,7 @@ export class TextArtifactElement extends MobxLitElement {
   }
 
   @computed
-  private get contentRes(): IPromiseBasedObservable<string> {
+  private get content$(): IPromiseBasedObservable<string> {
     if (!this.fetchUrl) {
       return fromPromise(Promise.race([]));
     }
@@ -45,7 +45,7 @@ export class TextArtifactElement extends MobxLitElement {
 
   @computed
   private get content() {
-    return this.contentRes.state === 'fulfilled' ? this.contentRes.value : '';
+    return this.content$.state === 'fulfilled' ? this.content$.value : '';
   }
 
   protected render() {

@@ -32,14 +32,14 @@ export class TextDiffArtifactElement extends MobxLitElement {
   @observable.ref artifact!: Artifact;
 
   @computed
-  private get contentRes(): IPromiseBasedObservable<string> {
+  private get content$(): IPromiseBasedObservable<string> {
     // TODO(weiweilin): handle refresh.
     return fromPromise(fetch(this.artifact.fetchUrl!).then((res) => res.text()));
   }
 
   @computed
   private get content() {
-    return this.contentRes.state === 'fulfilled' ? this.contentRes.value : '';
+    return this.content$.state === 'fulfilled' ? this.content$.value : '';
   }
 
   protected render() {

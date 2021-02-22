@@ -78,7 +78,7 @@ export class InvocationState {
   }
 
   @computed
-  get invocationRes(): IPromiseBasedObservable<Invocation> {
+  get invocation$(): IPromiseBasedObservable<Invocation> {
     if (!this.appState.resultDb || !this.invocationName) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
@@ -88,10 +88,10 @@ export class InvocationState {
 
   @computed
   get invocation(): Invocation | null {
-    if (this.invocationRes.state !== FULFILLED) {
+    if (this.invocation$.state !== FULFILLED) {
       return null;
     }
-    return this.invocationRes.value;
+    return this.invocation$.value;
   }
 
   @computed({keepAlive: true})

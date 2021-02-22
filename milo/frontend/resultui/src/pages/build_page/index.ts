@@ -289,7 +289,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       </div>
       <milo-status-bar
         .components=${[{color: this.statusBarColor, weight: 1}]}
-        .loading=${this.buildState.buildReq.state === 'pending'}
+        .loading=${this.buildState.build$.state === 'pending'}
       ></milo-status-bar>
       <milo-tab-bar
         .tabs=${this.tabDefs}
