@@ -24,7 +24,6 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
-	proto "github.com/golang/protobuf/proto"
 	git "go.chromium.org/luci/common/proto/git"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -41,10 +40,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // List copied from
 // https://github.com/google/gitiles/blob/65edbe49f2b3882a5979f602383ef0c7b2b8ee0c/java/com/google/gitiles/ArchiveFormat.java

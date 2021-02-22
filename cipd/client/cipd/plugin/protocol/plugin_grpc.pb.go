@@ -12,6 +12,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // HostClient is the client API for Host service.
@@ -95,7 +96,7 @@ type UnsafeHostServer interface {
 }
 
 func RegisterHostServer(s grpc.ServiceRegistrar, srv HostServer) {
-	s.RegisterService(&_Host_serviceDesc, srv)
+	s.RegisterService(&Host_ServiceDesc, srv)
 }
 
 func _Host_Log_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -134,7 +135,10 @@ func _Host_ListMetadata_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Host_serviceDesc = grpc.ServiceDesc{
+// Host_ServiceDesc is the grpc.ServiceDesc for Host service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Host_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "cipd.plugin.Host",
 	HandlerType: (*HostServer)(nil),
 	Methods: []grpc.MethodDesc{

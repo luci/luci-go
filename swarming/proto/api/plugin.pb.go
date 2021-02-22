@@ -16,13 +16,12 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
 	context "context"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -33,10 +32,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 type GetCancellationsResponse_Cancellation_Reason int32
 
@@ -123,7 +118,7 @@ type TaskSpec struct {
 	BotId string `protobuf:"bytes,5,opt,name=bot_id,json=botId,proto3" json:"bot_id,omitempty"`
 	// EnqueuedTime is the time at which a task was enqueued. It is only valid
 	// if state=PENDING.
-	EnqueuedTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=enqueued_time,json=enqueuedTime,proto3" json:"enqueued_time,omitempty"`
+	EnqueuedTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=enqueued_time,json=enqueuedTime,proto3" json:"enqueued_time,omitempty"`
 }
 
 func (x *TaskSpec) Reset() {
@@ -193,7 +188,7 @@ func (x *TaskSpec) GetBotId() string {
 	return ""
 }
 
-func (x *TaskSpec) GetEnqueuedTime() *timestamp.Timestamp {
+func (x *TaskSpec) GetEnqueuedTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EnqueuedTime
 	}
@@ -317,7 +312,7 @@ type AssignTasksRequest struct {
 	IdleBots []*IdleBot `protobuf:"bytes,2,rep,name=idle_bots,json=idleBots,proto3" json:"idle_bots,omitempty"`
 	// Time is the current time (according to swarming) at which these bots
 	// are attempting to have tasks assigned to them.
-	Time *timestamp.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
+	Time *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
 }
 
 func (x *AssignTasksRequest) Reset() {
@@ -366,7 +361,7 @@ func (x *AssignTasksRequest) GetIdleBots() []*IdleBot {
 	return nil
 }
 
-func (x *AssignTasksRequest) GetTime() *timestamp.Timestamp {
+func (x *AssignTasksRequest) GetTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Time
 	}
@@ -592,7 +587,7 @@ type NotifyTasksItem struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Time is the time at which the given task was in the given state.
-	Time *timestamp.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
+	Time *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
 	// Task describes a task request and its current state.
 	Task *TaskSpec `protobuf:"bytes,2,opt,name=task,proto3" json:"task,omitempty"`
 }
@@ -629,7 +624,7 @@ func (*NotifyTasksItem) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_swarming_proto_api_plugin_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *NotifyTasksItem) GetTime() *timestamp.Timestamp {
+func (x *NotifyTasksItem) GetTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Time
 	}
@@ -1089,7 +1084,7 @@ var file_go_chromium_org_luci_swarming_proto_api_plugin_proto_goTypes = []interf
 	(*GetCallbacksResponse)(nil),                  // 13: swarming.v1.GetCallbacksResponse
 	(*GetCancellationsResponse_Cancellation)(nil), // 14: swarming.v1.GetCancellationsResponse.Cancellation
 	(TaskState)(0),                                // 15: swarming.v1.TaskState
-	(*timestamp.Timestamp)(nil),                   // 16: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),                 // 16: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_swarming_proto_api_plugin_proto_depIdxs = []int32{
 	2,  // 0: swarming.v1.TaskSpec.slices:type_name -> swarming.v1.SliceSpec

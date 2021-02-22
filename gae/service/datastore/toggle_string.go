@@ -2,7 +2,16 @@
 
 package datastore
 
-import "fmt"
+import "strconv"
+
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[Auto-0]
+	_ = x[On-1]
+	_ = x[Off-2]
+}
 
 const _Toggle_name = "AutoOnOff"
 
@@ -10,7 +19,7 @@ var _Toggle_index = [...]uint8{0, 4, 6, 9}
 
 func (i Toggle) String() string {
 	if i >= Toggle(len(_Toggle_index)-1) {
-		return fmt.Sprintf("Toggle(%d)", i)
+		return "Toggle(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 	return _Toggle_name[_Toggle_index[i]:_Toggle_index[i+1]]
 }

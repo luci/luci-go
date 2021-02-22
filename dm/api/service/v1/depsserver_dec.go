@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
-	empty "github.com/golang/protobuf/ptypes/empty"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedDeps struct {
@@ -42,7 +42,7 @@ func (s *DecoratedDeps) EnsureGraphData(ctx context.Context, req *EnsureGraphDat
 	return
 }
 
-func (s *DecoratedDeps) ActivateExecution(ctx context.Context, req *ActivateExecutionReq) (rsp *empty.Empty, err error) {
+func (s *DecoratedDeps) ActivateExecution(ctx context.Context, req *ActivateExecutionReq) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "ActivateExecution", req)
@@ -59,7 +59,7 @@ func (s *DecoratedDeps) ActivateExecution(ctx context.Context, req *ActivateExec
 	return
 }
 
-func (s *DecoratedDeps) FinishAttempt(ctx context.Context, req *FinishAttemptReq) (rsp *empty.Empty, err error) {
+func (s *DecoratedDeps) FinishAttempt(ctx context.Context, req *FinishAttemptReq) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "FinishAttempt", req)

@@ -17,8 +17,7 @@
 package config
 
 import (
-	proto "github.com/golang/protobuf/proto"
-	proto1 "go.chromium.org/luci/buildbucket/proto"
+	proto "go.chromium.org/luci/buildbucket/proto"
 	_ "go.chromium.org/luci/common/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -32,10 +31,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This is a compile-time assertion that a sufficiently up-to-date version
-// of the legacy proto package is being used.
-const _ = proto.ProtoPackageIsVersion4
 
 // ProjectConfig is a luci-notify configuration for a particular project.
 type ProjectConfig struct {
@@ -200,10 +195,10 @@ type Notification struct {
 	// failure.
 	OnNewFailure bool `protobuf:"varint,7,opt,name=on_new_failure,json=onNewFailure,proto3" json:"on_new_failure,omitempty"`
 	// Notify on each build with a specified status.
-	OnOccurrence []proto1.Status `protobuf:"varint,9,rep,packed,name=on_occurrence,json=onOccurrence,proto3,enum=buildbucket.v2.Status" json:"on_occurrence,omitempty"`
+	OnOccurrence []proto.Status `protobuf:"varint,9,rep,packed,name=on_occurrence,json=onOccurrence,proto3,enum=buildbucket.v2.Status" json:"on_occurrence,omitempty"`
 	// Notify on each build with a specified status different than the previous
 	// one.
-	OnNewStatus []proto1.Status `protobuf:"varint,10,rep,packed,name=on_new_status,json=onNewStatus,proto3,enum=buildbucket.v2.Status" json:"on_new_status,omitempty"`
+	OnNewStatus []proto.Status `protobuf:"varint,10,rep,packed,name=on_new_status,json=onNewStatus,proto3,enum=buildbucket.v2.Status" json:"on_new_status,omitempty"`
 	// Notify only on builds which had a failing step matching this regular
 	// expression. Mutually exclusive with "on_new_status".
 	FailedStepRegexp string `protobuf:"bytes,11,opt,name=failed_step_regexp,json=failedStepRegexp,proto3" json:"failed_step_regexp,omitempty"`
@@ -292,14 +287,14 @@ func (x *Notification) GetOnNewFailure() bool {
 	return false
 }
 
-func (x *Notification) GetOnOccurrence() []proto1.Status {
+func (x *Notification) GetOnOccurrence() []proto.Status {
 	if x != nil {
 		return x.OnOccurrence
 	}
 	return nil
 }
 
-func (x *Notification) GetOnNewStatus() []proto1.Status {
+func (x *Notification) GetOnNewStatus() []proto.Status {
 	if x != nil {
 		return x.OnNewStatus
 	}
@@ -567,7 +562,7 @@ type GitilesCommits struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The Gitiles commits in this collection.
-	Commits []*proto1.GitilesCommit `protobuf:"bytes,1,rep,name=commits,proto3" json:"commits,omitempty"`
+	Commits []*proto.GitilesCommit `protobuf:"bytes,1,rep,name=commits,proto3" json:"commits,omitempty"`
 }
 
 func (x *GitilesCommits) Reset() {
@@ -602,7 +597,7 @@ func (*GitilesCommits) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_luci_notify_api_config_notify_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *GitilesCommits) GetCommits() []*proto1.GitilesCommit {
+func (x *GitilesCommits) GetCommits() []*proto.GitilesCommit {
 	if x != nil {
 		return x.Commits
 	}
@@ -618,13 +613,13 @@ type TemplateInput struct {
 	// Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
 	BuildbucketHostname string `protobuf:"bytes,1,opt,name=buildbucket_hostname,json=buildbucketHostname,proto3" json:"buildbucket_hostname,omitempty"`
 	// The completed build.
-	Build *proto1.Build `protobuf:"bytes,2,opt,name=build,proto3" json:"build,omitempty"`
+	Build *proto.Build `protobuf:"bytes,2,opt,name=build,proto3" json:"build,omitempty"`
 	// State of the previous build in this builder.
-	OldStatus proto1.Status `protobuf:"varint,3,opt,name=old_status,json=oldStatus,proto3,enum=buildbucket.v2.Status" json:"old_status,omitempty"`
+	OldStatus proto.Status `protobuf:"varint,3,opt,name=old_status,json=oldStatus,proto3,enum=buildbucket.v2.Status" json:"old_status,omitempty"`
 	// The failed steps that passed the given regexes (see the fields
 	// "failed_step_regexp" and "failed_step_regexp_exclude" above). If that field
 	// wasn't supplied, this will be empty.
-	MatchingFailedSteps []*proto1.Step `protobuf:"bytes,4,rep,name=matching_failed_steps,json=matchingFailedSteps,proto3" json:"matching_failed_steps,omitempty"`
+	MatchingFailedSteps []*proto.Step `protobuf:"bytes,4,rep,name=matching_failed_steps,json=matchingFailedSteps,proto3" json:"matching_failed_steps,omitempty"`
 }
 
 func (x *TemplateInput) Reset() {
@@ -666,21 +661,21 @@ func (x *TemplateInput) GetBuildbucketHostname() string {
 	return ""
 }
 
-func (x *TemplateInput) GetBuild() *proto1.Build {
+func (x *TemplateInput) GetBuild() *proto.Build {
 	if x != nil {
 		return x.Build
 	}
 	return nil
 }
 
-func (x *TemplateInput) GetOldStatus() proto1.Status {
+func (x *TemplateInput) GetOldStatus() proto.Status {
 	if x != nil {
 		return x.OldStatus
 	}
-	return proto1.Status_STATUS_UNSPECIFIED
+	return proto.Status_STATUS_UNSPECIFIED
 }
 
-func (x *TemplateInput) GetMatchingFailedSteps() []*proto1.Step {
+func (x *TemplateInput) GetMatchingFailedSteps() []*proto.Step {
 	if x != nil {
 		return x.MatchingFailedSteps
 	}
@@ -960,10 +955,10 @@ var file_go_chromium_org_luci_luci_notify_api_config_notify_proto_goTypes = []in
 	(*TemplateInput)(nil),          // 7: notify.TemplateInput
 	(*Notification_Email)(nil),     // 8: notify.Notification.Email
 	(*Notification_Blamelist)(nil), // 9: notify.Notification.Blamelist
-	(proto1.Status)(0),             // 10: buildbucket.v2.Status
-	(*proto1.GitilesCommit)(nil),   // 11: buildbucket.v2.GitilesCommit
-	(*proto1.Build)(nil),           // 12: buildbucket.v2.Build
-	(*proto1.Step)(nil),            // 13: buildbucket.v2.Step
+	(proto.Status)(0),              // 10: buildbucket.v2.Status
+	(*proto.GitilesCommit)(nil),    // 11: buildbucket.v2.GitilesCommit
+	(*proto.Build)(nil),            // 12: buildbucket.v2.Build
+	(*proto.Step)(nil),             // 13: buildbucket.v2.Step
 }
 var file_go_chromium_org_luci_luci_notify_api_config_notify_proto_depIdxs = []int32{
 	1,  // 0: notify.ProjectConfig.notifiers:type_name -> notify.Notifier
