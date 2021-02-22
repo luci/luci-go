@@ -57,12 +57,15 @@ var errConcurrentStateUpdate = errors.New("concurrent change to poller state", t
 // For each discovered CL, enqueues a task for CL updater to refresh CL state.
 // Automatically enqueues a new task to perform next poll.
 func poll(ctx context.Context, luciProject string, eta time.Time) error {
+	if delay := clock.Now(ctx).Sub(eta); delay > maxAcceptableDelay {
+		logging.Warningf(ctx, "poll %s arrived %s late; scheduling next poll instead", eta, delay)
+		return schedule(ctx, luciProject, time.Time{})
+	}
 	// TODO(tandrii): avoid concurrent polling of the same project via cheap
 	// best-effort locking in Redis.
 	meta, err := config.GetLatestMeta(ctx, luciProject)
 	switch {
 	case err != nil:
-
 	case (meta.Status == config.StatusDisabled ||
 		meta.Status == config.StatusNotExists):
 		if err := gobmap.Update(ctx, luciProject); err != nil {
@@ -111,6 +114,17 @@ func init() {
 // TODO(tandrii): revisit interval and error handling in pollWithConfig once CV
 // subscribes to Gerrit PubSub.
 const pollInterval = 10 * time.Second
+
+// maxAcceptableDelay prevents polls which arrive too late from doing actual
+// polling.
+//
+// maxAcceptableDelay / pollInterval effectively limits # concurrent polls of
+// the same project that may happen due to task retries, delays, and queue
+// throttling.
+//
+// Do not set too low, as this may prevent actual polling from happening at all
+// if the poll TQ is overloaded.
+const maxAcceptableDelay = 6 * pollInterval
 
 // schedule schedules the future poll.
 //
