@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d3f09d86_95dbef35",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Now we keep this config in temp dir, so I think this name is fine.",
+      "parentUuid": "574cff32_fa295264",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "21d32a67_216a914f",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-02-22T19:17:00Z",
       "side": 1,
       "message": "Cfg",
+      "range": {
+        "startLine": 57,
+        "startChar": 8,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "679ff97c_95232092",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "21d32a67_216a914f",
       "range": {
         "startLine": 57,
         "startChar": 8,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f15c6c67_f2708df5",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3077caa_851905e8",
+      "range": {
+        "startLine": 152,
+        "startChar": 41,
+        "endLine": 152,
+        "endChar": 71
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f32c5e8d_56c4b6f8",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-02-22T19:17:00Z",
       "side": 1,
       "message": "nit: in Go, error messages should not end with punctuation marks",
+      "range": {
+        "startLine": 233,
+        "startChar": 119,
+        "endLine": 233,
+        "endChar": 120
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b79470e5_df307f43",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f32c5e8d_56c4b6f8",
       "range": {
         "startLine": 233,
         "startChar": 119,
@@ -110,6 +200,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5369b3d_ec9cce16",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95db7e54_f984a114",
+      "range": {
+        "startLine": 268,
+        "startChar": 2,
+        "endLine": 272,
+        "endChar": 4
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4e66ff33_2b0e304e",
@@ -127,6 +241,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "89f6f689_511ef060",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e66ff33_2b0e304e",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d0244863_03c2dad2",
@@ -140,6 +272,30 @@
       "writtenOn": "2021-02-22T19:17:00Z",
       "side": 1,
       "message": "stale",
+      "range": {
+        "startLine": 311,
+        "startChar": 2,
+        "endLine": 312,
+        "endChar": 62
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f65bb4b6_e08c7ef6",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Now it\u0027s brought back.",
+      "parentUuid": "d0244863_03c2dad2",
       "range": {
         "startLine": 311,
         "startChar": 2,
@@ -173,6 +329,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "414e8ad2_02c36907",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62e50d5d_0978a02c",
+      "range": {
+        "startLine": 313,
+        "startChar": 26,
+        "endLine": 313,
+        "endChar": 27
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f9054f58_78f63c13",
@@ -190,6 +370,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b904af13_b56792b6",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "The whole approach doesn\u0027t work on windows and mac.",
+      "parentUuid": "f9054f58_78f63c13",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "86ee58d5_b6edc3f1",
@@ -203,6 +401,30 @@
       "writtenOn": "2021-02-22T19:17:00Z",
       "side": 1,
       "message": "nit: maybe switch here",
+      "range": {
+        "startLine": 356,
+        "startChar": 1,
+        "endLine": 356,
+        "endChar": 3
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2db4342a_97574ae7",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86ee58d5_b6edc3f1",
       "range": {
         "startLine": 356,
         "startChar": 1,
@@ -236,6 +458,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6539e487_b11c5527",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "7424eead_900b2dc2",
+      "range": {
+        "startLine": 367,
+        "startChar": 1,
+        "endLine": 367,
+        "endChar": 7
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1cb9e5ac_6e1278bd",
@@ -253,6 +499,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f15fbec_e2c543f6",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "1cb9e5ac_6e1278bd",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1f408ea6_14ce5cf8",
@@ -266,6 +530,24 @@
       "writtenOn": "2021-02-22T19:17:00Z",
       "side": 1,
       "message": "this is my only remaining problem with this CL. It makes a global (even across processes) mutation. \nAt the very least, different processes will interfere, but also it is intrusive. What if the developer uses a configuration called other than \"default\".\n\nSince you specify Config in L346: is it possible to use the emulator without activating the config *globally*? Can we pass this variable in ENV or as a parameter somewhere (locally)?",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db0f6ff0_c8e3e62c",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 382,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "1f408ea6_14ce5cf8",
       "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -289,6 +571,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "76dabc27_8cd43c64",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a55d3da_576421ff",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2008cc63_265276f0",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 20
@@ -300,6 +600,30 @@
       "writtenOn": "2021-02-22T19:17:00Z",
       "side": 1,
       "message": "how long these two steps usually take?\nif both are quick, should we combine them?",
+      "range": {
+        "startLine": 181,
+        "startChar": 79,
+        "endLine": 181,
+        "endChar": 96
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c31535b_edef8051",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-22T22:09:10Z",
+      "side": 1,
+      "message": "Do you mean starting emulator and creating instance?\n\nLogs from a sample run:\nstarted cloud emulatorlator in 1.993735344s\ncreated a temporary Spanner instance projects/chops-spanner-testing/instances/testing in 2.726767ms\ncreated a temporary Spanner database projects/chops-spanner-testing/instances/testing/databases/tmp20210222_1878910271 in 15.706707ms",
+      "parentUuid": "2008cc63_265276f0",
       "range": {
         "startLine": 181,
         "startChar": 79,
