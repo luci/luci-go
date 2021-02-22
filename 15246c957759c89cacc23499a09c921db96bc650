@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "16da9df6_86982aaa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-22T18:24:49Z",
+      "side": 1,
+      "message": "Tests look good :-)",
+      "revId": "15246c957759c89cacc23499a09c921db96bc650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f56c0c4_093252c7",
+        "filename": "cv/internal/gerrit/updater/updater_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-22T18:24:49Z",
+      "side": 1,
+      "message": "nit: \"and makes tests...\"",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 16
+      },
+      "revId": "15246c957759c89cacc23499a09c921db96bc650",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
