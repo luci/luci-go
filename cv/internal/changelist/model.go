@@ -283,6 +283,39 @@ func LoadMulti(ctx context.Context, cls []*CL) (err error) {
 	return
 }
 
+// Lookup loads CLID for each given ExternalID.
+//
+// CLID is 0 if ExternalID is not yet known.
+// Always returns a singular error.
+func Lookup(ctx context.Context, eids []ExternalID) ([]common.CLID, error) {
+	out := make([]common.CLID, len(eids))
+	entities := make([]clMap, len(eids))
+	for i, eid := range eids {
+		entities[i].ExternalID = eid
+	}
+	err := datastore.Get(ctx, entities)
+	merrs, _ := err.(errors.MultiError)
+	switch {
+	case err == nil:
+		for i, e := range entities {
+			out[i] = e.InternalID
+		}
+		return out, nil
+	case merrs == nil:
+		return nil, errors.Annotate(err, "failed to load clMap").Tag(transient.Tag).Err()
+	default:
+		for i, err := range merrs {
+			switch {
+			case err == nil:
+				out[i] = entities[i].InternalID
+			case err != datastore.ErrNoSuchEntity:
+				return nil, errors.Annotate(common.MostSevereError(merrs), "failed to load clMap").Tag(transient.Tag).Err()
+			}
+		}
+		return out, nil
+	}
+}
+
 // UpdateFields defines what parts of CL metadata to update.
 //
 // At least one field must be specified.
