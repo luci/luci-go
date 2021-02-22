@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "fb7032231cd22934d8f23e014efaad6f9c4298f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0cd27300_789af4a3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-22T23:02:12Z",
+      "side": 1,
+      "message": "curious, did you re-run benchmark?",
+      "revId": "fb7032231cd22934d8f23e014efaad6f9c4298f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93a66e90_6958339a",
+        "filename": "cv/internal/submission/order.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-22T23:02:12Z",
+      "side": 1,
+      "message": "i think it should actually be runCL, but it\u0027d be trivial to change later.",
+      "range": {
+        "startLine": 44,
+        "startChar": 25,
+        "endLine": 44,
+        "endChar": 35
+      },
+      "revId": "fb7032231cd22934d8f23e014efaad6f9c4298f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
