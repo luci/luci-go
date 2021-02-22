@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbf1bfdf_38160a3c",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-22T22:48:30Z",
+      "side": 1,
+      "message": "i spent almost 2 hour trying to de-duplicate this code with the above, but all abstractions were more weird than this copy-pasta-ish. But I still feel like there must be a way -- ideas welcome.",
+      "revId": "65e402ac728f87848033d31d71e1369c6979ae40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
