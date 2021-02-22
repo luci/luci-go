@@ -169,6 +169,16 @@ func TestPoller(t *testing.T) {
 			So(datastore.Get(ctx, st), ShouldBeNil)
 			return st
 		}
+		execTooLatePoll := func(ctx context.Context) {
+			beforeReqs := ct.GFake.Requests()
+			beforeState := mustGetState(lProject)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
+			afterReqs := ct.GFake.Requests()
+			afterState := mustGetState(lProject)
+
+			So(afterReqs, ShouldHaveLength, len(beforeReqs))
+			So(afterState.EVersion, ShouldEqual, beforeState.EVersion)
+		}
 
 		Convey("without project config, it's a noop", func() {
 			So(Poke(ctx, lProject), ShouldBeNil)
@@ -249,6 +259,8 @@ func TestPoller(t *testing.T) {
 					Convey("and full polls every fullPollInterval and force notifies PM", func() {
 						So(fullPollInterval, ShouldBeGreaterThan, 2*pollInterval)
 						ct.Clock.Add(fullPollInterval - 2*pollInterval)
+						execTooLatePoll(ctx)
+
 						// Update 2 changes in the mean time.
 						ct.GFake.MutateChange(gHost, 34, func(c *gf.Change) {
 							gf.Updated(ct.Clock.Now())(c.Info)
@@ -276,6 +288,7 @@ func TestPoller(t *testing.T) {
 
 						Convey("next full poll task must not be de-duped", func() {
 							ct.Clock.Add(fullPollInterval)
+							execTooLatePoll(ctx)
 							ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 							So(mustGetState(lProject).SubPollers.GetSubPollers()[0].GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 							So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+4)
@@ -283,6 +296,7 @@ func TestPoller(t *testing.T) {
 
 						Convey("full poll schedules tasks for no longer found changes", func() {
 							ct.Clock.Add(fullPollInterval)
+							execTooLatePoll(ctx)
 
 							ct.GFake.MutateChange(gHost, 33, func(c *gf.Change) {
 								gf.Updated(ct.Clock.Now())(c.Info)
