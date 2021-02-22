@@ -34,9 +34,11 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	pt "go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -182,9 +184,9 @@ func TestPoller(t *testing.T) {
 
 		Convey("without project config, it's a noop", func() {
 			So(Poke(ctx, lProject), ShouldBeNil)
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
+			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 0)
+			So(ct.TQ.Tasks().Payloads(), ShouldBeEmpty)
 			So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
@@ -201,10 +203,10 @@ func TestPoller(t *testing.T) {
 				OrProjects:   []string{gRepo},
 				LastFullTime: fullPollStamp,
 			}})
+			So(watchedBy(ctx, gHost, gRepo, "refs/heads/main").HasOnlyProject(lProject), ShouldBeTrue)
+
 			// Ensure follow up task has been created.
-			So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
-			So(watchedBy(ctx, gHost, gRepo, "refs/heads/main").
-				HasOnlyProject(lProject), ShouldBeTrue)
+			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
 			Convey("with CLs", func() {
 				getCL := func(host string, change int) *changelist.CL {
@@ -243,20 +245,23 @@ func TestPoller(t *testing.T) {
 						LastIncrTime: timestamppb.New(ct.Clock.Now()),
 						Changes:      []int64{31, 32},
 					}})
-					// 1 for the future poll + 2 immediate to update CLs 31, 32.
-					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+2)
+					// TQ tasks.
+					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+					So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32})
+
 					// Run all tasks.
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 					// Due to CL update task de-dup, regardless of what next incremental
 					// poll discovered, there shouldn't more CL update tasks.
-					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1)
-					// But there should be 2 CLs.
+					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+					So(updatertest.PFilter(ct.TQ.Tasks()), ShouldBeEmpty)
+					// But there should be 2 CLs populated in Datastore.
 					So(getCL(gHost, 31), ShouldNotBeNil)
 					So(getCL(gHost, 32), ShouldNotBeNil)
 					So(getCL(gHost, 33), ShouldBeNil)
 					So(getCL(gHost, 34), ShouldBeNil)
 
-					Convey("and full polls every fullPollInterval and force notifies PM", func() {
+					Convey("and the full poll happens every fullPollInterval and notifies PM on all changes", func() {
 						So(fullPollInterval, ShouldBeGreaterThan, 2*pollInterval)
 						ct.Clock.Add(fullPollInterval - 2*pollInterval)
 						execTooLatePoll(ctx)
@@ -278,20 +283,42 @@ func TestPoller(t *testing.T) {
 							LastFullTime: timestamppb.New(ct.Clock.Now()),
 							Changes:      []int64{31, 32, 33, 34},
 						}})
-						// 1 task for the future poll + 1 task per CL due to forceNotifyPM,
-						// which disables de-duplication.
-						So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+4)
+
+						So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+						// CL 31 has no task because it didn't change since incremental
+						// poll and so it was de-duped.
+						So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{32, 33, 34})
+						// 33 has ForceNotifyPM=true. Such task isn't de-dupe-able.
+						uTask33 := updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber()[1]
+						So(uTask33.GetForceNotifyPm(), ShouldBeTrue)
+
+						So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+						// And PM is notified only 31 and 32 for now.
+						pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
+							getCL(gHost, 31), getCL(gHost, 32),
+						})
+
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 						So(getCL(gHost, 33), ShouldNotBeNil)
 						So(getCL(gHost, 34), ShouldNotBeNil)
 						So(getCL(gHost, 32).EVersion, ShouldEqual, 2) // was updated.
 
-						Convey("next full poll task must not be de-duped", func() {
+						Convey("next full poll also notifies PM", func() {
 							ct.Clock.Add(fullPollInterval)
 							execTooLatePoll(ctx)
 							ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 							So(mustGetState(lProject).SubPollers.GetSubPollers()[0].GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
-							So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+4)
+
+							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+							So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+							// PM must be notified on all 31..34.
+							pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
+								getCL(gHost, 31), getCL(gHost, 32), getCL(gHost, 33), getCL(gHost, 34),
+							})
+							// Because 33 was previously imported with ForceNotifyPm=true,
+							// the new task without ForceNotifyPm is't deduped.
+							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{33})
+							So(updatertest.PFilter(ct.TQ.Tasks())[0].GetForceNotifyPm(), ShouldBeFalse)
 						})
 
 						Convey("full poll schedules tasks for no longer found changes", func() {
@@ -318,24 +345,21 @@ func TestPoller(t *testing.T) {
 								},
 							})
 
-							So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+4)
-							tasks := ct.TQ.Tasks().SortByETA()
-							// The latest task must be the next poll.
-							So(tasks[4].Class, ShouldResemble, task.ClassID)
-							// The prior 4 tasks must be for CL refresh, with 31|32 having
-							// updated hint, but not 33,34.
-							for _, t := range tasks[:4] {
-								So(t.Class, ShouldResemble, updater.TaskClassID)
-								u := t.Payload.(*updater.RefreshGerritCL)
-								So(u.GetHost(), ShouldEqual, gHost)
-								So(u.GetLuciProject(), ShouldEqual, lProject)
-								So(u.GetForceNotifyPm(), ShouldBeTrue)
-								if n := u.GetChange(); n == 31 || n == 32 {
-									So(u.GetUpdatedHint(), ShouldResembleProto, getCL(gHost, int(n)).Snapshot.GetExternalUpdateTime())
-								} else {
-									// No longer matched CLs.
-									So(u.GetUpdatedHint(), ShouldBeNil)
-								}
+							// 1x Poll + 1x PM task + 4x CL refresh.
+							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+							So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+							// PM must be still notified on all 31..34, but in 2 phases.
+							pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
+								getCL(gHost, 31), getCL(gHost, 32),
+							})
+							pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
+								getCL(gHost, 33), getCL(gHost, 34),
+							})
+							// 33 and 34 have 1 final refresh task without updateHint.
+							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{33, 34})
+							for _, p := range updatertest.PFilter(ct.TQ.Tasks()) {
+								So(p.GetForceNotifyPm(), ShouldBeFalse)
+								So(p.GetUpdatedHint(), ShouldBeNil)
 							}
 						})
 					})
@@ -382,21 +406,14 @@ func TestPoller(t *testing.T) {
 						},
 					})
 
-					So(ct.TQ.Tasks().Payloads(), ShouldHaveLength, 1+2)
-					tasks := ct.TQ.Tasks().SortByETA()
-					// The latest task must be the next poll.
-					So(tasks[2].Class, ShouldResemble, task.ClassID)
-					// The prior tasks must be for CL refresh.
-					for _, t := range tasks[:2] {
-						So(t.Class, ShouldResemble, updater.TaskClassID)
-						u := t.Payload.(*updater.RefreshGerritCL)
-						So(before.SubPollers.SubPollers[0].Changes, ShouldContain, u.GetChange())
-						So(u, ShouldResembleProto, &updater.RefreshGerritCL{
-							LuciProject:   lProject,
-							Host:          gHost,
-							Change:        u.GetChange(),
-							ForceNotifyPm: true,
-						})
+					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+					// PM can't be notified directly, because CL31 and CL32 are not in
+					// Datastore yet (unlikely, but possible if Gerrit updater TQ is
+					// stalled).
+					So(pmtest.Projects(ct.TQ.Tasks()), ShouldBeEmpty)
+					So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32})
+					for _, p := range updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber() {
+						So(p.GetForceNotifyPm(), ShouldBeTrue)
 					}
 				})
 			})
