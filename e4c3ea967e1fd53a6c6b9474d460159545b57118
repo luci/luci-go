@@ -22,6 +22,30 @@
       },
       "revId": "e4c3ea967e1fd53a6c6b9474d460159545b57118",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "323c47ce_ff09a878",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 1090,
+      "author": {
+        "id": 1409819
+      },
+      "writtenOn": "2021-02-22T19:30:44Z",
+      "side": 1,
+      "message": "I\u0027ve tested and the ps# seems to work. Added in the comment. Thanks for reminding that! I didn\u0027t realize the ps# could work...",
+      "parentUuid": "7856c578_c3376bac",
+      "range": {
+        "startLine": 1089,
+        "startChar": 49,
+        "endLine": 1090,
+        "endChar": 34
+      },
+      "revId": "e4c3ea967e1fd53a6c6b9474d460159545b57118",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
