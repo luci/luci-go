@@ -363,6 +363,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc6d113f_e0f1e119",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c870175a_928283a2",
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7ad0aed4_44b1eac3",
@@ -787,6 +805,30 @@
       "side": 1,
       "message": "So if we don\u0027t create a temporary directory for the config, the config will be created in the same directory with the default config. And then we\u0027ll have to switch back and forth between the default config and this emulator config.\n\nHmm.. Maybe it\u0027s OK to not use a temp dir. because the emulator config is actually static (I was thinking we need to set the rest port dynamically). Then we can change the process to:\n- If testing with real Spanner: run \"gcloud config configurations activate default\"\n- If testing with emulator:\n  - list config and look for spanner-emulator config, if not found, create it\n  - run \"gcloud config configurations activate gcloud config configurations activate default\"",
       "parentUuid": "bfeb4ed1_e5358ab9",
+      "range": {
+        "startLine": 168,
+        "startChar": 3,
+        "endLine": 168,
+        "endChar": 9
+      },
+      "revId": "bec4187be25054d04fbd18107c2cf11bbd3961ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e43e7033_cf560d54",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49f23d5c_4ad94595",
       "range": {
         "startLine": 168,
         "startChar": 3,

@@ -1,0 +1,313 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "574cff32_fa295264",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "since we will be overwriting this, let\u0027s pick a name that is less likely to be picked by the user, e.g. \"go.chromium.org/luci/common/spantest-emulator\" or something",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "21d32a67_216a914f",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "Cfg",
+      "range": {
+        "startLine": 57,
+        "startChar": 8,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b3077caa_851905e8",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "this reads like it always uses emulator, i.e. like the emulator is required",
+      "range": {
+        "startLine": 152,
+        "startChar": 41,
+        "endLine": 152,
+        "endChar": 71
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f32c5e8d_56c4b6f8",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "nit: in Go, error messages should not end with punctuation marks",
+      "range": {
+        "startLine": 233,
+        "startChar": 119,
+        "endLine": 233,
+        "endChar": 120
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "95db7e54_f984a114",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "nit: Emulator.Opts is mutable. Can be solved by making it an func which has \u003cthis\u003e code.",
+      "range": {
+        "startLine": 268,
+        "startChar": 2,
+        "endLine": 272,
+        "endChar": 4
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e66ff33_2b0e304e",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "please add an explanatory comment",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d0244863_03c2dad2",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 311,
+        "startChar": 2,
+        "endLine": 312,
+        "endChar": 62
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "62e50d5d_0978a02c",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "doesn\u0027t need to be public?",
+      "range": {
+        "startLine": 313,
+        "startChar": 26,
+        "endLine": 313,
+        "endChar": 27
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f9054f58_78f63c13",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "doesn\u0027t work on windows?",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86ee58d5_b6edc3f1",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "nit: maybe switch here",
+      "range": {
+        "startLine": 356,
+        "startChar": 1,
+        "endLine": 356,
+        "endChar": 3
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7424eead_900b2dc2",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "nit: switch with one case. if would be simpler",
+      "range": {
+        "startLine": 367,
+        "startChar": 1,
+        "endLine": 367,
+        "endChar": 7
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1cb9e5ac_6e1278bd",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "check `ok`:\n\n  if exiterr, ok :\u003d err.(*exec.ExitError); ok \u0026\u0026 exiterr.ExitCode() \u003d\u003d 1 {",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1f408ea6_14ce5cf8",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 382,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "this is my only remaining problem with this CL. It makes a global (even across processes) mutation. \nAt the very least, different processes will interfere, but also it is intrusive. What if the developer uses a configuration called other than \"default\".\n\nSince you specify Config in L346: is it possible to use the emulator without activating the config *globally*? Can we pass this variable in ENV or as a parameter somewhere (locally)?",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a55d3da_576421ff",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "please move closer to L160. It is needed only there.",
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2008cc63_265276f0",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T19:17:00Z",
+      "side": 1,
+      "message": "how long these two steps usually take?\nif both are quick, should we combine them?",
+      "range": {
+        "startLine": 181,
+        "startChar": 79,
+        "endLine": 181,
+        "endChar": 96
+      },
+      "revId": "89f083ba45746773ced66bcc2559e896e2d23387",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
