@@ -14,8 +14,9 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html, property } from 'lit-element';
-import { provideContext } from '../../libs/context';
-import { Artifact } from '../../services/resultdb';
+
+import { provideContext } from '../libs/context';
+import { Artifact } from '../services/resultdb';
 
 
 /**

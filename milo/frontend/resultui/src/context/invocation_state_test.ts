@@ -15,8 +15,8 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 
-import { QueryTestVariantsRequest, QueryTestVariantsResponse, TestVariant, TestVariantStatus, UISpecificService } from '../../services/resultdb';
-import { AppState } from '../app_state/app_state';
+import { QueryTestVariantsRequest, QueryTestVariantsResponse, TestVariant, TestVariantStatus, UISpecificService } from '../services/resultdb';
+import { AppState } from './app_state';
 import { InvocationState } from './invocation_state';
 
 const variant1: TestVariant = {

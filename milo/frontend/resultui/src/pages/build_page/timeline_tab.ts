@@ -20,8 +20,8 @@ import { autorun, observable } from 'mobx';
 import { DataSet } from 'vis-data/peer';
 import { Timeline } from 'vis-timeline/peer';
 
-import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { AppState, consumeAppState } from '../../context/app_state';
+import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { displayDuration } from '../../libs/time_utils';

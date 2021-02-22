@@ -17,9 +17,9 @@ import { assert } from 'chai';
 import { customElement, html, LitElement, property } from 'lit-element';
 import sinon from 'sinon';
 
-import { AppState, provideAppState } from '../context/app_state/app_state';
-import { provideConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
-import { InvocationState, provideInvocationState } from '../context/invocation_state/invocation_state';
+import { AppState, provideAppState } from '../context/app_state';
+import { InvocationState, provideInvocationState } from '../context/invocation_state';
+import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { QueryTestVariantsRequest, QueryTestVariantsResponse, TestVariantStatus, UISpecificService } from '../services/resultdb';
 import './test_results_tab';
 import { TestResultsTabElement } from './test_results_tab';
