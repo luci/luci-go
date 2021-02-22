@@ -23,7 +23,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
@@ -42,6 +43,133 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestSchedule(t *testing.T) {
+	t.Parallel()
+
+	Convey("Schedule works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "chromium-review.example.com"
+		const gRepo = "depot_tools"
+
+		// Each Schedule() moves clock forward by 1ns.
+		// This ensures that SortByETA returns tasks in the same order as scheduled,
+		// and makes tests deterministic w/o having to somehow sort individual proto
+		// messages.
+		const scheduleTimeIncrement = time.Nanosecond
+
+		do := func(t *RefreshGerritCL) []proto.Message {
+			So(Schedule(ctx, t), ShouldBeNil)
+			ct.Clock.Add(scheduleTimeIncrement)
+			return ct.TQ.Tasks().SortByETA().Payloads()
+		}
+
+		doTrans := func(t *RefreshGerritCL) []proto.Message {
+			err := datastore.RunInTransaction(ctx, func(tctx context.Context) error {
+				So(Schedule(tctx, t), ShouldBeNil)
+				return nil
+			}, nil)
+			So(err, ShouldBeNil)
+			ct.Clock.Add(scheduleTimeIncrement)
+			return ct.TQ.Tasks().SortByETA().Payloads()
+		}
+
+		taskMinimal := &RefreshGerritCL{
+			LuciProject: lProject,
+			Host:        gHost,
+			Change:      123,
+		}
+
+		Convey("Minimal task", func() {
+			So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal})
+
+			Convey("dedup works", func() {
+				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal})
+
+				Convey("but only within blindRefreshInterval", func() {
+					ct.Clock.Add(blindRefreshInterval - time.Second) // still within
+					So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal})
+					ct.Clock.Add(time.Second) // already out
+					So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal, taskMinimal})
+				})
+			})
+
+			Convey("transactional can't dedup, even with other transactional", func() {
+				So(doTrans(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal, taskMinimal})
+				So(doTrans(taskMinimal), ShouldResembleProto, []proto.Message{taskMinimal, taskMinimal, taskMinimal})
+			})
+
+			Convey("no dedup if different", func() {
+				taskAnother := proto.Clone(taskMinimal).(*RefreshGerritCL)
+				Convey("project", func() {
+					taskAnother.LuciProject = lProject + "2"
+					So(doTrans(taskAnother), ShouldResembleProto, []proto.Message{taskMinimal, taskAnother})
+				})
+				Convey("change", func() {
+					taskAnother.Change++
+					So(doTrans(taskAnother), ShouldResembleProto, []proto.Message{taskMinimal, taskAnother})
+				})
+				Convey("host", func() {
+					taskAnother.Host = gHost + "2"
+					So(doTrans(taskAnother), ShouldResembleProto, []proto.Message{taskMinimal, taskAnother})
+				})
+			})
+		})
+
+		Convey("CLID hint doesn't effect dedup", func() {
+			taskWithHint := proto.Clone(taskMinimal).(*RefreshGerritCL)
+			taskWithHint.ClidHint = 321
+			do(taskMinimal)
+			So(do(taskWithHint), ShouldResembleProto, []proto.Message{taskMinimal})
+		})
+
+		Convey("ForceNotifyPM is never deduped", func() {
+			taskForce := proto.Clone(taskMinimal).(*RefreshGerritCL)
+			taskForce.ForceNotifyPm = true
+			So(do(taskForce), ShouldResembleProto, []proto.Message{taskForce})
+
+			Convey("itself", func() {
+				So(do(taskForce), ShouldResembleProto, []proto.Message{taskForce, taskForce})
+			})
+			Convey("task without forceNotifyPM", func() {
+				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskForce, taskMinimal})
+			})
+			Convey("task with updatedHint", func() {
+				taskForceUpdatedHint := proto.Clone(taskForce).(*RefreshGerritCL)
+				taskForceUpdatedHint.UpdatedHint = &timestamppb.Timestamp{Seconds: 1531230000}
+				So(do(taskForceUpdatedHint), ShouldResembleProto, []proto.Message{taskForce, taskForceUpdatedHint})
+				So(do(taskForceUpdatedHint), ShouldResembleProto, []proto.Message{taskForce, taskForceUpdatedHint, taskForceUpdatedHint})
+			})
+		})
+
+		Convey("UpdateHint is de-duped with the same UpdatedHint, only", func() {
+			// updatedHint logically has no relationship to now, but realistically it's usually
+			// quite recent. So, use 1 hour ago.
+			updatedHintEpoch := ct.Clock.Now().Add(-time.Hour)
+			taskU0 := proto.Clone(taskMinimal).(*RefreshGerritCL)
+			taskU0.UpdatedHint = timestamppb.New(updatedHintEpoch)
+			taskU1 := proto.Clone(taskMinimal).(*RefreshGerritCL)
+			taskU1.UpdatedHint = timestamppb.New(updatedHintEpoch.Add(time.Second))
+
+			Convey("transactionally still no dedup", func() {
+				So(doTrans(taskU0), ShouldResembleProto, []proto.Message{taskU0})
+				So(doTrans(taskU0), ShouldResembleProto, []proto.Message{taskU0, taskU0})
+			})
+
+			Convey("only non-transactionally", func() {
+				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0})
+				So(do(taskU0), ShouldResembleProto, []proto.Message{taskU0})
+				So(do(taskU1), ShouldResembleProto, []proto.Message{taskU0, taskU1})
+				So(do(taskU1), ShouldResembleProto, []proto.Message{taskU0, taskU1})
+				So(do(taskMinimal), ShouldResembleProto, []proto.Message{taskU0, taskU1, taskMinimal})
+			})
+		})
+	})
+}
 
 func TestRelatedChangeProcessing(t *testing.T) {
 	t.Parallel()
