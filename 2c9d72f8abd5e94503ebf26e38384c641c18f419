@@ -120,6 +120,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "273104fa_2e7afab0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-02-22T00:14:12Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "a9513eb1_56959088",
+      "revId": "2c9d72f8abd5e94503ebf26e38384c641c18f419",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e29012a0_0e594fbe",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 9
