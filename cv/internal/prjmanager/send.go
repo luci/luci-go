@@ -16,6 +16,7 @@ package prjmanager
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -23,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -57,6 +59,29 @@ func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, 
 			ClUpdated: &prjpb.CLUpdated{
 				Clid:     int64(clid),
 				Eversion: int64(eversion),
+			},
+		},
+	})
+}
+
+// NotifyCLsUpdated is a batch of NotifyCLUpdated for the same ProjectManager.
+//
+// In each given CL, .ID and .EVersion must be set.
+func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
+	pbcls := make([]*prjpb.CLUpdated, len(cls))
+	for i, cl := range cls {
+		if cl.ID == 0 || cl.EVersion == 0 {
+			panic(fmt.Errorf("ID %d and EVersion %d must not be 0", cl.ID, cl.EVersion))
+		}
+		pbcls[i] = &prjpb.CLUpdated{
+			Clid:     int64(cl.ID),
+			Eversion: int64(cl.EVersion),
+		}
+	}
+	return send(ctx, luciProject, &prjpb.Event{
+		Event: &prjpb.Event_ClsUpdated{
+			ClsUpdated: &prjpb.CLsUpdated{
+				Cls: pbcls,
 			},
 		},
 	})
