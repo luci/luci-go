@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "738be6bb_5faa1347",
+        "filename": "milo/frontend/resultui/src/routes.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-22T22:46:03Z",
+      "side": 0,
+      "message": "Summary of changes in this file:\n1. Remove build-state-provider and invocation-state-provider.\n2. Merge the children of build-state-provider and invocation-state-provider with the children\nof their new parents.\n3. Declare notFoundRoute in place.",
+      "revId": "7c3641d47263a96d6474840fd62128f1530e5b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
