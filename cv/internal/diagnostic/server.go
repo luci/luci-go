@@ -138,6 +138,7 @@ func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLReq
 	}
 	resp = &diagnosticpb.GetCLResponse{
 		Id:               int64(cl.ID),
+		Eversion:         int64(cl.EVersion),
 		ExternalId:       string(cl.ExternalID),
 		Snapshot:         cl.Snapshot,
 		ApplicableConfig: cl.ApplicableConfig,

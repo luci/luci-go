@@ -79,11 +79,12 @@ message GetCLRequest{
 // entity.
 message GetCLResponse {
   int64 id = 1;
-  string external_id = 2;
-  cv.changelist.Snapshot snapshot = 3;
-  cv.changelist.ApplicableConfig applicable_config = 4;
-  cv.changelist.DependentMeta dependent_meta = 5;
-  repeated string incomplete_runs = 6;
+  int64 eversion = 2;
+  string external_id = 3;
+  cv.changelist.Snapshot snapshot = 4;
+  cv.changelist.ApplicableConfig applicable_config = 5;
+  cv.changelist.DependentMeta dependent_meta = 6;
+  repeated string incomplete_runs = 7;
 }
 
 message GetPollerRequest{
