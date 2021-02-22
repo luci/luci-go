@@ -19,8 +19,8 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
-import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import '../../context/artifact/artifact_provider';
+import { AppState, consumeAppState } from '../../context/app_state';
+import '../../context/artifact_provider';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult } from '../../services/resultdb';

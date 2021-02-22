@@ -21,7 +21,7 @@ import { computed, observable } from 'mobx';
 
 import '../components/copy_to_clipboard';
 import '../components/log';
-import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
+import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
@@ -129,7 +129,7 @@ Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.removeEventListener("click", this.onMouseClick)
+    this.removeEventListener('click', this.onMouseClick);
   }
 
   protected render() {

@@ -14,14 +14,14 @@
 
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
-import { getGitilesRepoURL } from '../../libs/build_utils';
+import { getGitilesRepoURL } from '../libs/build_utils';
 
-import { consumeContext, provideContext } from '../../libs/context';
-import * as iter from '../../libs/iter_utils';
-import { BuildExt } from '../../models/build_ext';
-import { Build, BuilderID, GetBuildRequest, GitilesCommit } from '../../services/buildbucket';
-import { QueryBlamelistRequest, QueryBlamelistResponse } from '../../services/milo_internal';
-import { AppState } from '../app_state/app_state';
+import { consumeContext, provideContext } from '../libs/context';
+import * as iter from '../libs/iter_utils';
+import { BuildExt } from '../models/build_ext';
+import { Build, BuilderID, GetBuildRequest, GitilesCommit } from '../services/buildbucket';
+import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
+import { AppState } from './app_state';
 
 /**
  * Records state of a build.
