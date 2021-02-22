@@ -31,6 +31,7 @@ import { consumeInvocationState, InvocationState } from '../../context/invocatio
 import { getGitilesRepoURL, getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
+import { genFeedbackUrl } from '../../libs/utils';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
 
@@ -67,9 +68,14 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   @observable.ref invocationState!: InvocationState;
 
   @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);
+  @observable.ref private showFeedbackDialog = false;
 
   private builder!: BuilderID;
   private buildNumOrId = '';
+
+  private get legacyUrl() {
+    return getLegacyURLForBuild(this.builder, this.buildNumOrId);
+  }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const project = location.params['project'];
@@ -266,6 +272,35 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
       </mwc-dialog>
+      <mwc-dialog
+        id="feedback-dialog"
+        heading="Tell Us What's Missing"
+        ?open=${this.showFeedbackDialog}
+        @closed=${() => {
+          const noFeedbackEle = this.shadowRoot!.getElementById('no-feedback-prompt')! as HTMLInputElement;
+          if (noFeedbackEle.checked) {
+            this.configsStore.userConfigs.askForFeedback = false;
+            this.configsStore.save();
+          }
+          this.showFeedbackDialog = false;
+          window.open(this.legacyUrl, '_self');
+        }}
+      >
+        <div>
+          We'd love to make the new build page work better for everyone.<br>
+          Please take a moment to give us feedback before switching back to the old build page.
+        </div>
+        <br>
+        <input type="checkbox" id="no-feedback-prompt">
+        <label for="no-feedback-prompt">Don't show again</label>
+        <mwc-button
+          slot="primaryAction"
+          dense
+          unelevated
+          @click=${() => window.open(genFeedbackUrl())}
+        >Open Feedback Page</mwc-button>
+        <mwc-button slot="secondaryAction" dialogAction="dismiss">Proceed to legacy page</mwc-button>
+      </mwc-dialog>
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build </span>
@@ -279,11 +314,15 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         </div>
         <div class="delimiter"></div>
         <a
-          @click=${() => {
+          @click=${(e: Event) => {
             const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
             document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
+            if (this.configsStore.userConfigs.askForFeedback) {
+              this.showFeedbackDialog = true;
+              e.preventDefault();
+            }
           }}
-          href=${getLegacyURLForBuild(this.builder, this.buildNumOrId)}
+          href=${this.legacyUrl}
         >Switch to the legacy build page</a>
         <div id="build-status">${this.renderBuildStatus()}</div>
       </div>
@@ -303,7 +342,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     :host {
       height: calc(100vh - var(--header-height));
       display: grid;
-      grid-template-rows: repeat(4, auto) 1fr;
+      grid-template-rows: repeat(5, auto) 1fr;
     }
 
     #build-summary {
