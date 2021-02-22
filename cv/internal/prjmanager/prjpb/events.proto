@@ -23,10 +23,15 @@ option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 message Event {
   oneof event {
     NewConfig new_config = 1;
+
     Poke poke = 2;
+
     CLUpdated cl_updated = 3;
+    CLsUpdated cls_updated = 7;
+
     RunCreated run_created = 4;
     RunFinished run_finished = 5;
+
     PurgeCompleted purge_completed = 6;
   }
 }
@@ -45,6 +50,11 @@ message CLUpdated {
   int64 clid = 1;
   // EVersion of the updated CL entity.
   int64 eversion = 2;
+}
+
+// CLsUpdated are multiple CLUpdated events.
+message CLsUpdated {
+  repeated CLUpdated cls = 1;
 }
 
 // RunCreated is sent to PM by either itself or API-based Run creation.
