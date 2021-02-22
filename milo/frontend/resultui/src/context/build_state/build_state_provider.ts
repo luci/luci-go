@@ -40,9 +40,9 @@ export class BuildStateProviderElement extends MobxLitElement {
       },
     ));
     this.disposers.push(when(
-      () => this.buildState.buildReq.state === REJECTED,
+      () => this.buildState.build$.state === REJECTED,
       () => {
-        const err = this.buildState.buildReq.value as GrpcError;
+        const err = this.buildState.build$.value as GrpcError;
         // If the build is not found and the user is not logged in, redirect
         // them to the login page.
         if (err.code === RpcCode.NOT_FOUND && this.appState.accessToken === '') {
@@ -50,7 +50,7 @@ export class BuildStateProviderElement extends MobxLitElement {
           return;
         }
         this.dispatchEvent(new ErrorEvent('error', {
-          message: this.buildState.buildReq.value.toString(),
+          message: this.buildState.build$.value.toString(),
           composed: true,
           bubbles: true,
         }));

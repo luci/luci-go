@@ -67,7 +67,7 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed
-  private get resultArtifactsRes(): IPromiseBasedObservable<ListArtifactsResponse> {
+  private get resultArtifacts$(): IPromiseBasedObservable<ListArtifactsResponse> {
     if (!this.appState.resultDb) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
@@ -77,8 +77,8 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get resultArtifacts() {
-    return this.resultArtifactsRes.state === FULFILLED
-      ? this.resultArtifactsRes.value.artifacts || []
+    return this.resultArtifacts$.state === FULFILLED
+      ? this.resultArtifacts$.value.artifacts || []
       : [];
   }
 

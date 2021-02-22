@@ -36,18 +36,18 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
   @computed private get artifactIdent() { return parseArtifactName(this.artifactName); }
 
   @computed
-  private get artifactRes() {
+  private get artifact$() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(this.appState.resultDb.getArtifact({name: this.artifactName}));
   }
   @computed private get artifact() {
-    return this.artifactRes.state === 'fulfilled' ? this.artifactRes.value : null;
+    return this.artifact$.state === 'fulfilled' ? this.artifact$.value : null;
   }
 
   @computed
-  private get contentRes() {
+  private get content$() {
     if (!this.appState.resultDb || !this.artifact) {
       return fromPromise(Promise.race([]));
     }
@@ -55,7 +55,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     return fromPromise(fetch(this.artifact.fetchUrl!).then((res) => res.text()));
   }
   @computed private get content() {
-    return this.contentRes.state === 'fulfilled' ? this.contentRes.value : '';
+    return this.content$.state === 'fulfilled' ? this.content$.value : '';
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -97,7 +97,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
       </div>
       <milo-status-bar
         .components=${[{color: 'var(--active-color)', weight: 1}]}
-        .loading=${this.artifactRes.state === 'pending'}
+        .loading=${this.artifact$.state === 'pending'}
       ></milo-status-bar>
       <div id="details">
         ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}

@@ -43,40 +43,40 @@ export class ImageDiffArtifactPage extends MobxLitElement {
   @computed private get parsedDiffArtifactName() { return parseArtifactName(this.diffArtifactName); }
 
   @computed
-  private get diffArtifactRes() {
+  private get diffArtifact$() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(this.appState.resultDb.getArtifact({name: this.diffArtifactName}));
   }
   @computed private get diffArtifact() {
-    return this.diffArtifactRes.state === 'fulfilled' ? this.diffArtifactRes.value : null;
+    return this.diffArtifact$.state === 'fulfilled' ? this.diffArtifact$.value : null;
   }
 
   @computed
-  private get expectedArtifactRes() {
+  private get expectedArtifact$() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(this.appState.resultDb.getArtifact({name: this.expectedArtifactName}));
   }
   @computed private get expectedArtifact() {
-    return this.expectedArtifactRes.state === 'fulfilled' ? this.expectedArtifactRes.value : null;
+    return this.expectedArtifact$.state === 'fulfilled' ? this.expectedArtifact$.value : null;
   }
 
   @computed
-  private get actualArtifactRes() {
+  private get actualArtifact$() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(this.appState.resultDb.getArtifact({name: this.actualArtifactName}));
   }
   @computed private get actualArtifact() {
-    return this.actualArtifactRes.state === 'fulfilled' ? this.actualArtifactRes.value : null;
+    return this.actualArtifact$.state === 'fulfilled' ? this.actualArtifact$.value : null;
   }
 
   @computed get isLoading() {
-    return this.expectedArtifactRes.state === 'pending' || this.actualArtifactRes.state === 'pending' || this.diffArtifactRes.state === 'pending';
+    return this.expectedArtifact$.state === 'pending' || this.actualArtifact$.state === 'pending' || this.diffArtifact$.state === 'pending';
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
