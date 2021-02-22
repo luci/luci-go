@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a317e1b_0f2dc7df",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T18:54:31Z",
+      "side": 1,
+      "message": "very nice",
+      "revId": "5ff2a0eb1dfc6cf70f3d4e91135371a3138d9fa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7477b471_d61fbf20",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-22T18:54:31Z",
+      "side": 1,
+      "message": "Please take a moment",
+      "range": {
+        "startLine": 291,
+        "startChar": 9,
+        "endLine": 291,
+        "endChar": 12
+      },
+      "revId": "5ff2a0eb1dfc6cf70f3d4e91135371a3138d9fa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
