@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ede60be1_b16643b3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-22T12:15:44Z",
+      "side": 1,
+      "message": "This is primarily to solve the struggle of naming things in the codebase.\n`Res` suffix worked fine so far but in a future CL I\u0027ll add an promise base observable that is not a server response.\n\nThis is somewhat consistent with the allowed usage of $ suffix in\nhttps://g3doc.corp.google.com/javascript/typescript/g3doc/styleguide.md?cl\u003dhead#naming-style\n\nThough, in our case:\n1. All attributes are observables by default, and do not have any special suffix.\n2. All promise based observables have $ suffix.\n",
+      "revId": "dcf34f431fbf246aae49fa1b096052dce7207289",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
