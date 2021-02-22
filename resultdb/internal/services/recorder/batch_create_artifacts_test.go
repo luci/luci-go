@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -26,12 +27,24 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+// fakeRBEClient mocks BatchUpdateBlobs.
+type fakeRBEClient struct {
+	repb.ContentAddressableStorageClient
+}
+
+func (c *fakeRBEClient) BatchUpdateBlobs(ctx context.Context, in *repb.BatchUpdateBlobsRequest, opts ...grpc.CallOption) (*repb.BatchUpdateBlobsResponse, error) {
+	out := new(repb.BatchUpdateBlobsResponse)
+	return out, nil
+}
 
 func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 	newArtReq := func(parent, artID, contentType string) *pb.CreateArtifactRequest {
@@ -171,5 +184,6 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different size")
 			})
 		})
+
 	})
 }

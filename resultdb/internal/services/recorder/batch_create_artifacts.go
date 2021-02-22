@@ -20,6 +20,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -30,12 +32,15 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // TODO(crbug.com/1177213) - make this configurable.
 const MaxBatchCreateArtifactSize = 10 * 1024 * 1024
+
+var maxReqSizeOpt = &grpc.MaxSendMsgSizeCallOption{MaxBatchCreateArtifactSize}
 
 type artifactCreationRequest struct {
 	invID       invocations.ID
@@ -186,5 +191,87 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		return nil, nil
 	}
 
-	return nil, nil
+	// send
+	casReq := &repb.BatchUpdateBlobsRequest{
+		InstanceName: s.Options.ArtifactRBEInstance,
+	}
+	for _, a := range artsToCreate {
+		casReq.Requests = append(casReq.Requests, &repb.BatchUpdateBlobsRequest_Request{
+			Digest: &repb.Digest{Hash: a.hash, SizeBytes: a.size},
+			Data:   a.data,
+		})
+	}
+	resp, err := s.casClient.BatchUpdateBlobs(ctx, casReq, maxReqSizeOpt)
+	if err != nil {
+		// The only possible error here is INVALID_ARGUMENT, which indicates that
+		// the client attempted to upload more than the server supported limit.
+		logging.Errorf(ctx, "RBE-CAS.BatchUpdateBlobs() failed w/ %s", err)
+		return nil, appstatus.Errorf(codes.Internal, "Exceeded the maximum size limit")
+	}
+
+	for _, r := range resp.Responses {
+		cd := codes.Code(r.Status.Code)
+		if cd != codes.OK {
+			logging.Errorf(ctx, "artifact %q: RBE-CAS.BatchUploadBlobs() responded %s", cd)
+		}
+		err = appstatus.Errorf(codes.Internal, "Failed to upload the artifact contents to the storage backend.")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// Save them in Spanner, if all the above succeeded.
+	err = createArtifactStates(ctx, artsToCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Duplicates are skipped silently and not considered as an error.
+	// Therefore, this returns all the input artifacts, including both skipped and created
+	// ones.
+	return &pb.BatchCreateArtifactsResponse{Artifacts: artifactCreationRequestsToProto(arts)}, nil
+}
+
+func artifactCreationRequestsToProto(arts []*artifactCreationRequest) []*pb.Artifact {
+	ret := make([]*pb.Artifact, len(arts))
+	for i, a := range arts {
+		ret[i] = &pb.Artifact{Name: a.name()}
+	}
+	return ret
+}
+
+// createArtifactStates creates the states of given artifacts in Spanner.
+func createArtifactStates(ctx context.Context, arts []*artifactCreationRequest) error {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		inv := arts[0].invID
+		return parallel.FanOutIn(func(work chan<- func() error) {
+			work <- func() (err error) {
+				invState, err := invocations.ReadState(ctx, inv)
+				if err == nil && invState != pb.Invocation_ACTIVE {
+					return appstatus.Errorf(codes.FailedPrecondition, "%s is not active", inv.Name())
+				}
+				return
+			}
+
+			for _, a := range arts {
+				work <- func() (err error) {
+					// Verify the state again.
+					exists, err := artifacts.Exist(ctx, inv, a.parentID(), a.artifactID, a.hash, a.size)
+					if err != nil || exists {
+						return errors.Annotate(err, "artifact %q", a.name()).Err()
+					}
+					span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]interface{}{
+						"InvocationId": a.invID,
+						"ParentId":     a.parentID(),
+						"ArtifactId":   a.artifactID,
+						"ContentType":  a.contentType,
+						"Size":         a.size,
+						"RBECASHash":   a.hash,
+					}))
+					return
+				}
+			}
+		})
+	})
+	return err
 }
