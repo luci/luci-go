@@ -140,7 +140,7 @@ type triageResult struct {
 	poke      eventbox.Events
 
 	clsUpdated struct {
-		// i-th event corresponds to i-th cl.
+		// events don't correspond to cls due to CLsUpdate batches.
 		events eventbox.Events
 		cls    []*prjpb.CLUpdated
 	}
@@ -176,6 +176,9 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *prjpb.Event_ClUpdated:
 		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
 		tr.clsUpdated.cls = append(tr.clsUpdated.cls, v.ClUpdated)
+	case *prjpb.Event_ClsUpdated:
+		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
+		tr.clsUpdated.cls = append(tr.clsUpdated.cls, v.ClsUpdated.GetCls()...)
 	case *prjpb.Event_RunCreated:
 		tr.runsCreated.events = append(tr.runsCreated.events, item)
 		tr.runsCreated.runs = append(tr.runsCreated.runs, common.RunID(v.RunCreated.GetRunId()))
