@@ -210,7 +210,7 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 		for i, sp := range stateBefore.SubPollers.GetSubPollers() {
 			i, sp := i, sp
 			work <- func() error {
-				err := subpoll(ctx, luciProject, sp)
+				err := subpoll(ctx, luciProject, meta, sp)
 				errs[i] = errors.Annotate(err, "subpoller %s", sp).Err()
 				return nil
 			}
