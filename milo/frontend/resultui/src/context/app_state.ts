@@ -14,10 +14,10 @@
 
 import { computed, observable } from 'mobx';
 
-import { consumeContext, provideContext } from '../../libs/context';
-import { BuildsService } from '../../services/buildbucket';
-import { MiloInternal } from '../../services/milo_internal';
-import { ResultDb, UISpecificService } from '../../services/resultdb';
+import { consumeContext, provideContext } from '../libs/context';
+import { BuildsService } from '../services/buildbucket';
+import { MiloInternal } from '../services/milo_internal';
+import { ResultDb, UISpecificService } from '../services/resultdb';
 
 /**
  * Records the app-level state.

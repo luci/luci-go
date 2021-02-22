@@ -16,13 +16,14 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { autorun, computed, observable, reaction } from 'mobx';
+import { REJECTED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
-import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
+import { AppState, consumeAppState } from '../../context/app_state';
+import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { NOT_FOUND_URL, router } from '../../routes';
 import './invocation_details_tab';
@@ -47,11 +48,47 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     this.invocationId = invocationId;
     return;
   }
+
+  private disposers: Array<() => void> = [];
+
   connectedCallback() {
     super.connectedCallback();
-    this.invocationState.invocationId = this.invocationId;
-    this.invocationState.initialized = true;
+
+    this.disposers.push(reaction(
+      () => [this.appState],
+      ([appState]) => {
+        this.invocationState?.dispose();
+        this.invocationState = new InvocationState(appState);
+        this.invocationState.invocationId = this.invocationId;
+        this.invocationState.initialized = true;
+
+        // Emulate @property() update.
+        this.updated(new Map([['invocationState', this.invocationState]]));
+      },
+      {fireImmediately: true},
+    ));
+    this.disposers.push(() => this.invocationState.dispose());
+
+    this.disposers.push(autorun(
+      () => {
+        if (this.invocationState.invocation$.state !== REJECTED) {
+          return;
+        }
+        this.dispatchEvent(new ErrorEvent('error', {
+          message: this.invocationState.invocation$.value.toString(),
+          composed: true,
+          bubbles: true,
+        }));
+      },
+    ));
     document.title = `inv: ${this.invocationId}`;
+  }
+
+  disconnectedCallback() {
+    for (const disposer of this.disposers) {
+      disposer();
+    }
+    super.disconnectedCallback();
   }
 
   private renderInvocationState() {
@@ -154,7 +191,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 }
 
 customElement('milo-invocation-page')(
-  consumeInvocationState(
+  provideInvocationState(
     consumeAppState(
       InvocationPageElement,
     ),

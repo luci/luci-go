@@ -13,21 +13,23 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import '@material/mwc-button';
 import '@material/mwc-dialog';
 import '@material/mwc-icon';
-import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
+import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
 import { autorun, computed, observable, reaction } from 'mobx';
+import { REJECTED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
-import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/app_state/user_configs';
-import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
+import { AppState, consumeAppState } from '../../context/app_state';
+import { BuildState, provideBuildState } from '../../context/build_state';
+import { InvocationState, provideInvocationState } from '../../context/invocation_state';
+import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
 import { getGitilesRepoURL, getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
@@ -109,17 +111,78 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   connectedCallback() {
     super.connectedCallback();
     this.appState.hasSettingsDialog = true;
-    this.buildState.builder = this.builder;
-    this.buildState.buildNumOrId = this.buildNumOrId;
+
+    this.disposers.push(reaction(
+      () => [this.appState],
+      () => {
+        this.buildState?.dispose();
+        this.buildState = new BuildState(this.appState);
+        this.buildState.builder = this.builder;
+        this.buildState.buildNumOrId = this.buildNumOrId;
+
+        // Emulate @property() update.
+        this.updated(new Map([['buildState', this.buildState]]));
+      },
+      {fireImmediately: true},
+    ));
+    this.disposers.push(() => this.buildState.dispose());
+
+    this.disposers.push(autorun(
+      () => {
+        if (this.buildState.build$.state !== REJECTED) {
+          return;
+        }
+        const err = this.buildState.build$.value as GrpcError;
+        // If the build is not found and the user is not logged in, redirect
+        // them to the login page.
+        if (err.code === RpcCode.NOT_FOUND && this.appState.accessToken === '') {
+          Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
+          return;
+        }
+        this.dispatchEvent(new ErrorEvent('error', {
+          message: this.buildState.build$.value.toString(),
+          composed: true,
+          bubbles: true,
+        }));
+      },
+    ));
+
+    this.disposers.push(reaction(
+      () => [
+        this.appState,
+        this.buildState.build?.infra?.resultdb?.invocation?.slice('invocations/'.length) || '',
+      ] as [AppState, string],
+      ([appState, invId]) => {
+        this.invocationState?.dispose();
+        this.invocationState = new InvocationState(appState);
+        this.invocationState.invocationId = invId;
+        this.invocationState.initialized = true;
+
+        // Emulate @property() update.
+        this.updated(new Map([['invocationState', this.invocationState]]));
+      },
+      {fireImmediately: true},
+    ));
+    this.disposers.push(() => this.invocationState.dispose());
+
+    this.disposers.push(autorun(
+      () => {
+        if (this.invocationState.invocation$.state !== REJECTED) {
+          return;
+        }
+        this.dispatchEvent(new ErrorEvent('error', {
+          message: this.invocationState.invocation$.value.toString(),
+          composed: true,
+          bubbles: true,
+        }));
+      },
+    ));
 
     this.disposers.push(autorun(() => {
       const build = this.buildState.build;
       if (!build) {
         return;
       }
-      this.invocationState.invocationId = build.infra?.resultdb?.invocation
-        ?.slice('invocations/'.length) || '';
-      this.invocationState.initialized = true;
 
       // If the build has only succeeded steps, show all steps in the steps tab by
       // default (even if the user's preference is to hide succeeded steps).
@@ -156,10 +219,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
   disconnectedCallback() {
     this.appState.hasSettingsDialog = false;
-    super.disconnectedCallback();
     for (const disposer of this.disposers) {
       disposer();
     }
+    super.disconnectedCallback();
   }
 
   @computed get hasInvocation() {
@@ -422,8 +485,8 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 }
 
 customElement('milo-build-page')(
-  consumeInvocationState(
-    consumeBuildState(
+  provideInvocationState(
+    provideBuildState(
       consumeConfigsStore(
         consumeAppState(
           BuildPageElement,

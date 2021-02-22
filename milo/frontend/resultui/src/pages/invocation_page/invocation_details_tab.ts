@@ -19,8 +19,8 @@ import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
-import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
+import { AppState, consumeAppState } from '../../context/app_state';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { router } from '../../routes';
 
 

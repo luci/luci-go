@@ -20,8 +20,7 @@ import sinon from 'sinon';
 
 import '.';
 import { InvocationPageElement } from '.';
-import { AppState } from '../../context/app_state/app_state';
-import { InvocationState } from '../../context/invocation_state/invocation_state';
+import { AppState } from '../../context/app_state';
 import { NOT_FOUND_URL } from '../../routes';
 
 
@@ -29,14 +28,10 @@ describe('Invocation Page', () => {
   it('should get invocation ID from URL', async () => {
     const appState = new AppState();
 
-    const invocationState = new InvocationState(appState);
-    after(() => invocationState.dispose());
-
     after(fixtureCleanup);
     const page = await fixture<InvocationPageElement>(html`
       <milo-invocation-page
         .appState=${appState}
-        .invocationState=${invocationState}
       ></milo-invocation-page>
     `);
 
@@ -45,19 +40,16 @@ describe('Invocation Page', () => {
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id']);
+    page.disconnectedCallback();
   });
 
   it('should redirect to the not found page when invocation_id is not provided', async () => {
     const appState = new AppState();
 
-    const invocationState = new InvocationState(appState);
-    after(() => invocationState.dispose());
-
     after(fixtureCleanup);
     const page = await fixture<InvocationPageElement>(html`
       <milo-invocation-page
         .appState=${appState}
-        .invocationState=${invocationState}
       ></milo-invocation-page>
     `);
 

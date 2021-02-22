@@ -26,10 +26,10 @@ import '../components/hotkey';
 import '../components/test_search_filter';
 import '../components/variant_entry';
 import { VariantEntryElement } from '../components/variant_entry';
-import { AppState, consumeAppState } from '../context/app_state/app_state';
-import { consumeConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
-import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
-import { generateRandomLabel, GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
+import { AppState, consumeAppState } from '../context/app_state';
+import { consumeInvocationState, InvocationState } from '../context/invocation_state';
+import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
+import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE } from '../libs/constants';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
@@ -40,8 +40,8 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
-  private enterTimestamp: number = 0;
-  private sentLoadingTimeToGA: boolean = false;
+  private enterTimestamp = 0;
+  private sentLoadingTimeToGA = false;
 
   private disposers: Array<() => void> = [];
   private async loadNextPage() {
@@ -234,7 +234,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       return;
     }
     this.sentLoadingTimeToGA = true;
-    const prefix = "testresults_" + this.invocationState.invocationId;
+    const prefix = 'testresults_' + this.invocationState.invocationId;
     trackEvent(
       GA_CATEGORIES.TEST_RESULTS_TAB,
       GA_ACTIONS.LOADING_TIME,

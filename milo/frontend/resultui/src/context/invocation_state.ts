@@ -16,11 +16,11 @@
 import { autorun, computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
-import { consumeContext, provideContext } from '../../libs/context';
-import { parseSearchQuery } from '../../libs/search_query';
-import { TestLoader } from '../../models/test_loader';
-import { Invocation, TestVariant } from '../../services/resultdb';
-import { AppState } from '../app_state/app_state';
+import { consumeContext, provideContext } from '../libs/context';
+import { parseSearchQuery } from '../libs/search_query';
+import { TestLoader } from '../models/test_loader';
+import { Invocation, TestVariant } from '../services/resultdb';
+import { AppState } from './app_state';
 
 /**
  * Records state of an invocation.

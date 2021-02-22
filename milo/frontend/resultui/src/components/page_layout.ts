@@ -18,8 +18,8 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
-import { AppState, provideAppState } from '../context/app_state/app_state';
-import { provideConfigsStore, UserConfigsStore } from '../context/app_state/user_configs';
+import { AppState, provideAppState } from '../context/app_state';
+import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { genFeedbackUrl } from '../libs/utils';
 import './signin';
 import { UserUpdateEvent } from './signin';
