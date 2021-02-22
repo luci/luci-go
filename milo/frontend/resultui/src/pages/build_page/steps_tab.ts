@@ -23,9 +23,9 @@ import { BuildStepEntryElement } from '../../components/build_step_entry';
 import '../../components/dot_spinner';
 import '../../components/hotkey';
 import '../../components/lazy_list';
-import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/app_state/user_configs';
-import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { AppState, consumeAppState } from '../../context/app_state';
+import { BuildState, consumeBuildState } from '../../context/build_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BuildStatus } from '../../services/buildbucket';
 
