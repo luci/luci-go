@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "406e98fd_eac41175",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-22T22:28:38Z",
+      "side": 1,
+      "message": "Del",
+      "range": {
+        "startLine": 254,
+        "startChar": 40,
+        "endLine": 254,
+        "endChar": 45
+      },
+      "revId": "e2e8f5592d4bb0a2e27190a2fffe06c24196e09a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55ae7ad0_13969914",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-22T22:28:38Z",
+      "side": 1,
+      "message": "Del",
+      "range": {
+        "startLine": 254,
+        "startChar": 64,
+        "endLine": 254,
+        "endChar": 66
+      },
+      "revId": "e2e8f5592d4bb0a2e27190a2fffe06c24196e09a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f2514af_07652139",
+        "filename": "cv/internal/gerrit/poller/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-22T22:28:38Z",
+      "side": 1,
+      "message": "this is unused. Maybe move it to top level and replace the inline number at L220 \u0026 L262?",
+      "range": {
+        "startLine": 261,
+        "startChar": 1,
+        "endLine": 261,
+        "endChar": 25
+      },
+      "revId": "e2e8f5592d4bb0a2e27190a2fffe06c24196e09a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
