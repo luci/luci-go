@@ -50,3 +50,15 @@ Please enter a description of the problem, with repro steps if applicable.
 `);
   return `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2,Type-Bug&comment=${feedbackComment}`;
 }
+
+/**
+ * Hash the message with SHA-256 and then return the outcome in hex encoded
+ * string.
+ */
+export async function sha256(message: string) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}

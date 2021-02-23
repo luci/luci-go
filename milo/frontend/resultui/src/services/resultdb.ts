@@ -16,6 +16,9 @@ import { PrpcClient } from '@chopsui/prpc-client';
 import { comparer } from 'mobx';
 import { createTransformer, fromPromise, FULFILLED } from 'mobx-utils';
 
+import { sha256 } from '../libs/utils';
+import { BuilderID } from './buildbucket';
+
 /**
  * Manually coded type definition and classes for resultdb service.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
@@ -374,4 +377,19 @@ export function constructArtifactName(identifier: ArtifactIdentifier) {
   } else {
     return `invocations/${identifier.invocationId}/artifacts/${identifier.artifactId}`;
   }
+}
+
+/**
+ * Computes invocation ID for the build from the given build ID.
+ */
+export function getInvIdFromBuildId(buildId: string): string {
+  return `build-${buildId}`;
+}
+
+/**
+ * Computes invocation ID for the build from the given builder ID and build number.
+ */
+export async function getInvIdFromBuildNum(builder: BuilderID, buildNum: number): Promise<string> {
+  const builderId = `${builder.project}/${builder.bucket}/${builder.builder}`;
+  return `build-${await sha256(builderId)}-${buildNum}`;
 }
