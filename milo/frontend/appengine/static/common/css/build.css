@@ -13,13 +13,33 @@
  * limitations under the License.
  */
 
-#opt-in-banner {
+#opt-in-banner>div {
     background-color: #feb;
     text-align: center;
     padding: 3px;
     color: #333;
     font-weight: bold;
     font-size: 12px;
+}
+
+#opt-in-link {
+    position: relative;
+    z-index: 2;
+}
+
+#feedback-bar {
+    position: absolute;
+    transition-property: top;
+    transition-duration: 0.5s;
+    transition-timing-function: ease;
+    animation: 0.5s ease-out dropdown;
+    z-index: 1;
+    top: 0px;
+    width: 100%;
+}
+
+#feedback-bar.show {
+    top: 20px;
 }
 
 #modal-overlay {
