@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87c5f47a_1cba5ad2",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T00:51:13Z",
+      "side": 1,
+      "message": "should we pass CLOUDSDK_CONFIG here too? otherwise, who do we create the config for?",
+      "revId": "8c51acb22b7005ae05f4d7495dc77e94ea50a1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "494b8a38_de6d7fe3",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T00:51:13Z",
+      "side": 1,
+      "message": "nit: normally receiver name is a single letter. How about \"e\"?",
+      "range": {
+        "startLine": 300,
+        "startChar": 6,
+        "endLine": 300,
+        "endChar": 14
+      },
+      "revId": "8c51acb22b7005ae05f4d7495dc77e94ea50a1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed738cd4_1058c3ee",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T00:51:13Z",
+      "side": 1,
+      "message": "maybe just if?",
+      "range": {
+        "startLine": 308,
+        "startChar": 2,
+        "endLine": 309,
+        "endChar": 7
+      },
+      "revId": "8c51acb22b7005ae05f4d7495dc77e94ea50a1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6443c311_43dd9a59",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T00:51:13Z",
+      "side": 1,
+      "message": "did you mean to remove this before uploading?\nif not, then please send this to Stderr",
+      "range": {
+        "startLine": 311,
+        "startChar": 3,
+        "endLine": 311,
+        "endChar": 15
+      },
+      "revId": "8c51acb22b7005ae05f4d7495dc77e94ea50a1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
