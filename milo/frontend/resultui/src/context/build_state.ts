@@ -14,13 +14,14 @@
 
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
-import { getGitilesRepoURL } from '../libs/build_utils';
 
+import { getGitilesRepoURL } from '../libs/build_utils';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { BuildExt } from '../models/build_ext';
 import { Build, BuilderID, GetBuildRequest, GitilesCommit } from '../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
+import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
 import { AppState } from './app_state';
 
 /**
@@ -29,6 +30,35 @@ import { AppState } from './app_state';
 export class BuildState {
   @observable.ref builder?: BuilderID;
   @observable.ref buildNumOrId?: string;
+
+  /**
+   * buildNum is defined when this.buildNumOrId is defined and doesn't start
+   * with 'b'.
+   */
+  @computed get buildNum() {
+    return this.buildNumOrId?.startsWith('b') === false ? Number(this.buildNumOrId) : null;
+  }
+
+  /**
+   * buildId is defined when this.buildNumOrId is defined and starts with 'b'.
+   */
+  @computed get buildId() {
+    return this.buildNumOrId?.startsWith('b') ? this.buildNumOrId.slice(1) : null;
+  }
+
+  @computed private get invocationId$(): IPromiseBasedObservable<string> {
+    if (this.builder && this.buildNum) {
+      return fromPromise(getInvIdFromBuildNum(this.builder, this.buildNum));
+    } else if (this.buildId) {
+      return fromPromise(Promise.resolve(getInvIdFromBuildId(this.buildId)));
+    } else {
+      return fromPromise(Promise.race([]));
+    }
+  }
+
+  @computed get invocationId() {
+    return this.invocationId$.state === FULFILLED ? this.invocationId$.value : null;
+  }
 
   @observable.ref private timestamp = Date.now();
 
@@ -62,9 +92,9 @@ export class BuildState {
     // establish a dependency on timestamp.
     this.timestamp;  // tslint:disable-line: no-unused-expression
 
-    const req: GetBuildRequest = this.buildNumOrId.startsWith('b')
-      ? {id: this.buildNumOrId.slice(1), fields: '*'}
-      : {builder: this.builder, buildNumber: Number(this.buildNumOrId), fields: '*'};
+    const req: GetBuildRequest = this.buildId
+      ? {id: this.buildId, fields: '*'}
+      : {builder: this.builder, buildNumber: this.buildNum!, fields: '*'};
 
     return fromPromise(this.appState.buildsService.getBuild(req));
   }

@@ -327,7 +327,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   private renderMain() {
     const state = this.invocationState;
 
-    if (state.initialized && !state.invocationId) {
+    if (state.invocationId === '') {
       return html`
         <div id="no-invocation">
           No associated invocation.<br>
