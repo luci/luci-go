@@ -16,12 +16,14 @@ import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-sid
 import { Commands, RouterLocation } from '@vaadin/router';
 import { assert } from 'chai';
 import { html } from 'lit-element';
+import sinon from 'sinon';
 
 import '.';
 import { BuildPageElement } from '.';
 import { AppState } from '../../context/app_state';
 import { UserConfigsStore } from '../../context/user_configs';
-import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../../services/resultdb';
+import { Build, BuildInput, BuildsService } from '../../services/buildbucket';
+import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../../services/resultdb';
 
 const builder = {
   project: 'project',
@@ -75,6 +77,54 @@ describe('Invocation Page', () => {
     page.connectedCallback();
     await aTimeout(10);
     assert.strictEqual(page.buildState.invocationId, getInvIdFromBuildId('1234'));
+    page.disconnectedCallback();
+  });
+
+  it('should fallback to invocation ID from buildbucket when invocation is not found', async () => {
+    const resultDbStub = sinon.stub(new ResultDb('', ''));
+    const buildsServiceStub = sinon.stub(new BuildsService('', ''));
+    resultDbStub?.getInvocation.onCall(0).rejects();
+    resultDbStub?.getInvocation.onCall(1).resolves();
+    buildsServiceStub?.getBuild.onCall(0).resolves({
+      infra: {
+        resultdb: {
+          hostname: 'hostname',
+          invocation: 'invocations/invocation-id',
+        },
+      },
+      input: {
+        gitilesCommit: {},
+      } as BuildInput,
+      output: {
+        properties: {},
+      },
+    } as Build);
+
+    after(fixtureCleanup);
+    const page = await fixture<BuildPageElement>(html`
+      <milo-build-page
+        .prerender=${true}
+        .appState=${{
+          ...new AppState(),
+          resultDb: resultDbStub,
+          buildsService: buildsServiceStub,
+        }}
+        .configsStore=${new UserConfigsStore()}
+      ></milo-build-page>
+    `);
+
+    const location = {
+      params: {
+        ...builder,
+        'build_num_or_id': 'b1234',
+      },
+    } as Partial<RouterLocation> as RouterLocation;
+    const cmd = {} as Partial<Commands> as Commands;
+
+    await page.onBeforeEnter(location, cmd);
+    page.connectedCallback();
+    await aTimeout(100);
+    assert.strictEqual(page.buildState.invocationId, 'invocation-id');
     page.disconnectedCallback();
   });
 });
