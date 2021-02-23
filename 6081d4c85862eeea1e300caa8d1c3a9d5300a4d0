@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "59f3d3b7_2fd4cbae",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1315,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-23T21:10:59Z",
+      "side": 1,
+      "message": "nit: I think it would be better to be more defensive here and ignore malformed values\n\n  if parts :\u003d strings.Split(s, \".\"); len(parts) \u003d\u003d 2 {\n    secs, err1 :\u003d ...\n    micros, err2 :\u003d  ...\n    if err1 \u003d\u003d nil \u0026\u0026 err2 \u003d\u003d nil {\n      eta \u003d time.Unix(...)\n    }\n  }",
+      "range": {
+        "startLine": 1313,
+        "startChar": 0,
+        "endLine": 1315,
+        "endChar": 49
+      },
+      "revId": "6081d4c85862eeea1e300caa8d1c3a9d5300a4d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
