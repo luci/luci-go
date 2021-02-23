@@ -26,8 +26,9 @@ import { AppState } from './app_state';
  * Records state of an invocation.
  */
 export class InvocationState {
-  @observable.ref invocationId = '';
-  @observable.ref initialized = false;
+  // '' means no associated invocation ID.
+  // null means uninitialized.
+  @observable.ref invocationId: string | null = null;
 
   @observable.ref showUnexpectedVariants = true;
   @observable.ref showUnexpectedlySkippedVariants = true;

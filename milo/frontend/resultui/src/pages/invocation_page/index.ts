@@ -60,7 +60,6 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         this.invocationState?.dispose();
         this.invocationState = new InvocationState(appState);
         this.invocationState.invocationId = this.invocationId;
-        this.invocationState.initialized = true;
 
         // Emulate @property() update.
         this.updated(new Map([['invocationState', this.invocationState]]));
@@ -116,7 +115,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         label: 'Test Results',
         href: router.urlForName(
           'invocation-test-results',
-          {'invocation_id': this.invocationState.invocationId},
+          {'invocation_id': this.invocationState.invocationId!},
         ),
       },
       {
@@ -124,7 +123,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         label: 'Invocation Details',
         href: router.urlForName(
           'invocation-details',
-          {'invocation_id': this.invocationState.invocationId},
+          {'invocation_id': this.invocationState.invocationId!},
         ),
       },
     ];
