@@ -56,12 +56,20 @@ import (
 	"go.chromium.org/luci/server/tq/internal/reminder"
 )
 
-// TraceContextHeader is name of a header that contains the trace context of
-// a span that produced the task.
-//
-// This header is read only by Dispatcher itself and exists mostly for FYI
-// purposes to help in debugging issues.
-const TraceContextHeader = "X-Luci-Tq-Trace-Context"
+const (
+	// TraceContextHeader is name of a header that contains the trace context of
+	// a span that produced the task.
+	//
+	// This header is read only by Dispatcher itself and exists mostly for FYI
+	// purposes to help in debugging issues.
+	TraceContextHeader = "X-Luci-Tq-Trace-Context"
+
+	// ExpectedETAHeader is the name of a header that indicates when the task was
+	// originally expected to run.
+	//
+	// One use of this header is for measuring latency of task completion.
+	ExpectedETAHeader = "X-Luci-Tq-Expected-ETA"
+)
 
 // Dispatcher is a registry of task classes that knows how serialize and route
 // them.
@@ -430,9 +438,10 @@ type ExecutionInfo struct {
 	// failed attempt.
 	ExecutionCount int
 
-	taskRetryReason       string // X-CloudTasks-TaskRetryReason
-	taskPreviousResponse  string // X-CloudTasks-TaskPreviousResponse
-	submitterTraceContext string // see TraceContextHeader
+	taskRetryReason       string    // X-CloudTasks-TaskRetryReason
+	taskPreviousResponse  string    // X-CloudTasks-TaskPreviousResponse
+	submitterTraceContext string    // see TraceContextHeader
+	expectedETA           time.Time // see ExpectedETAHeader
 }
 
 var executionInfoKey = "go.chromium.org/luci/server/tq.ExecutionInfo"
@@ -839,6 +848,10 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 		payload.Meta[TraceContextHeader] = span
 	}
 
+	// Inject magic header with ETA.
+	micros := scheduleTime.GetNanos() / 1000
+	payload.Meta[ExpectedETAHeader] = fmt.Sprintf("%d.%06d", scheduleTime.GetSeconds(), micros)
+
 	method := taskspb.HttpMethod(taskspb.HttpMethod_value[payload.Method])
 	if method == 0 {
 		return nil, errors.Reason("bad HTTP method %q", payload.Method).Err()
@@ -1133,9 +1146,16 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 		result = "retry"
 	}
 
-	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, result)
-	metrics.ServerDurationMS.Add(ctx, float64(dur.Milliseconds()), cls.ID, result)
+	retry := info.ExecutionCount
+	if retry > metrics.MaxRetryFieldValue {
+		retry = metrics.MaxRetryFieldValue
+	}
 
+	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, result, retry)
+	metrics.ServerDurationMS.Add(ctx, float64(dur.Milliseconds()), cls.ID, result)
+	if !info.expectedETA.IsZero() {
+		metrics.ServerTaskLatency.Add(ctx, float64(clock.Since(ctx, info.expectedETA).Milliseconds()), cls.ID, result, retry)
+	}
 	return err
 }
 
@@ -1287,11 +1307,25 @@ func parseHeaders(h http.Header) ExecutionInfo {
 		execCount, _ = strconv.ParseInt(count, 10, 32)
 	}
 
+	var eta time.Time
+	if s := h.Get(ExpectedETAHeader); s != "" {
+		// Expected format is "<seconds(int64)>.<microseconds(int32)>".
+		parts := strings.Split(s, ".")
+		if len(parts) == 2 {
+			secs, errS := strconv.ParseInt(parts[0], 10, 64)
+			micros, errM := strconv.ParseInt(parts[1], 10, 32)
+			if errS == nil && errM == nil {
+				eta = time.Unix(secs, micros*1000)
+			}
+		}
+	}
+
 	return ExecutionInfo{
 		ExecutionCount:        int(execCount),
 		taskRetryReason:       magicHeader("TaskRetryReason"),
 		taskPreviousResponse:  magicHeader("TaskPreviousResponse"),
 		submitterTraceContext: h.Get(TraceContextHeader),
+		expectedETA:           eta,
 	}
 }
 

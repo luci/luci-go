@@ -23,6 +23,11 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
+// MaxRetryFieldValue is the number to cap the value of retry count field at,
+// for metrics that include it, thus indicating a value greater or equal to it.
+// This makes the metric field have a reasonable number of distinct values.
+const MaxRetryFieldValue = 10
+
 var (
 	// bucketer1msTo5min covers range of 1..300k.
 	bucketer1msTo5min = distribution.GeometricBucketer(math.Pow(10, 0.055), 100)
@@ -127,6 +132,7 @@ var (
 		nil,
 		field.String("task_class"), // matches TaskClass.ID
 		field.String("result"),     // OK | retry | transient | fatal
+		field.Int("retry"),         // 0 for first try, incrementing until cap.
 	)
 
 	ServerDurationMS = metric.NewCumulativeDistribution(
@@ -136,5 +142,15 @@ var (
 		distribution.DefaultBucketer,
 		field.String("task_class"), // matches TaskClass.ID
 		field.String("result"),     // OK | retry | transient | fatal
+	)
+
+	ServerTaskLatency = metric.NewCumulativeDistribution(
+		"tq/server/latency",
+		"Time between task's expected ETA and actual completion",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.DefaultBucketer,
+		field.String("task_class"), // matches TaskClass.ID
+		field.String("result"),     // OK | retry | transient | fatal
+		field.Int("retry"),         // 0 for first try, incrementing until cap.
 	)
 )
