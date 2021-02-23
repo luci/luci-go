@@ -39,7 +39,7 @@ describe('Invocation Page', () => {
     const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
-    assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id']);
+    assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id'] as string);
     page.disconnectedCallback();
   });
 
