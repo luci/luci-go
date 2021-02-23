@@ -60,6 +60,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a06032dc_e529f8f1",
+        "filename": "resultdb/internal/artifacts/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T19:32:42Z",
+      "side": 1,
+      "message": "What if actualSize or actualHash is not valid?",
+      "range": {
+        "startLine": 125,
+        "startChar": 2,
+        "endLine": 129,
+        "endChar": 81
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e2e7340c_b86e54f4",
         "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
         "patchSetId": 5
