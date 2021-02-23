@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a4603a37_0a935342",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-23T23:23:36Z",
+      "side": 1,
+      "message": "Previously\n1. the result tab will show nothing, after loading the build, it will show resultdb integration hint.\n2. the result tab selector will remain hidden.\n\nNow\n1. the result tab will show it\u0027s loading, after loading the build, it will show resultdb integration hint.\n2. the result tab selector will be hidden after the build is loaded. (this behaviour is reverted in the newest patch).",
+      "parentUuid": "d6c1e82e_a98f4fb9",
+      "revId": "7bc2f37fde13533d9633c7dc1188d96d34cbfed8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "6f188ad7_93a29b0c",
         "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
         "patchSetId": 2
@@ -48,6 +66,30 @@
       "writtenOn": "2021-02-23T22:55:15Z",
       "side": 1,
       "message": "support",
+      "range": {
+        "startLine": 207,
+        "startChar": 28,
+        "endLine": 207,
+        "endChar": 37
+      },
+      "revId": "7bc2f37fde13533d9633c7dc1188d96d34cbfed8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da755296_57eec609",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-23T23:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f188ad7_93a29b0c",
       "range": {
         "startLine": 207,
         "startChar": 28,
@@ -71,6 +113,30 @@
       "writtenOn": "2021-02-23T22:55:15Z",
       "side": 1,
       "message": "Disable",
+      "range": {
+        "startLine": 208,
+        "startChar": 11,
+        "endLine": 208,
+        "endChar": 19
+      },
+      "revId": "7bc2f37fde13533d9633c7dc1188d96d34cbfed8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8edc82b6_81105449",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-23T23:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8feb4bf_3c8e247c",
       "range": {
         "startLine": 208,
         "startChar": 11,
