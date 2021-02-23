@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -60,12 +59,11 @@ func (ct ctest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
 }
 
 func (ct ctest) runCLUpdaterAs(ctx context.Context, change int64, lProject string) *changelist.CL {
-	So(updater.Schedule(ctx, &updater.RefreshGerritCL{
+	So(updater.Refresh(ctx, &updater.RefreshGerritCL{
 		LuciProject: lProject,
 		Host:        ct.gHost,
 		Change:      change,
 	}), ShouldBeNil)
-	ct.TQ.Run(ctx, tqtesting.StopAfterTask(updater.TaskClassID))
 	eid, err := changelist.GobID(ct.gHost, change)
 	So(err, ShouldBeNil)
 	cl, err := eid.Get(ctx)

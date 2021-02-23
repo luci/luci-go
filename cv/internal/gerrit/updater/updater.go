@@ -64,7 +64,7 @@ func init() {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
-			err := refresh(ctx, t)
+			err := Refresh(ctx, t)
 			return common.TQifyError(
 				ctx, err,
 				// Don't log the entire stack trace of stale data, which is sadly an
@@ -117,12 +117,14 @@ func Schedule(ctx context.Context, p *RefreshGerritCL) error {
 // Doesn't affect refreshes with updatedHint specified.
 const blindRefreshInterval = time.Minute
 
-// refresh fetches latest info from Gerrit.
+// Refresh fetches latest info from Gerrit.
 //
 // If datastore already contains snapshot with Gerrit-reported update time equal
 // to or after updatedHint, then no updating or querying will be performed,
 // but forceNotifyPM will still be obeyed.
-func refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
+//
+// Prefer Schedule() instead of Refresh() in production.
+func Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	f := fetcher{
 		luciProject:   r.GetLuciProject(),
 		host:          r.GetHost(),
