@@ -60,6 +60,155 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e2e7340c_b86e54f4",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "why copy in each one? they all have the same invocation id\n\nafter reading more code below: this also causes the weird pattern `arts[0].invID` and a check before that. Would be simpler to pass invID directly, whenever we pass arts",
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d4d5d8a4_ac275acb",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 76,
+        "startChar": 48,
+        "endLine": 76,
+        "endChar": 59
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c7f7330_e6f6f08d",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 77,
+        "startChar": 3,
+        "endLine": 77,
+        "endChar": 7
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "693b0858_4dcd3ce3",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "this is an invalid request, no?",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 3
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "807b56c6_1c140220",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "ret uses different indexes because currently len(ret) does not necessarily equal len(in.Requests).\n\nI think it would be simpler if it was, though. \ni.e. reject request with no artifact",
+      "range": {
+        "startLine": 97,
+        "startChar": 41,
+        "endLine": 97,
+        "endChar": 49
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c6e116a_ee0360bb",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "maybe leave a TODO to reject this request at the pRPC level, before we even parse the message (at this point of execution it is a bit too late)",
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0fa71a09_e8a84e27",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "validate it too?\nhttps://golang.org/pkg/mime/#ParseMediaType",
+      "range": {
+        "startLine": 113,
+        "startChar": 16,
+        "endLine": 113,
+        "endChar": 40
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f2e4526a_46e3a2ab",
         "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
         "patchSetId": 5
@@ -71,6 +220,30 @@
       "writtenOn": "2021-02-22T21:31:21Z",
       "side": 1,
       "message": "this codebase uses errgroup. Be consistent?\nthe benefit is that if at least one returns an error. all others are canceled",
+      "range": {
+        "startLine": 135,
+        "startChar": 8,
+        "endLine": 135,
+        "endChar": 25
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "36a216f9_c7b7ac93",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "ah, this was copied from that code. It is more OK in that case because there are only two goroutines there, while here we have N. There we didn\u0027t need concurrency control.\n\nBelow I am suggesting to batch RPCs into one. In that case, FanOutIn is OK to me.",
+      "parentUuid": "f2e4526a_46e3a2ab",
       "range": {
         "startLine": 135,
         "startChar": 8,
@@ -117,6 +290,47 @@
       "writtenOn": "2021-02-22T21:31:21Z",
       "side": 1,
       "message": "make on RPC: https://pkg.go.dev/cloud.google.com/go/spanner#KeySet",
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2ddf67d_41bfe343",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "i meant \"one\" RPC. Currently it makes N concurrent RPCs (without any concurrency limiting)",
+      "parentUuid": "a071d272_5c21a6fc",
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b8225dee_3eb84c7c",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-23T18:00:49Z",
+      "side": 1,
+      "message": "this may panic. The returned error is already appstatus-annotated",
+      "range": {
+        "startLine": 178,
+        "startChar": 14,
+        "endLine": 178,
+        "endChar": 78
+      },
       "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
