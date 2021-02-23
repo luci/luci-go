@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
-import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
+import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { suggestSearchQuery } from '../libs/search_query';
 import './auto_complete';
 import { SuggestionEntry } from './auto_complete';

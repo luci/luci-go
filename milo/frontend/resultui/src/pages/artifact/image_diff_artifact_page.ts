@@ -20,7 +20,7 @@ import { fromPromise } from 'mobx-utils';
 
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
-import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { AppState, consumeAppState } from '../../context/app_state';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { constructArtifactName, parseArtifactName } from '../../services/resultdb';
 

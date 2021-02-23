@@ -18,8 +18,8 @@ import { customElement, html, LitElement } from 'lit-element';
 
 import '../../components/commit_entry';
 import '../../components/hotkey';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/app_state/user_configs';
-import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { BuildState, consumeBuildState } from '../../context/build_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { router } from '../../routes';
 
 export class BuildDefaultTabElement extends LitElement {

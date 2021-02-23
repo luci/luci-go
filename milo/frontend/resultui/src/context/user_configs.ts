@@ -15,7 +15,7 @@
 import merge from 'lodash-es/merge';
 import { observable } from 'mobx';
 
-import { consumeContext, provideContext } from '../../libs/context';
+import { consumeContext, provideContext } from '../libs/context';
 
 // Backward incompatible changes are not allowed.
 export interface UserConfigs {
