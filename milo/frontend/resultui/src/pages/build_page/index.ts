@@ -28,12 +28,13 @@ import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, provideBuildState } from '../../context/build_state';
-import { InvocationState, provideInvocationState } from '../../context/invocation_state';
+import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
 import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
 import { getGitilesRepoURL, getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { genFeedbackUrl } from '../../libs/utils';
+import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
 
@@ -113,9 +114,29 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     return `/static/common/favicon/milo-32.png`;
   }
 
+  private errorHandler = (e: ErrorEvent) => {
+    if (e.error instanceof LoadTestVariantsError) {
+      // Ignore request using the old invocation ID.
+      if (!e.error.req.invocations.includes(`invocations/${this.buildState.invocationId}`)) {
+        e.stopPropagation();
+        return;
+      }
+
+      // Old builds don't support computed invocation ID.
+      // Disable it and try again.
+      if (this.buildState.useComputedInvId && !e.error.req.pageToken) {
+        this.buildState.useComputedInvId = false;
+        e.stopPropagation();
+        return;
+      }
+    }
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.appState.hasSettingsDialog = true;
+
+    this.addEventListener('error', this.errorHandler);
 
     this.disposers.push(reaction(
       () => [this.appState],
@@ -178,6 +199,17 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         if (this.invocationState.invocation$.state !== REJECTED) {
           return;
         }
+        const err = this.invocationState.invocation$.value as QueryInvocationError;
+        // Ignore request using the old invocation ID.
+        if (err.invId !== this.buildState.invocationId) {
+          return;
+        }
+        // Old builds don't support computed invocation ID.
+        // Disable it and try again.
+        if (this.buildState.useComputedInvId) {
+          this.buildState.useComputedInvId = false;
+          return;
+        }
         this.dispatchEvent(new ErrorEvent('error', {
           message: this.invocationState.invocation$.value.toString(),
           composed: true,
@@ -230,11 +262,18 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     for (const disposer of this.disposers) {
       disposer();
     }
+
+    this.removeEventListener('error', this.errorHandler);
     super.disconnectedCallback();
   }
 
   @computed get hasInvocation() {
-    return this.invocationState.invocationId !== '';
+    if (this.buildState.useComputedInvId) {
+      // The invocation may not exist. Wait for the invocation query to confirm
+      // its existence.
+      return this.invocationState.invocation !== null;
+    }
+    return Boolean(this.invocationState.invocationId);
   }
 
   @computed get tabDefs(): TabDef[] {
