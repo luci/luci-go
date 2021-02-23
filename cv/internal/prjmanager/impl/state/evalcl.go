@@ -216,13 +216,13 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 			break
 		}
 	}
-	switch t := cl.ApplicableConfig.GetUpdateTime().AsTime(); {
+	switch {
 	case ap == nil:
-		logging.Warningf(ctx, "CL(%d) is not watched by us as of %s", cl.ID, t)
+		logging.Warningf(ctx, "CL(%d) is not watched by us (CL update %s)", cl.ID, cl.UpdateTime)
 		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl
 	case len(cl.ApplicableConfig.GetProjects()) > 1:
-		logging.Warningf(ctx, "CL(%d) is watched by more than 1 project as of %s", cl.ID, t)
+		logging.Warningf(ctx, "CL(%d) is watched by more than 1 project (CL update %s)", cl.ID, cl.UpdateTime)
 		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl
 	}
