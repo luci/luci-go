@@ -33,6 +33,24 @@
       "message": "Perhaps we also want to track how many time people click on this link (same with the feedback popup on the new build page), to see how successful we are with this approach?",
       "revId": "30c5a80781efc4b7786662d0e6fd34ac50252bd3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e11dc88f_8984ca72",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-23T22:55:51Z",
+      "side": 1,
+      "message": "Will do.\n\nAlthough we can kind of track it already with monorail issue. The bug description template records the URL the user came from.",
+      "parentUuid": "0e425c48_ae2e4f22",
+      "revId": "30c5a80781efc4b7786662d0e6fd34ac50252bd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
