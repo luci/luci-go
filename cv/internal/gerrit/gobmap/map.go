@@ -17,9 +17,6 @@ package gobmap
 import (
 	"context"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -194,8 +191,6 @@ func internalGroups(configGroups []*config.ConfigGroup) map[string]*cfgmatcher.G
 // combination is watched by at most one ConfigGroup, which is why this may
 // return multiple ConfigGroupIDs even for the same LUCI project.
 func Lookup(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error) {
-	now := timestamppb.New(clock.Now(ctx).UTC())
-
 	// Fetch all MapPart entities for the given host and repo.
 	hostRepo := host + "/" + repo
 	parentKey := datastore.MakeKey(ctx, parentKind, hostRepo)
@@ -207,7 +202,7 @@ func Lookup(ctx context.Context, host, repo, ref string) (*changelist.Applicable
 
 	// For each MapPart entity, inspect the Groups to determine which configs
 	// apply for the given ref.
-	ac := &changelist.ApplicableConfig{UpdateTime: now}
+	ac := &changelist.ApplicableConfig{}
 	for _, mp := range mps {
 		if groups := mp.Groups.Match(ref); len(groups) != 0 {
 			ids := make([]string, len(groups))
