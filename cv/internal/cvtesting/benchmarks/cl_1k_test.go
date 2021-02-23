@@ -180,7 +180,6 @@ func makeCL(ci *gerritpb.ChangeInfo) *changelist.CL {
 			Projects: []*changelist.ApplicableConfig_Project{
 				{Name: "test", ConfigGroupIds: []string{"main"}},
 			},
-			UpdateTime: timestamppb.New(now),
 		},
 		DependentMeta: &changelist.DependentMeta{
 			ByProject: map[string]*changelist.DependentMeta_Meta{

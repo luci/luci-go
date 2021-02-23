@@ -183,9 +183,6 @@ message GerritSoftDep {
 // CLs, but storing the list is very useful for CV debugging and potentially for
 // better diagnostic messages to CV users and LUCI project owners.
 message ApplicableConfig {
-  // The timestamp when this was computed.
-  google.protobuf.Timestamp update_time = 1;
-
   message Project {
     string name = 1;
     // ID of the specific ConfigGroup. See cv/internal/config.ConfigGroupID.

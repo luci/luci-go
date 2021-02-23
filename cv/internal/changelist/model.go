@@ -323,8 +323,8 @@ type UpdateFields struct {
 	// Snapshot overwrites existing CL snapshot if newer according to its
 	// .ExternalUpdateTime.
 	Snapshot *Snapshot
-	// ApplicableConfig overwrites existing CL ApplicableConfig if newer
-	// accordingto to its .UpdateTime.
+	// ApplicableConfig overwrites existing CL ApplicableConfig if semantically
+	// different from existing one.
 	ApplicableConfig *ApplicableConfig
 
 	// AddDependentMeta adds or overwrites metadata per LUCI project in CL AsDepMeta.
@@ -340,8 +340,7 @@ func (u UpdateFields) IsEmpty() bool {
 }
 
 func (u UpdateFields) apply(cl *CL) (changed bool) {
-	if u.ApplicableConfig != nil && !cl.ApplicableConfig.IsUpToDate(
-		u.ApplicableConfig.GetUpdateTime().AsTime()) {
+	if u.ApplicableConfig != nil && !cl.ApplicableConfig.SemanticallyEqual(u.ApplicableConfig) {
 		cl.ApplicableConfig = u.ApplicableConfig
 		changed = true
 	}
@@ -390,8 +389,7 @@ func (u UpdateFields) apply(cl *CL) (changed bool) {
 //
 // If notify is given AND cl entity is created/updated, notify will be called
 // in a transaction context after CL is successfully created/updated.
-func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID,
-	fields UpdateFields, notify Notify) error {
+func Update(ctx context.Context, eid ExternalID, knownCLID common.CLID, fields UpdateFields, notify Notify) error {
 	if eid == "" && knownCLID == 0 {
 		panic("either ExternalID or known common.CLID must be provided")
 	}
