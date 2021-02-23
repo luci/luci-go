@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ef93ae0_e6fe913a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 22
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T21:35:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98f6e64b_316b0db6",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 83
+      },
+      "revId": "bd8f6c4d277c46b711217bb9a62a4d58f57e54db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cabad006_85aa0fff",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "17938cfb_326c9df6",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 22
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T21:35:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cabad006_85aa0fff",
+      "range": {
+        "startLine": 274,
+        "startChar": 118,
+        "endLine": 274,
+        "endChar": 126
+      },
+      "revId": "bd8f6c4d277c46b711217bb9a62a4d58f57e54db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a83c1ca3_854511c6",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-02-23T21:09:25Z",
       "side": 1,
       "message": "just err?",
+      "range": {
+        "startLine": 308,
+        "startChar": 5,
+        "endLine": 308,
+        "endChar": 14
+      },
+      "revId": "bd8f6c4d277c46b711217bb9a62a4d58f57e54db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee4ba11a_7b614896",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 22
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T21:35:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a83c1ca3_854511c6",
       "range": {
         "startLine": 308,
         "startChar": 5,
