@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f9f6a9d_f3a0189c",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T20:00:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "87c5f47a_1cba5ad2",
+      "revId": "8c51acb22b7005ae05f4d7495dc77e94ea50a1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "494b8a38_de6d7fe3",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-02-23T00:51:13Z",
       "side": 1,
       "message": "nit: normally receiver name is a single letter. How about \"e\"?",
+      "range": {
+        "startLine": 300,
+        "startChar": 6,
+        "endLine": 300,
+        "endChar": 14
+      },
+      "revId": "8c51acb22b7005ae05f4d7495dc77e94ea50a1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eea51af9_bea13143",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T20:00:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "494b8a38_de6d7fe3",
       "range": {
         "startLine": 300,
         "startChar": 6,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae3ea921_8c2607e5",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T20:00:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed738cd4_1058c3ee",
+      "range": {
+        "startLine": 308,
+        "startChar": 2,
+        "endLine": 309,
+        "endChar": 7
+      },
+      "revId": "8c51acb22b7005ae05f4d7495dc77e94ea50a1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6443c311_43dd9a59",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-02-23T00:51:13Z",
       "side": 1,
       "message": "did you mean to remove this before uploading?\nif not, then please send this to Stderr",
+      "range": {
+        "startLine": 311,
+        "startChar": 3,
+        "endLine": 311,
+        "endChar": 15
+      },
+      "revId": "8c51acb22b7005ae05f4d7495dc77e94ea50a1fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b61f3d49_5db3a44c",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T20:00:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6443c311_43dd9a59",
       "range": {
         "startLine": 311,
         "startChar": 3,
