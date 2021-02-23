@@ -50,6 +50,24 @@
       "message": "Er; why can\u0027t we launch with port 0 and then read it back? That\u0027s the only non-racy way to do this",
       "revId": "f511bfb2f5f65da56a61963a42dc17fabe8a08e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bdb02da_d4685949",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-23T22:23:13Z",
+      "side": 1,
+      "message": "Background: this change is needed by https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2677822/24/common/spantest/spantest.go#277\n\nI tried to pass port 0 to that command and it doesn\u0027t work (a port greater than 0 is required) so I reused the solution provided by Spanner team (just forwarded the email to you).",
+      "parentUuid": "2bfe7264_e5f2e569",
+      "revId": "f511bfb2f5f65da56a61963a42dc17fabe8a08e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
