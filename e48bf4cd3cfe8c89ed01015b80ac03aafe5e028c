@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e70326a9_6b9d11f1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-23T21:19:26Z",
+      "side": 1,
+      "message": "Del or content",
+      "range": {
+        "startLine": 13,
+        "startChar": 33,
+        "endLine": 13,
+        "endChar": 42
+      },
+      "revId": "e48bf4cd3cfe8c89ed01015b80ac03aafe5e028c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac8f039d_e1a7da58",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-23T21:19:26Z",
+      "side": 1,
+      "message": "nice! lgtm",
+      "revId": "e48bf4cd3cfe8c89ed01015b80ac03aafe5e028c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
