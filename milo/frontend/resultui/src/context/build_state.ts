@@ -32,6 +32,12 @@ export class BuildState {
   @observable.ref buildNumOrId?: string;
 
   /**
+   * Indicates whether a computed invocation ID should be used.
+   * Computed invocation ID may not work on older builds.
+   */
+  @observable.ref useComputedInvId = true;
+
+  /**
    * buildNum is defined when this.buildNumOrId is defined and doesn't start
    * with 'b'.
    */
@@ -47,7 +53,13 @@ export class BuildState {
   }
 
   @computed private get invocationId$(): IPromiseBasedObservable<string> {
-    if (this.builder && this.buildNum) {
+    if (!this.useComputedInvId) {
+      if (this.build === null) {
+        return fromPromise(Promise.race([]));
+      }
+      const invIdFromBuild = this.build.infra?.resultdb?.invocation?.slice('invocations/'.length) || '';
+      return fromPromise(Promise.resolve(invIdFromBuild));
+    } else if (this.builder && this.buildNum) {
       return fromPromise(getInvIdFromBuildNum(this.builder, this.buildNum));
     } else if (this.buildId) {
       return fromPromise(Promise.resolve(getInvIdFromBuildId(this.buildId)));
