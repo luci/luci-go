@@ -180,4 +180,26 @@ $(document).ready(function() {
       closeModal();
     }
   });
+
+  if (!document.cookie.includes('askForFeedback=false')) {
+    $('#feedback-bar').toggleClass('show', true);
+  }
+
+  $('#dismiss-feedback-bar').click(e => {
+    $('#feedback-bar').toggleClass('show', false);
+
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `askForFeedback=false; expires=${expires}; path=/`;
+    e.preventDefault();
+  });
+
+  $('#feedback-link').click(e => {
+    const feedbackComment = encodeURIComponent(
+`From Link: ${document.location.href}
+Please enter a description of the problem, with repro steps if applicable.
+`);
+    const url = `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2,Type-Bug&comment=${feedbackComment}`;
+    window.open(url);
+    e.preventDefault();
+  });
 });
