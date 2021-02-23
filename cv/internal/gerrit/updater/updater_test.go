@@ -331,10 +331,10 @@ func TestUpdateCLWorks(t *testing.T) {
 
 			Convey("after getting error from Gerrit", func() {
 				task.Change = 404
-				So(refresh(ctx, task), ShouldBeNil)
+				So(Refresh(ctx, task), ShouldBeNil)
 				assertDependentMetaOnly(404)
 				task.Change = 403
-				So(refresh(ctx, task), ShouldBeNil)
+				So(Refresh(ctx, task), ShouldBeNil)
 				assertDependentMetaOnly(403)
 			})
 
@@ -351,7 +351,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig("other-"+gHost, gRepo))
 				gobmap.Update(ctx, lProject)
 				task.Change = 1
-				So(refresh(ctx, task), ShouldBeNil)
+				So(Refresh(ctx, task), ShouldBeNil)
 				assertDependentMetaOnly(1)
 			})
 		})
@@ -361,7 +361,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("fail to fetch change details", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, err5xx, ci500))
 				task.Change = 500
-				So(refresh(ctx, task), ShouldErrLike, "boo")
+				So(Refresh(ctx, task), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
@@ -369,7 +369,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("fail to get filelist", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, okThenErr5xx(), ci500))
 				task.Change = 500
-				So(refresh(ctx, task), ShouldErrLike, "boo")
+				So(Refresh(ctx, task), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
@@ -378,7 +378,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		Convey("CL hint must actually exist", func() {
 			task.Change = 123
 			task.ClidHint = 848484881
-			So(refresh(ctx, task), ShouldErrLike, "clidHint 848484881 doesn't refer to an existing CL")
+			So(Refresh(ctx, task), ShouldErrLike, "clidHint 848484881 doesn't refer to an existing CL")
 		})
 
 		Convey("Fetch for the first time", func() {
@@ -391,7 +391,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			ct.GFake.SetDependsOn(gHost, ciParent, ciGrandpa)
 
 			task.Change = 123
-			So(refresh(ctx, task), ShouldBeNil)
+			So(Refresh(ctx, task), ShouldBeNil)
 			cl := getCL(ctx, gHost, 123)
 			So(cl.ApplicableConfig.GetUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 			So(cl.ApplicableConfig.HasOnlyProject(lProject), ShouldBeTrue)
@@ -461,7 +461,7 @@ func TestUpdateCLWorks(t *testing.T) {
 					return true
 				})
 				So(datastore.Put(ctx, cl), ShouldBeNil)
-				So(refresh(ctx, task), ShouldBeNil)
+				So(Refresh(ctx, task), ShouldBeNil)
 				updatedCL := getCL(ctx, gHost, 123)
 				runtest.AssertReceivedCLUpdate(ctx, rid1, updatedCL.ID, updatedCL.EVersion)
 				runtest.AssertReceivedCLUpdate(ctx, rid2, updatedCL.ID, updatedCL.EVersion)
@@ -469,13 +469,13 @@ func TestUpdateCLWorks(t *testing.T) {
 
 			Convey("Skips update with updatedHint", func() {
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
-				So(refresh(ctx, task), ShouldBeNil)
+				So(Refresh(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
 				So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
 
 				Convey("But notifies PM if explicitly asked to do so", func() {
 					task.ForceNotifyPm = true
-					So(refresh(ctx, task), ShouldBeNil)
+					So(Refresh(ctx, task), ShouldBeNil)
 					So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion) // not touched
 					pmNotifications = append(pmNotifications, lProject)
 					So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications) // notified
@@ -487,7 +487,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				task.UpdatedHint = timestamppb.New(
 					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Minute),
 				)
-				err := refresh(ctx, task)
+				err := Refresh(ctx, task)
 				So(err, ShouldErrLike, "stale Gerrit data")
 				So(transient.Tag.In(err), ShouldBeTrue)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
@@ -504,7 +504,7 @@ func TestUpdateCLWorks(t *testing.T) {
 					// be called. So, ensure 2+ RPCs return 5xx.
 					c.ACLs = okThenErr5xx()
 				})
-				So(refresh(ctx, task), ShouldBeNil)
+				So(Refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				So(cl2.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble,
@@ -527,7 +527,7 @@ func TestUpdateCLWorks(t *testing.T) {
 					})
 
 					task.UpdatedHint = nil
-					So(refresh(ctx, task), ShouldBeNil)
+					So(Refresh(ctx, task), ShouldBeNil)
 					cl3 := getCL(ctx, gHost, 123)
 					So(cl3.EVersion, ShouldEqual, cl2.EVersion+1)
 					So(cl3.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
@@ -557,7 +557,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				ct.Clock.Add(time.Second)
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
 				gobmap.Update(ctx, lProject)
-				So(refresh(ctx, task), ShouldBeNil)
+				So(Refresh(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				// Snapshot is preserved (handy, if this is temporal misconfiguration).
@@ -583,7 +583,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				task.LuciProject = lProject2
 
 				Convey("with access", func() {
-					So(refresh(ctx, task), ShouldBeNil)
+					So(Refresh(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					So(cl2.Snapshot.GetLuciProject(), ShouldEqual, lProject2)
@@ -599,7 +599,7 @@ func TestUpdateCLWorks(t *testing.T) {
 					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 						c.ACLs = gf.ACLRestricted("not-lProject2")
 					})
-					So(refresh(ctx, task), ShouldBeNil)
+					So(Refresh(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					// Snapshot is kept as is, including its ExternalUpdateTime.
@@ -624,7 +624,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
 			task.Change = 101
 			task.ClidHint = int64(cl.ID)
-			So(refresh(ctx, task), ShouldBeNil)
+			So(Refresh(ctx, task), ShouldBeNil)
 
 			cl2 := getCL(ctx, gHost, 101)
 			So(cl2.EVersion, ShouldEqual, 2)
