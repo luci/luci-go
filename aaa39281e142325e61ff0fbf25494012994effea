@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f7d6257_7ef5d12a",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-23T01:56:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1807f84_475f4d19",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 14
+      },
+      "revId": "aaa39281e142325e61ff0fbf25494012994effea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "29b6e415_1ae0ec4f",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-22T22:06:29Z",
       "side": 1,
       "message": "I\u0027m not sure truncating to seconds here is appropriate. \n\nPer https://cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues.tasks#Task Cloud Tasks truncate it to the nearest microsecond. We should do the same. Otherwise our metrics may have negative time intervals (for tasks that have \u003c1s ETA).",
+      "range": {
+        "startLine": 852,
+        "startChar": 49,
+        "endLine": 852,
+        "endChar": 74
+      },
+      "revId": "aaa39281e142325e61ff0fbf25494012994effea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "535bf1d8_20361aee",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 852,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-23T01:56:40Z",
+      "side": 1,
+      "message": "Done, though not rounding to the nearest ms, but plain truncating by integer division, i.e. `var int32 micros \u003d nanos / 1000`",
+      "parentUuid": "29b6e415_1ae0ec4f",
       "range": {
         "startLine": 852,
         "startChar": 49,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c700d21_0184a8a7",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1149,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-23T01:56:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd4fe461_f82ef032",
+      "range": {
+        "startLine": 1149,
+        "startChar": 4,
+        "endLine": 1149,
+        "endChar": 23
+      },
+      "revId": "aaa39281e142325e61ff0fbf25494012994effea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b6a0d92c_3a99d820",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-02-22T22:06:29Z",
       "side": 1,
       "message": "nit: skip setting this metrics if info.expectedETA IsZero. Task submitted by an older version of this code won\u0027t have it.",
+      "range": {
+        "startLine": 1155,
+        "startChar": 61,
+        "endLine": 1155,
+        "endChar": 77
+      },
+      "revId": "aaa39281e142325e61ff0fbf25494012994effea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbde1808_50fff059",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1155,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-23T01:56:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6a0d92c_3a99d820",
       "range": {
         "startLine": 1155,
         "startChar": 61,
@@ -116,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "18d60026_2e963b4f",
+        "filename": "server/tq/internal/metrics/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-23T01:56:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ed0175f_f4825f98",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 19
+      },
+      "revId": "aaa39281e142325e61ff0fbf25494012994effea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "aa8bb674_de4522af",
@@ -129,6 +249,30 @@
       "writtenOn": "2021-02-22T22:06:29Z",
       "side": 1,
       "message": "This field isn\u0027t set in handlePush. Also I\u0027m not sure it is useful to have it here at all.",
+      "range": {
+        "startLine": 144,
+        "startChar": 2,
+        "endLine": 144,
+        "endChar": 20
+      },
+      "revId": "aaa39281e142325e61ff0fbf25494012994effea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd6a0b1d_a273ba20",
+        "filename": "server/tq/internal/metrics/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-02-23T01:56:40Z",
+      "side": 1,
+      "message": "Good catch. I intended to have it in the metric above.",
+      "parentUuid": "aa8bb674_de4522af",
       "range": {
         "startLine": 144,
         "startChar": 2,
