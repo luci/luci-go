@@ -69,6 +69,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   @observable.ref buildState!: BuildState;
   @observable.ref invocationState!: InvocationState;
 
+  // Set to true when testing.
+  // Otherwise this.render() will throw due to missing initialization steps in
+  // this.onBeforeEnter.
+  @observable.ref prerender = false;
+
   @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);
   @observable.ref private showFeedbackDialog = false;
 
@@ -148,15 +153,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     ));
 
     this.disposers.push(reaction(
-      () => [
-        this.appState,
-        this.buildState.build?.infra?.resultdb?.invocation?.slice('invocations/'.length) || '',
-      ] as [AppState, string],
-      ([appState, invId]) => {
+      () => this.appState,
+      (appState) => {
         this.invocationState?.dispose();
         this.invocationState = new InvocationState(appState);
-        this.invocationState.invocationId = invId;
-        this.invocationState.initialized = true;
+        this.invocationState.invocationId = this.buildState.invocationId;
 
         // Emulate @property() update.
         this.updated(new Map([['invocationState', this.invocationState]]));
@@ -165,7 +166,14 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     ));
     this.disposers.push(() => this.invocationState.dispose());
 
-    this.disposers.push(autorun(
+    this.disposers.push(reaction(
+      () => this.buildState.invocationId,
+      (invId) => this.invocationState.invocationId = invId,
+      {fireImmediately: true},
+    ));
+
+    this.disposers.push(reaction(
+      () => this.invocationState.invocation$.state,
       () => {
         if (this.invocationState.invocation$.state !== REJECTED) {
           return;
@@ -305,6 +313,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   }
 
   protected render() {
+    if (this.prerender) {
+      return html``;
+    }
+
     return html`
       <mwc-dialog
         id="settings-dialog"
