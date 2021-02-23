@@ -82,7 +82,9 @@ func TestAddTask(t *testing.T) {
 	"type": "google.protobuf.Duration",
 	"body": "10s"
 }`)
-
+		expectedScheduleTime := timestamppb.New(now.Add(123 * time.Second))
+		expectedHeaders := defaultHeaders()
+		expectedHeaders[ExpectedETAHeader] = fmt.Sprintf("%d.%06d", expectedScheduleTime.GetSeconds(), expectedScheduleTime.GetNanos()/1000)
 		Convey("Nameless HTTP task", func() {
 			So(d.AddTask(ctx, task), ShouldBeNil)
 
@@ -90,12 +92,12 @@ func TestAddTask(t *testing.T) {
 			So(submitter.reqs[0].CreateTaskRequest, ShouldResembleProto, &taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
-					ScheduleTime: timestamppb.New(now.Add(123 * time.Second)),
+					ScheduleTime: expectedScheduleTime,
 					MessageType: &taskspb.Task_HttpRequest{
 						HttpRequest: &taskspb.HttpRequest{
 							HttpMethod: taskspb.HttpMethod_POST,
 							Url:        "https://example.com/internal/tasks/t/test-dur/hi",
-							Headers:    defaultHeaders(),
+							Headers:    expectedHeaders,
 							Body:       expectedPayload,
 							AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 								OidcToken: &taskspb.OidcToken{
@@ -114,15 +116,17 @@ func TestAddTask(t *testing.T) {
 			So(d.AddTask(ctx, task), ShouldBeNil)
 
 			So(submitter.reqs, ShouldHaveLength, 1)
+			expectedScheduleTime := timestamppb.New(now.Add(123 * time.Second))
+
 			So(submitter.reqs[0].CreateTaskRequest, ShouldResembleProto, &taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
-					ScheduleTime: timestamppb.New(now.Add(123 * time.Second)),
+					ScheduleTime: expectedScheduleTime,
 					MessageType: &taskspb.Task_AppEngineHttpRequest{
 						AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
 							HttpMethod:  taskspb.HttpMethod_POST,
 							RelativeUri: "/internal/tasks/t/test-dur/hi",
-							Headers:     defaultHeaders(),
+							Headers:     expectedHeaders,
 							Body:        expectedPayload,
 						},
 					},
@@ -219,15 +223,16 @@ func TestAddTask(t *testing.T) {
 			}), ShouldBeNil)
 
 			So(submitter.reqs, ShouldHaveLength, 1)
+			st := timestamppb.New(now.Add(444 * time.Second))
 			So(submitter.reqs[0].CreateTaskRequest, ShouldResembleProto, &taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
-					ScheduleTime: timestamppb.New(now.Add(444 * time.Second)),
+					ScheduleTime: st,
 					MessageType: &taskspb.Task_AppEngineHttpRequest{
 						AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
 							HttpMethod:  taskspb.HttpMethod_GET,
 							RelativeUri: "/zzz",
-							Headers:     map[string]string{"k": "v"},
+							Headers:     map[string]string{"k": "v", ExpectedETAHeader: fmt.Sprintf("%d.%06d", st.GetSeconds(), st.GetNanos()/1000)},
 							Body:        []byte("123"),
 						},
 					},
