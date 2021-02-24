@@ -54,6 +54,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "afb408b6_4f31f8d0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T23:29:55Z",
+      "side": 1,
+      "message": "Yes. latest result is as follows\n\n```\nBenchmarkComputeOrder/10_CLs               15568             77005 ns/op            5909 B/op              19 allocs/op\nBenchmarkComputeOrder/30_CLs                 339           3525561 ns/op           89470 B/op              72 allocs/op\nBenchmarkComputeOrder/100_CLs                  3         475807200 ns/op          694781 B/op             302 allocs/op\n```\n\ncomparing to previous implementaion: https://crrev.com/c/2339847. 100CL case is 33% faster. I guess the improvement is from using int ID instead of string ID so that map look up is much faster?",
+      "parentUuid": "0cd27300_789af4a3",
+      "revId": "fb7032231cd22934d8f23e014efaad6f9c4298f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "93a66e90_6958339a",
         "filename": "cv/internal/submission/order.go",
         "patchSetId": 2
@@ -65,6 +83,30 @@
       "writtenOn": "2021-02-22T23:02:12Z",
       "side": 1,
       "message": "i think it should actually be runCL, but it\u0027d be trivial to change later.",
+      "range": {
+        "startLine": 44,
+        "startChar": 25,
+        "endLine": 44,
+        "endChar": 35
+      },
+      "revId": "fb7032231cd22934d8f23e014efaad6f9c4298f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a58c1b2a_69f825e2",
+        "filename": "cv/internal/submission/order.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T23:29:55Z",
+      "side": 1,
+      "message": "Oh true. runCL should be used. Changed in the latest PS.",
+      "parentUuid": "93a66e90_6958339a",
       "range": {
         "startLine": 44,
         "startChar": 25,
