@@ -143,7 +143,13 @@ export class OverviewTabElement extends MobxLitElement {
         <div class="value"><milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, build.id)} target="_blank"></div>
         ${build.infra?.swarming ? html`
         <div class="key">Swarming Task:</div>
-        <div class="value">${build.infra.swarming.taskId ? html`<a href=${getURLForSwarmingTask(build.infra.swarming)}>${build.infra.swarming.taskId}</a>`: 'N/A'}</div>
+        <div class="value">
+        ${!build.infra.swarming.taskId ? 'N/A' : html`
+          <a href=${getURLForSwarmingTask(build.infra.swarming.hostname, build.infra.swarming.taskId)}>
+            ${build.infra.swarming.taskId}
+          </a>
+        `}
+        </div>
         <div class="key">Bot:</div>
         <div class="value">${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</div>
         ` : ''}
