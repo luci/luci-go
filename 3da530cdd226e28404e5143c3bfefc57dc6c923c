@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b12071b_75bc99b0",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T17:27:08Z",
+      "side": 1,
+      "message": "nice",
+      "revId": "3da530cdd226e28404e5143c3bfefc57dc6c923c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
