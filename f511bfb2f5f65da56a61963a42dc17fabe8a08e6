@@ -93,6 +93,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "69852e03_1cef7582",
+        "filename": "common/system/port/port.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-24T19:44:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3f40695_f87f5fbb",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 101
+      },
+      "revId": "f511bfb2f5f65da56a61963a42dc17fabe8a08e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f63e310_6d645438",
@@ -118,6 +142,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "94100b6f_d05799ea",
+        "filename": "common/system/port/port.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-24T19:44:40Z",
+      "side": 1,
+      "message": "So the range is [32768, 60000].\n\nDo you mean we keep this big range to randomly find a port, but if it\u0027s not free we try no more than, say 256 times to find another?",
+      "parentUuid": "2f63e310_6d645438",
+      "range": {
+        "startLine": 46,
+        "startChar": 4,
+        "endLine": 46,
+        "endChar": 30
+      },
+      "revId": "f511bfb2f5f65da56a61963a42dc17fabe8a08e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3cdb7c5b_cd3dcd92",
         "filename": "common/system/port/port.go",
         "patchSetId": 2
@@ -129,6 +177,30 @@
       "writtenOn": "2021-02-24T06:08:10Z",
       "side": 1,
       "message": "what\u0027s the point of this variable?",
+      "range": {
+        "startLine": 81,
+        "startChar": 5,
+        "endLine": 81,
+        "endChar": 15
+      },
+      "revId": "f511bfb2f5f65da56a61963a42dc17fabe8a08e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "497d715c_234928f5",
+        "filename": "common/system/port/port.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-24T19:44:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3cdb7c5b_cd3dcd92",
       "range": {
         "startLine": 81,
         "startChar": 5,
