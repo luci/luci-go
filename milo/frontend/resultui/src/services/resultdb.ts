@@ -64,6 +64,7 @@ export interface Invocation {
   readonly deadline: string;
   readonly includedInvocations?: string[];
   readonly tags?: Tag[];
+  readonly producerResource: string;
 }
 
 export interface TestResult {

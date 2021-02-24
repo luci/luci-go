@@ -20,12 +20,15 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import takeWhile from 'lodash-es/takeWhile';
 import { computed, observable } from 'mobx';
-import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
+import { fromPromise, FULFILLED } from 'mobx-utils';
 
 import '../../components/lazy_list';
+import { AppState, consumeAppState } from '../../context/app_state';
+import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ID_SEG_REGEX, TestVariant } from '../../services/resultdb';
 import '../copy_to_clipboard';
+import '../dot_spinner';
 import { OnEnterList } from '../lazy_list';
 import './result_entry';
 
@@ -41,7 +44,10 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
  * Renders an expandable entry of the given test variant.
  */
 @customElement('milo-variant-entry')
+@consumeAppState
 export class VariantEntryElement extends MobxLitElement implements OnEnterList {
+  @observable.ref appState!: AppState;
+
   @observable.ref variant!: TestVariant;
   @observable.ref prevTestId = '';
   @observable.ref prevVariant?: TestVariant;
@@ -69,6 +75,24 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
 
   @observable.ref private shouldRenderContent = false;
   @observable.ref renderCallback: Function | null = null;
+
+  @computed
+  private get parentInvId() {
+    const name = this.variant.results?.[0].result.name || this.variant.exonerations![0].name;
+    return name.split('/', 2).pop();
+  }
+
+  @computed
+  private get parentInv$() {
+    if (!this.appState.resultDb) {
+      return fromPromise(Promise.race([]));
+    }
+    return fromPromise(this.appState.resultDb.getInvocation({name: `invocations/${this.parentInvId}`}));
+  }
+
+  @computed private get parentInv() {
+    return this.parentInv$.state === FULFILLED ? this.parentInv$.value : null;
+  }
 
   /**
    * Common prefix between this.variant.testId and this.prevTestId.
@@ -140,6 +164,11 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
           ${sanitizeHTML(e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).')}
         </div>
         `)}
+        <div class="swarming-task">
+          ${this.parentInv ?
+          html`<a href=${this.parentInv.producerResource} target="_blank">Swarming Task</a>` :
+          html`<milo-dot-spinner></milo-dot-spinner>`}
+        </div>
         ${repeat(this.variant.results || [], (r) => r.result.resultId, (r, i) => html`
         <milo-result-entry
           .id=${i + 1}
@@ -326,6 +355,11 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
 
     .greyed-out {
       color: var(--greyed-out-text-color);
+    }
+
+    .swarming-task {
+      margin: 2px 5px;
+      color: var(--active-text-color);
     }
 
     .explanation-html {
