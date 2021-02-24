@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47c4927f_cf0a8344",
+        "filename": "buildbucket/cmd/bbagent/integration_util_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T19:20:39Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "530fc79119ccfae67829eb5658780c701bb5781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9ad96fc2_672c0308",
+        "filename": "buildbucket/cmd/bbagent/integration_util_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T19:20:39Z",
+      "side": 1,
+      "message": "nit: scheduleBuild would be more accurate",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 11
+      },
+      "revId": "530fc79119ccfae67829eb5658780c701bb5781a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
