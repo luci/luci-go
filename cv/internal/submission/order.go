@@ -18,30 +18,14 @@
 package submission
 
 import (
+	"fmt"
 	"sort"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-)
 
-// TODO(yiwzhang): clean up all the following structs once we have formal data
-// model for new CV.
-
-type CL struct {
-	Key  string
-	Deps []Dep
-}
-
-type Dep struct {
-	Key         string
-	Requirement RequirementType
-}
-
-type RequirementType int8
-
-const (
-	Soft RequirementType = iota
-	Hard
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // ComputeOrder computes the best order for submission of CLs based on
@@ -58,16 +42,16 @@ const (
 // https://en.wikipedia.org/wiki/Feedback_arc_set#Minimum_feedback_arc_set
 // However, approximation is fine within CV context so long as hard
 // dependencies are satisfied.
-func ComputeOrder(cls []CL) ([]CL, error) {
+func ComputeOrder(cls []*run.RunCL) ([]*run.RunCL, error) {
 	ret, _, err := compute(cls)
 	return ret, err
 }
 
 type brokenDep struct {
-	src, dest string
+	src, dest common.CLID
 }
 
-// optimize is DFS-based toposort which backtracks if a cycle is found and
+// compute is DFS-based toposort which backtracks if a cycle is found and
 // removes the last-followed soft requirement dependency.
 //
 // Denoting V=len(cls), E=number of dependency edges (bounded by O(V^2)),
@@ -83,30 +67,30 @@ type brokenDep struct {
 // guaranteed-reachable node Y. Then during backtracking, just skip forward
 // over chains of hard requirement changes. Also, with a reciprocal structure,
 // during 'skip back' phase one can skip directly to the nearest soft dep.
-func compute(cls []CL) ([]CL, int, error) {
-	ret := make([]CL, 0, len(cls))
-	remainingCLs := make(map[string]CL, len(cls))
+func compute(cls []*run.RunCL) ([]*run.RunCL, int, error) {
+	ret := make([]*run.RunCL, 0, len(cls))
+	remainingCLs := make(map[common.CLID]*run.RunCL, len(cls))
 	for _, cl := range cls {
-		if _, ok := remainingCLs[cl.Key]; ok {
-			return nil, 0, errors.Reason("duplicate cl: %s", cl.Key).Err()
+		if _, ok := remainingCLs[cl.ID]; ok {
+			return nil, 0, errors.Reason("duplicate cl: %d", cl.ID).Err()
 		}
-		remainingCLs[cl.Key] = cl
+		remainingCLs[cl.ID] = cl
 	}
 	brokenDeps := map[brokenDep]struct{}{}
-	cycleDetector := stringset.Set{}
+	cycleDetector := map[common.CLID]struct{}{}
 
 	// visit returns whether a cycle was detected that can't be resolved yet.
-	var visit func(cl CL) bool
-	visit = func(cl CL) bool {
-		if _, ok := remainingCLs[cl.Key]; !ok {
+	var visit func(cl *run.RunCL) bool
+	visit = func(cl *run.RunCL) bool {
+		if _, ok := remainingCLs[cl.ID]; !ok {
 			return false
 		}
-		if cycleDetector.Has(cl.Key) {
+		if _, ok := cycleDetector[cl.ID]; ok {
 			return true
 		}
-		cycleDetector.Add(cl.Key)
+		cycleDetector[cl.ID] = struct{}{}
 
-		for _, dep := range cl.Deps {
+		for _, dep := range cl.Detail.GetDeps() {
 			// TODO(yiwzhang): Strictly speaking, the time complexity for hashtable
 			// access is not strictly O(1) considering the time spent on hash func
 			// and comparing the output value (Denoted it as HASH(key)). Therefore,
@@ -117,41 +101,46 @@ func compute(cls []CL) ([]CL, int, error) {
 			// that the time spent on the following line will reduce to O(E*V*1).
 			// We are gonna defer this improvement till the struct for `Dep` is
 			// clear to us.
-			if _, ok := remainingCLs[dep.Key]; !ok {
+			depCLID := common.CLID(dep.GetClid())
+			if _, ok := remainingCLs[depCLID]; !ok {
 				continue
 			}
-			if _, ok := brokenDeps[brokenDep{cl.Key, dep.Key}]; ok {
+			if _, ok := brokenDeps[brokenDep{cl.ID, depCLID}]; ok {
 				continue
 			}
-			for visit(remainingCLs[dep.Key]) {
+			for visit(remainingCLs[depCLID]) {
 				// Going deeper forms a cycle which can't be broken up at deeper levels.
-				if dep.Requirement == Hard {
+				switch dep.GetKind() {
+				case changelist.DepKind_SOFT:
+				case changelist.DepKind_HARD:
 					// Can't break it at this level either, backtrack.
-					cycleDetector.Del(cl.Key)
+					delete(cycleDetector, cl.ID)
 					return true
+				default:
+					panic(fmt.Errorf("unknown dep kind %s", dep.GetKind()))
 				}
 				// Greedily break cycle by removing this dep. This is why this
 				// algorithm is only an approximation.
-				brokenDeps[brokenDep{cl.Key, dep.Key}] = struct{}{}
+				brokenDeps[brokenDep{cl.ID, depCLID}] = struct{}{}
 				break
 			}
 		}
-		cycleDetector.Del(cl.Key)
-		delete(remainingCLs, cl.Key)
+		delete(cycleDetector, cl.ID)
+		delete(remainingCLs, cl.ID)
 		ret = append(ret, cl)
 		return false
 	}
 
-	sortedCLs := make([]CL, len(cls))
+	sortedCLs := make([]*run.RunCL, len(cls))
 	copy(sortedCLs, cls)
 	sort.SliceStable(sortedCLs, func(i, j int) bool {
-		return sortedCLs[i].Key < sortedCLs[j].Key
+		return sortedCLs[i].ID < sortedCLs[j].ID
 	})
 	for _, cl := range sortedCLs {
 		if visit(cl) {
 			// A cycle was formed via hard requirement deps, which should not
 			// happen.
-			return nil, 0, errors.Reason("cycle detected for cl: %s", cl.Key).Err()
+			return nil, 0, errors.Reason("cycle detected for cl: %d", cl.ID).Err()
 		}
 	}
 	return ret, len(brokenDeps), nil
