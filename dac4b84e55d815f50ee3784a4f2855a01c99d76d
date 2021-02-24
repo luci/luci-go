@@ -34,6 +34,24 @@
       "parentUuid": "ac8bc0a8_ab97f464",
       "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "891fe5dc_8e458b36",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 26
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T07:32:58Z",
+      "side": 1,
+      "message": "FWIU Docker is a pretty heavy dependency, and is not required by our only target platform. \n\nVadim would correct me, but Docker is a security risk so we try not to install it on bots without a good reason.",
+      "parentUuid": "26a253a8_4d41a060",
+      "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
