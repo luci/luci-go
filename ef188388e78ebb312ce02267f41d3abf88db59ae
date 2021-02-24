@@ -64,6 +64,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1165c8f1_97ce8782",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-24T06:00:56Z",
+      "side": 1,
+      "message": "This was for entries that only had exonerations. Will scrap this in the next patch.",
+      "parentUuid": "40ee6c94_51050636",
+      "range": {
+        "startLine": 81,
+        "startChar": 54,
+        "endLine": 81,
+        "endChar": 92
+      },
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b6f05fb_bb958470",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-24T06:00:56Z",
+      "side": 1,
+      "message": "can exoneration have swarming link as well?",
+      "parentUuid": "6bed1355_cdeb7739",
+      "range": {
+        "startLine": 81,
+        "startChar": 39,
+        "endLine": 81,
+        "endChar": 42
+      },
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "eac6291a_ff49e918",
