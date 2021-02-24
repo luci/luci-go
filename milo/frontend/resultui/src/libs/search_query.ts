@@ -16,7 +16,7 @@ import { html } from 'lit-html';
 import { Suggestion } from '../components/auto_complete';
 import { TestVariant } from '../services/resultdb';
 
-const SPECIAL_QUERY_RE = /^(?<neg>-?)(?<type>[a-zA-Z]+):(?<value>.+)$/;
+const SPECIAL_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 
 export type TestVariantFilter = (v: TestVariant) => boolean;
 
@@ -25,7 +25,7 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
     const match = query.match(SPECIAL_QUERY_RE);
 
     // If the query isn't a special query, treat it as an ID query.
-    const {neg, type, value} = match?.groups! || {neg: '', type: 'ID', value: query};
+    const [, neg, type, value] = match || ['', '', 'ID', query];
     const negate = neg === '-';
     switch (type) {
       // Whether the test variant has the specified status.
@@ -104,14 +104,15 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
     return [];
   }
 
-  const match = subQuery.match(/^(?<neg>-?)ID:(?<substr>.*)/);
+  const match = subQuery.match(/^(-?)ID:(.*)/);
   if (match) {
-    if (match.groups!['neg'] === '-') {
-      return [getIdQuerySuggestion(match.groups!['substr'], true, true)];
+    const [, neg, substr] = match;
+    if (neg === '-') {
+      return [getIdQuerySuggestion(substr, true, true)];
     }
     return [
-      getIdQuerySuggestion(match.groups!['substr'], false, true),
-      getIdQuerySuggestion(match.groups!['substr'], true, true),
+      getIdQuerySuggestion(substr, false, true),
+      getIdQuerySuggestion(substr, true, true),
     ];
   }
 
