@@ -16,6 +16,24 @@
       "message": "Hi Robbie,\n\nI tried this change on my mac and there are 2 issues:\n1. gcloud on mac doesn\u0027t include the Cloud Spanner Emulator component (thus it requires Docker), so https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2677822/26/common/spantest/spantest.go#232 won\u0027t work\n2. e.cmd.SysProcAttr \u003d \u0026syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL} at https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2677822/26/common/spantest/spantest.go#287 only works on Linux. In fact I have to add _nonlinux files so that `go build` can pass on mac and win now. ",
       "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26a253a8_4d41a060",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 26
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-24T06:12:14Z",
+      "side": 1,
+      "message": "Ok... I guess I\u0027m a bit unclear... Why don\u0027t we just use the docker version on all platforms? Why do we want the gcloud version at all?",
+      "parentUuid": "ac8bc0a8_ab97f464",
+      "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
