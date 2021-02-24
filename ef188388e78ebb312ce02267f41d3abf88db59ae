@@ -114,6 +114,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "93b57289_010cfcd5",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T07:09:05Z",
+      "side": 1,
+      "message": "no",
+      "parentUuid": "1b6f05fb_bb958470",
+      "range": {
+        "startLine": 81,
+        "startChar": 39,
+        "endLine": 81,
+        "endChar": 42
+      },
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "eac6291a_ff49e918",
         "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
         "patchSetId": 1
@@ -184,6 +208,30 @@
       "side": 1,
       "message": "I see.\n\nIn the build page, we can get the swarming host name from buildbucket.\nBut how do we know the hostname in the invocation page?",
       "parentUuid": "5c29e080_1a09f419",
+      "range": {
+        "startLine": 169,
+        "startChar": 74,
+        "endLine": 169,
+        "endChar": 87
+      },
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e2bd0e5_66196079",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T07:09:05Z",
+      "side": 1,
+      "message": "take a look at the invocation id. It looks like task-\u003chost\u003e-\u003ctaskID\u003e",
+      "parentUuid": "e46e9278_121f92ad",
       "range": {
         "startLine": 169,
         "startChar": 74,
