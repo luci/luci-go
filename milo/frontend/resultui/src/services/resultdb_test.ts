@@ -22,7 +22,7 @@ describe('resultdb', () => {
     assert.strictEqual(invId, 'build-135d246ed1a40cc3e77d8b1daacc7198fe344b1ac7b95c08cb12f1cc383867d7-179945');
   });
 
-  describe('should compute invocation ID from build ID correctly', async () => {
+  it('should compute invocation ID from build ID correctly', async () => {
     const invId = await getInvIdFromBuildId('123456');
     assert.strictEqual(invId, 'build-123456');
   });
