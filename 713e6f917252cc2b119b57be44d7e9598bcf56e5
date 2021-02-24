@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06d9fe1d_4129cd47",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T18:38:48Z",
+      "side": 1,
+      "message": "2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb72f159_1fdaa2db",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T18:38:48Z",
+      "side": 1,
+      "message": "Use v2 lib `google.golang.org/protobuf/proto`",
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "269e28d4_ce0a23df",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T18:38:48Z",
+      "side": 1,
+      "message": "nit: This could be RWMutex.",
+      "range": {
+        "startLine": 67,
+        "startChar": 18,
+        "endLine": 67,
+        "endChar": 23
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0d36375_291d4cac",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T18:38:48Z",
+      "side": 1,
+      "message": "Should we use *bytes.Buffer instead because neither data of binary nor data of datagram stream type is a valid encoded string?",
+      "range": {
+        "startLine": 69,
+        "startChar": 15,
+        "endLine": 69,
+        "endChar": 31
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4ed57a7_ca417bff",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T18:38:48Z",
+      "side": 1,
+      "message": "This may error when fs.data is emtpty.\n\nUpdate: ah, you always initialize the first element when creating FakeStream.",
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0307765e_7712e697",
+        "filename": "logdog/client/butler/output/memory/memory_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-24T18:38:48Z",
+      "side": 1,
+      "message": "2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
