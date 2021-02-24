@@ -22,6 +22,10 @@ import { TestLoader } from '../models/test_loader';
 import { Invocation, TestVariant } from '../services/resultdb';
 import { AppState } from './app_state';
 
+export class QueryInvocationError {
+  constructor(readonly invId: string, readonly inner: unknown) {}
+}
+
 /**
  * Records state of an invocation.
  */
@@ -84,7 +88,14 @@ export class InvocationState {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getInvocation({name: this.invocationName}));
+    const invId = this.invocationId;
+    return fromPromise(
+      this.appState.resultDb
+        .getInvocation({name: this.invocationName})
+        .catch((e) => {
+          throw new QueryInvocationError(invId!, e);
+        }),
+    );
   }
 
   @computed

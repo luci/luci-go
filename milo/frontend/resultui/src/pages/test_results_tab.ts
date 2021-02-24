@@ -313,12 +313,12 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     const state = this.invocationState;
     return html`
       <span
-        style=${styleMap({'display': state.testLoader?.isLoading ? 'none' : ''})}
+        style=${styleMap({'display': state.testLoader?.isLoading ?? true ? 'none' : ''})}
         @click=${() => this.loadPagesUntilStatus(status)}
       >
         [load more]
       </span>
-      <span style=${styleMap({'display': state.testLoader?.isLoading ? '' : 'none'})}>
+      <span style=${styleMap({'display': state.testLoader?.isLoading ?? true ? '' : 'none'})}>
         loading <milo-dot-spinner></milo-dot-spinner>
       </span>
     `;
@@ -347,7 +347,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       <milo-lazy-list
         id="test-result-view"
         .growth=${300} tabindex="-1"
-        style=${styleMap({'display': state.testLoader?.firstRequestSent ? '' : 'none'})}
       >${this.renderAllVariants()}</milo-lazy-list>
     `;
   }

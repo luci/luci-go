@@ -19,7 +19,7 @@
 
 import { action, computed, observable } from 'mobx';
 
-import { QueryTestVariantsRequest, TestVariant, TestVariantStatus, UISpecificService } from '../services/resultdb';
+import { QueryTestVariantsRequest, QueryTestVariantsResponse, TestVariant, TestVariantStatus, UISpecificService } from '../services/resultdb';
 
 /**
  * The stage of the next test variant. The stage can be
@@ -43,6 +43,14 @@ const VARIANT_STATUS_LOADING_STAGE_MAP = Object.freeze({
   [TestVariantStatus.EXONERATED]: LoadingStage.LoadingExonerated,
   [TestVariantStatus.EXPECTED]: LoadingStage.LoadingExpected,
 });
+
+export class LoadTestVariantsError {
+  constructor(readonly req: QueryTestVariantsRequest, readonly source: unknown) {}
+
+  toString() {
+    return `error when loading test variants\n ${this.source}`;
+  }
+}
 
 /**
  * Keeps the progress of the iterator and loads tests into the test node on
@@ -146,8 +154,14 @@ export class TestLoader {
       return;
     }
 
-    const res = await this.uiSpecificService
-      .queryTestVariants({...this.req, pageToken: this.nextPageToken});
+    const req = {...this.req, pageToken: this.nextPageToken};
+    let res: QueryTestVariantsResponse;
+    try {
+      res = await this.uiSpecificService.queryTestVariants(req);
+    } catch (e) {
+      throw new LoadTestVariantsError(req, e);
+    }
+
     this.nextPageToken = res.nextPageToken;
 
     const testVariants = res.testVariants || [];
