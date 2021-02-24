@@ -149,7 +149,7 @@ func (x TriggeringPolicy_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TriggeringPolicy_Kind.Descriptor instead.
 func (TriggeringPolicy_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{4, 0}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{3, 0}
 }
 
 // ProjectConfig defines a schema for a config file that describe jobs belonging
@@ -167,8 +167,6 @@ type ProjectConfig struct {
 	//
 	// Deprecated: Do not use.
 	AclSets []*AclSet `protobuf:"bytes,3,rep,name=acl_sets,json=aclSets,proto3" json:"acl_sets,omitempty"`
-	// A set of security options to be enabled individually for the project.
-	SecurityOptions *SecurityOptions `protobuf:"bytes,4,opt,name=security_options,json=securityOptions,proto3" json:"security_options,omitempty"`
 }
 
 func (x *ProjectConfig) Reset() {
@@ -221,13 +219,6 @@ func (x *ProjectConfig) GetTrigger() []*Trigger {
 func (x *ProjectConfig) GetAclSets() []*AclSet {
 	if x != nil {
 		return x.AclSets
-	}
-	return nil
-}
-
-func (x *ProjectConfig) GetSecurityOptions() *SecurityOptions {
-	if x != nil {
-		return x.SecurityOptions
 	}
 	return nil
 }
@@ -354,55 +345,6 @@ func (x *AclSet) GetAcls() []*Acl {
 	return nil
 }
 
-// SecurityOptions enable project specific security features.
-type SecurityOptions struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Enables the use of project scoped service accounts.
-	ProjectScopedServiceAccounts bool `protobuf:"varint,1,opt,name=project_scoped_service_accounts,json=projectScopedServiceAccounts,proto3" json:"project_scoped_service_accounts,omitempty"`
-}
-
-func (x *SecurityOptions) Reset() {
-	*x = SecurityOptions{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *SecurityOptions) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SecurityOptions) ProtoMessage() {}
-
-func (x *SecurityOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SecurityOptions.ProtoReflect.Descriptor instead.
-func (*SecurityOptions) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *SecurityOptions) GetProjectScopedServiceAccounts() bool {
-	if x != nil {
-		return x.ProjectScopedServiceAccounts
-	}
-	return false
-}
-
 // TriggeringPolicy defines a function that decides when and how to launch a
 // job invocation, given the job's current state and a set of pending triggers.
 type TriggeringPolicy struct {
@@ -445,7 +387,7 @@ type TriggeringPolicy struct {
 func (x *TriggeringPolicy) Reset() {
 	*x = TriggeringPolicy{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -458,7 +400,7 @@ func (x *TriggeringPolicy) String() string {
 func (*TriggeringPolicy) ProtoMessage() {}
 
 func (x *TriggeringPolicy) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -471,7 +413,7 @@ func (x *TriggeringPolicy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggeringPolicy.ProtoReflect.Descriptor instead.
 func (*TriggeringPolicy) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *TriggeringPolicy) GetKind() TriggeringPolicy_Kind {
@@ -586,7 +528,7 @@ type Job struct {
 func (x *Job) Reset() {
 	*x = Job{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -599,7 +541,7 @@ func (x *Job) String() string {
 func (*Job) ProtoMessage() {}
 
 func (x *Job) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -612,7 +554,7 @@ func (x *Job) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Job.ProtoReflect.Descriptor instead.
 func (*Job) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Job) GetId() string {
@@ -739,7 +681,7 @@ type Trigger struct {
 func (x *Trigger) Reset() {
 	*x = Trigger{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -752,7 +694,7 @@ func (x *Trigger) String() string {
 func (*Trigger) ProtoMessage() {}
 
 func (x *Trigger) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -765,7 +707,7 @@ func (x *Trigger) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trigger.ProtoReflect.Descriptor instead.
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Trigger) GetId() string {
@@ -854,7 +796,7 @@ type NoopTask struct {
 func (x *NoopTask) Reset() {
 	*x = NoopTask{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -867,7 +809,7 @@ func (x *NoopTask) String() string {
 func (*NoopTask) ProtoMessage() {}
 
 func (x *NoopTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -880,7 +822,7 @@ func (x *NoopTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NoopTask.ProtoReflect.Descriptor instead.
 func (*NoopTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{7}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *NoopTask) GetSleepMs() int64 {
@@ -987,7 +929,7 @@ type GitilesTask struct {
 func (x *GitilesTask) Reset() {
 	*x = GitilesTask{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[8]
+		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1000,7 +942,7 @@ func (x *GitilesTask) String() string {
 func (*GitilesTask) ProtoMessage() {}
 
 func (x *GitilesTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1013,7 +955,7 @@ func (x *GitilesTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitilesTask.ProtoReflect.Descriptor instead.
 func (*GitilesTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{8}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GitilesTask) GetRepo() string {
@@ -1061,7 +1003,7 @@ type UrlFetchTask struct {
 func (x *UrlFetchTask) Reset() {
 	*x = UrlFetchTask{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[9]
+		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1074,7 +1016,7 @@ func (x *UrlFetchTask) String() string {
 func (*UrlFetchTask) ProtoMessage() {}
 
 func (x *UrlFetchTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1087,7 +1029,7 @@ func (x *UrlFetchTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UrlFetchTask.ProtoReflect.Descriptor instead.
 func (*UrlFetchTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{9}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UrlFetchTask) GetMethod() string {
@@ -1134,7 +1076,7 @@ type BuildbucketTask struct {
 func (x *BuildbucketTask) Reset() {
 	*x = BuildbucketTask{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[10]
+		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1147,7 +1089,7 @@ func (x *BuildbucketTask) String() string {
 func (*BuildbucketTask) ProtoMessage() {}
 
 func (x *BuildbucketTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1160,7 +1102,7 @@ func (x *BuildbucketTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildbucketTask.ProtoReflect.Descriptor instead.
 func (*BuildbucketTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{10}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *BuildbucketTask) GetServer() string {
@@ -1215,7 +1157,7 @@ type TaskDefWrapper struct {
 func (x *TaskDefWrapper) Reset() {
 	*x = TaskDefWrapper{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[11]
+		mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1228,7 +1170,7 @@ func (x *TaskDefWrapper) String() string {
 func (*TaskDefWrapper) ProtoMessage() {}
 
 func (x *TaskDefWrapper) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[11]
+	mi := &file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1241,7 +1183,7 @@ func (x *TaskDefWrapper) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskDefWrapper.ProtoReflect.Descriptor instead.
 func (*TaskDefWrapper) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{11}
+	return file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *TaskDefWrapper) GetNoop() *NoopTask {
@@ -1283,7 +1225,7 @@ var file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDesc 
 	0x69, 0x67, 0x1a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e,
 	0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x22, 0xf4, 0x01, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x43,
+	0x6f, 0x74, 0x6f, 0x22, 0xbe, 0x01, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x43,
 	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x27, 0x0a, 0x03, 0x6a, 0x6f, 0x62, 0x18, 0x01, 0x20, 0x03,
 	0x28, 0x0b, 0x32, 0x15, 0x2e, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x72, 0x2e, 0x63,
 	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x4a, 0x6f, 0x62, 0x52, 0x03, 0x6a, 0x6f, 0x62, 0x12, 0x33,
@@ -1293,31 +1235,22 @@ var file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDesc 
 	0x67, 0x65, 0x72, 0x12, 0x37, 0x0a, 0x08, 0x61, 0x63, 0x6c, 0x5f, 0x73, 0x65, 0x74, 0x73, 0x18,
 	0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65,
 	0x72, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x41, 0x63, 0x6c, 0x53, 0x65, 0x74, 0x42,
-	0x02, 0x18, 0x01, 0x52, 0x07, 0x61, 0x63, 0x6c, 0x53, 0x65, 0x74, 0x73, 0x12, 0x4c, 0x0a, 0x10,
-	0x73, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x5f, 0x6f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
-	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c,
-	0x65, 0x72, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x53, 0x65, 0x63, 0x75, 0x72, 0x69,
-	0x74, 0x79, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x0f, 0x73, 0x65, 0x63, 0x75, 0x72,
-	0x69, 0x74, 0x79, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x82, 0x01, 0x0a, 0x03, 0x41,
-	0x63, 0x6c, 0x12, 0x2e, 0x0a, 0x04, 0x72, 0x6f, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e,
-	0x32, 0x1a, 0x2e, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x72, 0x2e, 0x63, 0x6f, 0x6e,
-	0x66, 0x69, 0x67, 0x2e, 0x41, 0x63, 0x6c, 0x2e, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x04, 0x72, 0x6f,
-	0x6c, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x6f,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x54,
-	0x6f, 0x22, 0x2c, 0x0a, 0x04, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x0a, 0x0a, 0x06, 0x52, 0x45, 0x41,
-	0x44, 0x45, 0x52, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x54, 0x52, 0x49, 0x47, 0x47, 0x45, 0x52,
-	0x45, 0x52, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x4f, 0x57, 0x4e, 0x45, 0x52, 0x10, 0x01, 0x22,
-	0x47, 0x0a, 0x06, 0x41, 0x63, 0x6c, 0x53, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
-	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x29, 0x0a,
-	0x04, 0x61, 0x63, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x73, 0x63,
-	0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x72, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x41,
-	0x63, 0x6c, 0x52, 0x04, 0x61, 0x63, 0x6c, 0x73, 0x22, 0x58, 0x0a, 0x0f, 0x53, 0x65, 0x63, 0x75,
-	0x72, 0x69, 0x74, 0x79, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x45, 0x0a, 0x1f, 0x70,
-	0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x73, 0x63, 0x6f, 0x70, 0x65, 0x64, 0x5f, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x08, 0x52, 0x1c, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x53, 0x63, 0x6f,
-	0x70, 0x65, 0x64, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e,
-	0x74, 0x73, 0x22, 0x94, 0x02, 0x0a, 0x10, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x69, 0x6e,
+	0x02, 0x18, 0x01, 0x52, 0x07, 0x61, 0x63, 0x6c, 0x53, 0x65, 0x74, 0x73, 0x4a, 0x04, 0x08, 0x04,
+	0x10, 0x05, 0x52, 0x10, 0x73, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x5f, 0x6f, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x22, 0x82, 0x01, 0x0a, 0x03, 0x41, 0x63, 0x6c, 0x12, 0x2e, 0x0a, 0x04,
+	0x72, 0x6f, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1a, 0x2e, 0x73, 0x63, 0x68,
+	0x65, 0x64, 0x75, 0x6c, 0x65, 0x72, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x41, 0x63,
+	0x6c, 0x2e, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x04, 0x72, 0x6f, 0x6c, 0x65, 0x12, 0x1d, 0x0a, 0x0a,
+	0x67, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x6f, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x09, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x54, 0x6f, 0x22, 0x2c, 0x0a, 0x04, 0x52,
+	0x6f, 0x6c, 0x65, 0x12, 0x0a, 0x0a, 0x06, 0x52, 0x45, 0x41, 0x44, 0x45, 0x52, 0x10, 0x00, 0x12,
+	0x0d, 0x0a, 0x09, 0x54, 0x52, 0x49, 0x47, 0x47, 0x45, 0x52, 0x45, 0x52, 0x10, 0x02, 0x12, 0x09,
+	0x0a, 0x05, 0x4f, 0x57, 0x4e, 0x45, 0x52, 0x10, 0x01, 0x22, 0x47, 0x0a, 0x06, 0x41, 0x63, 0x6c,
+	0x53, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x29, 0x0a, 0x04, 0x61, 0x63, 0x6c, 0x73, 0x18,
+	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65,
+	0x72, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x41, 0x63, 0x6c, 0x52, 0x04, 0x61, 0x63,
+	0x6c, 0x73, 0x22, 0x94, 0x02, 0x0a, 0x10, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x69, 0x6e,
 	0x67, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x3b, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x27, 0x2e, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65,
 	0x72, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x54, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72,
@@ -1456,49 +1389,47 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDesc
 }
 
 var file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_goTypes = []interface{}{
 	(Acl_Role)(0),              // 0: scheduler.config.Acl.Role
 	(TriggeringPolicy_Kind)(0), // 1: scheduler.config.TriggeringPolicy.Kind
 	(*ProjectConfig)(nil),      // 2: scheduler.config.ProjectConfig
 	(*Acl)(nil),                // 3: scheduler.config.Acl
 	(*AclSet)(nil),             // 4: scheduler.config.AclSet
-	(*SecurityOptions)(nil),    // 5: scheduler.config.SecurityOptions
-	(*TriggeringPolicy)(nil),   // 6: scheduler.config.TriggeringPolicy
-	(*Job)(nil),                // 7: scheduler.config.Job
-	(*Trigger)(nil),            // 8: scheduler.config.Trigger
-	(*NoopTask)(nil),           // 9: scheduler.config.NoopTask
-	(*GitilesTask)(nil),        // 10: scheduler.config.GitilesTask
-	(*UrlFetchTask)(nil),       // 11: scheduler.config.UrlFetchTask
-	(*BuildbucketTask)(nil),    // 12: scheduler.config.BuildbucketTask
-	(*TaskDefWrapper)(nil),     // 13: scheduler.config.TaskDefWrapper
+	(*TriggeringPolicy)(nil),   // 5: scheduler.config.TriggeringPolicy
+	(*Job)(nil),                // 6: scheduler.config.Job
+	(*Trigger)(nil),            // 7: scheduler.config.Trigger
+	(*NoopTask)(nil),           // 8: scheduler.config.NoopTask
+	(*GitilesTask)(nil),        // 9: scheduler.config.GitilesTask
+	(*UrlFetchTask)(nil),       // 10: scheduler.config.UrlFetchTask
+	(*BuildbucketTask)(nil),    // 11: scheduler.config.BuildbucketTask
+	(*TaskDefWrapper)(nil),     // 12: scheduler.config.TaskDefWrapper
 }
 var file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_depIdxs = []int32{
-	7,  // 0: scheduler.config.ProjectConfig.job:type_name -> scheduler.config.Job
-	8,  // 1: scheduler.config.ProjectConfig.trigger:type_name -> scheduler.config.Trigger
+	6,  // 0: scheduler.config.ProjectConfig.job:type_name -> scheduler.config.Job
+	7,  // 1: scheduler.config.ProjectConfig.trigger:type_name -> scheduler.config.Trigger
 	4,  // 2: scheduler.config.ProjectConfig.acl_sets:type_name -> scheduler.config.AclSet
-	5,  // 3: scheduler.config.ProjectConfig.security_options:type_name -> scheduler.config.SecurityOptions
-	0,  // 4: scheduler.config.Acl.role:type_name -> scheduler.config.Acl.Role
-	3,  // 5: scheduler.config.AclSet.acls:type_name -> scheduler.config.Acl
-	1,  // 6: scheduler.config.TriggeringPolicy.kind:type_name -> scheduler.config.TriggeringPolicy.Kind
-	3,  // 7: scheduler.config.Job.acls:type_name -> scheduler.config.Acl
-	6,  // 8: scheduler.config.Job.triggering_policy:type_name -> scheduler.config.TriggeringPolicy
-	9,  // 9: scheduler.config.Job.noop:type_name -> scheduler.config.NoopTask
-	11, // 10: scheduler.config.Job.url_fetch:type_name -> scheduler.config.UrlFetchTask
-	12, // 11: scheduler.config.Job.buildbucket:type_name -> scheduler.config.BuildbucketTask
-	3,  // 12: scheduler.config.Trigger.acls:type_name -> scheduler.config.Acl
-	6,  // 13: scheduler.config.Trigger.triggering_policy:type_name -> scheduler.config.TriggeringPolicy
-	9,  // 14: scheduler.config.Trigger.noop:type_name -> scheduler.config.NoopTask
-	10, // 15: scheduler.config.Trigger.gitiles:type_name -> scheduler.config.GitilesTask
-	9,  // 16: scheduler.config.TaskDefWrapper.noop:type_name -> scheduler.config.NoopTask
-	11, // 17: scheduler.config.TaskDefWrapper.url_fetch:type_name -> scheduler.config.UrlFetchTask
-	12, // 18: scheduler.config.TaskDefWrapper.buildbucket:type_name -> scheduler.config.BuildbucketTask
-	10, // 19: scheduler.config.TaskDefWrapper.gitiles:type_name -> scheduler.config.GitilesTask
-	20, // [20:20] is the sub-list for method output_type
-	20, // [20:20] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	0,  // 3: scheduler.config.Acl.role:type_name -> scheduler.config.Acl.Role
+	3,  // 4: scheduler.config.AclSet.acls:type_name -> scheduler.config.Acl
+	1,  // 5: scheduler.config.TriggeringPolicy.kind:type_name -> scheduler.config.TriggeringPolicy.Kind
+	3,  // 6: scheduler.config.Job.acls:type_name -> scheduler.config.Acl
+	5,  // 7: scheduler.config.Job.triggering_policy:type_name -> scheduler.config.TriggeringPolicy
+	8,  // 8: scheduler.config.Job.noop:type_name -> scheduler.config.NoopTask
+	10, // 9: scheduler.config.Job.url_fetch:type_name -> scheduler.config.UrlFetchTask
+	11, // 10: scheduler.config.Job.buildbucket:type_name -> scheduler.config.BuildbucketTask
+	3,  // 11: scheduler.config.Trigger.acls:type_name -> scheduler.config.Acl
+	5,  // 12: scheduler.config.Trigger.triggering_policy:type_name -> scheduler.config.TriggeringPolicy
+	8,  // 13: scheduler.config.Trigger.noop:type_name -> scheduler.config.NoopTask
+	9,  // 14: scheduler.config.Trigger.gitiles:type_name -> scheduler.config.GitilesTask
+	8,  // 15: scheduler.config.TaskDefWrapper.noop:type_name -> scheduler.config.NoopTask
+	10, // 16: scheduler.config.TaskDefWrapper.url_fetch:type_name -> scheduler.config.UrlFetchTask
+	11, // 17: scheduler.config.TaskDefWrapper.buildbucket:type_name -> scheduler.config.BuildbucketTask
+	9,  // 18: scheduler.config.TaskDefWrapper.gitiles:type_name -> scheduler.config.GitilesTask
+	19, // [19:19] is the sub-list for method output_type
+	19, // [19:19] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() }
@@ -1544,18 +1475,6 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 			}
 		}
 		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SecurityOptions); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TriggeringPolicy); i {
 			case 0:
 				return &v.state
@@ -1567,7 +1486,7 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Job); i {
 			case 0:
 				return &v.state
@@ -1579,7 +1498,7 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Trigger); i {
 			case 0:
 				return &v.state
@@ -1591,7 +1510,7 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*NoopTask); i {
 			case 0:
 				return &v.state
@@ -1603,7 +1522,7 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GitilesTask); i {
 			case 0:
 				return &v.state
@@ -1615,7 +1534,7 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UrlFetchTask); i {
 			case 0:
 				return &v.state
@@ -1627,7 +1546,7 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuildbucketTask); i {
 			case 0:
 				return &v.state
@@ -1639,7 +1558,7 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TaskDefWrapper); i {
 			case 0:
 				return &v.state
@@ -1658,7 +1577,7 @@ func file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_init() 
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_scheduler_appengine_messages_config_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   12,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
