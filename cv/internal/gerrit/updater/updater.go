@@ -220,8 +220,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			// Snapshot considered up-to-date, but fetched in the context of a wrong project.
 			// Must re-fetch. It's OK to re-use prior snapshot so long as read access
 			// to Gerrit is verified.
-			logging.Warningf(ctx, "%s switches from %q to %q LUCI project",
-				f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
+			logging.Warningf(ctx, "%s switches from %q to %q LUCI project", f, f.priorCL.Snapshot.GetLuciProject(), f.luciProject)
 			err = f.fetchExisting(ctx)
 		} else {
 			// Can indeed skip the update.
@@ -240,7 +239,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		}
 		return nil
 	default:
-		logging.Debugf(ctx, "proceeding to update %s, last known EVersion: %d", f, f.priorCLEversion())
+		logging.Debugf(ctx, "proceeding to update %s, last known EVersion: %d, acfg %s %t", f, f.priorCLEversion(), f.toUpdate.ApplicableConfig, f.toUpdate.ApplicableConfig == nil)
 		return changelist.Update(
 			ctx,
 			f.externalID, f.clidIfKnown(),

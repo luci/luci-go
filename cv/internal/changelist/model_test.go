@@ -243,7 +243,7 @@ func TestUpdate(t *testing.T) {
 
 		Convey("new CL is created", func() {
 			snap := makeSnapshot(epoch)
-			acfg := makeApplicableConfig(epoch)
+			acfg := makeApplicableConfig()
 			asdep := makeDependentMeta(epoch)
 			err := Update(ctx, eid, 0 /* unknown CLID */, UpdateFields{
 				Snapshot:         snap,
@@ -264,7 +264,7 @@ func TestUpdate(t *testing.T) {
 		})
 
 		Convey("update existing", func() {
-			acfg := makeApplicableConfig(epoch)
+			acfg := makeApplicableConfig()
 			cl, err := eid.GetOrInsert(ctx, func(cl *CL) {
 				// no snapshot attached yet
 				cl.ApplicableConfig = acfg
@@ -286,15 +286,15 @@ func TestUpdate(t *testing.T) {
 			So(cl2.ID, ShouldEqual, cl.ID)
 			So(cl2.EVersion, ShouldEqual, 2)
 			So(cl2.Snapshot, ShouldResembleProto, snap)
-			So(cl2.ApplicableConfig, ShouldResembleProto, makeApplicableConfig(epoch))
+			So(cl2.ApplicableConfig, ShouldResembleProto, makeApplicableConfig())
 			// 1 entry should have been removed due to matching snapshot's project.
 			asdep := makeDependentMeta(epoch, "another-project")
 			So(cl2.DependentMeta, ShouldResembleProto, asdep)
 
 			Convey("with known CLID", func() {
-				acfg2 := makeApplicableConfig(epoch.Add(time.Minute))
+				snap2 := makeSnapshot(epoch.Add(time.Minute))
 				err = Update(ctx, "" /*unspecified externalID*/, cl.ID,
-					UpdateFields{ApplicableConfig: acfg2},
+					UpdateFields{Snapshot: snap2},
 					func(ctx context.Context, cl *CL) error {
 						So(datastore.CurrentTransaction(ctx), ShouldNotBeNil)
 						So(cl.EVersion, ShouldEqual, 3)
@@ -306,15 +306,15 @@ func TestUpdate(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(cl3.ID, ShouldEqual, cl.ID)
 				So(cl3.EVersion, ShouldEqual, 3)
-				So(cl3.Snapshot, ShouldResembleProto, snap)
-				So(cl3.ApplicableConfig, ShouldResembleProto, acfg2)
+				So(cl3.Snapshot, ShouldResembleProto, snap2)
+				So(cl3.ApplicableConfig, ShouldResembleProto, makeApplicableConfig())
 				So(cl3.DependentMeta, ShouldResembleProto, asdep)
 			})
 
-			Convey("skip if not newer", func() {
+			Convey("skip update if same", func() {
 				err = Update(ctx, "", cl.ID, UpdateFields{
 					Snapshot:         makeSnapshot(epoch.Add(-time.Minute)),
-					ApplicableConfig: makeApplicableConfig(epoch.Add(-time.Minute)),
+					ApplicableConfig: makeApplicableConfig(),
 					AddDependentMeta: makeDependentMeta(epoch.Add(-time.Minute), "another-project"),
 				}, func(context.Context, *CL) error {
 					panic("must not be called")
@@ -405,23 +405,21 @@ func TestConcurrentUpdate(t *testing.T) {
 		wg := sync.WaitGroup{}
 		wg.Add(N)
 		for d := 0; d < N; d++ {
-			// Simulate opposing Snapshot and ApplicableConfig timestamps for better
+			// Simulate opposing Snapshot and DependentMeta timestamps for better
 			// test coverage.
 
 			// For a co-prime p,N:
 			//   assert sorted(set([((p*d)%N) for d in xrange(N)])) == range(N)
-			// 47, 59, 73 are actual primes.
+			// 47, 59 are actual primes.
 			snapTS := epoch.Add(time.Second * time.Duration((47*d)%N))
-			acfgTS := epoch.Add(time.Second * time.Duration((59*d)%N))
 			asdepTS := epoch.Add(time.Second * time.Duration((73*d)%N))
 			go func() {
 				defer wg.Done()
 				snap := makeSnapshot(snapTS)
-				acfg := makeApplicableConfig(acfgTS)
 				asdep := makeDependentMeta(asdepTS, "another-project")
 				var err error
 				for i := 0; i < R; i++ {
-					if err = Update(ctx, eid, 0, UpdateFields{snap, acfg, asdep}, nil); err == nil {
+					if err = Update(ctx, eid, 0, UpdateFields{snap, nil, asdep}, nil); err == nil {
 						t.Logf("succeeded after %d tries", i)
 						return
 					}
@@ -442,7 +440,6 @@ func TestConcurrentUpdate(t *testing.T) {
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)
 		So(cl.Snapshot, ShouldResembleProto, makeSnapshot(latestTS))
-		So(cl.ApplicableConfig, ShouldResembleProto, makeApplicableConfig(latestTS))
 		So(cl.DependentMeta, ShouldResembleProto, makeDependentMeta(latestTS, "another-project"))
 		// Furthermore, there must have been at most N non-noop UpdateSnapshot
 		// calls (one per worker, iff they did exactly in the increasing order of
@@ -474,9 +471,8 @@ func makeSnapshot(updatedTime time.Time) *Snapshot {
 	}
 }
 
-func makeApplicableConfig(updatedTime time.Time) *ApplicableConfig {
+func makeApplicableConfig() *ApplicableConfig {
 	return &ApplicableConfig{
-		UpdateTime: timestamppb.New(updatedTime),
 		Projects: []*ApplicableConfig_Project{
 			{Name: luciProject, ConfigGroupIds: []string{"blah"}},
 		},

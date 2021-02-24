@@ -23,19 +23,6 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
-// IsUpToDate returns whether stored ApplicableConfig is at least as recent as
-// given time.
-func (s *ApplicableConfig) IsUpToDate(t time.Time) bool {
-	switch {
-	case s == nil:
-		return false
-	case t.After(s.UpdateTime.AsTime()):
-		return false
-	default:
-		return true
-	}
-}
-
 // IsUpToDate returns whether stored Snapshot is at least as recent as given
 // time and was done for a matching LUCI project.
 func (s *Snapshot) IsUpToDate(luciProject string, t time.Time) bool {
@@ -72,8 +59,7 @@ func (a *ApplicableConfig) HasProject(luciProject string) bool {
 	return false
 }
 
-// SemanticallyEqual checks if ApplicableConfig configs are the same except the
-// update time.
+// SemanticallyEqual checks if ApplicableConfig configs are the same.
 func (a *ApplicableConfig) SemanticallyEqual(b *ApplicableConfig) bool {
 	if len(a.GetProjects()) != len(b.GetProjects()) {
 		return false
