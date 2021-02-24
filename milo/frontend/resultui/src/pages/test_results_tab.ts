@@ -109,7 +109,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'test-results';
-    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED);
+    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
 
     // If first page of test results has already been loaded when connected
     // (happens when users switch tabs), we don't want to track the loading

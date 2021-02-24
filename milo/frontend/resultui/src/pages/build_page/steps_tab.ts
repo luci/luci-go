@@ -38,7 +38,7 @@ export class StepsTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'steps';
-    trackEvent(GA_CATEGORIES.STEPS_TAB, GA_ACTIONS.TAB_VISITED);
+    trackEvent(GA_CATEGORIES.STEPS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);

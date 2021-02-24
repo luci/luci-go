@@ -34,7 +34,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'related-builds';
-    trackEvent(GA_CATEGORIES.RELATED_BUILD_TAB, GA_ACTIONS.TAB_VISITED);
+    trackEvent(GA_CATEGORIES.RELATED_BUILD_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
 
   protected render() {
