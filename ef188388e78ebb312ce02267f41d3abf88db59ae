@@ -20,6 +20,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "40ee6c94_51050636",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T05:40:53Z",
+      "side": 1,
+      "message": "this code seems dead.\nif there are no results, then what are displaying?",
+      "range": {
+        "startLine": 81,
+        "startChar": 54,
+        "endLine": 81,
+        "endChar": 92
+      },
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6bed1355_cdeb7739",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T05:40:53Z",
+      "side": 1,
+      "message": "a test variant doesn\u0027t have a parent invocation. There may be different invocations for different results",
+      "range": {
+        "startLine": 81,
+        "startChar": 39,
+        "endLine": 81,
+        "endChar": 42
+      },
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "eac6291a_ff49e918",
         "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
         "patchSetId": 1
@@ -31,6 +77,47 @@
       "writtenOn": "2021-02-24T04:17:37Z",
       "side": 1,
       "message": "@nodir does all invocation has producerResource?",
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a7837d1_4e368bf3",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T05:40:53Z",
+      "side": 1,
+      "message": "no. It is not marked required in \nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/v1/invocation.proto;l\u003d132?q\u003dinvocation.proto",
+      "parentUuid": "eac6291a_ff49e918",
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c29e080_1a09f419",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T05:40:53Z",
+      "side": 1,
+      "message": "producer resource is not necessarily a swarming task. Maybe check that it looks like a task resource before calling it a task.\n\nstepping back, if this code is going to be swarming-specific, then you don\u0027t have to fetch invocation to begin with. Look at the parent invocation id. If it starts with \"task-\", then it is a task, and you can synthesize URL from that as well.",
+      "range": {
+        "startLine": 169,
+        "startChar": 74,
+        "endLine": 169,
+        "endChar": 87
+      },
       "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
