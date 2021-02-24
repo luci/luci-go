@@ -179,7 +179,6 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 // cleanupDatabase deletes all data from all tables.
 func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 	_, err := client.Apply(ctx, []*spanner.Mutation{
-		spanner.Delete("InvocationTasks", spanner.AllKeys()),
 		// All other tables are interleaved in Invocations table.
 		spanner.Delete("Invocations", spanner.AllKeys()),
 	})

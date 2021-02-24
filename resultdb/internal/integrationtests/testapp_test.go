@@ -188,11 +188,7 @@ func (t *testApp) initServers(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	finalizer.InitServer(finalizerServer, finalizer.Options{
-		TaskWorkers:       1,
-		TaskQueryInterval: 100 * time.Millisecond,
-		TaskLeaseDuration: 100 * time.Millisecond,
-	})
+	finalizer.InitServer(finalizerServer)
 
 	// bqexporter is not needed.
 

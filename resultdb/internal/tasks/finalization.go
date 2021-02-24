@@ -17,8 +17,6 @@ package tasks
 import (
 	"context"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -42,9 +40,6 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/finalizer", // for routing to "finalizer" service
 })
 
-// UseFinalizationTQ experiment enables using server/tq for finalization tasks.
-var UseFinalizationTQ = experiments.Register("rdb-use-tq-finalization")
-
 // StartInvocationFinalization changes invocation state to FINALIZING
 // if updateInv is set, and enqueues a TryFinalizeInvocation task.
 //
@@ -60,12 +55,8 @@ func StartInvocationFinalization(ctx context.Context, id invocations.ID, updateI
 			"State":        pb.Invocation_FINALIZING,
 		}))
 	}
-	if UseFinalizationTQ.Enabled(ctx) {
-		tq.MustAddTask(ctx, &tq.Task{
-			Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
-			Title:   string(id),
-		})
-	} else {
-		span.BufferWrite(ctx, Enqueue(TryFinalizeInvocation, "finalize/"+id.RowID(), id, nil, clock.Now(ctx).UTC()))
-	}
+	tq.MustAddTask(ctx, &tq.Task{
+		Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
+		Title:   string(id),
+	})
 }

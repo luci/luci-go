@@ -43,9 +43,6 @@ const (
 	// By default, finalize the invocation 1h after creation if it is still
 	// incomplete.
 	defaultInvocationDeadlineDuration = time.Hour
-
-	// To make sure an invocation_task can be performed eventually.
-	eventualInvocationTaskProcessAfter = 2 * day
 )
 
 // UpdateTokenMetadataKey is the metadata.MD key for the secret update token
