@@ -16,6 +16,46 @@
       "message": "Updated the implementation.",
       "revId": "6569bdc7e1ce89c70bb6740324301da21db344d0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "43df3f8a_b1e9720b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T17:18:42Z",
+      "side": 1,
+      "message": "LGTM % comment",
+      "revId": "6569bdc7e1ce89c70bb6740324301da21db344d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4928271f_7bc8c362",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-24T17:18:42Z",
+      "side": 1,
+      "message": "f",
+      "range": {
+        "startLine": 60,
+        "startChar": 60,
+        "endLine": 60,
+        "endChar": 61
+      },
+      "revId": "6569bdc7e1ce89c70bb6740324301da21db344d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
