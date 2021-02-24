@@ -16,6 +16,40 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/8851/test-results?q\u003d\n\nInvocation request are not cached.\nThis will be implemented in the next CL.\n",
       "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eac6291a_ff49e918",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-24T04:17:37Z",
+      "side": 1,
+      "message": "@nodir does all invocation has producerResource?",
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18000aa8_bef2c1a5",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-24T04:17:37Z",
+      "side": 1,
+      "message": "The spinner is added to reduce shifting.",
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
