@@ -170,6 +170,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "e46e9278_121f92ad",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-24T06:11:11Z",
+      "side": 1,
+      "message": "I see.\n\nIn the build page, we can get the swarming host name from buildbucket.\nBut how do we know the hostname in the invocation page?",
+      "parentUuid": "5c29e080_1a09f419",
+      "range": {
+        "startLine": 169,
+        "startChar": 74,
+        "endLine": 169,
+        "endChar": 87
+      },
+      "revId": "ef188388e78ebb312ce02267f41d3abf88db59ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "18000aa8_bef2c1a5",
