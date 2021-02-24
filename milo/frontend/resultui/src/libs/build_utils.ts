@@ -52,8 +52,8 @@ export function getURLForGerritChange(change: GerritChange): string {
   return `https://${change.host}/c/${change.change}/${change.patchset}`;
 }
 
-export function getURLForSwarmingTask(swarming: BuildInfraSwarming): string {
-  return `https://${swarming.hostname}/task?id=${swarming.taskId}&o=true&w=true`;
+export function getURLForSwarmingTask(hostname: string, taskId: string): string {
+  return `https://${hostname}/task?id=${taskId}&o=true&w=true`;
 }
 
 // getBotLink generates a link to a swarming bot.

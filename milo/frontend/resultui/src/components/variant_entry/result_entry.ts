@@ -56,14 +56,12 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed
-  private get parentInvType() {
-    if (this.parentInvId.startsWith('build-')) {
-      return 'Buildbucket build';
+  private get swarmingTaskLink() {
+    const match = this.parentInvId.match(/^task-(.+)-([0-9a-f]+)$/);
+    if (!match) {
+      return null;
     }
-    if (this.parentInvId.startsWith('task-')) {
-      return 'Swarming task';
-    }
-    return 'invocation';
+    return `https://${match[1]}/task?id=${match[2]}`;
   }
 
   @computed
@@ -102,6 +100,16 @@ export class ResultEntryElement extends MobxLitElement {
       'actual': this.resultArtifacts.find((a) => a.artifactId === 'actual_image'),
       'diff': this.resultArtifacts.find((a) => a.artifactId === 'image_diff'),
     };
+  }
+
+  private renderParentInvType() {
+    if (this.parentInvId.startsWith('build-')) {
+      return 'Buildbucket build';
+    }
+    if (this.parentInvId.startsWith('task-')) {
+      return html`<a href=${this.swarmingTaskLink} target="_blank">Swarming task</a>`;
+    }
+    return 'invocation';
   }
 
   private renderSummaryHtml() {
@@ -157,7 +165,7 @@ export class ResultEntryElement extends MobxLitElement {
 
     return html`
       <div id="inv-artifacts-header">
-        From the parent ${this.parentInvType}:
+        From the parent ${this.renderParentInvType()}:
       </div>
       <ul>
         ${this.invArtifacts.map((artifact) => html`
@@ -200,6 +208,11 @@ export class ResultEntryElement extends MobxLitElement {
     }
     return html`
       ${this.renderSummaryHtml()}
+      ${!this.swarmingTaskLink ? '' : html`
+      <div id="swarming-task">
+        ${this.renderParentInvType()}
+      </div>
+      `}
       ${this.textDiffArtifact && html`
       <milo-text-diff-artifact .artifact=${this.textDiffArtifact}>
       </milo-text-diff-artifact>
@@ -275,6 +288,10 @@ export class ResultEntryElement extends MobxLitElement {
     }
     .greyed-out {
       color: var(--greyed-out-text-color);
+    }
+
+    #swarming-task {
+      margin: 5px;
     }
 
     ul {
