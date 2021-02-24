@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3226da5a_789175bb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-24T19:24:23Z",
+      "side": 1,
+      "message": "This is inherently flaky.",
+      "parentUuid": "96917ed7_e40c19f9",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 69
+      },
+      "revId": "3a6b150c56abce86da22191f1ed694b7e4a04fd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9efa5c3_5c1f066c",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-17T06:31:03Z",
       "side": 1,
       "message": "I don\u0027t think this is ideal because if there\u0027s something wrong with removing the temp dirs, the emulator instances may be left running.\n\nLMK if there\u0027s another way.",
+      "range": {
+        "startLine": 16,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 83
+      },
+      "revId": "3a6b150c56abce86da22191f1ed694b7e4a04fd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2263ce12_303d3f89",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-24T19:24:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9efa5c3_5c1f066c",
       "range": {
         "startLine": 16,
         "startChar": 0,
