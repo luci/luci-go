@@ -46,7 +46,7 @@ export class OverviewTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'overview';
-    trackEvent(GA_CATEGORIES.OVERVIEW_TAB, GA_ACTIONS.TAB_VISITED);
+    trackEvent(GA_CATEGORIES.OVERVIEW_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
 
   private renderActionButtons() {

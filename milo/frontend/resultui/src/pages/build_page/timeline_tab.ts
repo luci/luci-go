@@ -35,7 +35,7 @@ export class TimelineTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'timeline';
-    trackEvent(GA_CATEGORIES.TIMELINE_TAB, GA_ACTIONS.TAB_VISITED);
+    trackEvent(GA_CATEGORIES.TIMELINE_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
     this.rendered = false;
     this.disposers.push(
       autorun(

@@ -92,7 +92,7 @@ export class BlamelistTabElement extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'blamelist';
-    trackEvent(GA_CATEGORIES.BLAMELIST_TAB, GA_ACTIONS.TAB_VISITED);
+    trackEvent(GA_CATEGORIES.BLAMELIST_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
     this.disposer = reaction(
       () => this.queryBlamelistResIter,
       () => {
