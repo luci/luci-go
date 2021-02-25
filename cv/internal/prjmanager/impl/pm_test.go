@@ -17,6 +17,7 @@ package impl
 import (
 	"context"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -185,6 +186,59 @@ func TestProjectLifeCycle(t *testing.T) {
 				So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			})
 		})
+	})
+}
+
+func TestProjectHandlesManyEvents(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM handles many events", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
+
+		ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+
+		const n = 10
+		for i := 0; i < n; i++ {
+			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+			So(prjmanager.Poke(ctx, lProject), ShouldBeNil)
+		}
+		events, err := eventbox.List(ctx, lProjectKey)
+		So(err, ShouldBeNil)
+		So(events, ShouldHaveLength, 2*n)
+
+		const w = 20
+		now := ct.Clock.Now()
+		errs := make(errors.MultiError, w)
+		wg := sync.WaitGroup{}
+		wg.Add(w)
+		for i := 0; i < w; i++ {
+			i := i
+			go func() {
+				defer wg.Done()
+				errs[i] = pokePMTask(ctx, lProject, now)
+			}()
+		}
+		wg.Wait()
+
+		// Exactly 1 of the workers must create PM entity, consume events and
+		// poke the poller.
+		p := prjmanager.Project{ID: lProject}
+		So(datastore.Get(ctx, &p), ShouldBeNil)
+		So(p.EVersion, ShouldEqual, 1)
+		events, err = eventbox.List(ctx, lProjectKey)
+		So(err, ShouldBeNil)
+		So(events, ShouldBeEmpty)
+		So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+
+		// At least 1 worker must finish successfully.
+		errCnt, _ := errs.Summary()
+		t.Logf("%d/%d workers failed", errCnt, w)
+		So(errCnt, ShouldBeLessThan, w)
 	})
 }
 
