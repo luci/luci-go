@@ -22,14 +22,17 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -211,6 +214,7 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 // validated and authorized.
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
 	// TODO(crbug/1042991): Deduplicate request IDs.
+	now := clock.Now(ctx).UTC()
 
 	// Bucket -> Builder -> *pb.Builder.
 	cfgs, err := fetchBuilderConfigs(ctx, reqs)
@@ -220,16 +224,18 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 
 	blds := make([]*model.Build, len(reqs))
 	nums := make([]*model.Build, 0, len(reqs))
+	ids := buildid.NewBuildIDs(ctx, now, len(reqs))
 	for i := range blds {
-		// TODO(crbug/1042991): Generate build IDs.
 		// TODO(crbug/1042991): Fill in relevant proto fields from the builder config.
 		// TODO(crbug/1042991): Fill in relevant proto fields from the request.
 		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
 		blds[i] = &model.Build{
-			ID: int64(i + 1),
+			ID:         ids[i],
+			CreateTime: now,
 			Proto: pb.Build{
-				Builder: reqs[i].Builder,
-				Id:      int64(i + 1),
+				Builder:    reqs[i].Builder,
+				CreateTime: timestamppb.New(now),
+				Id:         ids[i],
 			},
 		}
 
