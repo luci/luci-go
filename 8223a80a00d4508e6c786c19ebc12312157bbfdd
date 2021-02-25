@@ -16,6 +16,23 @@
       "message": "It should be safe to pass undefined experiment to a binary. It should result in at most warning. Is it not? (It\u0027s the primary reason why experiments are better than flags).",
       "revId": "8223a80a00d4508e6c786c19ebc12312157bbfdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "46178142_5668d488",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-25T03:20:40Z",
+      "side": 1,
+      "message": "LGTM. + what Vadim asked.",
+      "revId": "8223a80a00d4508e6c786c19ebc12312157bbfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
