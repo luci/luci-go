@@ -263,6 +263,9 @@ type ControllerReadOnly interface {
 	// InvocationID returns unique identifier of this particular invocation.
 	InvocationID() int64
 
+	// RealmID returns the full realm ID of the job ("<project>:<realm>").
+	RealmID() string
+
 	// Request contains parameters of the invocation supplied when it was created.
 	Request() Request
 

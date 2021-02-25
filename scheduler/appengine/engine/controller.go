@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -153,6 +155,15 @@ func (ctl *taskController) JobID() string {
 // InvocationID is part of task.Controller interface.
 func (ctl *taskController) InvocationID() int64 {
 	return ctl.saved.ID
+}
+
+// RealmID is part of task.Controller interface.
+func (ctl *taskController) RealmID() string {
+	if ctl.saved.RealmID != "" {
+		return ctl.saved.RealmID
+	}
+	proj := strings.Split(ctl.saved.JobID, "/")[0]
+	return realms.Join(proj, realms.LegacyRealm)
 }
 
 // Task is part of task.Controller interface.

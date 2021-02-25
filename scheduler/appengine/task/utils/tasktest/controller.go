@@ -24,6 +24,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -38,8 +39,9 @@ type TimerSpec struct {
 
 // TestController implements task.Controller and can be used in unit tests.
 type TestController struct {
-	OverrideJobID string // return value of JobID() if not ""
-	OverrideInvID int64  // return value of InvocationID() if not 0
+	OverrideJobID   string // return value of JobID() if not ""
+	OverrideInvID   int64  // return value of InvocationID() if not 0
+	OverrideRealmID string // return value of RealmID if not ""
 
 	Req task.Request // return value of Request
 
@@ -69,6 +71,14 @@ func (c *TestController) InvocationID() int64 {
 		return c.OverrideInvID
 	}
 	return 1
+}
+
+// RealmID is part of Controller interface.
+func (c *TestController) RealmID() string {
+	if c.OverrideRealmID != "" {
+		return c.OverrideRealmID
+	}
+	return realms.Join("some-project", "some-realm")
 }
 
 // Request is part of Controller interface.
