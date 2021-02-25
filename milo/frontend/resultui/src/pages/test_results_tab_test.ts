@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { customElement, html, LitElement, property } from 'lit-element';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 
 import { AppState, provideAppState } from '../context/app_state';
 import { InvocationState, provideInvocationState } from '../context/invocation_state';
@@ -107,5 +107,135 @@ describe('Test Results Tab', () => {
 
     assert.isFalse(invocationState.testLoader?.isLoading);
     assert.strictEqual(queryTestVariantsStub.callCount, 1);
+  });
+
+  describe('force loading test', () => {
+    let queryTestVariantsStub: SinonStub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>;
+    let appState: AppState;
+    let configsStore: UserConfigsStore;
+    let invocationState: InvocationState;
+    beforeEach(async () => {
+      queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
+      queryTestVariantsStub.onCall(0).resolves({testVariants: [variant1], nextPageToken: 'next0'});
+      queryTestVariantsStub.onCall(1).resolves({testVariants: [variant2], nextPageToken: 'next1'});
+      queryTestVariantsStub.onCall(2).resolves({testVariants: [variant3], nextPageToken: 'next2'});
+      queryTestVariantsStub.onCall(3).resolves({testVariants: [variant4], nextPageToken: 'next3'});
+      queryTestVariantsStub.onCall(4).resolves({testVariants: [variant5]});
+      appState = {
+        selectedTabId: '',
+        uiSpecificService: {
+          queryTestVariants: queryTestVariantsStub as typeof UISpecificService.prototype.queryTestVariants,
+        },
+      } as AppState;
+      configsStore = new UserConfigsStore();
+
+      invocationState = new InvocationState(appState);
+      invocationState.invocationId = 'invocation-id';
+
+      // Set force-test in URL.
+      const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?force-test`;
+      window.history.replaceState({path: newUrl}, '', newUrl);
+    });
+
+    afterEach(() => {
+      invocationState.dispose();
+      const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
+      window.history.replaceState({path: url}, '', url);
+      fixtureCleanup();
+    });
+
+    it('should load until at least one test is rendered', async () => {
+      invocationState.showUnexpectedVariants = false;
+      const provider = await fixture<ContextProvider>(html`
+        <milo-test-context-provider
+          .appState=${appState}
+          .configsStore=${configsStore}
+          .invocationState=${invocationState}
+        >
+          <milo-test-results-tab></milo-test-results-tab>
+        </milo-test-context-provider>
+      `);
+      const tab = provider.querySelector<TestResultsTabElement>('milo-test-results-tab')!;
+
+      tab.connectedCallback();
+
+      await aTimeout(0);
+      assert.isFalse(invocationState.testLoader?.isLoading);
+      assert.strictEqual(queryTestVariantsStub.callCount, 4);
+    });
+
+    it('should not force loading test after filters are updated', async () => {
+      const provider = await fixture<ContextProvider>(html`
+        <milo-test-context-provider
+          .appState=${appState}
+          .configsStore=${configsStore}
+          .invocationState=${invocationState}
+        >
+          <milo-test-results-tab></milo-test-results-tab>
+        </milo-test-context-provider>
+      `);
+      const tab = provider.querySelector<TestResultsTabElement>('milo-test-results-tab')!;
+
+      tab.connectedCallback();
+
+      await aTimeout(0);
+      assert.isFalse(invocationState.testLoader?.isLoading);
+      assert.strictEqual(queryTestVariantsStub.callCount, 1);
+
+      // Update filter and load the next page.
+      invocationState.showUnexpectedVariants = false;
+      tab.loadNextPage();
+      await aTimeout(0);
+      assert.isFalse(invocationState.testLoader?.isLoading);
+      assert.strictEqual(queryTestVariantsStub.callCount, 2);
+
+      // force-test search param should not be erased.
+      const searchParams = new URLSearchParams(window.location.search);
+      assert.isTrue(searchParams.has('force-test'));
+    });
+
+    it('should not force loading tests after switching tabs', async () => {
+      const provider = await fixture<ContextProvider>(html`
+        <milo-test-context-provider
+          .appState=${appState}
+          .configsStore=${configsStore}
+          .invocationState=${invocationState}
+        >
+          <milo-test-results-tab></milo-test-results-tab>
+        </milo-test-context-provider>
+      `);
+      const tab = provider.querySelector<TestResultsTabElement>('milo-test-results-tab')!;
+
+      await aTimeout(0);
+      assert.isFalse(invocationState.testLoader?.isLoading);
+      assert.strictEqual(queryTestVariantsStub.callCount, 1);
+
+      // Disconnect, reset the URL
+      tab.disconnectedCallback();
+      const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}/test-results`;
+      window.history.replaceState({path: newUrl}, '', newUrl);
+
+      // Then reload the tab.
+      invocationState.showUnexpectedVariants = false;
+      const provider2 = await fixture<ContextProvider>(html`
+        <milo-test-context-provider
+          .appState=${appState}
+          .configsStore=${configsStore}
+          .invocationState=${invocationState}
+        >
+          <milo-test-results-tab></milo-test-results-tab>
+        </milo-test-context-provider>
+      `);
+      const tab2 = provider2.querySelector<TestResultsTabElement>('milo-test-results-tab')!;
+
+      tab2.loadNextPage();
+      await aTimeout(10);
+      assert.isFalse(invocationState.testLoader?.isLoading);
+      assert.strictEqual(queryTestVariantsStub.callCount, 2);
+
+      // force-test search param should be restored.
+      const searchParams = new URLSearchParams(window.location.search);
+      assert.isTrue(searchParams.has('force-test'));
+    });
   });
 });
