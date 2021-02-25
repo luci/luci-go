@@ -88,8 +88,11 @@ func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) er
 	}
 
 	// Compute resulting state before transaction.
-	transitions, err := p.Mutate(ctx, toEvents(listing.Items), state)
+	transitions, garbage, err := p.Mutate(ctx, toEvents(listing.Items), state)
 	if err != nil {
+		return err
+	}
+	if err := deleteSemanticGarbage(ctx, &d, garbage); err != nil {
 		return err
 	}
 	transitions = withoutNoops(transitions, state)
@@ -150,7 +153,20 @@ type Processor interface {
 	//
 	// All actions that must be done atomically with updating state must be
 	// encapsulated inside Transition.SideEffectFn callback.
-	Mutate(context.Context, Events, State) ([]Transition, error)
+	//
+	// Garbage events will be deleted non-transactionally before executing
+	// transactional transitions. These events may still be processed by a
+	// concurrent invocation of a Processor. The garbage events slice may re-use
+	// the given events slice.
+	//
+	// For correctness, two concurrent invocation of a Processor must choose the
+	// same events to be deleted as garbage. Consider scenario of 2 events A and B
+	// deemed semantically the same and 2 concurrent Processor invocations:
+	//   P1: let me delete A and hope to transactionally process B.
+	//   P2:  ............ B and ............................... A.
+	// Then, it's a real possibility that A and B are both deleted AND no neither
+	// P1 nor P2 commits a transaction, thus forever forgetting about A and B.
+	Mutate(context.Context, Events, State) (transitions []Transition, garbage Events, err error)
 	// FetchEVersion is called at the beginning of a transaction.
 	//
 	// The returned EVersion is compared against the one associated with a state
@@ -177,6 +193,26 @@ func toEvents(items []dsset.Item) Events {
 		es[i] = Event(item)
 	}
 	return es
+}
+
+func deleteSemanticGarbage(ctx context.Context, d *dsset.Set, events Events) error {
+	l := len(events)
+	if l == 0 {
+		return nil
+	}
+	logging.Debugf(ctx, "eventbox deleting %d semantic garbage events before transaction", l)
+	i := -1
+	err := d.Delete(ctx, func() string {
+		i++
+		if i < l {
+			return events[i].ID
+		}
+		return ""
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to delete %d semantic garbage events before transaction", l).Err()
+	}
+	return nil
 }
 
 // State is an arbitrary object.

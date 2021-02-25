@@ -92,12 +92,14 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 //
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
-func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, error) {
+func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) (ts []eventbox.Transition, noops eventbox.Events, err error) {
 	tr := &triageResult{}
 	for _, e := range events {
 		tr.triage(ctx, e)
 	}
-	return pm.mutate(ctx, tr, s.(*state.State))
+	// TODO(tandrii): if there are too many redundant events, delete some of them.
+	ts, err = pm.mutate(ctx, tr, s.(*state.State))
+	return ts, nil, err
 }
 
 // FetchEVersion is called at the beginning of a transaction.

@@ -168,6 +168,42 @@ func TestSet(t *testing.T) {
 		So(listing.Items, ShouldResemble, []Item{{ID: "abc"}})
 		So(listing.Garbage, ShouldBeNil)
 	})
+
+	Convey("delete items non-transactionally", t, func() {
+		c := testingContext()
+
+		set := Set{
+			Parent:          datastore.MakeKey(c, "Parent", "parent"),
+			TombstonesDelay: time.Minute,
+		}
+
+		// Add 3 items.
+		So(set.Add(c, []Item{{ID: "abc"}}), ShouldBeNil)
+		So(set.Add(c, []Item{{ID: "def"}}), ShouldBeNil)
+		So(set.Add(c, []Item{{ID: "ghi"}}), ShouldBeNil)
+
+		l, err := set.List(c)
+		So(err, ShouldBeNil)
+		So(l.Items, ShouldHaveLength, 3)
+
+		// Delete 2 items before transacting.
+		i := 0
+		err = set.Delete(c, func() string {
+			switch i = i + 1; i {
+			case 1:
+				return "def"
+			case 2:
+				return "abc"
+			default:
+				return ""
+			}
+		})
+		So(err, ShouldBeNil)
+
+		l2, err := set.List(c)
+		So(err, ShouldBeNil)
+		So(l2.Items, ShouldResemble, []Item{{ID: "ghi"}})
+	})
 }
 
 func TestStress(t *testing.T) {
@@ -180,7 +216,7 @@ func TestStress(t *testing.T) {
 		c := testingContext()
 
 		set := Set{
-			Parent:          datastore.NewKey(c, "Parent", "parent", 0, nil),
+			Parent:          datastore.MakeKey(c, "Parent", "parent"),
 			TombstonesDelay: time.Minute,
 		}
 

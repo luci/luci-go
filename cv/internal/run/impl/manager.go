@@ -93,12 +93,13 @@ func (rm *runManager) LoadState(ctx context.Context) (eventbox.State, eventbox.E
 //
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
-func (rm *runManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, error) {
+func (rm *runManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, eventbox.Events, error) {
 	tr := &triageResult{}
 	for _, e := range events {
 		tr.triage(ctx, e)
 	}
-	return rm.processTriageResults(ctx, tr, s.(*state.RunState))
+	ts, err := rm.processTriageResults(ctx, tr, s.(*state.RunState))
+	return ts, nil, err
 }
 
 // FetchEVersion is called at the beginning of a transaction.
