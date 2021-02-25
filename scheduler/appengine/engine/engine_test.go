@@ -912,6 +912,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		Convey("happy path", func() {
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				So(ctl.InvocationID(), ShouldEqual, inv.ID)
+				So(ctl.RealmID(), ShouldEqual, "project:testing")
 				ctl.DebugLog("Succeeded!")
 				ctl.State().Status = task.StatusSucceeded
 				return nil
