@@ -42,6 +42,9 @@ export class InvocationState {
 
   @observable.ref searchText = '';
 
+  // Whether tests should be split into multiple sections by status.
+  @observable.ref multiSections = true;
+
   @observable.ref searchFilter = (_v: TestVariant) => true;
 
   private disposer = () => {};
