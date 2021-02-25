@@ -79,7 +79,7 @@ func TestProtoValidation(t *testing.T) {
 
 		call := func(j *messages.Job) error {
 			valCtx := &validation.Context{Context: ctx}
-			c.validateJobProto(valCtx, j)
+			c.validateJobProto(valCtx, j, "some-project:some-realm")
 			return valCtx.Finalize()
 		}
 
@@ -90,10 +90,6 @@ func TestProtoValidation(t *testing.T) {
 			Id:   "good id can have spaces and . and - and even ()",
 			Noop: &messages.NoopTask{},
 		}), ShouldBeNil)
-		So(call(&messages.Job{
-			Id:    "good",
-			Realm: "@invalid",
-		}), ShouldErrLike, "bad 'realm' field")
 		So(call(&messages.Job{
 			Id:       "good",
 			Schedule: "blah",
@@ -124,22 +120,22 @@ func TestProtoValidation(t *testing.T) {
 		Convey("with TaskDefWrapper", func() {
 			msg, err := c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 				Noop: &messages.NoopTask{},
-			})
+			}, "some-project:some-realm")
 			So(err, ShouldBeNil)
 			So(msg.(*messages.NoopTask), ShouldNotBeNil)
 
-			msg, err = c.extractTaskProto(ctx, nil)
+			msg, err = c.extractTaskProto(ctx, nil, "some-project:some-realm")
 			So(err, ShouldErrLike, "expecting a pointer to proto message")
 			So(msg, ShouldBeNil)
 
-			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{})
+			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{}, "some-project:some-realm")
 			So(err, ShouldErrLike, "can't find a recognized task definition")
 			So(msg, ShouldBeNil)
 
 			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 				Noop:     &messages.NoopTask{},
 				UrlFetch: &messages.UrlFetchTask{},
-			})
+			}, "some-project:some-realm")
 			So(err, ShouldErrLike, "only one field with task definition must be set")
 			So(msg, ShouldBeNil)
 		})
@@ -148,13 +144,13 @@ func TestProtoValidation(t *testing.T) {
 			msg, err := c.extractTaskProto(ctx, &messages.Job{
 				Id:   "blah",
 				Noop: &messages.NoopTask{},
-			})
+			}, "some-project:some-realm")
 			So(err, ShouldBeNil)
 			So(msg.(*messages.NoopTask), ShouldNotBeNil)
 
 			msg, err = c.extractTaskProto(ctx, &messages.Job{
 				Id: "blah",
-			})
+			}, "some-project:some-realm")
 			So(err, ShouldErrLike, "can't find a recognized task definition")
 			So(msg, ShouldBeNil)
 
@@ -162,7 +158,7 @@ func TestProtoValidation(t *testing.T) {
 				Id:       "blah",
 				Noop:     &messages.NoopTask{},
 				UrlFetch: &messages.UrlFetchTask{},
-			})
+			}, "some-project:some-realm")
 			So(err, ShouldErrLike, "only one field with task definition must be set")
 			So(msg, ShouldBeNil)
 		})
@@ -171,12 +167,13 @@ func TestProtoValidation(t *testing.T) {
 	Convey("extractTaskProto uses task manager validation", t, func() {
 		c := New().(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
-			name:          "broken noop",
-			validationErr: errors.New("boo"),
+			name:            "broken noop",
+			validationErr:   errors.New("boo"),
+			expectedRealmID: "some-project:some-realm",
 		})
 		msg, err := c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 			Noop: &messages.NoopTask{},
-		})
+		}, "some-project:some-realm")
 		So(err, ShouldErrLike, "boo")
 		So(msg, ShouldBeNil)
 	})
@@ -190,8 +187,9 @@ func TestTaskMarshaling(t *testing.T) {
 	Convey("works", t, func() {
 		c := New().(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
-			name: "url fetch",
-			task: &messages.UrlFetchTask{},
+			name:            "url fetch",
+			task:            &messages.UrlFetchTask{},
+			expectedRealmID: "some-project:some-realm",
 		})
 
 		// Round trip for a registered task.
@@ -199,7 +197,7 @@ func TestTaskMarshaling(t *testing.T) {
 			Url: "123",
 		})
 		So(err, ShouldBeNil)
-		task, err := c.UnmarshalTask(ctx, blob)
+		task, err := c.UnmarshalTask(ctx, blob, "some-project:some-realm")
 		So(err, ShouldBeNil)
 		So(task, ShouldResembleProto, &messages.UrlFetchTask{
 			Url: "123",
@@ -211,7 +209,7 @@ func TestTaskMarshaling(t *testing.T) {
 
 		// Once registered, but not anymore.
 		c = New().(*catalog)
-		_, err = c.UnmarshalTask(ctx, blob)
+		_, err = c.UnmarshalTask(ctx, blob, "some-project:some-realm")
 		So(err, ShouldErrLike, "can't find a recognized task definition")
 	})
 }
@@ -369,11 +367,11 @@ func TestConfigReading(t *testing.T) {
 			defs, err := cat.GetProjectJobs(ctx, "project1")
 			So(err, ShouldBeNil)
 
-			task, err := cat.UnmarshalTask(ctx, defs[0].Task)
+			task, err := cat.UnmarshalTask(ctx, defs[0].Task, defs[0].RealmID)
 			So(err, ShouldBeNil)
 			So(task, ShouldResembleProto, &messages.NoopTask{})
 
-			task, err = cat.UnmarshalTask(ctx, []byte("blarg"))
+			task, err = cat.UnmarshalTask(ctx, []byte("blarg"), defs[0].RealmID)
 			So(err, ShouldNotBeNil)
 			So(task, ShouldBeNil)
 		})
@@ -477,7 +475,8 @@ type fakeTaskManager struct {
 	name string
 	task proto.Message
 
-	validationErr error
+	validationErr   error
+	expectedRealmID string
 }
 
 func (m fakeTaskManager) Name() string {
@@ -498,8 +497,11 @@ func (m fakeTaskManager) Traits() task.Traits {
 	return task.Traits{}
 }
 
-func (m fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
+func (m fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message, realmID string) {
 	So(msg, ShouldNotBeNil)
+	if m.expectedRealmID != "" {
+		So(realmID, ShouldEqual, m.expectedRealmID)
+	}
 	if m.validationErr != nil {
 		c.Error(m.validationErr)
 	}

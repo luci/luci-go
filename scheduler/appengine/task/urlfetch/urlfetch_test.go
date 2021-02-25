@@ -45,7 +45,7 @@ func TestValidateProtoMessage(t *testing.T) {
 	Convey("ValidateProtoMessage works", t, func() {
 		c := &validation.Context{Context: context.Background()}
 		validate := func(msg proto.Message) error {
-			tm.ValidateProtoMessage(c, msg)
+			tm.ValidateProtoMessage(c, msg, "some-project:some-realm")
 			return c.Finalize()
 		}
 		Convey("ValidateProtoMessage passes good msg", func() {
