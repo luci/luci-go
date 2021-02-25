@@ -16,6 +16,46 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6835/test-results?q\u003dID%3Aninja%3A%2F%2Fbase%3Abase_unittests%2FThreadPoolTaskTrackerTest.RunDelayedTaskDuringFlushAsyncForTesting%2FBlockShutdown.0\u0026clean\u003d\u0026force-test\u003d",
       "revId": "2c7911016d89d5ccd9a3533a44c323961d29b90d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1947597e_ea235f6e",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-25T23:20:44Z",
+      "side": 1,
+      "message": "If there is no test to load, will this result in infinite loop?",
+      "revId": "2c7911016d89d5ccd9a3533a44c323961d29b90d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2fe477d_9b869828",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-02-25T23:20:44Z",
+      "side": 1,
+      "message": "Change it to force-loading?",
+      "range": {
+        "startLine": 129,
+        "startChar": 26,
+        "endLine": 129,
+        "endChar": 36
+      },
+      "revId": "2c7911016d89d5ccd9a3533a44c323961d29b90d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
