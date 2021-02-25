@@ -849,8 +849,10 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 	}
 
 	// Inject magic header with ETA.
-	micros := scheduleTime.GetNanos() / 1000
-	payload.Meta[ExpectedETAHeader] = fmt.Sprintf("%d.%06d", scheduleTime.GetSeconds(), micros)
+	if scheduleTime == nil {
+		payload.Meta[ExpectedETAHeader] = makeETAHeader(clock.Now(ctx))
+	}
+	payload.Meta[ExpectedETAHeader] = makeETAHeader(scheduleTime.AsTime())
 
 	method := taskspb.HttpMethod(taskspb.HttpMethod_value[payload.Method])
 	if method == 0 {
@@ -908,6 +910,13 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 		},
 	}
 	return req, nil
+}
+
+// makeETAHeader converts the given time into a decimal string representing
+// the number of seconds since the Unix epoch with microsecond resolution.
+func makeETAHeader(t time.Time) string {
+	mics := t.UnixNano() / 1000
+	return fmt.Sprintf("%d.%06d", mics/1e6, mics%1e6)
 }
 
 // queueID expands `id` into a full queue name if necessary.
