@@ -277,6 +277,10 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, buildMask *
 		if err != nil {
 			return err
 		}
+		if b.Proto == nil {
+			b.Proto = &pb.Build{}
+			logging.Warningf(ctx, "Loaded build %d had nil in proto", req.Build.Id)
+		}
 		toSave := []interface{}{b}
 		bk := datastore.KeyForObj(ctx, b)
 
