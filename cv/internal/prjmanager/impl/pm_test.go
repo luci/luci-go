@@ -39,6 +39,44 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func TestProjectTQLateTasks(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM task does nothing if it comes too late", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
+
+		ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+
+		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+		So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+		events1, err := eventbox.List(ctx, lProjectKey)
+		So(err, ShouldBeNil)
+
+		// Simulate stuck TQ task, which gets executed with a huge delay.
+		ct.Clock.Add(time.Hour)
+		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
+		// It must not modify PM state nor consume events.
+		So(datastore.Get(ctx, &prjmanager.Project{ID: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
+		events2, err := eventbox.List(ctx, lProjectKey)
+		So(err, ShouldBeNil)
+		So(events2, ShouldResemble, events1)
+		// But schedules new task instead.
+		So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+
+		// Next task coming ~on time proceeds normally.
+		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
+		So(datastore.Get(ctx, &prjmanager.Project{ID: lProject}), ShouldBeNil)
+		events3, err := eventbox.List(ctx, lProjectKey)
+		So(err, ShouldBeNil)
+		So(events3, ShouldBeEmpty)
+	})
+}
+
 func TestProjectLifeCycle(t *testing.T) {
 	t.Parallel()
 

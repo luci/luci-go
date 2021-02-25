@@ -17,6 +17,7 @@ package impl
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -37,7 +38,13 @@ func init() {
 	prjpb.PokePMTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PokePMTask)
-			err := pokePMTask(ctx, task.GetLuciProject())
+			// TODO(tandrii): after all tasks have ETA set, remove this backwards
+			// compatibility code.
+			eta := clock.Now(ctx)
+			if t := task.GetEta(); t != nil {
+				eta = t.AsTime()
+			}
+			err := pokePMTask(ctx, task.GetLuciProject(), eta)
 			// TODO(tandrii): avoid retries iff we know a new task was already
 			// scheduled for the next second.
 			return common.TQifyError(ctx, err, eventbox.ErrConcurretMutation)
@@ -45,8 +52,15 @@ func init() {
 	)
 }
 
-func pokePMTask(ctx context.Context, luciProject string) error {
+func pokePMTask(ctx context.Context, luciProject string, taskETA time.Time) error {
 	ctx = logging.SetField(ctx, "project", luciProject)
+	if delay := clock.Now(ctx).Sub(taskETA); delay > prjpb.MaxAcceptableDelay {
+		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)
+		// Scheduling new task reduces probability of concurrent tasks in extreme
+		// events.
+		return prjpb.Dispatch(ctx, luciProject, time.Time{})
+	}
+
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
 	err := eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject})
 	return errors.Annotate(err, "project %q", luciProject).Err()
