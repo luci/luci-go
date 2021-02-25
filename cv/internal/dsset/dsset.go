@@ -264,6 +264,33 @@ func (s *Set) List(ctx context.Context) (*Listing, error) {
 	}, nil
 }
 
+// Delete deletes items from the set non-transactionally.
+//
+// Use at your own risk. If in doubt, use expected BeginPop() instead.
+//
+// Calls nextID() to get next ID to delete until nextID() returns "".
+func (s *Set) Delete(ctx context.Context, nextID func() string) error {
+	if datastore.CurrentTransaction(ctx) != nil {
+		panic("dsset.Set.Delete must be called outside of a transaction")
+	}
+
+	keys := []*datastore.Key{}
+	for {
+		id := nextID()
+		if id == "" {
+			break
+		}
+		keys = append(keys, datastore.NewKey(ctx, "dsset.Item", id, 0, s.Parent))
+	}
+	err := batchOp(len(keys), func(start, end int) error {
+		return datastore.Delete(ctx, keys[start:end])
+	})
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+	return nil
+}
+
 // PopOp is an in-progress 'Pop' operation.
 //
 // See BeginPop.
@@ -449,8 +476,8 @@ func FinishPop(ctx context.Context, ops ...*PopOp) error {
 //
 // Returns only transient errors. There's no way to know which items were
 // removed and which weren't in case of an error.
-func CleanupGarbage(c context.Context, cleanup ...Garbage) error {
-	if datastore.CurrentTransaction(c) != nil {
+func CleanupGarbage(ctx context.Context, cleanup ...Garbage) error {
+	if datastore.CurrentTransaction(ctx) != nil {
 		panic("dsset.CleanupGarbage must be called outside of a transaction")
 	}
 
@@ -464,7 +491,7 @@ func CleanupGarbage(c context.Context, cleanup ...Garbage) error {
 	}
 
 	err := batchOp(len(keys), func(start, end int) error {
-		return datastore.Delete(c, keys[start:end])
+		return datastore.Delete(ctx, keys[start:end])
 	})
 	if err != nil {
 		return transient.Tag.Apply(err)
