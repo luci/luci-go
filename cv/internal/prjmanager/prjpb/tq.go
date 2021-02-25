@@ -32,6 +32,16 @@ import (
 // See Dispatch() for details.
 const PokeInterval = time.Second
 
+// MaxAcceptableDelay prevents TQ tasks which arrive too late from invoking PM.
+//
+// MaxAcceptableDelay / PokeInterval effectively limits # concurrent invocations
+// of PM on the same project that may happen due to task retries, delays, and
+// queue throttling.
+//
+// Do not set too low, as this may prevent actual PM invoking from happening at
+// all if the TQ is overloaded.
+const MaxAcceptableDelay = 60 * time.Second
+
 // PokePMTaskRef is used by PM implementation to add its handler.
 var PokePMTaskRef tq.TaskClassRef
 
@@ -88,7 +98,7 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	// PokePMTask moment might be already executing, meaning task dedup will
 	// ensure no new task will be scheduled AND the already executing run
 	// might not have read the Event that was just written.
-	// Thus, for safety, this should be large, however, will also leads to higher
+	// Thus, this should be large for safety. However, large value leads to higher
 	// latency of event processing of non-busy ProjectManagers.
 	// TODO(tandrii): this can be reduced significantly once safety "ping" events
 	// are originated from Config import cron tasks.
@@ -102,6 +112,6 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 		Title:            luciProject,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", luciProject, eta.UnixNano()),
 		ETA:              eta,
-		Payload:          &PokePMTask{LuciProject: luciProject},
+		Payload:          &PokePMTask{LuciProject: luciProject, Eta: timestamppb.New(eta)},
 	})
 }
