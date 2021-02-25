@@ -17,9 +17,10 @@ import '@material/mwc-button';
 import '@material/mwc-icon';
 import { BeforeEnterObserver } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
+import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { observable, reaction } from 'mobx';
 
 import '../components/dot_spinner';
 import '../components/hotkey';
@@ -44,27 +45,21 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   private sentLoadingTimeToGA = false;
 
   private disposers: Array<() => void> = [];
-  private async loadNextPage() {
-    try {
-      await this.invocationState.testLoader?.loadNextPage();
-    } catch (e) {
-      this.dispatchEvent(new ErrorEvent('error', {
-        error: e,
-        message: e.toString(),
-        composed: true,
-        bubbles: true,
-      }));
-    }
-  }
 
   /**
-   * Loads pages until we receive some variants with the given variant status.
+   * If status is specified, loads pages until we receive some variants with the
+   * given variant status.
+   * Otherwise, simply load the next page.
    *
    * Will always load at least one page.
    */
-  private async loadPagesUntilStatus(status: TestVariantStatus) {
+  private async loadNextPage(untilStatus?: TestVariantStatus) {
     try {
-      await this.invocationState.testLoader?.loadPagesUntilStatus(status);
+      if (untilStatus) {
+        await this.invocationState.testLoader?.loadPagesUntilStatus(untilStatus);
+      } else {
+        await this.invocationState.testLoader?.loadNextPage();
+      }
     } catch (e) {
       this.dispatchEvent(new ErrorEvent('error', {
         error: e,
@@ -77,25 +72,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
 
   onBeforeEnter() {
     this.enterTimestamp = Date.now();
-  }
-
-  @computed
-  private get totalDisplayedVariantCount() {
-    let count = 0;
-    if (this.invocationState.showUnexpectedVariants) {
-      count += this.invocationState.filteredUnexpectedVariants.length;
-    }
-    if (this.invocationState.showFlakyVariants) {
-      count += this.invocationState.filteredFlakyVariants.length;
-    }
-    if (this.invocationState.showExoneratedVariants) {
-      count += this.invocationState.filteredExoneratedVariants.length;
-    }
-    if (this.invocationState.showExpectedVariants) {
-      count += this.invocationState.filteredExpectedVariants.length;
-    }
-
-    return count;
   }
 
   @observable.ref private allVariantsWereExpanded = false;
@@ -141,11 +117,16 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     if (searchParams.has('q')) {
       this.invocationState.searchText = searchParams.get('q')!;
     }
+    if (searchParams.has('clean')) {
+      this.invocationState.multiSections = false;
+    }
+
     // Update the querystring when filters are updated.
     this.disposers.push(reaction(
       () => {
         const newSearchParams = new URLSearchParams({
           q: this.invocationState.searchText,
+          ...this.invocationState.multiSections ? {} : {'clean': ''},
         });
         return newSearchParams.toString();
       },
@@ -164,44 +145,58 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   }
 
   private renderAllVariants() {
+    const testLoader = this.invocationState.testLoader;
+    const multiSections = this.invocationState.multiSections;
     return html`
       ${this.renderIntegrationHint()}
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTED,
         this.invocationState.filteredUnexpectedVariants,
-        this.invocationState.showUnexpectedVariants,
+        this.invocationState.showUnexpectedVariants || !multiSections,
         (display) => this.invocationState.showUnexpectedVariants = display,
-        this.invocationState.testLoader?.loadedAllUnexpectedVariants || false,
+        testLoader?.loadedAllUnexpectedVariants || false,
         true,
       )}
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTEDLY_SKIPPED,
         this.invocationState.filteredUnexpectedlySkippedVariants,
-        this.invocationState.showUnexpectedlySkippedVariants,
+        this.invocationState.showUnexpectedlySkippedVariants || !multiSections,
         (display) => this.invocationState.showUnexpectedlySkippedVariants = display,
-        this.invocationState.testLoader?.loadedAllUnexpectedlySkippedVariants || false,
+        testLoader?.loadedAllUnexpectedlySkippedVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.FLAKY,
         this.invocationState.filteredFlakyVariants,
-        this.invocationState.showFlakyVariants,
+        this.invocationState.showFlakyVariants || !multiSections,
         (display) => this.invocationState.showFlakyVariants = display,
-        this.invocationState.testLoader?.loadedAllFlakyVariants || false,
+        testLoader?.loadedAllFlakyVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXONERATED,
         this.invocationState.filteredExoneratedVariants,
-        this.invocationState.showExoneratedVariants,
+        this.invocationState.showExoneratedVariants || !multiSections,
         (display) => this.invocationState.showExoneratedVariants = display,
-        this.invocationState.testLoader?.loadedAllExoneratedVariants || false,
+        testLoader?.loadedAllExoneratedVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXPECTED,
         this.invocationState.filteredExpectedVariants,
-        this.invocationState.showExpectedVariants,
+        this.invocationState.showExpectedVariants || !multiSections,
         (display) => this.invocationState.showExpectedVariants = display,
-        this.invocationState.testLoader?.loadedAllExpectedVariants || false,
+        testLoader?.loadedAllExpectedVariants || false,
       )}
+      ${multiSections ? '' : html`
+      <hr class="divider" style=${styleMap({'display': this.invocationState.totalDisplayedVariantCount === 0 ? 'none' : ''})}>
+      <div id="variant-list-tail">
+        Showing ${this.invocationState.totalDisplayedVariantCount} /
+        ${testLoader?.testVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'}
+        tests.
+        <span
+          class="active-text"
+          style=${styleMap({'display': this.invocationState.testLoader?.loadedAllVariants ?? true ? 'none' : ''})}
+        >${this.renderLoadMore()}</span>
+      </div>
+      `}
     `;
   }
 
@@ -260,7 +255,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   ) {
     const variantCountLabel = `${variants.length}${fullyLoaded ? '' : '+'}`;
     return html`
-      <div class="section-header">
+      <div class="section section-header">
         ${VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE[status]} (${variantCountLabel})
         <span
           class="active-text"
@@ -269,7 +264,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         <span
           class="active-text"
           style=${styleMap({'display': fullyLoaded ? 'none' : ''})}
-        >${this.renderLoadMoreForSection(status)}</span>
+        >${this.renderLoadMore(status)}</span>
       </div>
       ${repeat(
         (display ? variants : []).map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [TestVariant | undefined, TestVariant, TestVariant | undefined]),
@@ -279,14 +274,14 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
           .variant=${v}
           .prevTestId=${prev?.testId ?? ''}
           .prevVariant=${prev?.testId === v.testId ? prev : null}
-          .expanded=${this.totalDisplayedVariantCount === 1 || (prev === undefined && expandFirst)}
+          .expanded=${this.invocationState.totalDisplayedVariantCount === 1 || (prev === undefined && expandFirst)}
           .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
           .prerender=${true}
           .renderCallback=${this.variantRenderedCallback}
         ></milo-variant-entry>
       `)}
       <div
-        class="list-entry"
+        class="section list-entry"
         style=${styleMap({'display': variants.length === 0 && fullyLoaded ? '' : 'none'})}
       >
         No
@@ -294,23 +289,23 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         test results.
       </div>
       <div
-        class="list-entry"
+        class="section list-entry"
         style=${styleMap({'display': !display && variants.length !== 0 ? '' : 'none'})}
       >
         ${variants.length} hidden
         <span class=${VARIANT_STATUS_CLASS_MAP[status]}>${VARIANT_STATUS_DISPLAY_MAP[status]}</span>
         test results.
       </div>
-      <hr class="divider">
+      <hr class="section divider">
     `;
   }
 
-  private renderLoadMoreForSection(status: TestVariantStatus) {
+  private renderLoadMore(forStatus?: TestVariantStatus) {
     const state = this.invocationState;
     return html`
       <span
         style=${styleMap({'display': state.testLoader?.isLoading ?? true ? 'none' : ''})}
-        @click=${() => this.loadPagesUntilStatus(status)}
+        @click=${() => this.loadNextPage(forStatus)}
       >
         [load more]
       </span>
@@ -350,6 +345,25 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   protected render() {
     return html`
       <div id="header">
+        <div class="filters-container">
+          <input
+            id="multi-section-checkbox"
+            type="checkbox"
+            ?checked=${this.invocationState.multiSections}
+            @change=${(e: MouseEvent) => {
+              this.invocationState.multiSections = (e.target as HTMLInputElement).checked;
+              this.configsStore.save();
+            }}
+          >
+          <label
+            for="multi-section-checkbox"
+            title="Split tests into multiple sections by their status."
+          >
+            Multi-Sections
+            <mwc-icon class="inline-icon">info</mwc-icon>
+          </label>
+        </div>
+        <div class="filters-container-delimiter"></div>
         <div id="search-label">Search:</div>
         <milo-test-search-filter></milo-test-search-filter>
         <milo-hotkey key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
@@ -363,7 +377,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
           >Collapse All</mwc-button>
         </milo-hotkey>
       </div>
-      <div id="main">${this.renderMain()}</div>
+      <div id="main" class=${classMap({'single-section': !this.invocationState.multiSections})}>${this.renderMain()}</div>
     `;
   }
 
@@ -376,13 +390,14 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
 
     #header {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto auto auto 1fr auto;
       grid-gap: 5px;
       height: 30px;
       padding: 5px 10px 3px 10px;
     }
     #search-label {
       margin: auto;
+      padding-left: 5px;
     }
     milo-test-search-filter {
       max-width: 800px;
@@ -391,6 +406,21 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       margin-top: 1px;
     }
 
+    input[type="checkbox"] {
+      transform: translateY(1px);
+      margin-right: 3px;
+    }
+    .filters-container {
+      display: inline-block;
+      padding: 4px 5px 0;
+    }
+    .filter {
+      display: inline-block;
+      margin: 0 5px;
+    }
+    .filter:last-child {
+      margin-right: 0px;
+    }
     .filters-container-delimiter {
       border-left: 1px solid var(--divider-color);
       width: 0px;
@@ -423,6 +453,9 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       position: sticky;
       background-color: white;
       top: 0px;
+    }
+    .single-section .section {
+      display: none;
     }
 
     .divider {
@@ -465,6 +498,16 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     }
     #hide-hint {
       color: var(--active-text-color);
+      cursor: pointer;
+    }
+
+    #variant-list-tail {
+      padding: 0 5px 5px 5px;
+    }
+    #load {
+      color: var(--active-text-color);
+    }
+    #load-more {
       cursor: pointer;
     }
   `;
