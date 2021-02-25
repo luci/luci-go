@@ -16,6 +16,24 @@
       "message": "realmID  will be used later here, right?",
       "revId": "272bc111dd362b0e4f698e20b696ae2ed9aac907",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e98f76f9_bbb94854",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-25T22:54:12Z",
+      "side": 1,
+      "message": "yes (except in buildbucket.go)",
+      "parentUuid": "2cbdb699_d86b8669",
+      "revId": "272bc111dd362b0e4f698e20b696ae2ed9aac907",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
