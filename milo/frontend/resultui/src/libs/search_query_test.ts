@@ -158,8 +158,22 @@ describe('parseSearchQuery', () => {
     });
   });
 
+  describe('VHash query', () => {
+    it('should filter out variants with no matching variant hash', () => {
+      const filter = parseSearchQuery('vhash:key1:val1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1]);
+    });
 
-  describe('multiple query', () => {
+
+    it('should work with negation', () => {
+      const filter = parseSearchQuery('-vhash:key1:val1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant2, variant3, variant4, variant5]);
+    });
+  });
+
+  describe('multiple queries', () => {
     it('should be able to combine different types of query', () => {
       const filter = parseSearchQuery('rstatus:pass id:test-3');
       const filtered = variants.filter(filter);
@@ -283,16 +297,21 @@ describe('suggestSearchQuery', () => {
     assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:ranDom'), undefined);
   });
 
-  it('should only suggest ID query when the query prefix is ID', () => {
+  it('should suggest ID query when the query prefix is ID:', () => {
     const suggestions1 = suggestSearchQuery('ID:pass');
     assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:pass'), undefined);
     assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:pass'), undefined);
-    assert.strictEqual(suggestions1.find((s) => !s.value?.startsWith('ID:') && !s.value?.startsWith('-ID:')), undefined);
 
     const suggestions2 = suggestSearchQuery('-ID:pass');
     // When user explicitly typed negative query, don't suggest positive query.
     assert.strictEqual(suggestions2.find((s) => s.value === 'ID:pass'), undefined);
     assert.notStrictEqual(suggestions2.find((s) => s.value === '-ID:pass'), undefined);
+  });
+
+  it('should suggest ID query when the query type is a substring of ID:', () => {
+    const suggestions1 = suggestSearchQuery('i');
+    assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:'), undefined);
+    assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:'), undefined);
   });
 
   it('should suggest ID query even when there are other matching queries', () => {
@@ -301,5 +320,22 @@ describe('suggestSearchQuery', () => {
     assert.notStrictEqual(suggestions1.find((s) => s.value === '-RStatus:Fail'), undefined);
     assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:fail'), undefined);
     assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:fail'), undefined);
+  });
+
+  it('should suggest VHash query when the query prefix is VHash:', () => {
+    const suggestions1 = suggestSearchQuery('VHash:pass');
+    assert.notStrictEqual(suggestions1.find((s) => s.value === 'VHash:pass'), undefined);
+    assert.notStrictEqual(suggestions1.find((s) => s.value === '-VHash:pass'), undefined);
+
+    const suggestions2 = suggestSearchQuery('-VHash:pass');
+    // When user explicitly typed negative query, don't suggest positive query.
+    assert.strictEqual(suggestions2.find((s) => s.value === 'VHash:pass'), undefined);
+    assert.notStrictEqual(suggestions2.find((s) => s.value === '-VHash:pass'), undefined);
+  });
+
+  it('should suggest VHash query when the query type is a substring of VHash:', () => {
+    const suggestions1 = suggestSearchQuery('hash');
+    assert.notStrictEqual(suggestions1.find((s) => s.value === 'VHash:'), undefined);
+    assert.notStrictEqual(suggestions1.find((s) => s.value === '-VHash:'), undefined);
   });
 });
