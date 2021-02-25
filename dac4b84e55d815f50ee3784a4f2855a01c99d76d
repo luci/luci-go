@@ -69,6 +69,23 @@
       "message": "I\u0027ll land this change by itself now. It should be safe because running emulator is guarded by SPANNER_EMULATOR env var. ",
       "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79525ddb_d52a1d69",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 26
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-25T01:15:24Z",
+      "side": 1,
+      "message": "Bah, I didn\u0027t hit send on this earlier 😞\n\nI meant to say:\n\nDo we support development on mac or not? I think we do... or at least we should?\n\nAll that I\u0027m asking is that, instead of hard-coding the path of the emulator within the gcloud bundle (which seems fragile anyway), just consider the emulator to exist if:\n  * gcloud version \u003e\u003d 329 (the version now pinned in infra.git by https://chromium-review.googlesource.com/c/infra/infra/+/2717154)\n  * (on !linux) docker exists on $PATH\n\n?",
+      "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
