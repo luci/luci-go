@@ -63,6 +63,30 @@
       },
       "revId": "6630867092f98aed8c5fab8c64e12cb2f92cfcc9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ca6f682_1989d048",
+        "filename": "common/system/port/port.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-25T23:28:45Z",
+      "side": 1,
+      "message": "Robbie and I had a discussion offline. And his suggestion was given to avoid the if condition. Where my reply is changing within the if condition. Both should work. But I\u0027ll keep the if condition because it\u0027s easier for me to understand...",
+      "parentUuid": "10219072_29b9501f",
+      "range": {
+        "startLine": 59,
+        "startChar": 10,
+        "endLine": 59,
+        "endChar": 17
+      },
+      "revId": "6630867092f98aed8c5fab8c64e12cb2f92cfcc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
