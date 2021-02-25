@@ -928,6 +928,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 				ID:             inv.ID,
 				JobID:          "project/job",
 				IndexedJobID:   "project/job",
+				RealmID:        "project:testing",
 				Started:        epoch,
 				Finished:       epoch,
 				Revision:       job.Revision,

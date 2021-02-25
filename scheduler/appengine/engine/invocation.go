@@ -152,6 +152,13 @@ type Invocation struct {
 	// are harmless, but we don't want them to show up in listings.
 	IndexedJobID string
 
+	// RealmID is a global realm name (i.e. "<ProjectID>:...") the invocation
+	// belongs to.
+	//
+	// It is copied from the Job entity when the invocation is created. May be
+	// empty for old invocations.
+	RealmID string `gae:",noindex"`
+
 	// Started is time when this invocation was created.
 	Started time.Time `gae:",noindex"`
 

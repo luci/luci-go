@@ -1085,7 +1085,9 @@ func (e *engineImpl) enqueueInvocations(c context.Context, job *Job, req []task.
 func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req task.Request) (*Invocation, error) {
 	var inv *Invocation
 	err := runIsolatedTxn(c, func(c context.Context) (err error) {
-		inv, err = e.initInvocation(c, job.JobID, &Invocation{
+		inv, err = e.initInvocation(c, &Invocation{
+			JobID:           job.JobID,
+			RealmID:         job.RealmID,
 			Started:         clock.Now(c).UTC(),
 			Revision:        job.Revision,
 			RevisionURL:     job.RevisionURL,
@@ -1142,8 +1144,8 @@ func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task
 
 // initInvocation populates fields of Invocation struct.
 //
-// It allocates invocation ID and populates ID and JobID fields. It also copies
-// data from the given task.Request object into the corresponding fields of the
+// It allocates invocation ID and populates inv.ID field. It also copies data
+// from the given task.Request object into the corresponding fields of the
 // invocation entity (so they can be indexed etc).
 //
 // On success returns exact same 'inv' for convenience. It doesn't Put it into
@@ -1151,15 +1153,13 @@ func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task
 //
 // Must be called within a transaction, since it verifies an allocated ID is
 // not used yet.
-func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invocation, req *task.Request) (*Invocation, error) {
+func (e *engineImpl) initInvocation(c context.Context, inv *Invocation, req *task.Request) (*Invocation, error) {
 	assertInTransaction(c)
 
-	invID, err := generateInvocationID(c)
-	if err != nil {
+	var err error
+	if inv.ID, err = generateInvocationID(c); err != nil {
 		return nil, errors.Annotate(err, "failed to generate invocation ID").Err()
 	}
-	inv.ID = invID
-	inv.JobID = jobID
 
 	if req != nil {
 		if err := putRequestIntoInv(inv, req); err != nil {
