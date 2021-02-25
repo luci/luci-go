@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "134bef28_2139948b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T22:40:30Z",
+      "side": 1,
+      "message": "Yiwei, lgtU?",
+      "revId": "2006199baa2bb6892958ee1778b1772f2a138eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "acec9765_c3f6813e",
@@ -24,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "75b1a092_50ef23c4",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T22:40:30Z",
+      "side": 1,
+      "message": "Good thought, and No, Delete non-existing results in Nil. See L494 for prod code that relies on this.",
+      "parentUuid": "acec9765_c3f6813e",
+      "range": {
+        "startLine": 286,
+        "startChar": 1,
+        "endLine": 286,
+        "endChar": 47
+      },
+      "revId": "2006199baa2bb6892958ee1778b1772f2a138eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5d7dd32_5d2960cc",
@@ -37,6 +78,30 @@
       "writtenOn": "2021-02-25T22:34:44Z",
       "side": 1,
       "message": "nit: `MakeKey` so that you don\u0027t need to provide 0, nil",
+      "range": {
+        "startLine": 176,
+        "startChar": 30,
+        "endLine": 176,
+        "endChar": 36
+      },
+      "revId": "2006199baa2bb6892958ee1778b1772f2a138eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8807d95_576119fe",
+        "filename": "cv/internal/dsset/dsset_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T22:40:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5d7dd32_5d2960cc",
       "range": {
         "startLine": 176,
         "startChar": 30,
