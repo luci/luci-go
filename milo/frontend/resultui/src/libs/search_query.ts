@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { html } from 'lit-html';
+import { html, TemplateResult } from 'lit-html';
 import { Suggestion } from '../components/auto_complete';
 import { TestVariant } from '../services/resultdb';
 
@@ -37,10 +37,14 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
       case 'RSTATUS': {
         const statuses = value.split(',');
         return (v: TestVariant) => negate !== (v.results || []).some((r) => statuses.includes(r.result.status));
-      // Whether the test ID contains the query as a substring (case insensitive).
       }
+      // Whether the test ID contains the query as a substring (case insensitive).
       case 'ID': {
         return (v: TestVariant) => negate !== v.testId.toUpperCase().includes(value);
+      }
+      // Whether the test variant has the specified variant hash.
+      case 'VHASH': {
+        return (v: TestVariant) => negate !== (v.variantHash.toUpperCase() === value);
       }
       default: {
         throw new Error(`invalid query type: ${type}`);
@@ -50,6 +54,7 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
   return (v) => filters.every((f) => f(v));
 }
 
+// Queries with predefined value.
 const QUERY_SUGGESTIONS = [
   {value: 'Status:UNEXPECTED', explanation: 'Include only tests with unexpected status'},
   {value: '-Status:UNEXPECTED', explanation: 'Exclude tests with unexpected status'},
@@ -74,12 +79,25 @@ const QUERY_SUGGESTIONS = [
   {value: '-RStatus:Skip', explanation: 'Exclude tests with at least one skipped run'},
 ];
 
-function getIdQuerySuggestion(substr: string, neg: boolean, bold: boolean): Suggestion {
-  return {
-    value: `${neg ? '-' : ''}ID:${substr}`,
-    display: bold ? html`<strong>${neg ? '-' : ''}ID:</strong>${substr}` : undefined,
-    explanation: `${neg ? 'Exclude' : 'Include only'} tests with the specified substring in their ID (case insensitive)`,
-  };
+// Queries with arbitrary value.
+const QUERY_TYPE_SUGGESTIONS = [
+  {type: 'ID:', explanation: 'Include only tests with the specified substring in their ID (case insensitive)'},
+  {type: '-ID:', explanation: 'Exclude tests with the specified substring in their ID (case insensitive)'},
+
+  {type: 'VHash:', explanation: 'Include only tests with the specified variant hash'},
+  {type: '-VHash:', explanation: 'Exclude tests with the specified variant hash'},
+];
+
+/**
+ * Return a lit-html template that highlight the substring (case-insensitive)
+ * in the given fullString.
+ */
+function highlight(fullString: string, subString: string): TemplateResult {
+  const matchStart = fullString.toUpperCase().search(subString.toUpperCase());
+  const prefix = fullString.slice(0, matchStart);
+  const matched = fullString.slice(matchStart, matchStart + subString.length);
+  const suffix = fullString.slice(matchStart + subString.length);
+  return html`${prefix}<strong>${matched}</strong>${suffix}`;
 }
 
 export function suggestSearchQuery(query: string): readonly Suggestion[] {
@@ -93,9 +111,11 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
       // Put this section behind `Advanced Syntax` so `Advanced Syntax` won't
       // be hidden after the size of supported filter types grows.
       {isHeader: true, display: html`<strong>Supported Filter Types</strong>`},
-      {value: 'ID:test-id-substr', explanation: 'Include only tests with the specified substring in their ID (case insensitive). `ID:` is optional'},
+      {value: 'ID:test-id-substr', explanation: 'Include only tests with the specified substring in their ID (case insensitive)'},
+      {value: 'test-id-substr', explanation: 'Filters with no type are treated as ID filters'},
       {value: 'Status:UNEXPECTED,UNEXPECTEDLY_SKIPPED,FLAKY,EXONERATED,EXPECTED', explanation: 'Include only tests with the specified status'},
       {value: 'RStatus:Pass,Fail,Crash,Abort,Skip', explanation: 'Include only tests with at least one run of the specified status'},
+      {value: 'VHash:2660cde9da304c42', explanation: 'Include only tests with the specified variant hash'},
     ];
   }
 
@@ -104,35 +124,31 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
     return [];
   }
 
-  const match = subQuery.match(/^(-?)ID:(.*)/);
+  const suggestions: Suggestion[] = [];
+
+  // Suggest queries with predefined value.
+  const subQueryUpper = subQuery.toUpperCase();
+  suggestions.push(...QUERY_SUGGESTIONS.filter(({value}) => value.toUpperCase().includes(subQueryUpper)));
+
+  // Suggest queries with arbitrary value.
+  const match = subQuery.match(/^([^:]*:?)(.*)$/);
   if (match) {
-    const [, neg, substr] = match;
-    if (neg === '-') {
-      return [getIdQuerySuggestion(substr, true, true)];
-    }
-    return [
-      getIdQuerySuggestion(substr, false, true),
-      getIdQuerySuggestion(substr, true, true),
-    ];
+    const [, subQueryType, subQueryValue] = match;
+    const typeUpper = subQueryType.toUpperCase();
+    suggestions.push(
+      ...QUERY_TYPE_SUGGESTIONS.flatMap(({type, explanation}) => {
+        if (type.toUpperCase().includes(typeUpper)) {
+          return [{value: type + subQueryValue, explanation}];
+        }
+
+        if (subQueryValue === '') {
+          return [{value: type + subQueryType, explanation}];
+        }
+
+        return [];
+      }),
+    );
   }
 
-  const subQueryUpper = subQuery.toUpperCase();
-  const suggestions = QUERY_SUGGESTIONS
-    .map<Suggestion>(({value, explanation}) => {
-      const matchIndex = value.toUpperCase().search(subQueryUpper);
-      if (matchIndex === -1) {
-        return {value, explanation};
-      }
-      // Highlight the matched portion.
-      const prefix = value.slice(0, matchIndex);
-      const matched = value.slice(matchIndex, matchIndex + subQuery.length);
-      const suffix = value.slice(matchIndex + subQuery.length);
-      return {value, explanation, display: html`${prefix}<strong>${matched}</strong>${suffix}`};
-    })
-    .filter(({display}) => display);
-  suggestions.push(
-    getIdQuerySuggestion(subQuery, false, false),
-    getIdQuerySuggestion(subQuery, true, false),
-  );
-  return suggestions;
+  return suggestions.map((s) => ({...s, display: s.display || highlight(s.value!, subQuery)}));
 }
