@@ -29,10 +29,13 @@ export enum GA_ACTIONS {
 }
 
 export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
+  if (!ENABLE_GA) {
+    return;
+  }
+
   // See https://developers.google.com/analytics/devguides/collection/analyticsjs/events?hl=en#event_fields
   // for more information
-  // Use window.ga? instead of ga, so this function doesn't fail when executed in the test environment.
-  window.ga?.('send', {
+  window.ga('send', {
     hitType: 'event',
     eventCategory: category,
     eventAction: action,
@@ -45,5 +48,5 @@ export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: 
 // Sometimes we need to have a unique label in order to access to the raw value
 // data. Otherwise, value data will be aggregated into categories/actions
 export function generateRandomLabel(prefix: string): string {
-  return prefix + "_" + Math.random().toString(36).substr(2, 8);
+  return prefix + '_' + Math.random().toString(36).substr(2, 8);
 }
