@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "09e074d5_1e17d5c9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T18:58:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5316650e_ce17fcb8",
+      "range": {
+        "startLine": 7,
+        "startChar": 5,
+        "endLine": 7,
+        "endChar": 12
+      },
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "446f8d48_d113b392",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a3e2e8a_858ae204",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T18:58:54Z",
+      "side": 1,
+      "message": "the usual risks due to concurrency and non-atomicity.\n\nThe reason I mention risk here is that that dsset.Set is meant to provide atomic deletion of N items from the set as part of another transaction, but it requires using BeginPop().",
+      "parentUuid": "6d873283_71d8fa81",
+      "range": {
+        "startLine": 269,
+        "startChar": 19,
+        "endLine": 269,
+        "endChar": 23
+      },
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b194f080_f9dcc59b",
@@ -83,6 +131,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "37934540_347bd311",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T18:58:54Z",
+      "side": 1,
+      "message": "This is up to users, so see example in the next CL where I use this feature in PM.\n\nIn this package, the best I can do is document on L157 below + add example test.\nDo you have better ideas?",
+      "parentUuid": "b194f080_f9dcc59b",
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "175a56ac_ab8e62c9",
         "filename": "cv/internal/eventbox/box_test.go",
         "patchSetId": 1
@@ -94,6 +160,30 @@
       "writtenOn": "2021-02-25T18:49:15Z",
       "side": 1,
       "message": "Does this mean that as of this CL, the returned \"garbage\" is always nil?",
+      "range": {
+        "startLine": 65,
+        "startChar": 90,
+        "endLine": 65,
+        "endChar": 98
+      },
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "277ba993_5df65372",
+        "filename": "cv/internal/eventbox/box_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T18:58:54Z",
+      "side": 1,
+      "message": "in this *test*, the returned garbage is nil. There is a test below with non-nil garbage.",
+      "parentUuid": "175a56ac_ab8e62c9",
       "range": {
         "startLine": 65,
         "startChar": 90,
