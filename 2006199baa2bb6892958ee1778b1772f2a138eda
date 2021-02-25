@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ef9f2af_24ce92d8",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-25T22:42:17Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "75b1a092_50ef23c4",
+      "range": {
+        "startLine": 286,
+        "startChar": 1,
+        "endLine": 286,
+        "endChar": 47
+      },
+      "revId": "2006199baa2bb6892958ee1778b1772f2a138eda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5d7dd32_5d2960cc",
