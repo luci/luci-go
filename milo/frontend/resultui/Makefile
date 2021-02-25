@@ -8,7 +8,7 @@ node_deps:
 	npm install
 
 build: node_deps
-	npm run build
+	ENABLE_GA=true npm run build
 
 release:
 	npm ci && npm run build

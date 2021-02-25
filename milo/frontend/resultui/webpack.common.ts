@@ -17,7 +17,7 @@ import path from 'path';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import webpack from 'webpack';
+import webpack, { DefinePlugin } from 'webpack';
 
 const config: webpack.Configuration = {
   entry: {
@@ -74,6 +74,7 @@ const config: webpack.Configuration = {
       filename: path.resolve(__dirname, './out/index.html'),
     }),
     new HtmlWebpackHarddiskPlugin(),
+    new DefinePlugin({ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true')}),
   ],
 };
 

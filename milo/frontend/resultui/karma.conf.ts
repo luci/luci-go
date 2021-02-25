@@ -72,6 +72,7 @@ module.exports = (config: Config) => {
       plugins: [
         new DefinePlugin({
           'CONFIGS': fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
+          'ENABLE_GA': JSON.stringify(false),
         }),
       ],
     },

@@ -30,3 +30,9 @@ declare const CONFIGS: {
     readonly CLIENT_ID: string;
   }
 };
+
+/**
+ * Whether GA tracking should be enabled.
+ * Injected by webpack.
+ */
+declare const ENABLE_GA: boolean;
