@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d4c823a3_4b4077ea",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 919,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-25T19:20:37Z",
+      "side": 1,
+      "message": "nit: \n\nmics :\u003d t.UnixNano() / 1000\nreturn fmt.Sprintf(\"%d.%06d\", mics / 1e6, mics % 1e6)\n\n\n(UTC is unnecessary, UnixNano doesn\u0027t use the location, it is always based off UTC)",
+      "range": {
+        "startLine": 918,
+        "startChar": 0,
+        "endLine": 919,
+        "endChar": 42
+      },
+      "revId": "38890eb63afe0cba368362818977f79c694c2ddc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
