@@ -33,6 +33,24 @@
       "message": "LGTM. + what Vadim asked.",
       "revId": "8223a80a00d4508e6c786c19ebc12312157bbfdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ad03a6e_9d4b11dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-25T05:25:56Z",
+      "side": 1,
+      "message": "Chan found the problem: https://chrome-internal-review.googlesource.com/c/infradata/k8s/+/3639648",
+      "parentUuid": "8062373b_0bb7c17a",
+      "revId": "8223a80a00d4508e6c786c19ebc12312157bbfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
