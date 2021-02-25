@@ -199,8 +199,7 @@ export class StepsTabElement extends MobxLitElement {
 
     .filters-container {
       display: inline-block;
-      padding: 0 5px;
-      padding-top: 5px;
+      padding: 4px 5px 0;
     }
     .filter {
       display: inline-block;
