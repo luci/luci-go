@@ -34,6 +34,10 @@ export class InvocationState {
   // null means uninitialized.
   @observable.ref invocationId: string | null = null;
 
+  // Whether tests should be split into multiple sections by status.
+  @observable.ref multiSections = true;
+
+  // The following settings only apply when this.multiSections = true.
   @observable.ref showUnexpectedVariants = true;
   @observable.ref showUnexpectedlySkippedVariants = true;
   @observable.ref showFlakyVariants = true;
@@ -135,6 +139,36 @@ export class InvocationState {
   @computed get filteredExpectedVariants() {
     return (this.testLoader?.expectedTestVariants || [])
       .filter(v => this.searchFilter(v));
+  }
+
+  @computed
+  get totalDisplayedVariantCount() {
+    if (!this.multiSections) {
+      return this.filteredUnexpectedVariants.length
+        + this.filteredUnexpectedlySkippedVariants.length
+        + this.filteredFlakyVariants.length
+        + this.filteredExoneratedVariants.length
+        + this.filteredExpectedVariants.length;
+    }
+
+    let count = 0;
+    if (this.showUnexpectedVariants) {
+      count += this.filteredUnexpectedVariants.length;
+    }
+    if (this.showUnexpectedlySkippedVariants) {
+      count += this.filteredUnexpectedlySkippedVariants.length;
+    }
+    if (this.showFlakyVariants) {
+      count += this.filteredFlakyVariants.length;
+    }
+    if (this.showExoneratedVariants) {
+      count += this.filteredExoneratedVariants.length;
+    }
+    if (this.showExpectedVariants) {
+      count += this.filteredExpectedVariants.length;
+    }
+
+    return count;
   }
 }
 
