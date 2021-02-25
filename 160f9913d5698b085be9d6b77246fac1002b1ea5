@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "61f86d7c_d884220a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T19:13:47Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "160f9913d5698b085be9d6b77246fac1002b1ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5e822218_db0cb7ca",
@@ -14,6 +31,30 @@
       "writtenOn": "2021-02-25T19:02:31Z",
       "side": 1,
       "message": "Will these be deleted? (Is this related to the other recent CL about deleting some events in eventbox before processing?)",
+      "range": {
+        "startLine": 95,
+        "startChar": 123,
+        "endLine": 95,
+        "endChar": 128
+      },
+      "revId": "160f9913d5698b085be9d6b77246fac1002b1ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "320379d8_8c9f32e6",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T19:13:47Z",
+      "side": 1,
+      "message": "No need to answer, I see that the answer is yes :-)",
+      "parentUuid": "5e822218_db0cb7ca",
       "range": {
         "startLine": 95,
         "startChar": 123,
