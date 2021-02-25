@@ -129,8 +129,12 @@ type Manager interface {
 	// ValidateProtoMessage verifies task definition proto message makes sense.
 	// msg must have same underlying type as ProtoMessageType() return value.
 	//
+	// realmID is a full realm name (as "<project>:<realm>") of the job whose
+	// definition is being validated. It is never empty, but may be a @legacy
+	// realm.
+	//
 	// Errors are returned via validation.Context.
-	ValidateProtoMessage(c *validation.Context, msg proto.Message)
+	ValidateProtoMessage(c *validation.Context, msg proto.Message, realmID string)
 
 	// LaunchTask starts (or starts and finishes in one go) the task.
 	//

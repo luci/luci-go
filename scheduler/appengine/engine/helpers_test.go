@@ -176,7 +176,8 @@ func (m *fakeTaskManager) Traits() task.Traits {
 	return task.Traits{}
 }
 
-func (m *fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {}
+func (m *fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message, realmID string) {
+}
 
 func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	return m.launchTask(c, ctl)
