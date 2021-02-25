@@ -80,6 +80,41 @@
       "message": "Is this the number of workers that will be trying to update/poke/add events?",
       "revId": "160f9913d5698b085be9d6b77246fac1002b1ea5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a815b82_6d468264",
+        "filename": "cv/internal/prjmanager/impl/pm_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T20:16:41Z",
+      "side": 1,
+      "message": "well, i guess that\u0027s one way to imagine it, but really i\u0027m just generating n events per 2 kinds of events.",
+      "parentUuid": "4b056431_ae34557a",
+      "revId": "160f9913d5698b085be9d6b77246fac1002b1ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5a95aa2_d5e7d6f0",
+        "filename": "cv/internal/prjmanager/impl/pm_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-25T20:16:41Z",
+      "side": 1,
+      "message": "btw, interestingly I couldn\u0027t get \u003e1 worker to succeed until `w\u003d120`. This test would benefit from flaky datastore fake.",
+      "revId": "160f9913d5698b085be9d6b77246fac1002b1ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
