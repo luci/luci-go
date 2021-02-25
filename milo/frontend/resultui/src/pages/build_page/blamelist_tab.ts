@@ -237,6 +237,7 @@ export class BlamelistTabElement extends MobxLitElement {
 
     #repo-selector {
       white-space: nowrap;
+      padding-left: 5px;
     }
     #repo-select {
       display: inline-block;
