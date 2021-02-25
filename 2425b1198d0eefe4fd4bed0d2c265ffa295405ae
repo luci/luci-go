@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5316650e_ce17fcb8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T18:49:15Z",
+      "side": 1,
+      "message": "nit: eventbox",
+      "range": {
+        "startLine": 7,
+        "startChar": 5,
+        "endLine": 7,
+        "endChar": 12
+      },
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "446f8d48_d113b392",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T18:49:15Z",
+      "side": 1,
+      "message": "LGTM with questions",
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d873283_71d8fa81",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T18:49:15Z",
+      "side": 1,
+      "message": "You could say what the expected risk is; is the risk that concurrent calls could fail? What might happen if a Delete happens at the same time as BeginPop?",
+      "range": {
+        "startLine": 269,
+        "startChar": 19,
+        "endLine": 269,
+        "endChar": 23
+      },
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b194f080_f9dcc59b",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T18:49:15Z",
+      "side": 1,
+      "message": "What is semantic garbage? (like, what\u0027s an example of garbage events to delete?) I think it\u0027s a good idea to add a little more explanation somewhere.",
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "175a56ac_ab8e62c9",
+        "filename": "cv/internal/eventbox/box_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T18:49:15Z",
+      "side": 1,
+      "message": "Does this mean that as of this CL, the returned \"garbage\" is always nil?",
+      "range": {
+        "startLine": 65,
+        "startChar": 90,
+        "endLine": 65,
+        "endChar": 98
+      },
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
