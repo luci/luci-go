@@ -71,6 +71,8 @@ export class TestLoader {
   @computed get stage() { return this._stage; }
   @observable.ref private _stage = LoadingStage.LoadingUnexpected;
 
+  @observable.ref testVariantCount = 0;
+
   @observable.shallow readonly unexpectedTestVariants: TestVariant[] = [];
   @observable.shallow readonly unexpectedlySkippedTestVariants: TestVariant[] = [];
   @observable.shallow readonly flakyTestVariants: TestVariant[] = [];
@@ -182,6 +184,7 @@ export class TestLoader {
 
   @action
   private processTestVariants(testVariants: readonly TestVariant[]) {
+    this.testVariantCount += testVariants.length;
     for (const testVariant of testVariants) {
       switch (testVariant.status) {
         case TestVariantStatus.UNEXPECTED:
