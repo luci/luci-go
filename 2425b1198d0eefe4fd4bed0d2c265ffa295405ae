@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6508a05_eaae3c79",
+        "filename": "cv/internal/dsset/dsset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T19:13:16Z",
+      "side": 1,
+      "message": "And is the reason why you made this non-transactional for performance or other reasons?",
+      "parentUuid": "3a3e2e8a_858ae204",
+      "range": {
+        "startLine": 269,
+        "startChar": 19,
+        "endLine": 269,
+        "endChar": 23
+      },
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b194f080_f9dcc59b",
@@ -143,6 +167,24 @@
       "side": 1,
       "message": "This is up to users, so see example in the next CL where I use this feature in PM.\n\nIn this package, the best I can do is document on L157 below + add example test.\nDo you have better ideas?",
       "parentUuid": "b194f080_f9dcc59b",
+      "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d577694d_89a2b02c",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-25T19:13:16Z",
+      "side": 1,
+      "message": "(When I read this a minute ago I was wondering whether \"semantic garbage\" is going to mean something specific that I didn\u0027t understand.)\n\nI think the example in the next CL gives a good idea -- so I guess \"semantic garbage events\" just means any events that we want to delete before processing, such as no-ops, but it could also include any other events that we want to skip or ignore for other reasons?",
+      "parentUuid": "37934540_347bd311",
       "revId": "2425b1198d0eefe4fd4bed0d2c265ffa295405ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
