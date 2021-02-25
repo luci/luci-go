@@ -43,7 +43,7 @@ import (
 const (
 	// fullPollInterval is between querying Gerrit for all changes relevant to CV as
 	// if from scratch.
-	fullPollInterval = time.Hour
+	fullPollInterval = 30 * time.Minute
 
 	// incrementalPollOverlap is safety overlap of time range of Change.Updated
 	// between two successive polls.
