@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf41880a_3273f725",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-25T16:24:33Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "6630867092f98aed8c5fab8c64e12cb2f92cfcc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ddf8788c_10125ec1",
+        "filename": "common/system/port/port.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-25T16:24:33Z",
+      "side": 1,
+      "message": "note that this will have the effect of many PickUnusedPort\u0027s synchronizing on 32768.\n\nConsider \n\n   port \u003d minPort + ((port - minPort) + rand.Intn(100)) % (maxPort-minPort)\n\nWhich I think should make port roll around and preserve the random offset, if it does go over maxPort.",
+      "range": {
+        "startLine": 59,
+        "startChar": 10,
+        "endLine": 59,
+        "endChar": 17
+      },
+      "revId": "6630867092f98aed8c5fab8c64e12cb2f92cfcc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
