@@ -99,7 +99,7 @@ func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s 
 	}
 	// TODO(tandrii): if there are too many redundant events, delete some of them.
 	ts, err = pm.mutate(ctx, tr, s.(*state.State))
-	return ts, nil, err
+	return ts, tr.noops, err
 }
 
 // FetchEVersion is called at the beginning of a transaction.
@@ -152,8 +152,19 @@ func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev e
 
 // triageResult is the result of the triage of the incoming events.
 type triageResult struct {
+	// noops are events that can be safely deleted before a transaction
+	// because another semantically **superseding** event will remain in
+	// eventbox.
+	//
+	// Safety note: semantically the same event isn't sufficient, since concurrent
+	// invocations of a PM must agree on which events can be deleted and which
+	// must be kept.
+	noops eventbox.Events
+
+	// newConfig stores newConfig event with the largest ID if any.
 	newConfig eventbox.Events
-	poke      eventbox.Events
+	// poke stores Poke event with the largest ID if any.
+	poke eventbox.Events
 
 	clsUpdated struct {
 		// events don't correspond to cls due to CLsUpdate batches.
@@ -186,9 +197,9 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	}
 	switch v := e.GetEvent().(type) {
 	case *prjpb.Event_NewConfig:
-		tr.newConfig = append(tr.newConfig, item)
+		tr.highestIDWins(item, &tr.newConfig)
 	case *prjpb.Event_Poke:
-		tr.poke = append(tr.poke, item)
+		tr.highestIDWins(item, &tr.poke)
 	case *prjpb.Event_ClUpdated:
 		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
 		tr.clsUpdated.cls = append(tr.clsUpdated.cls, v.ClUpdated)
@@ -206,6 +217,19 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.purgesCompleted.purges = append(tr.purgesCompleted.purges, v.PurgeCompleted)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
+	}
+}
+
+func (tr *triageResult) highestIDWins(item eventbox.Event, target *eventbox.Events) {
+	if len(*target) == 0 {
+		*target = eventbox.Events{item}
+		return
+	}
+	if i := (*target)[0]; i.ID < item.ID {
+		tr.noops = append(tr.noops, i)
+		(*target)[0] = item
+	} else {
+		tr.noops = append(tr.noops, item)
 	}
 }
 
