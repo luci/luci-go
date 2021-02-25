@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "45d0caee_52062b2e",
+        "filename": "milo/frontend/resultui/src/context/invocation_state.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-25T09:16:14Z",
+      "side": 1,
+      "message": "Updated to a chain of\n+ ( condition ? count : 0 )\nI don\u0027t want to use array and filter because inserting a test or updating a filter will invalidate the cache and the entire array will need to be filtered again.",
+      "parentUuid": "480c7890_db50143c",
+      "revId": "e0d6842927d078c99817ab8716b78d167b2ed410",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f9bfc41b_4597a395",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-02-25T06:11:37Z",
       "side": 1,
       "message": "maybe `untilStatus`",
+      "range": {
+        "startLine": 56,
+        "startChar": 29,
+        "endLine": 56,
+        "endChar": 35
+      },
+      "revId": "e0d6842927d078c99817ab8716b78d167b2ed410",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "71066206_744f7829",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-25T09:16:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9bfc41b_4597a395",
       "range": {
         "startLine": 56,
         "startChar": 29,
