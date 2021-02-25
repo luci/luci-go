@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "267cc11a_f39ab1b6",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-25T02:52:52Z",
+      "side": 1,
+      "message": "Split the ID query suggestion into 2 to make the explanation shorter.",
+      "revId": "42c787be96c5365bf25d158a1b5dd1ff773ae00c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
