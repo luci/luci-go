@@ -851,8 +851,9 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 	// Inject magic header with ETA.
 	if scheduleTime == nil {
 		payload.Meta[ExpectedETAHeader] = makeETAHeader(clock.Now(ctx))
+	} else {
+		payload.Meta[ExpectedETAHeader] = makeETAHeader(scheduleTime.AsTime())
 	}
-	payload.Meta[ExpectedETAHeader] = makeETAHeader(scheduleTime.AsTime())
 
 	method := taskspb.HttpMethod(taskspb.HttpMethod_value[payload.Method])
 	if method == 0 {
@@ -1163,7 +1164,11 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, result, retry)
 	metrics.ServerDurationMS.Add(ctx, float64(dur.Milliseconds()), cls.ID, result)
 	if !info.expectedETA.IsZero() {
-		metrics.ServerTaskLatency.Add(ctx, float64(clock.Since(ctx, info.expectedETA).Milliseconds()), cls.ID, result, retry)
+		latency := clock.Since(ctx, info.expectedETA).Milliseconds()
+		if latency < 0 {
+			latency = 0
+		}
+		metrics.ServerTaskLatency.Add(ctx, float64(latency), cls.ID, result, retry)
 	}
 	return err
 }
