@@ -213,10 +213,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         This might be because they are not integrated with ResultDB yet.
         Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
         </p>
-        Known issues:
-        <ul id="known-issues">
-          <li>Test result tab is currently slow: <a href="https://crbug.com/1114935">crbug.com/1114935</a>.</li>
-        </ul>
         <span
           id="hide-hint"
           @click=${() => {
@@ -434,10 +430,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       border-top: 1px solid var(--divider-color);
     }
 
-    milo-test-nav-tree {
-      overflow: hidden;
-    }
-
     .unexpected {
       color: var(--failure-color);
     }
@@ -474,10 +466,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     #hide-hint {
       color: var(--active-text-color);
       cursor: pointer;
-    }
-    #known-issues{
-      margin-top: 3px;
-      margin-bottom: 3px;
     }
   `;
 }
