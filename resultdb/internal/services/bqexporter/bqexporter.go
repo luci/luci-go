@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -53,6 +54,9 @@ import (
 	// Add support for Spanner transactions in TQ.
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
 )
+
+// TODO(crbug.com/1116218): remove the experiment after YAML doens't pass it.
+var _ = experiments.Register("rdb-use-tq-bq-export")
 
 const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 
