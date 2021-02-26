@@ -94,7 +94,7 @@ func controllerForInvocation(c context.Context, e *engineImpl, inv *Invocation) 
 		saved: *inv,
 	}
 	var err error
-	if ctl.task, err = e.cfg.Catalog.UnmarshalTask(c, inv.Task); err != nil {
+	if ctl.task, err = e.cfg.Catalog.UnmarshalTask(c, inv.Task, ctl.RealmID()); err != nil {
 		return ctl, fmt.Errorf("failed to unmarshal the task - %s", err)
 	}
 	if ctl.manager = e.cfg.Catalog.GetTaskManager(ctl.task); ctl.manager == nil {

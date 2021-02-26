@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 
@@ -72,7 +73,7 @@ type Catalog interface {
 	// unmarshals and validates it, and returns proto.Message that represent
 	// the concrete task to run (e.g. SwarmingTask proto). It can be passed to
 	// corresponding task.Manager.
-	UnmarshalTask(c context.Context, task []byte) (proto.Message, error)
+	UnmarshalTask(c context.Context, task []byte, realmID string) (proto.Message, error)
 
 	// GetAllProjects returns a list of all known project ids.
 	GetAllProjects(c context.Context) ([]string, error)
@@ -180,12 +181,12 @@ func (cat *catalog) GetTaskManager(msg proto.Message) task.Manager {
 	return cat.managers[reflect.TypeOf(msg)]
 }
 
-func (cat *catalog) UnmarshalTask(c context.Context, task []byte) (proto.Message, error) {
+func (cat *catalog) UnmarshalTask(c context.Context, task []byte, realmID string) (proto.Message, error) {
 	msg := messages.TaskDefWrapper{}
 	if err := proto.Unmarshal(task, &msg); err != nil {
 		return nil, err
 	}
-	return cat.extractTaskProto(c, &msg)
+	return cat.extractTaskProto(c, &msg, realmID)
 }
 
 func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
@@ -255,7 +256,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		// Create a new validation context for each job/trigger since errors
 		// persist in context but we want to find all valid jobs/trigger.
 		ctx = &validation.Context{Context: c}
-		task := cat.validateJobProto(ctx, job)
+		realmID := validateRealm(ctx, projectID, job.Realm)
+		task := cat.validateJobProto(ctx, job, realmID)
+		acls := acl.ValidateTaskACLs(ctx, knownACLSets, job.GetAclSets(), job.GetAcls())
 		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Invalid job definition %s: %s", id, err)
 			continue
@@ -265,10 +268,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to marshal the task: %s: %s", id, err)
 			continue
 		}
-		realm := job.Realm
-		if realm == "" {
-			realm = realms.LegacyRealm
-		}
 		schedule := job.Schedule
 		if schedule == "" {
 			schedule = defaultJobSchedule
@@ -277,14 +276,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if schedule != "triggered" {
 			flavor = JobFlavorPeriodic
 		}
-		acls := acl.ValidateTaskACLs(ctx, knownACLSets, job.GetAclSets(), job.GetAcls())
-		if err := ctx.Finalize(); err != nil {
-			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
-			continue
-		}
 		out = append(out, Definition{
 			JobID:            fmt.Sprintf("%s/%s", projectID, job.Id),
-			RealmID:          realms.Join(projectID, realm),
+			RealmID:          realmID,
 			Acls:             *acls,
 			Flavor:           flavor,
 			Revision:         meta.Revision,
@@ -307,7 +301,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			id = trigger.Id
 		}
 		ctx = &validation.Context{Context: c}
-		task := cat.validateTriggerProto(ctx, trigger, allJobIDs, false)
+		realmID := validateRealm(ctx, projectID, trigger.Realm)
+		task := cat.validateTriggerProto(ctx, trigger, realmID, allJobIDs, false)
+		acls := acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
 		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Invalid trigger definition %s: %s", id, err)
 			continue
@@ -317,22 +313,13 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to marshal the task: %s: %s", id, err)
 			continue
 		}
-		realm := trigger.Realm
-		if realm == "" {
-			realm = realms.LegacyRealm
-		}
 		schedule := trigger.Schedule
 		if schedule == "" {
 			schedule = defaultTriggerSchedule
 		}
-		acls := acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
-		if err := ctx.Finalize(); err != nil {
-			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
-			continue
-		}
 		out = append(out, Definition{
 			JobID:            fmt.Sprintf("%s/%s", projectID, trigger.Id),
-			RealmID:          realms.Join(projectID, realm),
+			RealmID:          realmID,
 			Acls:             *acls,
 			Flavor:           JobFlavorTrigger,
 			Revision:         meta.Revision,
@@ -364,6 +351,12 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 		return nil
 	}
 
+	// Get the project ID to be able to construct full realm ID.
+	if !strings.HasPrefix(configSet, "projects/") {
+		return fmt.Errorf("expecting projects/... config set, got %q", configSet)
+	}
+	projectID := strings.TrimPrefix(configSet, "projects/")
+
 	// AclSets.
 	ctx.Enter("acl_sets")
 	knownACLSets := acl.ValidateACLSets(ctx, cfg.GetAclSets())
@@ -381,7 +374,8 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 		if job.Id != "" && !knownIDs.Add(job.Id) {
 			ctx.Errorf("duplicate id %q", job.Id)
 		}
-		cat.validateJobProto(ctx, job)
+		realmID := validateRealm(ctx, projectID, job.Realm)
+		cat.validateJobProto(ctx, job, realmID)
 		acl.ValidateTaskACLs(ctx, knownACLSets, job.GetAclSets(), job.GetAcls())
 		ctx.Exit()
 	}
@@ -399,7 +393,8 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 		if trigger.Id != "" && !knownIDs.Add(trigger.Id) {
 			ctx.Errorf("duplicate id %q", trigger.Id)
 		}
-		cat.validateTriggerProto(ctx, trigger, allJobIDs, true)
+		realmID := validateRealm(ctx, projectID, trigger.Realm)
+		cat.validateTriggerProto(ctx, trigger, realmID, allJobIDs, true)
 		acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
 		ctx.Exit()
 	}
@@ -412,16 +407,11 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 //
 // It also extracts a task definition from it (e.g. SwarmingTask proto).
 // Errors are returned via validation.Context.
-func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job) proto.Message {
+func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job, realmID string) proto.Message {
 	if j.Id == "" {
 		ctx.Errorf("missing 'id' field'")
 	} else if !jobIDRe.MatchString(j.Id) {
 		ctx.Errorf("%q is not valid value for 'id' field", j.Id)
-	}
-	if j.Realm != "" {
-		if err := realms.ValidateRealmName(j.Realm, realms.ProjectScope); err != nil {
-			ctx.Errorf("bad 'realm' field - %s", err)
-		}
 	}
 	if j.Schedule != "" {
 		if _, err := schedule.Parse(j.Schedule, 0); err != nil {
@@ -429,7 +419,7 @@ func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job) p
 		}
 	}
 	cat.validateTriggeringPolicy(ctx, j.TriggeringPolicy)
-	return cat.validateTaskProto(ctx, j)
+	return cat.validateTaskProto(ctx, j, realmID)
 }
 
 // validateTriggerProto validates and filters messages.Trigger protobuf message.
@@ -442,16 +432,11 @@ func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job) p
 // reference to the undefined job is removed.
 //
 // Errors are returned via validation.Context.
-func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Trigger, jobIDs stringset.Set, failOnMissing bool) proto.Message {
+func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Trigger, realmID string, jobIDs stringset.Set, failOnMissing bool) proto.Message {
 	if t.Id == "" {
 		ctx.Errorf("missing 'id' field'")
 	} else if !jobIDRe.MatchString(t.Id) {
 		ctx.Errorf("%q is not valid value for 'id' field", t.Id)
-	}
-	if t.Realm != "" {
-		if err := realms.ValidateRealmName(t.Realm, realms.ProjectScope); err != nil {
-			ctx.Errorf("bad 'realm' field - %s", err)
-		}
 	}
 	if t.Schedule != "" {
 		if _, err := schedule.Parse(t.Schedule, 0); err != nil {
@@ -472,7 +457,7 @@ func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Tr
 	}
 	t.Triggers = filtered
 	cat.validateTriggeringPolicy(ctx, t.TriggeringPolicy)
-	return cat.validateTaskProto(ctx, t)
+	return cat.validateTaskProto(ctx, t, realmID)
 }
 
 // validateTaskProto visits all fields of a proto and sniffs ones that correspond
@@ -480,7 +465,7 @@ func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Tr
 // there's one and only one such field, validates it, and returns it.
 //
 // Errors are returned via validation.Context.
-func (cat *catalog) validateTaskProto(ctx *validation.Context, t proto.Message) proto.Message {
+func (cat *catalog) validateTaskProto(ctx *validation.Context, t proto.Message, realmID string) proto.Message {
 	var taskMsg proto.Message
 
 	v := reflect.ValueOf(t)
@@ -514,7 +499,7 @@ func (cat *catalog) validateTaskProto(ctx *validation.Context, t proto.Message) 
 
 	taskMan := cat.GetTaskManager(taskMsg)
 	ctx.Enter("task")
-	taskMan.ValidateProtoMessage(ctx, taskMsg)
+	taskMan.ValidateProtoMessage(ctx, taskMsg, realmID)
 	ctx.Exit()
 	if ctx.Finalize() != nil {
 		return nil
@@ -536,9 +521,9 @@ func (cat *catalog) validateTriggeringPolicy(ctx *validation.Context, p *message
 // extractTaskProto visits all fields of a proto and sniffs ones that correspond
 // to task definitions (as registered via RegisterTaskManager). It ensures
 // there's one and only one such field, validates it, and returns it.
-func (cat *catalog) extractTaskProto(c context.Context, t proto.Message) (proto.Message, error) {
+func (cat *catalog) extractTaskProto(c context.Context, t proto.Message, realmID string) (proto.Message, error) {
 	ctx := &validation.Context{Context: c}
-	return cat.validateTaskProto(ctx, t), ctx.Finalize()
+	return cat.validateTaskProto(ctx, t, realmID), ctx.Finalize()
 }
 
 // marshalTask takes a concrete task definition proto (e.g. SwarmingTask), wraps
@@ -565,6 +550,22 @@ func (cat *catalog) marshalTask(task proto.Message) ([]byte, error) {
 }
 
 /// Helper functions.
+
+// validateRealm validates validity of `realm` configs field and returns the
+// full realm name (perhaps "<project>:@legacy" if the config doesn't have
+// a realm).
+func validateRealm(ctx *validation.Context, projectID, realm string) string {
+	if realm != "" {
+		if err := realms.ValidateRealmName(realm, realms.ProjectScope); err != nil {
+			ctx.Errorf("bad 'realm' field - %s", err)
+			realm = ""
+		}
+	}
+	if realm == "" {
+		realm = realms.LegacyRealm
+	}
+	return realms.Join(projectID, realm)
+}
 
 // getAllJobIDs returns a set of IDs of regular jobs and triggering jobs.
 //

@@ -86,7 +86,7 @@ func (m TaskManager) Traits() task.Traits {
 }
 
 // ValidateProtoMessage is part of Manager interface.
-func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
+func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message, realmID string) {
 	cfg, ok := msg.(*messages.GitilesTask)
 	if !ok {
 		c.Errorf("wrong type %T, expecting *messages.GitilesTask", msg)

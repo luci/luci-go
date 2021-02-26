@@ -588,7 +588,7 @@ func TestValidateConfig(t *testing.T) {
 		ctx := &validation.Context{Context: c}
 		m := TaskManager{}
 		validate := func(msg proto.Message) error {
-			m.ValidateProtoMessage(ctx, msg)
+			m.ValidateProtoMessage(ctx, msg, "some-project:some-realm")
 			return ctx.Finalize()
 		}
 		Convey("refNamespace works", func() {

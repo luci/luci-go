@@ -59,7 +59,7 @@ func GetPublicStateKind(j *engine.Job, traits task.Traits) PublicStateKind {
 
 // GetJobTraits asks the corresponding task manager for a traits struct.
 func GetJobTraits(ctx context.Context, cat catalog.Catalog, j *engine.Job) (task.Traits, error) {
-	taskDef, err := cat.UnmarshalTask(ctx, j.Task)
+	taskDef, err := cat.UnmarshalTask(ctx, j.Task, j.RealmID)
 	if err != nil {
 		logging.WithError(err).Warningf(ctx, "Failed to unmarshal task proto for %s", j.JobID)
 		return task.Traits{}, err

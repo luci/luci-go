@@ -50,7 +50,7 @@ func TestValidateProtoMessage(t *testing.T) {
 	Convey("ValidateProtoMessage works", t, func() {
 		ctx := &validation.Context{Context: c}
 		validate := func(msg proto.Message) error {
-			tm.ValidateProtoMessage(ctx, msg)
+			tm.ValidateProtoMessage(ctx, msg, "some-project:some-realm")
 			return ctx.Finalize()
 		}
 
@@ -87,7 +87,7 @@ func TestValidateProtoMessage(t *testing.T) {
 					Server:  url,
 					Bucket:  "bucket",
 					Builder: "builder",
-				})
+				}, "some-project:some-realm")
 				return ctx.Finalize()
 			}
 			So(call(""), ShouldErrLike, "field 'server' is required")

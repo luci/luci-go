@@ -51,7 +51,7 @@ func (m TaskManager) ProtoMessageType() proto.Message {
 }
 
 // ValidateProtoMessage is part of Manager interface.
-func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {}
+func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message, realmID string) {}
 
 // Traits is part of Manager interface.
 func (m TaskManager) Traits() task.Traits {
