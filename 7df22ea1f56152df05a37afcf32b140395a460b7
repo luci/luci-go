@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cde6f2af_d3078e4b",
+        "filename": "resultdb/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-26T07:26:10Z",
+      "side": 1,
+      "message": "nit: blank line after header",
+      "revId": "7df22ea1f56152df05a37afcf32b140395a460b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
