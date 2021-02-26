@@ -30,7 +30,10 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -201,15 +204,25 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
 
 		ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+		So(gobmap.Update(ctx, lProject), ShouldBeNil)
+		ct.GFake.AddFrom(gf.WithCIs("host", gf.ACLPublic(), gf.CI(
+			44, gf.Project("repo"), gf.Ref("refs/heads/main"),
+			gf.CQ(+2, ct.Clock.Now(), gf.U("user-1")))))
+		So(updater.Refresh(ctx, &updater.RefreshGerritCL{
+			LuciProject: lProject,
+			Host:        "host",
+			Change:      44,
+		}), ShouldBeNil) // this notifies PM once.
 
 		const n = 10
 		for i := 0; i < n; i++ {
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(prjmanager.Poke(ctx, lProject), ShouldBeNil)
+			So(prjmanager.NotifyCLUpdated(ctx, lProject, common.CLID(1), 1), ShouldBeNil)
 		}
 		events, err := eventbox.List(ctx, lProjectKey)
 		So(err, ShouldBeNil)
-		So(events, ShouldHaveLength, 2*n)
+		So(events, ShouldHaveLength, 1+3*n)
 
 		const w = 20
 		now := ct.Clock.Now()
@@ -230,6 +243,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		p := prjmanager.Project{ID: lProject}
 		So(datastore.Get(ctx, &p), ShouldBeNil)
 		So(p.EVersion, ShouldEqual, 1)
+		So(p.State.GetPcls(), ShouldHaveLength, 1)
 		events, err = eventbox.List(ctx, lProjectKey)
 		So(err, ShouldBeNil)
 		So(events, ShouldBeEmpty)
