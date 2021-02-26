@@ -40,18 +40,42 @@
 package buildid
 
 import (
+	"context"
 	"time"
+
+	"go.chromium.org/luci/common/data/rand/mathrand"
 )
 
 const (
-	timeResolution   = time.Millisecond
-	buildIdSuffixLen = 20
+	timeResolution = time.Millisecond
+
+	// buildIDMax is the maximum theoretical build ID.
+	// Based on time = beginningOfTheWorld, and max values for random and version bits.
+	buildIDMax = int64(0x7FFFFFFFFFFFFFFF)
+
+	// buildIDTimeSuffixLen is the number of bits following the time in a build ID.
+	buildIDTimeSuffixLen = 20
+
+	// buildIDVersion is the version number of the build ID scheme.
+	// Must not exceed 15 in the current build ID scheme since it's stored in four bits.
+	buildIDVersion = 1
 )
 
 var (
 	// beginningOfTheWorld is the earliest valid time encoded by build IDs.
 	beginningOfTheWorld = time.Date(2010, 01, 01, 0, 0, 0, 0, time.UTC)
 )
+
+// NewBuildIDs generates the given number of build IDs.
+func NewBuildIDs(ctx context.Context, t time.Time, n int) []int64 {
+	// Random component is in [n-1, 2^16).
+	base := idTimeSegment(t) | (int64(mathrand.Intn(ctx, 2^16-(n-1))+(n-1)) << 4) | buildIDVersion
+	ids := make([]int64, n)
+	for i := range ids {
+		ids[i] = base - int64(i*(1<<4))
+	}
+	return ids
+}
 
 // MayContainBuilds returns true if the time range can possibly contain builds.
 // Zero low/high value means no boundary for low/high.
@@ -88,5 +112,5 @@ func idTimeSegment(t time.Time) int64 {
 	}
 	// Use bitwise negation to make sure build id is monotonically decreasing.
 	// Thus the larger of the time, the smaller of the id.
-	return (^delta & ((int64(1) << 43) - 1)) << buildIdSuffixLen
+	return (^delta & ((int64(1) << 43) - 1)) << buildIDTimeSuffixLen
 }
