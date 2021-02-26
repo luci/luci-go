@@ -101,7 +101,6 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
-
 	rsp, err := search.NewQuery(req).Fetch(ctx)
 	if err != nil {
 		return nil, err

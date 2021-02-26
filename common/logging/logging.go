@@ -26,7 +26,9 @@
 // is running.
 package logging
 
-import "context"
+import (
+	"context"
+)
 
 // Logger interface is ultimately implemented by underlying logging libraries
 // (like go-logging or GAE logging). It is the least common denominator among
@@ -70,6 +72,7 @@ const (
 	loggerKey key = iota
 	fieldsKey
 	levelKey
+	errorReportingKey
 )
 
 // SetFactory sets the Logger factory for this context.

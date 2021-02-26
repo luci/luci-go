@@ -26,10 +26,13 @@ package sdlogger
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/errorreporting"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
@@ -169,6 +172,24 @@ func (s *Sink) Write(l *LogEntry) {
 	s.Out.Write([]byte("\n"))
 }
 
+// CloudErrorsSink wraps a LogEntryWriter and an errorreporting.Client.
+type CloudErrorsSink struct {
+	Client *errorreporting.Client
+	Out    LogEntryWriter
+}
+
+// Write appends a log entry to the given writer and reports the message to the
+// cloud error reporting for the Error severity if the client is not nil.
+func (s *CloudErrorsSink) Write(l *LogEntry) {
+	if l.Severity == ErrorSeverity && s.Client != nil {
+		// Append the trace id to make it easier to search in Cloud Logs Explorer.
+		s.Client.Report(errorreporting.Entry{
+			Error: errors.New(l.Message + " (Log Trace ID: " + l.TraceID + ")"),
+		})
+	}
+	s.Out.Write(l)
+}
+
 // Factory returns a factory of logger.Logger instances that log to the given
 // LogEntryWriter (usually &Sink{...}) using the LogEntry (if any) as a
 // prototype for log entries.
@@ -219,6 +240,7 @@ func (l *jsonLogger) Errorf(format string, args ...interface{}) {
 }
 
 func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
+
 	if !logging.IsLogging(l.ctx, lvl) {
 		return
 	}
