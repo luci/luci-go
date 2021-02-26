@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build linux
+// +build !linux
+
+// This file is for running spanner tests on non linux systems. The tests are
+// running against a real Spanner database.
+// TODO(crbug.com/1066993): Remove this file when we skip running spanner tests
+// on Windows or Mac. Or update this file to support running spanner tests
+// on Windows or Mac using Cloud Spanner Emulator.
 
 package testutil
 
@@ -27,7 +33,6 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
 	"go.chromium.org/luci/server/redisconn"
@@ -53,20 +58,11 @@ const (
 	// This could be mitigated by using different Redis databases in different
 	// test binaries, but the default limit is only 16.
 	RedisTestEnvVar = "INTEGRATION_TESTS_REDIS"
-
-	// EmulatorEnvVar is the name of the environment variable which controls
-	// whether to run spanner tests using Cloud Spanner Emulator.
-	// The value must be "1" to use emulator.
-	EmulatorEnvVar = "SPANNER_EMULATOR"
 )
 
 // runIntegrationTests returns true if integration tests should run.
 func runIntegrationTests() bool {
 	return os.Getenv(IntegrationTestEnvVar) == "1"
-}
-
-func runIntegrationTestsWithEmulator() bool {
-	return runIntegrationTests() && os.Getenv(EmulatorEnvVar) == "1"
 }
 
 // ConnectToRedis returns true if tests should connect to Redis.
@@ -151,37 +147,6 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 	testing.Init()
 
 	if runIntegrationTests() {
-		ctx := context.Background()
-		start := clock.Now(ctx)
-		var instanceName string
-		var emulator *spantest.Emulator
-
-		if runIntegrationTestsWithEmulator() {
-			var err error
-			// Start Cloud Spanner Emulator.
-			if emulator, err = spantest.StartEmulator(ctx); err != nil {
-				return 0, err
-			}
-			defer func() {
-				switch stopErr := emulator.Stop(); {
-				case stopErr == nil:
-
-				case err == nil:
-					err = stopErr
-
-				default:
-					fmt.Fprintf(os.Stderr, "failed to stop the emulator: %s\n", stopErr)
-				}
-			}()
-
-			// Create a Spanner instance.
-			if instanceName, err = emulator.NewInstance(ctx, ""); err != nil {
-				return 0, err
-			}
-			fmt.Printf("started cloud emulatorlator in and created a temporary Spanner instance %s in %s\n", instanceName, time.Since(start))
-			start = clock.Now(ctx)
-		}
-
 		// Find init_db.sql
 		initScriptPath, err := findInitScript()
 		if err != nil {
@@ -189,7 +154,9 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 		}
 
 		// Create a Spanner database.
-		db, err := spantest.NewTempDB(ctx, spantest.TempDBConfig{InitScriptPath: initScriptPath, InstanceName: instanceName}, emulator)
+		ctx := context.Background()
+		start := time.Now()
+		db, err := spantest.NewTempDB(ctx, spantest.TempDBConfig{InitScriptPath: initScriptPath})
 		if err != nil {
 			return 0, errors.Annotate(err, "failed to create a temporary Spanner database").Err()
 		}
@@ -220,6 +187,7 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 // cleanupDatabase deletes all data from all tables.
 func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 	_, err := client.Apply(ctx, []*spanner.Mutation{
+		spanner.Delete("InvocationTasks", spanner.AllKeys()),
 		// All other tables are interleaved in Invocations table.
 		spanner.Delete("Invocations", spanner.AllKeys()),
 	})

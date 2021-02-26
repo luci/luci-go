@@ -75,7 +75,7 @@ func run(ctx context.Context, minInterval time.Duration) {
 func purgeOneShard(ctx context.Context, shard int) error {
 	st := spanner.NewStatement(`
 		SELECT InvocationId
-		FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
+		FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration, spanner_emulator.disable_query_null_filtered_index_check=true}
 		WHERE ShardId = @shardId
 		AND ExpectedTestResultsExpirationTime IS NOT NULL
 		AND ExpectedTestResultsExpirationTime <= CURRENT_TIMESTAMP()
@@ -162,7 +162,7 @@ func rowsToPurge(ctx context.Context, inv invocations.ID, f func(table string, k
 	st := spanner.NewStatement(`
 		WITH DoNotPurge AS (
 			SELECT DISTINCT TestId, VariantHash
-			FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+			FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
 			WHERE InvocationId = @invocationId
 			  AND IsUnexpected = TRUE
 		)
