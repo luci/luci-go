@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b20c13d_6acab34c",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-26T19:54:08Z",
+      "side": 1,
+      "message": "oh, exactly right. fixed!\n\n\nFWIW, the \"\" hack was precisely to avoid this in my first impl where I was updating noops within `triageCLUpdated`.",
+      "parentUuid": "e283f481_efdbfa12",
+      "range": {
+        "startLine": 271,
+        "startChar": 3,
+        "endLine": 271,
+        "endChar": 33
+      },
+      "revId": "c21d1d49a41680d082b8f3222be2737dbfbd5a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3a30e6b3_5390e5df",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-02-26T04:50:09Z",
       "side": 1,
       "message": "Is it a better test that cl is updated again here and then you call Refresh again s.t. you will have two CLUpdated event with 2 EVersion? \n\nDuring the assertion you can check whether the EVersion for PCL is 2?",
+      "revId": "c21d1d49a41680d082b8f3222be2737dbfbd5a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0029df1_a5b5c263",
+        "filename": "cv/internal/prjmanager/impl/pm_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-26T19:54:08Z",
+      "side": 1,
+      "message": "Yeah, I like that (was lazy before). Done.",
+      "parentUuid": "3a30e6b3_5390e5df",
       "revId": "c21d1d49a41680d082b8f3222be2737dbfbd5a50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
