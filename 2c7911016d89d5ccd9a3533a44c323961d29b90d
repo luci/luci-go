@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3cd8f050_2671a753",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-26T01:00:04Z",
+      "side": 1,
+      "message": "Good point. Fixed and added a test case.",
+      "parentUuid": "1947597e_ea235f6e",
+      "revId": "2c7911016d89d5ccd9a3533a44c323961d29b90d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d2fe477d_9b869828",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-02-25T23:20:44Z",
       "side": 1,
       "message": "Change it to force-loading?",
+      "range": {
+        "startLine": 129,
+        "startChar": 26,
+        "endLine": 129,
+        "endChar": 36
+      },
+      "revId": "2c7911016d89d5ccd9a3533a44c323961d29b90d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ee15865_1a58e232",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-26T01:00:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2fe477d_9b869828",
       "range": {
         "startLine": 129,
         "startChar": 26,
