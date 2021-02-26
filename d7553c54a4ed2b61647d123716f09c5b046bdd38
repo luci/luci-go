@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f3f258c_9fd95d05",
+        "filename": "server/gaeemulation/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-26T00:44:12Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 204,
+        "startChar": 62,
+        "endLine": 204,
+        "endChar": 65
+      },
+      "revId": "d7553c54a4ed2b61647d123716f09c5b046bdd38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
