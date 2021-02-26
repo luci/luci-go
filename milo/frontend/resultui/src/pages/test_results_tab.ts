@@ -41,6 +41,9 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
+
+  // When set to true, keep loading test variants until the first one shows up.
+  private shouldForceLoadingTest = false;
   private enterTimestamp = 0;
   private sentLoadingTimeToGA = false;
 
@@ -53,12 +56,18 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
    *
    * Will always load at least one page.
    */
-  private async loadNextPage(untilStatus?: TestVariantStatus) {
+  async loadNextPage(untilStatus?: TestVariantStatus) {
     try {
       if (untilStatus) {
         await this.invocationState.testLoader?.loadPagesUntilStatus(untilStatus);
       } else {
         await this.invocationState.testLoader?.loadNextPage();
+      }
+      const shouldLoadNextPage = this.shouldForceLoadingTest &&
+        this.invocationState.totalDisplayedVariantCount === 0 &&
+        !this.invocationState.testLoader?.loadedAllVariants;
+      if (shouldLoadNextPage) {
+        this.loadNextPage();
       }
     } catch (e) {
       this.dispatchEvent(new ErrorEvent('error', {
@@ -120,6 +129,29 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     if (searchParams.has('clean')) {
       this.invocationState.multiSections = false;
     }
+    if (searchParams.has('force-loading')) {
+      // Store it in invocation state so we can restore the query param after
+      // switching tabs.
+      this.invocationState.forcedLoadingTest = true;
+      // Store it in the local state so we can update it without triggering
+      // URL update.
+      this.shouldForceLoadingTest = true;
+    }
+
+    if (this.shouldForceLoadingTest) {
+      // Disable force loading after filters are updated.
+      this.disposers.push(reaction(
+        () => [
+          this.invocationState.showUnexpectedVariants,
+          this.invocationState.showUnexpectedlySkippedVariants,
+          this.invocationState.showFlakyVariants,
+          this.invocationState.showExpectedVariants,
+          this.invocationState.showExoneratedVariants,
+          this.invocationState.searchText,
+        ],
+        () => this.shouldForceLoadingTest = false,
+      ));
+    }
 
     // Update the querystring when filters are updated.
     this.disposers.push(reaction(
@@ -127,6 +159,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         const newSearchParams = new URLSearchParams({
           q: this.invocationState.searchText,
           ...this.invocationState.multiSections ? {} : {'clean': ''},
+          ...this.invocationState.forcedLoadingTest ? {'force-loading': ''} : {},
         });
         return newSearchParams.toString();
       },
