@@ -53,9 +53,16 @@ func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVari
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 	}
-	tvs, token, err := q.Fetch(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to read test variants").Err()
+
+	var tvs []*uipb.TestVariant
+	var tvsPage []*uipb.TestVariant
+	var token string
+	for len(tvs) <= 0 {
+		if tvsPage, token, err = q.Fetch(ctx); err != nil {
+			return nil, errors.Annotate(err, "failed to read test variants").Err()
+		}
+		tvs = append(tvs, tvsPage...)
+		q.PageToken = token
 	}
 
 	return &uipb.QueryTestVariantsResponse{

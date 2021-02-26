@@ -84,5 +84,16 @@ func TestQueryTestVariants(t *testing.T) {
 				"40/T1/e3b0c44298fc1c14",
 			})
 		})
+
+		Convey(`Try next page`, func() {
+			res, err := srv.QueryTestVariants(ctx, &uipb.QueryTestVariantsRequest{
+				Invocations: []string{"invocations/inv0", "invocations/inv1"},
+				PageSize:    3,
+				PageToken:   pagination.Token("EXPECTED", "", ""),
+			})
+
+			So(err, ShouldBeNil)
+			So(len(res.TestVariants), ShouldEqual, 1)
+		})
 	})
 }
