@@ -84,6 +84,7 @@ type TestResultRow struct {
 	Exonerated bool `protobuf:"varint,13,opt,name=exonerated,proto3" json:"exonerated,omitempty"`
 	// Partition_time is used to partition the table.
 	// It is the time when exported invocation was created in Spanner.
+	// Note: it is NOT the time when the row is inserted into BigQuery table.
 	// https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
 	// mentions "The partitioning column must be a top-level field."
 	// So we keep this column here instead of adding the CreateTime to Invocation.
