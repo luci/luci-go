@@ -39,11 +39,14 @@ package gaeemulation
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -166,6 +169,9 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 		clientOpts = []option.ClientOption{option.WithTokenSource(ts)}
 	}
 
+	// A temporary interceptor to debug panics in "Commit" RPCs.
+	clientOpts = append(clientOpts, option.WithGRPCDialOption(grpc.WithUnaryInterceptor(panicInterceptor)))
+
 	client, err := datastore.NewClient(ctx, cloudProject, clientOpts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to instantiate the datastore client").Err()
@@ -180,4 +186,26 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 	// TODO(vadimsh): "Ping" the datastore to verify the credentials are correct?
 
 	return client, nil
+}
+
+func panicInterceptor(
+	ctx context.Context,
+	method string,
+	request interface{},
+	reply interface{},
+	cc *grpc.ClientConn,
+	invoker grpc.UnaryInvoker,
+	opts ...grpc.CallOption,
+) error {
+	defer func() {
+		if r := recover(); r != nil {
+			blob, err := json.MarshalIndent(request, "", "  ")
+			if err != nil {
+				blob = []byte(fmt.Sprintf("<JSON marshaling failed: %s>", err))
+			}
+			logging.Errorf(ctx, "Caught panic in %q, request body is:\n%s", method, blob)
+			panic(r)
+		}
+	}()
+	return invoker(ctx, method, request, reply, cc, opts...)
 }
