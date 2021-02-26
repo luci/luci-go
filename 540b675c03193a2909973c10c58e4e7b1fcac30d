@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d87a350_665fe0c2",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T04:06:59Z",
+      "side": 1,
+      "message": "I vaguely remember the version number is from 0, isn\u0027t it?",
+      "range": {
+        "startLine": 61,
+        "startChar": 18,
+        "endLine": 61,
+        "endChar": 19
+      },
+      "revId": "540b675c03193a2909973c10c58e4e7b1fcac30d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "887ff217_5b61d43f",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T04:06:59Z",
+      "side": 1,
+      "message": "It seems this generate the range [n, 2^16) instead of [n-1, 2^16)?",
+      "range": {
+        "startLine": 72,
+        "startChar": 29,
+        "endLine": 72,
+        "endChar": 64
+      },
+      "revId": "540b675c03193a2909973c10c58e4e7b1fcac30d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
