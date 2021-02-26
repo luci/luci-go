@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6500d7a_1a9a29d6",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-26T04:54:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06d9fe1d_4129cd47",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bb72f159_1fdaa2db",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-02-24T18:38:48Z",
       "side": 1,
       "message": "Use v2 lib `google.golang.org/protobuf/proto`",
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db8535b6_25eb360c",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-26T04:54:07Z",
+      "side": 1,
+      "message": "bah, I wish I could ban this from goimports... I\u0027ll look into that.",
+      "parentUuid": "bb72f159_1fdaa2db",
       "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "64178085_40baefe6",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-26T04:54:07Z",
+      "side": 1,
+      "message": "Yeah I thought of that, but practically I don\u0027t think it matters; the \"read\" operations are all O(1) work anyway.",
+      "parentUuid": "269e28d4_ce0a23df",
+      "range": {
+        "startLine": 67,
+        "startChar": 18,
+        "endLine": 67,
+        "endChar": 23
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e0d36375_291d4cac",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-02-24T18:38:48Z",
       "side": 1,
       "message": "Should we use *bytes.Buffer instead because neither data of binary nor data of datagram stream type is a valid encoded string?",
+      "range": {
+        "startLine": 69,
+        "startChar": 15,
+        "endLine": 69,
+        "endChar": 31
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4e774ae_46041976",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-26T04:54:07Z",
+      "side": 1,
+      "message": "I used strings.Builder so that the reader methods can be O(1) and return an immutable object. If we do bytes.Buffer then we\u0027d have to hold the lock for longer and copy the returned value of Bytes() before handing it back to the caller.\n\nNote that `string` doesn\u0027t imply an encoding, just the operations you do on it (https://blog.golang.org/strings - \"\"\"In Go, a string is in effect a read-only slice of bytes... It\u0027s important to state right up front that a string holds arbitrary bytes.\"\"\")",
+      "parentUuid": "e0d36375_291d4cac",
       "range": {
         "startLine": 69,
         "startChar": 15,
@@ -117,6 +207,30 @@
       "writtenOn": "2021-02-24T18:38:48Z",
       "side": 1,
       "message": "2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "522a5eb5_6931f52c",
+        "filename": "logdog/client/butler/output/memory/memory_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-26T04:54:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0307765e_7712e697",
       "range": {
         "startLine": 1,
         "startChar": 13,
