@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac948cc4_a2cd2647",
+        "filename": "resultdb/internal/services/resultdb/query_test_variants.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-26T08:32:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0fdb5a69_54d32fca",
+      "range": {
+        "startLine": 61,
+        "startChar": 14,
+        "endLine": 61,
+        "endChar": 16
+      },
+      "revId": "2939698b216991d0235c17d1049fd174c57742de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "14f0c93f_ae66985c",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-26T07:54:48Z",
       "side": 1,
       "message": "why this isn\u0027t just tvs? L65 seems to be unnecessary copying",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 12
+      },
+      "revId": "2939698b216991d0235c17d1049fd174c57742de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6eeff7dd_f690c86e",
+        "filename": "resultdb/internal/services/resultdb/query_test_variants.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-26T08:32:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14f0c93f_ae66985c",
       "range": {
         "startLine": 62,
         "startChar": 5,
