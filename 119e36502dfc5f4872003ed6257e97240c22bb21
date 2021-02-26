@@ -47,6 +47,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "756b3242_8b3cf6e0",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-26T19:29:58Z",
+      "side": 1,
+      "message": "Yes, intentional (earlier Patch used Force Notify) beacuse ForceNOtifyPM disables the task dedup. This way, we get both: dedup of redundant Gerrit refresh tasks AND notifying PM to reload tasks from Datastore.",
+      "parentUuid": "d6878d65_3b9ff155",
+      "range": {
+        "startLine": 267,
+        "startChar": 0,
+        "endLine": 270,
+        "endChar": 2
+      },
+      "revId": "119e36502dfc5f4872003ed6257e97240c22bb21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "664ec5f8_0ffd5672",
@@ -60,6 +84,30 @@
       "writtenOn": "2021-02-26T04:58:35Z",
       "side": 1,
       "message": "nit nit: may be we should just make checkAllowed a standard func instead of a receiver func.",
+      "range": {
+        "startLine": 279,
+        "startChar": 6,
+        "endLine": 279,
+        "endChar": 7
+      },
+      "revId": "119e36502dfc5f4872003ed6257e97240c22bb21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "becbc550_6a7b598b",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-26T19:29:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "664ec5f8_0ffd5672",
       "range": {
         "startLine": 279,
         "startChar": 6,
