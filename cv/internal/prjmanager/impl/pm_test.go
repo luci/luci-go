@@ -206,10 +206,11 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		for i := 0; i < n; i++ {
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(prjmanager.Poke(ctx, lProject), ShouldBeNil)
+			So(prjmanager.NotifyCLUpdated(ctx, lProject, common.CLID(1), i+1), ShouldBeNil)
 		}
 		events, err := eventbox.List(ctx, lProjectKey)
 		So(err, ShouldBeNil)
-		So(events, ShouldHaveLength, 2*n)
+		So(events, ShouldHaveLength, 3*n)
 
 		const w = 20
 		now := ct.Clock.Now()
