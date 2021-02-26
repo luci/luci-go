@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "3395d5aa_c968634f",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-26T07:34:50Z",
+      "side": 1,
+      "message": "maybe these two comments should be in the code.",
+      "parentUuid": "1b23ed68_4e537211",
+      "range": {
+        "startLine": 71,
+        "startChar": 31,
+        "endLine": 71,
+        "endChar": 33
+      },
+      "revId": "9beb738b7eb72091e65a4a695d94f1107916ba02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "31f61fdc_ffdf20db",
         "filename": "buildbucket/appengine/rpc/batch.go",
         "patchSetId": 1
