@@ -31,12 +31,14 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/appengine/tq"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -110,6 +112,11 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 		c.Errorf("'builder' field is required")
 	}
 
+	// Validate readiness for v2 Buildbucket API.
+	if _, err := builderID(cfg, realmID); err != nil {
+		c.Errorf("%s", err)
+	}
+
 	// Validate 'properties' and 'tags'.
 	if err := utils.ValidateKVList("property", cfg.Properties, ':'); err != nil {
 		c.Enter("properties")
@@ -177,6 +184,13 @@ func readTaskData(ctl task.Controller) (*taskData, error) {
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.BuildbucketTask) // already validated
 	req := ctl.Request()
+
+	// Validate readiness for v2 Buildbucket API. It should always pass, since
+	// the config has been validated already.
+	_, err := builderID(cfg, ctl.RealmID())
+	if err != nil {
+		return errors.Annotate(err, "unexpected bad bucket name in the task config").Err()
+	}
 
 	// Join tags from all known sources. Note: no overriding here for now, tags
 	// with identical keys are allowed.
@@ -482,6 +496,51 @@ func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r
 	default:
 		ctl.State().Status = task.StatusFailed
 	}
+}
+
+// builderID derives Buildbucket v2 builder ID from the config.
+//
+// Returns an error if some fields are invalid or there's not enough
+// information.
+func builderID(cfg *messages.BuildbucketTask, realmID string) (*buildbucketpb.BuilderID, error) {
+	var project, bucket string
+
+	switch {
+	case cfg.Bucket == "":
+		// Fallback to the realm. Ensure it is not a special realm.
+		project, bucket = realms.Split(realmID)
+		if bucket == realms.LegacyRealm || bucket == realms.RootRealm {
+			return nil, fmt.Errorf("'bucket' field for jobs in %q realm is required", bucket)
+		}
+
+	case strings.ContainsRune(cfg.Bucket, ':'):
+		// Full v2 form "<project>:<bucket>".
+		chunks := strings.SplitN(cfg.Bucket, ":", 2)
+		project, bucket = chunks[0], chunks[1]
+
+	case strings.HasPrefix(cfg.Bucket, "luci."):
+		// Legacy v1 bucket that matches a v2 bucket: "luci.<project>.<bucket>".
+		chunks := strings.SplitN(cfg.Bucket, ".", 3)
+		if len(chunks) != 3 {
+			return nil, fmt.Errorf("bad legacy v1 'bucket' %q, need 3 components", cfg.Bucket)
+		}
+		project, bucket = chunks[1], chunks[2]
+
+	default:
+		// A v2 bucket name within the current project.
+		project, _ = realms.Split(realmID)
+		bucket = cfg.Bucket
+	}
+
+	if cfg.Builder == "" {
+		return nil, fmt.Errorf("'builder' field is required")
+	}
+
+	return &buildbucketpb.BuilderID{
+		Project: project,
+		Bucket:  bucket,
+		Builder: cfg.Builder,
+	}, nil
 }
 
 func strProtoValue(s string) *structpb.Value {

@@ -382,15 +382,27 @@ message UrlFetchTask {
 // BuildbucketTask specifies parameters of Buildbucket-based jobs.
 message BuildbucketTask {
   // Server is hostname of the buildbucket service to use.
+  //
   // Typically, "cr-buildbucket.appspot.com".
   string server = 1;
+
   // Bucket defines what bucket to add the task to.
+  //
+  // Supported formats are:
+  //    * "<bucket>" - for a bucket in the current project.
+  //    * "<project>:<bucket>" - for a bucket in another project.
+  //    * "luci.<project>.<bucket>" - legacy v1 bucket name.
+  //
+  // If empty, defaults to `realm` field in the parent Job message.
   string bucket = 2;
-  // Builder defines what to run.
+
+  // Builder defines what builder within the bucket to launch.
   string builder = 3;
+
   // Properties is arbitrary "key:value" pairs describing the task.
   // TODO(tandrii): which properties will be overridden if triggered?
   repeated string properties = 4;
+
   // Tags is a list of tags (as "key:value" pairs) to assign to the task.
   repeated string tags = 5;
 }
