@@ -46,6 +46,8 @@ service Diagnostic {
   // TODO(tandrii): delete this Temporary API.
   rpc DeleteProjectEvents(DeleteProjectEventsRequest) returns (DeleteProjectEventsResponse);
 
+  // RefreshProjectCLs refreshes all CLs currently tracked by PM.
+  rpc RefreshProjectCLs(RefreshProjectCLsRequest) returns (RefreshProjectCLsResponse);
 }
 
 message GetProjectRequest {
@@ -106,4 +108,13 @@ message DeleteProjectEventsRequest {
 
 message DeleteProjectEventsResponse {
   map<string, int64> events = 1;
+}
+
+message RefreshProjectCLsRequest {
+  string project = 1;
+}
+
+message RefreshProjectCLsResponse{
+  // Map from CL ID to the EVersion in Datastore before the refresh.
+  map<int64, int64> cl_versions = 1;
 }

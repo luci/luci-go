@@ -30,7 +30,9 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
+	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -213,6 +215,53 @@ func TestDeleteProjectEvents(t *testing.T) {
 				}
 				So(sum, ShouldEqual, 2)
 			})
+		})
+	})
+}
+
+func TestRefreshProjectCLs(t *testing.T) {
+	t.Parallel()
+
+	Convey("RefreshProjectCLs works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "luci"
+		d := DiagnosticServer{}
+
+		Convey("without access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+			})
+			_, err := d.RefreshProjectCLs(ctx, &diagnosticpb.RefreshProjectCLsRequest{Project: lProject})
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("with access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+
+			So(datastore.Put(ctx, &prjmanager.Project{
+				ID: lProject,
+				State: &prjpb.PState{
+					Pcls: []*prjpb.PCL{
+						{Clid: 1},
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &changelist.CL{
+				ID:         1,
+				EVersion:   4,
+				ExternalID: changelist.MustGobID("x-review.example.com", 55),
+			}), ShouldBeNil)
+
+			resp, err := d.RefreshProjectCLs(ctx, &diagnosticpb.RefreshProjectCLsRequest{Project: lProject})
+			So(err, ShouldBeNil)
+			So(resp.GetClVersions(), ShouldResemble, map[int64]int64{1: 4})
+			So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{55})
 		})
 	})
 }
