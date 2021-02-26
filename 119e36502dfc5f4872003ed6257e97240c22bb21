@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9ac5ead_8cdd39e0",
+        "filename": "cv/api/diagnostic/diagnostic.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-26T04:58:35Z",
+      "side": 1,
+      "message": "nit: I would include the fact the it\u0027s the EVersion currently in ds before refreshing.",
+      "range": {
+        "startLine": 118,
+        "startChar": 23,
+        "endLine": 118,
+        "endChar": 51
+      },
+      "revId": "119e36502dfc5f4872003ed6257e97240c22bb21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d6878d65_3b9ff155",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-26T04:58:35Z",
+      "side": 1,
+      "message": "Is this intentional? shall we set the forceNotifyPM bit in refresh task instead?",
+      "range": {
+        "startLine": 267,
+        "startChar": 0,
+        "endLine": 270,
+        "endChar": 2
+      },
+      "revId": "119e36502dfc5f4872003ed6257e97240c22bb21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "664ec5f8_0ffd5672",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-26T04:58:35Z",
+      "side": 1,
+      "message": "nit nit: may be we should just make checkAllowed a standard func instead of a receiver func.",
+      "range": {
+        "startLine": 279,
+        "startChar": 6,
+        "endLine": 279,
+        "endChar": 7
+      },
+      "revId": "119e36502dfc5f4872003ed6257e97240c22bb21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
