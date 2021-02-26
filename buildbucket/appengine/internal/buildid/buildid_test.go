@@ -15,16 +15,77 @@
 package buildid
 
 import (
+	"context"
+	"math/rand"
 	"testing"
 	"time"
+
+	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestIdRange(t *testing.T) {
+func TestNewBuildIDs(t *testing.T) {
 	t.Parallel()
 
-	Convey("IdRange", t, func() {
+	Convey("NewBuildIDs", t, func() {
+		ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(0)))
+		t := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+
+		Convey("zero", func() {
+			ids := NewBuildIDs(ctx, t, 0)
+			So(ids, ShouldBeEmpty)
+		})
+
+		Convey("one", func() {
+			ids := NewBuildIDs(ctx, t, 1)
+			So(ids, ShouldResemble, []int64{
+				0x7DB4463C7FF00001,
+			})
+			So(ids[0]>>63, ShouldEqual, 0)
+			So(ids[0]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
+			So(ids[0]&0x0000000000000001, ShouldEqual, buildIDVersion)
+		})
+
+		Convey("two", func() {
+			ids := NewBuildIDs(ctx, t, 2)
+			So(ids, ShouldResemble, []int64{
+				0x7DB4463C7FF00071,
+				0x7DB4463C7FF00061,
+			})
+			So(ids[0]>>63, ShouldEqual, 0)
+			So(ids[0]&0x0000000000000001, ShouldEqual, buildIDVersion)
+			So(ids[0]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
+			So(ids[1]>>63, ShouldEqual, 0)
+			So(ids[1]&0x0000000000000001, ShouldEqual, buildIDVersion)
+			So(ids[1]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
+		})
+
+		Convey("many", func() {
+			for i := 0; i < 2^16; i++ {
+				ids := NewBuildIDs(ctx, t, i)
+				So(ids, ShouldHaveLength, i)
+				prev := buildIDMax
+				for _, id := range ids {
+					// Ensure strictly decreasing.
+					So(id, ShouldBeLessThan, prev)
+					prev = id
+					// Ensure positive.
+					So(id>>63, ShouldEqual, 0)
+					// Ensure time component.
+					So(id&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
+					// Ensure version.
+					So(id&0x000000000000000F, ShouldEqual, buildIDVersion)
+				}
+			}
+		})
+	})
+}
+
+func TestIDRange(t *testing.T) {
+	t.Parallel()
+
+	Convey("IDRange", t, func() {
 		Convey("valid time", func() {
 			timeLow := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
 			timeHigh := timeLow.Add(timeResolution * 10000)
@@ -34,7 +95,7 @@ func TestIdRange(t *testing.T) {
 				buildID := idTimeSegment(t) | suffix
 				return idLow <= buildID && buildID < idHigh
 			}
-			ones := (int64(1) << buildIdSuffixLen) - 1
+			ones := (int64(1) << buildIDTimeSuffixLen) - 1
 
 			// Ensure that min and max possible build IDs are within
 			// the range up to the timeResolution.
@@ -59,7 +120,7 @@ func TestIdRange(t *testing.T) {
 	})
 }
 
-func TestIdTimeSegment(t *testing.T) {
+func TestIDTimeSegment(t *testing.T) {
 	t.Parallel()
 
 	Convey("idTimeSegment", t, func() {
@@ -81,7 +142,7 @@ func TestIdTimeSegment(t *testing.T) {
 	})
 }
 
-func TestMMayContainBuilds(t *testing.T) {
+func TestMayContainBuilds(t *testing.T) {
 	t.Parallel()
 
 	Convey("normal", t, func() {
