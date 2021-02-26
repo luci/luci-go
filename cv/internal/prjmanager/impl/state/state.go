@@ -243,8 +243,9 @@ func (s *State) OnRunsFinished(ctx context.Context, finished common.RunIDs) (*St
 
 // OnCLsUpdated updates state as a result of new changes to CLs.
 //
-// Mutates incoming events slice.
-func (s *State) OnCLsUpdated(ctx context.Context, events []*prjpb.CLUpdated) (*State, SideEffect, error) {
+// clEVersions must map CL's ID to CL's EVersion.
+// clEVersions is mutated.
+func (s *State) OnCLsUpdated(ctx context.Context, clEVersions map[int64]int64) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
 	if s.PB.GetStatus() != prjpb.Status_STARTED {
@@ -256,14 +257,14 @@ func (s *State) OnCLsUpdated(ctx context.Context, events []*prjpb.CLUpdated) (*S
 
 	// Avoid doing anything in cases where all CL updates sent due to recent full
 	// poll iff we already know about each CL based on its EVersion.
-	updated := s.filterOutUpToDate(events)
-	if len(updated) == 0 {
+	s.filterOutUpToDate(clEVersions)
+	if len(clEVersions) == 0 {
 		return s, nil, nil
 	}
 
 	// Most likely there will be changes to state.
 	s = s.cloneShallow()
-	if err := s.evalUpdatedCLs(ctx, updated); err != nil {
+	if err := s.evalUpdatedCLs(ctx, clEVersions); err != nil {
 		return nil, nil, err
 	}
 	return s, nil, nil

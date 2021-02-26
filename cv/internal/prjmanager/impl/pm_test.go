@@ -25,12 +25,17 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -198,19 +203,73 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		defer cancel()
 
 		const lProject = "infra"
-		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
+		const gHost = "host"
+		const gRepo = "repo"
 
-		ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
+		refreshCLAndNotifyPM := func(c int64) {
+			So(updater.Refresh(ctx, &updater.RefreshGerritCL{
+				LuciProject: lProject,
+				Host:        "host",
+				Change:      c,
+			}), ShouldBeNil) // this notifies PM once.
+		}
+
+		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+		So(gobmap.Update(ctx, lProject), ShouldBeNil)
+
+		// Put #43 CL directly w/o notifying the PM.
+		cl43, err := changelist.MustGobID(gHost, 43).GetOrInsert(ctx, func(cl *changelist.CL) {
+			cl.Snapshot = &changelist.Snapshot{
+				ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
+				LuciProject:           lProject,
+				MinEquivalentPatchset: 1,
+				Patchset:              1,
+				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+					Host: gHost,
+					Info: gf.CI(43,
+						gf.Project(gRepo), gf.Ref("refs/heads/main"),
+						gf.CQ(+2, ct.Clock.Now(), gf.U("user-1"))),
+				}},
+			}
+			meta := ct.Cfg.MustExist(ctx, lProject)
+			cl.ApplicableConfig = &changelist.ApplicableConfig{
+				Projects: []*changelist.ApplicableConfig_Project{
+					{Name: lProject, ConfigGroupIds: []string{string(meta.ConfigGroupIDs[0])}},
+				},
+			}
+		})
+		So(err, ShouldBeNil)
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), gf.CI(
+			44, gf.Project(gRepo), gf.Ref("refs/heads/main"),
+			gf.CQ(+2, ct.Clock.Now(), gf.U("user-1")))))
+		refreshCLAndNotifyPM(44)
+		cl44, err := changelist.MustGobID(gHost, 44).Get(ctx)
+		So(err, ShouldBeNil)
+
+		// This event is the only event notifying PM about CL#43.
+		So(prjmanager.NotifyCLsUpdated(ctx, lProject, []*changelist.CL{cl43, cl44}), ShouldBeNil)
 
 		const n = 10
 		for i := 0; i < n; i++ {
 			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(prjmanager.Poke(ctx, lProject), ShouldBeNil)
+
+			ct.Clock.Add(time.Second)
+			ct.GFake.MutateChange(gHost, 44, func(c *gf.Change) { gf.Updated(ct.Clock.Now())(c.Info) })
+			refreshCLAndNotifyPM(44)
 		}
+		// Get the latest cl44 from Datastore.
+		cl44, err = changelist.MustGobID(gHost, 44).Get(ctx)
+		So(err, ShouldBeNil)
+
+		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
 		events, err := eventbox.List(ctx, lProjectKey)
 		So(err, ShouldBeNil)
-		So(events, ShouldHaveLength, 2*n)
+		// 1 refreshCLAndNotifyPM(44), 1 from NotifyCLsUpdated, 3*n from loop.
+		So(events, ShouldHaveLength, 3*n+2)
 
+		// Run `w` concurrent PMs.
 		const w = 20
 		now := ct.Clock.Now()
 		errs := make(errors.MultiError, w)
@@ -229,7 +288,19 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		// poke the poller.
 		p := prjmanager.Project{ID: lProject}
 		So(datastore.Get(ctx, &p), ShouldBeNil)
-		So(p.EVersion, ShouldEqual, 1)
+		// Both cl43 and cl44 must have corresponding PCLs with latest EVersions.
+		So(p.State.GetPcls(), ShouldHaveLength, 2)
+		for _, pcl := range p.State.GetPcls() {
+			switch common.CLID(pcl.GetClid()) {
+			case cl43.ID:
+				So(pcl.GetEversion(), ShouldEqual, int64(cl43.EVersion))
+			case cl44.ID:
+				So(pcl.GetEversion(), ShouldEqual, int64(cl44.EVersion))
+			default:
+				So("must not happen", ShouldBeTrue)
+			}
+		}
+
 		events, err = eventbox.List(ctx, lProjectKey)
 		So(err, ShouldBeNil)
 		So(events, ShouldBeEmpty)
