@@ -16,6 +16,24 @@
       "message": "nit: blank line after header",
       "revId": "7df22ea1f56152df05a37afcf32b140395a460b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "78a9efe6_6a568ec2",
+        "filename": "resultdb/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-26T07:40:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cde6f2af_d3078e4b",
+      "revId": "7df22ea1f56152df05a37afcf32b140395a460b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
