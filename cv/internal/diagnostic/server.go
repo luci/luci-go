@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -40,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -54,7 +56,7 @@ type DiagnosticServer struct {
 
 func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.GetProjectRequest) (resp *diagnosticpb.GetProjectResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = d.checkAllowed(ctx); err != nil {
+	if err = d.checkAllowed(ctx, "GetProject"); err != nil {
 		return
 	}
 	if req.GetProject() == "" {
@@ -100,7 +102,7 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 
 func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLRequest) (resp *diagnosticpb.GetCLResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = d.checkAllowed(ctx); err != nil {
+	if err = d.checkAllowed(ctx, "GetCL"); err != nil {
 		return
 	}
 
@@ -150,7 +152,7 @@ func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLReq
 
 func (d *DiagnosticServer) GetPoller(ctx context.Context, req *diagnosticpb.GetPollerRequest) (resp *diagnosticpb.GetPollerResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = d.checkAllowed(ctx); err != nil {
+	if err = d.checkAllowed(ctx, "GetPoller"); err != nil {
 		return
 	}
 	if req.GetProject() == "" {
@@ -185,10 +187,9 @@ type itemEntity struct {
 
 func (d *DiagnosticServer) DeleteProjectEvents(ctx context.Context, req *diagnosticpb.DeleteProjectEventsRequest) (resp *diagnosticpb.DeleteProjectEventsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if err = d.checkAllowed(ctx); err != nil {
+	if err = d.checkAllowed(ctx, "DeleteProjectEvents"); err != nil {
 		return
 	}
-	logging.Warningf(ctx, "%s is calling DeleteProjectEvents API %s", auth.CurrentIdentity(ctx), req)
 
 	switch {
 	case req.GetProject() == "":
@@ -219,13 +220,54 @@ func (d *DiagnosticServer) DeleteProjectEvents(ctx context.Context, req *diagnos
 	return &diagnosticpb.DeleteProjectEventsResponse{Events: stats}, nil
 }
 
-func (_ *DiagnosticServer) checkAllowed(ctx context.Context) error {
+func (d *DiagnosticServer) RefreshProjectCLs(ctx context.Context, req *diagnosticpb.RefreshProjectCLsRequest) (resp *diagnosticpb.RefreshProjectCLsResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = d.checkAllowed(ctx, "RefreshProjectCLs"); err != nil {
+		return
+	}
+	if req.GetProject() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+	}
+
+	p, err := prjmanager.Load(ctx, req.GetProject())
+	clids := make([]int64, len(p.State.GetPcls()))
+	errs := parallel.WorkPool(20, func(work chan<- func() error) {
+		for i, pcl := range p.State.GetPcls() {
+			id := pcl.GetClid()
+			clids[i] = id
+			work <- func() error {
+				cl := changelist.CL{ID: common.CLID(id)}
+				if err := datastore.Get(ctx, &cl); err != nil {
+					return errors.Annotate(err, "failed to fetch CL %d", id).Tag(transient.Tag).Err()
+				}
+				host, change, err := cl.ExternalID.ParseGobID()
+				if err != nil {
+					return err
+				}
+				payload := &updater.RefreshGerritCL{
+					LuciProject: p.ID,
+					Host:        host,
+					Change:      change,
+					ClidHint:    id,
+				}
+				return updater.Schedule(ctx, payload)
+			}
+		}
+	})
+	if err := common.MostSevereError(errs); err != nil {
+		return nil, err
+	}
+	return &diagnosticpb.RefreshProjectCLsResponse{Clids: clids}, nil
+}
+
+func (_ *DiagnosticServer) checkAllowed(ctx context.Context, name string) error {
 	switch yes, err := auth.IsMember(ctx, allowGroup); {
 	case err != nil:
 		return status.Errorf(codes.Internal, "failed to check ACL")
 	case !yes:
 		return status.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
 	default:
+		logging.Warningf(ctx, "%s is calling diagnostic.%s", auth.CurrentIdentity(ctx), name)
 		return nil
 	}
 }
