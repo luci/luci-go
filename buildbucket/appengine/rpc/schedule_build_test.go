@@ -16,10 +16,14 @@ package rpc
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -1122,8 +1126,7 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("ScheduleBuild", t, func() {
 		srv := &Builds{}
-
-		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx, _ := testclock.UseTime(mathrand.Set(txndefer.FilterRDS(memory.Use(context.Background())), rand.New(rand.NewSource(0))), testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -1204,9 +1207,9 @@ func TestScheduleBuild(t *testing.T) {
 						ID:     "builder",
 					}), ShouldBeNil)
 					So(datastore.Put(ctx, &model.Build{
-						ID: 1,
+						ID: 9021868963221471233,
 						Proto: pb.Build{
-							Id: 1,
+							Id: 9021868963221471233,
 							Builder: &pb.BuilderID{
 								Project: "project",
 								Bucket:  "bucket",
@@ -1238,9 +1241,10 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Id:     1,
-						Input:  &pb.Build_Input{},
-						Number: 1,
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Id:         9021868963221471233,
+						Input:      &pb.Build_Input{},
+						Number:     1,
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
@@ -1331,9 +1335,10 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Id:     1,
-						Input:  &pb.Build_Input{},
-						Number: 1,
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Id:         9021868963221471233,
+						Input:      &pb.Build_Input{},
+						Number:     1,
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
