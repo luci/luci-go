@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c92a37e5_5e2f547f",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-26T13:41:44Z",
+      "side": 1,
+      "message": "Yes. I incremented it since it\u0027s reimplemented here with some differences.",
+      "parentUuid": "3d87a350_665fe0c2",
+      "range": {
+        "startLine": 61,
+        "startChar": 18,
+        "endLine": 61,
+        "endChar": 19
+      },
+      "revId": "540b675c03193a2909973c10c58e4e7b1fcac30d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "887ff217_5b61d43f",
         "filename": "buildbucket/appengine/internal/buildid/buildid.go",
         "patchSetId": 1
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-26T04:06:59Z",
       "side": 1,
       "message": "It seems this generate the range [n, 2^16) instead of [n-1, 2^16)?",
+      "range": {
+        "startLine": 72,
+        "startChar": 29,
+        "endLine": 72,
+        "endChar": 64
+      },
+      "revId": "540b675c03193a2909973c10c58e4e7b1fcac30d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0e4f4e7_7c709afe",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-02-26T13:41:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "887ff217_5b61d43f",
       "range": {
         "startLine": 72,
         "startChar": 29,
