@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2066855_470dd5b2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-26T05:41:25Z",
+      "side": 1,
+      "message": "PTAL.\n\nMore specifically, please try following the README and run tests using Cloud Spanner Emulator. If you encounter any issue with it, please let me know.",
+      "revId": "a383c39c36cbb9845130da2707e235c0d4f38e13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
