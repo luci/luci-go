@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0829ef77_a9556a60",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-26T19:57:53Z",
+      "side": 1,
+      "message": "I improved the test to add coverage for such a use-case. Unfortunately, I wasn\u0027t bale to make it fail under normal circumstances, but this did the trick:\n\nFirst, load the system with max number of cores (12 in my case):\n$ stress -c 12\nThen run a test:\n$ go test -v -run TestProjectHandlesManyEvents -test.count 1000 -test.failfast\nVoila:\n \n  pm_test.go\n  Line 292\n  Expected collection to have length equal to [2], but its length was [1] instead! contents: [clid:2 eversion:11 config_group_indexes:0 trigger:{time:{seconds:1580639400} mode:\"FullRun\" email:\"user-1@example.com\n\" gerrit_account_id:1}]",
+      "parentUuid": "2b20c13d_6acab34c",
+      "range": {
+        "startLine": 271,
+        "startChar": 3,
+        "endLine": 271,
+        "endChar": 33
+      },
+      "revId": "c21d1d49a41680d082b8f3222be2737dbfbd5a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3a30e6b3_5390e5df",
