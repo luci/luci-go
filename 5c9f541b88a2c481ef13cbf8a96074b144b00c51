@@ -60,6 +60,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d2f29dc4_35c739f4",
+        "filename": "common/logging/sdlogger/logger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T02:39:01Z",
+      "side": 1,
+      "message": "chatted offline. No need for explicitly calling it. the client will flush it at most 2s later after a msg is added.",
+      "parentUuid": "b0e98b04_98fdd504",
+      "range": {
+        "startLine": 233,
+        "startChar": 3,
+        "endLine": 233,
+        "endChar": 14
+      },
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e919ce05_dd91a324",
         "filename": "common/logging/sdlogger/logger.go",
         "patchSetId": 2
@@ -98,6 +122,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1550584b_e2f53954",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T02:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c13e3fd_f93e61a9",
+      "range": {
+        "startLine": 140,
+        "startChar": 1,
+        "endLine": 144,
+        "endChar": 2
+      },
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fec2aeda_ccf5ad24",
@@ -111,6 +159,30 @@
       "writtenOn": "2021-02-22T22:31:53Z",
       "side": 1,
       "message": "it should be initialized before \u0027resolveDependencies\u0027. A logical place for it is probably right after initTracing. \n\nextra nit: it would also be esthetically pleasing if it returns an error, so we\u0027ll have a uniformly looking code like:\n\n\tif err :\u003d srv.initTracing(); err !\u003d nil {\n\t\treturn srv, errors.Annotate(err, \"failed to initialize tracing\").Err()\n\t}\n        if err :\u003d srv.initErrorReporting(); err !\u003d nil {\n\t\treturn srv, errors.Annotate(err, \"failed to initialize error reporting\").Err()\n\t}\n\tif err :\u003d srv.initProfiling(); err !\u003d nil {\n\t\treturn srv, errors.Annotate(err, \"failed to initialize profiling\").Err()\n\t}",
+      "range": {
+        "startLine": 747,
+        "startChar": 1,
+        "endLine": 747,
+        "endChar": 25
+      },
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22ef7d3d_a243f48f",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 747,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T02:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fec2aeda_ccf5ad24",
       "range": {
         "startLine": 747,
         "startChar": 1,
@@ -167,6 +239,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "94326bf6_1f65a2a4",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1958,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T02:39:01Z",
+      "side": 1,
+      "message": "Done. handled by the first line of the func.",
+      "parentUuid": "228a56f2_25ec34ec",
+      "range": {
+        "startLine": 1958,
+        "startChar": 59,
+        "endLine": 1958,
+        "endChar": 71
+      },
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15802a6d_f4eab0a7",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1958,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T02:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f65e242_439d66cd",
+      "range": {
+        "startLine": 1958,
+        "startChar": 88,
+        "endLine": 1958,
+        "endChar": 94
+      },
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ae24b5bb_16af111a",
@@ -190,6 +310,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "05b71672_165ff9ea",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1961,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T02:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae24b5bb_16af111a",
+      "range": {
+        "startLine": 1961,
+        "startChar": 69,
+        "endLine": 1961,
+        "endChar": 71
+      },
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "55e9b70a_725112e7",
@@ -203,6 +347,30 @@
       "writtenOn": "2021-02-22T22:31:53Z",
       "side": 1,
       "message": "Errorf",
+      "range": {
+        "startLine": 1965,
+        "startChar": 10,
+        "endLine": 1965,
+        "endChar": 18
+      },
+      "revId": "5c9f541b88a2c481ef13cbf8a96074b144b00c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b327f7a_466eeb1f",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1965,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-02-26T02:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55e9b70a_725112e7",
       "range": {
         "startLine": 1965,
         "startChar": 10,
