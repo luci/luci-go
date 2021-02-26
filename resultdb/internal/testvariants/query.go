@@ -329,7 +329,7 @@ var testVariantsWithUnexpectedResultsSQL = `
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
 	WITH unexpectedTestVariants AS (
 		SELECT DISTINCT TestId, VariantHash
-		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
 		WHERE IsUnexpected AND InvocationId in UNNEST(@invIDs)
 	),
 

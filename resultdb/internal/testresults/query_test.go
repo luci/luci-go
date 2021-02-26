@@ -381,7 +381,7 @@ func TestQueryTestResults(t *testing.T) {
   				WITH
 						testVariants AS (
 							SELECT DISTINCT TestId, VariantHash
-							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
 							WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 						),
 						exonerated AS (
@@ -440,7 +440,7 @@ func TestQueryTestResults(t *testing.T) {
 					WITH
 						variantsWithUnexpectedResults AS (
 							SELECT DISTINCT TestId, VariantHash
-							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
 							WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 							AND REGEXP_CONTAINS(TestId, @testIdRegexp)
 						),
