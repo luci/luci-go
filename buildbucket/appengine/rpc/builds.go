@@ -24,31 +24,43 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-var sha1Regex = regexp.MustCompile(`^[a-f0-9]{40}$`)
+var (
+	sha1Regex = regexp.MustCompile(`^[a-f0-9]{40}$`)
 
-// defMask is the default field mask to use for GetBuild requests.
-var defMask = mask.MustFromReadMask(&pb.Build{},
-	"builder",
-	"canary",
-	"create_time",
-	"created_by",
-	"critical",
-	"end_time",
-	"id",
-	"input.experimental",
-	"input.gerrit_changes",
-	"input.gitiles_commit",
-	"number",
-	"start_time",
-	"status",
-	"status_details",
-	"update_time",
+	// defMask is the default field mask to use for GetBuild requests.
+	defMask = mask.MustFromReadMask(&pb.Build{},
+		"builder",
+		"canary",
+		"create_time",
+		"created_by",
+		"critical",
+		"end_time",
+		"id",
+		"input.experimental",
+		"input.gerrit_changes",
+		"input.gitiles_commit",
+		"number",
+		"start_time",
+		"status",
+		"status_details",
+		"update_time",
+	)
+
+	// onboardedRPCs is a collection of the RPC method names that have been fully
+	// migrated to Go.
+	onboardedRPCs = stringset.Set{
+		"Batch":        struct{}{},
+		"GetBuild":     struct{}{},
+		"SearchBuilds": struct{}{},
+		"UpdateBuild":  struct{}{},
+	}
 )
 
 // TODO(crbug/1042991): Move to a common location.
@@ -79,11 +91,22 @@ func getBuildsSubMask(fields *field_mask.FieldMask) (*mask.Mask, error) {
 // TODO(crbug/1042991): Remove once methods are implemented.
 func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	err = commonPostlude(ctx, methodName, rsp, err)
-	if methodName == "GetBuild" || methodName == "SearchBuilds" || methodName == "Batch" || methodName == "UpdateBuild" {
+	if onboardedRPCs.Has(methodName) {
 		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 	return status.Errorf(codes.Unimplemented, "method not implemented")
+}
+
+// buildsServicePrelude logs the method name and proto request.
+//
+// Used to aid in development.
+// TODO(crbug/1042991): Remove once methods are implemented.
+func buildsServicePrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
+	if onboardedRPCs.Has(methodName) {
+		return ctx, nil
+	}
+	return logDetails(ctx, methodName, req)
 }
 
 // Builds implements pb.BuildsServer.
@@ -98,7 +121,7 @@ var _ pb.BuildsServer = &Builds{}
 // NewBuilds returns a new pb.BuildsServer.
 func NewBuilds() pb.BuildsServer {
 	return &pb.DecoratedBuilds{
-		Prelude:  logDetails,
+		Prelude:  buildsServicePrelude,
 		Service:  &Builds{},
 		Postlude: buildsServicePostlude,
 	}
