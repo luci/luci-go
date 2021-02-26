@@ -91,6 +91,7 @@ func TestBuildState(t *testing.T) {
 		Convey(`opened in error state`, func() {
 			bs := newBuildStateTracker(ctx, merger, "ns/", false, errors.New("nope"))
 			wait() // for final build
+			So(bs.workClosed, ShouldBeTrue)
 			assertStateEqual(bs.getLatest(), &buildState{
 				build: &bbpb.Build{
 					SummaryMarkdown: "\n\nError in build protocol: nope",

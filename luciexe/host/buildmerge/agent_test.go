@@ -90,11 +90,12 @@ func TestAgent(t *testing.T) {
 		})
 
 		Convey(`bad stream type`, func() {
-			merger.onNewStream(&logpb.LogStreamDescriptor{
+			cb := merger.onNewStream(&logpb.LogStreamDescriptor{
 				Name:        "u/build.proto",
 				StreamType:  logpb.StreamType_TEXT, // should be DATAGRAM
 				ContentType: luciexe.BuildProtoContentType,
 			})
+			So(cb, ShouldBeNil)
 			// NOTE: here and below we do ShouldBeTrue on `ok` instead of using
 			// ShouldNotBeNil on `tracker`. This is because ShouldNotBeNil is
 			// currently (as of Sep'19) implemented in terms of ShouldBeNil, which
@@ -108,16 +109,17 @@ func TestAgent(t *testing.T) {
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
-				SummaryMarkdown: "\n\nError in build protocol: stream \"u/build.proto\" has type \"TEXT\", expected \"DATAGRAM\"",
+				SummaryMarkdown: "\n\nError in build protocol: build proto stream \"u/build.proto\" has type \"TEXT\", expected \"DATAGRAM\"",
 			})
 		})
 
 		Convey(`bad content type`, func() {
-			merger.onNewStream(&logpb.LogStreamDescriptor{
+			cb := merger.onNewStream(&logpb.LogStreamDescriptor{
 				Name:        "u/build.proto",
 				StreamType:  logpb.StreamType_DATAGRAM,
 				ContentType: "i r bad",
 			})
+			So(cb, ShouldBeNil)
 			tracker, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
 
@@ -125,13 +127,31 @@ func TestAgent(t *testing.T) {
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
-				SummaryMarkdown: "\n\nError in build protocol: stream \"u/build.proto\" has content type \"i r bad\", expected \"" + luciexe.BuildProtoContentType + "\"",
+				SummaryMarkdown: fmt.Sprintf("\n\nError in build protocol: stream \"u/build.proto\" has content type \"i r bad\", expected one of %v", []string{luciexe.BuildProtoContentType, luciexe.BuildProtoZlibContentType}),
+			})
+		})
+
+		Convey(`build.proto suffix but bad stream type and content type `, func() {
+			cb := merger.onNewStream(&logpb.LogStreamDescriptor{
+				Name:        "u/build.proto",
+				StreamType:  logpb.StreamType_TEXT,
+				ContentType: "i r bad",
+			})
+			So(cb, ShouldBeNil)
+			tracker, ok := merger.states["url://u/build.proto"]
+			So(ok, ShouldBeTrue)
+
+			So(tracker.getLatest().build, ShouldResembleProto, &bbpb.Build{
+				EndTime:         now,
+				UpdateTime:      now,
+				Status:          bbpb.Status_INFRA_FAILURE,
+				SummaryMarkdown: fmt.Sprintf("\n\nError in build protocol: build.proto stream \"u/build.proto\" has stream type \"TEXT\" and content type \"i r bad\", expected \"DATAGRAM\" and one of %v", []string{luciexe.BuildProtoContentType, luciexe.BuildProtoZlibContentType}),
 			})
 		})
 
 		Convey(`ignores out-of-namespace streams`, func() {
-			merger.onNewStream(&logpb.LogStreamDescriptor{Name: "uprefix"})
-			merger.onNewStream(&logpb.LogStreamDescriptor{Name: "nope/something"})
+			So(merger.onNewStream(&logpb.LogStreamDescriptor{Name: "uprefix"}), ShouldBeNil)
+			So(merger.onNewStream(&logpb.LogStreamDescriptor{Name: "nope/something"}), ShouldBeNil)
 			So(merger.states, ShouldBeEmpty)
 		})
 
@@ -142,7 +162,8 @@ func TestAgent(t *testing.T) {
 		})
 
 		Convey(`will merge+relay root proto only`, func() {
-			merger.onNewStream(mkDesc("u/build.proto"))
+			cb := merger.onNewStream(mkDesc("u/build.proto"))
+			So(cb, ShouldNotBeNil)
 			tracker, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
 
