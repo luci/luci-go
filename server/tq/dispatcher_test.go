@@ -17,6 +17,7 @@ package tq
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
@@ -38,10 +39,16 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/server/tq/internal/metrics"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
 
@@ -82,9 +89,11 @@ func TestAddTask(t *testing.T) {
 	"type": "google.protobuf.Duration",
 	"body": "10s"
 }`)
+
 		expectedScheduleTime := timestamppb.New(now.Add(123 * time.Second))
 		expectedHeaders := defaultHeaders()
 		expectedHeaders[ExpectedETAHeader] = fmt.Sprintf("%d.%06d", expectedScheduleTime.GetSeconds(), expectedScheduleTime.GetNanos()/1000)
+
 		Convey("Nameless HTTP task", func() {
 			So(d.AddTask(ctx, task), ShouldBeNil)
 
@@ -93,6 +102,34 @@ func TestAddTask(t *testing.T) {
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
 					ScheduleTime: expectedScheduleTime,
+					MessageType: &taskspb.Task_HttpRequest{
+						HttpRequest: &taskspb.HttpRequest{
+							HttpMethod: taskspb.HttpMethod_POST,
+							Url:        "https://example.com/internal/tasks/t/test-dur/hi",
+							Headers:    expectedHeaders,
+							Body:       expectedPayload,
+							AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
+								OidcToken: &taskspb.OidcToken{
+									ServiceAccountEmail: "push-as@example.com",
+								},
+							},
+						},
+					},
+				},
+			})
+		})
+
+		Convey("HTTP task with no delay", func() {
+			task.Delay = 0
+			So(d.AddTask(ctx, task), ShouldBeNil)
+
+			// See `var now = ...` above.
+			expectedHeaders[ExpectedETAHeader] = "1442540000.000000"
+
+			So(submitter.reqs, ShouldHaveLength, 1)
+			So(submitter.reqs[0].CreateTaskRequest, ShouldResembleProto, &taskspb.CreateTaskRequest{
+				Parent: "projects/proj/locations/reg/queues/queue-1",
+				Task: &taskspb.Task{
 					MessageType: &taskspb.Task_HttpRequest{
 						HttpRequest: &taskspb.HttpRequest{
 							HttpMethod: taskspb.HttpMethod_POST,
@@ -247,6 +284,7 @@ func TestPushHandler(t *testing.T) {
 
 	Convey("With dispatcher", t, func() {
 		var handlerErr error
+		var handlerCb func(context.Context)
 
 		d := Dispatcher{NoAuth: true}
 		ref := d.RegisterTaskClass(TaskClass{
@@ -254,15 +292,38 @@ func TestPushHandler(t *testing.T) {
 			Prototype: &emptypb.Empty{},
 			Queue:     "queue",
 			Handler: func(ctx context.Context, payload proto.Message) error {
+				if handlerCb != nil {
+					handlerCb(ctx)
+				}
 				return handlerErr
 			},
 		})
 
-		srv := router.New()
+		var now = time.Unix(1442540100, 0)
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx, _, _ = tsmon.WithFakes(ctx)
+		tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
+
+		metric := func(m types.Metric, fieldVals ...interface{}) interface{} {
+			return tsmon.GetState(ctx).Store().Get(ctx, m, time.Time{}, fieldVals)
+		}
+
+		metricDist := func(m types.Metric, fieldVals ...interface{}) (count int64, sum float64) {
+			val := metric(m, fieldVals...)
+			if val != nil {
+				So(val, ShouldHaveSameTypeAs, &distribution.Distribution{})
+				count = val.(*distribution.Distribution).Count()
+				sum = val.(*distribution.Distribution).Sum()
+			}
+			return
+		}
+
+		srv := router.NewWithRootContext(ctx)
 		d.InstallTasksRoutes(srv, "/pfx")
 
-		call := func(body string) int {
+		call := func(body string, header http.Header) int {
 			req := httptest.NewRequest("POST", "/pfx/ignored/part", strings.NewReader(body))
+			req.Header = header
 			rec := httptest.NewRecorder()
 			srv.ServeHTTP(rec, req)
 			return rec.Result().StatusCode
@@ -270,59 +331,116 @@ func TestPushHandler(t *testing.T) {
 
 		Convey("Using class ID", func() {
 			Convey("Success", func() {
-				So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 200)
+				So(call(`{"class": "test-1", "body": {}}`, nil), ShouldEqual, 200)
 			})
 			Convey("Unknown", func() {
-				So(call(`{"class": "unknown", "body": {}}`), ShouldEqual, 404)
+				So(call(`{"class": "unknown", "body": {}}`, nil), ShouldEqual, 404)
 			})
 		})
 
 		Convey("Using type name", func() {
 			Convey("Success", func() {
-				So(call(`{"type": "google.protobuf.Empty", "body": {}}`), ShouldEqual, 200)
+				So(call(`{"type": "google.protobuf.Empty", "body": {}}`, nil), ShouldEqual, 200)
 			})
 			Convey("Totally unknown", func() {
-				So(call(`{"type": "unknown", "body": {}}`), ShouldEqual, 404)
+				So(call(`{"type": "unknown", "body": {}}`, nil), ShouldEqual, 404)
 			})
 			Convey("Not a registered task", func() {
-				So(call(`{"type": "google.protobuf.Duration", "body": {}}`), ShouldEqual, 404)
+				So(call(`{"type": "google.protobuf.Duration", "body": {}}`, nil), ShouldEqual, 404)
 			})
 		})
 
 		Convey("Not a JSON body", func() {
-			So(call(`blarg`), ShouldEqual, 400)
+			So(call(`blarg`, nil), ShouldEqual, 400)
 		})
 
 		Convey("Bad envelope", func() {
-			So(call(`{}`), ShouldEqual, 400)
+			So(call(`{}`, nil), ShouldEqual, 400)
 		})
 
 		Convey("Missing message body", func() {
-			So(call(`{"class": "test-1"}`), ShouldEqual, 400)
+			So(call(`{"class": "test-1"}`, nil), ShouldEqual, 400)
 		})
 
 		Convey("Bad message body", func() {
-			So(call(`{"class": "test-1", "body": "huh"}`), ShouldEqual, 400)
+			So(call(`{"class": "test-1", "body": "huh"}`, nil), ShouldEqual, 400)
 		})
 
 		Convey("Handler fatal error", func() {
 			handlerErr = errors.New("boo", Fatal)
-			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 202)
+			So(call(`{"class": "test-1", "body": {}}`, nil), ShouldEqual, 202)
 		})
 
 		Convey("Handler transient error", func() {
 			handlerErr = errors.New("boo", transient.Tag)
-			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 500)
+			So(call(`{"class": "test-1", "body": {}}`, nil), ShouldEqual, 500)
 		})
 
 		Convey("Handler non-fatal error", func() {
 			handlerErr = errors.New("boo")
-			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 429)
+			So(call(`{"class": "test-1", "body": {}}`, nil), ShouldEqual, 429)
 		})
 
 		Convey("No handler", func() {
 			ref.(*taskClassImpl).Handler = nil
-			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 404)
+			So(call(`{"class": "test-1", "body": {}}`, nil), ShouldEqual, 404)
+		})
+
+		Convey("Metrics work", func() {
+			callWithHeaders := func(headers map[string]string) {
+				hdr := make(http.Header)
+				for k, v := range headers {
+					hdr.Set(k, v)
+				}
+				So(call(`{"type": "google.protobuf.Empty", "body": {}}`, hdr), ShouldEqual, 200)
+			}
+
+			Convey("No ETA header", func() {
+				const fakeDelayMS = 33
+
+				handlerCb = func(ctx context.Context) {
+					info := TaskExecutionInfo(ctx)
+					So(info.ExecutionCount, ShouldEqual, 500)
+					So(info.expectedETA, ShouldBeZeroValue)
+					So(info.submitterTraceContext, ShouldEqual, "zzz")
+					clock.Get(ctx).(testclock.TestClock).Add(fakeDelayMS * time.Millisecond)
+				}
+
+				callWithHeaders(map[string]string{
+					"X-CloudTasks-TaskExecutionCount": "500",
+					TraceContextHeader:                "zzz",
+				})
+
+				So(metric(metrics.ServerHandledCount, "test-1", "OK", metrics.MaxRetryFieldValue), ShouldEqual, 1)
+
+				durCount, durSum := metricDist(metrics.ServerDurationMS, "test-1", "OK")
+				So(durCount, ShouldEqual, 1)
+				So(durSum, ShouldEqual, float64(fakeDelayMS))
+
+				latCount, _ := metricDist(metrics.ServerTaskLatency, "test-1", "OK", metrics.MaxRetryFieldValue)
+				So(latCount, ShouldEqual, 0)
+			})
+
+			Convey("With ETA header", func() {
+				var etaValue = time.Unix(1442540050, 1000)
+				const fakeDelayMS = 33
+
+				handlerCb = func(ctx context.Context) {
+					info := TaskExecutionInfo(ctx)
+					So(info.ExecutionCount, ShouldEqual, 5)
+					So(info.expectedETA.Equal(etaValue), ShouldBeTrue)
+					clock.Get(ctx).(testclock.TestClock).Add(fakeDelayMS * time.Millisecond)
+				}
+
+				callWithHeaders(map[string]string{
+					"X-CloudTasks-TaskExecutionCount": "5",
+					ExpectedETAHeader:                 "1442540050.000001",
+				})
+
+				latCount, latSum := metricDist(metrics.ServerTaskLatency, "test-1", "OK", 5)
+				So(latCount, ShouldEqual, 1)
+				So(latSum, ShouldEqual, float64(now.Sub(etaValue).Milliseconds()+fakeDelayMS))
+			})
 		})
 	})
 }
