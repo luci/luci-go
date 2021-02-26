@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c89fc0ad_d2b52fc0",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-26T20:55:37Z",
+      "side": 1,
+      "message": "please think of a name that better represents what this field actually means.\nMaybe \"loadUntilDisplayed\" or something.",
+      "range": {
+        "startLine": 46,
+        "startChar": 10,
+        "endLine": 46,
+        "endChar": 32
+      },
+      "revId": "ba398ef6d454563fbf73536bb6f55a2cd409a813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10a989bb_fc4f18cc",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-26T20:55:37Z",
+      "side": 1,
+      "message": "untilStatus is lost here.",
+      "range": {
+        "startLine": 70,
+        "startChar": 26,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "ba398ef6d454563fbf73536bb6f55a2cd409a813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0e4df53_10a1ac46",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-26T20:55:37Z",
+      "side": 1,
+      "message": "is the following possible\n\n1. developer1 passes a link with force-loading to another developer2\n2. developer2 changes some filters, copies the link from the browser address bar and sends it back\n3. developer1 receives a link with both filters and force-loading.\n\nDo we want force-loading in (3)? \n\n--\n\ni guess by broader question is why force-loading is in the URL to begin with? Shouldn\u0027t we determine [whether to force-load] based on whether test/variant filter is specified?",
+      "range": {
+        "startLine": 136,
+        "startChar": 57,
+        "endLine": 137,
+        "endChar": 20
+      },
+      "revId": "ba398ef6d454563fbf73536bb6f55a2cd409a813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3ced8e8_cea046ba",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-02-26T20:55:37Z",
+      "side": 1,
+      "message": "why do the two fields have inconsistent names?",
+      "range": {
+        "startLine": 138,
+        "startChar": 11,
+        "endLine": 138,
+        "endChar": 33
+      },
+      "revId": "ba398ef6d454563fbf73536bb6f55a2cd409a813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
