@@ -21,11 +21,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -78,6 +80,8 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 
 	out := make([]*prjpb.Component, len(s.PB.GetComponents()))
 	var modified int32
+	// TODO(crbug/1182446): remove panic catching.
+	var paniced int32
 	var mutex sync.Mutex
 	var actions []cAction
 	now := clock.Now(ctx)
@@ -102,7 +106,17 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 			}
 
 			i, oldC, oldWhen := i, oldC, oldWhen
-			work <- func() error {
+			work <- func() (err error) {
+				defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+					// TODO(crbug/1182446): remove panic catching.
+					atomic.AddInt32(&paniced, 1)
+					logging.Errorf(ctx, "caught panic %s:\n%s", p.Reason, p.Stack)
+					logging.Errorf(ctx, "caught panic dbg: now %s", now, oldWhen)
+					logging.Errorf(ctx, "caught panic dbg: oldC\n%s", protojson.Format(oldC))
+					logging.Errorf(ctx, "caught panic dbg: state PCLs\n%s", protojson.Format(s.PB))
+					err = errors.Reason("caught panic: %s", p.Reason).Err()
+				})
+
 				var actor componentActor = componentactor.New(oldC, supporter)
 				if s.testComponentActorFactory != nil {
 					actor = s.testComponentActorFactory(oldC, supporter)
@@ -134,7 +148,10 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 			}
 		}
 	})
-
+	if paniced > 0 {
+		// TODO(crbug/1182446): remove panic catching.
+		return nil, nil, errors.Reason("%d panics were caught", paniced).Err()
+	}
 	if len(actions) == 0 && modified == 0 {
 		out = nil // no mutations necessary
 	}
