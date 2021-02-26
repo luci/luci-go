@@ -36,6 +36,8 @@ export class InvocationState {
 
   // Whether tests should be split into multiple sections by status.
   @observable.ref multiSections = true;
+  // Whether the page forced loading tests until the first one shown up.
+  @observable.ref forcedLoadingTest = false;
 
   // The following settings only apply when this.multiSections = true.
   @observable.ref showUnexpectedVariants = true;
