@@ -72,6 +72,18 @@ func (ct ctest) runCLUpdaterAs(ctx context.Context, change int64, lProject strin
 	return cl
 }
 
+func (ct ctest) submitCL(ctx context.Context, change int64) *changelist.CL {
+	ct.GFake.MutateChange(ct.gHost, int(change), func(c *gf.Change) {
+		gf.Status(gerritpb.ChangeStatus_MERGED)(c.Info)
+		gf.Updated(ct.Clock.Now())(c.Info)
+	})
+	cl := ct.runCLUpdater(ctx, change)
+
+	// If this fails, you forgot to change fake time.
+	So(cl.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+	return cl
+}
+
 const cfgText1 = `
   config_groups {
     name: "g0"
@@ -145,7 +157,7 @@ func TestEndToEndSingleCL(t *testing.T) {
 		state, sideEffect, err = state.ExecDeferred(ctx)
 		So(err, ShouldBeNil)
 		So(sideEffect, ShouldBeNil)
-		So(state.PB, ShouldResembleProto, &prjpb.PState{
+		expected := &prjpb.PState{
 			LuciProject:      ct.lProject,
 			Status:           prjpb.Status_STARTED,
 			ConfigGroupNames: []string{"g0", "g1"},
@@ -166,7 +178,34 @@ func TestEndToEndSingleCL(t *testing.T) {
 					Clids: []int64{int64(cl101.ID)},
 				},
 			},
+		}
+		So(state.PB, ShouldResembleProto, expected)
+
+		// TODO(tandrii): modify once runs are created.
+
+		// Submit change.
+		ct.Clock.Add(time.Minute)
+		cl101 = ct.submitCL(ctx, 101)
+
+		state, sideEffect, err = state.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
+			{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
 		})
+		So(err, ShouldBeNil)
+		So(sideEffect, ShouldBeNil)
+		expected.GetPcls()[0].Eversion = int64(cl101.EVersion)
+		expected.GetPcls()[0].Trigger = nil
+		expected.GetPcls()[0].Submitted = true
+		expected.DirtyComponents = true
+		So(state.PB, ShouldResembleProto, expected)
+
+		// And CL must be no longer tracked.
+		state, sideEffect, err = state.ExecDeferred(ctx)
+		So(err, ShouldBeNil)
+		So(sideEffect, ShouldBeNil)
+		expected.Components = nil
+		expected.Pcls = nil
+		expected.DirtyComponents = false
+		So(state.PB, ShouldResembleProto, expected)
 	})
 }
 
@@ -1190,6 +1229,79 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			So(state.PB, ShouldResembleProto, pb)
 		})
 
+		Convey("identifies submitted PCLs as unused if possible", func() {
+			// Modify 1<-2 stack to have #1 submitted.
+			ct.Clock.Add(time.Minute)
+			cls[1] = ct.submitCL(ctx, 1)
+			cis[1] = cls[1].Snapshot.GetGerrit().GetInfo()
+			So(cis[1].Status, ShouldEqual, gerritpb.ChangeStatus_MERGED)
+
+			state.PB.Pcls = []*prjpb.PCL{
+				{
+					Clid:      int64(cls[1].ID),
+					Eversion:  int64(cls[1].EVersion),
+					Status:    prjpb.PCL_OK,
+					Submitted: true,
+				},
+			}
+			Convey("standalone submitted CL without a Run is unused", func() {
+				cat := state.categorizeCLs(ctx)
+				exp := &categorizedCLs{
+					active:   clidsSet{},
+					deps:     clidsSet{},
+					unloaded: clidsSet{},
+					unused:   clidsSet{1: struct{}{}},
+				}
+				So(cat, ShouldResemble, exp)
+				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
+				So(cat, ShouldResemble, exp)
+			})
+
+			Convey("standalone submitted CL with a Run is active", func() {
+				state.PB.Components = []*prjpb.Component{
+					{
+						Clids: []int64{1},
+						Pruns: []*prjpb.PRun{
+							{Clids: []int64{1}, Id: "run1"},
+						},
+					},
+				}
+				cat := state.categorizeCLs(ctx)
+				exp := &categorizedCLs{
+					active:   clidsSet{1: struct{}{}},
+					deps:     clidsSet{},
+					unloaded: clidsSet{},
+					unused:   clidsSet{},
+				}
+				So(cat, ShouldResemble, exp)
+				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
+				So(cat, ShouldResemble, exp)
+			})
+
+			Convey("submitted dependent is neither active nor unused, but a dep", func() {
+				state.PB.Pcls = sortPCLs(append(state.PB.Pcls,
+					&prjpb.PCL{
+						Clid:               int64(cls[2].ID),
+						Eversion:           int64(cls[2].EVersion),
+						Status:             prjpb.PCL_OK,
+						Trigger:            trigger.Find(cis[2]),
+						ConfigGroupIndexes: []int32{0},
+						Deps:               cls[2].Snapshot.GetDeps(),
+					},
+				))
+				cat := state.categorizeCLs(ctx)
+				exp := &categorizedCLs{
+					active:   clidsSet{2: struct{}{}},
+					deps:     clidsSet{1: struct{}{}},
+					unloaded: clidsSet{},
+					unused:   clidsSet{},
+				}
+				So(cat, ShouldResemble, exp)
+				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
+				So(cat, ShouldResemble, exp)
+			})
+		})
+
 		Convey("prunes PCLs with expired triggers", func() {
 			makePCL := func(i int64, t time.Time, deps ...*changelist.Dep) *prjpb.PCL {
 				return &prjpb.PCL{
@@ -1303,24 +1415,64 @@ func TestRepartition(t *testing.T) {
 		})
 
 		Convey("Compacts out unused PCLs", func() {
-			cat.active.resetI64(1, 3)
-			cat.unused.resetI64(2)
-			state.PB.Pcls = []*prjpb.PCL{
-				{Clid: 1},
-				{Clid: 2},
-				{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
-			}
-
-			state.repartition(cat)
-			So(state.PB, ShouldResembleProto, &prjpb.PState{
-				Pcls: []*prjpb.PCL{
+			Convey("no existing components", func() {
+				cat.active.resetI64(1, 3)
+				cat.unused.resetI64(2)
+				state.PB.Pcls = []*prjpb.PCL{
 					{Clid: 1},
+					{Clid: 2},
 					{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
-				},
-				Components: []*prjpb.Component{{
-					Clids: []int64{1, 3},
-					Dirty: true,
-				}},
+				}
+
+				state.repartition(cat)
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
+					Pcls: []*prjpb.PCL{
+						{Clid: 1},
+						{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
+					},
+					Components: []*prjpb.Component{{
+						Clids: []int64{1, 3},
+						Dirty: true,
+					}},
+				})
+			})
+			Convey("wipes out existing component, too", func() {
+				cat.unused.resetI64(1, 2, 3)
+				state.PB.Pcls = []*prjpb.PCL{
+					{Clid: 1},
+					{Clid: 2},
+					{Clid: 3},
+				}
+				state.PB.Components = []*prjpb.Component{
+					{Clids: []int64{1}},
+					{Clids: []int64{2, 3}},
+				}
+				state.repartition(cat)
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
+					Pcls:       nil,
+					Components: nil,
+				})
+			})
+			Convey("shrinks existing component, too", func() {
+				cat.active.resetI64(1)
+				cat.unused.resetI64(2)
+				state.PB.Pcls = []*prjpb.PCL{
+					{Clid: 1},
+					{Clid: 2},
+				}
+				state.PB.Components = []*prjpb.Component{{
+					Clids: []int64{1, 2},
+				}}
+				state.repartition(cat)
+				So(state.PB, ShouldResembleProto, &prjpb.PState{
+					Pcls: []*prjpb.PCL{
+						{Clid: 1},
+					},
+					Components: []*prjpb.Component{{
+						Clids: []int64{1},
+						Dirty: true,
+					}},
+				})
 			})
 		})
 

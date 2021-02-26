@@ -85,29 +85,51 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 //
 // Expects pclIndex to be same used by planPartition.
 func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []*prjpb.Component {
-	exactSet := func(clids []int64) (root int) {
+
+	canReuse := func(c *prjpb.Component) (root int, can bool) {
+		// Old component can be re-used iff both:
+		//  (1) it has exactly the same set in the new partition.
+		//  (2) it does not contain unused CLs.
+		clids := c.GetClids()
+
+		// Check (1).
 		root = d.RootOf(s.pclIndex[common.CLID(clids[0])])
 		if d.SizeOf(root) != len(clids) {
-			return -1
+			return -1, false
 		}
 		for _, id := range clids[1:] {
 			if root != d.RootOf(s.pclIndex[common.CLID(id)]) {
-				return -1
+				return -1, false
 			}
 		}
-		return root
+
+		// Check (2).
+		// Note that 2+ CL component which satisfies (1) can't have an unused CL.
+		// Unused CL don't have relation to other CLs, and so wouldn't be grouped
+		// into the same set in a new partition.
+
+		// TODO(crbug/1182446): remove this field-validation code.
+		for _, clid := range clids {
+			if cat.unused.hasI64(clid) && len(clids) != 1 {
+				panic(fmt.Errorf("Component with %d CLs %v has unused CL %d", len(clids), clids, clid))
+			}
+		}
+
+		if len(clids) == 1 && cat.unused.hasI64(clids[0]) {
+			return -1, false
+		}
+		return root, true
 	}
 	// First, try to re-use existing components whenever possible.
 	// Typically, this should cover most components.
 	reused := make(map[int]*prjpb.Component, d.Count())
-	var leftComponents []*prjpb.Component
+	var deleted []*prjpb.Component
 	for _, c := range s.PB.GetComponents() {
-		root := exactSet(c.GetClids())
-		if root == -1 {
-			leftComponents = append(leftComponents, c)
+		if root, yes := canReuse(c); yes {
+			reused[root] = c
 			continue
 		}
-		reused[root] = c
+		deleted = append(deleted, c)
 	}
 
 	// Now create new components.
@@ -145,7 +167,7 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 		}
 	}
 	addPRuns(s.PB.GetCreatedPruns())
-	for _, c := range leftComponents {
+	for _, c := range deleted {
 		addPRuns(c.GetPruns())
 	}
 
