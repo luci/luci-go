@@ -66,6 +66,15 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 			return nil, appstatus.BadRequest(errors.New("request includes an unsupported type"))
 		}
 	}
+
+	// TODO(yuanjunh): remove it after getting an estimate of the maximum amount.
+	if len(pyBatchReq.Requests) > 10 {
+		logging.Debugf(ctx, "Batch: write operation size - %d", len(pyBatchReq.Requests))
+	}
+	if len(goBatchReq) > 25 {
+		logging.Debugf(ctx, "Batch: read operation size - %d", len(goBatchReq))
+	}
+
 	// TODO(crbug.com/1144958): remove calling py after ScheduleBuild and CancelBuild are done.
 	pyResC := make(chan *pyBatchResponse)
 	if len(pyBatchReq.Requests) != 0 {
