@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -171,6 +172,50 @@ func fakeController(testSrvURL string) *tasktest.TestController {
 			}
 			return "topic", "auth_token", nil
 		},
+	}
+}
+
+func TestBuilderID(t *testing.T) {
+	t.Parallel()
+
+	var cases = []struct {
+		RealmID string
+		Bucket  string
+		Output  string
+		Error   string
+	}{
+		{"proj:realm", "", "proj:realm", ""},
+		{"proj:@legacy", "", "", "is required"},
+		{"proj:@root", "", "", "is required"},
+
+		{"proj:realm", "another-proj:buck", "another-proj:buck", ""},
+		{"proj:realm", "buck", "proj:buck", ""},
+		{"proj:realm", "abc.def.123", "proj:abc.def.123", ""},
+		{"proj:@legacy", "buck", "proj:buck", ""},
+
+		{"proj:realm", "luci.another-proj.buck", "another-proj:buck", ""},
+		{"proj:realm", "luci.another-proj.buck.more", "another-proj:buck.more", ""},
+		{"proj:realm", "luci.another-proj", "", "need 3 components"},
+	}
+
+	for _, c := range cases {
+		bid, err := builderID(&messages.BuildbucketTask{
+			Bucket:  c.Bucket,
+			Builder: "some-builder",
+		}, c.RealmID)
+		if c.Error != "" {
+			if err == nil {
+				t.Errorf("Expected to fail for %q %q, but did not", c.Bucket, c.RealmID)
+			} else if !strings.Contains(err.Error(), c.Error) {
+				t.Errorf("Expected to fail with %q, but failed with %q", c.Error, err.Error())
+			}
+		} else {
+			if err != nil {
+				t.Errorf("Expected to succeed for %q %q, but failed with %q", c.Bucket, c.RealmID, err.Error())
+			} else if got := fmt.Sprintf("%s:%s", bid.Project, bid.Bucket); got != c.Output {
+				t.Errorf("Expected to get %q, but got %q", c.Output, got)
+			}
+		}
 	}
 }
 

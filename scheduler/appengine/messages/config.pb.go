@@ -1060,11 +1060,19 @@ type BuildbucketTask struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Server is hostname of the buildbucket service to use.
+	//
 	// Typically, "cr-buildbucket.appspot.com".
 	Server string `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	// Bucket defines what bucket to add the task to.
+	//
+	// Supported formats are:
+	//    * "<bucket>" - for a bucket in the current project.
+	//    * "<project>:<bucket>" - for a bucket in another project.
+	//    * "luci.<project>.<bucket>" - legacy v1 bucket name.
+	//
+	// If empty, defaults to `realm` field in the parent Job message.
 	Bucket string `protobuf:"bytes,2,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	// Builder defines what to run.
+	// Builder defines what builder within the bucket to launch.
 	Builder string `protobuf:"bytes,3,opt,name=builder,proto3" json:"builder,omitempty"`
 	// Properties is arbitrary "key:value" pairs describing the task.
 	// TODO(tandrii): which properties will be overridden if triggered?
