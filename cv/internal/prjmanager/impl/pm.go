@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -97,7 +98,8 @@ func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s 
 	for _, e := range events {
 		tr.triage(ctx, e)
 	}
-	// TODO(tandrii): if there are too many redundant events, delete some of them.
+	tr.removeCLUpdateNoops()
+
 	ts, err = pm.mutate(ctx, tr, s.(*state.State))
 	return ts, tr.noops, err
 }
@@ -167,9 +169,12 @@ type triageResult struct {
 	poke eventbox.Events
 
 	clsUpdated struct {
-		// events don't correspond to cls due to CLsUpdate batches.
+		// maps CLID to latest EVersion.
+		clEVersions map[int64]int64
+		// maps CLID to event ID of CLUpdated or CLsUpdated events.
+		clEvents map[int64]string
+		// initially, all events. removeCLUpdateNoops() leaves only referenced ones.
 		events eventbox.Events
-		cls    []*prjpb.CLUpdated
 	}
 	runsCreated struct {
 		// events and runs are in random order.
@@ -200,12 +205,16 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 		tr.highestIDWins(item, &tr.newConfig)
 	case *prjpb.Event_Poke:
 		tr.highestIDWins(item, &tr.poke)
+
 	case *prjpb.Event_ClUpdated:
 		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
-		tr.clsUpdated.cls = append(tr.clsUpdated.cls, v.ClUpdated)
+		tr.triageCLUpdated(v.ClUpdated, item.ID)
 	case *prjpb.Event_ClsUpdated:
 		tr.clsUpdated.events = append(tr.clsUpdated.events, item)
-		tr.clsUpdated.cls = append(tr.clsUpdated.cls, v.ClsUpdated.GetCls()...)
+		for _, cl := range v.ClsUpdated.Cls {
+			tr.triageCLUpdated(cl, item.ID)
+		}
+
 	case *prjpb.Event_RunCreated:
 		tr.runsCreated.events = append(tr.runsCreated.events, item)
 		tr.runsCreated.runs = append(tr.runsCreated.runs, common.RunID(v.RunCreated.GetRunId()))
@@ -231,6 +240,39 @@ func (tr *triageResult) highestIDWins(item eventbox.Event, target *eventbox.Even
 	} else {
 		tr.noops = append(tr.noops, item)
 	}
+}
+
+func (tr *triageResult) triageCLUpdated(v *prjpb.CLUpdated, id string) {
+	clid := v.GetClid()
+	ev := v.GetEversion()
+
+	cu := &tr.clsUpdated
+	if curEV, exists := cu.clEVersions[v.GetClid()]; !exists || curEV < ev {
+		if cu.clEVersions == nil {
+			cu.clEVersions = make(map[int64]int64, 1)
+			cu.clEvents = make(map[int64]string, 1)
+		}
+		cu.clEVersions[clid] = ev
+		cu.clEvents[clid] = id
+	}
+}
+
+func (tr *triageResult) removeCLUpdateNoops() {
+	cu := &tr.clsUpdated
+	eventIDs := stringset.New(len(cu.clEvents))
+	for _, id := range cu.clEvents {
+		eventIDs.Add(id)
+	}
+	remaining := cu.events[:0]
+	for _, e := range cu.events {
+		if eventIDs.Has(e.ID) {
+			remaining = append(remaining, e)
+		} else {
+			tr.noops = append(tr.noops, e)
+		}
+	}
+	cu.events = remaining
+	cu.clEvents = nil // free memory
 }
 
 func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state.State) ([]eventbox.Transition, error) {
@@ -289,8 +331,8 @@ func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state
 		})
 	}
 
-	if len(tr.clsUpdated.cls) > 0 {
-		if s, se, err = s.OnCLsUpdated(ctx, tr.clsUpdated.cls); err != nil {
+	if len(tr.clsUpdated.clEVersions) > 0 {
+		if s, se, err = s.OnCLsUpdated(ctx, tr.clsUpdated.clEVersions); err != nil {
 			return nil, err
 		}
 		ret = append(ret, eventbox.Transition{

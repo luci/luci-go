@@ -148,8 +148,8 @@ func TestEndToEndSingleCL(t *testing.T) {
 
 		ct.GFake.CreateChange(&gf.Change{Host: ct.gHost, ACLs: gf.ACLPublic(), Info: ci101})
 		cl101 := ct.runCLUpdater(ctx, 101)
-		state, sideEffect, err = state.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
-			{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
+		state, sideEffect, err = state.OnCLsUpdated(ctx, map[int64]int64{
+			int64(cl101.ID): int64(cl101.EVersion),
 		})
 		So(err, ShouldBeNil)
 		So(sideEffect, ShouldBeNil)
@@ -187,8 +187,8 @@ func TestEndToEndSingleCL(t *testing.T) {
 		ct.Clock.Add(time.Minute)
 		cl101 = ct.submitCL(ctx, 101)
 
-		state, sideEffect, err = state.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
-			{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
+		state, sideEffect, err = state.OnCLsUpdated(ctx, map[int64]int64{
+			int64(cl101.ID): int64(cl101.EVersion),
 		})
 		So(err, ShouldBeNil)
 		So(sideEffect, ShouldBeNil)
@@ -547,8 +547,8 @@ func TestOnCLsUpdated(t *testing.T) {
 		// NOTE: conversion of individual CL to PCL is in TestUpdateConfig.
 
 		Convey("One simple CL", func() {
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
-				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
+				int64(cl101.ID): int64(cl101.EVersion),
 			})
 			So(err, ShouldBeNil)
 			So(s0.PB, ShouldResembleProto, pb0)
@@ -570,32 +570,18 @@ func TestOnCLsUpdated(t *testing.T) {
 				DirtyComponents: true,
 			})
 			Convey("Noop based on EVersion", func() {
-				s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
-					{Clid: int64(cl101.ID), Eversion: 1}, // already known
+				s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
+					int64(cl101.ID): 1, // already known
 				})
 				So(err, ShouldBeNil)
 				So(sideEffect, ShouldBeNil)
 				So(s1, ShouldEqual, s2) // pointer comparison only.
 			})
-
-			Convey("Removes duplicates", func() {
-				pb := backupPB(s1)
-				bumpEVersion(ctx, cl101, 10)
-				s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
-					{Clid: int64(cl101.ID), Eversion: 5},
-					{Clid: int64(cl101.ID), Eversion: 7},
-				})
-				So(err, ShouldBeNil)
-				So(sideEffect, ShouldBeNil)
-				So(s1.PB, ShouldResembleProto, pb)
-				pb.GetPcls()[0].Eversion = int64(cl101.EVersion)
-				So(s2.PB, ShouldResembleProto, pb)
-			})
 		})
 
 		Convey("One CL with a yet unknown dep", func() {
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
-				{Clid: int64(cl203.ID), Eversion: 1},
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
+				int64(cl203.ID): 1,
 			})
 			So(err, ShouldBeNil)
 			So(s0.PB, ShouldResembleProto, pb0)
@@ -645,11 +631,11 @@ func TestOnCLsUpdated(t *testing.T) {
 			})
 			pb1 := backupPB(s1)
 			bumpEVersion(ctx, cl203, 3)
-			s2, sideEffect, err := s1.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
-				{Clid: 404, Eversion: 404},                               // doesn't even exist
-				{Clid: int64(cl202.ID), Eversion: int64(cl202.EVersion)}, // new
-				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)}, // unchanged
-				{Clid: int64(cl203.ID), Eversion: 3},                     // updated
+			s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
+				404:             404,                   // doesn't even exist
+				int64(cl202.ID): int64(cl202.EVersion), // new
+				int64(cl101.ID): int64(cl101.EVersion), // unchanged
+				int64(cl203.ID): 3,                     // updated
 			})
 			So(err, ShouldBeNil)
 			So(s1.PB, ShouldResembleProto, pb1)
@@ -688,8 +674,8 @@ func TestOnCLsUpdated(t *testing.T) {
 
 		Convey("non-STARTED project ignores all CL events", func() {
 			s0.PB.Status = prjpb.Status_STOPPING
-			s1, sideEffect, err := s0.OnCLsUpdated(ctx, []*prjpb.CLUpdated{
-				{Clid: int64(cl101.ID), Eversion: int64(cl101.EVersion)},
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
+				int64(cl101.ID): int64(cl101.EVersion),
 			})
 			So(err, ShouldBeNil)
 			So(sideEffect, ShouldBeNil)

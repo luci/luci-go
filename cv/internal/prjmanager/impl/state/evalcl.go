@@ -60,10 +60,10 @@ func (s *State) reevalPCLs(ctx context.Context) error {
 }
 
 // evalUpdatedCLs updates/inserts PCLs.
-func (s *State) evalUpdatedCLs(ctx context.Context, clmap map[common.CLID]int64) error {
-	cls := make([]*changelist.CL, 0, len(clmap))
-	for id := range clmap {
-		cls = append(cls, &changelist.CL{ID: id})
+func (s *State) evalUpdatedCLs(ctx context.Context, clEVersions map[int64]int64) error {
+	cls := make([]*changelist.CL, 0, len(clEVersions))
+	for id := range clEVersions {
+		cls = append(cls, &changelist.CL{ID: common.CLID(id)})
 	}
 	return s.evalCLsFromDS(ctx, cls)
 }
@@ -142,26 +142,17 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	return nil
 }
 
-// filterOutUpToDate returns map[clid]eversion for which PCL is out of date or
-// doens't exist.
-func (s *State) filterOutUpToDate(events []*prjpb.CLUpdated) map[common.CLID]int64 {
-	res := make(map[common.CLID]int64, len(events))
-	for _, e := range events {
-		id := common.CLID(e.GetClid())
-		if ev, exists := res[id]; !exists || ev < e.GetEversion() {
-			res[id] = e.GetEversion()
-		}
-	}
+// filterOutUpToDate removes from the given clid -> EVersion map entires for
+// which PCL is already up to date.
+func (s *State) filterOutUpToDate(clEVersions map[int64]int64) {
 	// This isn't the most efficient way when P=len(PCLs) >> E=len(events)
 	// (e.g. O(E*log(P)) is possible by iterating sorted CLID events
 	// and doing binary search on PCLs at each step), but it mostly works.
 	for _, pcl := range s.PB.GetPcls() {
-		id := common.CLID(pcl.GetClid())
-		if ev, exists := res[id]; exists && ev <= pcl.GetEversion() {
-			delete(res, id)
+		if ev, exists := clEVersions[pcl.GetClid()]; exists && ev <= pcl.GetEversion() {
+			delete(clEVersions, pcl.GetClid())
 		}
 	}
-	return res
 }
 
 func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error, old *prjpb.PCL) (*prjpb.PCL, error) {
