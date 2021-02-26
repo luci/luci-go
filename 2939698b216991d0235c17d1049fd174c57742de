@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e8261fe_d4f1121f",
+        "filename": "resultdb/internal/services/resultdb/query_test_variants.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-26T07:48:29Z",
+      "side": 1,
+      "message": "I think we\u0027ll get a deadline here from https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/grpc/prpc/client.go;l\u003d400\n\nIs that right?",
+      "revId": "2939698b216991d0235c17d1049fd174c57742de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
