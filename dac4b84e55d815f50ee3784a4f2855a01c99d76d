@@ -103,6 +103,24 @@
       "message": "Sounds like the docker version has other challenges 😞\n\nDidn\u0027t mean to be a blocker on this, just was hopping there was more common ground between mac/linux (usually there is :()",
       "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cbaf51e_2d2e0cd1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 26
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-02-26T05:36:22Z",
+      "side": 1,
+      "message": "To summarize, I currently have the following blockers to run emulator on mac bots:\n1. It requires docker to run emulator on mac\n  a. \"docker run -p \u003crandomPort\u003e:\u003crandomPort\u003e gcr.io/cloud-spanner-emulator/emulator\" still binds the default grpc port\n  b. I had to run \"sudo docker\", and I haven\u0027t figured out a reliable way to run sudoless docker.\n2. Pdeathsig is only supported on Linux. \n  a. Robbie has told me the solution is to use signal handler. So if the other blocker is lifted, I should be able to solve this one.\n\nMy plan is to land this linux only version first. And then enable it on Linux bots. Then if there\u0027s need to support development on mac, I\u0027ll craft out a process of using emulator to run local tests on mac, which may involve running some extra command before/after the test run, but this may be hard to automate.",
+      "parentUuid": "9475d22e_ca9c9eef",
+      "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
