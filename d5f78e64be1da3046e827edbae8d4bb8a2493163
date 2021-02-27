@@ -93,6 +93,30 @@
       },
       "revId": "d5f78e64be1da3046e827edbae8d4bb8a2493163",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad9500e0_6f43ef36",
+        "filename": "gae/impl/cloud/datastore.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 656,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-02-27T00:43:21Z",
+      "side": 1,
+      "message": "Dropping the lock is probably fine...",
+      "parentUuid": "ce8416c7_10ba838f",
+      "range": {
+        "startLine": 655,
+        "startChar": 0,
+        "endLine": 656,
+        "endChar": 21
+      },
+      "revId": "d5f78e64be1da3046e827edbae8d4bb8a2493163",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
