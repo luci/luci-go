@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -55,7 +56,7 @@ type boundDatastore struct {
 	// one is set.
 	*cloudDatastore
 
-	transaction *datastore.Transaction
+	transaction *transactionWrapper
 	kc          ds.KeyContext
 }
 
@@ -275,7 +276,15 @@ func (bds *boundDatastore) GetTestable() ds.Testable { return nil }
 func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.Query {
 	nq := datastore.NewQuery(fq.Kind())
 	if bds.transaction != nil {
-		nq = nq.Transaction(bds.transaction)
+		// NOTE: As of 2021 Q1 this is safe because it's documented that:
+		//
+		//   "Queries are re-usable and it is safe to call Query.Run from concurrent
+		//   goroutines"
+		//
+		// Inspecting the datastore client code reveals that it only uses the `id`
+		// field of the *Transaction object, not any of the state within the
+		// *Transaction object which needs protection via the *transactionWrapper.
+		nq = nq.Transaction(bds.transaction.tx)
 	}
 	if ns := bds.kc.Namespace; ns != "" {
 		nq = nq.Namespace(ns)
@@ -633,14 +642,42 @@ func (npls *nativePropertyLoadSaver) Save() ([]datastore.Property, error) {
 	return props, nil
 }
 
-var datastoreTransactionKey = "*datastore.Transaction"
-
-func withDatastoreTransaction(c context.Context, tx *datastore.Transaction) context.Context {
-	return context.WithValue(c, &datastoreTransactionKey, tx)
+// transactionWrapper provides a Mutex around mutation calls on the Transaction.
+//
+// This is required until https://github.com/googleapis/google-cloud-go/issues/3750
+// is fixed.
+type transactionWrapper struct {
+	mu sync.Mutex
+	tx *datastore.Transaction
 }
 
-func datastoreTransaction(c context.Context) *datastore.Transaction {
-	if tx, ok := c.Value(&datastoreTransactionKey).(*datastore.Transaction); ok {
+func (tw *transactionWrapper) GetMulti(keys []*datastore.Key, dst interface{}) (err error) {
+	// We don't acquire a lock here because as of 2021 Q1 Transaction.GetMulti
+	// only reads the Transaction.id field, and doesn't make any mutations to the
+	// *Transaction state at all.
+	return tw.tx.GetMulti(keys, dst)
+}
+
+func (tw *transactionWrapper) PutMulti(keys []*datastore.Key, src interface{}) (ret []*datastore.PendingKey, err error) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	return tw.tx.PutMulti(keys, src)
+}
+
+func (tw *transactionWrapper) DeleteMulti(keys []*datastore.Key) (err error) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	return tw.tx.DeleteMulti(keys)
+}
+
+var datastoreTransactionKey = "*transactionWrapper"
+
+func withDatastoreTransaction(c context.Context, tx *datastore.Transaction) context.Context {
+	return context.WithValue(c, &datastoreTransactionKey, &transactionWrapper{tx: tx})
+}
+
+func datastoreTransaction(c context.Context) *transactionWrapper {
+	if tx, ok := c.Value(&datastoreTransactionKey).(*transactionWrapper); ok {
 		return tx
 	}
 	return nil
