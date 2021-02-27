@@ -179,6 +179,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1acfb4f2_bae45f96",
+        "filename": "logdog/client/butler/output/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-27T01:14:43Z",
+      "side": 1,
+      "message": "\u003e Note that `string` doesn\u0027t imply an encoding, just the operations you do on it (https://blog.golang.org/strings - \"\"\"In Go, a string is in effect a read-only slice of bytes... It\u0027s important to state right up front that a string holds arbitrary bytes.\"\"\")\n\nTIL, thanks!",
+      "parentUuid": "c4e774ae_46041976",
+      "range": {
+        "startLine": 69,
+        "startChar": 15,
+        "endLine": 69,
+        "endChar": 31
+      },
+      "revId": "713e6f917252cc2b119b57be44d7e9598bcf56e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "f4ed57a7_ca417bff",
         "filename": "logdog/client/butler/output/memory/memory.go",
         "patchSetId": 1
