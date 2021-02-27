@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54fc7392_f134a58b",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T06:38:08Z",
+      "side": 1,
+      "message": "jfyi, it should be safe to call cancel() twice.\nhttps://github.com/googleapis/google-cloud-go/blob/spanner/v1.15.0/spanner/batch.go#L211",
+      "range": {
+        "startLine": 192,
+        "startChar": 1,
+        "endLine": 192,
+        "endChar": 9
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
