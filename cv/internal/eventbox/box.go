@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/cv/internal/dsset"
+	"go.chromium.org/luci/cv/internal/eventbox/dsset"
 )
 
 // Emit emits a new event with provided value and auto-generated unique ID.
