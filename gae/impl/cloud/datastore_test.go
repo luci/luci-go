@@ -171,19 +171,11 @@ func TestBoundDatastore(t *testing.T) {
 
 // TestDatastore tests the cloud datastore implementation.
 //
-// This test uses the gcloud datastore emulator. Like the Go datastore package,
-// the emulator must use the gRPC interface. At the time of writing, the
-// emulator included with the "gcloud" tool is an older emulator that does NOT
-// support gRPC.
+// Run the emulator:
+// $ gcloud beta emulators datastore start
 //
-// Download the emulator linked here:
-// https://code.google.com/p/google-cloud-sdk/issues/detail?id=719#c3
-//
-// Run it in "--testing" mode, which removes random consistency failures and
-// runs in-memory:
-// $ ./gcd.sh start --testing
-//
-// Export the DATASTORE_EMULATOR_HOST environment variable. By default:
+// Export the DATASTORE_EMULATOR_HOST environment variable, which the above
+// command printed. By default:
 // $ export DATASTORE_EMULATOR_HOST=localhost:8080
 //
 // If the emulator environment is not detected, this test will be skipped.
