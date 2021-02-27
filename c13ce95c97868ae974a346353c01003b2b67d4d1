@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "778cdb15_6da62445",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-27T07:42:44Z",
+      "side": 1,
+      "message": "Did you get it from `gcloud beta emulators datastore env-init`?",
+      "range": {
+        "startLine": 11,
+        "startChar": 2,
+        "endLine": 11,
+        "endChar": 41
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9e82962a_2113c235",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-27T07:42:44Z",
+      "side": 1,
+      "message": "Can you do that? as you point out in the comment that the emulator is running in legacy mode now.",
+      "range": {
+        "startLine": 53,
+        "startChar": 28,
+        "endLine": 53,
+        "endChar": 65
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9af8eb7b_80d9f674",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-27T07:42:44Z",
+      "side": 1,
+      "message": "period",
+      "range": {
+        "startLine": 73,
+        "startChar": 54,
+        "endLine": 73,
+        "endChar": 55
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f82fd193_605ddebb",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-27T07:42:44Z",
+      "side": 1,
+      "message": "nit: this doesn\u0027t need to be named variable anymore. But for readability, I\u0027m okay with it.",
+      "range": {
+        "startLine": 77,
+        "startChar": 24,
+        "endLine": 77,
+        "endChar": 59
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d628f6f_ac3df41e",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-27T07:42:44Z",
+      "side": 1,
+      "message": "Should this be in else block? i.e. Do we still need to install memory backed datastore once we have emulator installed?",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 130,
+        "endChar": 43
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5368a274_7a7a1750",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-02-27T07:42:44Z",
+      "side": 1,
+      "message": "Maybe we can do this in cleanup func as well so that we delete everything after test complete.",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 48
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
