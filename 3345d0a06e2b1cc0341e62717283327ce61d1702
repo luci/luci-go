@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "29d0631b_9e6730bf",
+        "filename": "resultdb/internal/artifacts/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "This func removed.",
+      "parentUuid": "acfd1eee_cf01ab94",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 10
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a06032dc_e529f8f1",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-02-23T19:32:42Z",
       "side": 1,
       "message": "What if actualSize or actualHash is not valid?",
+      "range": {
+        "startLine": 125,
+        "startChar": 2,
+        "endLine": 129,
+        "endChar": 81
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e8212eb_312b67c4",
+        "filename": "resultdb/internal/artifacts/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "It will override the existing entry. create_artifact.go via the HTTP interface also has the same check.\n\nI ran a query and sampled a couple of artifacts w/ null in RBECASHash.\n- https://chromium-swarm.appspot.com/task?id\u003d4c9c01b1507ef811\n- https://chromium-swarm.appspot.com/task?id\u003d4de3707c09427811\n\nboth were uploaded w/o hash but size, interestingly.\n- https://screenshot.googleplex.com/B76ARvVKy2eKSKe\n\nOne was uploaded on Jun 2020, and the other one was on Aug 2020. I bet that they were both from my experimental LED/try builds.\n\nThinking now, an artifact w/o hash and size sounds like a bug. I changed the logic to reject an artifact, if the same name of an artifact was created w/o hash and size.",
+      "parentUuid": "a06032dc_e529f8f1",
       "range": {
         "startLine": 125,
         "startChar": 2,
@@ -98,6 +146,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8c3b251_130d5d21",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "good point. done",
+      "parentUuid": "e2e7340c_b86e54f4",
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d4d5d8a4_ac275acb",
@@ -111,6 +177,30 @@
       "writtenOn": "2021-02-23T18:00:49Z",
       "side": 1,
       "message": "typo",
+      "range": {
+        "startLine": 76,
+        "startChar": 48,
+        "endLine": 76,
+        "endChar": 59
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "12e325e0_309f0fee",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4d5d8a4_ac275acb",
       "range": {
         "startLine": 76,
         "startChar": 48,
@@ -144,6 +234,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "67feadbd_1489c98f",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c7f7330_e6f6f08d",
+      "range": {
+        "startLine": 77,
+        "startChar": 3,
+        "endLine": 77,
+        "endChar": 7
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "693b0858_4dcd3ce3",
@@ -157,6 +271,30 @@
       "writtenOn": "2021-02-23T18:00:49Z",
       "side": 1,
       "message": "this is an invalid request, no?",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 3
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0130197_b0297b43",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "right. the field is marked as required. updated to return an error instead.",
+      "parentUuid": "693b0858_4dcd3ce3",
       "range": {
         "startLine": 86,
         "startChar": 0,
@@ -190,6 +328,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1ba480f_55156e23",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "fixed.",
+      "parentUuid": "807b56c6_1c140220",
+      "range": {
+        "startLine": 97,
+        "startChar": 41,
+        "endLine": 97,
+        "endChar": 49
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3c6e116a_ee0360bb",
@@ -207,6 +369,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5fadf20a_de2f90c8",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "Added at L119 in the new patchset.",
+      "parentUuid": "3c6e116a_ee0360bb",
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0fa71a09_e8a84e27",
@@ -220,6 +400,30 @@
       "writtenOn": "2021-02-23T18:00:49Z",
       "side": 1,
       "message": "validate it too?\nhttps://golang.org/pkg/mime/#ParseMediaType",
+      "range": {
+        "startLine": 113,
+        "startChar": 16,
+        "endLine": 113,
+        "endChar": 40
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a83469a_9f88fd3b",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "Done at L100 in the new patchset.",
+      "parentUuid": "0fa71a09_e8a84e27",
       "range": {
         "startLine": 113,
         "startChar": 16,
@@ -277,6 +481,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "91e74623_2c0c5c17",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "done with errgroup. I like it just because I can save one indent level.",
+      "parentUuid": "f2e4526a_46e3a2ab",
+      "range": {
+        "startLine": 135,
+        "startChar": 8,
+        "endLine": 135,
+        "endChar": 25
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "94022b13_89e836f2",
@@ -290,6 +518,30 @@
       "writtenOn": "2021-02-22T21:31:21Z",
       "side": 1,
       "message": "does it make sense to dedupe it?",
+      "range": {
+        "startLine": 147,
+        "startChar": 13,
+        "endLine": 147,
+        "endChar": 37
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "266eed79_840cf7fc",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "done.",
+      "parentUuid": "94022b13_89e836f2",
       "range": {
         "startLine": 147,
         "startChar": 13,
@@ -331,6 +583,24 @@
       "side": 1,
       "message": "i meant \"one\" RPC. Currently it makes N concurrent RPCs (without any concurrency limiting)",
       "parentUuid": "a071d272_5c21a6fc",
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4305d77f_cb184cd5",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:53:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2ddf67d_41bfe343",
       "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
