@@ -259,7 +259,7 @@ func (bds *boundDatastore) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) erro
 }
 
 func (bds *boundDatastore) WithoutTransaction() context.Context {
-	return withDatastoreTransaction(bds, nil)
+	return withoutDatastoreTransaction(bds)
 }
 
 func (bds *boundDatastore) CurrentTransaction() ds.Transaction {
@@ -676,9 +676,13 @@ func withDatastoreTransaction(c context.Context, tx *datastore.Transaction) cont
 	return context.WithValue(c, &datastoreTransactionKey, &transactionWrapper{tx: tx})
 }
 
+func withoutDatastoreTransaction(c context.Context) context.Context {
+	return context.WithValue(c, &datastoreTransactionKey, nil)
+}
+
 func datastoreTransaction(c context.Context) *transactionWrapper {
-	if tx, ok := c.Value(&datastoreTransactionKey).(*transactionWrapper); ok {
-		return tx
+	if tw, ok := c.Value(&datastoreTransactionKey).(*transactionWrapper); ok {
+		return tw
 	}
 	return nil
 }
