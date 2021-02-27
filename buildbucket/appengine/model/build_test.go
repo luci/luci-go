@@ -17,6 +17,7 @@ package model
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
@@ -259,6 +260,51 @@ func TestBuild(t *testing.T) {
 					},
 				},
 			})
+		})
+
+		Convey("LegacyProperties", func() {
+			So(datastore.Put(ctx, &Build{
+				ID: 1,
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status: pb.Status_SUCCESS,
+				},
+				CreateTime: testclock.TestRecentTimeUTC,
+				LegacyProperties: LegacyProperties{
+					ResultDetails: []byte{},
+					LeaseProperties: LeaseProperties{
+						LeaseExpirationDate: time.Time{},
+						LeaseKey:            0,
+					},
+				},
+			}), ShouldBeNil)
+
+			b := &Build{
+				ID: 1,
+			}
+			So(datastore.Get(ctx, b), ShouldBeNil)
+			So(b.LegacyProperties, ShouldResemble, LegacyProperties{
+				ResultDetails: nil,
+				LeaseProperties: LeaseProperties{
+					LeaseExpirationDate: time.Time{},
+					LeaseKey:            0,
+				},
+			})
+			/*So(&b.Proto, ShouldResembleProto, &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status:     pb.Status_SUCCESS,
+				UpdateTime: t0pb,
+			})*/
 		})
 	})
 }
