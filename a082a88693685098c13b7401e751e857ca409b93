@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dc57741_472aa972",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-27T03:22:26Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "a082a88693685098c13b7401e751e857ca409b93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7695cf77_46c72464",
+        "filename": "gae/impl/cloud/datastore.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 675,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-27T03:22:26Z",
+      "side": 1,
+      "message": "why not\n\n   if tx \u003d\u003d nil { put nil in ctx}\n\n?",
+      "range": {
+        "startLine": 675,
+        "startChar": 5,
+        "endLine": 675,
+        "endChar": 29
+      },
+      "revId": "a082a88693685098c13b7401e751e857ca409b93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
