@@ -49,6 +49,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a9307526_1ab5b30e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-27T21:55:13Z",
+      "side": 1,
+      "message": "I haven\u0027t found emulator yet, but we can definitely connect to datastore in some cloud project.",
+      "parentUuid": "9e82962a_2113c235",
+      "range": {
+        "startLine": 53,
+        "startChar": 28,
+        "endLine": 53,
+        "endChar": 65
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9af8eb7b_80d9f674",
         "filename": "cv/internal/cvtesting/util.go",
         "patchSetId": 1
@@ -60,6 +84,30 @@
       "writtenOn": "2021-02-27T07:42:44Z",
       "side": 1,
       "message": "period",
+      "range": {
+        "startLine": 73,
+        "startChar": 54,
+        "endLine": 73,
+        "endChar": 55
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03652584_f450e61b",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-27T21:55:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9af8eb7b_80d9f674",
       "range": {
         "startLine": 73,
         "startChar": 54,
@@ -83,6 +131,30 @@
       "writtenOn": "2021-02-27T07:42:44Z",
       "side": 1,
       "message": "nit: this doesn\u0027t need to be named variable anymore. But for readability, I\u0027m okay with it.",
+      "range": {
+        "startLine": 77,
+        "startChar": 24,
+        "endLine": 77,
+        "endChar": 59
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ebfe159_3d95ab1c",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-27T21:55:13Z",
+      "side": 1,
+      "message": "yeah, exactly my thought.",
+      "parentUuid": "f82fd193_605ddebb",
       "range": {
         "startLine": 77,
         "startChar": 24,
@@ -118,6 +190,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d70eebaa_cd102580",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-27T21:55:13Z",
+      "side": 1,
+      "message": "It\u0027s in the logical `else` block, because iff emulator was installed, L125 would have returned. Either you missed that, or I am not getting your question.",
+      "parentUuid": "2d628f6f_ac3df41e",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 130,
+        "endChar": 43
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5368a274_7a7a1750",
         "filename": "cv/internal/cvtesting/util.go",
         "patchSetId": 1
@@ -129,6 +225,30 @@
       "writtenOn": "2021-02-27T07:42:44Z",
       "side": 1,
       "message": "Maybe we can do this in cleanup func as well so that we delete everything after test complete.",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 48
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d1616614_ac1e1eb3",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-27T21:55:13Z",
+      "side": 1,
+      "message": "good idea, done.",
+      "parentUuid": "5368a274_7a7a1750",
       "range": {
         "startLine": 170,
         "startChar": 0,
