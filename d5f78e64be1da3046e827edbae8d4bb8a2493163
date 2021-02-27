@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2b18d28_4d853575",
+        "filename": "gae/impl/cloud/datastore.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-27T00:41:52Z",
+      "side": 1,
+      "message": "Yeah I felt so too, but didn\u0027t want to end up copying a mutex or something if they add one.",
+      "parentUuid": "bddc79e7_67e426ac",
+      "range": {
+        "startLine": 651,
+        "startChar": 4,
+        "endLine": 651,
+        "endChar": 5
+      },
+      "revId": "d5f78e64be1da3046e827edbae8d4bb8a2493163",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5089596f_b0602fd5",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-27T00:38:35Z",
       "side": 1,
       "message": "Is this actually useful for anything? \n\nShould we RWLock?",
+      "range": {
+        "startLine": 655,
+        "startChar": 0,
+        "endLine": 656,
+        "endChar": 21
+      },
+      "revId": "d5f78e64be1da3046e827edbae8d4bb8a2493163",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce8416c7_10ba838f",
+        "filename": "gae/impl/cloud/datastore.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 656,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-02-27T00:41:52Z",
+      "side": 1,
+      "message": "Hm good point; I thought that maybe the transaction object kept a list of \u0027touched\u0027 keys, but you\u0027re right it doesn\u0027t (just uses the transaction ID). If you\u0027re OK assuming that won\u0027t change (probably true?) then I\u0027ll just drop the lock here.",
+      "parentUuid": "5089596f_b0602fd5",
       "range": {
         "startLine": 655,
         "startChar": 0,
