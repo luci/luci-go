@@ -173,6 +173,18 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	if len(b.LegacyProperties.ResultDetails) == 0 {
 		p["result_details"] = datastore.MkProperty(nil)
 	}
+	// When a build is finalized, py.UpdateBuild() clears lease_expiration_date, lease_key,
+	// and leasee. rpc/update_build.go clears them by setting nil on leasee, but the default
+	// value on lease_expiration_date and lease_key, which are not recognized as None, as
+	// described above. The below logic is to set null in the datastore for the fields,
+	// so that Python will handle them correctly.
+	if b.LegacyProperties.LeaseExpirationDate.IsZero() {
+		p["lease_expiration_date"] = datastore.MkProperty(nil)
+	}
+	if b.LegacyProperties.LeaseKey == 0 {
+		p["lease_key"] = datastore.MkProperty(nil)
+	}
+
 	// Writing a value for PubSubCallback confuses the Python implementation which
 	// expects PubSubCallback to be a LocalStructuredProperty. See also unused.go.
 	delete(p, "pubsub_callback")
