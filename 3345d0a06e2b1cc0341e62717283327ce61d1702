@@ -552,6 +552,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b93a86e1_dbd3f4f8",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:56:43Z",
+      "side": 1,
+      "message": "marking as done",
+      "parentUuid": "266eed79_840cf7fc",
+      "range": {
+        "startLine": 147,
+        "startChar": 13,
+        "endLine": 147,
+        "endChar": 37
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a071d272_5c21a6fc",
@@ -618,6 +642,30 @@
       "writtenOn": "2021-02-23T18:00:49Z",
       "side": 1,
       "message": "this may panic. The returned error is already appstatus-annotated",
+      "range": {
+        "startLine": 178,
+        "startChar": 14,
+        "endLine": 178,
+        "endChar": 78
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1462c4ed_708517da",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-02-27T05:56:43Z",
+      "side": 1,
+      "message": "If this panic, this should also panic.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/invocation.go;l\u003d88",
+      "parentUuid": "b8225dee_3eb84c7c",
       "range": {
         "startLine": 178,
         "startChar": 14,
