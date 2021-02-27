@@ -17,16 +17,24 @@ package cvtesting
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"os"
 	"testing"
 	"time"
+
+	nativeDatastore "cloud.google.com/go/datastore"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -61,6 +69,9 @@ type Test struct {
 	// with limited CPU resources.
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
+
+	// cleanups are executed in reverse order in cleanup()
+	cleanups []func()
 }
 
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
@@ -72,12 +83,17 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		t.GFake = &gf.Fake{}
 	}
 
-	topCtx, cancel := context.WithTimeout(context.Background(), t.MaxDuration)
-	deferme = func() {
-		// Fail the test if the topCtx timed out.
+	ctx = context.Background()
+	if testing.Verbose() {
+		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+	}
+
+	topCtx, cancel := context.WithTimeout(ctx, t.MaxDuration)
+	t.cleanups = append(t.cleanups, func() {
+		// Fail the test if the topCtx has timed out.
 		So(topCtx.Err(), ShouldBeNil)
 		cancel()
-	}
+	})
 
 	// Use a date-time that is easy to eyeball in logs.
 	utc := time.Date(2020, time.February, 2, 10, 30, 00, 0, time.UTC)
@@ -90,15 +106,70 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		t.Clock.Add(dur)
 	})
 
-	ctx = txndefer.FilterRDS(memory.Use(ctx))
-	datastore.GetTestable(ctx).AutoIndex(true)
-	datastore.GetTestable(ctx).Consistent(true)
-
-	if testing.Verbose() {
-		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-	}
+	ctx = t.installDS(ctx)
+	ctx = txndefer.FilterRDS(ctx)
 
 	ctx = t.GFake.Install(ctx)
 	ctx, t.TQ = tq.TestingContext(ctx, nil)
-	return
+	return ctx, t.cleanup
+}
+
+func (t *Test) cleanup() {
+	for i := len(t.cleanups) - 1; i >= 0; i-- {
+		t.cleanups[i]()
+	}
+}
+
+func (t *Test) installDS(ctx context.Context) context.Context {
+	if ctx, ok := t.installDSEmulator(ctx); ok {
+		return ctx
+	}
+	ctx = memory.Use(ctx)
+	// CV runs against Firestore backend, which is consistent.
+	datastore.GetTestable(ctx).Consistent(true)
+	datastore.GetTestable(ctx).AutoIndex(true)
+	return ctx
+}
+
+// installDSEmulator configures CV tests to run with DS emulator.
+//
+// If DATASTORE_EMULATOR_HOST ENV var isn't set, returns false.
+//
+// To use, run
+//
+//     $ gcloud beta emulators datastore start --consistency=1.0
+//
+// and export DATASTORE_EMULATOR_HOST as printed by above command.
+//
+// NOTE: as of Feb 2021, emulator runs in legacy Datastore mode,
+// not Firestore.
+func (t *Test) installDSEmulator(ctx context.Context) (context.Context, bool) {
+	emulatorHost := os.Getenv("DATASTORE_EMULATOR_HOST")
+	if emulatorHost == "" {
+		return ctx, false
+	}
+
+	logging.Debugf(ctx, "Using DS emulator at %q", emulatorHost)
+	client, err := nativeDatastore.NewClient(ctx, "luci-gae-test")
+	So(err, ShouldBeNil)
+	t.cleanups = append(t.cleanups, func() {
+		if err := client.Close(); err != nil {
+			logging.Errorf(ctx, "failed to close DS client: %s", err)
+		}
+	})
+	ctx = (&cloud.Config{ProjectID: "luci-ds-emulator-test", DS: client}).Use(ctx, nil)
+
+	// Enter a namespace for this tests.
+	randNamespace := make([]byte, 32)
+	if _, err := rand.Read(randNamespace); err != nil {
+		panic(err)
+	}
+	ctx = info.MustNamespace(ctx, fmt.Sprintf("testing-%s", hex.EncodeToString(randNamespace)))
+
+	// Execute a kindless query to clear the namespace.
+	q := datastore.NewQuery("").KeysOnly(true)
+	var allKeys []*datastore.Key
+	So(datastore.GetAll(ctx, q, &allKeys), ShouldBeNil)
+	So(datastore.Delete(ctx, allKeys), ShouldBeNil)
+	return ctx, true
 }
