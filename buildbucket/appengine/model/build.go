@@ -161,7 +161,7 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 		return nil, err
 	}
 	// ResultDetails is only set via v1 API. For builds only manipulated with the
-	// v2 API, this column will be missing in the datastore in Python. Python
+	// v2 API, the column will be missing in the datastore in Python. Python
 	// interprets this field as JSON, and a missing value is loaded as None which
 	// Python loads as the empty JSON dict. However in Go, in order to preserve
 	// the value of this field without having to interpret it, the type is set
@@ -173,6 +173,18 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	if len(b.LegacyProperties.ResultDetails) == 0 {
 		p["result_details"] = datastore.MkProperty(nil)
 	}
+	// When a build is finalized, py.UpdateBuild() clear lease_expiration_date, lease_key,
+	// and leasee. rpc/update_build.go clears them by setting nil on leasee, but the default
+	// value on lease_expiration_date and lease_key, which are not recognized as None, as
+	// described above. This defaults the value on the fields to null in the datastore
+	// which Python will handle correctly.
+	if b.LegacyProperties.LeaseExpirationDate.IsZero() {
+		p["lease_expiration_date"] = datastore.MkProperty(nil)
+	}
+	if b.LegacyProperties.LeaseKey == 0 {
+		p["lease_key"] = datastore.MkProperty(nil)
+	}
+
 	// Writing a value for PubSubCallback confuses the Python implementation which
 	// expects PubSubCallback to be a LocalStructuredProperty. See also unused.go.
 	delete(p, "pubsub_callback")
