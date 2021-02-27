@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b9b1b7c_31ffd820",
+        "filename": "gae/impl/cloud/datastore.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-27T02:38:21Z",
+      "side": 1,
+      "message": "this doesn\u0027t work any more.\nFix: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2725452",
+      "revId": "981595e791ad51c3fa04c3d3e6c4e380d5908b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
