@@ -142,13 +142,18 @@ export class InvocationState {
   }
 
   @computed
+  get totalFilteredVariantCount() {
+    return this.filteredUnexpectedVariants.length
+      + this.filteredUnexpectedlySkippedVariants.length
+      + this.filteredFlakyVariants.length
+      + this.filteredExoneratedVariants.length
+      + this.filteredExpectedVariants.length;
+  }
+
+  @computed
   get totalDisplayedVariantCount() {
     if (!this.multiSections) {
-      return this.filteredUnexpectedVariants.length
-        + this.filteredUnexpectedlySkippedVariants.length
-        + this.filteredFlakyVariants.length
-        + this.filteredExoneratedVariants.length
-        + this.filteredExpectedVariants.length;
+      return this.totalFilteredVariantCount;
     }
 
     return (this.showUnexpectedVariants ? this.filteredUnexpectedVariants.length : 0)
