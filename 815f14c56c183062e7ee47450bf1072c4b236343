@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c479579_6afb3361",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-28T23:17:36Z",
+      "side": 1,
+      "message": "LGTM, it\u0027s good to be able to simplify a bit :-)",
+      "revId": "815f14c56c183062e7ee47450bf1072c4b236343",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
