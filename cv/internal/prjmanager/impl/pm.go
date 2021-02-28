@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -94,6 +95,9 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
 func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) (ts []eventbox.Transition, noops eventbox.Events, err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/Mutate")
+	defer func() { span.End(err) }()
+
 	tr := &triageResult{}
 	for _, e := range events {
 		tr.triage(ctx, e)

@@ -22,13 +22,15 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
-	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -125,13 +127,15 @@ var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("the task should be d
 //
 //   * all other errors are non retryable and typically indicate a bug or severe
 //     misconfiguration. For example, lack of ProjectStateOffload entity.
-func (rb *RunBuilder) Create(ctx context.Context) (*run.Run, error) {
+func (rb *RunBuilder) Create(ctx context.Context) (ret *run.Run, err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")
+	defer func() { span.End(err) }()
+
 	if err := rb.prepare(ctx); err != nil {
 		return nil, err
 	}
-	var ret *run.Run
 	var innerErr error
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		ret, innerErr = rb.createTransactionally(ctx)
 		return innerErr
 	}, nil)
