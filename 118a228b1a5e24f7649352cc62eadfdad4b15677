@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da2fb7c8_143fa0ac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-02-28T01:20:39Z",
+      "side": 1,
+      "message": "Vadim, WDYT? Should I do the same thing for dsset in scheduler?",
+      "revId": "118a228b1a5e24f7649352cc62eadfdad4b15677",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
