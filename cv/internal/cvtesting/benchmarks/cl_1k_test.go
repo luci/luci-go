@@ -66,7 +66,7 @@ func BenchmarkLoadCLsUsage1K(b *testing.B) {
 	cls := initCLObjects(b.N)
 
 	benchmarkRAMper1KObjects(b, "CL", func() {
-		if err := changelist.LoadMulti(ctx, cls); err != nil {
+		if err := datastore.Get(ctx, cls); err != nil {
 			panic(err)
 		}
 	})

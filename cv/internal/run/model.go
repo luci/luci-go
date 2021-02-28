@@ -20,9 +20,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -138,62 +135,4 @@ type RunCL struct {
 	Run     *datastore.Key `gae:"$parent"`
 	Detail  *changelist.Snapshot
 	Trigger *Trigger
-}
-
-// LoadMulti is datastore.Get(ctx, runs) which parallelizes & batches, staying
-// within Datatstore limits even for large number of Runs.
-//
-// TODO(tandrii): generalize it via reflection or once Go finally gets Generics.
-// The same code also exists in changelist package.
-func LoadMulti(ctx context.Context, runs []*Run) (err error) {
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/run/LoadMulti")
-	defer func() { span.End(err) }()
-
-	// maxBatchSize limits how many Runs can be loaded at once.
-	//
-	// Datastore hard limit is 1000 [1], but actual Lookup API [2]
-	// may have to be called multiple times until all results are fetched [3].
-	// So, be conservative here.
-	// [1] https://cloud.google.com/datastore/docs/concepts/limits
-	// [2] https://godoc.org/cloud.google.com/go/datastore#Client.GetMulti
-	// [3] https://github.com/googleapis/google-cloud-go/blob/e38884163dd4acca7c10dcf5f21831c69af5bc18/datastore/datastore.go#L430
-	const maxBatchSize = 512
-
-	concurrency := 1 + len(runs)/maxBatchSize
-	if concurrency > 16 {
-		concurrency = 16
-	}
-
-	lazyErrors := errors.NewLazyMultiError(len(runs))
-	perr := parallel.WorkPool(concurrency, func(work chan<- func() error) {
-		for i := 0; i < len(runs); i += maxBatchSize {
-			i := i
-			batch := runs[i:]
-			if len(batch) > maxBatchSize {
-				batch = batch[:maxBatchSize]
-			}
-			work <- func() error {
-				err := datastore.Get(ctx, batch)
-				if err == nil {
-					return nil
-				}
-				if merr, ok := err.(errors.MultiError); ok {
-					for j, err := range merr {
-						if err != nil {
-							lazyErrors.Assign(i+j, err)
-						}
-					}
-					return nil
-				}
-				return err // singular error only.
-			}
-		}
-	})
-	switch {
-	case perr != nil:
-		err = common.MostSevereError(err)
-	default:
-		err = lazyErrors.Get()
-	}
-	return
 }
