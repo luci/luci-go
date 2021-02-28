@@ -62,13 +62,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
 )
-
-// batchSize is total number of items to pass to PutMulti or DeleteMulti RPCs.
-const batchSize = 500
 
 // Set holds a set of Items and uses tombstones to achieve idempotency of Add.
 //
@@ -173,9 +169,7 @@ func (s *Set) Add(c context.Context, items []Item) error {
 			Value:  itm.Value,
 		}
 	}
-	return transient.Tag.Apply(batchOp(len(entities), func(start, end int) error {
-		return datastore.Put(c, entities[start:end])
-	}))
+	return transient.Tag.Apply(datastore.Put(c, entities))
 }
 
 // List returns all items that are currently in the set (in arbitrary order),
@@ -288,13 +282,7 @@ func (s *Set) Delete(ctx context.Context, nextID func() string) (err error) {
 		}
 		keys = append(keys, datastore.NewKey(ctx, "dsset.Item", id, 0, s.Parent))
 	}
-	err = batchOp(len(keys), func(start, end int) error {
-		return datastore.Delete(ctx, keys[start:end])
-	})
-	if err != nil {
-		return transient.Tag.Apply(err)
-	}
-	return nil
+	return transient.Tag.Apply(datastore.Delete(ctx, keys))
 }
 
 // PopOp is an in-progress 'Pop' operation.
@@ -498,10 +486,7 @@ func CleanupGarbage(ctx context.Context, cleanup ...Garbage) (err error) {
 		}
 	}
 
-	err = batchOp(len(keys), func(start, end int) error {
-		return datastore.Delete(ctx, keys[start:end])
-	})
-	if err != nil {
+	if err := datastore.Delete(ctx, keys); err != nil {
 		return transient.Tag.Apply(err)
 	}
 
@@ -535,53 +520,4 @@ type tombstonesEntity struct {
 		ID         string
 		Tombstoned time.Time
 	} `gae:",noindex"`
-}
-
-// batchOp splits 'total' into batches and calls 'op' in parallel.
-//
-// Doesn't preserve order of returned errors! Don't try to deconstruct the
-// returned multi error, the position of individual errors there does not
-// correlate with the original array.
-func batchOp(total int, op func(start, end int) error) error {
-	switch {
-	case total == 0:
-		return nil
-	case total <= batchSize:
-		return op(0, total)
-	}
-
-	errs := make(chan error)
-	ops := 0
-	offset := 0
-	for total > 0 {
-		count := batchSize
-		if count > total {
-			count = total
-		}
-		go func(start, end int) {
-			errs <- op(start, end)
-		}(offset, offset+count)
-		offset += count
-		total -= count
-		ops++
-	}
-
-	var all errors.MultiError
-	for i := 0; i < ops; i++ {
-		err := <-errs
-		if merr, yep := err.(errors.MultiError); yep {
-			for _, e := range merr {
-				if e != nil {
-					all = append(all, e)
-				}
-			}
-		} else if err != nil {
-			all = append(all, err)
-		}
-	}
-
-	if len(all) == 0 {
-		return nil
-	}
-	return all
 }
