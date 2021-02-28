@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a18d734_fe6a0f01",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-28T23:04:45Z",
+      "side": 1,
+      "message": "Hi, I updated the design. Please take a look.\nNow whenever a loading activity occur, at least one test variant will be loaded.",
+      "revId": "2b68fb404f8976e817aa910b9d518b60b7b54fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6bf6bdfb_5fe8bd62",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-28T23:04:45Z",
+      "side": 1,
+      "message": "The loading logic is split between test loader and test result tab.\nI\u0027ll move all loading/filtering to test loader in the next CL.",
+      "revId": "2b68fb404f8976e817aa910b9d518b60b7b54fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

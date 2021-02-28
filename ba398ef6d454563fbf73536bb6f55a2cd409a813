@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea500ea2_06e4aa88",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-28T23:04:45Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "c89fc0ad_d2b52fc0",
+      "range": {
+        "startLine": 46,
+        "startChar": 10,
+        "endLine": 46,
+        "endChar": 32
+      },
+      "revId": "ba398ef6d454563fbf73536bb6f55a2cd409a813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "10a989bb_fc4f18cc",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-02-26T20:55:37Z",
       "side": 1,
       "message": "untilStatus is lost here.",
+      "range": {
+        "startLine": 70,
+        "startChar": 26,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "ba398ef6d454563fbf73536bb6f55a2cd409a813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "565eeb23_5ae5378f",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-28T23:04:45Z",
+      "side": 1,
+      "message": "untilStatus is not needed because if it was specified, L62 would\u0027ve loaded all the pages until that status.",
+      "parentUuid": "10a989bb_fc4f18cc",
       "range": {
         "startLine": 70,
         "startChar": 26,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4bb53e11_a1dc5ed0",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-28T23:04:45Z",
+      "side": 1,
+      "message": "Good point.\n\nI simplified the design to:\nWhenever a load more activity is triggered (by clicking on load more or when loading pages), at least one test variant will be loaded.",
+      "parentUuid": "f0e4df53_10a1ac46",
+      "range": {
+        "startLine": 136,
+        "startChar": 57,
+        "endLine": 137,
+        "endChar": 20
+      },
+      "revId": "ba398ef6d454563fbf73536bb6f55a2cd409a813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d3ced8e8_cea046ba",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-02-26T20:55:37Z",
       "side": 1,
       "message": "why do the two fields have inconsistent names?",
+      "range": {
+        "startLine": 138,
+        "startChar": 11,
+        "endLine": 138,
+        "endChar": 33
+      },
+      "revId": "ba398ef6d454563fbf73536bb6f55a2cd409a813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7c4253c_d5fb1e8d",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-02-28T23:04:45Z",
+      "side": 1,
+      "message": "Removed.\nIt was because they server different purposes.\nOne records the past behaviour (used to restore the search param), one indicates whether the page should force load.",
+      "parentUuid": "d3ced8e8_cea046ba",
       "range": {
         "startLine": 138,
         "startChar": 11,
