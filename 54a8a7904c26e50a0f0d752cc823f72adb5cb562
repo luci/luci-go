@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1b78a5b_ab4f40ab",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-28T23:01:02Z",
+      "side": 1,
+      "message": "Sort of unrelated to this CL: Interestingly, the past tense of panic is \"panicked\" with a k. (Also... picnic/picnicked\")",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 12
+      },
+      "revId": "54a8a7904c26e50a0f0d752cc823f72adb5cb562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6cfe444c_cfbb8788",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-28T23:01:02Z",
+      "side": 1,
+      "message": "nit: panicked",
+      "range": {
+        "startLine": 178,
+        "startChar": 5,
+        "endLine": 178,
+        "endChar": 12
+      },
+      "revId": "54a8a7904c26e50a0f0d752cc823f72adb5cb562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d98793dc_f9df9fc7",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-28T23:01:02Z",
+      "side": 1,
+      "message": "But do we want it in prod? Does this mean that all panics will be caught at some point, even in production? (If so, if a panic occurs in prod do will still get a error log and a 5xx status?)",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 46
+      },
+      "revId": "54a8a7904c26e50a0f0d752cc823f72adb5cb562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
