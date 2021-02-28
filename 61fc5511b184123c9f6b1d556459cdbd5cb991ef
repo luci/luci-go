@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "12124e90_8e5433f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-28T23:15:51Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "61fc5511b184123c9f6b1d556459cdbd5cb991ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b4645e9_b635ece6",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-28T23:15:51Z",
+      "side": 1,
+      "message": "helpful comment :-)",
+      "revId": "61fc5511b184123c9f6b1d556459cdbd5cb991ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "12a055d3_10fc8f88",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-02-28T23:15:51Z",
+      "side": 1,
+      "message": "buffered",
+      "range": {
+        "startLine": 420,
+        "startChar": 61,
+        "endLine": 420,
+        "endChar": 68
+      },
+      "revId": "61fc5511b184123c9f6b1d556459cdbd5cb991ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
