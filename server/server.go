@@ -72,6 +72,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"cloud.google.com/go/errorreporting"
 	"cloud.google.com/go/profiler"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
@@ -231,6 +232,8 @@ type Options struct {
 
 	EnableExperiments []string // names of go.chromium.org/luci/server/experiments to enable
 
+	CloudErrorReporting bool // set to true to enable Cloud Error Reporting
+
 	testSeed           int64                   // used to seed rng in tests
 	testStdout         sdlogger.LogEntryWriter // mocks stdout in tests
 	testStderr         sdlogger.LogEntryWriter // mocks stderr in tests
@@ -363,6 +366,13 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"container-image-id",
 		o.ContainerImageID,
 		"ID of the container image with this binary, for logs (optional)",
+	)
+
+	f.BoolVar(
+		&o.CloudErrorReporting,
+		"cloud-error-reporting",
+		o.CloudErrorReporting,
+		"Enable Cloud Error Reporting",
 	)
 
 	// See go.chromium.org/luci/server/experiments.
@@ -515,8 +525,9 @@ type Server struct {
 	startTime   time.Time    // for calculating uptime for /healthz
 	lastReqTime atomic.Value // time.Time when the last request started
 
-	stdout sdlogger.LogEntryWriter // for logging to stdout, nil in dev mode
-	stderr sdlogger.LogEntryWriter // for logging to stderr, nil in dev mode
+	stdout       sdlogger.LogEntryWriter // for logging to stdout, nil in dev mode
+	stderr       sdlogger.LogEntryWriter // for logging to stderr, nil in dev mode
+	errRptClient *errorreporting.Client  // for reporting to the cloud Error Reporting
 
 	mainPort *Port // pre-registered main port, see initMainPort
 
@@ -707,6 +718,9 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 	if err := srv.initTracing(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tracing").Err()
+	}
+	if err := srv.initErrorReporting(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize error reporting").Err()
 	}
 	if err := srv.initProfiling(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize profiling").Err()
@@ -1290,7 +1304,17 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 				e.SpanID = span.SpanContext().SpanID.String()
 			}
 		}
-		ctx = logging.SetFactory(ctx, sdlogger.Factory(&severityTracker, sdlogger.LogEntry{
+
+		var logSink sdlogger.LogEntryWriter
+		if s.errRptClient != nil {
+			logSink = &sdlogger.CloudErrorsSink{
+				Client: s.errRptClient,
+				Out:    &severityTracker,
+			}
+		} else {
+			logSink = &severityTracker
+		}
+		ctx = logging.SetFactory(ctx, sdlogger.Factory(logSink, sdlogger.LogEntry{
 			TraceID:   traceID,
 			Operation: &sdlogger.Operation{ID: s.genUniqueID(32)},
 		}, annotateWithSpan))
@@ -1805,17 +1829,9 @@ func (s *Server) initProfiling() error {
 		return nil
 	}
 
-	// Prefer ProfilingServiceID if given, fall back to TsMonJobName. Replace
-	// forbidden '/' symbol.
-	serviceID := s.Options.ProfilingServiceID
-	if serviceID == "" {
-		serviceID = s.Options.TsMonJobName
-	}
-	serviceID = strings.ReplaceAll(serviceID, "/", "-")
-
 	cfg := profiler.Config{
 		ProjectID:      s.Options.CloudProject,
-		Service:        serviceID,
+		Service:        s.getServiceID(),
 		ServiceVersion: s.Options.imageVersion(),
 		Instance:       s.Options.Hostname,
 		// Note: these two options may potentially have impact on performance, but
@@ -1840,6 +1856,18 @@ func (s *Server) initProfiling() error {
 
 	logging.Infof(s.Context, "Setting up Stackdriver profiler (service %q, version %q)", cfg.Service, cfg.ServiceVersion)
 	return nil
+}
+
+// getServiceID get the service id from either ProfilingServiceID or TsMonJobName.
+func (s *Server) getServiceID() string {
+	// Prefer ProfilingServiceID if given, fall back to TsMonJobName. Replace
+	// forbidden '/' symbol.
+	serviceID := s.Options.ProfilingServiceID
+	if serviceID == "" {
+		serviceID = s.Options.TsMonJobName
+	}
+	serviceID = strings.ReplaceAll(serviceID, "/", "-")
+	return serviceID
 }
 
 // initMainPort initializes the server on options.HTTPAddr port.
@@ -1932,6 +1960,31 @@ func (s *Server) initAdminPort() error {
 			pprof.Index(c.Writer, c.Request)
 		}
 	})
+	return nil
+}
+
+// initErrorReporting initializes an Error Report client.
+func (s *Server) initErrorReporting() error {
+	if !s.Options.CloudErrorReporting || s.Options.CloudProject == "" {
+		return nil
+	}
+
+	// Get token source to call Error Reporting API.
+	ts, err := auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	if err != nil {
+		return errors.Annotate(err, "failed to initialize token source").Err()
+	}
+	s.errRptClient, err = errorreporting.NewClient(s.Context, s.Options.CloudProject, errorreporting.Config{
+		ServiceName:    s.getServiceID(),
+		ServiceVersion: s.Options.imageVersion(),
+		OnError:        func(err error) { logging.Errorf(s.Context, "Error Reporting could not log error: %s", err) },
+	}, option.WithTokenSource(ts))
+
+	if err != nil {
+		return err
+	}
+	s.RegisterCleanup(func(ctx context.Context) { s.errRptClient.Close() })
+
 	return nil
 }
 
