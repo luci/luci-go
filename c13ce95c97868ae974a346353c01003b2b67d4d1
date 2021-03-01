@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "735c3232_ebb18a30",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-01T18:54:23Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "89962009_347341ce",
+      "range": {
+        "startLine": 11,
+        "startChar": 2,
+        "endLine": 11,
+        "endChar": 41
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9e82962a_2113c235",
@@ -250,6 +274,30 @@
       "side": 1,
       "message": "It\u0027s in the logical `else` block, because iff emulator was installed, L125 would have returned. Either you missed that, or I am not getting your question.",
       "parentUuid": "2d628f6f_ac3df41e",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 130,
+        "endChar": 43
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d2d14a1_347da30d",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-01T18:54:23Z",
+      "side": 1,
+      "message": "oh you are right. I misread the code.",
+      "parentUuid": "d70eebaa_cd102580",
       "range": {
         "startLine": 127,
         "startChar": 0,
