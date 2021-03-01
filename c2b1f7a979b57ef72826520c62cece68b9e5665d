@@ -22,6 +22,30 @@
       },
       "revId": "c2b1f7a979b57ef72826520c62cece68b9e5665d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9078228_de2dec38",
+        "filename": "cv/internal/prjmanager/clpurger/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T19:56:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c9a1880_50d22662",
+      "range": {
+        "startLine": 15,
+        "startChar": 36,
+        "endLine": 15,
+        "endChar": 44
+      },
+      "revId": "c2b1f7a979b57ef72826520c62cece68b9e5665d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
