@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8818453_f31672cc",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T20:00:04Z",
+      "side": 1,
+      "message": "resolving in favor of Robbie\u0027s comment.",
+      "parentUuid": "a19a6d56_03e84064",
+      "range": {
+        "startLine": 182,
+        "startChar": 40,
+        "endLine": 182,
+        "endChar": 56
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4002750a_2c46df18",
