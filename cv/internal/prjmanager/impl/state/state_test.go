@@ -606,19 +606,20 @@ func TestOnCLsUpdated(t *testing.T) {
 		})
 
 		Convey("PCLs must remain sorted", func() {
+			pcl101 := &prjpb.PCL{
+				Clid:               int64(cl101.ID),
+				Eversion:           1,
+				ConfigGroupIndexes: []int32{0}, // g0
+				Status:             prjpb.PCL_OK,
+				Trigger:            trigger.Find(ci101),
+			}
 			s1 := NewExisting(&prjpb.PState{
 				LuciProject:      ct.lProject,
 				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*prjpb.PCL{
-					{
-						Clid:               int64(cl101.ID),
-						Eversion:           1,
-						ConfigGroupIndexes: []int32{0}, // g0
-						Status:             prjpb.PCL_OK,
-						Trigger:            trigger.Find(ci101),
-					},
+				Pcls: sortPCLs([]*prjpb.PCL{
+					pcl101,
 					{
 						Clid:               int64(cl203.ID),
 						Eversion:           1,
@@ -627,7 +628,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						Trigger:            trigger.Find(ci203),
 						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
-				},
+				}),
 			})
 			pb1 := backupPB(s1)
 			bumpEVersion(ctx, cl203, 3)
@@ -645,9 +646,14 @@ func TestOnCLsUpdated(t *testing.T) {
 				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
 				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*prjpb.PCL{
-					s1.PB.GetPcls()[0], // 101 is unchanged
-					{ // new & inserted at the right spot
+				Pcls: sortPCLs([]*prjpb.PCL{
+					{
+						Clid:     404,
+						Eversion: 0,
+						Status:   prjpb.PCL_DELETED,
+					},
+					pcl101, // 101 is unchanged
+					{ // new
 						Clid:               int64(cl202.ID),
 						Eversion:           1,
 						ConfigGroupIndexes: []int32{1}, // g1
@@ -662,12 +668,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						Trigger:            trigger.Find(ci203),
 						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
-					{
-						Clid:     404,
-						Eversion: 0,
-						Status:   prjpb.PCL_DELETED,
-					},
-				},
+				}),
 				DirtyComponents: true,
 			})
 		})
