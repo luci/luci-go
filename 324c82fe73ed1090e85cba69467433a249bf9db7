@@ -34,6 +34,24 @@
       "parentUuid": "3876ac41_1138588f",
       "revId": "324c82fe73ed1090e85cba69467433a249bf9db7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9736bdc_31427519",
+        "filename": "cv/internal/lease/lease_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T19:54:20Z",
+      "side": 1,
+      "message": "this bothered me all night, so I dug into it this morning: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2727435",
+      "parentUuid": "1a4e1b46_f89c67e6",
+      "revId": "324c82fe73ed1090e85cba69467433a249bf9db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
