@@ -80,7 +80,6 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 
 	out := make([]*prjpb.Component, len(s.PB.GetComponents()))
 	var modified int32
-	// TODO(crbug/1182446): remove panic catching.
 	var paniced int32
 	var mutex sync.Mutex
 	var actions []cAction
@@ -108,12 +107,10 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 			i, oldC, oldWhen := i, oldC, oldWhen
 			work <- func() (err error) {
 				defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-					// TODO(crbug/1182446): remove panic catching.
 					atomic.AddInt32(&paniced, 1)
 					logging.Errorf(ctx, "caught panic %s:\n%s", p.Reason, p.Stack)
-					logging.Errorf(ctx, "caught panic dbg: now %s", now, oldWhen)
-					logging.Errorf(ctx, "caught panic dbg: oldC\n%s", protojson.Format(oldC))
-					logging.Errorf(ctx, "caught panic dbg: state PCLs\n%s", protojson.Format(s.PB))
+					logging.Debugf(ctx, "caught panic dbg: now %s prior %s component %s", now, oldWhen, protojson.Format(oldC))
+					logging.Debugf(ctx, "caught panic dbg: PCLs\n%s", protojson.Format(s.PB))
 					err = errors.Reason("caught panic: %s", p.Reason).Err()
 				})
 
@@ -149,7 +146,8 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 		}
 	})
 	if paniced > 0 {
-		// TODO(crbug/1182446): remove panic catching.
+		// This must not happen in production, but it's very useful on -dev while
+		// experimenting with triggering algorithms.
 		return nil, nil, errors.Reason("%d panics were caught", paniced).Err()
 	}
 	if len(actions) == 0 && modified == 0 {
@@ -177,6 +175,7 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 func (s *State) execComponentActions(ctx context.Context, actions []cAction, components []*prjpb.Component) error {
 	var errModified int32
 	var okModified int32
+	var paniced int32
 
 	poolSize := concurrentComponentProcessing
 	if l := len(actions); l < poolSize {
@@ -186,6 +185,13 @@ func (s *State) execComponentActions(ctx context.Context, actions []cAction, com
 		for _, a := range actions {
 			a := a
 			work <- func() (err error) {
+				defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+					atomic.AddInt32(&paniced, 1)
+					logging.Errorf(ctx, "caught panic %s:\n%s", p.Reason, p.Stack)
+					logging.Debugf(ctx, "caught panic: component %s", protojson.Format(components[a.componentIndex]))
+					err = errors.Reason("caught panic: %s", p.Reason).Err()
+				})
+
 				oldC := components[a.componentIndex]
 				var newC *prjpb.Component
 				switch newC, err = a.actor.Act(ctx); {
@@ -203,6 +209,11 @@ func (s *State) execComponentActions(ctx context.Context, actions []cAction, com
 			}
 		}
 	})
+	if paniced > 0 {
+		// This must not happen in production, but it's very useful on -dev while
+		// experimenting with triggering algorithms.
+		return errors.Reason("%d panics were caught", paniced).Err()
+	}
 	if errs == nil {
 		return nil
 	}
