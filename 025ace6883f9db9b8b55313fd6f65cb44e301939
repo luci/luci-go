@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87485e2a_a9feb0b9",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-01T19:25:56Z",
+      "side": 1,
+      "message": "nit: What about using environ.FromCtx so that it is customizable in each `cvtesting.Test`?\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/system/environ/environment.go;l\u003d47;drc\u003d69293cfd5ae8e42f0e486fe395232b2c68f4635e",
+      "range": {
+        "startLine": 91,
+        "startChar": 9,
+        "endLine": 91,
+        "endChar": 41
+      },
+      "revId": "025ace6883f9db9b8b55313fd6f65cb44e301939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
