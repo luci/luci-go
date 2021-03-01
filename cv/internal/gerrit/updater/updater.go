@@ -239,7 +239,6 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 		}
 		return nil
 	default:
-		logging.Debugf(ctx, "proceeding to update %s, last known EVersion: %d, acfg %s %t", f, f.priorCLEversion(), f.toUpdate.ApplicableConfig, f.toUpdate.ApplicableConfig == nil)
 		return changelist.Update(
 			ctx,
 			f.externalID, f.clidIfKnown(),
