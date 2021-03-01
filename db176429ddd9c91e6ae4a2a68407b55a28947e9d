@@ -20,6 +20,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4002750a_2c46df18",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-01T19:16:26Z",
+      "side": 1,
+      "message": "MkPropertyNI\n\n(looking in datastore, this field is not indexed, so we shouldn\u0027t cause it to be indexed here either)",
+      "range": {
+        "startLine": 185,
+        "startChar": 29,
+        "endLine": 185,
+        "endChar": 39
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "749eeb2a_64a5116a",
         "filename": "buildbucket/appengine/model/build_test.go",
         "patchSetId": 3
