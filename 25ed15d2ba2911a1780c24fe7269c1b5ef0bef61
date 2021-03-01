@@ -1,0 +1,51 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "67ff576d_e3da9056",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-01T19:57:49Z",
+      "side": 1,
+      "message": "\u003e \"runnin\" is a possible misspelling of \"running\".\n\nPlease fix.",
+      "parentUuid": "ea6164f4_37c60947",
+      "range": {
+        "startLine": 7,
+        "startChar": 14,
+        "endLine": 7,
+        "endChar": 20
+      },
+      "revId": "25ed15d2ba2911a1780c24fe7269c1b5ef0bef61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc2db614_69641171",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-01T19:57:49Z",
+      "side": 1,
+      "message": "nit: wish we had a gerrit.UseDev :)",
+      "range": {
+        "startLine": 62,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 43
+      },
+      "revId": "25ed15d2ba2911a1780c24fe7269c1b5ef0bef61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
