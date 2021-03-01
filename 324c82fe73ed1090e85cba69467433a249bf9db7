@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3876ac41_1138588f",
+        "filename": "cv/internal/lease/lease_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T13:08:53Z",
+      "side": 1,
+      "message": "this line fails otherwise because the loaded from **real** DS lease contains \n  Payload: []byte{}\n\nOTOH, in memory DS fake Payload is nil, as expected. While CV code isn\u0027t sensitive to this, this is very surprising. I ran a few tests in datastore/pls_test.go to verify that \n  `Payload:nil`\nis serialized as\n  DatastoreProperty(nil)\nwhile []byte{}\n  DatastoreProperty([]byte{}})\nand these are different.\n\nI am at a loss to explain what\u0027s going on.",
+      "revId": "324c82fe73ed1090e85cba69467433a249bf9db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
