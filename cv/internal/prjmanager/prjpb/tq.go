@@ -47,6 +47,7 @@ var PokePMTaskRef tq.TaskClassRef
 
 const (
 	ManageProjectTaskClass = "manage-project"
+	PurgeCLTaskClass       = "purge-project-cl"
 )
 
 func init() {
