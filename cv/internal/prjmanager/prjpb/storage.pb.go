@@ -615,7 +615,7 @@ func (x *Component) GetDirty() bool {
 //
 // Upon TQ task completion, the task handler notifies PM back via an
 // PurgeCompleted event. For fail-safe reasons, there is a deadline to
-// perform the purged. PM keeps the PurgingCL in PState until either deadline is
+// perform the purge. PM keeps the PurgingCL in PState until either deadline is
 // reached OR PurgeCompleted event is received.
 type PurgingCL struct {
 	state         protoimpl.MessageState
