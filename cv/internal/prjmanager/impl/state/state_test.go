@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -1045,12 +1046,19 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 				pr = lProjectB
 			}
 			cls[i] = ct.runCLUpdaterAs(ctx, int64(i), pr)
-			// If Datastore fake changes, this check and comment above can be removed,
-			// but the rest of the test will remain valid.
-			So(cls[i].ID, ShouldEqual, i)
 		}
 		// This will get 404 from Gerrit.
 		cls[12] = ct.runCLUpdater(ctx, 12)
+
+		for i := 1; i < 14; i++ {
+			// On in-memory DS fake, auto-generated IDs are 1,2, ...,
+			// so by construction the following would hold:
+			//   cls[i].ID == i
+			// On real DS, emit mapping to assist in test debug.
+			if cls[i].ID != common.CLID(i) {
+				logging.Debugf(ctx, "cls[%d].ID = %d", i, cls[i].ID)
+			}
+		}
 
 		run4 := &run.Run{
 			ID:  common.RunID(ct.lProject + "/1-a"),
@@ -1081,7 +1089,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 				defaultPCL(cls[7]),
 				defaultPCL(cls[8]),
 				defaultPCL(cls[9]),
-				{Clid: 12, Eversion: 1, Status: prjpb.PCL_UNKNOWN},
+				{Clid: int64(cls[12].ID), Eversion: 1, Status: prjpb.PCL_UNKNOWN},
 			})
 			state.PB.Components = []*prjpb.Component{
 				{
@@ -1099,9 +1107,9 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			cat := state.categorizeCLs(ctx)
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active:   mkClidsSet(cls[5], cls[6], cls[7], cls[8], cls[9]),
+				active:   mkClidsSet(cls, 5, 6, 7, 8, 9),
 				deps:     clidsSet{},
-				unused:   mkClidsSet(cls[12]),
+				unused:   mkClidsSet(cls, 12),
 				unloaded: clidsSet{},
 			})
 			So(state.PB, ShouldResembleProto, pbBefore)
@@ -1116,17 +1124,17 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 
 			cat := state.categorizeCLs(ctx)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active:   mkClidsSet(cls[3], cls[5], cls[6]),
-				deps:     mkClidsSet(cls[2]),
+				active:   mkClidsSet(cls, 3, 5, 6),
+				deps:     mkClidsSet(cls, 2),
 				unused:   clidsSet{},
-				unloaded: mkClidsSet(cls[2], cls[5], cls[6]),
+				unloaded: mkClidsSet(cls, 2, 5, 6),
 			})
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active:   mkClidsSet(cls[3], cls[2], cls[5], cls[6]),
-				deps:     mkClidsSet(cls[1]),
+				active:   mkClidsSet(cls, 3, 2, 5, 6),
+				deps:     mkClidsSet(cls, 1),
 				unused:   clidsSet{},
-				unloaded: mkClidsSet(cls[1]),
+				unloaded: mkClidsSet(cls, 1),
 			})
 			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[2]),
@@ -1153,18 +1161,18 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 
 			cat := state.categorizeCLs(ctx)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active:   mkClidsSet(cls[11], cls[13]),
+				active:   mkClidsSet(cls, 11, 13),
 				deps:     clidsSet{},
 				unused:   clidsSet{},
-				unloaded: mkClidsSet(cls[11], cls[13]),
+				unloaded: mkClidsSet(cls, 11, 13),
 			})
 			So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active: mkClidsSet(cls[11], cls[13]),
+				active: mkClidsSet(cls, 11, 13),
 				// 10 isn't in deps because this project has no visibility into CL 11.
-				deps:     mkClidsSet(cls[12]),
+				deps:     mkClidsSet(cls, 12),
 				unused:   clidsSet{},
-				unloaded: mkClidsSet(cls[12]),
+				unloaded: mkClidsSet(cls, 12),
 			})
 			pb.Pcls = sortPCLs([]*prjpb.PCL{
 				defaultPCL(cls[13]),
@@ -1237,7 +1245,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 					active:   clidsSet{},
 					deps:     clidsSet{},
 					unloaded: clidsSet{},
-					unused:   clidsSet{1: struct{}{}},
+					unused:   mkClidsSet(cls, 1),
 				}
 				So(cat, ShouldResemble, exp)
 				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
@@ -1247,15 +1255,15 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			Convey("standalone submitted CL with a Run is active", func() {
 				state.PB.Components = []*prjpb.Component{
 					{
-						Clids: []int64{1},
+						Clids: i64s(cls[1].ID),
 						Pruns: []*prjpb.PRun{
-							{Clids: []int64{1}, Id: "run1"},
+							{Clids: i64s(cls[1].ID), Id: "run1"},
 						},
 					},
 				}
 				cat := state.categorizeCLs(ctx)
 				exp := &categorizedCLs{
-					active:   clidsSet{1: struct{}{}},
+					active:   mkClidsSet(cls, 1),
 					deps:     clidsSet{},
 					unloaded: clidsSet{},
 					unused:   clidsSet{},
@@ -1278,8 +1286,8 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 				))
 				cat := state.categorizeCLs(ctx)
 				exp := &categorizedCLs{
-					active:   clidsSet{2: struct{}{}},
-					deps:     clidsSet{1: struct{}{}},
+					active:   mkClidsSet(cls, 2),
+					deps:     mkClidsSet(cls, 1),
 					unloaded: clidsSet{},
 					unused:   clidsSet{},
 				}
@@ -1290,9 +1298,9 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		})
 
 		Convey("prunes PCLs with expired triggers", func() {
-			makePCL := func(i int64, t time.Time, deps ...*changelist.Dep) *prjpb.PCL {
+			makePCL := func(i int, t time.Time, deps ...*changelist.Dep) *prjpb.PCL {
 				return &prjpb.PCL{
-					Clid:     i,
+					Clid:     int64(cls[i].ID),
 					Eversion: 1,
 					Status:   prjpb.PCL_OK,
 					Deps:     deps,
@@ -1310,10 +1318,10 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			}
 			cat := state.categorizeCLs(ctx)
 			So(cat, ShouldResemble, &categorizedCLs{
-				active:   clidsSet{1: struct{}{}, 2: struct{}{}},
-				deps:     clidsSet{cls[4].ID: struct{}{}},
-				unloaded: clidsSet{cls[4].ID: struct{}{}},
-				unused:   clidsSet{3: struct{}{}},
+				active:   mkClidsSet(cls, 1, 2),
+				deps:     mkClidsSet(cls, 4),
+				unloaded: mkClidsSet(cls, 4),
+				unused:   mkClidsSet(cls, 3),
 			})
 
 			Convey("and doesn't promote unloaded to active if trigger has expired", func() {
@@ -1325,10 +1333,10 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 
 				So(state.loadActiveIntoPCLs(ctx, cat), ShouldBeNil)
 				So(cat, ShouldResemble, &categorizedCLs{
-					active:   clidsSet{1: struct{}{}, 2: struct{}{}},
-					deps:     clidsSet{cls[4].ID: struct{}{}},
+					active:   mkClidsSet(cls, 1, 2),
+					deps:     mkClidsSet(cls, 4),
 					unloaded: clidsSet{},
-					unused:   clidsSet{3: struct{}{}},
+					unused:   mkClidsSet(cls, 3),
 				})
 			})
 		})
@@ -1725,10 +1733,10 @@ func sortPCLs(vs []*prjpb.PCL) []*prjpb.PCL {
 	return vs
 }
 
-func mkClidsSet(cls ...*changelist.CL) clidsSet {
-	res := make(clidsSet, len(cls))
-	for _, cl := range cls {
-		res[cl.ID] = struct{}{}
+func mkClidsSet(cls map[int]*changelist.CL, ids ...int) clidsSet {
+	res := make(clidsSet, len(ids))
+	for _, id := range ids {
+		res[cls[id].ID] = struct{}{}
 	}
 	return res
 }
