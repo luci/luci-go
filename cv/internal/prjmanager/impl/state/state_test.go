@@ -118,6 +118,15 @@ func updateConfigToNoFallabck(ctx context.Context, ct *ctest) config.Meta {
 	return ct.Cfg.MustExist(ctx, ct.lProject)
 }
 
+func updateConfigRenameG1toG11(ctx context.Context, ct *ctest) config.Meta {
+	cfgText2 := strings.ReplaceAll(cfgText1, `"g1"`, `"g11"`)
+	cfg2 := &cfgpb.Config{}
+	So(prototext.Unmarshal([]byte(cfgText2), cfg2), ShouldBeNil)
+	ct.Cfg.Update(ctx, ct.lProject, cfg2)
+	gobmap.Update(ctx, ct.lProject)
+	return ct.Cfg.MustExist(ctx, ct.lProject)
+}
+
 func TestEndToEndSingleCL(t *testing.T) {
 	t.Parallel()
 
@@ -248,7 +257,7 @@ func TestUpdateConfig(t *testing.T) {
 				ConfigGroupNames: []string{"g0", "g1"},
 				Components:       nil,
 				Pcls:             nil,
-				DirtyComponents:  true,
+				DirtyComponents:  false,
 			})
 		})
 
@@ -326,34 +335,57 @@ func TestUpdateConfig(t *testing.T) {
 			So(sideEffect, ShouldBeNil)
 		})
 
-		Convey("existing projects is updated without touching components", func() {
-			meta2 := updateConfigToNoFallabck(ctx, &ct)
-			s2, sideEffect, err := s1.UpdateConfig(ctx)
-			So(err, ShouldBeNil)
-			So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
-			So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
-				Hash:     meta2.Hash(),
-				EVersion: meta2.EVersion,
-				RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
-			})
-			So(s2.PB, ShouldResembleProto, &prjpb.PState{
-				LuciProject:      ct.lProject,
-				Status:           prjpb.Status_STARTED,
-				ConfigHash:       meta2.Hash(), // changed
-				ConfigGroupNames: []string{"g0", "g1"},
-				Pcls: []*prjpb.PCL{
-					{
-						Clid:               int64(cl101.ID),
-						Eversion:           1,
-						ConfigGroupIndexes: []int32{0, 1}, // +g1, because g1 is no longer "fallback: YES"
-						Status:             prjpb.PCL_OK,
-						Trigger:            trigger.Find(ci101),
+		Convey("existing project", func() {
+			Convey("updated without touching components", func() {
+				meta2 := updateConfigToNoFallabck(ctx, &ct)
+				s2, sideEffect, err := s1.UpdateConfig(ctx)
+				So(err, ShouldBeNil)
+				So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
+				So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
+					Hash:     meta2.Hash(),
+					EVersion: meta2.EVersion,
+					RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
+				})
+				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+					LuciProject:      ct.lProject,
+					Status:           prjpb.Status_STARTED,
+					ConfigHash:       meta2.Hash(), // changed
+					ConfigGroupNames: []string{"g0", "g1"},
+					Pcls: []*prjpb.PCL{
+						{
+							Clid:               int64(cl101.ID),
+							Eversion:           1,
+							ConfigGroupIndexes: []int32{0, 1}, // +g1, because g1 is no longer "fallback: YES"
+							Status:             prjpb.PCL_OK,
+							Trigger:            trigger.Find(ci101),
+						},
+						pb1.Pcls[1], // #202 didn't change.
+						pb1.Pcls[2], // #203 didn't change.
 					},
-					pb1.Pcls[1], // #202 didn't change.
-					pb1.Pcls[2], // #203 didn't change.
-				},
-				Components:      pb1.Components, // no changes here.
-				DirtyComponents: true,           // set to re-eval components
+					Components:      pb1.Components, // no changes here.
+					DirtyComponents: true,           // set to re-eval components
+				})
+			})
+
+			Convey("If PCLs stay same, DirtyComponents must be false", func() {
+				meta2 := updateConfigRenameG1toG11(ctx, &ct)
+				s2, sideEffect, err := s1.UpdateConfig(ctx)
+				So(err, ShouldBeNil)
+				So(s1.PB, ShouldResembleProto, pb1) // s1 must not change.
+				So(sideEffect, ShouldResemble, &UpdateIncompleteRunsConfig{
+					Hash:     meta2.Hash(),
+					EVersion: meta2.EVersion,
+					RunIDs:   common.MakeRunIDs(ct.lProject + "/" + "1111-v1-beef"),
+				})
+				So(s2.PB, ShouldResembleProto, &prjpb.PState{
+					LuciProject:      ct.lProject,
+					Status:           prjpb.Status_STARTED,
+					ConfigHash:       meta2.Hash(),
+					ConfigGroupNames: []string{"g0", "g11"}, // g1 -> g11.
+					Pcls:             pb1.GetPcls(),
+					Components:       pb1.Components, // no changes here.
+					DirtyComponents:  false,          // no need to re-eval.
+				})
 			})
 		})
 

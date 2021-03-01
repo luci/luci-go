@@ -22,6 +22,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -40,6 +41,7 @@ func (s *State) reevalPCLs(ctx context.Context) error {
 		return err
 	}
 	newPCLs := make([]*prjpb.PCL, len(cls))
+	mutated := false
 	for i, cl := range cls {
 		old := s.PB.GetPcls()[i]
 		switch pcl, err := s.makePCLFromDS(ctx, cl, errs[i], old); {
@@ -47,15 +49,18 @@ func (s *State) reevalPCLs(ctx context.Context) error {
 			return err
 		case pcl == nil:
 			panic("makePCLFromDS is wrong")
+		case pcl != old:
+			mutated = true
+			fallthrough
 		default:
-			// TODO(tandrii): avoid updating components if the new PCL is exact same
-			// as the old one.
 			newPCLs[i] = pcl
 		}
 	}
-	s.PB.Pcls = newPCLs
-	s.PB.DirtyComponents = true
-	s.pclIndex = nil
+	if mutated {
+		s.PB.Pcls = newPCLs
+		s.PB.DirtyComponents = true
+		s.pclIndex = nil
+	}
 	return nil
 }
 
@@ -85,7 +90,7 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 	}
 
 	// Sort new/updated CLs in the way as PCLs already are, namely by CL ID. Do it
-	// before loading from Datastore beacuse `errs` must correspond to `cls`.
+	// before loading from Datastore because `errs` must correspond to `cls`.
 	changelist.Sort(cls)
 	cls, errs, err := loadCLs(ctx, cls)
 	if err != nil {
@@ -106,26 +111,26 @@ func (s *State) evalCLsFromDS(ctx context.Context, cls []*changelist.CL) error {
 			newPCLs = append(newPCLs, oldPCLs[0])
 			oldPCLs = oldPCLs[1:]
 		}
-		// If CL is updated, pop oldPCL.
-		var oldPCL *prjpb.PCL
+		// If CL is updated, pop old.
+		var old *prjpb.PCL
 		if len(oldPCLs) > 0 && common.CLID(oldPCLs[0].GetClid()) == cl.ID {
-			oldPCL = oldPCLs[0]
+			old = oldPCLs[0]
 			oldPCLs = oldPCLs[1:]
 		}
 		// Compute new PCL.
-		switch pcl, err := s.makePCLFromDS(ctx, cl, errs[i], oldPCL); {
+		switch pcl, err := s.makePCLFromDS(ctx, cl, errs[i], old); {
 		case err != nil:
 			return err
-		case pcl == nil && oldPCL != nil:
+		case pcl == nil && old != nil:
 			panic("makePCLFromDS is wrong")
 		case pcl == nil:
 			// New CL, but not in datastore. Don't add anything to newPCLs.
 			// This weird case was logged by makePCLFromDS already.
-		default:
-			// TODO(tandrii): avoid updating components if the new PCL is exact same
-			// as the old one.
-			newPCLs = append(newPCLs, pcl)
+		case pcl != old:
 			changed = true
+			fallthrough
+		default:
+			newPCLs = append(newPCLs, pcl)
 		}
 	}
 	if !changed {
@@ -175,8 +180,11 @@ func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error,
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to load CL %d", cl.ID).Tag(transient.Tag).Err()
 	default:
-		// TODO(tandrii): return pointer to oldPCL if pcl has the same contents.
-		return s.makePCL(ctx, cl), nil
+		pcl := s.makePCL(ctx, cl)
+		if proto.Equal(pcl, old) {
+			return old, nil
+		}
+		return pcl, nil
 	}
 }
 
