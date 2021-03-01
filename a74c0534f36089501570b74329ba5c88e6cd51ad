@@ -22,6 +22,30 @@
       },
       "revId": "a74c0534f36089501570b74329ba5c88e6cd51ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ecece3c3_d3c452b1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T19:51:08Z",
+      "side": 1,
+      "message": "same. At this point I have poor understanding in what order and what it does 😞",
+      "parentUuid": "1586f89a_5185ee97",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 60
+      },
+      "revId": "a74c0534f36089501570b74329ba5c88e6cd51ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
