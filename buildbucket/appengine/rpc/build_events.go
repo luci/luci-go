@@ -177,8 +177,7 @@ func buildCompleted(ctx context.Context, b *model.Build) {
 func buildCompleting(ctx context.Context, b *model.Build) error {
 	bqTask := &taskdefs.ExportBigQuery{BuildId: b.ID}
 	invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
-	// TODO(tandrii): undo this and find a permanent solution.
-	return parallel.WorkPool(1, func(tks chan<- func() error) {
+	return parallel.FanOutIn(func(tks chan<- func() error) {
 		tks <- func() error { return notifyPubSub(ctx, b) }
 		tks <- func() error { return tasks.ExportBigQuery(ctx, bqTask) }
 		tks <- func() error { return tasks.FinalizeResultDB(ctx, invTask) }
