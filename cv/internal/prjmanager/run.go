@@ -22,8 +22,6 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -282,20 +280,27 @@ func (rb *RunBuilder) checkCLsUnchanged(ctx context.Context) {
 func (rb *RunBuilder) save(ctx context.Context) error {
 	rb.dsBatcher.reset()
 	// Keep .CreateTime and .UpdateTime entities the same across all saved
-	// entities. Do pre-emptive rounding before Datastore layer does it such
-	// rb.run entityRun entity has exactly values as what would be read from
-	// Datastore later.
+	// entities. Do pre-emptive rounding before Datastore layer does it, such
+	// that rb.run entity has the exact same fields' values as if entity was read
+	// from the Datastore.
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	rb.registerSaveRun(ctx, now)
 	for i := range rb.InputCLs {
 		rb.registerSaveRunCL(ctx, i)
 		rb.registerSaveCL(ctx, i, now)
 	}
-	// TODO(tandrii): consider also using rb.dsBatcher for PM notification.
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error { return rb.savePMNotification(ctx) })
-	eg.Go(func() error { return rb.dsBatcher.put(ctx) })
-	return eg.Wait()
+
+	// NOTE: within the Datastore transaction,
+	//  * savePMNotification Puts a Reminder entity in Datastore (see
+	//    server/tq/txn).
+	//  * Cloud Datastore client buffers all Puts in RAM, and sends all at once to
+	//    Datastore server at transaction's Commit().
+	// Therefore, there is no advantage in parallelizing dsBatcher.Put() and
+	// savePMNotification().
+	if err := rb.dsBatcher.put(ctx); err != nil {
+		return err
+	}
+	return rb.savePMNotification(ctx)
 }
 
 func (rb *RunBuilder) registerSaveRun(ctx context.Context, now time.Time) {
@@ -411,6 +416,10 @@ func (rb *RunBuilder) computeRunID(ctx context.Context) {
 
 // dsBatcher facilitates processing of many different kind of entities in a
 // single Get/Put operation while handling errors in entity-specific code.
+//
+// NOTE: all Put operations during Datastore transaction are buffered and
+// effectively batched by the Datastore client. However, here Puts are handled
+// the exact same way as Gets for consistency.
 type dsBatcher struct {
 	entities  []interface{}
 	callbacks []func(error) error
