@@ -77,6 +77,9 @@ type Test struct {
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
 
+	// Override default AppID for in-memory tests.
+	AppID string
+
 	// cleanups are executed in reverse order in cleanup().
 	cleanups []func()
 }
@@ -137,13 +140,18 @@ func (t *Test) cleanup() {
 }
 
 func (t *Test) installDS(ctx context.Context) context.Context {
+	if t.AppID == "" {
+		t.AppID = "dev~app" // default in memory package.
+	}
+
 	if ctx, ok := t.installDSReal(ctx); ok {
-		return ctx
+		return memory.UseInfo(ctx, t.AppID)
 	}
 	if ctx, ok := t.installDSEmulator(ctx); ok {
-		return ctx
+		return memory.UseInfo(ctx, t.AppID)
 	}
-	ctx = memory.Use(ctx)
+
+	ctx = memory.UseWithAppID(ctx, t.AppID)
 	// CV runs against Firestore backend, which is consistent.
 	datastore.GetTestable(ctx).Consistent(true)
 	datastore.GetTestable(ctx).AutoIndex(true)
