@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
@@ -213,4 +215,38 @@ func mustLoadLease(ctx context.Context, rid ResourceID) *Lease {
 		panic(err)
 	}
 	return ret
+}
+
+type Bytes struct {
+	ID string `gae:"$id"`
+	BS []byte `gae:",noindex"`
+}
+
+func TestDSBytes(t *testing.T) {
+	Convey("TestDSBytes", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		test := func(name string, bs []byte) {
+			Convey(name, func() {
+				in := Bytes{ID: name, BS: bs}
+				So(datastore.Put(ctx, &in), ShouldBeNil)
+				out := Bytes{ID: name}
+				So(datastore.Get(ctx, &out), ShouldBeNil)
+				logging.Debugf(ctx, "%s: read nil?%t expected nil?%t", name, out.BS == nil, bs == nil)
+				So(out.BS, ShouldHaveLength, len(bs))
+				So(out.BS, ShouldResemble, bs)
+			})
+		}
+
+		// OK for both, hooray.
+		test("one", []byte{123})
+
+		// Fails on real DS, where out.BS == []byte{}, not nil.
+		test("nilly", nil)
+
+		// Fails on memory DS, which out.BS == nil, not []byte{}.
+		test("empty", []byte{})
+	})
 }

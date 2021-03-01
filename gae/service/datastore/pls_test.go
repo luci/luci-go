@@ -1094,6 +1094,39 @@ var testCases = []testCase{
 		src:  &B0{B: makeUint8Slice(maxIndexedProperties + 1)},
 		want: &B0{B: makeUint8Slice(maxIndexedProperties + 1)},
 	},
+
+	{
+		desc: "[]byte-nil-map",
+		src:  &B0{B: nil},
+		want: PropertyMap{"B": mpNI([]byte(nil))},
+	},
+	{
+		desc: "[]byte-nil-reverse",
+		src:  PropertyMap{"B": mpNI([]byte(nil))},
+		want: &B0{B: nil},
+	},
+	{
+		desc: "[]byte-nil-round",
+		src:  &B0{B: nil},
+		want: &B0{B: nil},
+	},
+
+	{
+		desc: "[]byte-empty-map",
+		src:  &B0{B: []byte{}},
+		want: PropertyMap{"B": mpNI([]byte{})},
+	},
+	{
+		desc: "[]byte-empty-reverse",
+		src:  PropertyMap{"B": mpNI([]byte{})},
+		want: &B0{B: []byte{}},
+	},
+	{
+		desc: "[]byte-empty-round",
+		src:  &B0{B: []byte{}},
+		want: &B0{B: []byte{}},
+	},
+
 	{
 		desc:    "long []int8 is too long",
 		src:     &B1{B: makeInt8Slice(maxIndexedProperties + 1)},
