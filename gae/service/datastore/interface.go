@@ -642,6 +642,9 @@ func Get(c context.Context, dst ...interface{}) error {
 			et.trackError(index, err)
 			return
 		}
+		p := pm["BS"].(Property)
+		bs := p.value.(bytesByteSequence)
+		fmt.Printf("[WTF: Get %q => %s bs nil?%t `%v`\n", keys[idx].StringID(), p.propType, bs == nil, []byte(bs))
 
 		mat, v := mma.get(index)
 		if err := mat.setPM(v, pm); err != nil {
@@ -707,6 +710,10 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 	var dat DroppedArgTracker
 	dat.MarkNilKeysVals(keys, vals)
 	keys, vals, dal := dat.DropKeysAndVals(keys, vals)
+
+	p := vals[0]["BS"].(Property)
+	bs := p.value.(bytesByteSequence)
+	fmt.Printf("[WTF: PutMulti %q => %s bs nil?%t `%v`\n", keys[0].StringID(), p.propType, bs == nil, []byte(bs))
 
 	err = raw.PutMulti(keys, vals, func(compressedIdx int, key *Key, err error) {
 		idx := dal.OriginalIndex(compressedIdx)
