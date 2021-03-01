@@ -20,6 +20,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a19a6d56_03e84064",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T19:59:02Z",
+      "side": 1,
+      "message": "you need *indexed* property, right?\nsame Q for L185.",
+      "range": {
+        "startLine": 182,
+        "startChar": 40,
+        "endLine": 182,
+        "endChar": 56
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4002750a_2c46df18",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 3
@@ -77,6 +100,30 @@
       "writtenOn": "2021-03-01T19:17:42Z",
       "side": 1,
       "message": "yep, do a Get into a PropertyMap instead of b. That\u0027ll give you the raw property map of what\u0027s stored.",
+      "parentUuid": "749eeb2a_64a5116a",
+      "range": {
+        "startLine": 292,
+        "startChar": 4,
+        "endLine": 296,
+        "endChar": 6
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0855b39f_78a5d38f",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T19:59:02Z",
+      "side": 1,
+      "message": "I read datastore/pls_impl.go.\n\nHowever, I\u0027d still test the assumptions by actually writing something with Go and then reading it with Python.",
       "parentUuid": "749eeb2a_64a5116a",
       "range": {
         "startLine": 292,
