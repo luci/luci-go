@@ -160,7 +160,7 @@ type Settings_ApiHost struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// e.g. luci-change-verifier-dev.appspot.com.
+	// e.g. "luci-change-verifier-dev.appspot.com".
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// If a LUCI Project matches any of regexps and none of _exclude ones,
 	// CQDaemon will connect to the above Migration API host.
@@ -233,6 +233,11 @@ func (x *Settings_ApiHost) GetProd() bool {
 
 // Determines which projects should start relying on CV for computing
 // Runs to work on.
+//
+// The project is using CV Runs if and only if all 3 hold:
+//  * project matches at least one project_regexp.
+//  * project matches no project_regexp_exclude.
+//  * project matches exactly one ApiHost overall OR with prod=true.
 type Settings_UseCVRuns struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -24,7 +24,7 @@ option go_package = "go.chromium.org/luci/cv/api/migration;migrationpb";
 // CQDaemon and LUCI CV.
 message Settings {
   message ApiHost {
-    // e.g. luci-change-verifier-dev.appspot.com.
+    // e.g. "luci-change-verifier-dev.appspot.com".
     string host = 1;
     // If a LUCI Project matches any of regexps and none of _exclude ones,
     // CQDaemon will connect to the above Migration API host.
@@ -42,6 +42,11 @@ message Settings {
 
   // Determines which projects should start relying on CV for computing
   // Runs to work on.
+  //
+  // The project is using CV Runs if and only if all 3 hold:
+  //  * project matches at least one project_regexp.
+  //  * project matches no project_regexp_exclude.
+  //  * project matches exactly one ApiHost overall OR with prod=true.
   message UseCVRuns {
     repeated string project_regexp = 1;
     repeated string project_regexp_exclude = 2;
