@@ -90,6 +90,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3aed43f9_581507e5",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-01T20:44:58Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/model/legacy.go;l\u003d123\n\nIsn\u0027t that every property is indexed individually, unless it\u0027s annotated with \"noindex\" in the gae-orm? Same for \"result_details\" in L174",
+      "parentUuid": "4002750a_2c46df18",
+      "range": {
+        "startLine": 185,
+        "startChar": 29,
+        "endLine": 185,
+        "endChar": 39
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "749eeb2a_64a5116a",
         "filename": "buildbucket/appengine/model/build_test.go",
         "patchSetId": 3
