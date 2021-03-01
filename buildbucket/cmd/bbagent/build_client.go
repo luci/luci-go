@@ -95,17 +95,20 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 		return nil, nil, err
 	}
 
-	// Use "system" account to call UpdateBuild RPCs.
-	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
-	if err != nil {
-		return nil, nil, errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+	if !opts.Insecure {
+		// Use "system" account to call UpdateBuild RPCs.
+		sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+		}
+		prpcClient.C, err = auth.NewAuthenticator(sctx, auth.SilentLogin, auth.Options{
+			MonitorAs: "bbagent/buildbucket",
+		}).Client()
+		if err != nil {
+			return nil, nil, err
+		}
 	}
-	prpcClient.C, err = auth.NewAuthenticator(sctx, auth.SilentLogin, auth.Options{
-		MonitorAs: "bbagent/buildbucket",
-	}).Client()
-	if err != nil {
-		return nil, nil, err
-	}
+
 	// TODO(iannucci): Exchange secret build token+nonce for a running build token
 	// here to confirm that:
 	//   * We're the ONLY ones servicing this build (detect duplicate Swarming
