@@ -49,8 +49,13 @@ func shouldResembleTriagedCL(actual interface{}, expected ...interface{}) string
 		return err
 	}
 	b := exp.(*clInfo)
-	if a == b {
+	switch {
+	case a == b:
 		return ""
+	case a == nil:
+		return "actual is nil, but non-nil was expected"
+	case b == nil:
+		return "actual is not-nil, but nil was expected"
 	}
 
 	buf := strings.Builder{}
@@ -140,6 +145,22 @@ func TestCLsTriage(t *testing.T) {
 					expected.runIndexes = []int32{0}
 					So(a.cls[1], shouldResembleTriagedCL, expected)
 				})
+			})
+
+			Convey("CL without owner's email is not ready", func() {
+				sup.pb.Pcls[0].OwnerLacksEmail = true
+				a := triageCLs(&prjpb.Component{Clids: []int64{1}})
+				So(a.cls, ShouldHaveLength, 1)
+				expected := &clInfo{
+					pcl:        a.s.MustPCL(1),
+					runIndexes: nil,
+					purgingCL:  nil,
+
+					triagedCL: triagedCL{
+						purgeReason: &prjpb.PurgeCLTask_Reason{},
+					},
+				}
+				So(a.cls[1], shouldResembleTriagedCL, expected)
 			})
 
 			Convey("Already purged is never ready", func() {

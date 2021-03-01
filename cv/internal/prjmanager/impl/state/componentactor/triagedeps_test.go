@@ -48,8 +48,13 @@ func shouldResembleTriagedDeps(actual interface{}, expected ...interface{}) stri
 		return err
 	}
 	b := exp.(*triagedDeps)
-	if a == b {
+	switch {
+	case a == b:
 		return ""
+	case a == nil:
+		return "actual is nil, but non-nil was expected"
+	case b == nil:
+		return "actual is not-nil, but nil was expected"
 	}
 
 	buf := strings.Builder{}
