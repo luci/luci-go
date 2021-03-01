@@ -62,6 +62,30 @@
       },
       "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ca022fb_7c6a1821",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-01T19:17:42Z",
+      "side": 1,
+      "message": "yep, do a Get into a PropertyMap instead of b. That\u0027ll give you the raw property map of what\u0027s stored.",
+      "parentUuid": "749eeb2a_64a5116a",
+      "range": {
+        "startLine": 292,
+        "startChar": 4,
+        "endLine": 296,
+        "endChar": 6
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
