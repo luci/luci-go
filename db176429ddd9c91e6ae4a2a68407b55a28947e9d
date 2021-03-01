@@ -253,6 +253,30 @@
       },
       "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05fef785_b56d781c",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T22:06:00Z",
+      "side": 1,
+      "message": "the latter-ish: I\u0027d write throw away code on -dev to write several variants of Build with Py and with Go and then:\na) load each with PropertyMap (what Robbie wrote) in Go\nb) load each with a different language.\n\n\nBtw, as I learned this weekend, the DS emulator is a working quite well.\nSo, it might be feasible to connect locally a Go binary and a Python script to the same simulator DB and perform an integration test.\n\nNOTE: I\u0027m not saying you must drop everything and do it. I\u0027d probably just do -dev ad-hoc testing for anything I wasn\u0027t sure about.",
+      "parentUuid": "fb4d7992_9ba48558",
+      "range": {
+        "startLine": 292,
+        "startChar": 4,
+        "endLine": 296,
+        "endChar": 6
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
