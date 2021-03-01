@@ -184,6 +184,10 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 		panic(fmt.Errorf("PCL %d submitted %s", clid, assumption))
 	case pcl.GetTrigger() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
+	case pcl.GetOwnerLacksEmail():
+		// TODO: fill in the cause.
+		info.purgeReason = &prjpb.PurgeCLTask_Reason{}
+		return
 	}
 
 	cgIndexes := pcl.GetConfigGroupIndexes()

@@ -233,9 +233,12 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	ci := cl.Snapshot.GetGerrit().GetInfo()
 	if ci.GetStatus() == gerritpb.ChangeStatus_MERGED {
 		pcl.Submitted = true
-	} else {
-		// TODO(tandrii): stop storing triggering user's email
-		pcl.Trigger = trigger.Find(cl.Snapshot.GetGerrit().GetInfo())
+		return pcl
+	}
+	// TODO(tandrii): stop storing triggering user's email
+	pcl.Trigger = trigger.Find(ci)
+	if ci.GetOwner().GetEmail() == "" {
+		pcl.OwnerLacksEmail = true
 	}
 	return pcl
 }

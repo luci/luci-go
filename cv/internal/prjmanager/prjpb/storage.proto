@@ -162,7 +162,8 @@ message PCL {
   // Run will probably finish soon).
   bool submitted = 13;
 
-  // TODO(tandrii): track lack of owner email.
+  // If true, CL's owner has no known email.
+  bool owner_lacks_email = 14;
 }
 
 // PRun is an incomplete Run on which CV is currently working.
