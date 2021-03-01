@@ -39,6 +39,30 @@
       },
       "revId": "7df7b3b18c1eec3097cd9eeaaa70c547df0cd750",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e70b679b_699fe17e",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T19:50:05Z",
+      "side": 1,
+      "message": "nah, not worth it.",
+      "parentUuid": "640f17a0_d0ed986c",
+      "range": {
+        "startLine": 239,
+        "startChar": 79,
+        "endLine": 239,
+        "endChar": 80
+      },
+      "revId": "7df7b3b18c1eec3097cd9eeaaa70c547df0cd750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
