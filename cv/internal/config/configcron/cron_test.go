@@ -55,7 +55,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				config.ProjectSet("chromium"): {cvconfig.ConfigFileName: ""},
 			}))
 			// Project chromium doesn't exist in datastore.
-			err := SubmitRefreshTasks(ctx, false)
+			err := SubmitRefreshTasks(ctx)
 			So(err, ShouldBeNil)
 			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
 				{Project: "chromium"},
@@ -72,7 +72,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				Project: "chromium",
 				Enabled: true,
 			}), ShouldBeNil)
-			err := SubmitRefreshTasks(ctx, false)
+			err := SubmitRefreshTasks(ctx)
 			So(err, ShouldBeNil)
 			So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
 				{Project: "chromium"},
@@ -90,7 +90,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					Project: "chromium",
 					Enabled: true,
 				}), ShouldBeNil)
-				err := SubmitRefreshTasks(ctx, false)
+				err := SubmitRefreshTasks(ctx)
 				So(err, ShouldBeNil)
 				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
 					{Project: "chromium", Disable: true},
@@ -104,7 +104,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					Project: "chromium",
 					Enabled: true,
 				}), ShouldBeNil)
-				err := SubmitRefreshTasks(ctx, false)
+				err := SubmitRefreshTasks(ctx)
 				So(err, ShouldBeNil)
 				So(tqScheduler.Tasks().Payloads(), ShouldResembleProto, []*RefreshProjectConfigTask{
 					{Project: "chromium", Disable: true},
@@ -119,7 +119,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					Project: "foo",
 					Enabled: false,
 				}), ShouldBeNil)
-				err := SubmitRefreshTasks(ctx, false)
+				err := SubmitRefreshTasks(ctx)
 				So(err, ShouldBeNil)
 				So(tqScheduler.Tasks(), ShouldBeEmpty)
 			})
