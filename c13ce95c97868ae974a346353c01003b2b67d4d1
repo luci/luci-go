@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "89962009_347341ce",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T03:22:32Z",
+      "side": 1,
+      "message": "How to get it is exercise for the reader:\n  on gLinux, running the emulator command prints a command to install missing package\n  on other platforms, I guess it\u0027s similar, isn\u0027t it?",
+      "parentUuid": "778cdb15_6da62445",
+      "range": {
+        "startLine": 11,
+        "startChar": 2,
+        "endLine": 11,
+        "endChar": 41
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9e82962a_2113c235",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -61,6 +85,30 @@
       "side": 1,
       "message": "I haven\u0027t found emulator yet, but we can definitely connect to datastore in some cloud project.",
       "parentUuid": "9e82962a_2113c235",
+      "range": {
+        "startLine": 53,
+        "startChar": 28,
+        "endLine": 53,
+        "endChar": 65
+      },
+      "revId": "c13ce95c97868ae974a346353c01003b2b67d4d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93b00c6d_7cb47862",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T03:22:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9307526_1ab5b30e",
       "range": {
         "startLine": 53,
         "startChar": 28,
