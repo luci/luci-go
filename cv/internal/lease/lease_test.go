@@ -148,6 +148,7 @@ func TestLease(t *testing.T) {
 			ResourceID: rid,
 			Holder:     "holder",
 			ExpireTime: now.Add(1 * time.Minute),
+			Payload:    []byte("stuff"),
 		})
 		So(err, ShouldBeNil)
 
@@ -159,6 +160,7 @@ func TestLease(t *testing.T) {
 				Holder:     "holder",
 				ExpireTime: now.Add(2 * time.Minute),
 				Token:      []byte{22, 63, 95, 15, 154, 98, 29, 114},
+				Payload:    []byte("stuff"),
 			}
 			So(l, ShouldResemble, expected)
 			So(mustLoadLease(ctx, rid), ShouldResemble, expected)
@@ -172,6 +174,7 @@ func TestLease(t *testing.T) {
 				Holder:     "holder",
 				ExpireTime: now.Add(1 * time.Minute).Add(3 * time.Millisecond),
 				Token:      []byte{22, 63, 95, 15, 154, 98, 29, 114},
+				Payload:    []byte("stuff"),
 			}
 			So(l, ShouldResemble, expected)
 		})
