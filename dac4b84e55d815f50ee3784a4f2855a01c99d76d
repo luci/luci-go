@@ -139,6 +139,24 @@
       "parentUuid": "5cbaf51e_2d2e0cd1",
       "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "04dea094_4e272bfa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 26
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-01T19:20:58Z",
+      "side": 1,
+      "message": "\u003e \u003e To summarize, I currently have the following blockers to run emulator on mac bots:\n\u003e \u003e 1. It requires docker to run emulator on mac\n\u003e \u003e   a. \"docker run -p \u003crandomPort\u003e:\u003crandomPort\u003e gcr.io/cloud-spanner-emulator/emulator\" still binds the default grpc port\n\u003e \n\u003e I think you mean `docker run -p \u003crandomPort\u003e:\u003cgrpc port\u003e ...`? The grpc server inside the container is always going to bind to a fixed port; the -p option lets you bind that to a different port on the host.\n\u003e \n\u003e \u003e   b. I had to run \"sudo docker\", and I haven\u0027t figured out a reliable way to run sudoless docker.\n\u003e \n\u003e I just installed Docker on my mac and after installing the helper tools (which required a password) `docker` does not? Running:\n\nCould you tell me what helper tools you installed to run docker sudoless?\n\n\u003e \n\u003e $ docker run -p 127.0.0.1:30203:9010 -p 127.0.0.1:30204:9020 gcr.io/cloud-spanner-emulator/emulator:1.2.0\n\u003e 2021/02/26 17:16:50 gateway.go:140: Cloud Spanner emulator running.\n\u003e 2021/02/26 17:16:50 gateway.go:141: REST server listening at 0.0.0.0:9020\n\u003e 2021/02/26 17:16:50 gateway.go:142: gRPC server listening at 0.0.0.0:9010\n\u003e \n\u003e (which are of course bound to 30204 and 30203 respectively)\n\u003e \n\u003e Also SIGTERM correctly kills the emulator and cleans up the container.\n\u003e \n\u003e \u003e 2. Pdeathsig is only supported on Linux. \n\u003e \u003e   a. Robbie has told me the solution is to use signal handler. So if the other blocker is lifted, I should be able to solve this one.\n\u003e \u003e \n\u003e \u003e My plan is to land this linux only version first. And then enable it on Linux bots. Then if there\u0027s need to support development on mac, I\u0027ll craft out a process of using emulator to run local tests on mac, which may involve running some extra command before/after the test run, but this may be hard to automate.",
+      "parentUuid": "b78265aa_6caf9c7a",
+      "revId": "dac4b84e55d815f50ee3784a4f2855a01c99d76d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
