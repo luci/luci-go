@@ -64,6 +64,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 )
 
 // batchSize is total number of items to pass to PutMulti or DeleteMulti RPCs.
@@ -188,10 +189,13 @@ func (s *Set) Add(c context.Context, items []Item) error {
 // accumulation of a garbage in the set that will slow down 'List' and 'Pop'.
 //
 // Returns only transient errors.
-func (s *Set) List(ctx context.Context) (*Listing, error) {
+func (s *Set) List(ctx context.Context) (l *Listing, err error) {
 	if datastore.CurrentTransaction(ctx) != nil {
 		panic("dsset.Set.List must be called outside of a transaction")
 	}
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/List")
+	defer func() { span.End(err) }()
+
 	now := clock.Now(ctx).UTC()
 
 	// Fetch all items and all tombstones.
@@ -269,10 +273,12 @@ func (s *Set) List(ctx context.Context) (*Listing, error) {
 // Use at your own risk. If in doubt, use expected BeginPop() instead.
 //
 // Calls nextID() to get next ID to delete until nextID() returns "".
-func (s *Set) Delete(ctx context.Context, nextID func() string) error {
+func (s *Set) Delete(ctx context.Context, nextID func() string) (err error) {
 	if datastore.CurrentTransaction(ctx) != nil {
 		panic("dsset.Set.Delete must be called outside of a transaction")
 	}
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/Delete")
+	defer func() { span.End(err) }()
 
 	keys := []*datastore.Key{}
 	for {
@@ -282,7 +288,7 @@ func (s *Set) Delete(ctx context.Context, nextID func() string) error {
 		}
 		keys = append(keys, datastore.NewKey(ctx, "dsset.Item", id, 0, s.Parent))
 	}
-	err := batchOp(len(keys), func(start, end int) error {
+	err = batchOp(len(keys), func(start, end int) error {
 		return datastore.Delete(ctx, keys[start:end])
 	})
 	if err != nil {
@@ -476,10 +482,12 @@ func FinishPop(ctx context.Context, ops ...*PopOp) error {
 //
 // Returns only transient errors. There's no way to know which items were
 // removed and which weren't in case of an error.
-func CleanupGarbage(ctx context.Context, cleanup ...Garbage) error {
+func CleanupGarbage(ctx context.Context, cleanup ...Garbage) (err error) {
 	if datastore.CurrentTransaction(ctx) != nil {
 		panic("dsset.CleanupGarbage must be called outside of a transaction")
 	}
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/dsset/CleanupGarbage")
+	defer func() { span.End(err) }()
 
 	keys := []*datastore.Key{}
 	for _, tombs := range cleanup {
@@ -490,7 +498,7 @@ func CleanupGarbage(ctx context.Context, cleanup ...Garbage) error {
 		}
 	}
 
-	err := batchOp(len(keys), func(start, end int) error {
+	err = batchOp(len(keys), func(start, end int) error {
 		return datastore.Delete(ctx, keys[start:end])
 	})
 	if err != nil {

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/eventbox/dsset"
@@ -64,7 +65,15 @@ var ErrConcurretMutation = errors.New("Concurrent mutation")
 // and performing arbitrary side effects.
 //
 // Returns wrapped ErrConcurretMutation if entity's EVersion has changed.
-func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) error {
+func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) (err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch")
+	span.Attribute("recipient", recipient.String())
+	defer func() { span.End(err) }()
+
+	return processBatch(ctx, recipient, p)
+}
+
+func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) error {
 	var state State
 	var expectedEV EVersion
 	eg, ectx := errgroup.WithContext(ctx)
