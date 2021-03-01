@@ -57,7 +57,7 @@ func (rs *RunState) loadCLs(ctx context.Context) ([]*changelist.CL, error) {
 	for i, clID := range rs.Run.CLs {
 		cls[i] = &changelist.CL{ID: clID}
 	}
-	err := changelist.LoadMulti(ctx, cls)
+	err := datastore.Get(ctx, cls)
 	switch merr, ok := err.(errors.MultiError); {
 	case err == nil:
 		return cls, nil

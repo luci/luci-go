@@ -159,7 +159,7 @@ func loadRuns(ctx context.Context, ids map[common.RunID]struct{}) ([]*run.Run, e
 	for id := range ids {
 		runs = append(runs, &run.Run{ID: id})
 	}
-	err := run.LoadMulti(ctx, runs)
+	err := datastore.Get(ctx, runs)
 	switch merr, ok := err.(errors.MultiError); {
 	case err == nil:
 		return runs, make(errors.MultiError, len(runs)), nil

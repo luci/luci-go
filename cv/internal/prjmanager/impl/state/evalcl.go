@@ -313,10 +313,10 @@ func (s *State) loadCLsForPCLs(ctx context.Context) ([]*changelist.CL, errors.Mu
 func loadCLs(ctx context.Context, cls []*changelist.CL) ([]*changelist.CL, errors.MultiError, error) {
 	// At 0.007 KiB (serialized) per CL as of Jan 2021, this should scale 2000 CLs
 	// with reasonable RAM footprint and well within 10s because
-	// changelist.LoadMulti splits it into concurrently queried batches.
+	// datastore.GetMulti splits it into concurrently queried batches.
 	// To support more, CLs would need to be loaded and processed in batches,
 	// or CL snapshot size reduced.
-	err := changelist.LoadMulti(ctx, cls)
+	err := datastore.Get(ctx, cls)
 	switch merr, ok := err.(errors.MultiError); {
 	case err == nil:
 		return cls, make(errors.MultiError, len(cls)), nil
