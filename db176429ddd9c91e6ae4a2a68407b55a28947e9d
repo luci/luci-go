@@ -277,6 +277,30 @@
       },
       "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70a30513_b7701cea",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-01T22:27:16Z",
+      "side": 1,
+      "message": "(1) GoBB does not use the lease fields, as we have not ported the leasing APIs. Will we ever?\n(2) GoBB.UpdateBuild() is already updating Build entities with lease_expiration_time\u003d-61232123123. We don\u0027t have to make any of additional variants.\n(3) IIUC, all the logic in the py leasing API behave the same whether the expiration time is None or -61223123. Same for other leasing fields.\n\nI think I just need to push this change to dev, and\n- make sure that there is no 5xx in the leasing API, and\n- sample some builds to verify that they have null in ds lease fields.\n\nLet me know if I still need to test if python maps null to None.",
+      "parentUuid": "05fef785_b56d781c",
+      "range": {
+        "startLine": 292,
+        "startChar": 4,
+        "endLine": 296,
+        "endChar": 6
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
