@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b631be6e_56d65fe1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-01T00:06:21Z",
+      "side": 1,
+      "message": "This makes it a little bit easier for people with color vision deficiency to distinguish the exonereated and expected test variants.\n\nhttps://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6839/test-results?q\u003d",
+      "revId": "d72fb085e1079fdb114541c7a4bb3ba182729000",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
