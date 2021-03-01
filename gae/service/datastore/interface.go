@@ -642,6 +642,7 @@ func Get(c context.Context, dst ...interface{}) error {
 			et.trackError(index, err)
 			return
 		}
+		fmt.Printf("[WTF: Get %q => %v\n", keys[idx].StringID(), pm)
 
 		mat, v := mma.get(index)
 		if err := mat.setPM(v, pm); err != nil {
@@ -707,6 +708,7 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 	var dat DroppedArgTracker
 	dat.MarkNilKeysVals(keys, vals)
 	keys, vals, dal := dat.DropKeysAndVals(keys, vals)
+	fmt.Printf("[WTF: PutMulti %q => %v\n", keys[0].StringID(), vals[0])
 
 	err = raw.PutMulti(keys, vals, func(compressedIdx int, key *Key, err error) {
 		idx := dal.OriginalIndex(compressedIdx)

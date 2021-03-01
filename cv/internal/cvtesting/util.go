@@ -180,7 +180,7 @@ func (t *Test) installDSReal(ctx context.Context) (context.Context, bool) {
 		So(err, ShouldBeNil)
 	}
 
-	logging.Debugf(ctx, "Using DS of project %q", project)
+	// logging.Debugf(ctx, "Using DS of project %q", project)
 	client, err := nativeDatastore.NewClient(ctx, project, option.WithTokenSource(ts))
 	So(err, ShouldBeNil)
 	return t.installDSshared(ctx, project, client), true
@@ -204,7 +204,7 @@ func (t *Test) installDSEmulator(ctx context.Context) (context.Context, bool) {
 		return ctx, false
 	}
 
-	logging.Debugf(ctx, "Using DS emulator at %q", emulatorHost)
+	// logging.Debugf(ctx, "Using DS emulator at %q", emulatorHost)
 	client, err := nativeDatastore.NewClient(ctx, "luci-gae-emulator-test")
 	So(err, ShouldBeNil)
 	return t.installDSshared(ctx, "luci-gae-emulator-test", client), true
@@ -221,7 +221,7 @@ func (t *Test) installDSshared(ctx context.Context, cloudProject string, client 
 
 	// Enter a namespace for this tests.
 	ns := genDSNamespaceName(time.Now())
-	logging.Debugf(ctx, "Using %q DS namespace", ns)
+	// logging.Debugf(ctx, "Using %q DS namespace", ns)
 	ctx = info.MustNamespace(ctx, ns)
 	// Failure to clear is hard before the test,
 	// ignored after the test.
