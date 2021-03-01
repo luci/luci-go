@@ -22,6 +22,30 @@
       },
       "revId": "025ace6883f9db9b8b55313fd6f65cb44e301939",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ffe6c12_a2288317",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T19:52:49Z",
+      "side": 1,
+      "message": "Each CV test can already do this via cvtesting.Test{MaxDuration:...}",
+      "parentUuid": "87485e2a_a9feb0b9",
+      "range": {
+        "startLine": 91,
+        "startChar": 9,
+        "endLine": 91,
+        "endChar": 41
+      },
+      "revId": "025ace6883f9db9b8b55313fd6f65cb44e301939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
