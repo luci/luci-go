@@ -16,6 +16,69 @@
       "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6839/test-results?q\u003d",
       "revId": "031c2cb30456871bfb9477d17a8efd0ee98f5540",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dabdd201_a4178aa6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-01T21:34:06Z",
+      "side": 1,
+      "message": "Is the purple icon for \"unexpectedly skipped\" and \"exonerated\" being used anywhere else? I think it\u0027s a bit confusing if we use the same color for 2 different statuses (and it is a bit misleading as Tiff thought purple means \"infra failure\")",
+      "revId": "031c2cb30456871bfb9477d17a8efd0ee98f5540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "655b22ea_c4d55712",
+        "filename": "milo/frontend/resultui/src/context/invocation_state.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-01T21:34:06Z",
+      "side": 1,
+      "message": "should?",
+      "range": {
+        "startLine": 37,
+        "startChar": 32,
+        "endLine": 37,
+        "endChar": 36
+      },
+      "revId": "031c2cb30456871bfb9477d17a8efd0ee98f5540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "316a0311_05d44982",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-01T21:34:06Z",
+      "side": 1,
+      "message": "\"clean\" is not really meaningful here. How about \"empty_section\" and negate the meaning?",
+      "range": {
+        "startLine": 120,
+        "startChar": 26,
+        "endLine": 120,
+        "endChar": 31
+      },
+      "revId": "031c2cb30456871bfb9477d17a8efd0ee98f5540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
