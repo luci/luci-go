@@ -36,6 +36,29 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "81ceaa11_576012fe",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-01T22:05:00Z",
+      "side": 1,
+      "message": "Strictly speaking, it is not true if testLoader is null.",
+      "range": {
+        "startLine": 54,
+        "startChar": 10,
+        "endLine": 54,
+        "endChar": 16
+      },
+      "revId": "2b68fb404f8976e817aa910b9d518b60b7b54fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "6bf6bdfb_5fe8bd62",
@@ -49,6 +72,23 @@
       "writtenOn": "2021-02-28T23:04:45Z",
       "side": 1,
       "message": "The loading logic is split between test loader and test result tab.\nI\u0027ll move all loading/filtering to test loader in the next CL.",
+      "revId": "2b68fb404f8976e817aa910b9d518b60b7b54fae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "088aee95_c5a52c74",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-01T22:05:00Z",
+      "side": 1,
+      "message": "I am a bit confused here. Should this be inside the if block at line 65?",
       "revId": "2b68fb404f8976e817aa910b9d518b60b7b54fae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
