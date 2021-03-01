@@ -136,6 +136,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a22ebec_18f6a0c4",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-01T21:57:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "130f4c23_a40b1cfb",
+      "range": {
+        "startLine": 185,
+        "startChar": 29,
+        "endLine": 185,
+        "endChar": 39
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "749eeb2a_64a5116a",
@@ -197,6 +221,30 @@
       "side": 1,
       "message": "I read datastore/pls_impl.go.\n\nHowever, I\u0027d still test the assumptions by actually writing something with Go and then reading it with Python.",
       "parentUuid": "749eeb2a_64a5116a",
+      "range": {
+        "startLine": 292,
+        "startChar": 4,
+        "endLine": 296,
+        "endChar": 6
+      },
+      "revId": "db176429ddd9c91e6ae4a2a68407b55a28947e9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fb4d7992_9ba48558",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-01T21:57:31Z",
+      "side": 1,
+      "message": "how would you write a unit test that writes a value in go and reads it in py? did you mean a manual integration test on dev?",
+      "parentUuid": "0855b39f_78a5d38f",
       "range": {
         "startLine": 292,
         "startChar": 4,
