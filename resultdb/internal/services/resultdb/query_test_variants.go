@@ -16,9 +16,7 @@ package resultdb
 
 import (
 	"context"
-	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
@@ -55,27 +53,13 @@ func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVari
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 	}
-
-	var tvs []*uipb.TestVariant
-	var token string
-	for len(tvs) == 0 {
-		if tvs, token, err = q.Fetch(ctx); err != nil {
-			return nil, errors.Annotate(err, "failed to read test variants").Err()
-		}
-		q.PageToken = token
-		if outOfTime(ctx) {
-			break
-		}
+	tvs, token, err := q.Fetch(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read test variants").Err()
 	}
 
 	return &uipb.QueryTestVariantsResponse{
 		TestVariants:  tvs,
 		NextPageToken: token,
 	}, nil
-}
-
-// outOfTime returns true if the context will expire in less than 500ms.
-func outOfTime(ctx context.Context) bool {
-	dl, ok := ctx.Deadline()
-	return ok && clock.Until(ctx, dl) < 500*time.Millisecond
 }
