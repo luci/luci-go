@@ -16,6 +16,24 @@
       "message": "Shall we revert the gRPC interceptor too?",
       "revId": "1f84ea974ae5ad81fb185c0a5d542e54e56b248f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c1cfb7a_b6af59e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T22:46:57Z",
+      "side": 1,
+      "message": "part of me likes extra debug info, but in retrospect it wasn\u0027t very useful.\nSo, i vote for revert.",
+      "parentUuid": "b16112cf_de916111",
+      "revId": "1f84ea974ae5ad81fb185c0a5d542e54e56b248f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
