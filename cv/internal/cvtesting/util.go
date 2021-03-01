@@ -17,10 +17,12 @@ package cvtesting
 
 import (
 	"context"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
@@ -175,7 +177,7 @@ func (t *Test) installDSReal(ctx context.Context) (context.Context, bool) {
 	logging.Debugf(ctx, "Using DS of project %q", project)
 	client, err := nativeDatastore.NewClient(ctx, project, option.WithTokenSource(ts))
 	So(err, ShouldBeNil)
-	return t.installDSshared(ctx, client), true
+	return t.installDSshared(ctx, project, client), true
 }
 
 // installDSEmulator configures CV tests to run with DS emulator.
@@ -197,27 +199,24 @@ func (t *Test) installDSEmulator(ctx context.Context) (context.Context, bool) {
 	}
 
 	logging.Debugf(ctx, "Using DS emulator at %q", emulatorHost)
-	client, err := nativeDatastore.NewClient(ctx, "luci-gae-test")
+	client, err := nativeDatastore.NewClient(ctx, "luci-gae-emulator-test")
 	So(err, ShouldBeNil)
-	return t.installDSshared(ctx, client), true
+	return t.installDSshared(ctx, "luci-gae-emulator-test", client), true
 }
 
-func (t *Test) installDSshared(ctx context.Context, client *nativeDatastore.Client) context.Context {
+func (t *Test) installDSshared(ctx context.Context, cloudProject string, client *nativeDatastore.Client) context.Context {
 	t.cleanups = append(t.cleanups, func() {
 		if err := client.Close(); err != nil {
 			logging.Errorf(ctx, "failed to close DS client: %s", err)
 		}
 	})
-	ctx = (&cloud.Config{ProjectID: "luci-ds-emulator-test", DS: client}).Use(ctx, nil)
+	ctx = (&cloud.Config{ProjectID: cloudProject, DS: client}).Use(ctx, nil)
+	maybeCleanupOldDSNamespaces(ctx)
 
 	// Enter a namespace for this tests.
-	randNamespace := make([]byte, 8)
-	if _, err := rand.Read(randNamespace); err != nil {
-		panic(err)
-	}
-	ns := fmt.Sprintf("testing-%s-%s", time.Now().Format("2006-01-02"), hex.EncodeToString(randNamespace))
+	ns := genDSNamespaceName(time.Now())
+	logging.Debugf(ctx, "Using %q DS namespace", ns)
 	ctx = info.MustNamespace(ctx, ns)
-
 	// Failure to clear is hard before the test,
 	// ignored after the test.
 	So(clearDS(ctx), ShouldBeNil)
@@ -227,6 +226,32 @@ func (t *Test) installDSshared(ctx context.Context, client *nativeDatastore.Clie
 		}
 	})
 	return ctx
+}
+
+func genDSNamespaceName(t time.Time) string {
+	rnd := make([]byte, 8)
+	if _, err := cryptorand.Read(rnd); err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("testing-%s-%s", time.Now().Format("2006-01-02"), hex.EncodeToString(rnd))
+}
+
+var dsNamespaceRegexp = regexp.MustCompile(`^testing-(\d{4}-\d\d-\d\d)-[0-9a-f]+$`)
+
+func isOldTestDSNamespace(ns string, now time.Time) bool {
+	m := dsNamespaceRegexp.FindSubmatch([]byte(ns))
+	if len(m) == 0 {
+		return false
+	}
+	// Anything up ~2 days old should be kept to avoid accidentally removing
+	// currently under test namespace in presence of timezones and out of sync
+	// clocks.
+	const maxAge = 2 * 24 * time.Hour
+	t, err := time.Parse("2006-01-02", string(m[1]))
+	if err != nil {
+		panic(err)
+	}
+	return now.Sub(t) > maxAge
 }
 
 func clearDS(ctx context.Context) error {
@@ -240,4 +265,31 @@ func clearDS(ctx context.Context) error {
 		return errors.Annotate(err, "failed to delete %d entities", len(allKeys)).Err()
 	}
 	return nil
+}
+
+func maybeCleanupOldDSNamespaces(ctx context.Context) {
+	if rand.Intn(1024) < 1020 { // ~99% of cases.
+		return
+	}
+	q := datastore.NewQuery("__namespace__").KeysOnly(true)
+	var allKeys []*datastore.Key
+	if err := datastore.GetAll(ctx, q, &allKeys); err != nil {
+		logging.Warningf(ctx, "failed to query all namespaces: %s", err)
+		return
+	}
+	now := time.Now()
+	var toDelete []string
+	for _, k := range allKeys {
+		ns := k.StringID()
+		if isOldTestDSNamespace(ns, now) {
+			toDelete = append(toDelete, ns)
+		}
+	}
+	logging.Debugf(ctx, "cleaning up %d old namespaces", len(toDelete))
+	for _, ns := range toDelete {
+		logging.Debugf(ctx, "cleaning up %s", ns)
+		if err := clearDS(info.MustNamespace(ctx, ns)); err != nil {
+			logging.Errorf(ctx, "failed to clean old DS namespace %s: %s", ns, err)
+		}
+	}
 }
