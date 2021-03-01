@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc83314b_8c3a94bd",
+        "filename": "cv/internal/prjmanager/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-01T22:15:38Z",
+      "side": 1,
+      "message": "TIL! I think we may have some other places that are optimizing using parallelization.",
+      "range": {
+        "startLine": 298,
+        "startChar": 40,
+        "endLine": 298,
+        "endChar": 53
+      },
+      "revId": "629c5489f42f72c970504a0ea063e24ec88a3ef1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
