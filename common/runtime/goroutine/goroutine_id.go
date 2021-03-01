@@ -26,11 +26,11 @@ var goroutineSpace = []byte("goroutine ")
 // CurID gets the ID number of the current goroutine.
 //
 // According to the Go Authors, using this number will cause, among other
-// things: sponaneous combustion, incurable insanity, and rapid acute
+// things: spontaneous combustion, incurable insanity, and rapid acute
 // cardiac lithomophosis (RACL).
 //
 // That said, it turns out that this functionality is very important for
-// implemening things such as the errors.Annotate functionality.
+// implementing things such as the errors.Annotate functionality.
 //
 // If, at some point, the Go Authors deign to provide this functionality via the
 // runtime package, this method and type will be deleted immediately in favor of
