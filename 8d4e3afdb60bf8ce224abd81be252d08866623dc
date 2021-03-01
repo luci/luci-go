@@ -16,6 +16,24 @@
       "message": "fun code 😊",
       "revId": "8d4e3afdb60bf8ce224abd81be252d08866623dc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7dc57175_c154516b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2021-03-01T20:34:47Z",
+      "side": 1,
+      "message": "ya, I got a chuckle out of it 😊. Have any of you talked with the Go folks any time recently? I see that this file is very old now, so maybe the language/stdlib people will have different opinions now",
+      "parentUuid": "6f5efccc_6644b067",
+      "revId": "8d4e3afdb60bf8ce224abd81be252d08866623dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
