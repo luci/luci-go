@@ -134,6 +134,13 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 		return errors.New("can't extend an expired lease")
 	}
 
+	extended := *l
+	extended.ExpireTime = l.ExpireTime.UTC().Add(addition).Truncate(time.Millisecond)
+	extended.Token = make([]byte, tokenLen)
+	if _, err := mathrand.Read(ctx, extended.Token); err != nil {
+		return errors.Annotate(err, "failed to generate token for the extension").Err()
+	}
+
 	var innerErr error
 	finalErr := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
@@ -146,11 +153,7 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 		case !bytes.Equal(cur.Token, l.Token):
 			return ErrConflict
 		}
-		l.ExpireTime = l.ExpireTime.UTC().Add(addition).Truncate(time.Millisecond)
-		if _, err = mathrand.Read(ctx, l.Token); err != nil {
-			return errors.Annotate(err, "failed to generate token for lease").Err()
-		}
-		if err := datastore.Put(ctx, l); err != nil {
+		if err := datastore.Put(ctx, &extended); err != nil {
 			return errors.Annotate(err, "failed to put lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
 		}
 		return nil
@@ -162,6 +165,7 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 	case finalErr != nil:
 		return errors.Annotate(finalErr, "failed to extend lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
 	}
+	*l = extended
 	return nil
 }
 
