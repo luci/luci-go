@@ -17,16 +17,28 @@ package cvtesting
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
+	nativeDatastore "cloud.google.com/go/datastore"
+	"google.golang.org/api/option"
+
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	serverauth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -61,23 +73,35 @@ type Test struct {
 	// with limited CPU resources.
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
+
+	// cleanups are executed in reverse order in cleanup().
+	cleanups []func()
 }
 
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	// Set defaults.
 	if t.MaxDuration == time.Duration(0) {
-		t.MaxDuration = 10 * time.Second
+		if os.Getenv("DATASTORE_PROJECT") == "" {
+			t.MaxDuration = 10 * time.Second
+		} else {
+			t.MaxDuration = 60 * time.Second
+		}
 	}
 	if t.GFake == nil {
 		t.GFake = &gf.Fake{}
 	}
 
-	topCtx, cancel := context.WithTimeout(context.Background(), t.MaxDuration)
-	deferme = func() {
-		// Fail the test if the topCtx timed out.
+	ctx = context.Background()
+	if testing.Verbose() {
+		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+	}
+
+	topCtx, cancel := context.WithTimeout(ctx, t.MaxDuration)
+	t.cleanups = append(t.cleanups, func() {
+		// Fail the test if the topCtx has timed out.
 		So(topCtx.Err(), ShouldBeNil)
 		cancel()
-	}
+	})
 
 	// Use a date-time that is easy to eyeball in logs.
 	utc := time.Date(2020, time.February, 2, 10, 30, 00, 0, time.UTC)
@@ -90,15 +114,130 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		t.Clock.Add(dur)
 	})
 
-	ctx = txndefer.FilterRDS(memory.Use(ctx))
-	datastore.GetTestable(ctx).AutoIndex(true)
-	datastore.GetTestable(ctx).Consistent(true)
-
-	if testing.Verbose() {
-		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
-	}
+	ctx = t.installDS(ctx)
+	ctx = txndefer.FilterRDS(ctx)
 
 	ctx = t.GFake.Install(ctx)
 	ctx, t.TQ = tq.TestingContext(ctx, nil)
-	return
+	return ctx, t.cleanup
+}
+
+func (t *Test) cleanup() {
+	for i := len(t.cleanups) - 1; i >= 0; i-- {
+		t.cleanups[i]()
+	}
+}
+
+func (t *Test) installDS(ctx context.Context) context.Context {
+	if ctx, ok := t.installDSReal(ctx); ok {
+		return ctx
+	}
+	if ctx, ok := t.installDSEmulator(ctx); ok {
+		return ctx
+	}
+	ctx = memory.Use(ctx)
+	// CV runs against Firestore backend, which is consistent.
+	datastore.GetTestable(ctx).Consistent(true)
+	datastore.GetTestable(ctx).AutoIndex(true)
+	return ctx
+}
+
+// installDSProd configures CV tests to run with actual DS.
+//
+// If DATASTORE_PROJECT ENV var isn't set, returns false.
+//
+// To use, first
+//
+//    $ luci-auth context -- bash
+//    $ export DATASTORE_PROJECT=my-cloud-project-with-datastore
+//
+// and then run go tests the usual way, e.g.:
+//
+//    $ go test ./...
+func (t *Test) installDSReal(ctx context.Context) (context.Context, bool) {
+	project := os.Getenv("DATASTORE_PROJECT")
+	if project == "" {
+		return ctx, false
+	}
+	if project == "luci-change-verifier" {
+		panic("Don't use production CV project. Using -dev is OK.")
+	}
+
+	at := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
+		Scopes: serverauth.CloudOAuthScopes,
+	})
+	ts, err := at.TokenSource()
+	if err != nil {
+		err = errors.Annotate(err, "failed to initialize the token source (are you in `$ luci-auth context`?)").Err()
+		So(err, ShouldBeNil)
+	}
+
+	logging.Debugf(ctx, "Using DS of project %q", project)
+	client, err := nativeDatastore.NewClient(ctx, project, option.WithTokenSource(ts))
+	So(err, ShouldBeNil)
+	return t.installDSshared(ctx, client), true
+}
+
+// installDSEmulator configures CV tests to run with DS emulator.
+//
+// If DATASTORE_EMULATOR_HOST ENV var isn't set, returns false.
+//
+// To use, run
+//
+//     $ gcloud beta emulators datastore start --consistency=1.0
+//
+// and export DATASTORE_EMULATOR_HOST as printed by above command.
+//
+// NOTE: as of Feb 2021, emulator runs in legacy Datastore mode,
+// not Firestore.
+func (t *Test) installDSEmulator(ctx context.Context) (context.Context, bool) {
+	emulatorHost := os.Getenv("DATASTORE_EMULATOR_HOST")
+	if emulatorHost == "" {
+		return ctx, false
+	}
+
+	logging.Debugf(ctx, "Using DS emulator at %q", emulatorHost)
+	client, err := nativeDatastore.NewClient(ctx, "luci-gae-test")
+	So(err, ShouldBeNil)
+	return t.installDSshared(ctx, client), true
+}
+
+func (t *Test) installDSshared(ctx context.Context, client *nativeDatastore.Client) context.Context {
+	t.cleanups = append(t.cleanups, func() {
+		if err := client.Close(); err != nil {
+			logging.Errorf(ctx, "failed to close DS client: %s", err)
+		}
+	})
+	ctx = (&cloud.Config{ProjectID: "luci-ds-emulator-test", DS: client}).Use(ctx, nil)
+
+	// Enter a namespace for this tests.
+	randNamespace := make([]byte, 8)
+	if _, err := rand.Read(randNamespace); err != nil {
+		panic(err)
+	}
+	ns := fmt.Sprintf("testing-%s-%s", time.Now().Format("2006-01-02"), hex.EncodeToString(randNamespace))
+	ctx = info.MustNamespace(ctx, ns)
+
+	// Failure to clear is hard before the test,
+	// ignored after the test.
+	So(clearDS(ctx), ShouldBeNil)
+	t.cleanups = append(t.cleanups, func() {
+		if err := clearDS(ctx); err != nil {
+			logging.Errorf(ctx, "failed to clean DS namespace %s: %s", ns, err)
+		}
+	})
+	return ctx
+}
+
+func clearDS(ctx context.Context) error {
+	// Execute a kindless query to clear entire namespace.
+	q := datastore.NewQuery("").KeysOnly(true)
+	var allKeys []*datastore.Key
+	if err := datastore.GetAll(ctx, q, &allKeys); err != nil {
+		return errors.Annotate(err, "failed to get entities").Err()
+	}
+	if err := datastore.Delete(ctx, allKeys); err != nil {
+		return errors.Annotate(err, "failed to delete %d entities", len(allKeys)).Err()
+	}
+	return nil
 }
