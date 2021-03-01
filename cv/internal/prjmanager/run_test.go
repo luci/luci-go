@@ -279,15 +279,14 @@ func TestRunBuilder(t *testing.T) {
 				So(cl.UpdateTime, ShouldResemble, r.CreateTime)
 			}
 
-			Convey("Run is properly saved", func() {
-				saved := &run.Run{ID: expectedRunID}
-				So(datastore.Get(ctx, saved), ShouldBeNil)
-				So(saved, ShouldResemble, expectedRun)
-			})
+			// Run is properly saved
+			saved := &run.Run{ID: expectedRunID}
+			So(datastore.Get(ctx, saved), ShouldBeNil)
+			So(saved, ShouldResemble, expectedRun)
 
 			for i := range rb.InputCLs {
 				i := i
-				Convey(fmt.Sprintf("RunCL %d is properly saved", rb.InputCLs[i].ID), func() {
+				Convey(fmt.Sprintf("RunCL %d-th is properly saved", i), func() {
 					saved := &run.RunCL{
 						ID:  rb.InputCLs[i].ID,
 						Run: datastore.MakeKey(ctx, run.RunKind, expectedRunID),
@@ -296,7 +295,7 @@ func TestRunBuilder(t *testing.T) {
 					So(saved.Trigger, ShouldResembleProto, rb.InputCLs[i].TriggerInfo)
 					So(saved.Detail, ShouldResembleProto, rb.cls[i].Snapshot)
 				})
-				Convey(fmt.Sprintf("CL %d is properly updated", rb.InputCLs[i].ID), func() {
+				Convey(fmt.Sprintf("CL %d-th is properly updated", i), func() {
 					saved := &changelist.CL{ID: rb.InputCLs[i].ID}
 					So(datastore.Get(ctx, saved), ShouldBeNil)
 					So(saved.IncompleteRuns.ContainsSorted(expectedRunID), ShouldBeTrue)
