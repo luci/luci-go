@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0038d71_6f7a0abf",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T14:07:22Z",
+      "side": 1,
+      "message": "So real DS takes nil []byte and returns []byte{} 😞",
+      "revId": "93556b8d48c8cfcb3ff4506284651c1a6974c666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7b0cc03_f34c4ae3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T14:07:22Z",
+      "side": 1,
+      "message": "OTOH, memory DS takes []byte{} and returns nil",
+      "revId": "93556b8d48c8cfcb3ff4506284651c1a6974c666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
