@@ -33,6 +33,7 @@ import (
 
 	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config/configcron"
 	"go.chromium.org/luci/cv/internal/diagnostic"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -55,7 +56,9 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		isDev := srv.Options.CloudProject == "luci-change-verifier-dev"
+		if srv.Options.CloudProject == "luci-change-verifier-dev" {
+			srv.Context = common.SetDev(srv.Context)
+		}
 		srv.Context = gerrit.UseProd(srv.Context)
 
 		// Register pRPC servers.
@@ -65,7 +68,7 @@ func main() {
 		srv.Routes.GET(
 			"/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
-			func(rc *router.Context) { refreshConfig(rc, isDev) },
+			refreshConfig,
 		)
 
 		// The service has no UI, so just redirect to the RPC Explorer.
@@ -77,13 +80,13 @@ func main() {
 	})
 }
 
-func refreshConfig(rc *router.Context, isDev bool) {
+func refreshConfig(rc *router.Context) {
 	// The cron job interval is 1 minute.
 	ctx, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
 	defer cancel()
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error { return servicecfg.ImportConfig(ctx) })
-	eg.Go(func() error { return configcron.SubmitRefreshTasks(ctx, isDev) })
+	eg.Go(func() error { return configcron.SubmitRefreshTasks(ctx) })
 	code := 200
 	if err := eg.Wait(); err != nil {
 		errors.Log(ctx, err)
