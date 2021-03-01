@@ -23,6 +23,7 @@ import (
 	"math/rand"
 	"os"
 	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -83,11 +84,16 @@ type Test struct {
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	// Set defaults.
 	if t.MaxDuration == time.Duration(0) {
-		if os.Getenv("DATASTORE_PROJECT") == "" {
-			t.MaxDuration = 10 * time.Second
-		} else {
-			t.MaxDuration = 60 * time.Second
+		t.MaxDuration = 10 * time.Second
+	}
+	// Can't use Go's test timeout because it is per TestXYZ func,
+	// which typically instantiates & runs several `cvtesting.Test`s.
+	if s := os.Getenv("CV_TEST_TIMEOUT_SEC"); s != "" {
+		v, err := strconv.ParseInt(s, 10, 31)
+		if err != nil {
+			panic(err)
 		}
+		t.MaxDuration = time.Duration(v) * time.Second
 	}
 	if t.GFake == nil {
 		t.GFake = &gf.Fake{}
