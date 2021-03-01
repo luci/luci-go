@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2839236_1cf419ce",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T01:24:28Z",
+      "side": 1,
+      "message": "Fixed!\n\nFun fact: I typed it correctly the first time w/o thinking, but when reviewing, I turned on logic and decided it was a typo 😄",
+      "parentUuid": "b1b78a5b_ab4f40ab",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 12
+      },
+      "revId": "54a8a7904c26e50a0f0d752cc823f72adb5cb562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6cfe444c_cfbb8788",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a68ca3f_d0865f9e",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T01:24:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6cfe444c_cfbb8788",
+      "range": {
+        "startLine": 178,
+        "startChar": 5,
+        "endLine": 178,
+        "endChar": 12
+      },
+      "revId": "54a8a7904c26e50a0f0d752cc823f72adb5cb562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d98793dc_f9df9fc7",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-02-28T23:01:02Z",
       "side": 1,
       "message": "But do we want it in prod? Does this mean that all panics will be caught at some point, even in production? (If so, if a panic occurs in prod do will still get a error log and a 5xx status?)",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 46
+      },
+      "revId": "54a8a7904c26e50a0f0d752cc823f72adb5cb562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9de49c04_2626b807",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-01T01:24:28Z",
+      "side": 1,
+      "message": "Good question. Yes, we do.\nPanic in the child goroutine crashes entire process and all requests it handles crash, too. So, panics aren\u0027t nice, even if we don\u0027t get Cloud Errors email.\nBut, good news is that Yuanjun is working on generic error reporting to Cloud Errors from each logging.Errorf.\n\nAh, so I should use Errorf sparingly. Updated CL.",
+      "parentUuid": "d98793dc_f9df9fc7",
       "range": {
         "startLine": 213,
         "startChar": 0,
