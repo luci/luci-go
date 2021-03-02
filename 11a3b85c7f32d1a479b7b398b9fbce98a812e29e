@@ -16,6 +16,23 @@
       "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results?q\u003d\n",
       "revId": "11a3b85c7f32d1a479b7b398b9fbce98a812e29e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e1ec801_7fdcfebe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-02T03:35:28Z",
+      "side": 1,
+      "message": "Defer to Tuan since this is a pure UI change. But I\u0027ve played with the demo and it\u0027s working like a charm.",
+      "revId": "11a3b85c7f32d1a479b7b398b9fbce98a812e29e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
