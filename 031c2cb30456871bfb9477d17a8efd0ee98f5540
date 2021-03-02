@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "da510480_af041c94",
+        "filename": "milo/frontend/resultui/src/context/invocation_state.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-02T00:42:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "655b22ea_c4d55712",
+      "range": {
+        "startLine": 37,
+        "startChar": 32,
+        "endLine": 37,
+        "endChar": 36
+      },
+      "revId": "031c2cb30456871bfb9477d17a8efd0ee98f5540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "316a0311_05d44982",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-03-01T21:34:06Z",
       "side": 1,
       "message": "\"clean\" is not really meaningful here. How about \"empty_section\" and negate the meaning?",
+      "range": {
+        "startLine": 120,
+        "startChar": 26,
+        "endLine": 120,
+        "endChar": 31
+      },
+      "revId": "031c2cb30456871bfb9477d17a8efd0ee98f5540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "888e81b8_a957794d",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-02T00:42:46Z",
+      "side": 1,
+      "message": "We don\u0027t want to negate it because the default behaviour (no search param) should be \"show empty section\".\n\nWe can rename it to \u0027no-empty-groups\u0027.\nBut I feel that\u0027s too many characters for what it\u0027s worth.\n\nOverall, I think \u0027clean\u0027 is good enough because we don\u0027t expect human to use this search param. This option will (most likely) only be used by other apps that want to link to a specific test variant.",
+      "parentUuid": "316a0311_05d44982",
       "range": {
         "startLine": 120,
         "startChar": 26,
