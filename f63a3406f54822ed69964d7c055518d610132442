@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5bb49344_c3ead95b",
+        "filename": "logdog/api/config/svcconfig/cloud_logging.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-02T06:20:54Z",
+      "side": 1,
+      "message": "I would phrase this a bit more like:\n\n   NOTE: Using the global logdog account is insecure from a client-isolation\n   point of view, and means that any LUCI client could send their logs to your\n   project. This likely wouldn\u0027t happen maliciously, but if someone copy-pasted\n   your configuration into their own project, you may end up paying to index and \n   store their logs :)",
+      "revId": "f63a3406f54822ed69964d7c055518d610132442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
