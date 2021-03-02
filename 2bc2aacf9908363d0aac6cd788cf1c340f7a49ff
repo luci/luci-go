@@ -63,6 +63,30 @@
       },
       "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e32f498a_dc02bfb5",
+        "filename": "logdog/api/config/svcconfig/cloud_logging.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-02T03:16:18Z",
+      "side": 1,
+      "message": "I\u0027m not tandrii, but I think we should just require project-scoped accounts. Cloud Logging export would be an additional carrot to do the migration.",
+      "parentUuid": "89ba9e47_2c8654a3",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 34
+      },
+      "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
