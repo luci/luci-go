@@ -83,6 +83,15 @@ func Cancel(ctx context.Context, runID common.RunID) error {
 	})
 }
 
+// Finalize tells runManager to try to finalize the given run.
+func Finalize(ctx context.Context, runID common.RunID) error {
+	return sendNow(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_Finalize{
+			Finalize: &eventpb.Finalize{},
+		},
+	})
+}
+
 // NotifyCLUpdated informs RunManager that given CL has a new version available.
 func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
 	return sendNow(ctx, runID, &eventpb.Event{
@@ -93,24 +102,6 @@ func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, 
 			},
 		},
 	})
-}
-
-// NotifyFinished tells RunManager that Run has finished in CQDaemon.
-//
-// TODO(crbug/1141880): Remove this event after migration.
-func NotifyFinished(ctx context.Context, runID common.RunID, after time.Duration) error {
-	evt := &eventpb.Event{
-		Event: &eventpb.Event_Finished{
-			Finished: &eventpb.Finished{},
-		},
-	}
-	if after > 0 {
-		t := clock.Now(ctx).Add(after)
-		evt.ProcessAfter = timestamppb.New(t)
-		return send(ctx, runID, evt, t)
-
-	}
-	return sendNow(ctx, runID, evt)
 }
 
 func sendNow(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
