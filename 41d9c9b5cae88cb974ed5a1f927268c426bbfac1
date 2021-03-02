@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7ddf65a8_84d4f624",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-02T23:00:35Z",
+      "side": 1,
+      "message": "It\u0027s still needed.\nThe do while loop only ensures that at least one variant is loaded.\nBut it doesn\u0027t ensure that at least one *expected* variant is loaded.\nThis can happen when you start at LoadingUnexpected and call loadNextTestVariants(TestVariantStatus.EXPECTED).\nAdded a comment to clarify this.",
+      "parentUuid": "628ea882_1dce5251",
+      "revId": "41d9c9b5cae88cb974ed5a1f927268c426bbfac1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2ed60c46_78478dee",
         "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
         "patchSetId": 4
