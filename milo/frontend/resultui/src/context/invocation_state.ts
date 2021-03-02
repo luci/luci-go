@@ -149,6 +149,19 @@ export class InvocationState {
       + this.filteredExoneratedVariants.length
       + this.filteredExpectedVariants.length;
   }
+
+  @computed
+  get totalDisplayedVariantCount() {
+    if (!this.showEmptyGroups) {
+      return this.totalFilteredVariantCount;
+    }
+
+    return (this.showUnexpectedVariants ? this.filteredUnexpectedVariants.length : 0)
+     + (this.showUnexpectedlySkippedVariants ? this.filteredUnexpectedlySkippedVariants.length : 0)
+     + (this.showFlakyVariants ? this.filteredFlakyVariants.length : 0)
+     + (this.showExoneratedVariants ? this.filteredExoneratedVariants.length : 0)
+     + (this.showExpectedVariants ? this.filteredExpectedVariants.length : 0);
+  }
 }
 
 export const consumeInvocationState = consumeContext<'invocationState', InvocationState>('invocationState');

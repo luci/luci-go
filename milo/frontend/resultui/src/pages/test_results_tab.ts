@@ -47,18 +47,31 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   private disposers: Array<() => void> = [];
 
   /**
-   * If status is specified, loads pages until we receive some variants with the
-   * given variant status.
-   * Otherwise, simply load the next page.
+   * If status is specified, loads test variants until we receive some variants
+   * with the given variant status.
+   * Otherwise, simply load the next batch of test variants.
    *
-   * Will always load at least one page.
+   * Will always load at least test variant unless the last page is reached.
    */
-  private async loadNextPage(untilStatus?: TestVariantStatus) {
+  async loadNextTestVariants(untilStatus?: TestVariantStatus) {
+    const loader = this.invocationState.testLoader;
+    if (!loader) {
+      return;
+    }
+    const beforeCount = this.invocationState.totalFilteredVariantCount;
+
     try {
       if (untilStatus) {
-        await this.invocationState.testLoader?.loadPagesUntilStatus(untilStatus);
+        await loader.loadPagesUntilStatus(untilStatus);
       } else {
-        await this.invocationState.testLoader?.loadNextPage();
+        await loader.loadNextPage();
+      }
+      const shouldLoadNextPage = !loader.loadedAllVariants &&
+        // Use filtered count instead of displayed count so displaying settings
+        // doesn't change the loading behavior.
+        this.invocationState.totalFilteredVariantCount === beforeCount;
+      if (shouldLoadNextPage) {
+        await this.loadNextTestVariants();
       }
     } catch (e) {
       this.dispatchEvent(new ErrorEvent('error', {
@@ -106,7 +119,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         // the loading operation already. In that case we don't want to load
         // more test results.
         if (!testLoader.firstRequestSent) {
-          this.loadNextPage();
+          this.loadNextTestVariants();
         }
       },
       {fireImmediately: true},
@@ -288,7 +301,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     return html`
       <span
         style=${styleMap({'display': state.testLoader?.isLoading ?? true ? 'none' : ''})}
-        @click=${() => this.loadNextPage(forStatus)}
+        @click=${() => this.loadNextTestVariants(forStatus)}
       >
         [load more]
       </span>
