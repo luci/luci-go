@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ea81ace_433cfa31",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-02T03:45:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bee333a4_b039bf9b",
+      "revId": "11a3b85c7f32d1a479b7b398b9fbce98a812e29e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4e5d12bb_29454c97",
@@ -65,6 +83,30 @@
       "writtenOn": "2021-03-02T03:40:51Z",
       "side": 1,
       "message": "nits: single quote",
+      "range": {
+        "startLine": 274,
+        "startChar": 24,
+        "endLine": 274,
+        "endChar": 25
+      },
+      "revId": "11a3b85c7f32d1a479b7b398b9fbce98a812e29e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e5605f70_673d95b1",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-02T03:45:04Z",
+      "side": 1,
+      "message": "single quote can\u0027t be used in HTML template.",
+      "parentUuid": "4e5d12bb_29454c97",
       "range": {
         "startLine": 274,
         "startChar": 24,
