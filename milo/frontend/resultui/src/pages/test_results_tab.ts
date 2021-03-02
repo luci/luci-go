@@ -262,6 +262,9 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     expandFirst = false,
   ) {
     const variantCountLabel = `${variants.length}${fullyLoaded ? '' : '+'}`;
+    if (variants.length === 0 && !this.invocationState.showEmptyGroups) {
+      return html``;
+    }
     return html`
       <div
         class=${classMap({
@@ -381,7 +384,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
           >Collapse All</mwc-button>
         </milo-hotkey>
       </div>
-      <div id="main" class=${classMap({'show-empty-groups': this.invocationState.showEmptyGroups})}>${this.renderMain()}</div>
+      <div id="main">${this.renderMain()}</div>
     `;
   }
 
@@ -475,12 +478,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     }
     .group-header.expanded:not(.empty) {
       border-bottom: 1px solid var(--divider-color);
-    }
-    .group-header.empty {
-      display: none;
-    }
-    .show-empty-groups .group-header.empty {
-      display: grid;
     }
 
     .unexpected {
