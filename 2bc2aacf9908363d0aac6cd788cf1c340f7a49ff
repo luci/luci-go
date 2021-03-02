@@ -111,6 +111,30 @@
       },
       "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dbc50dc1_c34ba56f",
+        "filename": "logdog/api/config/svcconfig/cloud_logging.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-02T05:52:47Z",
+      "side": 1,
+      "message": "So I also wanted to just require scoped accounts and then backtracked to a boolean exactly because chromeos doesn\u0027t use them yet :p\n\nIf you think it\u0027s feasible to quickly (though maybe a bit painfully) move chromeos to a scoped account, then just requiring scoped accounts and dropping this field entirely SGTM.",
+      "parentUuid": "993ff6f2_0bc4544d",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 34
+      },
+      "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
