@@ -38,7 +38,7 @@ type CloudLoggingConfig struct {
 	//
 	// NOTE: Using the global logdog account is insecure from a client-isolation
 	// point of view, and means that any LUCI client could send their logs to
-	// your project. This likely wouldn't happen maliciously, buit if someone
+	// your project. This likely wouldn't happen maliciously, but if someone
 	// copy-pasted your configuration into their own project, you may end up
 	// paying to index and store their logs.
 	UseGlobalLogdogAccount bool `protobuf:"varint,2,opt,name=use_global_logdog_account,json=useGlobalLogdogAccount,proto3" json:"use_global_logdog_account,omitempty"`
