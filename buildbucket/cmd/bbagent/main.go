@@ -66,43 +66,28 @@ func main() {
 		// serves "/debug" endpoints for pprof.
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
-	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		logging.Errorf(ctx, "failed to Getwd", err)
-		os.Exit(1)
-	}
-
-	os.Exit(mainImpl(ctx, cwd, os.Args))
+	os.Exit(mainImpl())
 }
 
-func mainImpl(ctx context.Context, workdir string, args []string) (retcode int) {
-	// TODO(iannucci): this "on purpose panic" is really messy, clean it up.
-	panicOnPurpose := false
-	defer func() {
-		if panicOnPurpose {
-			logging.Errorf(ctx, recover().(error).Error())
-			retcode = 1
-		}
-	}()
+func mainImpl() int {
+	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
+
 	check := func(err error) {
 		if err != nil {
-			panicOnPurpose = true
-			panic(err)
+			logging.Errorf(ctx, err.Error())
+			os.Exit(1)
 		}
 	}
 
-	fs := flag.NewFlagSet(args[0], flag.ExitOnError)
-	outputFile := luciexe.AddOutputFlagToSet(fs)
-	fs.Parse(args[1:])
-	extraArgs := fs.Args()
+	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
+	flag.Parse()
+	args := flag.Args()
 
-	if len(extraArgs) != 1 {
-		check(errors.Reason("expected 1 argument: got %d", len(extraArgs)).Err())
+	if len(args) != 1 {
+		check(errors.Reason("expected 1 argument: got %d", len(args)).Err())
 	}
 
-	input, err := bbinput.Parse(extraArgs[0])
+	input, err := bbinput.Parse(args[0])
 	check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
 
 	// bbclientRetriesEnabled is a passed-py-pointer value which we use to turn
@@ -169,8 +154,7 @@ func mainImpl(ctx context.Context, workdir string, args []string) (retcode int) 
 				SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
 			}
 			buildsCh.CloseAndDrain(cctx)
-			panicOnPurpose = true
-			panic(err)
+			os.Exit(1)
 		}
 	}
 
@@ -178,7 +162,6 @@ func mainImpl(ctx context.Context, workdir string, args []string) (retcode int) 
 	prepareInputBuild(cctx, input.Build)
 
 	opts := &host.Options{
-		BaseDir:        filepath.Join(workdir, "x"),
 		BaseBuild:      input.Build,
 		ButlerLogLevel: logging.Warning,
 		ViewerURL: fmt.Sprintf("https://%s/build/%d",
@@ -186,6 +169,9 @@ func mainImpl(ctx context.Context, workdir string, args []string) (retcode int) 
 		LogdogOutput: logdogOutput,
 		ExeAuth:      host.DefaultExeAuth("bbagent", input.KnownPublicGerritHosts),
 	}
+	cwd, err := os.Getwd()
+	check(errors.Annotate(err, "getting cwd").Err())
+	opts.BaseDir = filepath.Join(cwd, "x")
 
 	exeArgs := append(([]string)(nil), input.Build.Exe.Cmd...)
 	payloadPath := input.PayloadPath
@@ -291,6 +277,7 @@ func mainImpl(ctx context.Context, workdir string, args []string) (retcode int) 
 		"build.status_details",
 		"build.summary_markdown",
 	}
+	var retcode int
 
 	fatalUpdateBuildErr, _ := fatalUpdateBuildErrorSlot.Load().(error)
 	if finalizeBuild(ctx, finalBuild, fatalUpdateBuildErr, statusDetails, outputFile) {
@@ -327,7 +314,7 @@ func mainImpl(ctx context.Context, workdir string, args []string) (retcode int) 
 		}
 	}
 
-	return
+	return retcode
 }
 
 // finalizeBuild returns true if fatalErr is nil and there's no additional
