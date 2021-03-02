@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "868c1787_574cb036",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-02T01:37:53Z",
+      "side": 1,
+      "message": "You may need to `terraform apply` cv\u0027s configs first to pick up https://chrome-internal.googlesource.com/infra/infra_internal/+/85e0ead45509609887d8487e67fe71aad9cbc6d0",
+      "revId": "6b9d42af280ae3a724011c0b396955ea3c2f7505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
