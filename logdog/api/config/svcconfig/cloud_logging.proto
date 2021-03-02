@@ -1,0 +1,22 @@
+// Copyright 2021 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package svcconfig;
+
+option go_package = "go.chromium.org/luci/logdog/api/config/svcconfig";
+
+// CloudLoggingConfig specifies how Logdog should export log entries to
+// Cloud Logging.
+message CloudLoggingConfig {
+  // The name of the project, where Logdog logs are exported.
+  string destination = 1;
+
+  // The service account to be used for log exports.
+  //
+  // The account must have monitoring writer permission in the destination
+  // project.
+  string exporter_svc_account = 2;
+}
