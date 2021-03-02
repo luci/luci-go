@@ -135,6 +135,30 @@
       },
       "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29a9a229_74b14d80",
+        "filename": "logdog/api/config/svcconfig/cloud_logging.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-02T06:12:12Z",
+      "side": 1,
+      "message": "SG with `use_insecure_global_logdog_account` and a plan of dropping the field after CrOS is ready.\n\nPTAL again",
+      "parentUuid": "dbc50dc1_c34ba56f",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 34
+      },
+      "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
