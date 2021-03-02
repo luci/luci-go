@@ -70,6 +70,24 @@
       "parentUuid": "ce50fccf_3b59c53a",
       "revId": "8d4e3afdb60bf8ce224abd81be252d08866623dc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd64b0db_af6e53a0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1318707
+      },
+      "writtenOn": "2021-03-02T00:26:43Z",
+      "side": 1,
+      "message": "It\u0027s amusing that so many people, and indeed the standard library itself, use this same workaround :S \nhttps://www.reddit.com/r/golang/comments/77mooi/why_golang_refuse_to_provide_goroutine_id_then/",
+      "parentUuid": "8cb0c0af_e745bdb8",
+      "revId": "8d4e3afdb60bf8ce224abd81be252d08866623dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
