@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d813b42_87ccd515",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-02T22:19:45Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2729247",
+      "revId": "0a168fa2436f798806a66358a81663a4b6738735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d401cbde_398f1591",
@@ -54,6 +71,54 @@
       "writtenOn": "2021-02-26T16:42:56Z",
       "side": 1,
       "message": "nit: may I ask to move this part before mathrand.Intn call? I feel like more static parts of the expression are better be before dynamic parts (random value)",
+      "range": {
+        "startLine": 72,
+        "startChar": 65,
+        "endLine": 72,
+        "endChar": 71
+      },
+      "revId": "0a168fa2436f798806a66358a81663a4b6738735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4ff3459_f0313fd9",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-02T22:19:45Z",
+      "side": 1,
+      "message": "Ah shit, I guess ^ is bitwise xor.",
+      "parentUuid": "d401cbde_398f1591",
+      "range": {
+        "startLine": 72,
+        "startChar": 54,
+        "endLine": 72,
+        "endChar": 58
+      },
+      "revId": "0a168fa2436f798806a66358a81663a4b6738735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce86705e_bc686bf1",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-02T22:19:45Z",
+      "side": 1,
+      "message": "The following is one expression:\nmathrand.Intn(ctx, 2^16-(n-1))+(n-1)\n\nThis generates a random number between [0, 2^16 - (n-1)) then adds (n-1) shifting it into the range [n-1, 2^16).\n\nI\u0027ve moved this whole thing to its own line for clarity.",
+      "parentUuid": "c495ac33_31fe356b",
       "range": {
         "startLine": 72,
         "startChar": 65,
@@ -105,6 +170,54 @@
         "startChar": 24,
         "endLine": 75,
         "endChar": 32
+      },
+      "revId": "0a168fa2436f798806a66358a81663a4b6738735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f96d3b58_92802eac",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-02T22:19:45Z",
+      "side": 1,
+      "message": "It\u0027s explained in the package-level comment. I\u0027ve added a hint but I didn\u0027t copy the explanation here.",
+      "parentUuid": "9fa73e06_67c1698b",
+      "range": {
+        "startLine": 75,
+        "startChar": 24,
+        "endLine": 75,
+        "endChar": 32
+      },
+      "revId": "0a168fa2436f798806a66358a81663a4b6738735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e184b63_13c1e885",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-02T22:19:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db87e0cc_2a63d388",
+      "range": {
+        "startLine": 75,
+        "startChar": 16,
+        "endLine": 75,
+        "endChar": 17
       },
       "revId": "0a168fa2436f798806a66358a81663a4b6738735",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
