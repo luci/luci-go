@@ -1,0 +1,26 @@
+// Copyright 2021 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package svcconfig;
+
+option go_package = "go.chromium.org/luci/logdog/api/config/svcconfig";
+
+// CloudLoggingConfig specifies how Logdog should export log entries to
+// Cloud Logging.
+message CloudLoggingConfig {
+  // The name of the project, where Logdog logs are exported.
+  string destination = 1;
+
+  // If true, Logdog uses its default credential for log exports
+  // to the destination project. If false, it uses the project-scoped account.
+  //
+  // NOTE: Using the global logdog account is insecure from a client-isolation
+  // point of view, and means that any LUCI client could send their logs to
+  // your project. This likely wouldn't happen maliciously, buit if someone
+  // copy-pasted your configuration into their own project, you may end up
+  // paying to index and store their logs.
+  bool use_global_logdog_account = 2;
+}
