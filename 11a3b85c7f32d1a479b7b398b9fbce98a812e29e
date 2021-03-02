@@ -33,6 +33,46 @@
       "message": "Defer to Tuan since this is a pure UI change. But I\u0027ve played with the demo and it\u0027s working like a charm.",
       "revId": "11a3b85c7f32d1a479b7b398b9fbce98a812e29e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bee333a4_b039bf9b",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-02T03:40:51Z",
+      "side": 1,
+      "message": "Nits: Is the indentation correct here? I thought it should be 2 more spaces.",
+      "revId": "11a3b85c7f32d1a479b7b398b9fbce98a812e29e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e5d12bb_29454c97",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-02T03:40:51Z",
+      "side": 1,
+      "message": "nits: single quote",
+      "range": {
+        "startLine": 274,
+        "startChar": 24,
+        "endLine": 274,
+        "endChar": 25
+      },
+      "revId": "11a3b85c7f32d1a479b7b398b9fbce98a812e29e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
