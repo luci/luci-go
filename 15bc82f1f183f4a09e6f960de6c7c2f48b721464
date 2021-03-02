@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b6dfb75_6e27e155",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-02T02:38:55Z",
+      "side": 1,
+      "message": "This is a prerequisite of moving TestResultsTabElement.loadNextTestVariants into TestLoader.\n\nDemo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6044/test-results?q\u003dID%3Anet",
+      "revId": "15bc82f1f183f4a09e6f960de6c7c2f48b721464",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
