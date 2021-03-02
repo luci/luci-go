@@ -22,6 +22,30 @@
       },
       "revId": "c3e6cdd402a3671666556378f319b1ab2fd9d83c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f23beb1_ee46017f",
+        "filename": "logdog/api/config/svcconfig/cloud_logging.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-02T07:00:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b69fbe7_a19502c4",
+      "range": {
+        "startLine": 22,
+        "startChar": 60,
+        "endLine": 22,
+        "endChar": 64
+      },
+      "revId": "c3e6cdd402a3671666556378f319b1ab2fd9d83c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
