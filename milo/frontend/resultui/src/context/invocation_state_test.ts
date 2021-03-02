@@ -69,7 +69,7 @@ describe('InvocationState', () => {
 
     const invocationState = new InvocationState(appState);
     invocationState.invocationId = 'invocation-id';
-    await invocationState.testLoader!.loadNextPage();
+    await invocationState.testLoader!.loadNextTestVariants();
     after(() => invocationState.dispose());
 
     it('should not filter out anything when search text is empty', () => {
