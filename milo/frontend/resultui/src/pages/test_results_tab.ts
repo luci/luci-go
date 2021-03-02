@@ -58,7 +58,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     if (!loader) {
       return;
     }
-    const beforeCount = this.invocationState.totalFilteredVariantCount;
+    const beforeCount = loader.testVariantCount;
 
     try {
       if (untilStatus) {
@@ -69,7 +69,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       const shouldLoadNextPage = !loader.loadedAllVariants &&
         // Use filtered count instead of displayed count so displaying settings
         // doesn't change the loading behavior.
-        this.invocationState.totalFilteredVariantCount === beforeCount;
+        loader.testVariantCount === beforeCount;
       if (shouldLoadNextPage) {
         await this.loadNextTestVariants();
       }
@@ -163,7 +163,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       ${this.renderIntegrationHint()}
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTED,
-        this.invocationState.filteredUnexpectedVariants,
+        testLoader?.unexpectedTestVariants || [],
         this.invocationState.showUnexpectedVariants,
         (display) => this.invocationState.showUnexpectedVariants = display,
         testLoader?.loadedAllUnexpectedVariants || false,
@@ -171,35 +171,35 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       )}
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTEDLY_SKIPPED,
-        this.invocationState.filteredUnexpectedlySkippedVariants,
+        testLoader?.unexpectedlySkippedTestVariants || [],
         this.invocationState.showUnexpectedlySkippedVariants,
         (display) => this.invocationState.showUnexpectedlySkippedVariants = display,
         testLoader?.loadedAllUnexpectedlySkippedVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.FLAKY,
-        this.invocationState.filteredFlakyVariants,
+        testLoader?.flakyTestVariants || [],
         this.invocationState.showFlakyVariants,
         (display) => this.invocationState.showFlakyVariants = display,
         testLoader?.loadedAllFlakyVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXONERATED,
-        this.invocationState.filteredExoneratedVariants,
+        testLoader?.exoneratedTestVariants || [],
         this.invocationState.showExoneratedVariants,
         (display) => this.invocationState.showExoneratedVariants = display,
         testLoader?.loadedAllExoneratedVariants || false,
       )}
       ${this.renderVariants(
         TestVariantStatus.EXPECTED,
-        this.invocationState.filteredExpectedVariants,
+        testLoader?.expectedTestVariants || [],
         this.invocationState.showExpectedVariants,
         (display) => this.invocationState.showExpectedVariants = display,
         testLoader?.loadedAllExpectedVariants || false,
       )}
       <div id="variant-list-tail">
-        Showing ${this.invocationState.totalFilteredVariantCount} /
-        ${testLoader?.testVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'}
+        Showing ${testLoader?.testVariantCount || 0} /
+        ${testLoader?.unfilteredTestVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'}
         tests.
         <span
           class="active-text"
@@ -287,7 +287,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
           .variant=${v}
           .prevTestId=${prev?.testId ?? ''}
           .prevVariant=${prev?.testId === v.testId ? prev : null}
-          .expanded=${this.invocationState.totalFilteredVariantCount === 1 || (prev === undefined && expandFirst)}
+          .expanded=${this.invocationState.testLoader?.testVariantCount === 1 || (prev === undefined && expandFirst)}
           .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
           .prerender=${true}
           .renderCallback=${this.variantRenderedCallback}

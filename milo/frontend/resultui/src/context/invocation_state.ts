@@ -48,16 +48,22 @@ export class InvocationState {
 
   @observable.ref searchFilter = (_v: TestVariant) => true;
 
-  private disposer = () => {};
+  private disposers: Array<() => void> = [];
   constructor(private appState: AppState) {
-    this.disposer = autorun(() => {
+    this.disposers.push(autorun(() => {
       try {
         this.searchFilter = parseSearchQuery(this.searchText);
       } catch (e) {
         //TODO(weiweilin): display the error to the user.
         console.error(e);
       }
-    });
+    }));
+    this.disposers.push(autorun(() => {
+      if (!this.testLoader) {
+        return;
+      }
+      this.testLoader.filter = this.searchFilter;
+    }));
   }
 
   @observable.ref private isDisposed = false;
@@ -68,7 +74,9 @@ export class InvocationState {
    */
   dispose() {
     this.isDisposed = true;
-    this.disposer();
+    for (const disposer of this.disposers) {
+      disposer();
+    }
 
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
@@ -118,37 +126,6 @@ export class InvocationState {
     return new TestLoader({invocations: [this.invocationName]}, this.appState.uiSpecificService);
   }
 
-  @computed get filteredUnexpectedVariants() {
-    return (this.testLoader?.unexpectedTestVariants || [])
-      .filter(v => this.searchFilter(v));
-  }
-
-  @computed get filteredUnexpectedlySkippedVariants() {
-    return (this.testLoader?.unexpectedlySkippedTestVariants || [])
-      .filter(v => this.searchFilter(v));
-  }
-
-  @computed get filteredFlakyVariants() {
-    return (this.testLoader?.flakyTestVariants || [])
-      .filter(v => this.searchFilter(v));
-  }
-  @computed get filteredExoneratedVariants() {
-    return (this.testLoader?.exoneratedTestVariants || [])
-      .filter(v => this.searchFilter(v));
-  }
-  @computed get filteredExpectedVariants() {
-    return (this.testLoader?.expectedTestVariants || [])
-      .filter(v => this.searchFilter(v));
-  }
-
-  @computed
-  get totalFilteredVariantCount() {
-    return this.filteredUnexpectedVariants.length
-      + this.filteredUnexpectedlySkippedVariants.length
-      + this.filteredFlakyVariants.length
-      + this.filteredExoneratedVariants.length
-      + this.filteredExpectedVariants.length;
-  }
 }
 
 export const consumeInvocationState = consumeContext<'invocationState', InvocationState>('invocationState');

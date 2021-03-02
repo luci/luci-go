@@ -74,39 +74,39 @@ describe('InvocationState', () => {
 
     it('should not filter out anything when search text is empty', () => {
       invocationState.searchText = '';
-      assert.deepEqual(invocationState.filteredUnexpectedVariants, [variant1, variant2]);
-      assert.deepEqual(invocationState.filteredFlakyVariants, [variant3]);
-      assert.deepEqual(invocationState.filteredExoneratedVariants, [variant4]);
-      assert.deepEqual(invocationState.filteredExpectedVariants, [variant5]);
+      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, [variant1, variant2]);
+      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, [variant3]);
+      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, [variant4]);
+      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
 
     it('should filter out variants whose test ID doesn\'t match the search text', () => {
       invocationState.searchText = 'test-suite-a';
-      assert.deepEqual(invocationState.filteredUnexpectedVariants, [variant1, variant2]);
-      assert.deepEqual(invocationState.filteredFlakyVariants, []);
-      assert.deepEqual(invocationState.filteredExoneratedVariants, []);
-      assert.deepEqual(invocationState.filteredExpectedVariants, []);
+      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, [variant1, variant2]);
+      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, []);
+      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, []);
+      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, []);
     });
 
     it('search text should be case insensitive', () => {
       invocationState.searchText = 'test-suite-b';
-      assert.deepEqual(invocationState.filteredUnexpectedVariants, []);
-      assert.deepEqual(invocationState.filteredFlakyVariants, [variant3]);
-      assert.deepEqual(invocationState.filteredExoneratedVariants, [variant4]);
-      assert.deepEqual(invocationState.filteredExpectedVariants, [variant5]);
+      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
+      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, [variant3]);
+      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, [variant4]);
+      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
 
     it('should preserve the last known valid filter', () => {
       invocationState.searchText = 'test-suite-b';
-      assert.deepEqual(invocationState.filteredUnexpectedVariants, []);
-      assert.deepEqual(invocationState.filteredFlakyVariants, [variant3]);
-      assert.deepEqual(invocationState.filteredExoneratedVariants, [variant4]);
-      assert.deepEqual(invocationState.filteredExpectedVariants, [variant5]);
+      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
+      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, [variant3]);
+      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, [variant4]);
+      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
       invocationState.searchText = 'invalid:filter';
-      assert.deepEqual(invocationState.filteredUnexpectedVariants, []);
-      assert.deepEqual(invocationState.filteredFlakyVariants, [variant3]);
-      assert.deepEqual(invocationState.filteredExoneratedVariants, [variant4]);
-      assert.deepEqual(invocationState.filteredExpectedVariants, [variant5]);
+      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
+      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, [variant3]);
+      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, [variant4]);
+      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
   });
 });
