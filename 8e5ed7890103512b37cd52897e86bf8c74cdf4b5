@@ -39,6 +39,30 @@
       },
       "revId": "8e5ed7890103512b37cd52897e86bf8c74cdf4b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b247d44_3f37be60",
+        "filename": "client/cmd/gerrit/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-03-02T17:38:40Z",
+      "side": 1,
+      "message": "you have to go generate first, see \nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/proto/gerrit/generate.go;l\u003d15",
+      "parentUuid": "45419f54_50923e74",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 1
+      },
+      "revId": "8e5ed7890103512b37cd52897e86bf8c74cdf4b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
