@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0cc9bd0_2a5cde3f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1356118
+      },
+      "writtenOn": "2021-03-02T16:51:37Z",
+      "side": 1,
+      "message": "Original CL is crrev.com/c/2386005. Will use that CL after fixing current issue—trying to not send those reviewers too much junk.",
+      "revId": "8e5ed7890103512b37cd52897e86bf8c74cdf4b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45419f54_50923e74",
+        "filename": "client/cmd/gerrit/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1356118
+      },
+      "writtenOn": "2021-03-02T16:51:37Z",
+      "side": 1,
+      "message": "Running \u0027go run .\u0027 from this directory after setting up the environment the way you suggested results in a couple lines like \u0027../../../common/api/gerrit/rest.go:347:63: undefined: gerrit.ListChangeCommentsRequest\u0027. Do I have to manually do something to compile the protobufs into go code?",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 1
+      },
+      "revId": "8e5ed7890103512b37cd52897e86bf8c74cdf4b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
