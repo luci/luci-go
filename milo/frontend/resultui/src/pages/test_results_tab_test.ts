@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { customElement, html, LitElement, property } from 'lit-element';
 import sinon, { SinonStub } from 'sinon';
@@ -105,6 +105,7 @@ describe('Test Results Tab', () => {
     tab.disconnectedCallback();
     tab.connectedCallback();
 
+    await aTimeout(0);
     assert.isFalse(invocationState.testLoader?.isLoading);
     assert.strictEqual(queryTestVariantsStub.callCount, 1);
   });
@@ -153,14 +154,6 @@ describe('Test Results Tab', () => {
       fixtureCleanup();
     });
 
-    it('should load at least one test variant', async () => {
-      invocationState.searchText = 'ID:b';
-
-      await tab.loadNextTestVariants();
-      assert.isFalse(invocationState.testLoader?.isLoading);
-      assert.strictEqual(queryTestVariantsStub.callCount, 4);
-    });
-
     it('display setting should not cause more tests to be loaded', async () => {
       invocationState.showUnexpectedVariants = false;
       invocationState.showUnexpectedlySkippedVariants = false;
@@ -168,28 +161,9 @@ describe('Test Results Tab', () => {
       invocationState.showExoneratedVariants = false;
       invocationState.showExpectedVariants = false;
 
-      await tab.loadNextTestVariants();
+      await tab.loadMore();
       assert.isFalse(invocationState.testLoader?.isLoading);
       assert.strictEqual(queryTestVariantsStub.callCount, 2);
-    });
-
-    it('should stop loading when the final page is reached', async () => {
-      // Throw test loader.
-      const oldLoadNextPage = invocationState.testLoader!.loadNextPage.bind(invocationState.testLoader!);
-      let callCount = 0;
-      invocationState.testLoader!.loadNextPage = (...params) => {
-        callCount++;
-        if (callCount > 10) {
-          throw new Error('too many load next page calls');
-        }
-        return oldLoadNextPage(...params);
-      };
-
-      invocationState.searchText = 'ID:does-not-exist';
-      await tab.loadNextTestVariants();
-
-      assert.isFalse(invocationState.testLoader?.isLoading);
-      assert.strictEqual(queryTestVariantsStub.callCount, 5);
     });
 
     it('should trigger automatic loading when visiting the tab for the first time', async () => {
