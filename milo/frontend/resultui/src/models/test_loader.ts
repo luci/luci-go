@@ -57,6 +57,8 @@ export class LoadTestVariantsError {
  * request.
  */
 export class TestLoader {
+  @observable.ref filter = (_v: TestVariant) => true;
+
   @computed get isLoading() { return !this.loadedAllVariants && this.loadingReqCount !== 0; }
   @observable.ref private loadingReqCount = 0;
 
@@ -71,13 +73,38 @@ export class TestLoader {
   @computed get stage() { return this._stage; }
   @observable.ref private _stage = LoadingStage.LoadingUnexpected;
 
-  @observable.ref testVariantCount = 0;
+  @observable.ref unfilteredTestVariantCount = 0;
 
-  @observable.shallow readonly unexpectedTestVariants: TestVariant[] = [];
-  @observable.shallow readonly unexpectedlySkippedTestVariants: TestVariant[] = [];
-  @observable.shallow readonly flakyTestVariants: TestVariant[] = [];
-  @observable.shallow readonly exoneratedTestVariants: TestVariant[] = [];
-  @observable.shallow readonly expectedTestVariants: TestVariant[] = [];
+  @computed
+  get testVariantCount() {
+    return this.unexpectedTestVariants.length
+      + this.unexpectedlySkippedTestVariants.length
+      + this.flakyTestVariants.length
+      + this.exoneratedTestVariants.length
+      + this.expectedTestVariants.length;
+  }
+
+  @computed get unexpectedTestVariants() {
+    return this.unfilteredUnexpectedVariants.filter((this.filter));
+  }
+  @computed get unexpectedlySkippedTestVariants() {
+    return this.unfilteredUnexpectedlySkippedVariants.filter((this.filter));
+  }
+  @computed get flakyTestVariants() {
+    return this.unfilteredFlakyVariants.filter((this.filter));
+  }
+  @computed get exoneratedTestVariants() {
+    return this.unfilteredExoneratedVariants.filter((this.filter));
+  }
+  @computed get expectedTestVariants() {
+    return this.unfilteredExpectedVariants.filter((this.filter));
+  }
+
+  @observable.shallow readonly unfilteredUnexpectedVariants: TestVariant[] = [];
+  @observable.shallow readonly unfilteredUnexpectedlySkippedVariants: TestVariant[] = [];
+  @observable.shallow readonly unfilteredFlakyVariants: TestVariant[] = [];
+  @observable.shallow readonly unfilteredExoneratedVariants: TestVariant[] = [];
+  @observable.shallow readonly unfilteredExpectedVariants: TestVariant[] = [];
 
   @computed get loadedAllVariants() { return this.stage === LoadingStage.Done; }
   @computed get loadedAllUnexpectedVariants() { return this.stage > LoadingStage.LoadingUnexpected; }
@@ -86,14 +113,14 @@ export class TestLoader {
   @computed get loadedAllExoneratedVariants() { return this.stage > LoadingStage.LoadingExonerated; }
   @computed get loadedAllExpectedVariants() { return this.stage > LoadingStage.LoadingExpected; }
   @computed get firstPageLoaded() {
-    return this.unexpectedTestVariants.length > 0 || this.loadedAllUnexpectedVariants;
+    return this.unfilteredUnexpectedVariants.length > 0 || this.loadedAllUnexpectedVariants;
   }
   @computed get firstPageIsEmpty() {
     return this.loadedAllUnexpectedVariants &&
-      this.unexpectedTestVariants.length === 0 &&
-      this.unexpectedlySkippedTestVariants.length === 0 &&
-      this.flakyTestVariants.length === 0 &&
-      this.exoneratedTestVariants.length === 0;
+      this.unfilteredUnexpectedVariants.length === 0 &&
+      this.unfilteredUnexpectedlySkippedVariants.length === 0 &&
+      this.unfilteredFlakyVariants.length === 0 &&
+      this.unfilteredExoneratedVariants.length === 0;
   }
 
   // undefined means the end has been reached.
@@ -140,7 +167,7 @@ export class TestLoader {
     // If we wanted to load up to Expected, and none have arrived yet
     // (i.e. we're at the point where ResultDB has just returned the final
     // non-expected variants to us), load one more page.
-    if (status === TestVariantStatus.EXPECTED && this.expectedTestVariants.length === 0) {
+    if (status === TestVariantStatus.EXPECTED && this.unfilteredExpectedVariants.length === 0) {
       await this.loadNextPage();
     }
   }
@@ -184,28 +211,28 @@ export class TestLoader {
 
   @action
   private processTestVariants(testVariants: readonly TestVariant[]) {
-    this.testVariantCount += testVariants.length;
+    this.unfilteredTestVariantCount += testVariants.length;
     for (const testVariant of testVariants) {
       switch (testVariant.status) {
         case TestVariantStatus.UNEXPECTED:
           this._stage = LoadingStage.LoadingUnexpected;
-          this.unexpectedTestVariants.push(testVariant);
+          this.unfilteredUnexpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
           this._stage = LoadingStage.LoadingUnexpectedlySkipped;
-          this.unexpectedlySkippedTestVariants.push(testVariant);
+          this.unfilteredUnexpectedlySkippedVariants.push(testVariant);
           break;
         case TestVariantStatus.FLAKY:
           this._stage = LoadingStage.LoadingFlaky;
-          this.flakyTestVariants.push(testVariant);
+          this.unfilteredFlakyVariants.push(testVariant);
           break;
         case TestVariantStatus.EXONERATED:
           this._stage = LoadingStage.LoadingExonerated;
-          this.exoneratedTestVariants.push(testVariant);
+          this.unfilteredExoneratedVariants.push(testVariant);
           break;
         case TestVariantStatus.EXPECTED:
           this._stage = LoadingStage.LoadingExpected;
-          this.expectedTestVariants.push(testVariant);
+          this.unfilteredExpectedVariants.push(testVariant);
           break;
         default:
           break;
