@@ -47,8 +47,8 @@ import (
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
-// diagnostic API.
-const allowGroup = "administrators"
+// diagnostic API. See https://crbug.com/1183616.
+const allowGroup = "service-luci-change-verifier-admins"
 
 type DiagnosticServer struct {
 	diagnosticpb.UnimplementedDiagnosticServer
