@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ef018a5_c4e8a6ab",
+        "filename": "logdog/api/config/svcconfig/cloud_logging.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-02T01:46:11Z",
+      "side": 1,
+      "message": "I want to prevent other projects from being able to export logs to a cloud project owned by someone else.\n\nLet\u0027s say that CrOS and Chromium granted monitoring writer role to logdog@appspot.googleservice.com. Then, Fuchsia can update their project config to export their logs to Chromium and CrOS projects.\n\nHowever, I don\u0027t think this prevent such a thing from happening at all. Fuchsia can still update their project configs with Chromium\u0027s exporter_svc_account. Any suggestions are welcome. :)",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 34
+      },
+      "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
