@@ -68,4 +68,9 @@ message ProjectConfig {
   // Any unspecified index configuration will default to the service archival
   // config.
   ArchiveIndexConfig archive_index_config = 12;
+
+  // Project-specific CloudLogging configuration.
+  //
+  // If not specified, no Logdog logs will be exported to Cloud Logging.
+  CloudLoggingConfig cloud_logging_config = 13;
 }
