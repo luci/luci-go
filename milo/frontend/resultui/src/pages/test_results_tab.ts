@@ -263,21 +263,23 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   ) {
     const variantCountLabel = `${variants.length}${fullyLoaded ? '' : '+'}`;
     return html`
-      <div class=${classMap({
-        'expanded': display,
-        'empty': variants.length === 0,
-        'group-header': true,
-      })}>
-        <mwc-icon class=${'inline-icon ' + VARIANT_STATUS_CLASS_MAP[status]}>${VARIANT_STATUS_ICON_MAP[status]}</mwc-icon>
-        ${VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE[status]} (${variantCountLabel})
-        <span
-          class="active-text"
-          @click=${() => toggleDisplay(!display)}
-        >[${display ? 'hide' : 'show'}]</span>
-        <span
-          class="active-text"
-          style=${styleMap({'display': fullyLoaded ? 'none' : ''})}
-        >${this.renderLoadMore(status)}</span>
+      <div
+        class=${classMap({
+          'expanded': display,
+          'empty': variants.length === 0,
+          'group-header': true,
+        })}
+        @click=${() => toggleDisplay(!display)}
+      >
+        <mwc-icon class="group-icon">${display ? 'expand_more' : 'chevron_right'}</mwc-icon>
+        <mwc-icon class=${'group-icon ' + VARIANT_STATUS_CLASS_MAP[status]}>${VARIANT_STATUS_ICON_MAP[status]}</mwc-icon>
+        <div class="group-title">
+          ${VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE[status]} (${variantCountLabel})
+          <span
+            class="active-text"
+            style=${styleMap({'display': fullyLoaded ? 'none' : ''})}
+          >${this.renderLoadMore(status)}</span>
+        </div>
       </div>
       ${repeat(
         (display ? variants : []).map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [TestVariant | undefined, TestVariant, TestVariant | undefined]),
@@ -301,7 +303,10 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     return html`
       <span
         style=${styleMap({'display': state.testLoader?.isLoading ?? true ? 'none' : ''})}
-        @click=${() => this.loadNextTestVariants(forStatus)}
+        @click=${(e: Event) => {
+          this.loadNextTestVariants(forStatus);
+          e.stopPropagation();
+        }}
       >
         [load more]
       </span>
@@ -445,13 +450,21 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     }
 
     .group-header {
+      display: grid;
+      grid-template-columns: auto auto 1fr;
+      grid-gap: 5px;
       font-size: 16px;
       font-weight: bold;
-      padding: 5px 5px 5px 15px;
+      padding: 5px 5px 5px 10px;
       position: sticky;
       background-color: white;
       border-top: 1px solid var(--divider-color);
       top: -1px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .group-title {
+      line-height: 24px;
     }
     .group-header:first-child {
       top: 0px;
@@ -467,7 +480,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       display: none;
     }
     .show-empty-groups .group-header.empty {
-      display: block;
+      display: grid;
     }
 
     .unexpected {
