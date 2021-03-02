@@ -16,6 +16,24 @@
       "message": "ping. If this LGTM, then I will land this in dev and verify WAI",
       "revId": "faeeb98375a1015cd84842b456a0a94dbe9b999a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eac38620_9c7dfe88",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-02T19:41:57Z",
+      "side": 1,
+      "message": "As discussed in the meeting, let\u0027s consider if it\u0027s possible to:\n\n1. Do nothing. Let the lease-related values be incorrect as long as Python isn\u0027t doing anything incorrect with such builds (consider that Update is live so we already have such values in the datastore, if there have been no issues maybe we don\u0027t need to do anything).\n\n2. Try to make the change on the Python side, for example in the computation of is_leased. Have it consider whether or not a build is finalized.\n\nThat said, this CL \"seems\" fine. It just might not be necessary.",
+      "parentUuid": "21d505e5_72d59220",
+      "revId": "faeeb98375a1015cd84842b456a0a94dbe9b999a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
