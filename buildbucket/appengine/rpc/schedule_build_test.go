@@ -1207,9 +1207,9 @@ func TestScheduleBuild(t *testing.T) {
 						ID:     "builder",
 					}), ShouldBeNil)
 					So(datastore.Put(ctx, &model.Build{
-						ID: 9021868963221471233,
+						ID: 9021868963221667745,
 						Proto: pb.Build{
-							Id: 9021868963221471233,
+							Id: 9021868963221667745,
 							Builder: &pb.BuilderID{
 								Project: "project",
 								Bucket:  "bucket",
@@ -1242,7 +1242,7 @@ func TestScheduleBuild(t *testing.T) {
 							Builder: "builder",
 						},
 						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-						Id:         9021868963221471233,
+						Id:         9021868963221667745,
 						Input:      &pb.Build_Input{},
 						Number:     1,
 					})
@@ -1336,7 +1336,7 @@ func TestScheduleBuild(t *testing.T) {
 							Builder: "builder",
 						},
 						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-						Id:         9021868963221471233,
+						Id:         9021868963221667745,
 						Input:      &pb.Build_Input{},
 						Number:     1,
 					})
