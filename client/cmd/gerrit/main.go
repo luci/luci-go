@@ -43,6 +43,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 			cmdChangeAbandon(defaultAuthOpts),
 			cmdChangeCreate(defaultAuthOpts),
 			cmdChangeDetail(defaultAuthOpts),
+			cmdListChangeComments(defaultAuthOpts),
 			cmdChangeQuery(defaultAuthOpts),
 			cmdChangesSubmittedTogether(defaultAuthOpts),
 			cmdGetMergeable(defaultAuthOpts),
