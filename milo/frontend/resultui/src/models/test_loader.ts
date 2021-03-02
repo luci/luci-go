@@ -100,11 +100,11 @@ export class TestLoader {
     return this.unfilteredExpectedVariants.filter((this.filter));
   }
 
-  @observable.shallow readonly unfilteredUnexpectedVariants: TestVariant[] = [];
-  @observable.shallow readonly unfilteredUnexpectedlySkippedVariants: TestVariant[] = [];
-  @observable.shallow readonly unfilteredFlakyVariants: TestVariant[] = [];
-  @observable.shallow readonly unfilteredExoneratedVariants: TestVariant[] = [];
-  @observable.shallow readonly unfilteredExpectedVariants: TestVariant[] = [];
+  @observable.shallow private unfilteredUnexpectedVariants: TestVariant[] = [];
+  @observable.shallow private unfilteredUnexpectedlySkippedVariants: TestVariant[] = [];
+  @observable.shallow private unfilteredFlakyVariants: TestVariant[] = [];
+  @observable.shallow private unfilteredExoneratedVariants: TestVariant[] = [];
+  @observable.shallow private unfilteredExpectedVariants: TestVariant[] = [];
 
   @computed get loadedAllVariants() { return this.stage === LoadingStage.Done; }
   @computed get loadedAllUnexpectedVariants() { return this.stage > LoadingStage.LoadingUnexpected; }
@@ -135,39 +135,46 @@ export class TestLoader {
   private loadPromise = Promise.resolve();
 
   /**
-   * Loads the next batch of tests from the iterator to the node.
+   * Load at least one test variant of the specified status (or any status if
+   * not specified) unless the last page is reached.
    */
-  loadNextPage() {
+  loadNextTestVariants(untilStatus?: TestVariantStatus) {
     this._firstRequestSent = true;
     if (this.stage === LoadingStage.Done) {
       return this.loadPromise;
     }
+
     this.loadingReqCount++;
-    this.loadPromise = this.loadPromise.then(() => this.loadNextPageInternal());
+    this.loadPromise = this.loadPromise.then(() => this.loadNextTestVariantsInternal(untilStatus));
     return this.loadPromise.then(() => this.loadingReqCount--);
   }
 
   /**
-   * Loads pages repeatedly until we receive some variants with the given variant status.
+   * Load at least one test variant of the specified status (or any status if
+   * not specified) unless the last page is reached.
    *
-   * Will always load at least one page.
+   * @precondition there should not exist a running instance of
+   * this.loadNextTestVariantsInternal
    */
-  async loadPagesUntilStatus(status: TestVariantStatus) {
-    if (this.stage === VARIANT_STATUS_LOADING_STAGE_MAP[status]) {
-      // If we expect the next batch to be at least the status we want, load one page only.
-      await this.loadNextPage();
-      return;
-    }
+  private async loadNextTestVariantsInternal(untilStatus?: TestVariantStatus) {
+    const beforeCount = this.testVariantCount;
+
+    let shouldLoadNextPage: boolean;
 
     // Load pages until the next expected status is at least the one we're after.
     do {
       await this.loadNextPage();
-    } while (this.stage < VARIANT_STATUS_LOADING_STAGE_MAP[status]);
+      shouldLoadNextPage =
+        !this.loadedAllVariants && this.testVariantCount === beforeCount ||
+        untilStatus !== undefined && this.stage < VARIANT_STATUS_LOADING_STAGE_MAP[untilStatus];
+    } while (shouldLoadNextPage);
 
     // If we wanted to load up to Expected, and none have arrived yet
     // (i.e. we're at the point where ResultDB has just returned the final
     // non-expected variants to us), load one more page.
-    if (status === TestVariantStatus.EXPECTED && this.unfilteredExpectedVariants.length === 0) {
+    // Note: the while loop above only ensures at least one test variant of
+    // *any* status is loaded.
+    if (untilStatus === TestVariantStatus.EXPECTED && this.unfilteredExpectedVariants.length === 0) {
       await this.loadNextPage();
     }
   }
@@ -178,7 +185,7 @@ export class TestLoader {
    * @precondition there should not exist a running instance of
    * this.loadMoreInternal
    */
-  private async loadNextPageInternal() {
+  private async loadNextPage() {
     if (this.nextPageToken === undefined) {
       return;
     }

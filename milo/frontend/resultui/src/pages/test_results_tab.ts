@@ -46,33 +46,9 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
 
   private disposers: Array<() => void> = [];
 
-  /**
-   * If status is specified, loads test variants until we receive some variants
-   * with the given variant status.
-   * Otherwise, simply load the next batch of test variants.
-   *
-   * Will always load at least test variant unless the last page is reached.
-   */
-  async loadNextTestVariants(untilStatus?: TestVariantStatus) {
-    const loader = this.invocationState.testLoader;
-    if (!loader) {
-      return;
-    }
-    const beforeCount = loader.testVariantCount;
-
+  async loadMore(untilStatus?: TestVariantStatus) {
     try {
-      if (untilStatus) {
-        await loader.loadPagesUntilStatus(untilStatus);
-      } else {
-        await loader.loadNextPage();
-      }
-      const shouldLoadNextPage = !loader.loadedAllVariants &&
-        // Use filtered count instead of displayed count so displaying settings
-        // doesn't change the loading behavior.
-        loader.testVariantCount === beforeCount;
-      if (shouldLoadNextPage) {
-        await this.loadNextTestVariants();
-      }
+      await this.invocationState.testLoader?.loadNextTestVariants(untilStatus);
     } catch (e) {
       this.dispatchEvent(new ErrorEvent('error', {
         error: e,
@@ -119,7 +95,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         // the loading operation already. In that case we don't want to load
         // more test results.
         if (!testLoader.firstRequestSent) {
-          this.loadNextTestVariants();
+          this.loadMore();
         }
       },
       {fireImmediately: true},
@@ -307,7 +283,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       <span
         style=${styleMap({'display': state.testLoader?.isLoading ?? true ? 'none' : ''})}
         @click=${(e: Event) => {
-          this.loadNextTestVariants(forStatus);
+          this.loadMore(forStatus);
           e.stopPropagation();
         }}
       >
