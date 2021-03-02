@@ -47,7 +47,7 @@ type Event struct {
 	//	*Event_Poke
 	//	*Event_NewConfig
 	//	*Event_ClUpdated
-	//	*Event_Finished
+	//	*Event_Finalize
 	Event isEvent_Event `protobuf_oneof:"event"`
 	// Instructs Run Manager that this event can only be processed after
 	// this timestamp.
@@ -128,9 +128,9 @@ func (x *Event) GetClUpdated() *CLUpdated {
 	return nil
 }
 
-func (x *Event) GetFinished() *Finished {
-	if x, ok := x.GetEvent().(*Event_Finished); ok {
-		return x.Finished
+func (x *Event) GetFinalize() *Finalize {
+	if x, ok := x.GetEvent().(*Event_Finalize); ok {
+		return x.Finalize
 	}
 	return nil
 }
@@ -184,15 +184,9 @@ type Event_ClUpdated struct {
 	ClUpdated *CLUpdated `protobuf:"bytes,5,opt,name=cl_updated,json=clUpdated,proto3,oneof"`
 }
 
-type Event_Finished struct {
-	// On Finished event, Run Manager will finalize the Run.
-	//
-	// This event SHOULD only be sent by migration api when CQDaemon is still
-	// controlling the execution of the Run and reporting the final Run back
-	// to CV.
-	//
-	// TODO(crbug/1141880): Remove this event after migration.
-	Finished *Finished `protobuf:"bytes,30,opt,name=finished,proto3,oneof"`
+type Event_Finalize struct {
+	// On Finalize event, Run Manager will finalize the Run.
+	Finalize *Finalize `protobuf:"bytes,6,opt,name=finalize,proto3,oneof"`
 }
 
 func (*Event_Start) isEvent_Event() {}
@@ -205,7 +199,7 @@ func (*Event_NewConfig) isEvent_Event() {}
 
 func (*Event_ClUpdated) isEvent_Event() {}
 
-func (*Event_Finished) isEvent_Event() {}
+func (*Event_Finalize) isEvent_Event() {}
 
 type Start struct {
 	state         protoimpl.MessageState
@@ -438,14 +432,14 @@ func (x *CLUpdated) GetEVersion() int64 {
 	return 0
 }
 
-type Finished struct {
+type Finalize struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *Finished) Reset() {
-	*x = Finished{}
+func (x *Finalize) Reset() {
+	*x = Finalize{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -453,13 +447,13 @@ func (x *Finished) Reset() {
 	}
 }
 
-func (x *Finished) String() string {
+func (x *Finalize) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Finished) ProtoMessage() {}
+func (*Finalize) ProtoMessage() {}
 
-func (x *Finished) ProtoReflect() protoreflect.Message {
+func (x *Finalize) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -471,8 +465,8 @@ func (x *Finished) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Finished.ProtoReflect.Descriptor instead.
-func (*Finished) Descriptor() ([]byte, []int) {
+// Deprecated: Use Finalize.ProtoReflect.Descriptor instead.
+func (*Finalize) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_rawDescGZIP(), []int{6}
 }
 
@@ -503,10 +497,10 @@ var file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_rawDesc = []b
 	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x76, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x65, 0x76, 0x65,
 	0x6e, 0x74, 0x70, 0x62, 0x2e, 0x43, 0x4c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x48, 0x00,
 	0x52, 0x09, 0x63, 0x6c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x36, 0x0a, 0x08, 0x66,
-	0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x18, 0x1e, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e,
+	0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e,
 	0x63, 0x76, 0x2e, 0x72, 0x75, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x70, 0x62, 0x2e, 0x46,
-	0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x48, 0x00, 0x52, 0x08, 0x66, 0x69, 0x6e, 0x69, 0x73,
-	0x68, 0x65, 0x64, 0x12, 0x3f, 0x0a, 0x0d, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x5f, 0x61,
+	0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x48, 0x00, 0x52, 0x08, 0x66, 0x69, 0x6e, 0x61, 0x6c,
+	0x69, 0x7a, 0x65, 0x12, 0x3f, 0x0a, 0x0d, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x5f, 0x61,
 	0x66, 0x74, 0x65, 0x72, 0x18, 0x14, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f,
 	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d,
 	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0c, 0x70, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x41,
@@ -520,7 +514,7 @@ var file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_rawDesc = []b
 	0x65, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6c, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03,
 	0x52, 0x04, 0x63, 0x6c, 0x69, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69,
 	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x22, 0x0a, 0x0a, 0x08, 0x46, 0x69, 0x6e, 0x69, 0x73, 0x68, 0x65, 0x64, 0x42, 0x36,
+	0x6f, 0x6e, 0x22, 0x0a, 0x0a, 0x08, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x42, 0x36,
 	0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72,
 	0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e,
 	0x61, 0x6c, 0x2f, 0x72, 0x75, 0x6e, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x70, 0x62, 0x3b, 0x65,
@@ -547,7 +541,7 @@ var file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_goTypes = []i
 	(*Poke)(nil),                  // 3: cv.run.eventpb.Poke
 	(*NewConfig)(nil),             // 4: cv.run.eventpb.NewConfig
 	(*CLUpdated)(nil),             // 5: cv.run.eventpb.CLUpdated
-	(*Finished)(nil),              // 6: cv.run.eventpb.Finished
+	(*Finalize)(nil),              // 6: cv.run.eventpb.Finalize
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_depIdxs = []int32{
@@ -556,7 +550,7 @@ var file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_depIdxs = []i
 	3, // 2: cv.run.eventpb.Event.poke:type_name -> cv.run.eventpb.Poke
 	4, // 3: cv.run.eventpb.Event.new_config:type_name -> cv.run.eventpb.NewConfig
 	5, // 4: cv.run.eventpb.Event.cl_updated:type_name -> cv.run.eventpb.CLUpdated
-	6, // 5: cv.run.eventpb.Event.finished:type_name -> cv.run.eventpb.Finished
+	6, // 5: cv.run.eventpb.Event.finalize:type_name -> cv.run.eventpb.Finalize
 	7, // 6: cv.run.eventpb.Event.process_after:type_name -> google.protobuf.Timestamp
 	7, // [7:7] is the sub-list for method output_type
 	7, // [7:7] is the sub-list for method input_type
@@ -644,7 +638,7 @@ func file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Finished); i {
+			switch v := v.(*Finalize); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -662,7 +656,7 @@ func file_go_chromium_org_luci_cv_internal_run_eventpb_events_proto_init() {
 		(*Event_Poke)(nil),
 		(*Event_NewConfig)(nil),
 		(*Event_ClUpdated)(nil),
-		(*Event_Finished)(nil),
+		(*Event_Finalize)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
