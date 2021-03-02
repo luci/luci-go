@@ -16,6 +16,23 @@
       "message": "You may need to `terraform apply` cv\u0027s configs first to pick up https://chrome-internal.googlesource.com/infra/infra_internal/+/85e0ead45509609887d8487e67fe71aad9cbc6d0",
       "revId": "6b9d42af280ae3a724011c0b396955ea3c2f7505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d3e1ed2_131355f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-02T02:29:06Z",
+      "side": 1,
+      "message": "Yeah, as Vadim said, it needs to log in glinux and manually run `terraform apply` to enable Error Reporting API by following this Readme https://chrome-internal.googlesource.com/infra/infra_internal/+/refs/heads/master/terraform/#applying-changes.\n\nFor a GAE app, an alternative way is to just click `enable` button - https://screenshot.googleplex.com/AwsbiyXTLS2oko3. Because I loss my access to gLinux in a previous restart. I enabled it via the UI for cv Dev (I have no permission for staging\u0026prod)",
+      "revId": "6b9d42af280ae3a724011c0b396955ea3c2f7505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
