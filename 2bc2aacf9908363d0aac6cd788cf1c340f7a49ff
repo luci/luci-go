@@ -87,6 +87,30 @@
       },
       "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "993ff6f2_0bc4544d",
+        "filename": "logdog/api/config/svcconfig/cloud_logging.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-02T03:26:28Z",
+      "side": 1,
+      "message": "this is also what I planned to respond with, except I went to check iff CrOS is using one. Nope 😞\nSo, this will be an obstacle, but not insurmountable -- if we book a Git admin (myself?) and a calm day to deploy it (e.g. Saturday)",
+      "parentUuid": "e32f498a_dc02bfb5",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 34
+      },
+      "revId": "2bc2aacf9908363d0aac6cd788cf1c340f7a49ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
