@@ -12,6 +12,7 @@ import "google/protobuf/duration.proto";
 
 import "go.chromium.org/luci/common/proto/options.proto";
 import "go.chromium.org/luci/logdog/api/config/svcconfig/archival.proto";
+import "go.chromium.org/luci/logdog/api/config/svcconfig/cloud_logging.proto";
 
 option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/projects:luci-logdog.cfg";
@@ -68,4 +69,9 @@ message ProjectConfig {
   // Any unspecified index configuration will default to the service archival
   // config.
   ArchiveIndexConfig archive_index_config = 12;
+
+  // Project-specific CloudLogging configuration.
+  //
+  // If not specified, no Logdog logs will be exported to Cloud Logging.
+  CloudLoggingConfig cloud_logging_config = 13;
 }
