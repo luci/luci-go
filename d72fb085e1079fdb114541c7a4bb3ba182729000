@@ -33,6 +33,24 @@
       "message": "I guess it\u0027s a bit confusing if we use purple here, because \"exonerated\" is a good thing, and I think people are used to link purple with \"infra failure\", which is a bad thing.",
       "revId": "d72fb085e1079fdb114541c7a4bb3ba182729000",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c77d24ac_e3250a34",
+        "filename": "milo/frontend/resultui/src/libs/constants.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-02T01:58:32Z",
+      "side": 1,
+      "message": "Actually, the colour is pink rather than purple.\nMy original intention was\npurple -\u003e infra failure\npink -\u003e exonerated.\n\nUnfortunately, in the old build page, the infra failure colour is somewhere between purple and pink.\n\nHow about changing it to blue? Then we will have\npurple -\u003e infra failure\nblue -\u003e canceled and exonerated (didn\u0027t happen or doesn\u0027t matter any more).\n\n@tiffany could you give me some idea?",
+      "parentUuid": "a4507704_b898e7f1",
+      "revId": "d72fb085e1079fdb114541c7a4bb3ba182729000",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
