@@ -74,6 +74,36 @@ func (rs *RunState) loadCLs(ctx context.Context) ([]*changelist.CL, error) {
 	}
 }
 
+// LoadRunCLs loads all RunCL entities involved in the Run.
+//
+// Return nil error iff all RunCLs are successfully loaded.
+func (rs *RunState) LoadRunCLs(ctx context.Context) ([]*run.RunCL, error) {
+	cls := make([]*run.RunCL, len(rs.Run.CLs))
+	for i, clID := range rs.Run.CLs {
+		cls[i] = &run.RunCL{ID: clID}
+	}
+	err := datastore.Get(ctx, cls)
+	switch merr, ok := err.(errors.MultiError); {
+	case err == nil:
+		return cls, nil
+	case ok:
+		for i, err := range merr {
+			if err == datastore.ErrNoSuchEntity {
+				return nil, errors.Reason("RunCL %d not found in Datastore", cls[i].ID).Err()
+			}
+		}
+		count, err := merr.Summary()
+		return nil, errors.Annotate(err, "failed to load %d out of %d RunCLs", count, len(cls)).Tag(transient.Tag).Err()
+	default:
+		return nil, errors.Annotate(err, "failed to load %d RunCLs", len(cls)).Tag(transient.Tag).Err()
+	}
+}
+
+// FetchTryjobResult computes final results of Tryjobs launched for this run.
+func (rs *RunState) FetchTryjobResult(ctx context.Context) (passed bool, msg string, err error) {
+	panic("not implemented")
+}
+
 // RefreshCLs submits tasks for refresh all CLs involved in this Run.
 func (rs *RunState) RefreshCLs(ctx context.Context) error {
 	cls, err := rs.loadCLs(ctx)
