@@ -56,6 +56,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "14b60a8e_47bc264f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T23:01:27Z",
+      "side": 1,
+      "message": "I\u0027ve verified that legacy cloud datastore works the same way, not just Datastore-on-Firestore .",
+      "parentUuid": "96bb0239_4ae0f587",
+      "revId": "93556b8d48c8cfcb3ff4506284651c1a6974c666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a7b0cc03_f34c4ae3",
         "filename": "/COMMIT_MSG",
         "patchSetId": 5
