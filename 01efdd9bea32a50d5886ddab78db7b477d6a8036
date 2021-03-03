@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a9dc13f_4d0759f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:03:37Z",
+      "side": 1,
+      "message": "That would launch batched cancellations to 100% even while non-batched cancellations are being served at \u003c 100% in prod (currently 0%). This should either:\n1. Launch separately first (to 100% and confirm that it\u0027s working)\n2. Launch to some threshold (e.g. say 50% of prod cancellations then we flip batch cancellations)\n3. Add the randomization to batch so it can follow the same percentage",
+      "parentUuid": "094ada34_5f009cbe",
+      "revId": "01efdd9bea32a50d5886ddab78db7b477d6a8036",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "37b088c1_134b1f92",
