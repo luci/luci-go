@@ -56,6 +56,30 @@
       },
       "revId": "59bef0b29a7a19bc98c1f86a91e2b850789d6aae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35f86ef4_192e94a4",
+        "filename": "milo/frontend/resultui/out/static/styles/style.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-03T00:59:51Z",
+      "side": 1,
+      "message": "Thanks. Didn\u0027t know that existed.\n\nI\u0027ll update colours in another CL.",
+      "parentUuid": "d01234ad_41a142d8",
+      "range": {
+        "startLine": 31,
+        "startChar": 23,
+        "endLine": 31,
+        "endChar": 29
+      },
+      "revId": "59bef0b29a7a19bc98c1f86a91e2b850789d6aae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
