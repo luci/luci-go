@@ -55,9 +55,8 @@ export const VARIANT_STATUS_ICON_MAP = Object.freeze({
   [TestVariantStatus.UNEXPECTED]: 'error',
   [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'report',
   [TestVariantStatus.FLAKY]: 'warning',
-  // TODO(weiweilin): find an appropriate icon for exonerated
-  [TestVariantStatus.EXONERATED]: 'check',
-  [TestVariantStatus.EXPECTED]: 'check',
+  [TestVariantStatus.EXONERATED]: 'remove_circle',
+  [TestVariantStatus.EXPECTED]: 'check_circle',
 });
 
 
