@@ -72,6 +72,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ed7ccb9_5721cc98",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-03T21:28:12Z",
+      "side": 1,
+      "message": "We don\u0027t have those metrics. I prefer the option #1 to avoid adding extra complexity to the releasing. `/CancelBuild` is a lightweight api. It should be fine we switch the cancellation in Batch after /CancelBuild is 100% launched. I don\u0027t think there are much cancel traffic.",
+      "parentUuid": "1bd044be_73f3f727",
+      "revId": "01efdd9bea32a50d5886ddab78db7b477d6a8036",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "37b088c1_134b1f92",
