@@ -122,7 +122,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		is.Inputs = append(is.Inputs, path)
 	}
 
-	client, err := c.authFlags.NewClient(ctx, c.casFlags.Instance)
+	client, err := c.authFlags.NewClient(ctx, c.casFlags.Instance, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to create cas client").Err()
 	}
