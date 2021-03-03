@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "50004706_cef1eac0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-03T18:10:09Z",
+      "side": 1,
+      "message": "Do we have metrics of cancelation via batch vs. direct? If there\u0027s a big hunk of direct traffic then probably just switching batch after the singleton RPC is at 100% is fine. If the bulk of the cancelation traffic is via batch it might make sense to add randomization there, too?",
+      "parentUuid": "2a9dc13f_4d0759f8",
+      "revId": "01efdd9bea32a50d5886ddab78db7b477d6a8036",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "37b088c1_134b1f92",
