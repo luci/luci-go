@@ -42,7 +42,7 @@ func (af *testAuthFlags) Register(_ *flag.FlagSet) {}
 
 func (af *testAuthFlags) Parse() error { return nil }
 
-func (af *testAuthFlags) NewClient(ctx context.Context, _ string) (*client.Client, error) {
+func (af *testAuthFlags) NewClient(ctx context.Context, _ string, _ bool) (*client.Client, error) {
 	return af.testEnv.Server.NewTestClient(ctx)
 }
 

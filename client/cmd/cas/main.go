@@ -60,11 +60,11 @@ func (af *authFlags) Parse() error {
 	return nil
 }
 
-func (af *authFlags) NewClient(ctx context.Context, instance string) (*client.Client, error) {
+func (af *authFlags) NewClient(ctx context.Context, instance string, readOnly bool) (*client.Client, error) {
 	if af.parsedOpts == nil {
 		return nil, errors.Reason("AuthFlags.Parse() must be called").Err()
 	}
-	return cas.NewClient(ctx, instance, *af.parsedOpts, false)
+	return cas.NewClient(ctx, instance, *af.parsedOpts, readOnly)
 }
 
 func getApplication() *cli.Application {
