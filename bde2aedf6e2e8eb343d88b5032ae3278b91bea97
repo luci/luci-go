@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe33b727_b070c760",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T04:43:20Z",
+      "side": 1,
+      "message": "This is actually an improvement over the CQD, which posts a separate RPC.\n👍",
+      "range": {
+        "startLine": 151,
+        "startChar": 68,
+        "endLine": 152,
+        "endChar": 56
+      },
+      "revId": "bde2aedf6e2e8eb343d88b5032ae3278b91bea97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
