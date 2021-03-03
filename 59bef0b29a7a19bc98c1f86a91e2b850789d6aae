@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68b8a535_f2cde31f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-03T00:45:31Z",
+      "side": 1,
+      "message": "Demo:\nUpdated colour: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/24373/test-results?q\u003d-Status%3AUNEXPECTED%2CFLAKY\n\nWithout updating colour: https://weiweilin-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/24373/test-results?q\u003d-Status%3AUNEXPECTED%2CFLAKY",
+      "revId": "59bef0b29a7a19bc98c1f86a91e2b850789d6aae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
