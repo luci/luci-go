@@ -140,7 +140,7 @@ type triageResult struct {
 		events eventbox.Events
 		cls    common.CLIDs
 	}
-	finishedEvents     eventbox.Events
+	finalizeEvents     eventbox.Events
 	nextReadyEventTime time.Time
 }
 
@@ -170,23 +170,14 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *eventpb.Event_ClUpdated:
 		tr.clUpdatedEvents.events = append(tr.clUpdatedEvents.events, item)
 		tr.clUpdatedEvents.cls = append(tr.clUpdatedEvents.cls, common.CLID(e.GetClUpdated().GetClid()))
-	case *eventpb.Event_Finished:
-		tr.finishedEvents = append(tr.finishedEvents, item)
+	case *eventpb.Event_Finalize:
+		tr.finalizeEvents = append(tr.finalizeEvents, item)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
 }
 
 func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) (ret []eventbox.Transition, err error) {
-	if tr.finishedEvents != nil {
-		t := eventbox.Transition{Events: tr.finishedEvents}
-		t.SideEffectFn, rs, err = rm.handler.OnFinished(ctx, rs)
-		if err != nil {
-			return nil, err
-		}
-		t.TransitionTo = rs
-		ret = append(ret, t)
-	}
 	switch {
 	case len(tr.cancelEvents) > 0:
 		t := eventbox.Transition{Events: tr.cancelEvents}
@@ -208,6 +199,31 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		t.SideEffectFn, rs, err = rm.handler.Start(ctx, rs)
 		if err != nil {
 			return nil, err
+		}
+		t.TransitionTo = rs
+		ret = append(ret, t)
+	}
+	if tr.finalizeEvents != nil {
+		t := eventbox.Transition{}
+		if rs.Run.Status == run.Status_RUNNING {
+			// Convert status from RUNNING to FINALIZING when received finalize
+			// event so that other event handler won't attempt to mutate this Run.
+			// It is best effort to ensure the atomicity of finalization process,
+			// although true atomic can't be guranteed because Gerrit operations
+			// are not atomic.
+			rs = rs.ShallowCopy()
+			rs.Run.Status = run.Status_FINALIZING
+			// Do not consume the finalize event and set nextReadyEventTime
+			// to a previous timestamp so that Run Manager will be woken up
+			// immediately after this transaction to do the actual finalization
+			// work.
+			tr.nextReadyEventTime = clock.Now(ctx).Add(-1 * time.Second)
+		} else {
+			t.Events = tr.finalizeEvents
+			t.SideEffectFn, rs, err = rm.handler.Finalize(ctx, rs)
+			if err != nil {
+				return nil, err
+			}
 		}
 		t.TransitionTo = rs
 		ret = append(ret, t)
