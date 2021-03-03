@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "094ada34_5f009cbe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-03T17:28:30Z",
+      "side": 1,
+      "message": "Does Batch also need to change to use the new code path?",
+      "revId": "01efdd9bea32a50d5886ddab78db7b477d6a8036",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "37b088c1_134b1f92",
