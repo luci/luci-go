@@ -32,8 +32,8 @@ func TestBuilds(t *testing.T) {
 		Convey("ensure unimplemented", func() {
 			srv = NewBuilds()
 
-			Convey("CancelBuild", func() {
-				rsp, err := srv.CancelBuild(ctx, nil)
+			Convey("ScheduleBuild", func() {
+				rsp, err := srv.ScheduleBuild(ctx, nil)
 				So(err, ShouldErrLike, "method not implemented")
 				So(rsp, ShouldBeNil)
 			})
