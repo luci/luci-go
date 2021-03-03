@@ -28,7 +28,7 @@ html {
   --greyed-out-text-color: #808080;
   --active-text-color: #0000ff;
 
-  --exonerated-color: #df20b6;
+  --exonerated-color: #0084ff;
   --success-color: #169c16;
   --failure-color: #d23a2d;
   --warning-text-color: #ff9900;
@@ -36,7 +36,7 @@ html {
   --scheduled-color: #73808c;
   --started-color: #ff8000;
   --critical-failure-color: #6c40bf;
-  --canceled-color: #0084ff;
+  --canceled-color: var(--exonerated-color);
 
   --scheduled-bg-color: #b7c1c9;
   --started-bg-color: #ffd1a2;
