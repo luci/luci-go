@@ -318,7 +318,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
 	}
 
-	c, err := r.authFlags.NewClient(ctx, r.casFlags.Instance)
+	c, err := r.authFlags.NewClient(ctx, r.casFlags.Instance, true)
 	if err != nil {
 		return err
 	}

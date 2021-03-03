@@ -37,7 +37,7 @@ type AuthFlags interface {
 	Parse() error
 
 	// NewClient creates an authroised RBE Client.
-	NewClient(ctx context.Context, instance string) (*client.Client, error)
+	NewClient(ctx context.Context, instance string, readOnly bool) (*client.Client, error)
 }
 
 var _ cli.ContextModificator = (*commonFlags)(nil)
