@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "89ed6ff1_aea9a872",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:30:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "147632d0_0f10fdc5",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bbf3a540_ca7306fc",
@@ -43,6 +61,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8af680d4_b6d3b4aa",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:30:52Z",
+      "side": 1,
+      "message": "I thought about request kind string but I wasn\u0027t sure the body of this entity generalizes to deduping anything. Unless we change the BuildID field below to be ResourceName (https://google.aip.dev/122) then this can dedupe anything.",
+      "parentUuid": "bbf3a540_ca7306fc",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 23
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a03c219d_a7398850",
         "filename": "buildbucket/appengine/model/requestid.go",
         "patchSetId": 1
@@ -54,6 +96,24 @@
       "writtenOn": "2021-03-03T17:49:29Z",
       "side": 1,
       "message": "note that this is automatic based on the struct type name",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc3e16bb_64e7dbc3",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:30:52Z",
+      "side": 1,
+      "message": "Ack but it\u0027s explicitly filled in for the other entities so I kept it for consistency.",
+      "parentUuid": "a03c219d_a7398850",
       "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -95,6 +155,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "dff3ffe5_d33938f4",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:30:52Z",
+      "side": 1,
+      "message": "What type do we want to implement PropertyConverter on? Should we have a struct of RequestIDDeduplicationComponents or something (currently: auth.Identity, request ID string, maybe request kind string).",
+      "parentUuid": "4c832d09_70ff95d4",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d994654d_6f1a5995",
         "filename": "buildbucket/appengine/model/requestid.go",
         "patchSetId": 1
@@ -124,6 +202,24 @@
       "side": 1,
       "message": "(I think one of the intermediate ideas we had was to have a cron for this, but that\u0027s essentially what a delayed task in TQ is _anyway_, so probably better to use a transactional TQ task instead)",
       "parentUuid": "d994654d_6f1a5995",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "60a38848_51b08258",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:30:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc7ff7eb_ccf27f5b",
       "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -163,6 +259,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "46e04443_3e64d597",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:30:52Z",
+      "side": 1,
+      "message": "Fine, though I don\u0027t think it\u0027s necessary. I only put it because you didn\u0027t review the code originally.",
+      "parentUuid": "0fd2d248_8070c314",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b8991c27_834fd649",
@@ -186,6 +300,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d1dfb93e_677a7956",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:30:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8991c27_834fd649",
+      "range": {
+        "startLine": 296,
+        "startChar": 11,
+        "endLine": 296,
+        "endChar": 37
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "87c8bf95_2c774114",
@@ -199,6 +337,30 @@
       "writtenOn": "2021-03-03T16:13:44Z",
       "side": 1,
       "message": "can be done outside the transaction and only once. I\u0027d compute  entire\n  var reqDedup *model.RequestID // to put later\nbefore transaction code and here do ds.Get if reqDedup !\u003dnil",
+      "range": {
+        "startLine": 298,
+        "startChar": 6,
+        "endLine": 299,
+        "endChar": 103
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "60477d27_471fee31",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T18:30:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "87c8bf95_2c774114",
       "range": {
         "startLine": 298,
         "startChar": 6,
