@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"sort"
 	"strings"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -269,8 +271,9 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	// task creation tasks are only created if everything else has succeeded (since everything can't be done
 	// in one transaction).
 	err = parallel.WorkPool(64, func(work chan<- func() error) {
-		for _, b := range blds {
+		for i, b := range blds {
 			b := b
+			reqID := reqs[i].RequestId
 			work <- func() error {
 				toPut := []interface{}{b}
 				if b.Proto.Infra != nil {
@@ -290,7 +293,27 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 					})
 				}
 
-				err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					if reqID != "" {
+						// Hash the user:requestID for a well-distributed entity key space.
+						id := fmt.Sprintf("%x", sha1.Sum([]byte(fmt.Sprintf("%s:%s", auth.CurrentIdentity(ctx), reqID))))
+						switch err := datastore.Get(ctx, &model.RequestID{ID: id}); {
+						case err == datastore.ErrNoSuchEntity:
+							toPut = append(toPut, &model.RequestID{
+								ID:         id,
+								BuildID:    b.ID,
+								CreatedBy:  auth.CurrentIdentity(ctx),
+								CreateTime: now,
+								RequestID:  reqID,
+							})
+						case err != nil:
+							return errors.Annotate(err, "failed to deduplicate request ID: %d", b.ID).Err()
+						default:
+							// TODO(crbug/1042991): Fetch existing build and deduplicate instead of erring.
+							return errors.Reason("request ID reuse: %s", reqID).Err()
+						}
+					}
+
 					switch err := datastore.Get(ctx, &model.Build{ID: b.ID}); {
 					case err == nil:
 						return appstatus.Errorf(codes.AlreadyExists, "build already exists: %d", b.ID)
