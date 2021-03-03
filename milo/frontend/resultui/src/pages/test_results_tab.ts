@@ -487,8 +487,10 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     }
 
     #variant-list-tail {
-      border-top: 1px solid var(--divider-color);
       padding: 5px 0 5px 15px;
+    }
+    #variant-list-tail:not(:first-child) {
+      border-top: 1px solid var(--divider-color);
     }
     #load {
       color: var(--active-text-color);
