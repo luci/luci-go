@@ -1,6 +1,80 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "147632d0_0f10fdc5",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T16:13:44Z",
+      "side": 1,
+      "message": "2021",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bbf3a540_ca7306fc",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T16:13:44Z",
+      "side": 1,
+      "message": "thinking out loud: hypothetically, we may need to de-duplicate more than just build Schedule requests in the future, e.g. CreateBuild requests. Will we be able to re-use this struct as is or will some backwards compat fields have to be added?\n\nWDYT about adding `RequestKind string`+ use it during hashing as easy to do now w/o much overhead while allow safe future re-use.",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 23
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2fc87419_29af30bc",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T16:13:44Z",
+      "side": 1,
+      "message": "isn\u0027t it worth documenting what ID is?\nOr, how about moving ID generation based on other fields into this package, as say \"func (r*RequestID) FillID()\"?",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d994654d_6f1a5995",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T16:13:44Z",
+      "side": 1,
+      "message": "why do you need an index on this? This will only make creation/deletion more expensive.",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "29aeff00_26e97ed8",
@@ -20,6 +94,70 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0fd2d248_8070c314",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T16:13:44Z",
+      "side": 1,
+      "message": "please add actual code comment, this func is \u003e50 LOC long now.",
+      "parentUuid": "29aeff00_26e97ed8",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b8991c27_834fd649",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T16:13:44Z",
+      "side": 1,
+      "message": "this also needs annotation, even more so than individual ds.Get/ds.Puts inside the transaction.",
+      "range": {
+        "startLine": 296,
+        "startChar": 11,
+        "endLine": 296,
+        "endChar": 37
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87c8bf95_2c774114",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T16:13:44Z",
+      "side": 1,
+      "message": "can be done outside the transaction and only once. I\u0027d compute  entire\n  var reqDedup *model.RequestID // to put later\nbefore transaction code and here do ds.Get if reqDedup !\u003dnil",
+      "range": {
+        "startLine": 298,
+        "startChar": 6,
+        "endLine": 299,
+        "endChar": 103
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "10f8ab96_89636c3c",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
@@ -31,6 +169,24 @@
       "writtenOn": "2021-03-03T14:34:42Z",
       "side": 1,
       "message": "This block starting at L296 and continuing below is the final transactional part of scheduling which currently:\n1. Stores the build and its related entities (infra and input properties).\n2. Enqueues a task queue task which creates the Swarming task.\n\nSo add the request ID as one of the entities to put if it doesn\u0027t exist. If it does exist, L312 is to avoid running any of the rest of the code in this transaction and fetch the existing build and related entities instead.",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c72532b_f00ca1e0",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T16:13:44Z",
+      "side": 1,
+      "message": "LGTM.",
+      "parentUuid": "10f8ab96_89636c3c",
       "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
