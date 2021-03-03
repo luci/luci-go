@@ -48,7 +48,9 @@ export class PageLayoutElement extends MobxLitElement {
 
   constructor() {
     super();
-    gAuthPromise.then((gAuth) => this.appState.gAuth = gAuth);
+    gAuthPromise
+      .then((gAuth) => this.appState.gAuth = gAuth)
+      .catch(() => this.appState.accessToken = '');
   }
 
   errorHandler = (event: ErrorEvent) => {

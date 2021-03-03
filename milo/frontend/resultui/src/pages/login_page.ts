@@ -46,8 +46,20 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
   }
 
   protected render() {
+    if (!this.appState.gAuth) {
+      return html`
+        <div id="sign-in-message">
+          You must sign in to see anything useful, but Google signin failed to initialize.<br>
+          Please ensure that cookies from <i>[*.]accounts.google.com</i> are not blocked.
+        <div>
+      `;
+    }
     return html`
-      <div id="sign-in-message">You must <span id="sign-in-link" @click=${() => this.appState.gAuth?.signIn()}>sign in</span> to see anything useful.<div>
+      <div id="sign-in-message">
+        You must
+        <span id="sign-in-link" @click=${() => this.appState.gAuth?.signIn()}>sign in</span>
+        to see anything useful.
+      <div>
     `;
   }
 
