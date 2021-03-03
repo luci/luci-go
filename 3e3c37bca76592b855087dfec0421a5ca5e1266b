@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6bfb3005_0263818e",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T20:46:21Z",
+      "side": 1,
+      "message": "since it\u0027s 2021, we should use sha256 just because it should be the default,\ninstead of explaining that md5 would have been just fine for our purposes.",
+      "range": {
+        "startLine": 32,
+        "startChar": 12,
+        "endLine": 32,
+        "endChar": 16
+      },
+      "revId": "3e3c37bca76592b855087dfec0421a5ca5e1266b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

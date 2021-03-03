@@ -83,6 +83,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f422e051_32059605",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T20:46:21Z",
+      "side": 1,
+      "message": "I don\u0027t have strong opinion, proceed as you see fit.",
+      "parentUuid": "8af680d4_b6d3b4aa",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 23
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a03c219d_a7398850",
@@ -203,6 +227,24 @@
       "side": 1,
       "message": "I guess the reason not to do this is because you\u0027d end up re-hashing on every Get and Put call :/",
       "parentUuid": "429d60e7_83a3ce58",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "473acb8c_fb4f7384",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T20:46:21Z",
+      "side": 1,
+      "message": "came here to say that PropertyConverter magic isn\u0027t necessary and is actually less efficient, but Robbie\u0027s first.",
+      "parentUuid": "19809270_8b129501",
       "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -350,6 +392,30 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "b8991c27_834fd649",
+      "range": {
+        "startLine": 296,
+        "startChar": 11,
+        "endLine": 296,
+        "endChar": 37
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "90b512f1_0eb2f42f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T20:46:21Z",
+      "side": 1,
+      "message": "not done.",
+      "parentUuid": "d1dfb93e_677a7956",
       "range": {
         "startLine": 296,
         "startChar": 11,
