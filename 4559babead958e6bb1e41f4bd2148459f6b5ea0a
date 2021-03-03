@@ -33,6 +33,24 @@
       "message": "Wonder if I\u0027m in the right repo here? The code I\u0027m seeing here seems stone old in comparison to master:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/cq/appengine/config/config.go",
       "revId": "4559babead958e6bb1e41f4bd2148459f6b5ea0a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "64c8fd79_2700f0e4",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1115956
+      },
+      "writtenOn": "2021-03-03T18:48:57Z",
+      "side": 1,
+      "message": "Seems like I branched off a stone old commit :(",
+      "parentUuid": "5313661c_8615e14d",
+      "revId": "4559babead958e6bb1e41f4bd2148459f6b5ea0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
