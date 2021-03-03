@@ -441,8 +441,8 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			// Although we can detect actual loops and emit better errors,
 			// this happens so rarely, it's not yet worth the time.
 			ctx.Errorf("triggered_by must refer to an existing builder without "+
-				" equivalent_to, location_regexp, or experiment_percentage options. "+
-				"triggered_by relationships must also not form a loop (given: %q)",
+				"equivalent_to or experiment_percentage options. triggered_by "+
+				"relationships must also not form a loop (given: %q)",
 				b.TriggeredBy)
 		case b.TriggeredBy != "":
 			// Reaching here means parent exists in config.
