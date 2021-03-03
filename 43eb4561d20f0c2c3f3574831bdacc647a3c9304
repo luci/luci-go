@@ -22,6 +22,30 @@
       },
       "revId": "43eb4561d20f0c2c3f3574831bdacc647a3c9304",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f1f5471_2e046d66",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-03T23:43:05Z",
+      "side": 1,
+      "message": "Yes, I failed to run cas client in swarming task due to this like\nhttps://chromium-swarm.appspot.com/task?id\u003d5210b3a2629b9d10",
+      "parentUuid": "797d4a49_49e42226",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 45
+      },
+      "revId": "43eb4561d20f0c2c3f3574831bdacc647a3c9304",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
