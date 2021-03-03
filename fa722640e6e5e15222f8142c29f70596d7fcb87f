@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc178db1_393b4452",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T23:49:26Z",
+      "side": 1,
+      "message": "context: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2727435/\n\nmany of tests are broken here, though not as many as I expected:\n * luci-go: DM, Scheduler, CV, LogDog\n * infra: lab_inventory\n * infra_internal: didn\u0027t check.\n\nUnfortunately, you can\u0027t see it from tryjobs because buildbucket proto comparison **by value** spectacularly goes into full OOM iff test fails\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/model/build_test.go;l\u003d72\n\nThoughts? Worth proceeding?",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "101f4293_b29753aa",
+        "filename": "gae/impl/memory/datastore_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T23:49:26Z",
+      "side": 1,
+      "message": "this is why most tests are broken.",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "809aeca2_2d3dbc98",
+        "filename": "gae/service/datastore/deserialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T23:49:26Z",
+      "side": 1,
+      "message": "actual fix is here because memory/ impl relies on this serialize/deserializer, but not prod/ or cloud/ implementations.",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
