@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29aeff00_26e97ed8",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T14:34:42Z",
+      "side": 1,
+      "message": "From L227, blds and reqs slices are 1:1.",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "10f8ab96_89636c3c",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-03T14:34:42Z",
+      "side": 1,
+      "message": "This block starting at L296 and continuing below is the final transactional part of scheduling which currently:\n1. Stores the build and its related entities (infra and input properties).\n2. Enqueues a task queue task which creates the Swarming task.\n\nSo add the request ID as one of the entities to put if it doesn\u0027t exist. If it does exist, L312 is to avoid running any of the rest of the code in this transaction and fetch the existing build and related entities instead.",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
