@@ -43,6 +43,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a03c219d_a7398850",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-03T17:49:29Z",
+      "side": 1,
+      "message": "note that this is automatic based on the struct type name",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2fc87419_29af30bc",
         "filename": "buildbucket/appengine/model/requestid.go",
         "patchSetId": 1
@@ -60,6 +77,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4c832d09_70ff95d4",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-03T17:49:29Z",
+      "side": 1,
+      "message": "I would consider PropertyConverter for the ID field here. See \"Additionally, any field ptr-to-type may implement the PropertyConverter\" in https://pkg.go.dev/go.chromium.org/luci/gae/service/datastore#GetPLS",
+      "parentUuid": "2fc87419_29af30bc",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d994654d_6f1a5995",
         "filename": "buildbucket/appengine/model/requestid.go",
         "patchSetId": 1
@@ -71,6 +106,24 @@
       "writtenOn": "2021-03-03T16:13:44Z",
       "side": 1,
       "message": "why do you need an index on this? This will only make creation/deletion more expensive.",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc7ff7eb_ccf27f5b",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-03T17:49:29Z",
+      "side": 1,
+      "message": "(I think one of the intermediate ideas we had was to have a cron for this, but that\u0027s essentially what a delayed task in TQ is _anyway_, so probably better to use a transactional TQ task instead)",
+      "parentUuid": "d994654d_6f1a5995",
       "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
