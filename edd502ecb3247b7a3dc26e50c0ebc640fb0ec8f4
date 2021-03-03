@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "293ee8ac_b7501cf0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-03T22:48:44Z",
+      "side": 1,
+      "message": "You need to open the demo in incognito mode to see the effect.\n\nDemo: https://weiweilin-dot-luci-milo.appspot.com/ui/login?redirect\u003dhttps%3A%2F%2Fweiweilin-dot-luci-milo.appspot.com%2Fui%2Fp%2Fchrome%2Fbuilders%2Fci%2Fcronet-arm-debug%2F10273%2Foverview\n",
+      "revId": "edd502ecb3247b7a3dc26e50c0ebc640fb0ec8f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
