@@ -141,6 +141,24 @@
       "parentUuid": "6bf66f4e_e2663512",
       "revId": "93556b8d48c8cfcb3ff4506284651c1a6974c666",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0b2bde5_1ad75a18",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-03T23:50:29Z",
+      "side": 1,
+      "message": "well, I can fix it, but it breaks soooo many tests: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2732038",
+      "parentUuid": "a5fa9ef2_7fc0535f",
+      "revId": "93556b8d48c8cfcb3ff4506284651c1a6974c666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
