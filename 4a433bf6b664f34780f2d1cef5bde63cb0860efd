@@ -191,6 +191,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "19809270_8b129501",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-03T19:09:06Z",
+      "side": 1,
+      "message": "I guess the reason not to do this is because you\u0027d end up re-hashing on every Get and Put call :/",
+      "parentUuid": "429d60e7_83a3ce58",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d994654d_6f1a5995",
         "filename": "buildbucket/appengine/model/requestid.go",
         "patchSetId": 1
