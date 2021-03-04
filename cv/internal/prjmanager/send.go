@@ -74,6 +74,20 @@ func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist
 	})
 }
 
+// NotifyPurgeCompleted tells ProjectManager that a CL purge has completed.
+//
+// The ultimate result of CL purge is the updated state of a CL itself, thus no
+// information is provided here.
+func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string) error {
+	return send(ctx, luciProject, &prjpb.Event{
+		Event: &prjpb.Event_PurgeCompleted{
+			PurgeCompleted: &prjpb.PurgeCompleted{
+				OperationId: operationID,
+			},
+		},
+	})
+}
+
 // NotifyRunCreated is sent by ProjectManager to itself within a Run creation
 // transaction.
 //
