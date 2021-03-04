@@ -24,7 +24,7 @@ import '../components/log';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
-import { displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
+import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
 import { StepExt } from '../models/step_ext';
 import './expandable_entry';
@@ -98,13 +98,18 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
 
   private renderDuration() {
     if (!this.step.duration) {
-      return html``;
+      return html`
+        <span id="duration" title="No duration">N/A</span>
+      `;
     }
+    const title = `\
+Started:  ${this.step.startTime!.toFormat(NUMERIC_TIME_FORMAT)}
+Ended:    ${this.step.endTime ? this.step.endTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'}
+Duration: ${displayDuration(this.step.duration)}\
+`;
     return html`
-      <span id="duration"
-        title="Started: ${this.step.startTime!.toFormat(NUMERIC_TIME_FORMAT)}${this.step.endTime ? `
-Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
-        ${displayDuration(this.step.duration)}
+      <span id="duration" title=${title}>
+        ${displayCompactDuration(this.step.duration)}
       </span>
     `;
   }
@@ -148,6 +153,7 @@ Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
             class=${BUILD_STATUS_CLASS_MAP[this.step.status]}
             title=${BUILD_STATUS_DISPLAY_MAP[this.step.status]}
           >${BUILD_STATUS_ICON_MAP[this.step.status]}</mwc-icon>
+          ${this.renderDuration()}
           <b>${this.number}. ${this.step.selfName}</b>
           <milo-copy-to-clipboard
             .textToCopy=${this.step.name}
@@ -155,7 +161,6 @@ Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
             @click=${(e: Event) => e.stopPropagation()}
           ></milo-copy-to-clipboard>
           <span id="header-markdown">${renderMarkdown(this.step.header)}</span>
-          ${this.renderDuration()}
         </span>
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
@@ -201,11 +206,13 @@ Ended: ${this.step.endTime!.toFormat(NUMERIC_TIME_FORMAT)}` : ``}">
       padding: .25em .4em;
       font-size: 75%;
       font-weight: 700;
-      line-height: 1;
+      line-height: 13px;
       text-align: center;
       white-space: nowrap;
-      vertical-align: text-bottom;
+      vertical-align: bottom;
       border-radius: .25rem;
+      margin-bottom: 3px;
+      width: 35px;
     }
 
     #summary {
