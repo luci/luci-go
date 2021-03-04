@@ -16,6 +16,138 @@
       "message": "PTAL",
       "revId": "abc46901894bc5716f58bdca75117125ad479c01",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d34ae11_0ef115ed",
+        "filename": "cv/internal/run/impl/handler/finalize.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:29:04Z",
+      "side": 1,
+      "message": "Nit: Add a username or bug for TODOs",
+      "range": {
+        "startLine": 59,
+        "startChar": 5,
+        "endLine": 59,
+        "endChar": 9
+      },
+      "revId": "abc46901894bc5716f58bdca75117125ad479c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e13bde4_4035c0cc",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:29:04Z",
+      "side": 1,
+      "message": "Ah, so there is indeed a \"submit queue\" :-) It\u0027s funny that the whole thing was called commit queue (and the google3 equivalent is submit queue) when the queue for submitting is a relatively small part of it.",
+      "range": {
+        "startLine": 27,
+        "startChar": 5,
+        "endLine": 27,
+        "endChar": 10
+      },
+      "revId": "abc46901894bc5716f58bdca75117125ad479c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b569dd8_1669aec8",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:29:04Z",
+      "side": 1,
+      "message": "Or: currently being submitted",
+      "range": {
+        "startLine": 31,
+        "startChar": 34,
+        "endLine": 31,
+        "endChar": 57
+      },
+      "revId": "abc46901894bc5716f58bdca75117125ad479c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53ee03cd_fa7cc8d7",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:29:04Z",
+      "side": 1,
+      "message": "Nit: optionally you can capitalize Run here and on line 35.",
+      "range": {
+        "startLine": 31,
+        "startChar": 22,
+        "endLine": 31,
+        "endChar": 25
+      },
+      "revId": "abc46901894bc5716f58bdca75117125ad479c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de8739f7_bb160c75",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:29:04Z",
+      "side": 1,
+      "message": "all submissions that happened",
+      "range": {
+        "startLine": 39,
+        "startChar": 38,
+        "endLine": 39,
+        "endChar": 62
+      },
+      "revId": "abc46901894bc5716f58bdca75117125ad479c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ad2994d_c40b1e60",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:29:04Z",
+      "side": 1,
+      "message": "Just curious, if ReserveInput and ReserveResult are only used as input/output of this function, then it would also be possible to just put them inline here (ie. it would have 4 arguments and 4 return values) right?\n\nIs the main point of having the structs to avoid having too many args and return values, and allow for more detailed documentation of the input and result?",
+      "revId": "abc46901894bc5716f58bdca75117125ad479c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
