@@ -105,6 +105,30 @@
       },
       "revId": "c2d7a88ba7dcddfbe91e3647c337fa63c9561d16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03ea64d8_abb4c708",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-04T06:36:53Z",
+      "side": 1,
+      "message": "yes.",
+      "parentUuid": "1478ca9d_ec4a67be",
+      "range": {
+        "startLine": 32,
+        "startChar": 30,
+        "endLine": 32,
+        "endChar": 34
+      },
+      "revId": "c2d7a88ba7dcddfbe91e3647c337fa63c9561d16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
