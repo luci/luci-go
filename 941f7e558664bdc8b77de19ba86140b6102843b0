@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "907c2bcf_6d493e73",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-04T05:49:58Z",
+      "side": 0,
+      "message": "it is not easy to count key size in badger.",
+      "revId": "941f7e558664bdc8b77de19ba86140b6102843b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
