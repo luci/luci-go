@@ -1,6 +1,40 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a991fd6_873cca18",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "looks good % suggestions + questions",
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42d9d5a1_e58df288",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "I agree it\u0027s related to submit *today*,\nbut it really deserves another package. Also, it\u0027s be cleaner to install it into context in server.Main()",
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a01b55db_8804a95c",
@@ -42,6 +76,184 @@
         "startChar": 20,
         "endLine": 41,
         "endChar": 201
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63f83735_be8378a8",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "run/",
+      "range": {
+        "startLine": 84,
+        "startChar": 50,
+        "endLine": 84,
+        "endChar": 51
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56a7c7a1_cfff92af",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "this isn\u0027t really important; the client is cheap, and we\u0027ll install it in context only once -- in main(), just like Gerrit client factory.",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 21
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a1ba46e_88f0393e",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "this should use server auth anonymous transport, s.t. we get instrumentation.",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 94,
+        "endChar": 5
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e968875a_4b8ce742",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 101,
+        "startChar": 20,
+        "endLine": 101,
+        "endChar": 36
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07d6b0d9_118f9165",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "consider instead providing top level FetchLatest(ctx, endpoint)\nsince client itself isn\u0027t really useful for callers, and \n  treestatus.FetchLatest(ctx, ...)\nis more readable then\n  treestatus.MustTreeStatusClient(ctx).FetchLatest(ctx, ...)",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 116,
+        "endChar": 0
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "591908f1_a937ce0a",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "should we start using https://golang.org/pkg/net/http/#NewRequestWithContext?",
+      "range": {
+        "startLine": 120,
+        "startChar": 13,
+        "endLine": 120,
+        "endChar": 45
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24ab386b_4e79d0f0",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "not transient because this means bad `url`, right?",
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "075a359a_cec86757",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T19:40:28Z",
+      "side": 1,
+      "message": "also transient, right?",
+      "range": {
+        "startLine": 131,
+        "startChar": 88,
+        "endLine": 131,
+        "endChar": 94
       },
       "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
