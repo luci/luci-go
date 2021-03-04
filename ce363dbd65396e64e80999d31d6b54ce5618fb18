@@ -1,6 +1,52 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "19492a04_7c808a1b",
+        "filename": "resultdb/internal/artifacts/artifact.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-04T00:50:04Z",
+      "side": 1,
+      "message": "nit: move one line down?",
+      "range": {
+        "startLine": 113,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 72
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "705c6a6c_a0e26935",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-04T00:50:04Z",
+      "side": 1,
+      "message": "Nit, to not confuse with artifacts.ParseParentID(), name this function parseArtifactParentName?",
+      "range": {
+        "startLine": 66,
+        "startChar": 5,
+        "endLine": 66,
+        "endChar": 24
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "54fc7392_f134a58b",
@@ -19,6 +65,75 @@
         "startChar": 1,
         "endLine": 192,
         "endChar": 9
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "12bc710a_07815f40",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-04T00:50:04Z",
+      "side": 1,
+      "message": "nit: extract this to a small helper function?",
+      "range": {
+        "startLine": 203,
+        "startChar": 3,
+        "endLine": 204,
+        "endChar": 61
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bbaf65d4_0b5c1596",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-04T00:50:04Z",
+      "side": 1,
+      "message": "Make hashPrefix public and use it here? So we don\u0027t need HashFunc",
+      "range": {
+        "startLine": 433,
+        "startChar": 31,
+        "endLine": 433,
+        "endChar": 34
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d17f62e0_8e490ddd",
+        "filename": "resultdb/sink/validation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-04T00:50:04Z",
+      "side": 1,
+      "message": "nit: art.ContentType should be OK here.",
+      "range": {
+        "startLine": 52,
+        "startChar": 35,
+        "endLine": 52,
+        "endChar": 55
       },
       "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
