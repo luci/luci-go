@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e3e214d_6a570945",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-04T01:36:17Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-1-dot-luci-milo.appspot.com/ui/p/turquoise/builders/global.ci/roll-commenter/b8853750827237727968/blamelist",
+      "revId": "6dd279c725fed4b266118ccd533fe522b845c5d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
