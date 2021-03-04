@@ -344,6 +344,25 @@ func TestDatastore(t *testing.T) {
 				So(get, ShouldResemble, put)
 			})
 
+			Convey(`Can Get empty []byte slice as nil`, func() {
+				put := ds.PropertyMap{
+					"$id":   mkpNI("foo"),
+					"$kind": mkpNI("FooType"),
+					"Empty": mkp([]byte(nil)),
+					"Nilly": mkp([]byte{}),
+				}
+				get := ds.PropertyMap{
+					"$id":   put["$id"],
+					"$kind": put["$kind"],
+				}
+				exp := put.Clone()
+				exp["Nilly"] = mkp([]byte(nil))
+
+				So(ds.Put(c, put), ShouldBeNil)
+				So(ds.Get(c, get), ShouldBeNil)
+				So(get, ShouldResemble, exp)
+			})
+
 			Convey(`With several entities installed`, func() {
 				So(ds.Put(c, []ds.PropertyMap{
 					{"$kind": mkp("Test"), "$id": mkp("foo"), "FooBar": mkp(true)},

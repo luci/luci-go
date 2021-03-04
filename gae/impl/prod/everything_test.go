@@ -290,6 +290,25 @@ func TestBasicDatastore(t *testing.T) {
 			So(ent["Time"], ShouldResemble, pm["Time"])
 		})
 
+		Convey(`Can Get empty []byte slice as nil`, func() {
+			put := ds.PropertyMap{
+				"$id":   mpNI("foo"),
+				"$kind": mpNI("FooType"),
+				"Empty": mp([]byte(nil)),
+				"Nilly": mp([]byte{}),
+			}
+			get := ds.PropertyMap{
+				"$id":   put["$id"],
+				"$kind": put["$kind"],
+			}
+			exp := put.Clone()
+			exp["Nilly"] = mp([]byte(nil))
+
+			So(ds.Put(ctx, put), ShouldBeNil)
+			So(ds.Get(ctx, get), ShouldBeNil)
+			So(get, ShouldResemble, exp)
+		})
+
 		Convey("memcache: Set (nil) is the same as Set ([]byte{})", func() {
 			So(mc.Set(ctx, mc.NewItem(ctx, "bob")), ShouldBeNil) // normally would panic because Value is nil
 

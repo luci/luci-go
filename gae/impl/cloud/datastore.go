@@ -436,8 +436,15 @@ func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
 		case nil:
 			nv = nil
 
-		case int64, bool, string, float64, []byte:
+		case int64, bool, string, float64:
 			break
+
+		case []byte:
+			if len(nvt) == 0 {
+				// Cloud datastore library returns []byte{} if it is empty.
+				// Make it nil as more convinient to deal with in tests.
+				nv = []byte(nil)
+			}
 
 		case time.Time:
 			// Cloud datastore library returns local time.
