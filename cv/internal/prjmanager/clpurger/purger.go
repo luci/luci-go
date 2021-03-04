@@ -87,14 +87,19 @@ func purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
 		logging.Warningf(ctx, "this app isn't managing Runs for the project")
 		return nil
 	}
-	err := cancel.Cancel(ctx, cancel.Input{
+
+	msg, err := formatMessage(ctx, task, cl)
+	if err != nil {
+		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
+	}
+	err = cancel.Cancel(ctx, cancel.Input{
 		LUCIProject:      task.GetLuciProject(),
 		CL:               cl,
 		LeaseDuration:    time.Minute,
 		Notify:           cancel.VOTERS | cancel.OWNER,
 		Requester:        "prjmanager/clpurger",
 		Trigger:          task.GetTrigger(),
-		Message:          formatMessage(ctx, task),
+		Message:          msg,
 		RunCLExternalIDs: nil, // there is no Run.
 	})
 	switch {
@@ -138,8 +143,4 @@ func needsPurging(ctx context.Context, cl *changelist.CL, task *prjpb.PurgeCLTas
 		return false
 	}
 	return true
-}
-
-func formatMessage(ctx context.Context, task *prjpb.PurgeCLTask) string {
-	return "TODO(tandrii): IMPLEMENT!"
 }

@@ -157,7 +157,11 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReason: &prjpb.PurgeCLTask_Reason{},
+						purgeReason: &prjpb.PurgeCLTask_Reason{
+							Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
+								OwnerLacksEmail: true,
+							},
+						},
 					},
 				}
 				So(a.cls[1], shouldResembleTriagedCL, expected)
@@ -201,14 +205,20 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReason: &prjpb.PurgeCLTask_Reason{},
-						ready:       false,
-						deps:        nil, // not checked.
+						purgeReason: &prjpb.PurgeCLTask_Reason{
+							Reason: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups_{
+								WatchedByManyConfigGroups: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups{
+									ConfigGroups: []string{"singular", "another"},
+								},
+							},
+						},
+						ready: false,
+						deps:  nil, // not checked.
 					},
 				}
 				So(a.cls[1], shouldResembleTriagedCL, expected)
 				// And CL should in fact be purged.
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{1: struct{}{}})
+				So(a.toPurge, ShouldResemble, map[int64]struct{}{1: {}})
 
 				Convey("not even if inside 1+ Runs, but Run protects from purging", func() {
 					a := triageCLs(&prjpb.Component{
@@ -284,8 +294,14 @@ func TestCLsTriage(t *testing.T) {
 				So(a.cls[3], shouldResembleTriagedCL, &clInfo{
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
-						ready:       false,
-						purgeReason: &prjpb.PurgeCLTask_Reason{},
+						ready: false,
+						purgeReason: &prjpb.PurgeCLTask_Reason{
+							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
+								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+									// TODO(tandrii): fill in the cause.
+								},
+							},
+						},
 						deps: &triagedDeps{
 							lastTriggered: epoch,
 							incompatMode:  sup.PCL(3).GetDeps(),
@@ -314,8 +330,14 @@ func TestCLsTriage(t *testing.T) {
 				So(a.cls[3], shouldResembleTriagedCL, &clInfo{
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
-						ready:       false,
-						purgeReason: &prjpb.PurgeCLTask_Reason{},
+						ready: false,
+						purgeReason: &prjpb.PurgeCLTask_Reason{
+							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
+								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+									// TODO(tandrii): fill in the cause.
+								},
+							},
+						},
 						deps: &triagedDeps{
 							lastTriggered: epoch.UTC(),
 							submitted:     []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
@@ -380,8 +402,14 @@ func TestCLsTriage(t *testing.T) {
 				So(a.cls[3], shouldResembleTriagedCL, &clInfo{
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
-						ready:       false,
-						purgeReason: &prjpb.PurgeCLTask_Reason{},
+						ready: false,
+						purgeReason: &prjpb.PurgeCLTask_Reason{
+							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
+								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+									// TODO(tandrii): fill in the cause.
+								},
+							},
+						},
 						deps: &triagedDeps{
 							lastTriggered: epoch,
 							incompatMode:  sup.PCL(3).GetDeps(),
@@ -399,7 +427,13 @@ func TestCLsTriage(t *testing.T) {
 				So(a.reverseDeps, ShouldBeEmpty)
 				for _, info := range a.cls {
 					So(info.ready, ShouldBeFalse)
-					So(info.purgeReason, ShouldResembleProto, &prjpb.PurgeCLTask_Reason{})
+					So(info.purgeReason, ShouldResembleProto, &prjpb.PurgeCLTask_Reason{
+						Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
+							InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+								// TODO(tandrii): fill in the cause.
+							},
+						},
+					})
 				}
 				So(a.toPurge, ShouldResemble, map[int64]struct{}{1: struct{}{}, 2: struct{}{}, 3: struct{}{}})
 
