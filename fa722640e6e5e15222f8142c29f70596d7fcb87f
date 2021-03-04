@@ -54,6 +54,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c8b7fbfc_4b7445a7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T00:30:18Z",
+      "side": 1,
+      "message": "i\u0027ll try to fix those packages.\nBut wdym by rationalizing?",
+      "parentUuid": "cac7bc40_824ae8e2",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "101f4293_b29753aa",
         "filename": "gae/impl/memory/datastore_test.go",
         "patchSetId": 1
@@ -89,6 +107,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "85527483_7585fdb0",
+        "filename": "gae/impl/memory/datastore_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T00:30:18Z",
+      "side": 1,
+      "message": "yep.",
+      "parentUuid": "8553b1a4_d17d6dc7",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "809aeca2_2d3dbc98",
         "filename": "gae/service/datastore/deserialize.go",
         "patchSetId": 1
@@ -100,6 +136,24 @@
       "writtenOn": "2021-03-03T23:49:26Z",
       "side": 1,
       "message": "actual fix is here because memory/ impl relies on this serialize/deserializer, but not prod/ or cloud/ implementations.",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb323379_2e58c316",
+        "filename": "gae/service/datastore/deserialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T00:30:18Z",
+      "side": 1,
+      "message": "Robbie, do you have better place to stick the fix?",
+      "parentUuid": "809aeca2_2d3dbc98",
       "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -121,6 +175,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4367b3ba_b2650272",
+        "filename": "gae/service/datastore/deserialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T00:30:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1cd61dfb_85cce85f",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dd02ac3a_17fa213b",
@@ -134,6 +206,24 @@
       "writtenOn": "2021-03-04T00:00:15Z",
       "side": 1,
       "message": "Why not  \n\n  if val, _, err \u003d cmpbin.ReadBytes(buf); err \u003d\u003d nil \u0026\u0026 val \u003d\u003d nil {\n    val \u003d []byte{}\n  }\n\n??",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7cdfdd4a_f181e32a",
+        "filename": "gae/service/datastore/deserialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T00:30:18Z",
+      "side": 1,
+      "message": "because `val` is an interface{}\nhttps://play.golang.com/p/sXVUtoWypYx",
+      "parentUuid": "dd02ac3a_17fa213b",
       "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
