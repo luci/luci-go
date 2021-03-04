@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "715c44a5_e8e35032",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-04T01:03:30Z",
+      "side": 1,
+      "message": "@chanli, @nodir\nWe need to agree on the interface and document it somewhere.",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 58
+      },
+      "revId": "3a3285f48d6a6fc3dc7a8d48d9a9d1f708150997",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
