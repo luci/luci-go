@@ -189,7 +189,7 @@ export class BlamelistTabElement extends MobxLitElement {
           .number=${i + 1}
           .repoUrl=${this.selectedRepoURL}
           .commit=${commit}
-          .expanded=${false}
+          .expanded=${this.commits.length === 1}
         ></milo-commit-entry>
         `)}
         <div
