@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "064a1d2a_0312e512",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-04T06:29:44Z",
+      "side": 1,
+      "message": "I\u0027m waiting mirror of badger repository",
+      "parentUuid": "933a371d_6fcf2600",
+      "revId": "c2d7a88ba7dcddfbe91e3647c337fa63c9561d16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d6038a53_17904ae7",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-03-04T06:27:23Z",
       "side": 1,
       "message": "nit: delete if the given path is a file?",
+      "range": {
+        "startLine": 32,
+        "startChar": 30,
+        "endLine": 32,
+        "endChar": 34
+      },
+      "revId": "c2d7a88ba7dcddfbe91e3647c337fa63c9561d16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54907096_df72e0e1",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-04T06:29:44Z",
+      "side": 1,
+      "message": "I think it is better to return err in that case?",
+      "parentUuid": "d6038a53_17904ae7",
       "range": {
         "startLine": 32,
         "startChar": 30,
