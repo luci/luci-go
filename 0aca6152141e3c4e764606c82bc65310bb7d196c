@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d350a62f_418571e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-04T01:00:51Z",
+      "side": 1,
+      "message": "In the demo, triage_output is embed in summary_html.\n\nDemo: https://weiweilin-dot-luci-milo.appspot.com/ui/p/fuchsia/builders/try/fuchsia-arm64-release/b8853739313886649792/test-results?q\u003dfuchsia-pkg%3A%2F%2Ffuchsia.com%2Ffdio-unittest-package%23meta%2Ffdio-unittest-package.cmx%2FHandleFDTest%3APPollNegative\u0026clean\u003d",
+      "revId": "0aca6152141e3c4e764606c82bc65310bb7d196c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
