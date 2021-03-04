@@ -27,11 +27,12 @@ import '../dot_spinner';
  */
 export class TextArtifactElement extends MobxLitElement {
   @property({attribute: 'artifact-id'}) artifactID!: string;
+  @property({attribute: 'inv-level', type: Boolean}) isInvLevelArtifact = false;
   @observable.ref artifacts!: Map<string, Artifact>;
 
   @computed
   private get fetchUrl(): string|undefined {
-    const artifact = this.artifacts.get(this.artifactID);
+    const artifact = this.artifacts.get((this.isInvLevelArtifact ? 'inv-level/' : '') + this.artifactID);
     return artifact ? artifact.fetchUrl : '';
   }
 

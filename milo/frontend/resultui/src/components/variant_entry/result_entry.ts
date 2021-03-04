@@ -23,7 +23,7 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import '../../context/artifact_provider';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { ListArtifactsResponse, TestResult } from '../../services/resultdb';
+import { Artifact, ListArtifactsResponse, TestResult } from '../../services/resultdb';
 import '../expandable_entry';
 import './image_diff_artifact';
 import './text_artifact';
@@ -88,7 +88,10 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get artifactsMapping() {
-    return new Map(this.resultArtifacts.map(obj => [obj.artifactId, obj]));
+    return new Map([
+      ...this.resultArtifacts.map(obj => [obj.artifactId, obj] as [string, Artifact]),
+      ...this.invArtifacts.map(obj => ['inv-level/' + obj.artifactId, obj] as [string, Artifact]),
+    ]);
   }
 
   @computed private get textDiffArtifact() {
