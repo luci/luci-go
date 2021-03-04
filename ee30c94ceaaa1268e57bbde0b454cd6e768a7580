@@ -39,6 +39,24 @@
       "message": "it is better to ignore only this case.",
       "revId": "ee30c94ceaaa1268e57bbde0b454cd6e768a7580",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02592d6d_3de79b55",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-04T23:48:43Z",
+      "side": 1,
+      "message": "OK, I agree `errors.Annotate(err, \"couldn\u0027t estimate the free space at %s\", d.path).Err()` shouldn\u0027t happen.",
+      "parentUuid": "f1b0651c_b6faaf40",
+      "revId": "ee30c94ceaaa1268e57bbde0b454cd6e768a7580",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
