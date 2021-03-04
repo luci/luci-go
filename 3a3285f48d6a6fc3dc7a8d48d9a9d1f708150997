@@ -22,6 +22,30 @@
       },
       "revId": "3a3285f48d6a6fc3dc7a8d48d9a9d1f708150997",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5369ab31_a9a974a7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-04T01:08:12Z",
+      "side": 1,
+      "message": "I can add an example at go/result-sink#upload-artifacts",
+      "parentUuid": "715c44a5_e8e35032",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 58
+      },
+      "revId": "3a3285f48d6a6fc3dc7a8d48d9a9d1f708150997",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
