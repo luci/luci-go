@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "518d878c27ff04ff5849031131bef650fb5cef8f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93778112_c97fd932",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:22:04Z",
+      "side": 1,
+      "message": "This LGTM, although I think I still don\u0027t know why the Finished event had to be replaced; I think the CL description could be expanded a little.",
+      "revId": "518d878c27ff04ff5849031131bef650fb5cef8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
