@@ -15,6 +15,7 @@
 package cache
 
 import (
+	"context"
 	"crypto"
 	"encoding/json"
 	"flag"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
@@ -225,15 +227,15 @@ func (d *Cache) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 }
 
 // Add reads data from src and stores it in cache.
-func (d *Cache) Add(digest isolated.HexDigest, src io.Reader) error {
-	return d.add(digest, src, nil)
+func (d *Cache) Add(ctx context.Context, digest isolated.HexDigest, src io.Reader) error {
+	return d.add(ctx, digest, src, nil)
 }
 
 // AddFileWithoutValidation adds src as cache entry with hardlink.
 // But this doesn't do any content validation.
 //
 // TODO(tikuta): make one function and control the behavior by option?
-func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) error {
+func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest isolated.HexDigest, src string) error {
 	fi, err := os.Stat(src)
 	if err != nil {
 		return errors.Annotate(err, "failed to get stat").Err()
@@ -263,7 +265,7 @@ func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) 
 	d.lru.pushFront(digest, units.Size(fi.Size()))
 	if err := d.respectPolicies(); err != nil {
 		d.lru.pop(digest)
-		return err
+		logging.Warningf(ctx, "failed to respect cache policies for %s. %s", digest, err)
 	}
 
 	d.statsMu.Lock()
@@ -274,8 +276,8 @@ func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) 
 
 // AddWithHardlink reads data from src and stores it in cache and hardlink file.
 // This is to avoid file removal by shrink in Add().
-func (d *Cache) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
-	return d.add(digest, src, func() error {
+func (d *Cache) AddWithHardlink(ctx context.Context, digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
+	return d.add(ctx, digest, src, func() error {
 		if err := d.hardlinkUnlocked(digest, dest, perm); err != nil {
 			_ = os.Remove(d.itemPath(digest))
 			return errors.Annotate(err, "failed to call Hardlink(%s, %s)", digest, dest).Err()
@@ -317,7 +319,7 @@ func (d *Cache) GetUsed() []int64 {
 
 // Private details.
 
-func (d *Cache) add(digest isolated.HexDigest, src io.Reader, cb func() error) error {
+func (d *Cache) add(ctx context.Context, digest isolated.HexDigest, src io.Reader, cb func() error) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
@@ -362,7 +364,7 @@ func (d *Cache) add(digest isolated.HexDigest, src io.Reader, cb func() error) e
 	d.lru.pushFront(digest, units.Size(size))
 	if err := d.respectPolicies(); err != nil {
 		d.lru.pop(digest)
-		return err
+		logging.Warningf(ctx, "failed to respect cache policies for %s. %s", digest, err)
 	}
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
