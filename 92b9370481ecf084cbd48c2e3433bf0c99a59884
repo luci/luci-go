@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a01b55db_8804a95c",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:33:07Z",
+      "side": 1,
+      "message": "Nit: add a period.\n\nSo, are there different instances of tree status app for different projects?",
+      "range": {
+        "startLine": 32,
+        "startChar": 74,
+        "endLine": 32,
+        "endChar": 77
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85f2fa66_79e3b775",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:33:07Z",
+      "side": 1,
+      "message": "Since we\u0027re specifying a specific revision, we can use the revision instead of \"master\", in order to avoid using \"master\" (which is deprecated in favor of \"main\")\n\ne.g. https://source.chromium.org/chromium/infra/infra/+/09d53b324dd786b96d69c6cbb8ee6c389b22fd3f:appengine/chromium_status/appengine_module/chromium_status/status.py;l\u003d209-252",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 201
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
