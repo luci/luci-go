@@ -114,7 +114,12 @@ func dsR2FProp(in datastore.Property) (ds.Property, error) {
 	val := in.Value
 	switch x := val.(type) {
 	case datastore.ByteString:
-		val = []byte(x)
+		if len(x) == 0 {
+			// Use nil for empty byte slice instead of []byte{}.
+			val = []byte(nil)
+		} else {
+			val = []byte(x)
+		}
 	case *datastore.Key:
 		val = dsR2F(x)
 	case appengine.BlobKey:
