@@ -56,6 +56,7 @@ type Foo struct {
 	Val   int
 	Name  string
 	Multi []string
+	Bytes []byte `gae:",noindex"`
 	Key   *ds.Key
 
 	Scatter []byte `gae:"__scatter__"` // this is normally invisible
@@ -87,6 +88,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			Convey("and Get it back", func() {
 				newFoo := &Foo{ID: 1}
 				So(ds.Get(c, newFoo), ShouldBeNil)
+				f.Bytes = []byte{}
 				So(newFoo, ShouldResemble, f)
 
 				Convey("but it's hidden from a different namespace", func() {
@@ -99,7 +101,6 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(ds.Delete(c, k), ShouldBeNil)
 					So(ds.Get(c, newFoo), ShouldEqual, ds.ErrNoSuchEntity)
 				})
-
 			})
 			Convey("Can Get it back as a PropertyMap", func() {
 				pmap := ds.PropertyMap{
@@ -113,6 +114,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					"Name":  prop(""),
 					"Val":   prop(10),
 					"Multi": ds.PropertySlice{prop("foo"), prop("bar")},
+					"Bytes": propNI([]byte{}),
 					"Key":   prop(ds.MkKeyContext("dev~app", "").MakeKey("Bar", "Baz")),
 				})
 			})
@@ -183,10 +185,11 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 					for i, val := range vals {
 						So(val, ShouldResemble, ds.PropertyMap{
-							"Val":  ds.MkProperty(10),
-							"Name": ds.MkProperty(""),
-							"$key": ds.MkPropertyNI(keys[i]),
-							"Key":  ds.MkProperty(nil),
+							"Val":   ds.MkProperty(10),
+							"Name":  ds.MkProperty(""),
+							"Bytes": ds.MkPropertyNI([]byte{}),
+							"$key":  ds.MkPropertyNI(keys[i]),
+							"Key":   ds.MkProperty(nil),
 						})
 					}
 				})

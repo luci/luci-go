@@ -127,6 +127,21 @@ func TestPropertyMapSerialization(t *testing.T) {
 			}
 		})
 	})
+	Convey("PropertyMap serialization special cases", t, func() {
+		Convey("[]byte(nil) and []bytes{} are deserialized as []bytes{}", func() {
+			// This is what actual production Datastore does.
+			data := SerializeKC.ToBytes(PropertyMap{
+				"Nilly": mp([]byte(nil)),
+				"Empty": mp([]byte{}),
+			})
+			dec, err := Deserialize.PropertyMap(mkBuf(data))
+			So(err, ShouldBeNil)
+			So(dec, ShouldResemble, PropertyMap{
+				"Nilly": mp([]byte{}),
+				"Empty": mp([]byte{}),
+			})
+		})
+	})
 }
 
 func die(err error) {
