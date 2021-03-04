@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d86be89_62fb9e0b",
+        "filename": "milo/frontend/resultui/src/libs/time_utils.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-04T05:33:32Z",
+      "side": 1,
+      "message": "added",
+      "parentUuid": "0b538a91_08fd727e",
+      "revId": "2f0ce6b2ba2d3a8be3fcf18f003f34e6d0ce1819",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "981d4522_4a87a112",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-03-04T05:12:53Z",
       "side": 1,
       "message": "As it is not very clear if this is an integer division or a double division in this case, maybe put 24.0 to make it clear it is double division?",
+      "range": {
+        "startLine": 47,
+        "startChar": 46,
+        "endLine": 47,
+        "endChar": 48
+      },
+      "revId": "2f0ce6b2ba2d3a8be3fcf18f003f34e6d0ce1819",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ea9b6d3_9312d3fa",
+        "filename": "milo/frontend/resultui/src/libs/time_utils.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-04T05:33:32Z",
+      "side": 1,
+      "message": "I don\u0027t think that\u0027s needed. There\u0027s no integer division in JS/TS.",
+      "parentUuid": "981d4522_4a87a112",
       "range": {
         "startLine": 47,
         "startChar": 46,
