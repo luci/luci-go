@@ -230,10 +230,19 @@ func (x *PurgeCLTask) GetReason() *PurgeCLTask_Reason {
 	return nil
 }
 
+// Reason is a separate message despite containing just a oneof because it's
+// passed as an argument in CV code, and oneof field's type is private and so
+// can't be referenced.
 type PurgeCLTask_Reason struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to Reason:
+	//	*PurgeCLTask_Reason_OwnerLacksEmail
+	//	*PurgeCLTask_Reason_WatchedByManyConfigGroups_
+	//	*PurgeCLTask_Reason_InvalidDeps_
+	Reason isPurgeCLTask_Reason_Reason `protobuf_oneof:"reason"`
 }
 
 func (x *PurgeCLTask_Reason) Reset() {
@@ -268,6 +277,142 @@ func (*PurgeCLTask_Reason) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDescGZIP(), []int{2, 0}
 }
 
+func (m *PurgeCLTask_Reason) GetReason() isPurgeCLTask_Reason_Reason {
+	if m != nil {
+		return m.Reason
+	}
+	return nil
+}
+
+func (x *PurgeCLTask_Reason) GetOwnerLacksEmail() bool {
+	if x, ok := x.GetReason().(*PurgeCLTask_Reason_OwnerLacksEmail); ok {
+		return x.OwnerLacksEmail
+	}
+	return false
+}
+
+func (x *PurgeCLTask_Reason) GetWatchedByManyConfigGroups() *PurgeCLTask_Reason_WatchedByManyConfigGroups {
+	if x, ok := x.GetReason().(*PurgeCLTask_Reason_WatchedByManyConfigGroups_); ok {
+		return x.WatchedByManyConfigGroups
+	}
+	return nil
+}
+
+func (x *PurgeCLTask_Reason) GetInvalidDeps() *PurgeCLTask_Reason_InvalidDeps {
+	if x, ok := x.GetReason().(*PurgeCLTask_Reason_InvalidDeps_); ok {
+		return x.InvalidDeps
+	}
+	return nil
+}
+
+type isPurgeCLTask_Reason_Reason interface {
+	isPurgeCLTask_Reason_Reason()
+}
+
+type PurgeCLTask_Reason_OwnerLacksEmail struct {
+	OwnerLacksEmail bool `protobuf:"varint,1,opt,name=owner_lacks_email,json=ownerLacksEmail,proto3,oneof"`
+}
+
+type PurgeCLTask_Reason_WatchedByManyConfigGroups_ struct {
+	WatchedByManyConfigGroups *PurgeCLTask_Reason_WatchedByManyConfigGroups `protobuf:"bytes,2,opt,name=watched_by_many_config_groups,json=watchedByManyConfigGroups,proto3,oneof"`
+}
+
+type PurgeCLTask_Reason_InvalidDeps_ struct {
+	InvalidDeps *PurgeCLTask_Reason_InvalidDeps `protobuf:"bytes,3,opt,name=invalid_deps,json=invalidDeps,proto3,oneof"`
+}
+
+func (*PurgeCLTask_Reason_OwnerLacksEmail) isPurgeCLTask_Reason_Reason() {}
+
+func (*PurgeCLTask_Reason_WatchedByManyConfigGroups_) isPurgeCLTask_Reason_Reason() {}
+
+func (*PurgeCLTask_Reason_InvalidDeps_) isPurgeCLTask_Reason_Reason() {}
+
+type PurgeCLTask_Reason_WatchedByManyConfigGroups struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Config group names without LUCI project prefix.
+	ConfigGroups []string `protobuf:"bytes,1,rep,name=config_groups,json=configGroups,proto3" json:"config_groups,omitempty"`
+}
+
+func (x *PurgeCLTask_Reason_WatchedByManyConfigGroups) Reset() {
+	*x = PurgeCLTask_Reason_WatchedByManyConfigGroups{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PurgeCLTask_Reason_WatchedByManyConfigGroups) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PurgeCLTask_Reason_WatchedByManyConfigGroups) ProtoMessage() {}
+
+func (x *PurgeCLTask_Reason_WatchedByManyConfigGroups) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PurgeCLTask_Reason_WatchedByManyConfigGroups.ProtoReflect.Descriptor instead.
+func (*PurgeCLTask_Reason_WatchedByManyConfigGroups) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDescGZIP(), []int{2, 0, 0}
+}
+
+func (x *PurgeCLTask_Reason_WatchedByManyConfigGroups) GetConfigGroups() []string {
+	if x != nil {
+		return x.ConfigGroups
+	}
+	return nil
+}
+
+type PurgeCLTask_Reason_InvalidDeps struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *PurgeCLTask_Reason_InvalidDeps) Reset() {
+	*x = PurgeCLTask_Reason_InvalidDeps{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PurgeCLTask_Reason_InvalidDeps) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PurgeCLTask_Reason_InvalidDeps) ProtoMessage() {}
+
+func (x *PurgeCLTask_Reason_InvalidDeps) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PurgeCLTask_Reason_InvalidDeps.ProtoReflect.Descriptor instead.
+func (*PurgeCLTask_Reason_InvalidDeps) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDescGZIP(), []int{2, 0, 1}
+}
+
 var File_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDesc = []byte{
@@ -297,7 +442,7 @@ var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDesc =
 	0x09, 0x52, 0x0b, 0x6c, 0x75, 0x63, 0x69, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x2c,
 	0x0a, 0x03, 0x65, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f,
 	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69,
-	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x03, 0x65, 0x74, 0x61, 0x22, 0xe5, 0x01, 0x0a,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x03, 0x65, 0x74, 0x61, 0x22, 0xd1, 0x04, 0x0a,
 	0x0b, 0x50, 0x75, 0x72, 0x67, 0x65, 0x43, 0x4c, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x21, 0x0a, 0x0c,
 	0x6c, 0x75, 0x63, 0x69, 0x5f, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x52, 0x0b, 0x6c, 0x75, 0x63, 0x69, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12,
@@ -311,12 +456,35 @@ var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDesc =
 	0x73, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x76, 0x2e, 0x70,
 	0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x2e,
 	0x50, 0x75, 0x72, 0x67, 0x65, 0x43, 0x4c, 0x54, 0x61, 0x73, 0x6b, 0x2e, 0x52, 0x65, 0x61, 0x73,
-	0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x1a, 0x08, 0x0a, 0x06, 0x52, 0x65,
-	0x61, 0x73, 0x6f, 0x6e, 0x42, 0x39, 0x5a, 0x37, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
-	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f,
-	0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61,
-	0x67, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x3b, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x1a, 0xf3, 0x02, 0x0a, 0x06, 0x52,
+	0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x2c, 0x0a, 0x11, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x5f, 0x6c,
+	0x61, 0x63, 0x6b, 0x73, 0x5f, 0x65, 0x6d, 0x61, 0x69, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08,
+	0x48, 0x00, 0x52, 0x0f, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x4c, 0x61, 0x63, 0x6b, 0x73, 0x45, 0x6d,
+	0x61, 0x69, 0x6c, 0x12, 0x85, 0x01, 0x0a, 0x1d, 0x77, 0x61, 0x74, 0x63, 0x68, 0x65, 0x64, 0x5f,
+	0x62, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x79, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x67,
+	0x72, 0x6f, 0x75, 0x70, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x41, 0x2e, 0x63, 0x76,
+	0x2e, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6a, 0x70,
+	0x62, 0x2e, 0x50, 0x75, 0x72, 0x67, 0x65, 0x43, 0x4c, 0x54, 0x61, 0x73, 0x6b, 0x2e, 0x52, 0x65,
+	0x61, 0x73, 0x6f, 0x6e, 0x2e, 0x57, 0x61, 0x74, 0x63, 0x68, 0x65, 0x64, 0x42, 0x79, 0x4d, 0x61,
+	0x6e, 0x79, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x48, 0x00,
+	0x52, 0x19, 0x77, 0x61, 0x74, 0x63, 0x68, 0x65, 0x64, 0x42, 0x79, 0x4d, 0x61, 0x6e, 0x79, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x12, 0x58, 0x0a, 0x0c, 0x69,
+	0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x5f, 0x64, 0x65, 0x70, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x33, 0x2e, 0x63, 0x76, 0x2e, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65,
+	0x72, 0x2e, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x2e, 0x50, 0x75, 0x72, 0x67, 0x65, 0x43, 0x4c, 0x54,
+	0x61, 0x73, 0x6b, 0x2e, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x2e, 0x49, 0x6e, 0x76, 0x61, 0x6c,
+	0x69, 0x64, 0x44, 0x65, 0x70, 0x73, 0x48, 0x00, 0x52, 0x0b, 0x69, 0x6e, 0x76, 0x61, 0x6c, 0x69,
+	0x64, 0x44, 0x65, 0x70, 0x73, 0x1a, 0x40, 0x0a, 0x19, 0x57, 0x61, 0x74, 0x63, 0x68, 0x65, 0x64,
+	0x42, 0x79, 0x4d, 0x61, 0x6e, 0x79, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x47, 0x72, 0x6f, 0x75,
+	0x70, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x67, 0x72, 0x6f,
+	0x75, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x1a, 0x0d, 0x0a, 0x0b, 0x49, 0x6e, 0x76, 0x61, 0x6c,
+	0x69, 0x64, 0x44, 0x65, 0x70, 0x73, 0x42, 0x08, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e,
+	0x42, 0x39, 0x5a, 0x37, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e,
+	0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65,
+	0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x70, 0x72, 0x6a, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x2f,
+	0x70, 0x72, 0x6a, 0x70, 0x62, 0x3b, 0x70, 0x72, 0x6a, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -331,27 +499,31 @@ func file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDescG
 	return file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_goTypes = []interface{}{
-	(*PokePMTask)(nil),            // 0: cv.prjmanager.prjpb.PokePMTask
-	(*KickPokePMTask)(nil),        // 1: cv.prjmanager.prjpb.KickPokePMTask
-	(*PurgeCLTask)(nil),           // 2: cv.prjmanager.prjpb.PurgeCLTask
-	(*PurgeCLTask_Reason)(nil),    // 3: cv.prjmanager.prjpb.PurgeCLTask.Reason
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
-	(*PurgingCL)(nil),             // 5: cv.prjmanager.prjpb.PurgingCL
-	(*run.Trigger)(nil),           // 6: cv.run.Trigger
+	(*PokePMTask)(nil),                                   // 0: cv.prjmanager.prjpb.PokePMTask
+	(*KickPokePMTask)(nil),                               // 1: cv.prjmanager.prjpb.KickPokePMTask
+	(*PurgeCLTask)(nil),                                  // 2: cv.prjmanager.prjpb.PurgeCLTask
+	(*PurgeCLTask_Reason)(nil),                           // 3: cv.prjmanager.prjpb.PurgeCLTask.Reason
+	(*PurgeCLTask_Reason_WatchedByManyConfigGroups)(nil), // 4: cv.prjmanager.prjpb.PurgeCLTask.Reason.WatchedByManyConfigGroups
+	(*PurgeCLTask_Reason_InvalidDeps)(nil),               // 5: cv.prjmanager.prjpb.PurgeCLTask.Reason.InvalidDeps
+	(*timestamppb.Timestamp)(nil),                        // 6: google.protobuf.Timestamp
+	(*PurgingCL)(nil),                                    // 7: cv.prjmanager.prjpb.PurgingCL
+	(*run.Trigger)(nil),                                  // 8: cv.run.Trigger
 }
 var file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_depIdxs = []int32{
-	4, // 0: cv.prjmanager.prjpb.PokePMTask.eta:type_name -> google.protobuf.Timestamp
-	4, // 1: cv.prjmanager.prjpb.KickPokePMTask.eta:type_name -> google.protobuf.Timestamp
-	5, // 2: cv.prjmanager.prjpb.PurgeCLTask.purging_cl:type_name -> cv.prjmanager.prjpb.PurgingCL
-	6, // 3: cv.prjmanager.prjpb.PurgeCLTask.trigger:type_name -> cv.run.Trigger
+	6, // 0: cv.prjmanager.prjpb.PokePMTask.eta:type_name -> google.protobuf.Timestamp
+	6, // 1: cv.prjmanager.prjpb.KickPokePMTask.eta:type_name -> google.protobuf.Timestamp
+	7, // 2: cv.prjmanager.prjpb.PurgeCLTask.purging_cl:type_name -> cv.prjmanager.prjpb.PurgingCL
+	8, // 3: cv.prjmanager.prjpb.PurgeCLTask.trigger:type_name -> cv.run.Trigger
 	3, // 4: cv.prjmanager.prjpb.PurgeCLTask.reason:type_name -> cv.prjmanager.prjpb.PurgeCLTask.Reason
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	4, // 5: cv.prjmanager.prjpb.PurgeCLTask.Reason.watched_by_many_config_groups:type_name -> cv.prjmanager.prjpb.PurgeCLTask.Reason.WatchedByManyConfigGroups
+	5, // 6: cv.prjmanager.prjpb.PurgeCLTask.Reason.invalid_deps:type_name -> cv.prjmanager.prjpb.PurgeCLTask.Reason.InvalidDeps
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_init() }
@@ -409,6 +581,35 @@ func file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PurgeCLTask_Reason_WatchedByManyConfigGroups); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PurgeCLTask_Reason_InvalidDeps); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
+	file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_msgTypes[3].OneofWrappers = []interface{}{
+		(*PurgeCLTask_Reason_OwnerLacksEmail)(nil),
+		(*PurgeCLTask_Reason_WatchedByManyConfigGroups_)(nil),
+		(*PurgeCLTask_Reason_InvalidDeps_)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -416,7 +617,7 @@ func file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_prjmanager_prjpb_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
