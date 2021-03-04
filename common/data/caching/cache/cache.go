@@ -15,6 +15,7 @@
 package cache
 
 import (
+	"context"
 	"crypto"
 	"encoding/json"
 	"flag"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
@@ -263,7 +265,7 @@ func (d *Cache) AddFileWithoutValidation(digest isolated.HexDigest, src string) 
 	d.lru.pushFront(digest, units.Size(fi.Size()))
 	if err := d.respectPolicies(); err != nil {
 		d.lru.pop(digest)
-		return err
+		logging.Warningf(context.Background(), "failed to respect cache policies for %s. %s", digest, err)
 	}
 
 	d.statsMu.Lock()
@@ -362,7 +364,7 @@ func (d *Cache) add(digest isolated.HexDigest, src io.Reader, cb func() error) e
 	d.lru.pushFront(digest, units.Size(size))
 	if err := d.respectPolicies(); err != nil {
 		d.lru.pop(digest)
-		return err
+		logging.Warningf(context.Background(), "failed to respect cache policies for %s. %s", digest, err)
 	}
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()

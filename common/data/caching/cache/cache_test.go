@@ -177,7 +177,7 @@ func TestNew(t *testing.T) {
 
 		file1Content := []byte("foo")
 		file1Digest := isolated.HashBytes(h, file1Content)
-		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldNotBeNil)
+		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
 
 		So(c.Close(), ShouldBeNil)
 	})
