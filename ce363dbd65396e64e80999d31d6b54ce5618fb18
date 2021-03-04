@@ -26,6 +26,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "69fd7169_da04fd8a",
+        "filename": "resultdb/internal/artifacts/artifact.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "why not just \n\n  hashPrefix + hash\n\n?",
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "705c6a6c_a0e26935",
         "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
         "patchSetId": 9
@@ -42,6 +59,155 @@
         "startChar": 5,
         "endLine": 66,
         "endChar": 24
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07a5bf11_23f63842",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "nit: this is repeated quite a few times. Consider extracting L87-115 to a separate func that deals only with one artifact at a time.",
+      "range": {
+        "startLine": 90,
+        "startChar": 34,
+        "endLine": 90,
+        "endChar": 46
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba077994_06be3343",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "i think the implication here is that if i is 0, then invID is not initialized yet.\nI think the intention could be more explicit/obvious:\n\n  case invID \u003d\u003d \"\":\n    invID \u003d ...\n  case invID !\u003d ...:\n    return ...",
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "696de0e0_490a2239",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "nit: join?",
+      "range": {
+        "startLine": 111,
+        "startChar": 8,
+        "endLine": 112,
+        "endChar": 8
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4da0f472_fc13a042",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "nit: arts[i] \u003d ...",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 124,
+        "endChar": 22
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b9f4a32_5f5b72f3",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "if it is empty most of the time, then let\u0027s not create the map in advance, but create it only right before inserting a key",
+      "range": {
+        "startLine": 140,
+        "startChar": 46,
+        "endLine": 140,
+        "endChar": 80
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af93a9f0_6ab64a93",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "nit: a bit weird that we are using *request* struct for data in the DB. It seems we use it only because it has hash and size fields.\n\ni wonder if you considered to do the L199-217 check into readArtifactStates. Then we can use a local struct, with hash and size fields, and do the check after span.Read call",
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e5adf6a_73dfd325",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "this code is kind of dead. If we don\u0027t have arts, then we don\u0027t have invID either.",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 173,
+        "endChar": 0
       },
       "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -72,6 +238,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2ca38dc2_2615eb0c",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "nit: consider moving this into the L182. There is no need to pass invState from one goroutine to another: the goroutine that got invState can do the whole job.\n\ni essentially propose in the L155 comment. It seems right now we have to goroutines that only do reads and put the data into a common variables, and then main goroutine do the actual checks. My proposal is that individual goroutines do the checks too, so that variables are *more local*, but also checks would happen concurrently\n\nre *more local*: currently the reader of L199 has read another function body to verify if the key format matches. If that happens in one function, it is more local.\n\nin other words, the only common thing between these two checks if that they both use a txn. Most of their code has little to do with each other.",
+      "range": {
+        "startLine": 194,
+        "startChar": 0,
+        "endLine": 196,
+        "endChar": 2
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "12bc710a_07815f40",
         "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
         "patchSetId": 9
@@ -95,6 +284,87 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "dbe3217f_3f8e4797",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "perhaps with *artifactCreationRequest receiever",
+      "parentUuid": "12bc710a_07815f40",
+      "range": {
+        "startLine": 203,
+        "startChar": 3,
+        "endLine": 204,
+        "endChar": 61
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2421cb4_5ad9e5cb",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "which artifact?\n\nsame below",
+      "range": {
+        "startLine": 210,
+        "startChar": 54,
+        "endLine": 210,
+        "endChar": 60
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe2e99c8_a040aeed",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "let\u0027s do this check before calling newArtifactCreationRequestsFromProto",
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88b57fe4_94027b85",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "TODO: ...",
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bbaf65d4_0b5c1596",
         "filename": "resultdb/internal/services/recorder/create_artifact.go",
         "patchSetId": 9
@@ -106,6 +376,30 @@
       "writtenOn": "2021-03-04T00:50:04Z",
       "side": 1,
       "message": "Make hashPrefix public and use it here? So we don\u0027t need HashFunc",
+      "range": {
+        "startLine": 433,
+        "startChar": 31,
+        "endLine": 433,
+        "endChar": 34
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a52ed538_e184734b",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-04T22:35:20Z",
+      "side": 1,
+      "message": "we should use AddHashPrefix here. Then we don\u0027t need to make HashFunc public.",
+      "parentUuid": "bbaf65d4_0b5c1596",
       "range": {
         "startLine": 433,
         "startChar": 31,
