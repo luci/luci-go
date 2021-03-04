@@ -35,6 +35,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cac7bc40_824ae8e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-04T00:00:15Z",
+      "side": 1,
+      "message": "I think it\u0027s worth rationalizing this; I\u0027m guessing updating the tests is probably not going to be too hard.",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "101f4293_b29753aa",
@@ -54,6 +71,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8553b1a4_d17d6dc7",
+        "filename": "gae/impl/memory/datastore_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-04T00:00:15Z",
+      "side": 1,
+      "message": "you mean ShouldResembles?",
+      "parentUuid": "101f4293_b29753aa",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "809aeca2_2d3dbc98",
         "filename": "gae/service/datastore/deserialize.go",
         "patchSetId": 1
@@ -65,6 +100,40 @@
       "writtenOn": "2021-03-03T23:49:26Z",
       "side": 1,
       "message": "actual fix is here because memory/ impl relies on this serialize/deserializer, but not prod/ or cloud/ implementations.",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1cd61dfb_85cce85f",
+        "filename": "gae/service/datastore/deserialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-04T00:00:15Z",
+      "side": 1,
+      "message": "don\u0027t end on comma?",
+      "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd02ac3a_17fa213b",
+        "filename": "gae/service/datastore/deserialize.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-04T00:00:15Z",
+      "side": 1,
+      "message": "Why not  \n\n  if val, _, err \u003d cmpbin.ReadBytes(buf); err \u003d\u003d nil \u0026\u0026 val \u003d\u003d nil {\n    val \u003d []byte{}\n  }\n\n??",
       "revId": "fa722640e6e5e15222f8142c29f70596d7fcb87f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
