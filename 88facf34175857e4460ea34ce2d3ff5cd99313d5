@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0f36eaa2_dfd9e1b0",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T22:59:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "914e8660_5278d7de",
+      "range": {
+        "startLine": 80,
+        "startChar": 65,
+        "endLine": 80,
+        "endChar": 79
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e4721e52_bc4f39d2",
         "filename": "cv/internal/prjmanager/clpurger/user_text.go",
         "patchSetId": 1
@@ -95,6 +119,54 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "c51a7bd8_2c734d3d",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T22:59:45Z",
+      "side": 1,
+      "message": "good point. DOne!",
+      "parentUuid": "8bd18da1_15d22380",
+      "range": {
+        "startLine": 91,
+        "startChar": 17,
+        "endLine": 91,
+        "endChar": 48
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f94fb42b_b21ce19f",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T22:59:45Z",
+      "side": 1,
+      "message": "My think was that users can copy-paste this message as is into the bug. Bullet points make eyeballing by overloaded folks easier, so this why I used it here, too.",
+      "parentUuid": "554d40f0_ce350e93",
+      "range": {
+        "startLine": 91,
+        "startChar": 4,
+        "endLine": 91,
+        "endChar": 16
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ce42366a_2fcb113d",
         "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
         "patchSetId": 1
@@ -141,6 +213,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "44c4c46b_f109828f",
+        "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T22:59:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d00b902_826c79fa",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 17
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8dd13e1f_94a56d8a",
         "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
         "patchSetId": 1
@@ -152,6 +248,30 @@
       "writtenOn": "2021-03-04T18:08:53Z",
       "side": 1,
       "message": "Long name :-P\n\nWhy is there an \"_\" at the end?",
+      "range": {
+        "startLine": 75,
+        "startChar": 31,
+        "endLine": 75,
+        "endChar": 76
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d507c482_55860d5a",
+        "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T22:59:45Z",
+      "side": 1,
+      "message": "I believe it\u0027s because normally oneof field would generate `PurgeCLTask_Reason_WatchedByManyConfigGroups` type, but there is already actual user-defined message with the same name, so generator had to improvise.\nBut yes, long (see my comment on proto file)",
+      "parentUuid": "8dd13e1f_94a56d8a",
       "range": {
         "startLine": 75,
         "startChar": 31,
@@ -185,6 +305,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f93a004a_5dac238b",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T22:59:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83d34de7_dd2773d7",
+      "range": {
+        "startLine": 301,
+        "startChar": 12,
+        "endLine": 301,
+        "endChar": 16
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f5763f78_003d9eac",
@@ -198,6 +342,30 @@
       "writtenOn": "2021-03-04T18:08:53Z",
       "side": 1,
       "message": "Maybe \"passed as an argument in CV code\"?",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 19
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c2c1f42_dd2e86ac",
+        "filename": "cv/internal/prjmanager/prjpb/tasks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T22:59:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5763f78_003d9eac",
       "range": {
         "startLine": 57,
         "startChar": 5,
