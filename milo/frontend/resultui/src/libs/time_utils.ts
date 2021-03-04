@@ -40,3 +40,20 @@ export function displayDuration(duration: Duration) {
   }
   return parts.join(' ');
 }
+
+export function displayCompactDuration(duration: Duration) {
+  const shifted = duration.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds');
+  if (shifted.days >= 1) {
+    return `${(shifted.days + shifted.hours / 24).toFixed(1)}d`;
+  }
+  if (shifted.hours >= 1) {
+    return `${(shifted.hours + shifted.minutes / 60).toFixed(1)}h`;
+  }
+  if (shifted.minutes >= 1) {
+    return `${(shifted.minutes + shifted.seconds / 60).toFixed(1)}m`;
+  }
+  if (shifted.seconds >= 1) {
+    return `${shifted.seconds}s`;
+  }
+  return `${shifted.milliseconds}ms`;
+}
