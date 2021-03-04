@@ -25,7 +25,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritutil "go.chromium.org/luci/common/api/gerrit"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -514,12 +513,16 @@ func TestSetReview(t *testing.T) {
 	t.Parallel()
 
 	Convey("SetReview", t, func() {
-		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		user := U("user-123")
 		accountID := user.AccountId
-		f := WithCIs("example",
+		ciBefore := CI(10001, CQ(1, tc.Now(), user), Updated(tc.Now()))
+		f := WithCIs(
+			"example",
 			ACLGrant(OpReview, codes.PermissionDenied, "chromium").Or(ACLGrant(OpAlterVotesOfOthers, codes.PermissionDenied, "chromium")),
-			CI(10001, CQ(1, clock.Now(ctx).Add(-2*time.Minute), user)))
+			ciBefore,
+		)
+		tc.Add(2 * time.Minute)
 		ctx = f.Install(ctx)
 
 		mustWriterClient := func(host, luciProject string) gerrit.CLWriterClient {
@@ -574,11 +577,12 @@ func TestSetReview(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &gerritpb.ReviewResult{})
+			So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
 			So(latestCI().GetMessages(), ShouldResembleProto, []*gerritpb.ChangeMessageInfo{
 				{
 					Id:      "0",
 					Author:  U("chromium"),
-					Date:    timestamppb.New(clock.Now(ctx)),
+					Date:    timestamppb.New(tc.Now()),
 					Message: "this is a message",
 				},
 			})
@@ -598,16 +602,17 @@ func TestSetReview(t *testing.T) {
 					"Commit-Queue": 2,
 				},
 			})
+			So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
 			So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldResembleProto, []*gerritpb.ApprovalInfo{
 				{
 					User:  user,
 					Value: 1,
-					Date:  timestamppb.New(clock.Now(ctx).Add(-2 * time.Minute)),
+					Date:  timestamppb.New(tc.Now().Add(-2 * time.Minute)),
 				},
 				{
 					User:  U("chromium"),
 					Value: 2,
-					Date:  timestamppb.New(clock.Now(ctx)),
+					Date:  timestamppb.New(tc.Now()),
 				},
 			})
 		})
@@ -628,6 +633,7 @@ func TestSetReview(t *testing.T) {
 						"Commit-Queue": 0,
 					},
 				})
+				So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
 				So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldBeEmpty)
 			})
 
@@ -645,16 +651,17 @@ func TestSetReview(t *testing.T) {
 						"Commit-Queue": 1,
 					},
 				})
+				So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
 				So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldResembleProto, []*gerritpb.ApprovalInfo{
 					{
 						User:  user,
 						Value: 1,
-						Date:  timestamppb.New(clock.Now(ctx).Add(-2 * time.Minute)),
+						Date:  timestamppb.New(tc.Now().Add(-2 * time.Minute)),
 					},
 					{
 						User:  U("user-789"),
 						Value: 1,
-						Date:  timestamppb.New(clock.Now(ctx)),
+						Date:  timestamppb.New(tc.Now()),
 					},
 				})
 			})

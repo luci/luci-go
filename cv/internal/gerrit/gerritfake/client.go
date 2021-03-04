@@ -30,8 +30,10 @@ import (
 
 	gerritutil "go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -226,12 +228,31 @@ func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewReque
 	if err := client.setReviewEnforceACLs(in, ch); err != nil {
 		return nil, err
 	}
+	// Always push Updated time forward.
+	now := clock.Now(ctx).UTC() // UTC is for easy to read logs
+	switch u := ch.Info.GetUpdated().AsTime(); {
+	case now.Before(u):
+		panic(fmt.Errorf("Clock's time [%s] is before the Updated time [%s]", now, u))
+	case u.Equal(now):
+		if tclock, ok := clock.Get(ctx).(testclock.TestClock); ok {
+			logging.Debugf(ctx, "testclock.Time += 1second to ensure increasing Updated time")
+			tclock.Add(time.Second)
+			now = tclock.Now()
+		} else {
+			return nil, status.Errorf(
+				codes.Internal,
+				"Clock's time [%s] is equal to the Updated time [%s] and not running in test",
+				now, u,
+			)
+		}
+	}
+	ch.Info.Updated = timestamppb.New(now)
 
 	if in.Message != "" {
 		ch.Info.Messages = append(ch.Info.Messages, &gerritpb.ChangeMessageInfo{
 			Id:      strconv.Itoa(len(ch.Info.Messages)),
 			Author:  U(client.luciProject),
-			Date:    timestamppb.New(clock.Now(ctx)),
+			Date:    timestamppb.New(now),
 			Message: in.Message,
 		})
 	}
@@ -239,12 +260,13 @@ func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewReque
 	if len(in.Labels) > 0 {
 		for label, val := range in.Labels {
 			if in.OnBehalfOf == 0 {
-				Vote(label, int(val), clock.Now(ctx), U(client.luciProject))(ch.Info)
+				Vote(label, int(val), now, U(client.luciProject))(ch.Info)
 			} else {
-				Vote(label, int(val), clock.Now(ctx), U(fmt.Sprintf("user-%d", in.OnBehalfOf)))(ch.Info)
+				Vote(label, int(val), now, U(fmt.Sprintf("user-%d", in.OnBehalfOf)))(ch.Info)
 			}
 		}
 	}
+
 	return &gerritpb.ReviewResult{Labels: in.GetLabels()}, nil
 }
 

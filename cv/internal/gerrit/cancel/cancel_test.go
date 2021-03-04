@@ -47,7 +47,10 @@ func TestCancel(t *testing.T) {
 		const gHost = "x-review.example.com"
 		const lProject = "lProject"
 		const changeNum = 10001
-		ci := gf.CI(10001, gf.PS(2), gf.CQ(2, clock.Now(ctx).Add(-2*time.Minute), user), gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
+		ci := gf.CI(
+			10001, gf.PS(2),
+			gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), user),
+			gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
 		So(trigger.Find(ci).GerritAccountId, ShouldEqual, 100)
 		cl := &changelist.CL{
 			ID:         99999,
