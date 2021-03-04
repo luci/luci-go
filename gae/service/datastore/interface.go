@@ -615,6 +615,18 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 // not be affected. This means that you can populate an object for dst with some
 // values, do a Get, and on an ErrNoSuchEntity, do a Put (inside a transaction,
 // of course :)).
+//
+// Beware of passing non-zero objects with repeated fields, as the read values
+// will be appended to the existing slice. For example,
+//     type MyObj struct {
+//       ID     string   `gae:$id`
+//       Labels []string
+//     }
+//     ...
+//     o := MyObj{Labels:[]string{"a"}
+//     Put(ctx, &o)
+//     Get(ctx, &o)
+//     // o.Labels is now []string{"a", "a"}.
 func Get(c context.Context, dst ...interface{}) error {
 	if len(dst) == 0 {
 		return nil
