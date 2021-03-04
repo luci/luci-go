@@ -56,6 +56,30 @@
       },
       "revId": "8588bd4e6d9cd9402b82f6da87e39ff36e85d510",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "25ceb950_ab97efe7",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-04T18:25:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bbd2afaa_b2703b39",
+      "range": {
+        "startLine": 119,
+        "startChar": 5,
+        "endLine": 119,
+        "endChar": 16
+      },
+      "revId": "8588bd4e6d9cd9402b82f6da87e39ff36e85d510",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
