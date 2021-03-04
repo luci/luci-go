@@ -77,6 +77,16 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			So(err.Error(), ShouldContainSubstring, "namespace \"$$blzyall\" does not match")
 		})
 
+		Convey("Can Put /Get", func() {
+			f := &Foo{Val: 10, Multi: []string{"foo", "bar"}, Key: ds.MakeKey(c, "Bar", "Baz")}
+			So(ds.Put(c, f), ShouldBeNil)
+
+			f2 := &Foo{ID: f.ID, Parent: f.Parent}
+			f2.Multi = []string{"existing"}
+			So(ds.Get(c, f2), ShouldBeNil)
+			So(f2.Multi, ShouldResemble, f.Multi) // actually {"existing", "foo", "bar"}
+		})
+
 		Convey("Can Put stuff", func() {
 			// with an incomplete key!
 			f := &Foo{Val: 10, Multi: []string{"foo", "bar"}, Key: ds.MakeKey(c, "Bar", "Baz")}
