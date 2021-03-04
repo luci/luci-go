@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec1efb5c_f5ddee4e",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-04T06:18:55Z",
+      "side": 0,
+      "message": "Yes. bbolt uses a file, but badger uses a directory.\n\nLet me add back this if this is necessary.",
+      "parentUuid": "f2413432_fcba1c26",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 2
+      },
+      "revId": "941f7e558664bdc8b77de19ba86140b6102843b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "907c2bcf_6d493e73",
