@@ -16,6 +16,46 @@
       "message": "PTAL. This is ready now.",
       "revId": "8588bd4e6d9cd9402b82f6da87e39ff36e85d510",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1411b831_585cb022",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:19:35Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "8588bd4e6d9cd9402b82f6da87e39ff36e85d510",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bbd2afaa_b2703b39",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:19:35Z",
+      "side": 1,
+      "message": "Optional alternative names: needsPurging, clNeedsPurging",
+      "range": {
+        "startLine": 119,
+        "startChar": 5,
+        "endLine": 119,
+        "endChar": 16
+      },
+      "revId": "8588bd4e6d9cd9402b82f6da87e39ff36e85d510",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
