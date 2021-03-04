@@ -182,7 +182,15 @@ func (d Deserializer) Property(buf cmpbin.ReadableBytesBuffer) (p Property, err 
 	case PTString:
 		val, _, err = cmpbin.ReadString(buf)
 	case PTBytes:
-		val, _, err = cmpbin.ReadBytes(buf)
+		// For compatibility with actual Datastore.
+		switch v, _, e := cmpbin.ReadBytes(buf); {
+		case e != nil:
+			err = e
+		case v == nil:
+			val = []byte{}
+		default:
+			val = v
+		}
 	case PTTime:
 		val, err = d.Time(buf)
 	case PTGeoPoint:

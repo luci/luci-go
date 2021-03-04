@@ -128,8 +128,8 @@ func init() {
 			val[j] = r
 		}
 
-		dataMultiRoot[i] = &Foo{ID: id, Value: val}
-		dataSingleRoot[i] = &Foo{ID: id, Parent: root, Value: val}
+		dataMultiRoot[i] = &Foo{ID: id, Value: val, ValueNI: []byte{}}
+		dataSingleRoot[i] = &Foo{ID: id, Parent: root, Value: val, ValueNI: []byte{}}
 	}
 
 	for i := range hugeField {
@@ -637,10 +637,10 @@ func TestQuerySupport(t *testing.T) {
 
 			Convey("overwrite", func() {
 				data := []*Foo{
-					{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
-					{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
-					{ID: 4, Parent: root, Value: []int64{3, 5, 7, 9, 11, 100, 1, 2}},
-					{ID: 5, Parent: root, Value: []int64{1, 70, 101}},
+					{ID: 2, Parent: root, ValueNI: []byte{}, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
+					{ID: 3, Parent: root, ValueNI: []byte{}, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
+					{ID: 4, Parent: root, ValueNI: []byte{}, Value: []int64{3, 5, 7, 9, 11, 100, 1, 2}},
+					{ID: 5, Parent: root, ValueNI: []byte{}, Value: []int64{1, 70, 101}},
 				}
 
 				_, _, c := mkds(data)
@@ -655,7 +655,7 @@ func TestQuerySupport(t *testing.T) {
 					So(vals[0], ShouldResemble, data[0])
 					So(vals[1], ShouldResemble, data[2])
 
-					foo2 := &Foo{ID: 2, Parent: root, Value: []int64{2, 3}}
+					foo2 := &Foo{ID: 2, Parent: root, Value: []int64{2, 3}, ValueNI: []byte{}}
 					So(ds.Put(c, foo2), ShouldBeNil)
 
 					vals = []*Foo{}
@@ -665,7 +665,7 @@ func TestQuerySupport(t *testing.T) {
 					So(vals[0], ShouldResemble, foo2)
 					So(vals[1], ShouldResemble, data[2])
 
-					foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}}
+					foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}, ValueNI: []byte{}}
 					So(ds.Put(c, foo1), ShouldBeNil)
 
 					vals = []*Foo{}
@@ -681,10 +681,10 @@ func TestQuerySupport(t *testing.T) {
 			})
 
 			projectData := []*Foo{
-				{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}, Sort: []string{"x", "z"}},
-				{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}, Sort: []string{"b"}},
-				{ID: 4, Parent: root, Value: []int64{3, 5, 7, 9, 11, 100, 1, 2}, Sort: []string{"aa", "a"}},
-				{ID: 5, Parent: root, Value: []int64{1, 70, 101}, Sort: []string{"c"}},
+				{ID: 2, Parent: root, ValueNI: []byte{}, Value: []int64{1, 2, 3, 4, 5, 6, 7}, Sort: []string{"x", "z"}},
+				{ID: 3, Parent: root, ValueNI: []byte{}, Value: []int64{3, 4, 5, 6, 7, 8, 9}, Sort: []string{"b"}},
+				{ID: 4, Parent: root, ValueNI: []byte{}, Value: []int64{3, 5, 7, 9, 11, 100, 1, 2}, Sort: []string{"aa", "a"}},
+				{ID: 5, Parent: root, ValueNI: []byte{}, Value: []int64{1, 70, 101}, Sort: []string{"c"}},
 			}
 
 			Convey("project+extra orders", func() {
@@ -745,7 +745,7 @@ func TestQuerySupport(t *testing.T) {
 				// based on the whole entity, but we forgot to limit the comparison
 				// string generation by the inequality criteria.
 				data := []*Foo{
-					{ID: 2, Parent: root, Value: []int64{2, 3, 5, 6}, Sort: []string{"z"}},
+					{ID: 2, Parent: root, Value: []int64{2, 3, 5, 6}, ValueNI: []byte{}, Sort: []string{"z"}},
 				}
 
 				_, _, c := mkds(data)
@@ -760,7 +760,7 @@ func TestQuerySupport(t *testing.T) {
 				q = q.Gt("Value", 2).Limit(2)
 
 				So(ds.RunInTransaction(c, func(c context.Context) error {
-					foo1 := &Foo{ID: 3, Parent: root, Value: []int64{0, 2, 3, 4}}
+					foo1 := &Foo{ID: 3, Parent: root, Value: []int64{0, 2, 3, 4}, ValueNI: []byte{}}
 					So(ds.Put(c, foo1), ShouldBeNil)
 
 					vals := []*Foo{}
@@ -788,11 +788,11 @@ func TestQuerySupport(t *testing.T) {
 
 				So(ds.RunInTransaction(c, func(c context.Context) error {
 					So(ds.Put(c, &Foo{
-						ID: 1, Parent: root, Value: []int64{0, 1, 1000},
+						ID: 1, Parent: root, Value: []int64{0, 1, 1000}, ValueNI: []byte{},
 						Sort: []string{"x", "zz"}}), ShouldBeNil)
 
 					So(ds.Put(c, &Foo{
-						ID: 2, Parent: root, Value: []int64{0, 1, 1000},
+						ID: 2, Parent: root, Value: []int64{0, 1, 1000}, ValueNI: []byte{},
 						Sort: []string{"zz", "zzz", "zzzz"}}), ShouldBeNil)
 
 					vals := []*ds.Key{}
@@ -816,8 +816,8 @@ func TestQuerySupport(t *testing.T) {
 				_, _, c := mkds(projectData)
 				q = q.Eq("Value", 2, 3)
 
-				foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}}
-				foo7 := &Foo{ID: 7, Parent: root, Value: []int64{2, 3}}
+				foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}, ValueNI: []byte{}}
+				foo7 := &Foo{ID: 7, Parent: root, Value: []int64{2, 3}, ValueNI: []byte{}}
 
 				So(ds.RunInTransaction(c, func(c context.Context) error {
 					So(ds.Put(c, foo1), ShouldBeNil)
