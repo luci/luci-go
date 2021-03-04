@@ -100,8 +100,6 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       builder: builder as string,
     };
     this.buildNumOrId = buildNumOrId as string;
-
-    document.title = `${builder} ${buildNumOrId}`;
     return;
   }
 
@@ -112,6 +110,12 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       return `/static/common/favicon/${STATUS_FAVICON_MAP[this.buildState.build.status]}-32.png`;
     }
     return `/static/common/favicon/milo-32.png`;
+  }
+
+  @computed private get documentTitle() {
+    const status = this.buildState.build?.status;
+    const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
+    return `${statusDisplay} - ${this.builder.builder} ${this.buildNumOrId}`;
   }
 
   private errorHandler = (e: ErrorEvent) => {
@@ -246,6 +250,12 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     this.disposers.push((reaction(
       () => this.faviconUrl,
       (faviconUrl) => document.getElementById('favicon')?.setAttribute('href', faviconUrl),
+      {fireImmediately: true},
+    )));
+
+    this.disposers.push((reaction(
+      () => this.documentTitle,
+      (title) => document.title = title,
       {fireImmediately: true},
     )));
 
