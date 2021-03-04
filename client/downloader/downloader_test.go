@@ -268,7 +268,7 @@ func TestDownloaderWithCache(t *testing.T) {
 		cacheObj, err := cache.New(policy, cacheDir, h)
 		So(err, ShouldBeNil)
 
-		So(cacheObj.Add(hithash, bytes.NewReader(hit)), ShouldBeNil)
+		So(cacheObj.Add(ctx, hithash, bytes.NewReader(hit)), ShouldBeNil)
 
 		d := New(ctx, client, isolated1hash, tmpDir, &Options{
 			FileCallback: func(name string, _ *isolated.File) {
