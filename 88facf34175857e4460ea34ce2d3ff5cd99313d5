@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "914e8660_5278d7de",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "a preferred email",
+      "range": {
+        "startLine": 80,
+        "startChar": 65,
+        "endLine": 80,
+        "endChar": 79
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4721e52_bc4f39d2",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "This is OK; you cold also consider calling this \"Details for debugging:\" or something",
+      "range": {
+        "startLine": 89,
+        "startChar": 24,
+        "endLine": 89,
+        "endChar": 38
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8bd18da1_15d22380",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "This won\u0027t work for non-Googlers, I think it\u0027s still preferred to use a externally-useable URL even if it\u0027s very long. So, avoiding \"master\" and trying to make it slightly shorter, maybe:\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/lucicfg/doc/#luci.cq_group",
+      "range": {
+        "startLine": 91,
+        "startChar": 17,
+        "endLine": 91,
+        "endChar": 48
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "554d40f0_ce350e93",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "Instead of \"relevant doc\", maybe: \"For more about CQ config groups, see:\". This also maybe doesn\u0027t need to be in a bullet point, but is also OK as is.",
+      "range": {
+        "startLine": 91,
+        "startChar": 4,
+        "endLine": 91,
+        "endChar": 16
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce42366a_2fcb113d",
+        "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "Thanks for comments",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 5
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9d00b902_826c79fa",
+        "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "Nit, spelling",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 17
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8dd13e1f_94a56d8a",
+        "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "Long name :-P\n\nWhy is there an \"_\" at the end?",
+      "range": {
+        "startLine": 75,
+        "startChar": 31,
+        "endLine": 75,
+        "endChar": 76
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83d34de7_dd2773d7",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "Nit: For TODOs fill in a username or bug. (Here and below.)",
+      "range": {
+        "startLine": 301,
+        "startChar": 12,
+        "endLine": 301,
+        "endChar": 16
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f5763f78_003d9eac",
+        "filename": "cv/internal/prjmanager/prjpb/tasks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-04T18:08:53Z",
+      "side": 1,
+      "message": "Maybe \"passed as an argument in CV code\"?",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 19
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
