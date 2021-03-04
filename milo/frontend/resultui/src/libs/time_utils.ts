@@ -40,3 +40,20 @@ export function displayDuration(duration: Duration) {
   }
   return parts.join(' ');
 }
+
+export function displayCompactDuration(duration: Duration) {
+  const shifted = duration.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds');
+  if (shifted.days >= 1) {
+    return `${shifted.days}d`;
+  }
+  if (shifted.hours >= 1) {
+    return `${shifted.hours}h`;
+  }
+  if (shifted.minutes >= 1) {
+    return `${shifted.minutes}m`;
+  }
+  if (shifted.seconds >= 1) {
+    return `${shifted.seconds}s`;
+  }
+  return `${shifted.milliseconds}ms`;
+}
