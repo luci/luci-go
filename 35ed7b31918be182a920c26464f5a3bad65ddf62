@@ -52,6 +52,24 @@
       "parentUuid": "11ded428_b020d5a7",
       "revId": "35ed7b31918be182a920c26464f5a3bad65ddf62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1dd195b5_422cd47c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-05T04:17:35Z",
+      "side": 1,
+      "message": "because the size of blob for empty directory is 0?",
+      "parentUuid": "f1e72fcd_2b9d3d8b",
+      "revId": "35ed7b31918be182a920c26464f5a3bad65ddf62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
