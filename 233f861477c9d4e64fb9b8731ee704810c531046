@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "841e7416_81be1b35",
+        "filename": "common/spantest/spantest_linux.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-05T07:17:26Z",
+      "side": 1,
+      "message": "The mac version also works on my linux, so we can potentially use the mac version on linux as well if we agree to install docker on the linux builder.\n\nAlso \"sudo docker\" was a problem for me and I don\u0027t even know how did I fix it, so we may need to experiment on someone else\u0027s linux workstation first to confirm \"sudo docker\" is really not a problem.",
+      "revId": "233f861477c9d4e64fb9b8731ee704810c531046",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
