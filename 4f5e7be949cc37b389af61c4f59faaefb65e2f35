@@ -51,6 +51,24 @@
       "message": "This and https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2740211 can be a single CL.\n\napp.yaml and code changes are always deployed together as a single artifact, there\u0027s no need to deploy it in multiple stages",
       "revId": "4f5e7be949cc37b389af61c4f59faaefb65e2f35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a23d3e6_df25834e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-05T21:55:55Z",
+      "side": 1,
+      "message": "ah right. this not cron nor index. merged.",
+      "parentUuid": "4ae6abc0_1fc5b266",
+      "revId": "4f5e7be949cc37b389af61c4f59faaefb65e2f35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
