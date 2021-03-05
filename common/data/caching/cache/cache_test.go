@@ -16,6 +16,7 @@ package cache
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"math"
 	"os"
@@ -34,6 +35,7 @@ func testCache(t *testing.T, c *Cache) isolated.HexDigests {
 	Convey(`Common tests performed on a cache of objects.`, func() {
 		// c's policies must have MaxItems == 2 and MaxSize == 1024.
 		td := t.TempDir()
+		ctx := context.Background()
 
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
@@ -68,20 +70,20 @@ func testCache(t *testing.T, c *Cache) isolated.HexDigests {
 		So(err, ShouldNotBeNil)
 
 		// It's too large to fit in the cache.
-		So(c.Add(tooLargeDigest, bytes.NewBuffer(tooLargeContent)), ShouldNotBeNil)
+		So(c.Add(ctx, tooLargeDigest, bytes.NewBuffer(tooLargeContent)), ShouldNotBeNil)
 
 		// It gets discarded because it's too large.
-		So(c.Add(largeDigest, bytes.NewBuffer(largeContent)), ShouldBeNil)
-		So(c.Add(emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
-		So(c.Add(emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
+		So(c.Add(ctx, largeDigest, bytes.NewBuffer(largeContent)), ShouldBeNil)
+		So(c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
+		So(c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
 		So(c.Keys(), ShouldResemble, isolated.HexDigests{emptyDigest, largeDigest})
 		c.Evict(emptyDigest)
 		So(c.Keys(), ShouldResemble, isolated.HexDigests{largeDigest})
-		So(c.Add(emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
+		So(c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
 
-		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
+		So(c.Add(ctx, file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
 		So(c.Touch(emptyDigest), ShouldBeTrue)
-		So(c.Add(file2Digest, bytes.NewBuffer(file2Content)), ShouldBeNil)
+		So(c.Add(ctx, file2Digest, bytes.NewBuffer(file2Content)), ShouldBeNil)
 
 		r, err = c.Read(file1Digest)
 		So(r, ShouldBeNil)
@@ -107,7 +109,7 @@ func testCache(t *testing.T, c *Cache) isolated.HexDigests {
 		So(actual, ShouldResemble, file2Content)
 
 		dest = filepath.Join(td, "hardlink")
-		So(c.AddWithHardlink(hardlinkDigest, bytes.NewBuffer(hardlinkContent), dest, os.ModePerm),
+		So(c.AddWithHardlink(ctx, hardlinkDigest, bytes.NewBuffer(hardlinkContent), dest, os.ModePerm),
 			ShouldBeNil)
 		actual, err = ioutil.ReadFile(dest)
 		So(err, ShouldBeNil)
@@ -169,6 +171,7 @@ func TestNew(t *testing.T) {
 	})
 
 	Convey(`MinFreeSpace too big`, t, func() {
+		ctx := context.Background()
 		dir := t.TempDir()
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
@@ -177,12 +180,13 @@ func TestNew(t *testing.T) {
 
 		file1Content := []byte("foo")
 		file1Digest := isolated.HashBytes(h, file1Content)
-		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldNotBeNil)
+		So(c.Add(ctx, file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
 
 		So(c.Close(), ShouldBeNil)
 	})
 
 	Convey(`MaxSize 0`, t, func() {
+		ctx := context.Background()
 		dir := t.TempDir()
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
@@ -191,7 +195,7 @@ func TestNew(t *testing.T) {
 
 		file1Content := []byte("foo")
 		file1Digest := isolated.HashBytes(h, file1Content)
-		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
+		So(c.Add(ctx, file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
 		So(c.Keys(), ShouldHaveLength, 1)
 		So(c.Close(), ShouldBeNil)
 	})
@@ -221,6 +225,7 @@ func TestNew(t *testing.T) {
 	})
 
 	Convey(`AddFileWithoutValidation`, t, func() {
+		ctx := context.Background()
 		dir := t.TempDir()
 		cache := filepath.Join(dir, "cache")
 		h := isolated.GetHash(isolatedclient.DefaultNamespace)
@@ -237,15 +242,15 @@ func TestNew(t *testing.T) {
 
 		emptyHash := isolated.HashBytes(h, nil)
 
-		So(c.AddFileWithoutValidation(emptyHash, empty), ShouldBeNil)
+		So(c.AddFileWithoutValidation(ctx, emptyHash, empty), ShouldBeNil)
 
 		So(c.Touch(emptyHash), ShouldBeTrue)
 
 		// Adding already existing file is fine.
-		So(c.AddFileWithoutValidation(emptyHash, empty), ShouldBeNil)
+		So(c.AddFileWithoutValidation(ctx, emptyHash, empty), ShouldBeNil)
 
 		empty2 := filepath.Join(dir, "empty2")
 		So(ioutil.WriteFile(empty2, nil, 0600), ShouldBeNil)
-		So(c.AddFileWithoutValidation(emptyHash, empty2), ShouldBeNil)
+		So(c.AddFileWithoutValidation(ctx, emptyHash, empty2), ShouldBeNil)
 	})
 }

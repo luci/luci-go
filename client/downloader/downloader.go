@@ -447,7 +447,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 				})
 
 				wg.Go(func() error {
-					err := d.options.Cache.AddWithHardlink(details.Digest, pr, filename, os.FileMode(mode))
+					err := d.options.Cache.AddWithHardlink(ctx, details.Digest, pr, filename, os.FileMode(mode))
 					if perr := pr.CloseWithError(err); perr != nil {
 						return errors.Annotate(perr, "failed to close pipe reader").Err()
 					}
@@ -511,7 +511,7 @@ func (d *Downloader) loadOrAddToCache(hash isolated.HexDigest) (*bytes.Buffer, e
 	}
 
 	if d.options.Cache != nil {
-		if err := d.options.Cache.Add(hash, bytes.NewReader(buf.Bytes())); err != nil {
+		if err := d.options.Cache.Add(d.ctx, hash, bytes.NewReader(buf.Bytes())); err != nil {
 			return nil, err
 		}
 	}

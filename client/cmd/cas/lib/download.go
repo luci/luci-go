@@ -268,7 +268,7 @@ func cacheSmallFiles(kvs *embeddedkvs.KVS, outputs []*client.TreeOutput) error {
 	return eg.Wait()
 }
 
-func cacheOutputFiles(diskcache *cache.Cache, kvs *embeddedkvs.KVS, outputs map[digest.Digest]*client.TreeOutput) error {
+func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs *embeddedkvs.KVS, outputs map[digest.Digest]*client.TreeOutput) error {
 	var smallOutputs, largeOutputs []*client.TreeOutput
 
 	for _, output := range outputs {
@@ -295,8 +295,7 @@ func cacheOutputFiles(diskcache *cache.Cache, kvs *embeddedkvs.KVS, outputs map[
 	}
 
 	for _, output := range largeOutputs {
-		if err := diskcache.AddFileWithoutValidation(
-			isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
+		if err := diskcache.AddFileWithoutValidation(ctx, isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
 			return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
 		}
 	}
@@ -446,7 +445,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 
 	if diskcache != nil {
 		start = time.Now()
-		if err := cacheOutputFiles(diskcache, kvs, to); err != nil {
+		if err := cacheOutputFiles(ctx, diskcache, kvs, to); err != nil {
 			return err
 		}
 		logger.Infof("finished cache addition, took %s", time.Since(start))
