@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/warmup"
 
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -54,6 +55,7 @@ func main() {
 	mods := []module.Module{
 		gaeemulation.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		warmup.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
