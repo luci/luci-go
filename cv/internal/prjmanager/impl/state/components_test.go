@@ -208,7 +208,8 @@ func TestComponentsActions(t *testing.T) {
 			})
 			So(state.PB, ShouldResembleProto, pb)
 
-			So(state.execComponentActions(ctx, actions, components), ShouldBeNil)
+			_, err = state.execComponentActions(ctx, actions, components)
+			So(err, ShouldBeNil)
 			// Must modify passed components only.
 			So(state.PB, ShouldResembleProto, pb)
 			So(components, ShouldResembleProto, []*prjpb.Component{
@@ -261,7 +262,7 @@ func TestComponentsActions(t *testing.T) {
 			}).factory
 			actions, components, err := state.scanComponents(ctx)
 			So(err, ShouldBeNil)
-			err = state.execComponentActions(ctx, actions, components)
+			_, err = state.execComponentActions(ctx, actions, components)
 			So(err, ShouldBeNil)
 			// Must modify passed components only.
 			So(state.PB, ShouldResembleProto, pb)
@@ -292,7 +293,7 @@ func TestComponentsActions(t *testing.T) {
 			}).factory
 			actions, components, err := state.scanComponents(ctx)
 			So(err, ShouldBeNil)
-			err = state.execComponentActions(ctx, actions, components)
+			_, err = state.execComponentActions(ctx, actions, components)
 			So(err, ShouldErrLike, "act-oops")
 			So(state.PB, ShouldResembleProto, pb)
 
@@ -324,14 +325,14 @@ func (t *testCActor) NextActionTime(_ context.Context, now time.Time) (time.Time
 	return t.parent.nextAction(t.c.GetClids()[0], now)
 }
 
-func (t *testCActor) Act(context.Context) (*prjpb.Component, error) {
+func (t *testCActor) Act(context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
 	for _, clid := range t.parent.actErrOnCLs {
 		if t.c.GetClids()[0] == clid {
-			return nil, errors.Reason("act-oops %v", t.c).Err()
+			return nil, nil, errors.Reason("act-oops %v", t.c).Err()
 		}
 	}
 	c := t.c.CloneShallow()
 	c.Dirty = false
 	c.DecisionTime = nil
-	return c, nil
+	return c, nil, nil
 }
