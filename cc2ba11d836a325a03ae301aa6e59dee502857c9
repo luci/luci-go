@@ -112,6 +112,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "99498bb6_d53760a5",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-05T22:22:25Z",
+      "side": 1,
+      "message": "Im my POV, I will echo the Generic approach as it looks like the right encapsulation and reusable in the future.",
+      "parentUuid": "59ef8f53_d94c3d43",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 13
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b1beef3d_904e2cc2",
         "filename": "cv/internal/bq/bq.go",
         "patchSetId": 4
