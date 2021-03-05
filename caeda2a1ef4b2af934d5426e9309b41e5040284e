@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "edd7286c_e47ee895",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-05T20:10:13Z",
+      "side": 1,
+      "message": "LGTM with question",
+      "revId": "caeda2a1ef4b2af934d5426e9309b41e5040284e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce745ee0_809f540a",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-05T20:10:13Z",
+      "side": 1,
+      "message": "Does this mean \"created in one Datastore operation transaction\"? Why does this mean that no duplicates are possible?",
+      "range": {
+        "startLine": 58,
+        "startChar": 44,
+        "endLine": 58,
+        "endChar": 74
+      },
+      "revId": "caeda2a1ef4b2af934d5426e9309b41e5040284e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
