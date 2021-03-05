@@ -54,18 +54,27 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 	}
 
-	return NewClientFromPerRPCCredentials(ctx, instance, creds)
+	cl, err := client.NewClient(ctx, instance,
+		client.DialParams{
+			Service:            "remotebuildexecution.googleapis.com:443",
+			TransportCredsOnly: true,
+		}, ClientOptions(creds)...)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create client").Err()
+	}
+
+	return cl, nil
 }
 
-// NewClientFromPerRPCCredentials creates CAS client using PerRPCCredentials.
-func NewClientFromPerRPCCredentials(ctx context.Context, instance string, creds credentials.PerRPCCredentials) (*client.Client, error) {
+// ClientOptions returns CAS client options.
+func ClientOptions(creds credentials.PerRPCCredentials) []client.Opt {
 	casConcurrency := runtime.NumCPU() * 2
 	if runtime.GOOS == "windows" {
 		// This is for better file write performance on Windows (http://b/171672371#comment6).
 		casConcurrency = runtime.NumCPU()
 	}
 
-	clOpts := []client.Opt{
+	return []client.Opt{
 		&client.PerRPCCreds{Creds: creds},
 		client.CASConcurrency(casConcurrency),
 		client.UtilizeLocality(true),
@@ -76,14 +85,4 @@ func NewClientFromPerRPCCredentials(ctx context.Context, instance string, creds 
 		client.RegularMode(0600),
 		client.CompressedBytestreamThreshold(0),
 	}
-	cl, err := client.NewClient(ctx, instance,
-		client.DialParams{
-			Service:            "remotebuildexecution.googleapis.com:443",
-			TransportCredsOnly: true,
-		}, clOpts...)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create client").Err()
-	}
-
-	return cl, nil
 }
