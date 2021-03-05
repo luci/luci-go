@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aac2eaf3_ad4c48b1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-05T03:38:36Z",
+      "side": 1,
+      "message": "hmm, some tests are failing. (not reproduce on my machine)\nhttps://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8853635123361174000/+/u/go_test/stdout#L2043_6\n\nWhy it fails for `failed to call GetDirectoryTree: rpc error: code \u003d Unknown desc \u003d retry budget exhausted (6 attempts): directory digest e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855/0 not found\u0027`?",
+      "revId": "35ed7b31918be182a920c26464f5a3bad65ddf62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
