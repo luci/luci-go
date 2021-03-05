@@ -351,6 +351,23 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 	}))
 }
 
+// ExamineNotification is part of Manager interface.
+func (m TaskManager) ExamineNotification(c context.Context, msg *pubsub.PubsubMessage) string {
+	// Buildbucket v1 builds have the token in attributes.
+	if tok := msg.Attributes["auth_token"]; tok != "" {
+		return tok
+	}
+	// Buildbucket v2 builds have the token as "user_data" in the message body.
+	var body struct {
+		UserData string `json:"user_data"`
+	}
+	if json.Unmarshal([]byte(msg.Data), &body) == nil {
+		return body.UserData
+	}
+	// Must be some garbage, ignore.
+	return ""
+}
+
 // HandleNotification is part of Manager interface.
 func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	ctl.DebugLog("Received PubSub notification, asking Buildbucket for the build status")
