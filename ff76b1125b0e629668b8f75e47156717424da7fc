@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e93eca9f_9647b404",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-05T20:16:27Z",
+      "side": 1,
+      "message": "Or: which is always (or almost always?) a very short list in practice.\n\nI wonder what the number of such CLs might be for chromium ... usually 0? or usually \u003e 0 and \u003c 10? (Not really important so don\u0027t spend time getting the number.)",
+      "range": {
+        "startLine": 271,
+        "startChar": 56,
+        "endLine": 272,
+        "endChar": 13
+      },
+      "revId": "ff76b1125b0e629668b8f75e47156717424da7fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65dda144_b61145d2",
+        "filename": "cv/internal/prjmanager/impl/state/components_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-05T20:16:27Z",
+      "side": 1,
+      "message": "Prunes? (Or purges?)",
+      "range": {
+        "startLine": 189,
+        "startChar": 10,
+        "endLine": 189,
+        "endChar": 15
+      },
+      "revId": "ff76b1125b0e629668b8f75e47156717424da7fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
