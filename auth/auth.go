@@ -885,7 +885,7 @@ func (creds perRPCCreds) GetRequestMetadata(c context.Context, uri ...string) (m
 		return nil, err
 	}
 	return map[string]string{
-		"Authorization": tok.TokenType + " " + tok.AccessToken,
+		"Authorization": tok.Type() + " " + tok.AccessToken,
 	}, nil
 }
 
