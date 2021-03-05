@@ -34,6 +34,24 @@
       "parentUuid": "aac2eaf3_ad4c48b1",
       "revId": "35ed7b31918be182a920c26464f5a3bad65ddf62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1e72fcd_2b9d3d8b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-05T04:16:13Z",
+      "side": 1,
+      "message": "That should be uploaded to fake CAS in the same test.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/cmd/cas/lib/cas_test.go;l\u003d71;drc\u003dbd1207897212041f13de1f27c55722f9fd00ab02\n\nBut I\u0027m wondering why the size_bytes is 0.",
+      "parentUuid": "11ded428_b020d5a7",
+      "revId": "35ed7b31918be182a920c26464f5a3bad65ddf62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
