@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4ab45125_e23c47c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-05T20:08:00Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "7fe852714a67d9fb1e36ccd3d6277223b93191f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "66bfb919_dce5ea0c",
         "filename": "cv/internal/prjmanager/prjpb/tasks.proto",
         "patchSetId": 3
@@ -14,6 +31,30 @@
       "writtenOn": "2021-03-04T22:59:45Z",
       "side": 1,
       "message": "this one is exact same name (in Go) as L62, this is why extra \"_\" at the end of the auto-gen type for L62.\n\nNow, I considered moving this message out of PurgeCLTask, but it makes little sense standalone. Since this is internal impl + we have static type checks of Go, i think this is fine to keep as is.",
+      "range": {
+        "startLine": 66,
+        "startChar": 12,
+        "endLine": 66,
+        "endChar": 37
+      },
+      "revId": "7fe852714a67d9fb1e36ccd3d6277223b93191f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd417932_d6e22be6",
+        "filename": "cv/internal/prjmanager/prjpb/tasks.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-05T20:08:00Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "66bfb919_dce5ea0c",
       "range": {
         "startLine": 66,
         "startChar": 12,

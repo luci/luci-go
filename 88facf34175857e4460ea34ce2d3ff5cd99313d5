@@ -167,6 +167,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "8c9d88ac_946e6469",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-05T20:08:00Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "f94fb42b_b21ce19f",
+      "range": {
+        "startLine": 91,
+        "startChar": 4,
+        "endLine": 91,
+        "endChar": 16
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ce42366a_2fcb113d",
         "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
         "patchSetId": 1
@@ -272,6 +296,30 @@
       "side": 1,
       "message": "I believe it\u0027s because normally oneof field would generate `PurgeCLTask_Reason_WatchedByManyConfigGroups` type, but there is already actual user-defined message with the same name, so generator had to improvise.\nBut yes, long (see my comment on proto file)",
       "parentUuid": "8dd13e1f_94a56d8a",
+      "range": {
+        "startLine": 75,
+        "startChar": 31,
+        "endLine": 75,
+        "endChar": 76
+      },
+      "revId": "88facf34175857e4460ea34ce2d3ff5cd99313d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "28be404c_2f565927",
+        "filename": "cv/internal/prjmanager/clpurger/user_text_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-05T20:08:00Z",
+      "side": 1,
+      "message": "Ah, I see...",
+      "parentUuid": "d507c482_55860d5a",
       "range": {
         "startLine": 75,
         "startChar": 31,
