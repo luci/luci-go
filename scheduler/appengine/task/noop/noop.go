@@ -87,6 +87,11 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 	return nil
 }
 
+// ExamineNotification is part of Manager interface.
+func (m TaskManager) ExamineNotification(c context.Context, msg *pubsub.PubsubMessage) string {
+	return ""
+}
+
 // HandleNotification is part of Manager interface.
 func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	return errors.New("not implemented")
