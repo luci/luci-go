@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a2e773d_8af510d4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-05T22:39:33Z",
+      "side": 1,
+      "message": "I don\u0027t know why it was done, but it looks intentional. One thing that bothers me is that user_data may be logged somewhere. I initially insisted on a separate auth_token in v1 precisely to make it clear that it can contain secrets.",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 37
+      },
+      "revId": "4c45cf3fb6984189ae0e4c5fb458fc08bfcee989",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01fca72c_59ed6109",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-05T22:39:33Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "4c45cf3fb6984189ae0e4c5fb458fc08bfcee989",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
