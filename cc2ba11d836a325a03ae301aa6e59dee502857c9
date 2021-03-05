@@ -16,6 +16,121 @@
       "message": "This is actually still not complete, but I said I\u0027d upload something today! I\u0027ll continue tomorrow.",
       "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6c281e24_de79bbbc",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-05T00:36:28Z",
+      "side": 1,
+      "message": "21, since it doesn\u0027t look like even 50% copy of token server code.",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be13f3b7_e79f798a",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-05T00:36:28Z",
+      "side": 1,
+      "message": "based on recent BB, I think we should *record* the fact that row was sent in datastore. A sub-entity of Run will do.\n\nWdyt?",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 28
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6fcdbdec_2352a885",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-05T00:36:28Z",
+      "side": 1,
+      "message": "This should depend on kind of failure.\nLoading Run form datastore giving ErrNoSuchEntity must be a permanent failure.",
+      "range": {
+        "startLine": 49,
+        "startChar": 3,
+        "endLine": 49,
+        "endChar": 40
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "59ef8f53_d94c3d43",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-05T00:36:28Z",
+      "side": 1,
+      "message": "Let\u0027s talk purpose of the package and its API.\n\nConsider tokenserver\u0027s bq/ package: it sorta generic in that it works against various tables with various schemas. Its users must therefore prepare proto-representation of rows on their own before calling \"LogToken\". Furthermore, it encapsulates *async* nature of requests by hiding TQ inside itself.\n\n\nI can think of 2 approaches: Generic and Run-specific.\n\nGeneric\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\nGiven `internal/bq`, I expected only generic BQ functionality, which should then provide just 3 APIs:\n   * API to instantiate prod Inserter, and perhaps install into context (which is typical approach we use in CV, but not used in Token Server)\n   * API to install fake inserter for use in tests.\n   * Either:\n     * SendRow(table, row) (**sync** call)\n     * AsyncSendRow(table,row) (puts TQ task)\n \n  -\u003e however, AsyncSendRow approach has downside in that TQ task will do anything else, e.g. we can\u0027t put a datastore entity.\n     -\u003e So, I think we should go with SendRow() sync API in this package.\n\nAnd I think it\u0027d be good to put all Run-specific code into run/... package.\nThe individual bq-export TQ tasks can be defined in Run package, as well.\n\nRun-Specific\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\nBasically, stick a combination of above into run/bq w/o generality.\n\n\n\nRun-specific approach is fine, but \na) we\u0027ll need to change destination table for BQ exports some day.\nb) I\u0027d like to emit non-Run BQ data, too.\nSo, I\u0027d vote for Generic approach since code-wise it\u0027s about the same amount.\n\n\nWDYT?",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 13
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1beef3d_904e2cc2",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-05T00:36:28Z",
+      "side": 1,
+      "message": "what\u0027s the point of inserter struct if you re-creating it for each row?\n\nI think Inserter should be created \u0026\u0026 installed into context in server main().\nIn CV tests, a fake inserter, which records rows in RAM can be used.\n\nupdate: this is actually what Vadim did, too: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/tokenserver/appengine/backend/main.go;l\u003d45?q\u003dNewInserter\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2Ftokenserver%2Fappengine%2F",
+      "range": {
+        "startLine": 72,
+        "startChar": 1,
+        "endLine": 72,
+        "endChar": 30
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
