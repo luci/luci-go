@@ -20,7 +20,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -120,7 +119,7 @@ func TestPurgeCL(t *testing.T) {
 		ct.Clock.Add(time.Minute)
 
 		Convey("Happy path: cancel trigger, refresh CL, and notify PM", func() {
-			So(tq.AddTask(ctx, &tq.Task{Payload: task}), ShouldBeNil)
+			So(Schedule(ctx, task), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 
 			clAfter := loadCL()
@@ -133,7 +132,7 @@ func TestPurgeCL(t *testing.T) {
 				// Use different Operation ID s.t. we can easily assert PM was notified
 				// the 2nd time.
 				task.PurgingCl.OperationId = "op-2"
-				So(tq.AddTask(ctx, &tq.Task{Payload: task}), ShouldBeNil)
+				So(Schedule(ctx, task), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clAfter.EVersion)
 				assertPMNotified("op-2")
@@ -145,7 +144,7 @@ func TestPurgeCL(t *testing.T) {
 
 			Convey("Task arrives after the deadline", func() {
 				task.PurgingCl.Deadline = timestamppb.New(ct.Clock.Now().Add(-time.Minute))
-				So(tq.AddTask(ctx, &tq.Task{Payload: task}), ShouldBeNil)
+				So(Schedule(ctx, task), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 			})
@@ -155,7 +154,7 @@ func TestPurgeCL(t *testing.T) {
 				gf.CQ(+1, ct.Clock.Now().Add(-time.Hour), gf.U("user-1"))(ci)
 				task.Trigger = trigger.Find(ci)
 
-				So(tq.AddTask(ctx, &tq.Task{Payload: task}), ShouldBeNil)
+				So(Schedule(ctx, task), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 			})
@@ -164,7 +163,7 @@ func TestPurgeCL(t *testing.T) {
 				settings.UseCvRuns.ProjectRegexpExclude = []string{lProject}
 				So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-				So(tq.AddTask(ctx, &tq.Task{Payload: task}), ShouldBeNil)
+				So(Schedule(ctx, task), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 			})

@@ -52,6 +52,14 @@ func init() {
 	})
 }
 
+func Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: t,
+		// No DeduplicationKey as these tasks are created transactionally by PM.
+		Title: fmt.Sprintf("%s/%d/%s", t.GetLuciProject(), t.GetPurgingCl().GetClid(), t.GetPurgingCl().GetOperationId()),
+	})
+}
+
 func PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 	ctx = logging.SetField(ctx, "cl", task.GetPurgingCl().GetClid())
