@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -106,6 +108,24 @@ func (c *CancelIncompleteRuns) Do(ctx context.Context) error {
 			work <- func() error {
 				// TODO(tandrii): pass "Project disabled" as a reason.
 				return run.Cancel(ctx, id)
+			}
+		}
+	})
+	return common.MostSevereError(err)
+}
+
+// TriggerPurgeCLTasks triggers PurgeCLTasks via TQ.
+type TriggerPurgeCLTasks struct {
+	payloads []*prjpb.PurgeCLTask
+}
+
+// Do implements SideEffect interface.
+func (t *TriggerPurgeCLTasks) Do(ctx context.Context) error {
+	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
+		for _, p := range t.payloads {
+			p := p
+			work <- func() error {
+				return clpurger.Schedule(ctx, p)
 			}
 		}
 	})
