@@ -13,6 +13,9 @@ automatic_scaling:
   min_idle_instances: 1
   max_concurrent_requests: 80
 
+inbound_services:
+- warmup
+
 instance_class: F4
 
 entrypoint: >
