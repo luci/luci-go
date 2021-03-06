@@ -142,8 +142,9 @@ type Flags struct {
 	scopesIAM     bool   // value of -scopes-iam
 	scopesContext bool   // value of -scopes-context
 
-	hasIDTokenFlags bool // true if registered -use-id-token flag
-	useIDToken      bool
+	hasIDTokenFlags bool   // true if registered -use-id-token flag
+	useIDToken      bool   // value of -use-id-token
+	audience        string // value of -audience
 }
 
 // Register adds auth related flags to a FlagSet.
@@ -172,6 +173,8 @@ func (fl *Flags) registerIDTokenFlags(f *flag.FlagSet) {
 	fl.hasIDTokenFlags = true
 	f.BoolVar(&fl.useIDToken, "use-id-token", false,
 		"When set, use ID tokens instead of OAuth2 access tokens. Some backends may require them.")
+	f.StringVar(&fl.audience, "audience", fl.defaults.Audience,
+		"An audience to put into ID tokens. Ignored when not using ID tokens.")
 }
 
 // Options returns auth.Options populated based on parsed command line flags.
@@ -196,6 +199,7 @@ func (fl *Flags) Options() (auth.Options, error) {
 
 	if fl.hasIDTokenFlags {
 		opts.UseIDTokens = fl.useIDToken
+		opts.Audience = fl.audience
 	}
 
 	return opts, nil
