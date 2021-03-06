@@ -18,6 +18,7 @@ package buildbucket
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -35,6 +36,7 @@ import (
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
@@ -353,7 +355,25 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 
 // ExamineNotification is part of Manager interface.
 func (m TaskManager) ExamineNotification(c context.Context, msg *pubsub.PubsubMessage) string {
-	return msg.Attributes["auth_token"]
+	// Buildbucket v1 builds have the token in attributes.
+	if tok := msg.Attributes["auth_token"]; tok != "" {
+		return tok
+	}
+	// Buildbucket v2 builds have the token as "user_data" in the JSON message
+	// body. The message body itself is base64-encoded.
+	blob, err := base64.URLEncoding.DecodeString(msg.Data)
+	if err != nil {
+		logging.Warningf(c, "PubSub message data is not base64: %s", err)
+		return ""
+	}
+	var body struct {
+		UserData string `json:"user_data"`
+	}
+	if err := json.Unmarshal(blob, &body); err != nil {
+		logging.Warningf(c, "PubSub message is not valid JSON: %s", err)
+		return ""
+	}
+	return body.UserData
 }
 
 // HandleNotification is part of Manager interface.
