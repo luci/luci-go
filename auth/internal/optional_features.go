@@ -28,5 +28,5 @@ var (
 	// to grab tokens belonging to some service account.
 	//
 	// Implemented in luci_ts.go.
-	NewLUCITSTokenProvider func(ctx context.Context, host, actAs, realm string, scopes []string, transport http.RoundTripper) (TokenProvider, error)
+	NewLUCITSTokenProvider func(ctx context.Context, useIDTokens bool, host, actAs, realm string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error)
 )
