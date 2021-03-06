@@ -69,6 +69,11 @@ type Catalog interface {
 	// implementation (or nil).
 	GetTaskManager(m proto.Message) task.Manager
 
+	// GetTaskManagerByName returns a registered task manager given its name.
+	//
+	// Returns nil if there's no such task manager.
+	GetTaskManagerByName(name string) task.Manager
+
 	// UnmarshalTask takes a serialized task definition (as in Definition.Task),
 	// unmarshals and validates it, and returns proto.Message that represent
 	// the concrete task to run (e.g. SwarmingTask proto). It can be passed to
@@ -156,12 +161,14 @@ type Definition struct {
 // New returns implementation of Catalog.
 func New() Catalog {
 	return &catalog{
-		managers: map[reflect.Type]task.Manager{},
+		managersByType: map[reflect.Type]task.Manager{},
+		managersByName: map[string]task.Manager{},
 	}
 }
 
 type catalog struct {
-	managers map[reflect.Type]task.Manager
+	managersByType map[reflect.Type]task.Manager
+	managersByName map[string]task.Manager
 }
 
 func (cat *catalog) RegisterTaskManager(m task.Manager) error {
@@ -170,15 +177,23 @@ func (cat *catalog) RegisterTaskManager(m task.Manager) error {
 	if typ == nil || typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("expecting pointer to a struct, got %T instead", prototype)
 	}
-	if _, ok := cat.managers[typ]; ok {
+	if _, ok := cat.managersByType[typ]; ok {
 		return fmt.Errorf("task kind %T is already registered", prototype)
 	}
-	cat.managers[typ] = m
+	if _, ok := cat.managersByName[m.Name()]; ok {
+		return fmt.Errorf("task manager with name %q is already registered", m.Name())
+	}
+	cat.managersByType[typ] = m
+	cat.managersByName[m.Name()] = m
 	return nil
 }
 
 func (cat *catalog) GetTaskManager(msg proto.Message) task.Manager {
-	return cat.managers[reflect.TypeOf(msg)]
+	return cat.managersByType[reflect.TypeOf(msg)]
+}
+
+func (cat *catalog) GetTaskManagerByName(name string) task.Manager {
+	return cat.managersByName[name]
 }
 
 func (cat *catalog) UnmarshalTask(c context.Context, task []byte, realmID string) (proto.Message, error) {

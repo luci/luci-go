@@ -631,18 +631,28 @@ func TestProcessPubSubPush(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(token, ShouldNotEqual, "")
 
-		Convey("ProcessPubSubPush works and retries tq.Retry errors", func() {
+		prepMessage := func(body, token string) []byte {
 			msg := struct {
 				Message pubsub.PubsubMessage `json:"message"`
 			}{
 				Message: pubsub.PubsubMessage{
 					Attributes: map[string]string{"auth_token": token},
-					Data:       "blah",
+					Data:       body,
 				},
 			}
-			blob, err := json.Marshal(&msg)
-			So(err, ShouldBeNil)
+			blob, _ := json.Marshal(&msg)
+			return blob
+		}
 
+		// Prep url.Values the same way PrepareTopic does.
+		urlValues := e.pushSubscriptionURLValues(ctl.manager, "some@publisher.com")
+
+		// Extract the token from attributes where we put it below.
+		mgr.examineNotification = func(_ context.Context, msg *pubsub.PubsubMessage) string {
+			return msg.Attributes["auth_token"]
+		}
+
+		Convey("ProcessPubSubPush works and retries tq.Retry errors", func() {
 			calls := 0
 			mgr.handleNotification = func(ctx context.Context, msg *pubsub.PubsubMessage) error {
 				So(msg.Data, ShouldEqual, "blah")
@@ -652,32 +662,39 @@ func TestProcessPubSubPush(t *testing.T) {
 				}
 				return nil
 			}
-			So(e.ProcessPubSubPush(c, blob), ShouldBeNil)
+			So(e.ProcessPubSubPush(c, prepMessage("blah", token), urlValues), ShouldBeNil)
 			So(calls, ShouldEqual, 2) // executed the retry
 		})
 
 		Convey("ProcessPubSubPush handles bad token", func() {
-			msg := struct {
-				Message pubsub.PubsubMessage `json:"message"`
-			}{
-				Message: pubsub.PubsubMessage{
-					Attributes: map[string]string{"auth_token": token + "blah"},
-					Data:       "blah",
-				},
-			}
-			blob, err := json.Marshal(&msg)
-			So(err, ShouldBeNil)
-			So(e.ProcessPubSubPush(c, blob), ShouldErrLike, "bad token")
+			err := e.ProcessPubSubPush(c, prepMessage("blah", token+"blah"), urlValues)
+			So(err, ShouldErrLike, "bad token")
+			So(transient.Tag.In(err), ShouldBeFalse)
 		})
 
 		Convey("ProcessPubSubPush handles missing invocation", func() {
 			datastore.Delete(c, datastore.KeyForObj(c, &inv))
-			msg := pubsub.PubsubMessage{
-				Attributes: map[string]string{"auth_token": token},
+
+			err := e.ProcessPubSubPush(c, prepMessage("blah", token), urlValues)
+			So(err, ShouldErrLike, "doesn't exist")
+			So(transient.Tag.In(err), ShouldBeFalse)
+		})
+
+		Convey("ProcessPubSubPush handles unknown task manager", func() {
+			// Pass `nil` instead of urlValue, so that the engine can't figure out
+			// what task manager to use.
+			err := e.ProcessPubSubPush(c, prepMessage("blah", token), nil)
+			So(err, ShouldErrLike, "unknown task manager")
+			So(transient.Tag.In(err), ShouldBeFalse)
+		})
+
+		Convey("ProcessPubSubPush can't find the auth token", func() {
+			mgr.examineNotification = func(context.Context, *pubsub.PubsubMessage) string {
+				return ""
 			}
-			blob, err := json.Marshal(&msg)
-			So(err, ShouldBeNil)
-			So(transient.Tag.In(e.ProcessPubSubPush(c, blob)), ShouldBeFalse)
+			err := e.ProcessPubSubPush(c, prepMessage("blah", token), urlValues)
+			So(err, ShouldErrLike, "failed to extract")
+			So(transient.Tag.In(err), ShouldBeFalse)
 		})
 	})
 }
