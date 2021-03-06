@@ -16,6 +16,7 @@ package buildbucket
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -479,6 +480,33 @@ func TestPassedTriggers(t *testing.T) {
 		s = propertiesString()
 		So(s, ShouldContainSubstring, fmt.Sprintf("sha1=%d", maxTriggersAsSchedulerProperty))
 		So(s, ShouldNotContainSubstring, "sha1=0")
+	})
+}
+
+func TestExamineNotification(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		c := memory.Use(context.Background())
+		mgr := TaskManager{}
+
+		Convey("v1", func() {
+			tok := mgr.ExamineNotification(c, &pubsub.PubsubMessage{
+				Attributes: map[string]string{"auth_token": "blah"},
+			})
+			So(tok, ShouldEqual, "blah")
+		})
+
+		Convey("v2", func() {
+			call := func(data string) string {
+				return mgr.ExamineNotification(c, &pubsub.PubsubMessage{
+					Data: data,
+				})
+			}
+			So(call(base64.URLEncoding.EncodeToString([]byte(`{"user_data": "blah"}`))), ShouldEqual, "blah")
+			So(call(base64.URLEncoding.EncodeToString([]byte(`not json`))), ShouldEqual, "")
+			So(call("not base64"), ShouldEqual, "")
+		})
 	})
 }
 
