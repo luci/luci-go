@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a18639d3_ec961cef",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-06T00:23:05Z",
+      "side": 1,
+      "message": "I thought of that, but it doesn\u0027t really mean anything, just causes more noise in logs.\n\nAlso, note that we still need to notify PM even if this task is to permanently fail.",
+      "parentUuid": "da5e0e66_c23c451a",
+      "revId": "3ee6b4719fb4f2174738e24ab92622f7b79a088d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "739af6a7_2be3e658",
         "filename": "cv/internal/prjmanager/clpurger/purger.go",
         "patchSetId": 3
@@ -31,6 +49,30 @@
       "writtenOn": "2021-03-05T22:38:38Z",
       "side": 1,
       "message": "nit: Is this intentional, i.e. including the reason in the log?",
+      "range": {
+        "startLine": 121,
+        "startChar": 61,
+        "endLine": 121,
+        "endChar": 63
+      },
+      "revId": "3ee6b4719fb4f2174738e24ab92622f7b79a088d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3573c5aa_091e9015",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-06T00:23:05Z",
+      "side": 1,
+      "message": "Yes. This isn\u0027t supposed to ever happen in prod, but if it does, knowing why CL is being purged is really useful.",
+      "parentUuid": "739af6a7_2be3e658",
       "range": {
         "startLine": 121,
         "startChar": 61,
