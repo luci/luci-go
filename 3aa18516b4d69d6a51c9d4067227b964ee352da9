@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c67846e_5272981c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-06T00:31:41Z",
+      "side": 1,
+      "message": "PTAL\n\nThis is not 100% necessary (we always have a fallback on timer-based checks instead of PubSub), but it is kind of nice not to rely on the fallback.",
+      "revId": "3aa18516b4d69d6a51c9d4067227b964ee352da9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
