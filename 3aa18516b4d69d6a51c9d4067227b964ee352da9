@@ -3,6 +3,29 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "994c64ee_58458df2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-06T00:38:59Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 26
+      },
+      "revId": "3aa18516b4d69d6a51c9d4067227b964ee352da9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "3c67846e_5272981c",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
