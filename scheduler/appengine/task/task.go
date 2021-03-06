@@ -167,6 +167,16 @@ type Manager interface {
 	// of errors.
 	AbortTask(c context.Context, ctl Controller) error
 
+	// ExamineNotification is called to extract the auth token from the incoming
+	// PubSub message.
+	//
+	// It should return an empty string if the message is unrecognized/malformed
+	// or there's no auth token in it. Note that the PubSub message here is not
+	// yet validated and can be a total garbage (or even be malicious).
+	//
+	// See PrepareTopic for more info.
+	ExamineNotification(c context.Context, msg *pubsub.PubsubMessage) string
+
 	// HandleNotification is called whenever engine receives a PubSub message sent
 	// to a topic created with Controller.PrepareTopic. Expect duplicated and
 	// out-of-order messages here. HandleNotification must be idempotent.
@@ -228,11 +238,13 @@ type Controller interface {
 	// PrepareTopic create PubSub topic for notifications related to the task and
 	// adds given publisher to its ACL.
 	//
-	// It returns full name of the topic and a token that will be used to route
-	// PubSub messages back to the Manager. Topic name and its configuration are
-	// controlled by the Engine. The publisher to the topic must be instructed to
-	// put the token into 'auth_token' attribute of PubSub messages. The engine
-	// will know how to route such messages to Manager.HandleNotification.
+	// It returns full name of the topic and a token that will be used to
+	// authenticate the PubSub message and bind it to the task the Controller is
+	// operating on now. Topic name and its configuration are controlled by the
+	// Engine. The publisher to the topic must put the token somewhere inside
+	// the message. The engine will ask the task manager to extract the token
+	// from the message via ExamineNotification, then it will validate the token
+	// and eventually call HandleNotification.
 	//
 	// 'publisher' can be a service account email, or an URL to some luci service.
 	// If URL is given, its /auth/api/v1/server/info endpoint will be used to

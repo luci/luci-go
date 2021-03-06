@@ -158,10 +158,11 @@ func mockEnforceRealmACL(realm string) authtest.MockedDatum {
 
 // fakeTaskManager implement task.Manager interface.
 type fakeTaskManager struct {
-	launchTask         func(ctx context.Context, ctl task.Controller) error
-	abortTask          func(ctx context.Context, ctl task.Controller) error
-	handleNotification func(ctx context.Context, msg *pubsub.PubsubMessage) error
-	handleTimer        func(ctx context.Context, ctl task.Controller, name string, payload []byte) error
+	launchTask          func(ctx context.Context, ctl task.Controller) error
+	abortTask           func(ctx context.Context, ctl task.Controller) error
+	examineNotification func(ctx context.Context, msg *pubsub.PubsubMessage) string
+	handleNotification  func(ctx context.Context, msg *pubsub.PubsubMessage) error
+	handleTimer         func(ctx context.Context, ctl task.Controller, name string, payload []byte) error
 }
 
 func (m *fakeTaskManager) Name() string {
@@ -188,6 +189,10 @@ func (m *fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) erro
 		return m.abortTask(c, ctl)
 	}
 	return nil
+}
+
+func (m *fakeTaskManager) ExamineNotification(c context.Context, msg *pubsub.PubsubMessage) string {
+	return m.examineNotification(c, msg)
 }
 
 func (m *fakeTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {

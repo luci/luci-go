@@ -197,7 +197,7 @@ type EngineInternal interface {
 	//
 	// May return an error tagged with tq.Retry or transient.Tag. They indicate
 	// the message should be redelivered later.
-	ProcessPubSubPush(c context.Context, body []byte) error
+	ProcessPubSubPush(c context.Context, body []byte, urlValues url.Values) error
 
 	// PullPubSubOnDevServer is called on dev server to pull messages from PubSub
 	// subscription associated with given publisher.
@@ -658,26 +658,32 @@ func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
 // ProcessPubSubPush is called whenever incoming PubSub message is received.
 //
 // Part of the internal interface, doesn't check ACLs.
-func (e *engineImpl) ProcessPubSubPush(c context.Context, body []byte) error {
+func (e *engineImpl) ProcessPubSubPush(c context.Context, body []byte, urlValues url.Values) error {
+	// Grab the task manager name that will receive this push. See prepareTopic
+	// and pushSubscriptionURLValues for where `kind` is setup.
+	manager := urlValues.Get("kind")
+
+	// Deserialize the message as a Cloud PubSub JSON struct.
 	var pushBody struct {
 		Message pubsub.PubsubMessage `json:"message"`
 	}
 	if err := json.Unmarshal(body, &pushBody); err != nil {
 		return err
 	}
+
 	// Retry once after a slight adhoc delay (to let datastore transactions land)
 	// instead of returning an error to PubSub immediately. We don't want errors
 	// tagged with tq.Retry to engage PubSub flow control, since they are
 	// semi-expected and it is also expected that an immediate retry helps. This
 	// is still best effort only and on another error we let the PubSub retry
 	// mechanism to handle it.
-	err := e.handlePubSubMessage(c, &pushBody.Message)
+	err := e.handlePubSubMessage(c, manager, &pushBody.Message)
 	if err == nil || !tq.Retry.In(err) {
 		return err
 	}
 	logging.Warningf(c, "Attempting a quick retry after 1s: %s", err)
 	clock.Sleep(c, time.Second)
-	return e.handlePubSubMessage(c, &pushBody.Message)
+	return e.handlePubSubMessage(c, manager, &pushBody.Message)
 }
 
 // PullPubSubOnDevServer is called on dev server to pull messages from PubSub
@@ -694,7 +700,7 @@ func (e *engineImpl) PullPubSubOnDevServer(c context.Context, taskManagerName, p
 		logging.Infof(c, "No new PubSub messages")
 		return nil
 	}
-	switch err = e.handlePubSubMessage(c, msg); {
+	switch err = e.handlePubSubMessage(c, taskManagerName, msg); {
 	case err == nil:
 		ack() // success
 	case transient.Tag.In(err) || tq.Retry.In(err):
@@ -1892,15 +1898,27 @@ var pubsubAuthToken = tokens.TokenKind{
 }
 
 // handlePubSubMessage routes the pubsub message to the invocation.
-func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMessage) error {
-	logging.Infof(c, "Received PubSub message %q", msg.MessageId)
+func (e *engineImpl) handlePubSubMessage(c context.Context, manager string, msg *pubsub.PubsubMessage) error {
+	logging.Infof(c, "Received PubSub message %q for %q", msg.MessageId, manager)
 
-	// Extract Job and Invocation ID from validated auth_token.
+	// Ask the manager to extract the auth token from the message for us. Its
+	// location within the message is an implementation detail of the particular
+	// task manager.
+	mgr := e.cfg.Catalog.GetTaskManagerByName(manager)
+	if mgr == nil {
+		return errors.Reason("unknown task manager %q", manager).Err()
+	}
+	authToken := mgr.ExamineNotification(c, msg)
+	if authToken == "" {
+		return errors.Reason("failed to extract the auth token from the pubsub message").Err()
+	}
+
+	// Validate authToken and extract Job and Invocation IDs from it.
 	var jobID string
 	var invID int64
-	data, err := pubsubAuthToken.Validate(c, msg.Attributes["auth_token"], nil)
+	data, err := pubsubAuthToken.Validate(c, authToken, nil)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "Bad auth_token attribute")
+		logging.WithError(err).Errorf(c, "Bad PubSub auth token")
 		return err
 	}
 	jobID = data["job"]
@@ -1957,8 +1975,7 @@ func (e *engineImpl) genTopicAndSubNames(c context.Context, manager, publisher s
 // messages back to the task.Manager that handles the task.
 //
 // It returns full topic name, as well as a token that securely identifies the
-// task. It should be put into 'auth_token' attribute of PubSub messages by
-// whoever publishes them.
+// task.
 func (e *engineImpl) prepareTopic(c context.Context, params *topicParams) (topic string, tok string, err error) {
 	// If given URL, ask the service for name of its default service account.
 	// FetchServiceInfo implements efficient cache internally, so it's fine to
@@ -1980,11 +1997,12 @@ func (e *engineImpl) prepareTopic(c context.Context, params *topicParams) (topic
 	// use pull based subscription, since localhost push URL is not valid.
 	pushURL := ""
 	if !info.IsDevAppServer(c) {
-		urlParams := url.Values{}
-		urlParams.Add("kind", params.manager.Name())
-		urlParams.Add("publisher", params.publisher)
 		pushURL = fmt.Sprintf(
-			"https://%s%s?%s", info.DefaultVersionHostname(c), e.cfg.PubSubPushPath, urlParams.Encode())
+			"https://%s%s?%s",
+			info.DefaultVersionHostname(c),
+			e.cfg.PubSubPushPath,
+			e.pushSubscriptionURLValues(params.manager, params.publisher).Encode(),
+		)
 	}
 
 	// Create and configure the topic. Do it only once.
@@ -2009,4 +2027,12 @@ func (e *engineImpl) prepareTopic(c context.Context, params *topicParams) (topic
 	}
 
 	return topic, tok, nil
+}
+
+// pushSubscriptionURLValues returns "?=..." params for a PubSub push URL.
+func (e *engineImpl) pushSubscriptionURLValues(mgr task.Manager, publisher string) url.Values {
+	return url.Values{
+		"kind":      []string{mgr.Name()},
+		"publisher": []string{publisher},
+	}
 }

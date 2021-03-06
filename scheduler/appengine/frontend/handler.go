@@ -217,7 +217,7 @@ func pubsubPushHandler(c *router.Context) {
 		rc.fail(500, "Failed to read the request: %s", err)
 		return
 	}
-	if err = globalEngine.ProcessPubSubPush(rc.Context, body); err != nil {
+	if err = globalEngine.ProcessPubSubPush(rc.Context, body, rc.Request.URL.Query()); err != nil {
 		rc.err(err, "Failed to process incoming PubSub push")
 		return
 	}

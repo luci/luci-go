@@ -516,6 +516,10 @@ func (m fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) error
 	return nil
 }
 
+func (m fakeTaskManager) ExamineNotification(c context.Context, msg *pubsub.PubsubMessage) string {
+	return ""
+}
+
 func (m fakeTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	return errors.New("not implemented")
 }
