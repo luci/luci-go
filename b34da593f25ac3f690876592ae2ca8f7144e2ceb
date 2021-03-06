@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f3ac651_22d89aa7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-06T02:25:11Z",
+      "side": 1,
+      "message": "PTAL, tested manually using `luci-auth token -use-id-token -service-account-json ... -audience ...`.",
+      "revId": "b34da593f25ac3f690876592ae2ca8f7144e2ceb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
