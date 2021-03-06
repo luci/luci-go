@@ -30,6 +30,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth/integration/localauth/rpcs"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/lucictx"
@@ -50,7 +51,11 @@ type luciContextTokenProvider struct {
 // description of how to locate and contact the local auth server.
 //
 // See auth/integration/localauth package for the implementation of the server.
-func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
+func NewLUCIContextTokenProvider(ctx context.Context, useIDTokens bool, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
+	if useIDTokens {
+		return nil, errors.New("ID tokens are not supported yet when using LUCI_CONTEXT (crbug.com/1184230)")
+	}
+
 	localAuth := lucictx.GetLocalAuth(ctx)
 	switch {
 	case localAuth == nil:

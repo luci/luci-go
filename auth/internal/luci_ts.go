@@ -25,6 +25,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
@@ -59,7 +60,10 @@ type luciTSTokenProvider struct {
 }
 
 func init() {
-	NewLUCITSTokenProvider = func(ctx context.Context, host, actAs, realm string, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
+	NewLUCITSTokenProvider = func(ctx context.Context, useIDTokens bool, host, actAs, realm string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
+		if useIDTokens {
+			return nil, errors.New("ID tokens are not supported yet when impersonating via LUCI (crbug.com/1184230)")
+		}
 		return &luciTSTokenProvider{
 			host:      host,
 			actAs:     actAs,

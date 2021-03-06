@@ -60,7 +60,7 @@ type gceTokenProvider struct {
 
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata
 // server.
-func NewGCETokenProvider(ctx context.Context, account string, scopes []string) (TokenProvider, error) {
+func NewGCETokenProvider(ctx context.Context, useIDTokens bool, account string, scopes []string, audience string) (TokenProvider, error) {
 	// When running on GKE using Workload Identities, the metadata is served by
 	// gke-metadata-server pod, which may be very slow, especially when the node
 	// has just started. We'll wait for it to become responsive by retrying
@@ -68,7 +68,7 @@ func NewGCETokenProvider(ctx context.Context, account string, scopes []string) (
 	var p TokenProvider
 	err := retry.Retry(ctx, transient.Only(retryParams), func() error {
 		var err error
-		p, err = attemptInit(ctx, account, scopes)
+		p, err = attemptInit(ctx, useIDTokens, account, scopes, audience)
 		return err
 	}, retry.LogCallback(ctx, "initializing GCE token provider"))
 	return p, err
@@ -88,7 +88,11 @@ func retryParams() retry.Iterator {
 }
 
 // attemptInit attempts to initialize GCE token provider.
-func attemptInit(ctx context.Context, account string, scopes []string) (TokenProvider, error) {
+func attemptInit(ctx context.Context, useIDTokens bool, account string, scopes []string, audience string) (TokenProvider, error) {
+	if useIDTokens {
+		return nil, errors.New("ID tokens are not supported yet when using GCE metadata server (crbug.com/1184230)")
+	}
+
 	// This mutex is used to avoid hitting GKE metadata server concurrently if
 	// we have a stampede of goroutines. It doesn't actually protect any shared
 	// state in the current process.
