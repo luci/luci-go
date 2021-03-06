@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "dd843313_b8fe0869",
+        "filename": "cv/internal/prjmanager/impl/state/components.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-06T00:32:54Z",
+      "side": 1,
+      "message": "updated comment to be clear what I mean here.\n\nI expect in the typical peaks of 100CLs *at once* when some CL stack becomes pruned. Most of the time, I expect \u003c10 CLs for the busiest projects.",
+      "parentUuid": "e93eca9f_9647b404",
+      "range": {
+        "startLine": 271,
+        "startChar": 56,
+        "endLine": 272,
+        "endChar": 13
+      },
+      "revId": "ff76b1125b0e629668b8f75e47156717424da7fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "65dda144_b61145d2",
         "filename": "cv/internal/prjmanager/impl/state/components_test.go",
         "patchSetId": 3
@@ -61,6 +85,30 @@
       "side": 1,
       "message": "Or is this related to PRuns? (Project-Runs)?",
       "parentUuid": "65dda144_b61145d2",
+      "range": {
+        "startLine": 189,
+        "startChar": 10,
+        "endLine": 189,
+        "endChar": 15
+      },
+      "revId": "ff76b1125b0e629668b8f75e47156717424da7fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac4262b7_0a011156",
+        "filename": "cv/internal/prjmanager/impl/state/components_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-06T00:32:54Z",
+      "side": 1,
+      "message": "purges, thanks!",
+      "parentUuid": "d509ece1_a863ac99",
       "range": {
         "startLine": 189,
         "startChar": 10,
