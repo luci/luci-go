@@ -16,7 +16,6 @@ package state
 
 import (
 	"context"
-	"sort"
 	"testing"
 	"time"
 
@@ -186,7 +185,7 @@ func TestComponentsActions(t *testing.T) {
 			})
 		})
 
-		Convey("purges CLs", func() {
+		Convey("Pruns CLs", func() {
 			makeDirtySetup(1, 2, 3)
 			state.testComponentActorFactory = (&componentActorSetup{
 				nextAction: func(cl int64, now time.Time) (time.Time, error) { return now, nil },
@@ -210,8 +209,6 @@ func TestComponentsActions(t *testing.T) {
 				So(sideEffect, ShouldHaveSameTypeAs, &TriggerPurgeCLTasks{})
 				ps := sideEffect.(*TriggerPurgeCLTasks).payloads
 				So(ps, ShouldHaveLength, 2)
-				// Unlike PB.PurgingCls, the tasks aren't necessarily sorted.
-				sort.Slice(ps, func(i, j int) bool { return ps[i].GetPurgingCl().GetClid() < ps[j].GetPurgingCl().GetClid() })
 				So(ps[0].GetPurgingCl(), ShouldResembleProto, state2.PB.GetPurgingCls()[0]) // CL#1
 				So(ps[0].GetTrigger(), ShouldResembleProto, state2.PB.GetPcls()[1 /*CL#1*/].GetTrigger())
 				So(ps[0].GetLuciProject(), ShouldEqual, lProject)

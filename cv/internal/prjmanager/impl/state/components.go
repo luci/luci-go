@@ -268,8 +268,8 @@ func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask
 		m.addI64(id)
 	}
 	// Verify only CLs not yet purged are being purged.
-	// NOTE: this iterates all CLs currently being purged, but there should be
-	// very few such CLs comparing to the total number of tracked CLs.
+	// NOTE: this iterates all CLs currently being purged, which is tiny in
+	// practice.
 	for _, p := range s.PB.GetPurgingCls() {
 		if m.hasI64(p.GetClid()) {
 			panic(fmt.Errorf("can't purge %d CL which is already being purged", p.GetClid()))
