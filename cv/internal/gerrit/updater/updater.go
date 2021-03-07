@@ -65,11 +65,11 @@ func init() {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
 			err := Refresh(ctx, t)
-			return common.TQifyError(
-				ctx, err,
+			return common.TQIfy{
 				// Don't log the entire stack trace of stale data, which is sadly an
 				// hourly occurrence.
-				errStaleData)
+				KnownRetry: []error{errStaleData},
+			}.Error(ctx, err)
 		},
 	})
 }

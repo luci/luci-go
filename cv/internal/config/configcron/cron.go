@@ -101,9 +101,9 @@ func init() {
 			task := payload.(*RefreshProjectConfigTask)
 			if err := refreshProject(ctx, task.GetProject(), task.GetDisable()); err != nil {
 				// Never retry tasks because the refresh task is submitted every minute
-				// by AppEngine Cron.
+				// by the AppEngine Cron.
 				err = tq.Fatal.Apply(err)
-				return common.TQifyError(ctx, err)
+				return common.TQIfy{}.Error(ctx, err)
 			}
 			return nil
 		},
