@@ -252,7 +252,36 @@ func (s *State) execComponentActions(ctx context.Context, actions []cAction, com
 // Modifies given tasks in place.
 // Panics in case of problems.
 func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask) {
-	// TODO(tandrii): implement.
+	// First, verify individual tasks have expected fields set.
+	m := make(clidsSet, len(ts))
+	for _, t := range ts {
+		id := t.GetPurgingCl().GetClid()
+		switch {
+		case id == 0:
+			panic("clid must be set")
+		case m.hasI64(id):
+			panic(fmt.Errorf("duplicated clid %d", id))
+		case t.GetReason().GetReason() == nil:
+			// 2nd GetReason() is deeper check to ensure oneof reason field is set.
+			panic("reason must be set")
+		}
+		m.addI64(id)
+	}
+	// Verify only CLs not yet purged are being purged.
+	// NOTE: this iterates all CLs currently being purged, but there should be
+	// very few such CLs comparing to the total number of tracked CLs.
+	for _, p := range s.PB.GetPurgingCls() {
+		if m.hasI64(p.GetClid()) {
+			panic(fmt.Errorf("can't purge %d CL which is already being purged", p.GetClid()))
+		}
+	}
+	// Verify only CLs from the component are being purged.
+	for _, clid := range c.GetClids() {
+		m.delI64(clid)
+	}
+	if len(m) > 0 {
+		panic(fmt.Errorf("purging %v CLs outside the component", m))
+	}
 }
 
 // addCLsToPurge changes PB.PurgingCLs and prepares for atomic creation of TQ
@@ -263,8 +292,34 @@ func (s *State) addCLsToPurge(ctx context.Context, ts []*prjpb.PurgeCLTask) Side
 	if len(ts) == 0 {
 		return nil
 	}
-	// TODO(tandrii): implement.
+	s.populatePurgeCLTasks(ctx, ts)
+	purgingCLs := make([]*prjpb.PurgingCL, len(ts))
+	for i, t := range ts {
+		purgingCLs[i] = t.GetPurgingCl()
+	}
+	s.PB.PurgingCls, _ = s.PB.COWPurgingCLs(nil, purgingCLs)
 	return &TriggerPurgeCLTasks{payloads: ts}
+}
+
+// maxPurgingCLDuration limits the time that a TQ task has to execute
+// PurgeCLTask.
+const maxPurgingCLDuration = 10 * time.Minute
+
+// populatePurgeCLTasks populates all remaining fields in PurgeCLsTasks created
+// by componentActor.
+//
+// Modifies given tasks in place.
+func (s *State) populatePurgeCLTasks(ctx context.Context, ts []*prjpb.PurgeCLTask) {
+	deadline := timestamppb.New(clock.Now(ctx).Add(maxPurgingCLDuration))
+	opInt := deadline.AsTime().Unix()
+	for _, t := range ts {
+		id := t.GetPurgingCl().GetClid()
+		pcl := s.PB.GetPcls()[s.pclIndex[common.CLID(id)]]
+		t.Trigger = pcl.GetTrigger()
+		t.LuciProject = s.PB.GetLuciProject()
+		t.PurgingCl.Deadline = deadline
+		t.PurgingCl.OperationId = fmt.Sprintf("%d-%d", opInt, id)
+	}
 }
 
 func (s *State) makeActorSupporter(ctx context.Context) (*actorSupporterImpl, error) {
