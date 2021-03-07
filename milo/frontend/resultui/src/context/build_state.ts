@@ -16,6 +16,7 @@ import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { getGitilesRepoURL } from '../libs/build_utils';
+import { CacheOption } from '../libs/cached_fn';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { BuildExt } from '../models/build_ext';
@@ -93,6 +94,7 @@ export class BuildState {
     // tslint:enable: no-unused-expression
   }
 
+  private buildQueryTime = 0;
   @computed
   get build$(): IPromiseBasedObservable<Build> {
     if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
@@ -100,15 +102,17 @@ export class BuildState {
       // ready.
       return fromPromise(Promise.race([]));
     }
-    // Since response can be different when queried at different time,
-    // establish a dependency on timestamp.
-    this.timestamp;  // tslint:disable-line: no-unused-expression
+
+    const cacheOpt = this.buildQueryTime < this.timestamp
+      ? CacheOption.ForceRefresh
+      : CacheOption.Cached;
+    this.buildQueryTime = this.timestamp;
 
     const req: GetBuildRequest = this.buildId
       ? {id: this.buildId, fields: '*'}
       : {builder: this.builder, buildNumber: this.buildNum!, fields: '*'};
 
-    return fromPromise(this.appState.buildsService.getBuild(req));
+    return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt));
   }
 
   @computed
