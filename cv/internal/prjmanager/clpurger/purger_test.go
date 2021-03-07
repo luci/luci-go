@@ -109,8 +109,10 @@ func TestPurgeCL(t *testing.T) {
 				Deadline:    timestamppb.New(ct.Clock.Now().Add(10 * time.Minute)),
 			},
 			Trigger: trigger.Find(ci),
-			Reason:  &prjpb.PurgeCLTask_Reason{
-				// TODO(tandrii): populate.
+			Reason: &prjpb.PurgeCLTask_Reason{
+				Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
+					OwnerLacksEmail: true,
+				},
 			},
 		}
 		So(task.Trigger, ShouldNotBeNil)
@@ -124,7 +126,7 @@ func TestPurgeCL(t *testing.T) {
 			clAfter := loadCL()
 			So(clAfter.EVersion, ShouldBeGreaterThan, clBefore.EVersion)
 			So(trigger.Find(clAfter.Snapshot.GetGerrit().GetInfo()), ShouldBeNil)
-			So(lastMessageOf(clAfter), ShouldContainSubstring, "TODO")
+			So(lastMessageOf(clAfter), ShouldContainSubstring, "owner doesn't have a preferred email")
 			assertPMNotified("op")
 
 			Convey("Idempotent: if TQ task is retried, just notify PM", func() {

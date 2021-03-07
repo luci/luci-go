@@ -53,8 +53,24 @@ message PurgeCLTask {
 
   cv.run.Trigger trigger = 3;
 
+  // Reason is a separate message despite containing just a oneof because it's
+  // passed as an argument in CV code, and oneof field's type is private and so
+  // can't be referenced.
   message Reason {
-    // TODO(tandrii): expand.
+    oneof reason {
+      bool owner_lacks_email = 1;
+      WatchedByManyConfigGroups watched_by_many_config_groups = 2;
+      InvalidDeps invalid_deps = 3;
+    }
+
+    message WatchedByManyConfigGroups {
+      // Config group names without LUCI project prefix.
+      repeated string config_groups = 1;
+    }
+
+    message InvalidDeps {
+    }
   }
+
   Reason reason = 4;
 }

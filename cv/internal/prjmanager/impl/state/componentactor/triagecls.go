@@ -185,8 +185,11 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 	case pcl.GetTrigger() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
 	case pcl.GetOwnerLacksEmail():
-		// TODO: fill in the cause.
-		info.purgeReason = &prjpb.PurgeCLTask_Reason{}
+		info.purgeReason = &prjpb.PurgeCLTask_Reason{
+			Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
+				OwnerLacksEmail: true,
+			},
+		}
 		return
 	}
 
@@ -198,11 +201,25 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 		if info.deps = a.triageDeps(pcl, cgIndexes[0]); info.deps.OK() {
 			info.ready = true
 		} else {
-			// TODO: fill in the cause.
-			info.purgeReason = &prjpb.PurgeCLTask_Reason{}
+			info.purgeReason = &prjpb.PurgeCLTask_Reason{
+				Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
+					InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+						// TODO: fill in the cause.
+					},
+				},
+			}
 		}
 	default:
-		// TODO: fill in the cause.
-		info.purgeReason = &prjpb.PurgeCLTask_Reason{}
+		cgNames := make([]string, len(cgIndexes))
+		for i, idx := range cgIndexes {
+			cgNames[i] = a.s.ConfigGroup(idx).ID.Name()
+		}
+		info.purgeReason = &prjpb.PurgeCLTask_Reason{
+			Reason: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups_{
+				WatchedByManyConfigGroups: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups{
+					ConfigGroups: cgNames,
+				},
+			},
+		}
 	}
 }
