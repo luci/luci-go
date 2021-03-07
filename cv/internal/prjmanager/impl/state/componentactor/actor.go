@@ -61,13 +61,14 @@ type Actor struct {
 	//
 	// Only for CLs with clInfo.ready being true.
 	reverseDeps map[int64][]int64
+
 	// visitedCLs tracks clid of visited CLs during stageNewRuns.
 	visitedCLs map[int64]struct{}
 
 	// runBuilders are prepared by NextActionTime() and executed in Act().
 	runBuilders []*prjmanager.RunBuilder
-	// toPurge are clids of CLs which should be newly purged.
-	toPurge map[int64]struct{}
+	// purgeCLtasks for subset of CLs in toPurge which can be purged now.
+	purgeCLtasks []*prjpb.PurgeCLTask
 }
 
 // New returns new Actor.
@@ -82,8 +83,8 @@ func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, e
 	if err != nil {
 		return time.Time{}, err
 	}
-	if len(a.toPurge) > 0 {
-		when = now
+	if w := a.stagePurges(ctx, now); !w.IsZero() && (when.IsZero() || w.Before(when)) {
+		when = w
 	}
 	return when, nil
 }
@@ -100,17 +101,7 @@ func (a *Actor) Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask
 		c.Pruns, _ = c.COWPRuns(nil, newPruns)
 	}
 	// TODO(tandrii): cancelations
-	var pts []*prjpb.PurgeCLTask
-	if len(a.toPurge) > 0 {
-		pts = make([]*prjpb.PurgeCLTask, 0, len(a.toPurge))
-		for clid := range a.toPurge {
-			pts = append(pts, &prjpb.PurgeCLTask{
-				Reason:    a.cls[clid].purgeReason,
-				PurgingCl: &prjpb.PurgingCL{Clid: clid},
-			})
-		}
-	}
-	return c, pts, nil
+	return c, a.purgeCLtasks, nil
 }
 
 func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
