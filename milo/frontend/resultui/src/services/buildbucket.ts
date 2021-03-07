@@ -14,6 +14,8 @@
 
 import { PrpcClient } from '@chopsui/prpc-client';
 
+import { cached, CachedFn, CacheOption } from '../libs/cached_fn';
+
 /**
  * Manually coded type definition and classes for buildbucket services.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
@@ -258,45 +260,47 @@ export interface ScheduleBuildRequest {
 const BUILDS_SERVICE = 'buildbucket.v2.Builds';
 
 export class BuildsService {
-  private prpcClient: PrpcClient;
+  private readonly cachedCallFn: CachedFn<[string, object], Promise<unknown>>;
 
   constructor(readonly host: string, accessToken: string) {
-    this.prpcClient = new PrpcClient({host, accessToken});
+    const client = new PrpcClient({host, accessToken});
+    this.cachedCallFn = cached(
+      (method: string, message: object) => {
+        return client.call(BUILDS_SERVICE, method, message);
+      },
+      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
+    );
   }
 
-  async getBuild(req: GetBuildRequest) {
-    return await this.call(
+  async getBuild(req: GetBuildRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn.withOpt(
+      cacheOpt,
       'GetBuild',
       req,
     ) as Build;
   }
 
-  async searchBuilds(req: SearchBuildsRequest) {
-    return await this.call(
+  async searchBuilds(req: SearchBuildsRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn.withOpt(
+      cacheOpt,
       'SearchBuilds',
       req,
     ) as SearchBuildsResponse;
   }
 
   async cancelBuild(req: CancelBuildRequest) {
-    return await this.call(
+    return await this.cachedCallFn.withOpt(
+      CacheOption.NoCache,
       'CancelBuild',
       req,
     ) as Build;
   }
 
   async scheduleBuild(req: ScheduleBuildRequest) {
-    return await this.call(
+    return await this.cachedCallFn.withOpt(
+      CacheOption.NoCache,
       'ScheduleBuild',
       req,
     ) as Build;
-  }
-
-  private call(method: string, message: object) {
-    return this.prpcClient.call(
-      BUILDS_SERVICE,
-      method,
-      message,
-    );
   }
 }
