@@ -375,8 +375,11 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	default:
 		s.PB.Components = components
 	}
+
+	var sideEffect SideEffect
 	if len(actions) > 0 {
-		if err := s.execComponentActions(ctx, actions, components); err != nil {
+		sideEffect, err = s.execComponentActions(ctx, actions, components)
+		if err != nil {
 			return nil, nil, err
 		}
 	}
@@ -384,7 +387,9 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	t, tPB := earliestDecisionTime(components)
 	if !proto.Equal(s.PB.NextEvalTime, tPB) {
 		s.PB.NextEvalTime = tPB
-		prjpb.Dispatch(ctx, s.PB.GetLuciProject(), t)
+		if err := prjpb.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
+			return nil, nil, err
+		}
 	}
-	return s, nil, nil
+	return s, sideEffect, nil
 }

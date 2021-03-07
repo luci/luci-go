@@ -82,20 +82,20 @@ func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, e
 }
 
 // Act implements state.componentActor.
-func (a *Actor) Act(ctx context.Context) (*prjpb.Component, error) {
+func (a *Actor) Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
 	c := a.c.CloneShallow()
 	c.Dirty = false
 
 	switch newPruns, err := a.createRuns(ctx); {
 	case err != nil:
-		return nil, err
+		return nil, nil, err
 	case len(newPruns) > 0:
 		c.Pruns, _ = c.COWPRuns(nil, newPruns)
 	}
 
 	// TODO: cancelations
 	// TODO: purges
-	return c, nil
+	return c, nil, nil
 }
 
 func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
