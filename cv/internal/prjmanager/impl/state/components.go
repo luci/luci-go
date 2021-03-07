@@ -172,10 +172,16 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 //
 // Modifies passed component slice in place.
 // Modifies individuals components via copy-on-write.
-func (s *State) execComponentActions(ctx context.Context, actions []cAction, components []*prjpb.Component) error {
+//
+// If there are any new CLs to purge, modifies PB.PurgingCLs via copy-on-write
+// and returns a SideEffect to trigger corresponding TQ tasks.
+func (s *State) execComponentActions(ctx context.Context, actions []cAction, components []*prjpb.Component) (SideEffect, error) {
 	var errModified int32
 	var okModified int32
 	var paniced int32
+
+	var newPurgeCLsTaskMutex sync.Mutex
+	var newPurgeTasks []*prjpb.PurgeCLTask
 
 	poolSize := concurrentComponentProcessing
 	if l := len(actions); l < poolSize {
@@ -193,43 +199,72 @@ func (s *State) execComponentActions(ctx context.Context, actions []cAction, com
 				})
 
 				oldC := components[a.componentIndex]
-				var newC *prjpb.Component
-				switch newC, err = a.actor.Act(ctx); {
+				switch newC, purgeTasks, err := a.actor.Act(ctx); {
 				case err != nil:
 					// Ensure this component is reconsidered during then next PM mutation.
 					newC = components[a.componentIndex].CloneShallow()
 					newC.DecisionTime = timestamppb.New(clock.Now(ctx))
 					components[a.componentIndex] = newC
 					atomic.AddInt32(&errModified, 1)
+					return err
 				case newC != oldC:
 					components[a.componentIndex] = newC
 					atomic.AddInt32(&okModified, 1)
+					fallthrough
+				default:
+					if len(purgeTasks) > 0 {
+						s.validatePurgeCLTasks(oldC, purgeTasks)
+						newPurgeCLsTaskMutex.Lock()
+						defer newPurgeCLsTaskMutex.Unlock()
+						newPurgeTasks = append(newPurgeTasks, purgeTasks...)
+					}
+					return nil
 				}
-				return
 			}
 		}
 	})
+	sideEffect := s.addCLsToPurge(ctx, newPurgeTasks)
 	if paniced > 0 {
 		// This must not happen in production, but it's very useful on -dev while
 		// experimenting with triggering algorithms.
-		return errors.Reason("%d panics were caught", paniced).Err()
+		return nil, errors.Reason("%d panics were caught", paniced).Err()
 	}
 	if errs == nil {
-		return nil
+		return sideEffect, nil
 	}
 	severe := common.MostSevereError(errs)
 	sharedMsg := fmt.Sprintf(
 		"acted on components: succeded %d (ok-modified %d), failed %d",
 		int32(len(actions))-errModified, okModified, errModified)
 	if okModified == 0 {
-		return errors.Annotate(severe, sharedMsg+", keeping the most severe error").Err()
+		return sideEffect, errors.Annotate(severe, sharedMsg+", keeping the most severe error").Err()
 	}
 	// Components are independent, so proceed since partial progress is better
 	// than none.
 	logging.Warningf(ctx, "%s (most severe error %s)", sharedMsg, severe)
 	// For failed components, their DecisionTime is set `now` by scanComponents,
 	// thus PM will reconsider them as soon possible.
-	return nil
+	return nil, nil
+}
+
+// validatePurgeCLTasks verifies correctness of tasks from componentActor.
+//
+// Modifies given tasks in place.
+// Panics in case of problems.
+func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask) {
+	// TODO(tandrii): implement.
+}
+
+// addCLsToPurge changes PB.PurgingCLs and prepares for atomic creation of TQ
+// tasks to do actual purge.
+//
+// Expects given tasks to be correct (see validatePurgeCLTasks).
+func (s *State) addCLsToPurge(ctx context.Context, ts []*prjpb.PurgeCLTask) SideEffect {
+	if len(ts) == 0 {
+		return nil
+	}
+	// TODO(tandrii): implement.
+	return &TriggerPurgeCLTasks{payloads: ts}
 }
 
 func (s *State) makeActorSupporter(ctx context.Context) (*actorSupporterImpl, error) {
@@ -295,16 +330,21 @@ type componentActor interface {
 	//
 	// Called if and only if shouldAct() returned true.
 	//
-	// Called outside of any Datastore transaction, and notably before the a
-	// transaction on PM state.
+	// Called outside of any Datastore transaction, notably before the transaction
+	// on PM state.
 	//
 	// Must return either original component OR copy-on-write modification.
 	// If modified, the new component value is **best-effort** saved in the follow
 	// up Datastore transaction on PM state, success of which must not be relied
 	// upon.
 	//
+	// May return CLs that should be purged. Each prjpb.PurgeCLTask must have
+	// these fields set:
+	//  * .purging_cl.clid
+	//  * .reason
+	//
 	// If error is not nil, the potentially modified component is ignored.
 	//
-	// TODO(tandrii): support purge CL and cancel Run actions.
-	Act(ctx context.Context) (*prjpb.Component, error)
+	// TODO(tandrii): support cancel Run actions.
+	Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask, error)
 }
