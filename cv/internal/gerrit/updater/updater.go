@@ -378,6 +378,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 	case err != nil:
 		return nil, err
 	case !watched:
+		logging.Warningf(ctx, "Gerrit host %q is not watched by project %q", f.host, f.luciProject, f)
 		setNoAccess()
 		return nil, nil
 	}
