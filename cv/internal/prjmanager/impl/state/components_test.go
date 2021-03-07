@@ -16,6 +16,7 @@ package state
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -185,6 +186,39 @@ func TestComponentsActions(t *testing.T) {
 			})
 		})
 
+		Convey("purges CLs", func() {
+			makeDirtySetup(1, 2, 3)
+			state.testComponentActorFactory = (&componentActorSetup{
+				nextAction: func(cl int64, now time.Time) (time.Time, error) { return now, nil },
+				purgeCLs:   []int64{1, 3},
+			}).factory
+			actions, components, err := state.scanComponents(ctx)
+			So(err, ShouldBeNil)
+			So(actions, ShouldHaveLength, 3)
+			So(components, ShouldResembleProto, pb.GetComponents())
+			So(state.PB, ShouldResembleProto, pb)
+
+			Convey("ExecDeferred", func() {
+				state2, sideEffect, err := state.ExecDeferred(ctx)
+				So(err, ShouldBeNil)
+				expectedDeadline := timestamppb.New(now.Add(maxPurgingCLDuration))
+				So(state2.PB.GetPurgingCls(), ShouldResembleProto, []*prjpb.PurgingCL{
+					{Clid: 1, OperationId: "1580640000-1", Deadline: expectedDeadline},
+					{Clid: 3, OperationId: "1580640000-3", Deadline: expectedDeadline},
+				})
+
+				So(sideEffect, ShouldHaveSameTypeAs, &TriggerPurgeCLTasks{})
+				ps := sideEffect.(*TriggerPurgeCLTasks).payloads
+				So(ps, ShouldHaveLength, 2)
+				// Unlike PB.PurgingCls, the tasks aren't necessarily sorted.
+				sort.Slice(ps, func(i, j int) bool { return ps[i].GetPurgingCl().GetClid() < ps[j].GetPurgingCl().GetClid() })
+				So(ps[0].GetPurgingCl(), ShouldResembleProto, state2.PB.GetPurgingCls()[0]) // CL#1
+				So(ps[0].GetTrigger(), ShouldResembleProto, state2.PB.GetPcls()[1 /*CL#1*/].GetTrigger())
+				So(ps[0].GetLuciProject(), ShouldEqual, lProject)
+				So(ps[1].GetPurgingCl(), ShouldResembleProto, state2.PB.GetPurgingCls()[1]) // CL#3
+			})
+		})
+
 		Convey("partial failure in scan", func() {
 			makeDirtySetup(1, 2, 3)
 			state.testComponentActorFactory = (&componentActorSetup{
@@ -310,6 +344,7 @@ func TestComponentsActions(t *testing.T) {
 type componentActorSetup struct {
 	nextAction  func(clid int64, now time.Time) (time.Time, error)
 	actErrOnCLs []int64
+	purgeCLs    []int64
 }
 
 func (s *componentActorSetup) factory(c *prjpb.Component, _ componentactor.Supporter) componentActor {
@@ -331,8 +366,23 @@ func (t *testCActor) Act(context.Context) (*prjpb.Component, []*prjpb.PurgeCLTas
 			return nil, nil, errors.Reason("act-oops %v", t.c).Err()
 		}
 	}
+
 	c := t.c.CloneShallow()
 	c.Dirty = false
 	c.DecisionTime = nil
+
+	for _, clid := range t.parent.purgeCLs {
+		if t.c.GetClids()[0] == clid {
+			ps := []*prjpb.PurgeCLTask{{
+				PurgingCl: &prjpb.PurgingCL{
+					Clid: clid,
+				},
+				Reason: &prjpb.PurgeCLTask_Reason{Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
+					OwnerLacksEmail: true,
+				}},
+			}}
+			return c, ps, nil
+		}
+	}
 	return c, nil, nil
 }
