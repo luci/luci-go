@@ -39,6 +39,30 @@
       },
       "revId": "caeda2a1ef4b2af934d5426e9309b41e5040284e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ad506b2_c769ab4e",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-07T01:54:12Z",
+      "side": 1,
+      "message": "yes and yes % but also within transaction we can\u0027t specify deduplication *key*.",
+      "parentUuid": "ce745ee0_809f540a",
+      "range": {
+        "startLine": 58,
+        "startChar": 44,
+        "endLine": 58,
+        "endChar": 74
+      },
+      "revId": "caeda2a1ef4b2af934d5426e9309b41e5040284e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
