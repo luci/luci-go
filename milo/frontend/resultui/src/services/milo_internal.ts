@@ -14,6 +14,7 @@
 
 import { PrpcClient } from '@chopsui/prpc-client';
 
+import { CachedPrpcClient } from '../libs/cached_prpc_client';
 import { BuilderID, GitilesCommit } from './buildbucket';
 
 /**
@@ -81,31 +82,35 @@ export interface User {
 const SERVICE = 'luci.milo.v1.MiloInternal';
 
 export class MiloInternal {
-  private prpcClient: PrpcClient;
+  private client: CachedPrpcClient;
 
   constructor(accessToken: string) {
-    this.prpcClient = new PrpcClient({host: '', accessToken});
+    this.client = new CachedPrpcClient(new PrpcClient({host: '', accessToken}));
   }
 
-  async queryBlamelist(req: QueryBlamelistRequest) {
+  async queryBlamelist(req: QueryBlamelistRequest, forceRefresh = false) {
     return await this.call(
       'QueryBlamelist',
       req,
+      forceRefresh,
     ) as QueryBlamelistResponse;
   }
 
-  async getCurrentUser(req: GetCurrentUserRequest) {
+  async getCurrentUser(req: GetCurrentUserRequest, forceRefresh = false) {
     return await this.call(
       'GetCurrentUser',
       req,
+      forceRefresh,
     ) as User;
   }
 
-  private call(method: string, message: object) {
-    return this.prpcClient.call(
+  private call(method: string, message: object, forceRefresh = false) {
+    return this.client.call(
       SERVICE,
       method,
       message,
+      undefined,
+      forceRefresh,
     );
   }
 }

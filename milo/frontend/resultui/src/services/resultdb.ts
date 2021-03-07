@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import { PrpcClient } from '@chopsui/prpc-client';
-import { comparer } from 'mobx';
-import { createTransformer, fromPromise, FULFILLED } from 'mobx-utils';
 
+import { CachedPrpcClient } from '../libs/cached_prpc_client';
 import { sha256 } from '../libs/utils';
 import { BuilderID } from './buildbucket';
 
@@ -223,114 +222,94 @@ export interface TestResultBundle {
 
 export class ResultDb {
   private static SERVICE = 'luci.resultdb.v1.ResultDB';
-  private prpcClient: PrpcClient;
+  private client: CachedPrpcClient;
 
   constructor(readonly host: string, accessToken: string) {
-    this.prpcClient = new PrpcClient({host, accessToken});
+    this.client = new CachedPrpcClient(new PrpcClient({host, accessToken}));
   }
 
-  async getInvocation(req: GetInvocationRequest): Promise<Invocation> {
+  async getInvocation(req: GetInvocationRequest, forceRefresh = false): Promise<Invocation> {
     return await this.call(
       'GetInvocation',
       req,
+      forceRefresh,
     ) as Invocation;
   }
 
-  async queryTestResults(req: QueryTestResultsRequest) {
+  async queryTestResults(req: QueryTestResultsRequest, forceRefresh = false) {
     return await this.call(
-        'QueryTestResults',
-        req,
+      'QueryTestResults',
+      req,
+      forceRefresh,
     ) as QueryTestResultsResponse;
   }
 
-  async queryTestExonerations(req: QueryTestExonerationsRequest) {
+  async queryTestExonerations(req: QueryTestExonerationsRequest, forceRefresh = false) {
     return await this.call(
-        'QueryTestExonerations',
-        req,
+      'QueryTestExonerations',
+      req,
+      forceRefresh,
     ) as QueryTestExonerationsResponse;
   }
 
-  async listArtifacts(req: ListArtifactsRequest) {
+  async listArtifacts(req: ListArtifactsRequest, forceRefresh = false) {
     return await this.call(
       'ListArtifacts',
       req,
+      forceRefresh,
     ) as ListArtifactsResponse;
   }
 
-  async queryArtifacts(req: QueryArtifactsRequest) {
+  async queryArtifacts(req: QueryArtifactsRequest, forceRefresh = false) {
     return await this.call(
       'QueryArtifacts',
       req,
+      forceRefresh,
     ) as QueryArtifactsResponse;
   }
 
-  async getArtifact(req: GetArtifactRequest) {
+  async getArtifact(req: GetArtifactRequest, forceRefresh = false) {
     return await this.call(
       'GetArtifact',
       req,
+      forceRefresh,
     ) as Artifact;
   }
 
-  /**
-   * Returns the cached list artifacts response of an invocation.
-   */
-  private getListArtifactsResOfInv = createTransformer((invName: string) => {
-    const artifacts = this.listArtifacts({parent: invName});
-    return fromPromise(artifacts);
-  });
-
-  /**
-   * Returns the cached artifacts of an invocation.
-   * If the artifacts are not cached yet,
-   * 1. return null, and
-   * 2. fetch the artifacts, and
-   * 3. once the artifacts are fetched, notifies the subscribers with the new
-   * artifacts
-   *
-   * @param invName: Invocation Name.
-   * @return artifacts of the invocation (if cached) or null.
-   */
-  getCachedArtifactsOfInv = createTransformer(
-    (invName: string) => {
-      const listArtifactRes = this.getListArtifactsResOfInv(invName);
-      return listArtifactRes.state === FULFILLED
-        ? listArtifactRes.value.artifacts || []
-        : null;
-    },
-    {
-      equals: comparer.shallow,
-    },
-  );
-
-  private call(method: string, message: object) {
-    return this.prpcClient.call(
+  private call(method: string, message: object, forceRefresh = false) {
+    return this.client.call(
       ResultDb.SERVICE,
       method,
       message,
+      undefined,
+      forceRefresh,
     );
   }
 }
 
 export class UISpecificService {
-  private prpcClient: PrpcClient;
   private static SERVICE = 'luci.resultdb.internal.ui.UI';
+  private client: CachedPrpcClient;
 
   constructor(readonly host: string, accessToken: string) {
-    this.prpcClient = new PrpcClient({host, accessToken});
+    this.client = new CachedPrpcClient(new PrpcClient({host, accessToken}));
   }
 
-  async queryTestVariants(req: QueryTestVariantsRequest) {
+  async queryTestVariants(req: QueryTestVariantsRequest, forceRefresh = false) {
     return await this.call(
       'QueryTestVariants',
       req,
+      forceRefresh,
     ) as QueryTestVariantsResponse;
   }
 
-  private call(method: string, message: object) {
-    return this.prpcClient.call(
+  private call(method: string, message: object, forceRefresh = false) {
+    return this.client.call(
       UISpecificService.SERVICE,
       method,
       message,
+      undefined,
+      forceRefresh,
     );
   }
 }

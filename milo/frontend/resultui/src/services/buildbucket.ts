@@ -14,6 +14,8 @@
 
 import { PrpcClient } from '@chopsui/prpc-client';
 
+import { CachedPrpcClient } from '../libs/cached_prpc_client';
+
 /**
  * Manually coded type definition and classes for buildbucket services.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
@@ -258,23 +260,25 @@ export interface ScheduleBuildRequest {
 const BUILDS_SERVICE = 'buildbucket.v2.Builds';
 
 export class BuildsService {
-  private prpcClient: PrpcClient;
+  private client: CachedPrpcClient;
 
   constructor(readonly host: string, accessToken: string) {
-    this.prpcClient = new PrpcClient({host, accessToken});
+    this.client = new CachedPrpcClient(new PrpcClient({host, accessToken}));
   }
 
-  async getBuild(req: GetBuildRequest) {
+  async getBuild(req: GetBuildRequest, forceRefresh = false) {
     return await this.call(
       'GetBuild',
       req,
+      forceRefresh,
     ) as Build;
   }
 
-  async searchBuilds(req: SearchBuildsRequest) {
+  async searchBuilds(req: SearchBuildsRequest, forceRefresh = false) {
     return await this.call(
       'SearchBuilds',
       req,
+      forceRefresh,
     ) as SearchBuildsResponse;
   }
 
@@ -282,6 +286,7 @@ export class BuildsService {
     return await this.call(
       'CancelBuild',
       req,
+      true,
     ) as Build;
   }
 
@@ -289,14 +294,17 @@ export class BuildsService {
     return await this.call(
       'ScheduleBuild',
       req,
+      true,
     ) as Build;
   }
 
-  private call(method: string, message: object) {
-    return this.prpcClient.call(
+  private call(method: string, message: object, forceRefresh = false) {
+    return this.client.call(
       BUILDS_SERVICE,
       method,
       message,
+      undefined,
+      forceRefresh,
     );
   }
 }

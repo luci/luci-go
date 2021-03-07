@@ -93,6 +93,7 @@ export class BuildState {
     // tslint:enable: no-unused-expression
   }
 
+  private buildQueryTime = 0;
   @computed
   get build$(): IPromiseBasedObservable<Build> {
     if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
@@ -100,15 +101,15 @@ export class BuildState {
       // ready.
       return fromPromise(Promise.race([]));
     }
-    // Since response can be different when queried at different time,
-    // establish a dependency on timestamp.
-    this.timestamp;  // tslint:disable-line: no-unused-expression
+
+    const cacheIsStaled = this.buildQueryTime < this.timestamp;
+    this.buildQueryTime = this.timestamp;
 
     const req: GetBuildRequest = this.buildId
       ? {id: this.buildId, fields: '*'}
       : {builder: this.builder, buildNumber: this.buildNum!, fields: '*'};
 
-    return fromPromise(this.appState.buildsService.getBuild(req));
+    return fromPromise(this.appState.buildsService.getBuild(req, cacheIsStaled));
   }
 
   @computed
@@ -175,7 +176,7 @@ export class BuildState {
     async function* streamBlamelist() {
       let res: QueryBlamelistResponse;
       do {
-        res = await milo.queryBlamelist(req);
+        res = await milo.queryBlamelist(req, true);
         req = {...req, pageToken: res.nextPageToken};
         yield res;
       } while (res.nextPageToken);
