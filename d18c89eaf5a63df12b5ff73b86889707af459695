@@ -22,6 +22,30 @@
       },
       "revId": "d18c89eaf5a63df12b5ff73b86889707af459695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a23135b_9c41deb4",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T23:48:11Z",
+      "side": 1,
+      "message": "For now, yes. Because we have some internal projects spanning both intenral and public repos, I am not entirely confident it\u0027s OK. I wish it was OK though, so I\u0027d like to consider this during CQ realms.",
+      "parentUuid": "d1ab3cc3_a40b38d3",
+      "range": {
+        "startLine": 138,
+        "startChar": 0,
+        "endLine": 150,
+        "endChar": 0
+      },
+      "revId": "d18c89eaf5a63df12b5ff73b86889707af459695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
