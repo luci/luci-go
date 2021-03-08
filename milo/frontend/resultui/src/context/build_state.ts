@@ -16,6 +16,7 @@ import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { getGitilesRepoURL } from '../libs/build_utils';
+import { CacheOption } from '../libs/cached_fn';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { BuildExt } from '../models/build_ext';
@@ -93,6 +94,7 @@ export class BuildState {
     // tslint:enable: no-unused-expression
   }
 
+  private buildQueryTime = 0;
   @computed
   get build$(): IPromiseBasedObservable<Build> {
     if (!this.appState.buildsService || (!this.buildId && (!this.builder || !this.buildNum))) {
@@ -100,15 +102,27 @@ export class BuildState {
       // ready.
       return fromPromise(Promise.race([]));
     }
-    // Since response can be different when queried at different time,
-    // establish a dependency on timestamp.
-    this.timestamp;  // tslint:disable-line: no-unused-expression
+
+    // If we use a simple boolean property here,
+    // 1. the boolean property cannot be an observable because we don't want to
+    // update observables in a computed property, and
+    // 2. we still need an observable (like this.timestamp) to trigger the
+    // update, and
+    // 3. this.refresh() will need to reset the boolean properties of all
+    // time-sensitive computed value.
+    //
+    // If we record the query time instead, no other code will need to read
+    // or update the query time.
+    const cacheOpt = this.buildQueryTime < this.timestamp
+      ? CacheOption.ForceRefresh
+      : CacheOption.Cached;
+    this.buildQueryTime = this.timestamp;
 
     const req: GetBuildRequest = this.buildId
       ? {id: this.buildId, fields: '*'}
       : {builder: this.builder, buildNumber: this.buildNum!, fields: '*'};
 
-    return fromPromise(this.appState.buildsService.getBuild(req));
+    return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt));
   }
 
   @computed

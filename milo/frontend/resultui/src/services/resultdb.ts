@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import { PrpcClient } from '@chopsui/prpc-client';
-import { comparer } from 'mobx';
-import { createTransformer, fromPromise, FULFILLED } from 'mobx-utils';
 
+import { cached, CacheOption } from '../libs/cached_fn';
 import { sha256 } from '../libs/utils';
 import { BuilderID } from './buildbucket';
 
@@ -223,115 +222,85 @@ export interface TestResultBundle {
 
 export class ResultDb {
   private static SERVICE = 'luci.resultdb.v1.ResultDB';
-  private prpcClient: PrpcClient;
+
+  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(readonly host: string, accessToken: string) {
-    this.prpcClient = new PrpcClient({host, accessToken});
+    const client = new PrpcClient({host, accessToken});
+    this.cachedCallFn = cached(
+      (method: string, message: object) => client.call(ResultDb.SERVICE, method, message),
+      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
+    );
   }
 
-  async getInvocation(req: GetInvocationRequest): Promise<Invocation> {
-    return await this.call(
+  async getInvocation(req: GetInvocationRequest, cacheOpt = CacheOption.Cached): Promise<Invocation> {
+    return await this.cachedCallFn(
+      cacheOpt,
       'GetInvocation',
       req,
     ) as Invocation;
   }
 
-  async queryTestResults(req: QueryTestResultsRequest) {
-    return await this.call(
-        'QueryTestResults',
-        req,
+  async queryTestResults(req: QueryTestResultsRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn(
+      cacheOpt,
+      'QueryTestResults',
+      req,
     ) as QueryTestResultsResponse;
   }
 
-  async queryTestExonerations(req: QueryTestExonerationsRequest) {
-    return await this.call(
-        'QueryTestExonerations',
-        req,
+  async queryTestExonerations(req: QueryTestExonerationsRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn(
+      cacheOpt,
+      'QueryTestExonerations',
+      req,
     ) as QueryTestExonerationsResponse;
   }
 
-  async listArtifacts(req: ListArtifactsRequest) {
-    return await this.call(
+  async listArtifacts(req: ListArtifactsRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn(
+      cacheOpt,
       'ListArtifacts',
       req,
     ) as ListArtifactsResponse;
   }
 
-  async queryArtifacts(req: QueryArtifactsRequest) {
-    return await this.call(
+  async queryArtifacts(req: QueryArtifactsRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn(
+      cacheOpt,
       'QueryArtifacts',
       req,
     ) as QueryArtifactsResponse;
   }
 
-  async getArtifact(req: GetArtifactRequest) {
-    return await this.call(
+  async getArtifact(req: GetArtifactRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn(
+      cacheOpt,
       'GetArtifact',
       req,
     ) as Artifact;
   }
-
-  /**
-   * Returns the cached list artifacts response of an invocation.
-   */
-  private getListArtifactsResOfInv = createTransformer((invName: string) => {
-    const artifacts = this.listArtifacts({parent: invName});
-    return fromPromise(artifacts);
-  });
-
-  /**
-   * Returns the cached artifacts of an invocation.
-   * If the artifacts are not cached yet,
-   * 1. return null, and
-   * 2. fetch the artifacts, and
-   * 3. once the artifacts are fetched, notifies the subscribers with the new
-   * artifacts
-   *
-   * @param invName: Invocation Name.
-   * @return artifacts of the invocation (if cached) or null.
-   */
-  getCachedArtifactsOfInv = createTransformer(
-    (invName: string) => {
-      const listArtifactRes = this.getListArtifactsResOfInv(invName);
-      return listArtifactRes.state === FULFILLED
-        ? listArtifactRes.value.artifacts || []
-        : null;
-    },
-    {
-      equals: comparer.shallow,
-    },
-  );
-
-  private call(method: string, message: object) {
-    return this.prpcClient.call(
-      ResultDb.SERVICE,
-      method,
-      message,
-    );
-  }
 }
 
 export class UISpecificService {
-  private prpcClient: PrpcClient;
   private static SERVICE = 'luci.resultdb.internal.ui.UI';
 
+  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+
   constructor(readonly host: string, accessToken: string) {
-    this.prpcClient = new PrpcClient({host, accessToken});
+    const client = new PrpcClient({host, accessToken});
+    this.cachedCallFn = cached(
+      (method: string, message: object) => client.call(UISpecificService.SERVICE, method, message),
+      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
+    );
   }
 
-  async queryTestVariants(req: QueryTestVariantsRequest) {
-    return await this.call(
+  async queryTestVariants(req: QueryTestVariantsRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn(
+      cacheOpt,
       'QueryTestVariants',
       req,
     ) as QueryTestVariantsResponse;
-  }
-
-  private call(method: string, message: object) {
-    return this.prpcClient.call(
-      UISpecificService.SERVICE,
-      method,
-      message,
-    );
   }
 }
 
