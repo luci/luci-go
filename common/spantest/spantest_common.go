@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build linux
-
-// Package spantest implements creation/destruction of a temporary Spanner
-// database.
+// Package spantest implements:
+// * start/stop the Cloud Spanner Emulator,
+// * creation/removal of a temporary gcloud config,
+// * creation of a temporary Spanner instance,
+// * creation/destruction of a temporary Spanner database.
 package spantest
 
 import (
@@ -24,12 +25,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
-	"syscall"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -44,18 +42,11 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/common/system/filesystem"
-	"go.chromium.org/luci/common/system/port"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-const (
-	// emulatorRelativePath is the relative path of the Cloud Spanner Emulator binary to gcloud root.
-	emulatorRelativePath = "bin/cloud_spanner_emulator/emulator_main"
-
-	// emulatorCfg is the gcloud config name for Cloud Spanner Emulator.
-	emulatorCfg = "spanner-emulator"
-)
+// emulatorCfg is the gcloud config name for Cloud Spanner Emulator.
+const emulatorCfg = "spanner-emulator"
 
 // TempDBConfig specifies how to create a temporary database.
 type TempDBConfig struct {
@@ -224,29 +215,8 @@ func SanitizeDBName(name string) string {
 	return name
 }
 
-// findEmulatorPath finds the path to Cloud Spanner Emulator binary.
-//
-// Note that this should only work on Linux because only gcloud on Linux contains
-// Cloud Spanner Emulator component. For Windows and MacOS users, the emulator
-// requires Docker to be installed on your system and available on the system path.
-func findEmulatorPath() (string, error) {
-	o, err := exec.Command("gcloud", "info", "--format=value(installation.sdk_root)").Output()
-	if err != nil {
-		return "", err
-	}
-
-	emulatorPath := filepath.Join(strings.TrimSuffix(string(o), "\n"), emulatorRelativePath)
-	switch _, err = os.Stat(emulatorPath); {
-	case os.IsNotExist(err):
-		return "", fmt.Errorf("cannot find cloud spanner emulator binary at %v. \n Please run `make install-spanner-emulator`", emulatorPath)
-	case err != nil:
-		return "", err
-	}
-
-	return emulatorPath, nil
-}
-
 // Emulator is for starting and stopping a Cloud Spanner Emulator process.
+// TODO(crbug.com/1066993): Make Emulator an interfact with two implementations (*nativeEmulator and *dockerEmulator).
 type Emulator struct {
 	// hostport is the address at which emulator process is running.
 	hostport string
@@ -256,47 +226,6 @@ type Emulator struct {
 	cancel func()
 	// cfgDir is the path to the temporary dircetory holding the gcloud config for emulator.
 	cfgDir string
-
-	sigChan chan os.Signal
-	done    chan bool
-}
-
-// StartEmulator starts a Cloud Spanner Emulator instance.
-func StartEmulator(ctx context.Context) (*Emulator, error) {
-	emulatorPath, err := findEmulatorPath()
-	if err != nil {
-		return nil, errors.Annotate(err, "find emulator").Err()
-	}
-
-	p, err := port.PickUnusedPort()
-	if err != nil {
-		return nil, errors.Annotate(err, "picking port").Err()
-	}
-
-	hostport := fmt.Sprintf("localhost:%d", p)
-	e := &Emulator{
-		hostport: hostport,
-	}
-
-	if e.cfgDir, err = e.createSpannerEmulatorConfig(); err != nil {
-		return nil, err
-	}
-
-	ctx, e.cancel = context.WithCancel(ctx)
-	e.cmd = exec.CommandContext(ctx, emulatorPath, "--host_port", e.hostport)
-	e.cmd.Env = append(e.cmd.Env, fmt.Sprintf("SPANNER_EMULATOR_HOST=%s", e.hostport), fmt.Sprintf("CLOUDSDK_CONFIG=%s", e.cfgDir))
-	e.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	// Without this, test will hang when finish.
-	// But unfortunately this is only supported on Linux.
-	e.cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
-	e.cmd.Stdout = os.Stdout
-	e.cmd.Stderr = os.Stderr
-
-	if err = e.cmd.Start(); err != nil {
-		return nil, err
-	}
-
-	return e, nil
 }
 
 func (e *Emulator) opts() []option.ClientOption {
@@ -305,23 +234,6 @@ func (e *Emulator) opts() []option.ClientOption {
 		option.WithGRPCDialOption(grpc.WithInsecure()),
 		option.WithoutAuthentication(),
 	}
-}
-
-// Stop kills the emulator process and removes the temporary gcloud config directory.
-func (e *Emulator) Stop() error {
-	if e.cmd != nil {
-		e.cmd.Process.Release()
-		e.cancel()
-		e.cmd = nil
-	}
-
-	if e.cfgDir != "" {
-		if err := filesystem.RemoveAll(e.cfgDir); err == nil {
-			return errors.Annotate(err, "failed to remove the temporary config directory").Err()
-		}
-		e.cfgDir = ""
-	}
-	return nil
 }
 
 // createSpannerEmulatorConfig creates a temporary CLOUDSDK_CONFIG, then creates
@@ -363,13 +275,13 @@ func (e *Emulator) NewInstance(ctx context.Context, projectName string) (string,
 	}
 	defer client.Close()
 
-	insId := "testing"
+	insID := "testing"
 	insOp, err := client.CreateInstance(ctx, &inspb.CreateInstanceRequest{
 		Parent:     projectName,
-		InstanceId: insId,
+		InstanceId: insID,
 		Instance: &inspb.Instance{
 			Config:      emulatorCfg,
-			DisplayName: insId,
+			DisplayName: insID,
 			NodeCount:   1,
 		},
 	})
