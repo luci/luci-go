@@ -16,6 +16,24 @@
       "message": "The mac version also works on my linux, so we can potentially use the mac version on linux as well if we agree to install docker on the linux builder.\n\nAlso \"sudo docker\" was a problem for me and I don\u0027t even know how did I fix it, so we may need to experiment on someone else\u0027s linux workstation first to confirm \"sudo docker\" is really not a problem.",
       "revId": "233f861477c9d4e64fb9b8731ee704810c531046",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "489d2f78_f0be2bf5",
+        "filename": "common/spantest/spantest_linux.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-08T20:48:17Z",
+      "side": 1,
+      "message": "I think the non-docker version on linux is fine, just due to the non-ubiquitousness of docker, currently. If we later end up using docker more, maybe it will make sense to just use the docker version everywhere.",
+      "parentUuid": "841e7416_81be1b35",
+      "revId": "233f861477c9d4e64fb9b8731ee704810c531046",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

@@ -50,6 +50,69 @@
       "message": "Deferring to Robbie/Vadim. \nI am over-subscribed and this doesn\u0027t require domain knowledge.",
       "revId": "b8c80ea3e3db6387c2f4cadaea97136d5951a9e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a589b064_d45136df",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-08T20:48:17Z",
+      "side": 1,
+      "message": "lgtm w/ suggestions",
+      "revId": "b8c80ea3e3db6387c2f4cadaea97136d5951a9e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca0ef2b3_44eb7b70",
+        "filename": "common/spantest/spantest_linux.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-08T20:48:17Z",
+      "side": 1,
+      "message": "It would be nice to refactor this later so that StartEmulator took a list of preferred methods (e.g. Native, Docker) where Native will be skipped on !linux.\n\nSo on Linux the default would be {Native, Docker} and on !linux it would be {Docker}.\n\n(rather than selecting the implementation at compile-time, which is what we have here).\n\nIf you do this, then Emulator should be an Interface with two implementations (*nativeEmulator and *dockerEmulator).",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 18
+      },
+      "revId": "b8c80ea3e3db6387c2f4cadaea97136d5951a9e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2abb49a5_33e87c93",
+        "filename": "common/spantest/spantest_mac.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-08T20:48:17Z",
+      "side": 1,
+      "message": "Note that this should also work on windows\n\nMaybe call this `spantest_docker` and the other file `spantest_native`?",
+      "range": {
+        "startLine": 15,
+        "startChar": 10,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "b8c80ea3e3db6387c2f4cadaea97136d5951a9e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
