@@ -85,6 +85,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ce96a675_04514db4",
+        "filename": "auth/integration/localauth/generator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T22:59:50Z",
+      "side": 1,
+      "message": "I\u0027m tired atm and can\u0027t suggest what to to put inside the code,\nbut I\u0027m sure future me would love to read this alongside doc already in code.\nMaybe just paste it as is?",
+      "parentUuid": "06325f04_edcbd319",
+      "range": {
+        "startLine": 46,
+        "startChar": 74,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "0e57ce47cb234ffec53ce20d377d48365b838f79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6b34d34e_542d82d6",
         "filename": "auth/integration/localauth/generator.go",
         "patchSetId": 2
