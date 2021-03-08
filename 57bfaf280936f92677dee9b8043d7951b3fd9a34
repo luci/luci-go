@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d9a9bf4_4105b587",
+        "filename": "auth/auth.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1445,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T18:08:00Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 1445,
+        "startChar": 7,
+        "endLine": 1445,
+        "endChar": 9
+      },
+      "revId": "57bfaf280936f92677dee9b8043d7951b3fd9a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32289b74_5a6b4467",
+        "filename": "auth/internal/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T18:08:00Z",
+      "side": 1,
+      "message": "i think worth mentioning the audience hack here",
+      "revId": "57bfaf280936f92677dee9b8043d7951b3fd9a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "052dc55e_2f9cfa01",
+        "filename": "auth/internal/service.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T18:08:00Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 126,
+        "startChar": 46,
+        "endLine": 126,
+        "endChar": 48
+      },
+      "revId": "57bfaf280936f92677dee9b8043d7951b3fd9a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65c1d579_17b86cd2",
+        "filename": "auth/internal/service.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T18:08:00Z",
+      "side": 1,
+      "message": "isn\u0027t it worth documenting in CacheKey.Scopes field? (I left comment in internal/common.go).",
+      "range": {
+        "startLine": 129,
+        "startChar": 70,
+        "endLine": 130,
+        "endChar": 36
+      },
+      "revId": "57bfaf280936f92677dee9b8043d7951b3fd9a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c4b16e1_e248aea1",
+        "filename": "auth/internal/service.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T18:08:00Z",
+      "side": 1,
+      "message": "my new favorite word 😊 TIL",
+      "range": {
+        "startLine": 161,
+        "startChar": 5,
+        "endLine": 161,
+        "endChar": 15
+      },
+      "revId": "57bfaf280936f92677dee9b8043d7951b3fd9a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
