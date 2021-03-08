@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "2f349c74_9ea5a6b5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T17:55:33Z",
+      "side": 1,
+      "message": "Yes. FWIW, I don\u0027t want *any* CL purged just yet -- I want to verify that intents to purge are correct on -dev *first*.",
+      "parentUuid": "6e67919d_42b1ce90",
+      "range": {
+        "startLine": 9,
+        "startChar": 60,
+        "endLine": 9,
+        "endChar": 70
+      },
+      "revId": "6af6b3cbe657739901169a2a88cfbbc5be230fb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "d770bbc1_3ea691e7",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
