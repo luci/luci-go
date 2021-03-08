@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d57f2035_ea7be889",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T23:48:43Z",
+      "side": 1,
+      "message": "Added some comments.\nBasically, using a boolean variable doesn\u0027t make it cleaner.\nWe still can\u0027t get rid of timestamp and the boolean variable will need to be referenced in multiple locations.",
+      "parentUuid": "099382ce_e12eea78",
+      "range": {
+        "startLine": 106,
+        "startChar": 21,
+        "endLine": 106,
+        "endChar": 57
+      },
+      "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "852fffff_a5f3b633",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-03-08T20:13:39Z",
       "side": 1,
       "message": "at this point we don\u0027t know yet that the request will succeed",
+      "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a082cc4d_0ad8fbfd",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T23:48:43Z",
+      "side": 1,
+      "message": "We cache it regardless.\nIf the caller are not happy about the response (network failure?), they can trigger a refresh (by refreshing the window, or updating the timestamp).\nThis is the existing behaviour. This CL does not change the it.",
+      "parentUuid": "852fffff_a5f3b633",
       "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -75,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0125197c_a2434e0c",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T23:48:43Z",
+      "side": 1,
+      "message": "My original intent was to keep the function signature unchanged, so it can be used as a drop-in replacement.\nBut now I think changing the signature is probably good because we are forced to think about the implication when calling them. With the help of typescript we are unlikely to forget to prepend the cache option param.",
+      "parentUuid": "3e634df5_10908013",
+      "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8d6a6c97_ba54d92a",
@@ -88,6 +148,30 @@
       "writtenOn": "2021-03-08T20:13:39Z",
       "side": 1,
       "message": "nit: unnecessary?",
+      "range": {
+        "startLine": 268,
+        "startChar": 43,
+        "endLine": 269,
+        "endChar": 14
+      },
+      "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "75c53144_2e4465f3",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T23:48:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d6a6c97_ba54d92a",
       "range": {
         "startLine": 268,
         "startChar": 43,
