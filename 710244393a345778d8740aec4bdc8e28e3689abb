@@ -33,6 +33,24 @@
       "message": "This change looks good to me. But I find it hard to follow because fetching test variants with unexpected results and fetching test variants without unexpected result seem like completely different codepaths, and I\u0027d expect them to have more stuff in common.",
       "revId": "710244393a345778d8740aec4bdc8e28e3689abb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c85b7909_1a641764",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-08T19:36:40Z",
+      "side": 1,
+      "message": "Yeah the queries are very different for performance.",
+      "parentUuid": "67fae466_516cba6e",
+      "revId": "710244393a345778d8740aec4bdc8e28e3689abb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
