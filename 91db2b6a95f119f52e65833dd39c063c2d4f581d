@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84474f40_37de0dfb",
+        "filename": "milo/frontend/resultui/src/components/code_mirror_editor.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T05:35:36Z",
+      "side": 1,
+      "message": "We can\u0027t import the style via \u003clink\u003e because the css won\u0027t be fully applied when codemirror computes/updates the layout.",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 20
+      },
+      "revId": "91db2b6a95f119f52e65833dd39c063c2d4f581d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
