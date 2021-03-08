@@ -266,6 +266,9 @@ export class OverviewTabElement extends MobxLitElement {
       scrollbarStyle: 'null',
       matchBrackets: true,
       lineWrapping: true,
+      foldGutter: true,
+      lineNumbers: true,
+      gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
     };
 
     return html`

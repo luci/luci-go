@@ -14,11 +14,16 @@
 
 import * as CodeMirror from 'codemirror';
 import 'codemirror/addon/edit/matchbrackets';
-import 'codemirror/mode/javascript/javascript.js';
+import 'codemirror/addon/fold/brace-fold';
+import 'codemirror/addon/fold/foldcode';
+import 'codemirror/addon/fold/foldgutter';
+import 'codemirror/mode/javascript/javascript';
 import { css, customElement, LitElement } from 'lit-element';
 import { html } from 'lit-html';
 import { observable } from 'mobx';
 
+const foldGutterStyle = require('codemirror/addon/fold/foldgutter.css').default;
+const codemirrorStyle = require('codemirror/lib/codemirror.css').default;
 
 /**
  * A lit-element wrapper of codemirror
@@ -36,30 +41,33 @@ export class CodeMirrorEditorElement extends LitElement {
 
   protected render() {
     return html`
-      <link rel="stylesheet" type="text/css" href="/static/styles/thirdparty/codemirror.css">
       <textarea id="editor">${this.value}</textarea>
     `;
   }
 
-  static styles = css`
-    :host {
-      display: block;
-      border-radius: 4px;
-      border: 1px solid var(--divider-color);
-    }
-    .CodeMirror {
-      height: auto;
-      max-height: 1000px;
-      font-size: 12px;
-    }
-    .CodeMirror-scroll{
-      max-height: 1000px;
-    }
-    .cm-property.cm-string {
-      color: #318495;
-    }
-    .cm-string:not(.cm-property){
-      color: #036a06;
-    }
-  `;
+  static styles = [
+    codemirrorStyle,
+    foldGutterStyle,
+    css`
+      :host {
+        display: block;
+        border-radius: 4px;
+        border: 1px solid var(--divider-color);
+      }
+      .CodeMirror {
+        height: auto;
+        max-height: 1000px;
+        font-size: 12px;
+      }
+      .CodeMirror-scroll{
+        max-height: 1000px;
+      }
+      .cm-property.cm-string {
+        color: #318495;
+      }
+      .cm-string:not(.cm-property){
+        color: #036a06;
+      }
+    `,
+  ];
 }
