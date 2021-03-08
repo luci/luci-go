@@ -86,7 +86,7 @@ export class PageLayoutElement extends MobxLitElement {
           class="interactive-icon"
           title="Settings"
           @click=${() => this.appState.showSettingsDialog = true}
-          style=${styleMap({display: this.appState.hasSettingsDialog ? '' : 'none'})}
+          style=${styleMap({display: this.appState.hasSettingsDialog > 0 ? '' : 'none'})}
         >settings</mwc-icon>
         <div id="signin">
           ${this.appState.gAuth ? html`

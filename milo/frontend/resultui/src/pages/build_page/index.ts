@@ -20,8 +20,8 @@ import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
-import { autorun, computed, observable, reaction } from 'mobx';
-import { REJECTED } from 'mobx-utils';
+import { autorun, computed, observable, reaction, when } from 'mobx';
+import { PENDING, REJECTED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -80,12 +80,22 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
   private builder!: BuilderID;
   private buildNumOrId = '';
+  private buildId!: string;
+  private urlSuffix = '';
 
   private get legacyUrl() {
     return getLegacyURLForBuild(this.builder, this.buildNumOrId);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
+    const buildId = location.params['build_id'];
+    const path = location.params['path'];
+    if (typeof buildId === 'string' && path instanceof Array) {
+      this.buildId = buildId as string;
+      this.urlSuffix = '/' + path.join('/') + location.search;
+      return;
+    }
+
     const project = location.params['project'];
     const bucket = location.params['bucket'];
     const builder = location.params['builder'];
@@ -138,7 +148,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
   connectedCallback() {
     super.connectedCallback();
-    this.appState.hasSettingsDialog = true;
+    this.appState.hasSettingsDialog++;
 
     this.addEventListener('error', this.errorHandler);
 
@@ -148,7 +158,13 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         this.buildState?.dispose();
         this.buildState = new BuildState(this.appState);
         this.buildState.builder = this.builder;
-        this.buildState.buildNumOrId = this.buildNumOrId;
+        if (this.buildId) {
+          this.buildState.buildId = this.buildId;
+        } else if (this.buildNumOrId.startsWith('b')) {
+          this.buildState.buildId = this.buildNumOrId.slice(1);
+        } else {
+          this.buildState.buildNum = Number(this.buildNumOrId);
+        }
 
         // Emulate @property() update.
         this.updated(new Map([['buildState', this.buildState]]));
@@ -222,6 +238,26 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       },
     ));
 
+    if (this.buildId) {
+      this.disposers.push(when(
+        () => this.buildState.build$.state !== PENDING,
+        () => {
+          const builder = this.buildState.build!.builder;
+          const buildUrl = router.urlForName(
+            'build',
+            {
+              project: builder.project,
+              bucket: builder.bucket,
+              builder: builder.builder,
+              build_num_or_id: `b${this.buildId}`,
+            },
+          );
+          Router.go(buildUrl + this.urlSuffix);
+        },
+      ));
+      return;
+    }
+
     this.disposers.push(autorun(() => {
       const build = this.buildState.build;
       if (!build) {
@@ -268,13 +304,12 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   }
 
   disconnectedCallback() {
-    this.appState.hasSettingsDialog = false;
+    super.disconnectedCallback();
     for (const disposer of this.disposers) {
       disposer();
     }
-
     this.removeEventListener('error', this.errorHandler);
-    super.disconnectedCallback();
+    this.appState.hasSettingsDialog--;
   }
 
   @computed get hasInvocation() {
@@ -362,7 +397,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   }
 
   protected render() {
-    if (this.prerender) {
+    if (this.buildId || this.prerender) {
       return html``;
     }
 
