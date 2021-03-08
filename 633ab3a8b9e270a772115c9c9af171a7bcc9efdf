@@ -16,6 +16,86 @@
       "message": "Demo:\nhttps://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6886/test-results?q\u003d\n",
       "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "099382ce_e12eea78",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T20:13:39Z",
+      "side": 1,
+      "message": "how is this different from a boolean variable instead of buildQueryTime? which is set instead of buildQueryTime?",
+      "range": {
+        "startLine": 106,
+        "startChar": 21,
+        "endLine": 106,
+        "endChar": 57
+      },
+      "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "852fffff_a5f3b633",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T20:13:39Z",
+      "side": 1,
+      "message": "at this point we don\u0027t know yet that the request will succeed",
+      "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e634df5_10908013",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T20:13:39Z",
+      "side": 1,
+      "message": "I\u0027d expect the impl to be in one func, as opposed to a part in one func, and another part in another func. Consider moving L54-58 into L64, and calling withOpt(Cached, ...params) here instead\n\nbut stepping back, most callsites use withOpt. Maybe just have one function with opt as first param? It would reduce the amount of code here.",
+      "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d6a6c97_ba54d92a",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T20:13:39Z",
+      "side": 1,
+      "message": "nit: unnecessary?",
+      "range": {
+        "startLine": 268,
+        "startChar": 43,
+        "endLine": 269,
+        "endChar": 14
+      },
+      "revId": "633ab3a8b9e270a772115c9c9af171a7bcc9efdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
