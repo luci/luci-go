@@ -243,7 +243,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 	// ambient credentials on their own and fail (or proceed) appropriately.
 	canInherit := opts.Method == auth.LUCIContextMethod && opts.ActAsServiceAccount == ""
 	if !canInherit && !ac.anonymous {
-		if ac.luciSrv, ac.localAuth, err = launchSrv(ctx, opts, ac.authenticator, ac.ID); err != nil {
+		if ac.luciSrv, ac.localAuth, err = launchSrv(ctx, opts, ac.ID); err != nil {
 			return errors.Annotate(err, "failed to launch local auth server for %q account", ac.ID).Err()
 		}
 	}
@@ -455,39 +455,23 @@ func (ac *Context) Report(ctx context.Context) {
 //
 // Returns the server itself (so it can be stopped) and also LocalAuth section
 // that can be put into LUCI_CONTEXT to make subprocesses use the server.
-func launchSrv(ctx context.Context, opts auth.Options, athn *auth.Authenticator, accID string) (srv *localauth.Server, la *lucictx.LocalAuth, err error) {
-	// Two cases here:
-	//  1) We are using options that specify service account private key or
-	//     IAM-based authenticator (with IAM refresh token just initialized
-	//     above). In this case we can mint tokens for any requested combination
-	//     of scopes and can use NewFlexibleGenerator.
-	//  2) We are using options that specify some externally configured
-	//     authenticator (like GCE metadata server, or a refresh token). In this
-	//     case we have to use this specific authenticator for generating tokens.
-	var gen localauth.TokenGenerator
-	if auth.AllowsArbitraryScopes(ctx, opts) {
-		logging.Debugf(ctx, "Using flexible token generator: %s (acting as %q)", opts.Method, opts.ActAsServiceAccount)
-		gen, err = localauth.NewFlexibleGenerator(ctx, opts)
-	} else {
-		// An authenticator preconfigured with given list of scopes.
-		logging.Debugf(ctx, "Using rigid token generator: %s (scopes %s)", opts.Method, opts.Scopes)
-		gen, err = localauth.NewRigidGenerator(ctx, athn)
-	}
+func launchSrv(ctx context.Context, opts auth.Options, accID string) (*localauth.Server, *lucictx.LocalAuth, error) {
+	gen, err := localauth.NewTokenGenerator(ctx, opts)
 	if err != nil {
-		return
+		return nil, nil, err
 	}
 
 	// We currently always setup a context with one account (which is also
 	// default). It means if we override some existing LUCI_CONTEXT, all
 	// non-default accounts there are "forgotten".
-	srv = &localauth.Server{
+	srv := &localauth.Server{
 		TokenGenerators: map[string]localauth.TokenGenerator{
 			accID: gen,
 		},
 		DefaultAccountID: accID,
 	}
-	la, err = srv.Start(ctx)
-	return
+	la, err := srv.Start(ctx)
+	return srv, la, err
 }
 
 func (ac *Context) setupGitAuth(tempDir string) error {

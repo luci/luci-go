@@ -17,6 +17,7 @@ package localauth
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -26,38 +27,82 @@ import (
 	"go.chromium.org/luci/auth"
 )
 
-// NewFlexibleGenerator constructs TokenGenerator that can generate tokens with
-// arbitrary set of scopes, if given options allow.
+// NewTokenGenerator constructs TokenGenerator that can generate tokens with
+// arbitrary set of scopes or audiences, if given options allow.
 //
 // It creates one or more auth.Authenticator instances internally (per
-// combination of requested scopes) using given 'opts' as a basis for options.
+// combination of requested parameters) using given 'opts' as a basis for
+// auth options.
 //
-// Works only for options for which auth.AllowsArbitraryScopes(...) is true.
-// In this case options point to a service account private key or something
-// equivalent.
+// If given options allow minting tokens with arbitrary scopes, then opts.Scopes
+// are ignored and they are instead substituted with the scopes requested in
+// GenerateToken. This happens, for example, when `opts` indicate using service
+// account keys, or IAM impersonation or LUCI context protocol. In all these
+// cases the credentials are "powerful enough" to generate tokens with arbitrary
+// scopes.
 //
-// The token generator will produce tokens that have exactly requested scopes.
-// Value of opts.Scopes is ignored.
-func NewFlexibleGenerator(ctx context.Context, opts auth.Options) (TokenGenerator, error) {
-	if !auth.AllowsArbitraryScopes(ctx, opts) {
-		return nil, fmt.Errorf("can't use given auth.Options to mint token with arbitrary scopes")
+// If given options do not allow changing scopes (e.g. they are backed by an
+// OAuth2 refresh token that has fixed scopes), then GenerateToken will return
+// tokens with such fixed scopes regardless of what scopes are requested. This
+// is still useful sometimes, since some fixed scopes can actually cover a lot
+// of other scopes (e.g. "cloud-platform" scopes covers a ton of more fine grain
+// Cloud scopes).
+func NewTokenGenerator(ctx context.Context, opts auth.Options) (TokenGenerator, error) {
+	if opts.Method == auth.AutoSelectMethod {
+		opts.Method = auth.SelectBestMethod(ctx, opts)
 	}
-	return &flexibleGenerator{
-		ctx:            ctx,
-		opts:           opts,
-		authenticators: map[string]*auth.Authenticator{},
+	if len(opts.Scopes) == 0 {
+		opts.Scopes = []string{auth.OAuthScopeEmail}
+	}
+	sort.Strings(opts.Scopes)
+	return &generator{
+		ctx:                   ctx,
+		opts:                  opts,
+		allowsArbitraryScopes: allowsArbitraryScopes(&opts),
+		authenticators:        map[string]*auth.Authenticator{},
 	}, nil
 }
 
-type flexibleGenerator struct {
-	ctx  context.Context
-	opts auth.Options
+// allowsArbitraryScopes returns true if given authenticator options allow
+// generating tokens for arbitrary set of scopes.
+//
+// For example, using a private key to sign assertions allows to mint tokens
+// for any set of scopes (since there's no restriction on what scopes we can
+// put into JWT to be signed).
+func allowsArbitraryScopes(opts *auth.Options) bool {
+	switch {
+	case opts.Method == auth.ServiceAccountMethod:
+		// A private key can be used to generate tokens with any combination of
+		// scopes.
+		return true
+	case opts.Method == auth.LUCIContextMethod:
+		// We can ask the local auth server for any combination of scopes.
+		return true
+	case opts.ActAsServiceAccount != "":
+		// When using derived tokens the authenticator can ask the corresponding API
+		// (Cloud IAM's generateAccessToken or LUCI's MintServiceAccountToken) for
+		// any scopes it wants.
+		return true
+	}
+	return false
+}
+
+type generator struct {
+	ctx                   context.Context
+	opts                  auth.Options
+	allowsArbitraryScopes bool
 
 	lock           sync.RWMutex
 	authenticators map[string]*auth.Authenticator
 }
 
-func (g *flexibleGenerator) authenticator(scopes []string) (*auth.Authenticator, error) {
+func (g *generator) authenticator(scopes []string) (*auth.Authenticator, error) {
+	// For auth methods that don't allow changing scopes, just use the predefined
+	// ones and hope they are sufficient for the caller.
+	if !g.allowsArbitraryScopes {
+		scopes = g.opts.Scopes
+	}
+
 	// We use '\n' as separator. It should not appear in the scopes.
 	for _, s := range scopes {
 		if strings.ContainsRune(s, '\n') {
@@ -77,6 +122,7 @@ func (g *flexibleGenerator) authenticator(scopes []string) (*auth.Authenticator,
 		authenticator = g.authenticators[cacheKey]
 		if authenticator == nil {
 			opts := g.opts
+			opts.UseIDTokens = false
 			opts.Scopes = scopes
 			authenticator = auth.NewAuthenticator(g.ctx, auth.SilentLogin, opts)
 			g.authenticators[cacheKey] = authenticator
@@ -86,7 +132,7 @@ func (g *flexibleGenerator) authenticator(scopes []string) (*auth.Authenticator,
 	return authenticator, nil
 }
 
-func (g *flexibleGenerator) GenerateToken(_ context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+func (g *generator) GenerateToken(_ context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 	a, err := g.authenticator(scopes)
 	if err != nil {
 		return nil, err
@@ -94,51 +140,25 @@ func (g *flexibleGenerator) GenerateToken(_ context.Context, scopes []string, li
 	return a.GetAccessToken(lifetime)
 }
 
-func (g *flexibleGenerator) GetEmail() (string, error) {
+func (g *generator) GetEmail() (string, error) {
+	// First try to fish out the email from existing cached authenticators.
+	var email string
+	g.lock.RLock()
+	for _, a := range g.authenticators {
+		if email, _ = a.GetEmail(); email != "" {
+			break
+		}
+	}
+	g.lock.RUnlock()
+
+	if email != "" {
+		return email, nil
+	}
+
+	// Give up and construct a new authenticator just to get the email.
 	a, err := g.authenticator([]string{auth.OAuthScopeEmail})
 	if err != nil {
 		return "", err
 	}
 	return a.GetEmail()
-}
-
-// NewRigidGenerator constructs TokenGenerator that always uses given
-// authenticator to generate tokens, regardless of requested scopes.
-//
-// It is suitable for auth methods that rely on existing pre-configured
-// credentials or state to generate tokens with some predefined set of scopes.
-//
-// For example, this is the case for UserCredentialsMethod (where the user has
-// to go through a login flow to get a refresh token) or for GCEMetadataMethod
-// (where GCE instance has to be launched with predefined list of scopes).
-//
-// The token generator will return the access token with scopes it can give,
-// regardless of requested scopes. Also this token will always have all scopes
-// given to it by Authenticator.
-//
-// Note that we can't even compare the requested scopes to the scopes provided
-// by the authenticator, because some Google scopes are aliases for a large set
-// of scopes. For example, a token with 'cloud-platform' scope can be used in
-// APIs that expect 'iam' scope. So the generator will just give the token it
-// has, hoping for the best. If the token is not sufficient, callers will get
-// HTTP 403 or HTTP 401 errors when using it.
-func NewRigidGenerator(ctx context.Context, authenticator *auth.Authenticator) (TokenGenerator, error) {
-	// Bail early if we detect there are no cached refresh token for the requested
-	// combination of scopes.
-	if err := authenticator.CheckLoginRequired(); err != nil {
-		return nil, err
-	}
-	return rigidGenerator{authenticator}, nil
-}
-
-type rigidGenerator struct {
-	authenticator *auth.Authenticator
-}
-
-func (g rigidGenerator) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
-	return g.authenticator.GetAccessToken(lifetime)
-}
-
-func (g rigidGenerator) GetEmail() (string, error) {
-	return g.authenticator.GetEmail()
 }
