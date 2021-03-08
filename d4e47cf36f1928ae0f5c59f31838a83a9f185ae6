@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ae08e4f_a3b2332d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T22:59:28Z",
+      "side": 1,
+      "message": "I\u0027m tired atm and can\u0027t suggest what to to put inside the code,\nbut I\u0027m sure future me would love to read this alongside doc already in code.\nMaybe just paste it as is?",
+      "revId": "d4e47cf36f1928ae0f5c59f31838a83a9f185ae6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
