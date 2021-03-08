@@ -18,6 +18,7 @@ import '@material/mwc-dialog';
 import '@material/mwc-textarea';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
+import { EditorConfiguration } from 'codemirror';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
@@ -260,12 +261,15 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderProperties(header: string, properties: {[key: string]: unknown}) {
-    const editorOptions = {
+    const editorOptions: EditorConfiguration = {
       mode: {name: 'javascript', json: true},
       readOnly: true,
       scrollbarStyle: 'null',
       matchBrackets: true,
       lineWrapping: true,
+      foldGutter: true,
+      lineNumbers: true,
+      gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
     };
 
     return html`
