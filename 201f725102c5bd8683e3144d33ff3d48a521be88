@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "916e44e2_2e418a17",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-08T20:10:30Z",
+      "side": 1,
+      "message": "Should it be `!w.IsZero() \u0026\u0026 w.Before(when)`?",
+      "range": {
+        "startLine": 86,
+        "startChar": 34,
+        "endLine": 86,
+        "endChar": 45
+      },
+      "revId": "201f725102c5bd8683e3144d33ff3d48a521be88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c030de8_4d2c28fa",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stagepurges.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-08T20:10:30Z",
+      "side": 1,
+      "message": "Maybe purgeReason also matter here? e.g. cv doesn\u0027t need to wait for stabilizationDelay if purgeResaon is owner lacks of email which most likely can\u0027t be fixed by end of the delay.\n\nBut This is trivial to change in the future, we can start with what you have today for simplicity.",
+      "revId": "201f725102c5bd8683e3144d33ff3d48a521be88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
