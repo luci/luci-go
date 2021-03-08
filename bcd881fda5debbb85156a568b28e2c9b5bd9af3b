@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bfc54fcd_07e1cdd8",
+        "filename": "milo/frontend/resultui/src/context/app_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T19:22:27Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 38,
+        "startChar": 54,
+        "endLine": 38,
+        "endChar": 56
+      },
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b9470f1a_0f20de36",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T19:22:27Z",
+      "side": 1,
+      "message": "nit: I think the code would be a bit more readable if this was in additional parenthesis.",
+      "range": {
+        "startLine": 98,
+        "startChar": 40,
+        "endLine": 98,
+        "endChar": 90
+      },
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "365e2548_103a05de",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T19:22:27Z",
+      "side": 1,
+      "message": "hash too?",
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "203018b3_723185ad",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T19:22:27Z",
+      "side": 1,
+      "message": "ideally there is one way of doing things\n\nlooks like the same data can be stored in two fields. Consider storing one thing in one place. If you need buildState.buildIdParam only to decide whether to use short links, then consider having a boolean for that, while still keeping build id in buildNumOrId",
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7b642d4_2884a679",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-08T19:22:27Z",
+      "side": 1,
+      "message": "this doesn\u0027t mean it succeeded, right?\nCan the L246 callback be called if the request failed?",
+      "range": {
+        "startLine": 245,
+        "startChar": 42,
+        "endLine": 245,
+        "endChar": 54
+      },
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
