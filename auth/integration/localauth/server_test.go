@@ -43,8 +43,12 @@ type callbackGen struct {
 	cb    func(context.Context, []string, time.Duration) (*oauth2.Token, error)
 }
 
-func (g *callbackGen) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+func (g *callbackGen) GenerateOAuthToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 	return g.cb(ctx, scopes, lifetime)
+}
+
+func (g *callbackGen) GenerateIDToken(ctx context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error) {
+	return g.cb(ctx, []string{"audience:" + audience}, lifetime)
 }
 
 func (g *callbackGen) GetEmail() (string, error) {

@@ -14,6 +14,27 @@
 
 package rpcs
 
+import (
+	"go.chromium.org/luci/common/errors"
+)
+
+// BaseRequest defines fields included in all requests.
+type BaseRequest struct {
+	Secret    []byte `json:"secret"`
+	AccountID string `json:"account_id"`
+}
+
+// Validate checks that the request is structurally valid.
+func (r *BaseRequest) Validate() error {
+	switch {
+	case len(r.Secret) == 0:
+		return errors.New(`field "secret" is required`)
+	case r.AccountID == "":
+		return errors.New(`field "account_id" is required`)
+	}
+	return nil
+}
+
 // BaseResponse defines optional fields included in all responses.
 type BaseResponse struct {
 	ErrorCode    int    `json:"error_code,omitempty"`
