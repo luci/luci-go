@@ -30,9 +30,17 @@ export class AppState {
   @observable.ref selectedTabId = '';
   @observable.ref selectedBlamelistPinIndex = 0;
 
-  // Indicates whether the current page has a settings dialog.
-  // This should be set by the current page.
-  @observable.ref hasSettingsDialog = false;
+  // Use number instead of boolean because previousPage.disconnectedCallback
+  // might be called after currentPage.disconnectedCallback.
+  // Number allows us to reset the setting even when the execution is out of
+  // order.
+  /**
+   * When hasSettingsDialog > 0, the current page has a settings dialog.
+   *
+   * If the page has a setting dialog, it should increment the number on connect
+   * and decrement it on disconnet.
+   */
+  @observable.ref hasSettingsDialog = 0;
   @observable.ref showSettingsDialog = false;
 
   @observable.ref gAuth: gapi.auth2.GoogleAuth | null = null;

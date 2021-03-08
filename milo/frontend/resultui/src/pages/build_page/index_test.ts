@@ -22,7 +22,7 @@ import '.';
 import { BuildPageElement } from '.';
 import { AppState } from '../../context/app_state';
 import { UserConfigsStore } from '../../context/user_configs';
-import { Build, BuildInput, BuildsService } from '../../services/buildbucket';
+import { Build, BuildInput, BuildsService, GetBuildRequest } from '../../services/buildbucket';
 import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../../services/resultdb';
 
 const builder = {
@@ -51,7 +51,7 @@ describe('Invocation Page', () => {
     const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
-    await aTimeout(10);
+    await aTimeout(0);
     assert.strictEqual(page.buildState.invocationId, await getInvIdFromBuildNum(builder, 1234));
     page.disconnectedCallback();
   });
@@ -75,7 +75,7 @@ describe('Invocation Page', () => {
     const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
-    await aTimeout(10);
+    await aTimeout(0);
     assert.strictEqual(page.buildState.invocationId, getInvIdFromBuildId('1234'));
     page.disconnectedCallback();
   });
@@ -123,8 +123,53 @@ describe('Invocation Page', () => {
 
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
-    await aTimeout(100);
+    await aTimeout(0);
     assert.strictEqual(page.buildState.invocationId, 'invocation-id');
+    page.disconnectedCallback();
+  });
+
+  it('should redirect to a long link when visited via a short link', async () => {
+    const original = window.location.href;
+    after(() => window.history.replaceState(original, '', original));
+
+    const getBuildMock = sinon.stub<[GetBuildRequest], Promise<Build>>();
+    getBuildMock.onCall(0).resolves({
+      builder,
+      number: 123,
+      id: '1234',
+      input: {},
+      output: {properties: {}},
+    } as Build);
+
+    after(fixtureCleanup);
+    const page = await fixture<BuildPageElement>(html`
+      <milo-build-page
+        .prerender=${true}
+        .appState=${{
+          ...new AppState(),
+          buildsService: {
+            ...new BuildsService('', ''),
+            getBuild: getBuildMock,
+          },
+        }}
+        .configsStore=${new UserConfigsStore()}
+      ></milo-build-page>
+    `);
+
+    const location = {
+      params: {
+        'build_id': '1234',
+        'path': ['test-results'],
+      },
+      search: '?q=a',
+      hash: '#an-element',
+    } as Partial<RouterLocation> as RouterLocation;
+    const cmd = {} as Partial<Commands> as Commands;
+
+    await page.onBeforeEnter(location, cmd);
+    page.connectedCallback();
+    await aTimeout(0);
+    assert.isTrue(window.location.href.endsWith('/ui/p/project/builders/bucket/builder/b1234/test-results?q=a#an-element'));
     page.disconnectedCallback();
   });
 });
