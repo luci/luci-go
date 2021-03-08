@@ -76,6 +76,17 @@ router.setRoutes({
       ],
     },
     {
+      path: '/b/:build_id/:path*',
+      name: 'build-short-link',
+      action: async (_ctx, cmd) => {
+        await import(
+          /* webpackChunkName: "build_page" */
+          /* webpackPrefetch: true */
+          './pages/build_page');
+        return cmd.component('milo-build-page');
+      },
+    },
+    {
       path: '/p/:project/builders/:bucket/:builder/:build_num_or_id',
       name: 'build',
       action: async (_ctx, cmd) => {

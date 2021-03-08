@@ -28,29 +28,24 @@ import { AppState } from './app_state';
  * Records state of a build.
  */
 export class BuildState {
+  @observable.ref buildId?: string;
   @observable.ref builder?: BuilderID;
-  @observable.ref buildNumOrId?: string;
+  @observable.ref buildNum?: number;
+
+  @computed get buildNumOrId() {
+    if (this.buildNum) {
+      return `${this.buildNum}`;
+    } else if (this.buildId) {
+      return `b${this.buildId}`;
+    }
+    return null;
+  }
 
   /**
    * Indicates whether a computed invocation ID should be used.
    * Computed invocation ID may not work on older builds.
    */
   @observable.ref useComputedInvId = true;
-
-  /**
-   * buildNum is defined when this.buildNumOrId is defined and doesn't start
-   * with 'b'.
-   */
-  @computed get buildNum() {
-    return this.buildNumOrId?.startsWith('b') === false ? Number(this.buildNumOrId) : null;
-  }
-
-  /**
-   * buildId is defined when this.buildNumOrId is defined and starts with 'b'.
-   */
-  @computed get buildId() {
-    return this.buildNumOrId?.startsWith('b') ? this.buildNumOrId.slice(1) : null;
-  }
 
   @computed private get invocationId$(): IPromiseBasedObservable<string> {
     if (!this.useComputedInvId) {
@@ -59,10 +54,10 @@ export class BuildState {
       }
       const invIdFromBuild = this.build.infra?.resultdb?.invocation?.slice('invocations/'.length) || '';
       return fromPromise(Promise.resolve(invIdFromBuild));
-    } else if (this.builder && this.buildNum) {
-      return fromPromise(getInvIdFromBuildNum(this.builder, this.buildNum));
     } else if (this.buildId) {
       return fromPromise(Promise.resolve(getInvIdFromBuildId(this.buildId)));
+    } else if (this.builder && this.buildNum) {
+      return fromPromise(getInvIdFromBuildNum(this.builder, this.buildNum));
     } else {
       return fromPromise(Promise.race([]));
     }
@@ -95,7 +90,7 @@ export class BuildState {
 
   @computed
   get build$(): IPromiseBasedObservable<Build> {
-    if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
+    if (!this.appState.buildsService || (!this.builder || !this.buildNum) && this.buildId === undefined) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
