@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1a8a003_9cebde6b",
+        "filename": "cv/internal/prjmanager/impl/e2e_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T23:46:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1286f1b_2b7a8ebf",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "4a5affdcf6fc7d53a39d640687a2300fa9dd671a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66e3e745_3be0fad8",
@@ -95,6 +119,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3413b43b_9ef79dca",
+        "filename": "cv/internal/prjmanager/impl/e2e_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T23:46:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66e3e745_3be0fad8",
+      "range": {
+        "startLine": 39,
+        "startChar": 31,
+        "endLine": 39,
+        "endChar": 36
+      },
+      "revId": "4a5affdcf6fc7d53a39d640687a2300fa9dd671a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9d9944f0_973d65d8",
@@ -129,6 +177,30 @@
         "id": 1003190
       },
       "writtenOn": "2021-03-08T21:25:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d9944f0_973d65d8",
+      "range": {
+        "startLine": 102,
+        "startChar": 4,
+        "endLine": 102,
+        "endChar": 8
+      },
+      "revId": "4a5affdcf6fc7d53a39d640687a2300fa9dd671a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7cbc7307_890f48e5",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T23:46:46Z",
       "side": 1,
       "message": "Done",
       "parentUuid": "9d9944f0_973d65d8",
