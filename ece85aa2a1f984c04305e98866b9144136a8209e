@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "ece85aa2a1f984c04305e98866b9144136a8209e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb4ceb19_17a33637",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-08T20:24:01Z",
+      "side": 1,
+      "message": "nit; adding \"/\" before the ending char, \"\u003e\"\ni.e., \u003ctext-artifact ... /\u003e",
+      "range": {
+        "startLine": 105,
+        "startChar": 82,
+        "endLine": 105,
+        "endChar": 84
+      },
+      "revId": "ece85aa2a1f984c04305e98866b9144136a8209e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
