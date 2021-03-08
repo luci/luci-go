@@ -16,6 +16,29 @@
       "message": "Demo: https://paste.googleplex.com/5708273840816128",
       "revId": "9c8aa80226c6e0bfb0882835204c915b33890c65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c314d62c_1f2f8971",
+        "filename": "auth/integration/localauth/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T23:39:58Z",
+      "side": 1,
+      "message": "i always wanted to check you: what\u0027s *your* strategy behind using \n  \u0027xyz - %s\u0027 % err\nvs \n  \u0027xyz: %s\u0027 % err \n?",
+      "range": {
+        "startLine": 412,
+        "startChar": 39,
+        "endLine": 412,
+        "endChar": 40
+      },
+      "revId": "9c8aa80226c6e0bfb0882835204c915b33890c65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
