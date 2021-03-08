@@ -32,7 +32,7 @@ import (
 func TestTQifyError(t *testing.T) {
 	t.Parallel()
 
-	Convey("TQifyError works", t, func() {
+	Convey("TQify works", t, func() {
 		ctx := memlogger.Use(context.Background())
 		ml := logging.Get(ctx).(*memlogger.MemLogger)
 		if testing.Verbose() {
@@ -55,36 +55,75 @@ func TestTQifyError(t *testing.T) {
 		errTransBoo := transient.Tag.Apply(errBoo)
 		errWrapOops := errors.Annotate(errOops, "wrapped").Err()
 		errMulti := errors.NewMultiError(errWrapOops, errBoo)
+		errRare := errors.New("an oppressed invertebrate lacking emoji unlike 🐞 or 🐛")
+		errTransRare := transient.Tag.Apply(errRare)
 
-		Convey("noop", func() {
-			err := TQifyError(ctx, nil)
-			So(err, ShouldBeNil)
-			So(ml.Messages(), ShouldHaveLength, 0)
+		Convey("matchesErrors is true if it matches ANY leaf errors", func() {
+			So(matchesErrors(errWrapOops, errOops), ShouldBeTrue)
+			So(matchesErrors(errMulti, errOops), ShouldBeTrue)
+			So(matchesErrors(errWrapOops, errWrapOops), ShouldBeFalse)
+			So(matchesErrors(errMulti, errWrapOops), ShouldBeFalse)
+
+			So(matchesErrors(errTransRare, errOops, errBoo, errRare), ShouldBeTrue)
+			So(matchesErrors(errTransRare, errOops, errBoo), ShouldBeFalse)
 		})
-		Convey("fatal", func() {
-			err := TQifyError(ctx, errOops)
-			So(tq.Fatal.In(err), ShouldBeTrue)
-			So(assertLoggedStack(), ShouldContainSubstring, "oops")
+
+		Convey("Simple", func() {
+			Convey("noop", func() {
+				err := TQifyError(ctx, nil)
+				So(err, ShouldBeNil)
+				So(ml.Messages(), ShouldHaveLength, 0)
+			})
+			Convey("non-transient becomes Fatal and is logged", func() {
+				err := TQifyError(ctx, errOops)
+				So(tq.Fatal.In(err), ShouldBeTrue)
+				So(assertLoggedStack(), ShouldContainSubstring, "oops")
+			})
+			Convey("transient is retried and logged", func() {
+				err := TQifyError(ctx, errTransBoo)
+				So(tq.Fatal.In(err), ShouldBeFalse)
+				So(assertLoggedStack(), ShouldContainSubstring, "boo")
+			})
 		})
-		Convey("trans", func() {
-			err := TQifyError(ctx, errTransBoo)
-			So(tq.Fatal.In(err), ShouldBeFalse)
-			So(assertLoggedStack(), ShouldContainSubstring, "boo")
-		})
-		Convey("not excluded", func() {
-			err := TQifyError(ctx, errTransBoo, errOops)
-			So(tq.Fatal.In(err), ShouldBeFalse)
-			So(assertLoggedStack(), ShouldContainSubstring, "boo")
-		})
-		Convey("exclude simple unwrap", func() {
-			err := TQifyError(ctx, errTransBoo, errBoo)
-			So(tq.Fatal.In(err), ShouldBeFalse)
-			So(ml.Messages(), ShouldBeEmpty)
-		})
-		Convey("exclude with multierror", func() {
-			err := TQifyError(ctx, errMulti, errOops)
-			So(tq.Fatal.In(err), ShouldBeTrue)
-			So(ml.Messages(), ShouldBeEmpty)
+
+		Convey("With Known errors", func() {
+			tqify := TQIfy{
+				KnownRetry: []error{errBoo},
+				KnownFatal: []error{errOops},
+			}
+			Convey("on unknown error", func() {
+				Convey("transient -> retried and logged", func() {
+					err := tqify.Error(ctx, errTransRare)
+					So(err, ShouldEqual, errTransRare)
+					So(assertLoggedStack(), ShouldContainSubstring, "lacking emoji")
+				})
+				Convey("non-transient -> Fatal and logged", func() {
+					err := tqify.Error(ctx, errRare)
+					So(tq.Fatal.In(err), ShouldBeTrue)
+					So(assertLoggedStack(), ShouldContainSubstring, "lacking emoji")
+				})
+			})
+
+			Convey("KnownFatal => tq.Fatal, no log", func() {
+				err := tqify.Error(ctx, errWrapOops)
+				So(tq.Fatal.In(err), ShouldBeTrue)
+				So(ml.Messages(), ShouldBeEmpty)
+			})
+			Convey("KnownRetry => non-transient, non-Fatal, no log", func() {
+				err := tqify.Error(ctx, errTransBoo)
+				So(tq.Fatal.In(err), ShouldBeFalse)
+				So(transient.Tag.In(err), ShouldBeFalse)
+				So(ml.Messages(), ShouldBeEmpty)
+			})
+			Convey("KnownRetry & KnownFatal => KnownRetry wins", func() {
+				err := tqify.Error(ctx, errMulti)
+				So(tq.Fatal.In(err), ShouldBeFalse)
+				So(transient.Tag.In(err), ShouldBeFalse)
+				So(ml.Messages(), ShouldHaveLength, 1)
+				m := ml.Messages()[0]
+				So(m.Level, ShouldEqual, logging.Error)
+				So(m.Msg, ShouldContainSubstring, "BUG: invalid TQIfy config")
+			})
 		})
 	})
 }

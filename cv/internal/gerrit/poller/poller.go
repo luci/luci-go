@@ -103,7 +103,9 @@ func init() {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*task.PollGerritTask)
 			err := poll(ctx, task.GetLuciProject(), task.GetEta().AsTime())
-			return common.TQifyError(ctx, err, errConcurrentStateUpdate)
+			return common.TQIfy{
+				KnownRetry: []error{errConcurrentStateUpdate},
+			}.Error(ctx, err)
 		},
 	})
 }

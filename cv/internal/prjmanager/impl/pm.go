@@ -49,7 +49,9 @@ func init() {
 			err := pokePMTask(ctx, task.GetLuciProject(), eta)
 			// TODO(tandrii): avoid retries iff we know a new task was already
 			// scheduled for the next second.
-			return common.TQifyError(ctx, err, eventbox.ErrConcurretMutation)
+			return common.TQIfy{
+				KnownRetry: []error{eventbox.ErrConcurretMutation},
+			}.Error(ctx, err)
 		},
 	)
 }

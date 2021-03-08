@@ -50,39 +50,90 @@ func MostSevereError(err error) error {
 	return firstTrans
 }
 
-// TQifyError does final error processing before returning from a TQ handler.
+// TQIfy converts CV error semantics to server/TQ, and logs error if necessary.
 //
-//  * logs error with LogError unless one of error's leaf nodes matches at least
-//    one of omitStackTraceFor, in which case no log is emitted at all since
-//    server/tq will emit a line, too.
-//  * non-transient errors are tagged with tq.Fatal to avoid retries.
+// Usage:
+//   func tqHandler(ctx ..., payload...) error {
+//     err := doStuff(ctx, ...)
+//     return TQIfy{}.Error(ctx, err)
+//   }
 //
-// omitStackTraceFor must contain only unwrapped errors.
-func TQifyError(ctx context.Context, err error, omitStackTraceFor ...error) error {
+// Given that:
+//  * TQ lib recognizes 2 errror tags:
+//    * TQ.Fatal => HTTP 202, no retries
+//    * transient.Tag => HTTP 500, will be retried
+//    * else => HTTP 429, will be retried
+// OTOH, CV uses
+//  * transient.Tag to treat all _transient_ situations, where retry should
+//    help
+//  * else => permanent errors, where retries aren't helpful.
+//
+// Most _transient_ situations in CV are due to expected issues such as Gerrit
+// giving stale data. Getting HTTP 500s in this case is an unfortunate noise,
+// which obscures other infrequent situations which are worth looking at.
+type TQIfy struct {
+	// KnownRetry are expected errors which will result in HTTP 429 and retries*.
+	//
+	// * retries may not happen if task queue configuration prevents it, e.g.
+	// because task has exhausted its retry quota.
+	//
+	// Retry and Fatal should not match the same error, but if this happens, Retry
+	// takes effect and Fatal is ignored to avoid accidental damage.
+	//
+	// Stack trace isn't logged, but server/tq still logs the error string.
+	//
+	// Must contain only leaf errors, i.e. no annotated or MultiError objects.
+	KnownRetry []error
+	// KnownFatal are expected errors which will result in HTTP 202 and no
+	// retries.
+	//
+	// Stack trace isn't logged, but server/tq still logs the error string.
+	//
+	// Must contain only leaf errors, i.e. no annotated or MultiError objects.
+	KnownFatal []error
+}
+
+func (t TQIfy) Error(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
-	// If stack trace isn't needed, there is no reason to log error at all, since
-	// TQ guts emit an ERROR log, too.
-	if !shouldOmitStackTrace(err, omitStackTraceFor...) {
-		LogError(ctx, err, omitStackTraceFor...)
-	}
-	if !transient.Tag.In(err) {
+	retry := matchesErrors(err, t.KnownRetry...)
+	fail := matchesErrors(err, t.KnownFatal...)
+	switch {
+	case retry && transient.Tag.In(err):
+		// Return the same error but w/o transient tag.
+		return errors.Reason("%s", err).Err()
+	case retry && fail:
+		logging.Errorf(ctx, "BUG: invalid TQIfy config %v: error %s matched both KnownRetry and KnownFatal", t, err)
+		fallthrough
+	case retry:
+		return err
+	case fail:
+		return tq.Fatal.Apply(err)
+	case !transient.Tag.In(err):
 		err = tq.Fatal.Apply(err)
+		fallthrough
+	default:
+		LogError(ctx, err)
+		return err
 	}
-	return err
+}
+
+// TQifyError is shortcut for TQIfy{}.Error.
+func TQifyError(ctx context.Context, err error) error {
+	return TQIfy{}.Error(ctx, err)
 }
 
 // LogError is errors.Log with CV-specific package filtering.
 //
 // Logs entire error stack with ERROR severity by default.
-// Logs just error with WARNING severity iff one of error's leaf nodes matches
-// at least one of the given list of `omitStackTraceFor` errors.
+// Logs just error with WARNING severity iff one of error (or its inner error)
+// equal at least one of the given list of `expectedErrors` errors.
 // This is useful if TQ handler is known to frequently fail this way.
 //
-// omitStackTraceFor must contain only unwrapped errors.
-func LogError(ctx context.Context, err error, omitStackTraceFor ...error) {
-	if shouldOmitStackTrace(err, omitStackTraceFor...) {
+// expectedErrors must contain only unwrapped errors.
+func LogError(ctx context.Context, err error, expectedErrors ...error) {
+	if matchesErrors(err, expectedErrors...) {
 		logging.Warningf(ctx, "%s", err)
 		return
 	}
@@ -99,16 +150,16 @@ func LogError(ctx context.Context, err error, omitStackTraceFor ...error) {
 	)
 }
 
-func shouldOmitStackTrace(err error, omitStackTraceFor ...error) bool {
+func matchesErrors(err error, knownErrors ...error) bool {
 	omit := false
-	errors.WalkLeaves(err, func(leafError error) bool {
-		for _, e := range omitStackTraceFor {
-			if leafError == e {
+	errors.WalkLeaves(err, func(iErr error) bool {
+		for _, kErr := range knownErrors {
+			if iErr == kErr {
 				omit = true
 				return false // stop iteration
 			}
 		}
-		return true // continue iterating leaf nodes
+		return true // continue iterating
 	})
 	return omit
 }
