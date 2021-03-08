@@ -26,6 +26,8 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { displayDuration } from '../../libs/time_utils';
 
+const timelineStyle = require('vis-timeline/styles/vis-timeline-graph2d.min.css').default;
+
 export class TimelineTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref buildState!: BuildState;
@@ -106,7 +108,6 @@ export class TimelineTabElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <link rel="stylesheet" type="text/css" href="/static/styles/thirdparty/vis-timeline-graph2d.min.css">
       <div id="timeline"></div>
     `;
   }
@@ -115,62 +116,65 @@ export class TimelineTabElement extends MobxLitElement {
     this.rendered = true;
   }
 
-  static styles = css`
-    .vis-range {
-      cursor: pointer;
-    }
+  static styles = [
+    timelineStyle,
+    css`
+      .vis-range {
+        cursor: pointer;
+      }
 
-    .status.infra-failure {
-      color: #FFFFFF;
-      background-color: #c6c;
-      border-color: #ACA0B3;
-    }
-    .status.started {
-      color: #000;
-      background-color: #fd3;
-      border-color: #C5C56D;
-    }
-    .status.failure {
-      color: #000;
-      background-color: #e88;
-      border-color: #A77272;
-      border-style: solid;
-    }
-    .status.canceled {
-      color: #000;
-      background-color: #8ef;
-      border-color: #00d8fc;
-      border-style: solid;
-    }
-    .status.success {
-      color: #000;
-      background-color: #8d4;
-      border-color: #4F8530;
-    }
+      .status.infra-failure {
+        color: #FFFFFF;
+        background-color: #c6c;
+        border-color: #ACA0B3;
+      }
+      .status.started {
+        color: #000;
+        background-color: #fd3;
+        border-color: #C5C56D;
+      }
+      .status.failure {
+        color: #000;
+        background-color: #e88;
+        border-color: #A77272;
+        border-style: solid;
+      }
+      .status.canceled {
+        color: #000;
+        background-color: #8ef;
+        border-color: #00d8fc;
+        border-style: solid;
+      }
+      .status.success {
+        color: #000;
+        background-color: #8d4;
+        border-color: #4F8530;
+      }
 
-    .group-title > .title{
-      display: inline-block;
-      white-space: nowrap;
-      max-width: 50em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+      .group-title > .title{
+        display: inline-block;
+        white-space: nowrap;
+        max-width: 50em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    .group-title > .duration{
-      display: inline-block;
-      text-align: right;
-      float: right;
-    }
+      .group-title > .duration{
+        display: inline-block;
+        text-align: right;
+        float: right;
+      }
 
-    .group-title {
-      font-weight: bold;
-      padding: 5px;
-    }
+      .group-title {
+        font-weight: bold;
+        padding: 5px;
+      }
 
-    .vis-labelset .vis-label .vis-inner {
-      display: block;
-    }
-  `;
+      .vis-labelset .vis-label .vis-inner {
+        display: block;
+      }
+    `,
+  ];
 }
 
 customElement('milo-timeline-tab')(

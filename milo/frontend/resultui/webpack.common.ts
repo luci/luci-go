@@ -41,10 +41,14 @@ const config: webpack.Configuration = {
         },
         exclude: /node_modules/,
       },
+      {
+        test: /\.css$/,
+        loader: 'lit-css-loader',
+      },
     ],
   },
   resolve: {
-    extensions: ['.js', '.ts'],
+    extensions: ['.js', '.ts', '.css'],
   },
   externals: {
     'configs': 'CONFIGS',
