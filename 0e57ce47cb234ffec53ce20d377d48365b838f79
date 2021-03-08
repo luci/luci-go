@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6c7d4bf_b7002773",
+        "filename": "auth/integration/localauth/generator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T17:34:38Z",
+      "side": 1,
+      "message": "this is really useful doc (see me wondering on L100), but I don\u0027t grasp fully what\u0027s the harm in requesting the scopes that has asked for.\n\nIN fine-grained scope case, request will succeed and user gets a token.\nElse, if user wants entirely different scope, request will fail and user can deal with it immediately rather than getting token with a different scope and presenting it somewhere else.\n\nWhat did I get wrong / am overlooking?",
+      "range": {
+        "startLine": 46,
+        "startChar": 74,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "0e57ce47cb234ffec53ce20d377d48365b838f79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b34d34e_542d82d6",
+        "filename": "auth/integration/localauth/generator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T17:34:38Z",
+      "side": 1,
+      "message": "for my own understanding: if I run \n  luci-auth context \u003climited scopes\u003e -- \u003cIT\u003dgo app using this authenticator\u003e\n\nwhile IT *can ask*, it doesn\u0027t mean `luci-auth` will actually provide a token, it may as well be an error. Right?",
+      "range": {
+        "startLine": 79,
+        "startChar": 12,
+        "endLine": 79,
+        "endChar": 15
+      },
+      "revId": "0e57ce47cb234ffec53ce20d377d48365b838f79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "640be97c_a5b84c29",
+        "filename": "auth/integration/localauth/generator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T17:34:38Z",
+      "side": 1,
+      "message": "I bet you\u0027ve though of this, but it\u0027s not clear to me. Why is the following worse\n\n  if set(scopes).difference(set(g.opts.Scopes)):\n    return nil, errors.New(...)\n\n(except that ~10 LOC required for this in Go)\nupdate: will ask at the doc for this struct instead.",
+      "range": {
+        "startLine": 101,
+        "startChar": 13,
+        "endLine": 101,
+        "endChar": 17
+      },
+      "revId": "0e57ce47cb234ffec53ce20d377d48365b838f79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
