@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7e19260_96abedd2",
+        "filename": "milo/frontend/resultui/src/context/app_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T22:59:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bfc54fcd_07e1cdd8",
+      "range": {
+        "startLine": 38,
+        "startChar": 54,
+        "endLine": 38,
+        "endChar": 56
+      },
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9470f1a_0f20de36",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-08T19:22:27Z",
       "side": 1,
       "message": "nit: I think the code would be a bit more readable if this was in additional parenthesis.",
+      "range": {
+        "startLine": 98,
+        "startChar": 40,
+        "endLine": 98,
+        "endChar": 90
+      },
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f6928e2_87039998",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T22:59:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9470f1a_0f20de36",
       "range": {
         "startLine": 98,
         "startChar": 40,
@@ -64,6 +112,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "79ec5a68_251f0f49",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T22:59:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "365e2548_103a05de",
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "203018b3_723185ad",
@@ -81,6 +147,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4d0b2fa_2da99272",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T22:59:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "203018b3_723185ad",
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e7b642d4_2884a679",
@@ -94,6 +178,30 @@
       "writtenOn": "2021-03-08T19:22:27Z",
       "side": 1,
       "message": "this doesn\u0027t mean it succeeded, right?\nCan the L246 callback be called if the request failed?",
+      "range": {
+        "startLine": 245,
+        "startChar": 42,
+        "endLine": 245,
+        "endChar": 54
+      },
+      "revId": "bcd881fda5debbb85156a568b28e2c9b5bd9af3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11d66f24_cbab9184",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-08T22:59:15Z",
+      "side": 1,
+      "message": "L220 is triggered first in that case.\nBut you are right. \u003d\u003d\u003d FULFILLED is more robust.",
+      "parentUuid": "e7b642d4_2884a679",
       "range": {
         "startLine": 245,
         "startChar": 42,
