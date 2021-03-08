@@ -29,20 +29,32 @@ import (
 )
 
 type serviceAccountTokenProvider struct {
-	ctx     context.Context // only for logging
-	jsonKey []byte
-	path    string
-	scopes  []string
+	ctx         context.Context // only for logging
+	jsonKey     []byte
+	path        string
+	useIDTokens bool
+	scopes      []string
+	audience    string
 }
 
 // NewServiceAccountTokenProvider returns TokenProvider that uses service
 // account private key (on disk or in memory) to make access tokens.
-func NewServiceAccountTokenProvider(ctx context.Context, jsonKey []byte, path string, scopes []string) (TokenProvider, error) {
+func NewServiceAccountTokenProvider(ctx context.Context, useIDTokens bool, jsonKey []byte, path string, scopes []string, audience string) (TokenProvider, error) {
+	if useIDTokens {
+		if audience == "" {
+			return nil, ErrAudienceRequired
+		}
+		scopes = nil
+	} else {
+		audience = ""
+	}
 	return &serviceAccountTokenProvider{
-		ctx:     ctx,
-		jsonKey: jsonKey,
-		path:    path,
-		scopes:  scopes,
+		ctx:         ctx,
+		jsonKey:     jsonKey,
+		path:        path,
+		useIDTokens: useIDTokens,
+		scopes:      scopes,
+		audience:    audience,
 	}, nil
 }
 
@@ -56,7 +68,15 @@ func (p *serviceAccountTokenProvider) jwtConfig(ctx context.Context) (*jwt.Confi
 			return nil, err
 		}
 	}
-	return google.JWTConfigFromJSON(jsonKey, p.scopes...)
+	cfg, err := google.JWTConfigFromJSON(jsonKey, p.scopes...)
+	if err != nil {
+		return nil, err
+	}
+	if p.useIDTokens {
+		cfg.UseIDToken = true
+		cfg.PrivateClaims = map[string]interface{}{"target_audience": p.audience}
+	}
+	return cfg, nil
 }
 
 func (p *serviceAccountTokenProvider) RequiresInteraction() bool {
@@ -91,6 +111,7 @@ func (p *serviceAccountTokenProvider) CacheKey(ctx context.Context) (*CacheKey, 
 		logging.Errorf(ctx, "Failed to load private key JSON - %s", err)
 		return nil, ErrBadCredentials
 	}
+
 	// PrivateKeyID is optional part of the private key JSON. If not given, use
 	// a digest of the private key itself. This ID is used strictly locally, it
 	// doesn't matter how we get it as long as it is repeatable between process
@@ -101,9 +122,17 @@ func (p *serviceAccountTokenProvider) CacheKey(ctx context.Context) (*CacheKey, 
 		h.Write(cfg.PrivateKey)
 		pkeyID = "custom:" + hex.EncodeToString(h.Sum(nil))
 	}
+
+	// When using ID tokens, put the audience as a fake scope in the cache key.
+	// See the comment for Scopes in CacheKey.
+	scopes := p.scopes
+	if p.useIDTokens {
+		scopes = []string{"audience:" + p.audience}
+	}
+
 	return &CacheKey{
 		Key:    fmt.Sprintf("service_account/%s/%s", cfg.Email, pkeyID),
-		Scopes: p.scopes,
+		Scopes: scopes,
 	}, nil
 }
 
@@ -119,13 +148,21 @@ func (p *serviceAccountTokenProvider) MintToken(ctx context.Context, base *Token
 		if email == "" {
 			email = NoEmail
 		}
-		return &Token{
+		ret := &Token{
 			Token:   *newTok,
 			IDToken: NoIDToken,
 			Email:   email,
-		}, nil
+		}
+		// When jwt.Config.UseIDToken is true, the produced oauth2.Token actually
+		// contains the ID token, not the access token. Perform a compensating
+		// switcheroo.
+		if cfg.UseIDToken {
+			ret.IDToken = ret.AccessToken
+			ret.AccessToken = NoAccessToken
+		}
+		return ret, nil
 	case transient.Tag.In(err):
-		logging.Warningf(ctx, "Error when creating access token - %s", err)
+		logging.Warningf(ctx, "Error when creating token - %s", err)
 		return nil, err
 	default:
 		logging.Warningf(ctx, "Invalid or revoked service account key - %s", err)

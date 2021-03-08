@@ -85,6 +85,11 @@ var (
 	// inherently by its nature (e.g. not implemented) or due to its configuration
 	// (e.g. no necessary scopes).
 	ErrNoIDToken = errors.New("ID tokens are not supported in this configuration")
+
+	// ErrNoAccessToken is returned by GetAccessToken when UseIDTokens option is
+	// false (i.e. the caller wants access tokens), but the authentication method
+	// doesn't actually support access tokens.
+	ErrNoAccessToken = errors.New("access tokens are not supported in this configuration")
 )
 
 // Some known Google API OAuth scopes.
@@ -235,15 +240,28 @@ type Options struct {
 	// instead. This is useful, for example, when calling APIs that are hosted on
 	// Cloud Run or served via Cloud Endpoints.
 	//
-	// Currently works only with UserCredentialsMethod.
+	// Currently only partially supported, see crbug.com/1184230.
 	//
 	// Default: false.
 	UseIDTokens bool
 
 	// Scopes is a list of OAuth scopes to request.
 	//
+	// Ignored when using ID tokens.
+	//
 	// Default: [OAuthScopeEmail].
 	Scopes []string
+
+	// Audience is the audience to put into ID tokens.
+	//
+	// It will become `aud` claim in the token. Should usually be some "https://"
+	// URL. Services that validate ID tokens check this field.
+	//
+	// Ignored when not using ID tokens or when using UserCredentialsMethod (the
+	// audience always matches OAuth2 ClientID in this case).
+	//
+	// Defaults: the value of ClientID to mimic UserCredentialsMethod.
+	Audience string
 
 	// ActAsServiceAccount is used to act as a specified service account email.
 	//
@@ -501,14 +519,17 @@ type Authenticator struct {
 // context: uses its logger, clock and deadline.
 func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *Authenticator {
 	// Add default scope, sort scopes.
-	if len(opts.Scopes) == 0 {
-		opts.Scopes = []string{OAuthScopeEmail}
+	if len(opts.Scopes) == 0 || opts.UseIDTokens {
+		opts.Scopes = []string{OAuthScopeEmail} // also implies "openid"
 	} else {
 		opts.Scopes = append([]string(nil), opts.Scopes...) // copy
 		sort.Strings(opts.Scopes)
 	}
 
 	// Fill in blanks with default values.
+	if opts.Audience == "" {
+		opts.Audience = opts.ClientID
+	}
 	if opts.GCEAccountName == "" {
 		opts.GCEAccountName = "default"
 	}
@@ -611,7 +632,10 @@ func (a *Authenticator) PerRPCCredentials() (credentials.PerRPCCredentials, erro
 	}
 }
 
-// GetAccessToken returns a valid access token with specified minimum lifetime.
+// GetAccessToken returns a valid token with the specified minimum lifetime.
+//
+// Returns either an access token or an ID token based on UseIDTokens
+// authenticator option.
 //
 // Does not interact with the user. May return ErrLoginRequired.
 func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, error) {
@@ -658,6 +682,12 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 			Expiry:      tok.Expiry,
 			TokenType:   "Bearer",
 		}, nil
+	}
+
+	// This should not be happening, but in case it does, better to return an
+	// error instead of a phony access token.
+	if tok.Token.AccessToken == internal.NoAccessToken {
+		return nil, ErrNoAccessToken
 	}
 
 	return &tok.Token, nil
@@ -932,18 +962,22 @@ func (a *Authenticator) ensureInitialized() error {
 	// token is also the target auth token, so scope it to whatever scopes were
 	// requested via Options.
 	var scopes []string
+	var useIDTokens bool
 	switch a.actingMode() {
 	case actingModeNone:
 		scopes = a.opts.Scopes
+		useIDTokens = a.opts.UseIDTokens
 	case actingModeIAM:
 		scopes = []string{OAuthScopeIAM}
+		useIDTokens = false // IAM uses OAuth tokens
 	case actingModeLUCI:
 		scopes = []string{OAuthScopeEmail}
+		useIDTokens = false // LUCI currently uses OAuth tokens
 	default:
 		panic("impossible")
 	}
 	a.baseToken = &tokenWithProvider{}
-	a.baseToken.provider, a.err = makeBaseTokenProvider(a.ctx, a.opts, scopes)
+	a.baseToken.provider, a.err = makeBaseTokenProvider(a.ctx, a.opts, scopes, useIDTokens)
 	if a.err != nil {
 		return a.err // note: this can be ErrInsufficientAccess
 	}
@@ -1406,17 +1440,20 @@ func (t *tokenWithProvider) refreshTokenWithRetries(ctx context.Context, prev, b
 
 // makeBaseTokenProvider creates TokenProvider implementation based on options.
 //
-// opts.Scopes is ignored, 'scopes' is used instead. This is used in actor mode
-// to supply scopes necessary to use an "acting" API.
+// opts.Scopes and opts.UseIDTokens are ignored, `scopes` and `useIDTokens` are
+// used instead. This is used in actor mode to supply parameters necessary to
+// use an "acting" API: they generally do not match what's in `opts`.
 //
 // Called by ensureInitialized.
-func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string) (internal.TokenProvider, error) {
+func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, useIDTokens bool) (internal.TokenProvider, error) {
 	if opts.testingBaseTokenProvider != nil {
 		return opts.testingBaseTokenProvider, nil
 	}
 
 	switch opts.Method {
 	case UserCredentialsMethod:
+		// Note: supports ID tokens and OAuth access tokens at the same time.
+		// Ignores audience (it always matches ClientID).
 		return internal.NewUserAuthTokenProvider(
 			ctx,
 			opts.ClientID,
@@ -1429,13 +1466,25 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string) 
 		}
 		return internal.NewServiceAccountTokenProvider(
 			ctx,
+			useIDTokens,
 			opts.ServiceAccountJSON,
 			serviceAccountPath,
-			scopes)
+			scopes,
+			opts.Audience)
 	case GCEMetadataMethod:
-		return internal.NewGCETokenProvider(ctx, opts.GCEAccountName, scopes)
+		return internal.NewGCETokenProvider(
+			ctx,
+			useIDTokens,
+			opts.GCEAccountName,
+			scopes,
+			opts.Audience)
 	case LUCIContextMethod:
-		return internal.NewLUCIContextTokenProvider(ctx, scopes, opts.Transport)
+		return internal.NewLUCIContextTokenProvider(
+			ctx,
+			useIDTokens,
+			scopes,
+			opts.Audience,
+			opts.Transport)
 	default:
 		return nil, fmt.Errorf("auth: unrecognized authentication method: %s", opts.Method)
 	}
@@ -1450,8 +1499,10 @@ func makeIAMTokenProvider(ctx context.Context, opts *Options) (internal.TokenPro
 	}
 	return internal.NewIAMTokenProvider(
 		ctx,
+		opts.UseIDTokens,
 		opts.ActAsServiceAccount,
 		opts.Scopes,
+		opts.Audience,
 		opts.Transport)
 }
 
@@ -1467,9 +1518,11 @@ func makeLUCITokenProvider(ctx context.Context, opts *Options) (internal.TokenPr
 	}
 	return internal.NewLUCITSTokenProvider(
 		ctx,
+		opts.UseIDTokens,
 		opts.TokenServerHost,
 		opts.ActAsServiceAccount,
 		opts.ActViaLUCIRealm,
 		opts.Scopes,
+		opts.Audience,
 		opts.Transport)
 }
