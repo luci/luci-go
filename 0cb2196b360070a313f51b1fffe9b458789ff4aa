@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb736368_9642beaa",
+        "filename": "cv/internal/prjmanager/impl/e2e_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-08T20:40:20Z",
+      "side": 1,
+      "message": "nice!",
+      "range": {
+        "startLine": 181,
+        "startChar": 3,
+        "endLine": 183,
+        "endChar": 34
+      },
+      "revId": "0cb2196b360070a313f51b1fffe9b458789ff4aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
