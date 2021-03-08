@@ -101,7 +101,9 @@ message TestResult {
   //
   // Supports artifact embedding using custom tags:
   // * <text-artifact> renders contents of an artifact as text.
-  //   Usage: <text-artifact artifact-id="<artifact_id>">
+  //   Usage:
+  //   * To embed result level artifact: <text-artifact artifact-id="<artifact_id>">
+  //   * To embed invocation level artifact: <text-artifact artifact-id="<artifact_id>" inv-level>
   string summary_html = 7 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // The point in time when the test case started to execute.
