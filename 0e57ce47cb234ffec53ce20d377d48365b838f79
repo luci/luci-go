@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "06325f04_edcbd319",
+        "filename": "auth/integration/localauth/generator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-08T19:14:02Z",
+      "side": 1,
+      "message": "1. \"Fixed scopes\" case happens only when running stuff locally using OAuth refresh tokens. This happens mostly during development process to test stuff. Not on bots. It is (kind of) important this process is not very complicated.\n\n2. Imagine a server uses PubSub, Datastore, BigQuery and happens to request fine-grained scopes for them, i.e. \"pubsub\", \"datastore, \"bigquery\". If we remove the logic that replaces the scopes with fixed ones, the developer would have to run \"luci-auth login -scopes ...\" three separate times to setup 3 separate refresh tokens. But if we keep this logic, the developer can login only once either with \"luci-auth login -scopes cloud-platform\" (knowing it covers everything), or \"luci-auth login -scopes pubsub -scopes datastore -scopes bigquery\".\n\nNote that the fact that \"cloud-platform\" scope covers other scopes is not known programatically, there\u0027s no built-in database of scopes to check and no API to \"expand\" them. There are other \"big\" scopes like that too. So it has to be known by the developer apriori. We just assume they know what they want when they use `luci-auth context` with OAuth2 refresh tokens.",
+      "parentUuid": "a6c7d4bf_b7002773",
+      "range": {
+        "startLine": 46,
+        "startChar": 74,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "0e57ce47cb234ffec53ce20d377d48365b838f79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6b34d34e_542d82d6",
         "filename": "auth/integration/localauth/generator.go",
         "patchSetId": 2
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-08T17:34:38Z",
       "side": 1,
       "message": "for my own understanding: if I run \n  luci-auth context \u003climited scopes\u003e -- \u003cIT\u003dgo app using this authenticator\u003e\n\nwhile IT *can ask*, it doesn\u0027t mean `luci-auth` will actually provide a token, it may as well be an error. Right?",
+      "range": {
+        "startLine": 79,
+        "startChar": 12,
+        "endLine": 79,
+        "endChar": 15
+      },
+      "revId": "0e57ce47cb234ffec53ce20d377d48365b838f79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5929cdd_b1187777",
+        "filename": "auth/integration/localauth/generator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-08T19:14:02Z",
+      "side": 1,
+      "message": "`luci-auth context` may return a token with different scope. Again, this happens to handle \"cloud-platform\" situation. This is also similar how GKE Workload Identity work: you can ask gke-metadata-server for any scope, it doesn\u0027t care, it gives you cloud-platform.\n\nReturning an error in this case is less useful than just giving a token and hoping it works, since in the later case there are ways for developer to \"make stuff work\" by using `luci-auth login -scopes ...` with a superset of all requested scopes.",
+      "parentUuid": "6b34d34e_542d82d6",
       "range": {
         "startLine": 79,
         "startChar": 12,
