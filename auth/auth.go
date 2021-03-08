@@ -445,36 +445,6 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 	return UserCredentialsMethod
 }
 
-// AllowsArbitraryScopes returns true if given authenticator options allow
-// generating tokens for arbitrary set of scopes.
-//
-// For example, using a private key to sign assertions allows to mint tokens
-// for any set of scopes (since there's no restriction on what scopes we can
-// put into JWT to be signed).
-//
-// On other hand, using e.g GCE metadata server restricts us to use only scopes
-// assigned to GCE instance when it was created.
-func AllowsArbitraryScopes(ctx context.Context, opts Options) bool {
-	if opts.Method == AutoSelectMethod {
-		opts.Method = SelectBestMethod(ctx, opts)
-	}
-	switch {
-	case opts.Method == ServiceAccountMethod:
-		// A private key can be used to generate tokens with any combination of
-		// scopes.
-		return true
-	case opts.Method == LUCIContextMethod:
-		// We can ask the local auth server for any combination of scopes.
-		return true
-	case opts.ActAsServiceAccount != "":
-		// When using derived tokens the authenticator can ask the corresponding API
-		// (Cloud IAM's generateAccessToken or LUCI's MintServiceAccountToken) for
-		// any scopes it wants.
-		return true
-	}
-	return false
-}
-
 // Authenticator is a factory for http.RoundTripper objects that know how to use
 // cached credentials and how to send monitoring metrics (if tsmon package was
 // imported).
