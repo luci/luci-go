@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "18e89566_8a98a3ef",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T23:52:13Z",
+      "side": 1,
+      "message": "well, yes, except when may also be zero (if there were no staged Runs and no Runs are planned).\n\nHence, I have `a \u0026\u0026 (c | b)`  instead of just `a \u0026\u0026 b` where \na \u003d !w.IsZero()\nb \u003d w.Before(when)",
+      "parentUuid": "916e44e2_2e418a17",
+      "range": {
+        "startLine": 86,
+        "startChar": 34,
+        "endLine": 86,
+        "endChar": 45
+      },
+      "revId": "201f725102c5bd8683e3144d33ff3d48a521be88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9c030de8_4d2c28fa",
         "filename": "cv/internal/prjmanager/impl/state/componentactor/stagepurges.go",
         "patchSetId": 1
@@ -37,6 +61,24 @@
       "writtenOn": "2021-03-08T20:10:30Z",
       "side": 1,
       "message": "Maybe purgeReason also matter here? e.g. cv doesn\u0027t need to wait for stabilizationDelay if purgeResaon is owner lacks of email which most likely can\u0027t be fixed by end of the delay.\n\nBut This is trivial to change in the future, we can start with what you have today for simplicity.",
+      "revId": "201f725102c5bd8683e3144d33ff3d48a521be88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6a8cd9b_9d4bfdea",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/stagepurges.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-08T23:52:13Z",
+      "side": 1,
+      "message": "Exactly my thinking at the time of coding.",
+      "parentUuid": "9c030de8_4d2c28fa",
       "revId": "201f725102c5bd8683e3144d33ff3d48a521be88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
