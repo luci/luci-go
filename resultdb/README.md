@@ -2,7 +2,17 @@
 
 ### Install Cloud Spanner Emulator
 
+#### Linux
+
 From command line, run: `sudo apt-get install google-cloud-sdk-spanner-emulator`
+
+#### Mac
+
+* [Install Docker Desktop on Mac](https://docs.docker.com/docker-for-mac/install/)
+
+> Note: As of Mar 3, 2021, the newest version of Docker Desktop (3.2.0) is having issues, please download 3.1.0 [here](https://docs.docker.com/docker-for-mac/release-notes/#docker-desktop-310).
+
+* After Docker Desktop is installed, go to Preferences > Experimental Features and toggle off "Enable cloud experience"
 
 ### Run tests
 
@@ -14,3 +24,5 @@ export SPANNER_EMULATOR=1
 ```
 
 Then run go test as usual.
+
+> Note: If you run tests on mac, please start Docker Desktop before running tests.
