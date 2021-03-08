@@ -35,13 +35,13 @@ export class BuildState {
    * Indicates whether a computed invocation ID should be used.
    * Computed invocation ID may not work on older builds.
    */
-  @observable.ref useComputedInvId = true;
+   @observable.ref useComputedInvId = true;
 
   /**
    * buildNum is defined when this.buildNumOrId is defined and doesn't start
    * with 'b'.
    */
-  @computed get buildNum() {
+   @computed get buildNum() {
     return this.buildNumOrId?.startsWith('b') === false ? Number(this.buildNumOrId) : null;
   }
 
@@ -95,7 +95,7 @@ export class BuildState {
 
   @computed
   get build$(): IPromiseBasedObservable<Build> {
-    if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
+    if (!this.appState.buildsService || !this.buildId && (!this.builder || !this.buildNum)) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
