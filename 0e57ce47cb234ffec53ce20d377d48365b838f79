@@ -109,6 +109,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d25bb61a_d29bf5c7",
+        "filename": "auth/integration/localauth/generator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-08T23:16:36Z",
+      "side": 1,
+      "message": "I think the existing comment is good enough. I doubt you\u0027ll ever revisit this part of code anyway.",
+      "parentUuid": "ce96a675_04514db4",
+      "range": {
+        "startLine": 46,
+        "startChar": 74,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "0e57ce47cb234ffec53ce20d377d48365b838f79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6b34d34e_542d82d6",
         "filename": "auth/integration/localauth/generator.go",
         "patchSetId": 2
