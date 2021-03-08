@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e67919d_42b1ce90",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-08T17:51:08Z",
+      "side": 1,
+      "message": "In this case, the specific possibility is that CV may purge some CLs that should have runs, and because it\u0027s hooked up with CQDaemon that would mean that no attempt actually gets run for those CLs, right?",
+      "range": {
+        "startLine": 9,
+        "startChar": 60,
+        "endLine": 9,
+        "endChar": 70
+      },
+      "revId": "6af6b3cbe657739901169a2a88cfbbc5be230fb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d770bbc1_3ea691e7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-08T17:51:08Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "6af6b3cbe657739901169a2a88cfbbc5be230fb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
