@@ -95,7 +95,7 @@ export class BuildState {
 
   @computed
   get build$(): IPromiseBasedObservable<Build> {
-    if (!this.appState.buildsService || !this.builder || this.buildNumOrId === undefined) {
+    if (!this.appState.buildsService || (!this.buildId && (!this.builder || !this.buildNum))) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
