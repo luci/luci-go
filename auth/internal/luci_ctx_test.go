@@ -116,9 +116,11 @@ func TestLUCIContextProvider(t *testing.T) {
 			})
 
 			So(<-requests, ShouldResemble, rpcs.GetOAuthTokenRequest{
-				Scopes:    []string{"B", "A"},
-				Secret:    []byte("zekret"),
-				AccountID: "acc_id",
+				BaseRequest: rpcs.BaseRequest{
+					Secret:    []byte("zekret"),
+					AccountID: "acc_id",
+				},
+				Scopes: []string{"B", "A"},
 			})
 		})
 

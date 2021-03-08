@@ -36,9 +36,9 @@ const (
 //
 // Useful for integration tests that involve local auth server.
 //
-// Each GenerateToken call returns a token "<prefix><N>", where "<prefix>" is by
-// default "fake_token_" (it can be changed via Prefix) and N starts from 0 and
-// incremented for each call.
+// Each GenerateOAuthToken and GenerateIDToken call returns a token
+// "<prefix><N>", where "<prefix>" is by default "fake_token_" (it can be
+// changed via Prefix) and N starts from 0 and incremented for each call.
 //
 // If KeepRecord is true, each generated token is recorded along with a list of
 // scopes that were used to generate it. Use TokenScopes() to see what scopes
@@ -51,11 +51,11 @@ type FakeTokenGenerator struct {
 
 	m    sync.Mutex
 	n    int
-	toks map[string][]string // fake token => list of its scopes
+	toks map[string][]string // fake token => list of its scopes or an audience
 }
 
-// GenerateToken is part of TokenGenerator interface.
-func (f *FakeTokenGenerator) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+// GenerateOAuthToken is part of TokenGenerator interface.
+func (f *FakeTokenGenerator) GenerateOAuthToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 	f.m.Lock()
 	defer f.m.Unlock()
 
@@ -82,6 +82,13 @@ func (f *FakeTokenGenerator) GenerateToken(ctx context.Context, scopes []string,
 		AccessToken: token,
 		Expiry:      clock.Now(ctx).Add(tokenLifetime),
 	}, nil
+}
+
+// GenerateIDToken is part of TokenGenerator interface.
+func (f *FakeTokenGenerator) GenerateIDToken(ctx context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error) {
+	// Reuse GenerateOAuthToken implementation. We are generating fake tokens
+	// after all.
+	return f.GenerateOAuthToken(ctx, []string{"audience:" + audience}, lifetime)
 }
 
 // GetEmail is part of TokenGenerator interface.

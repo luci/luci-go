@@ -427,6 +427,43 @@ type Options struct {
 	testingIAMTokenProvider internal.TokenProvider
 }
 
+// PopulateDefaults populates empty fields of `opts` with default values.
+//
+// It is called automatically by NewAuthenticator. Use it only if you need to
+// normalize and examine auth.Options before passing them to NewAuthenticator.
+func (opts *Options) PopulateDefaults() {
+	// Add default scope, sort scopes.
+	if len(opts.Scopes) == 0 || opts.UseIDTokens {
+		opts.Scopes = []string{OAuthScopeEmail} // also implies "openid"
+	} else {
+		opts.Scopes = append([]string(nil), opts.Scopes...) // copy
+		sort.Strings(opts.Scopes)
+	}
+
+	// Fill in blanks with default values.
+	if opts.Audience == "" {
+		opts.Audience = opts.ClientID
+	}
+	if opts.GCEAccountName == "" {
+		opts.GCEAccountName = "default"
+	}
+	if opts.Transport == nil {
+		opts.Transport = http.DefaultTransport
+	}
+	if opts.MinTokenLifetime == 0 {
+		opts.MinTokenLifetime = 2 * time.Minute
+	}
+
+	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
+	if opts.SecretsDir != "" && !filepath.IsAbs(opts.SecretsDir) {
+		var err error
+		opts.SecretsDir, err = filepath.Abs(opts.SecretsDir)
+		if err != nil {
+			panic(fmt.Errorf("failed to get abs path to token cache dir: %s", err))
+		}
+	}
+}
+
 // SelectBestMethod returns a most appropriate authentication method for the
 // given set of options and the current execution environment.
 //
@@ -518,36 +555,7 @@ type Authenticator struct {
 // how to use and update cached credentials tokens. It is bound to the given
 // context: uses its logger, clock and deadline.
 func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *Authenticator {
-	// Add default scope, sort scopes.
-	if len(opts.Scopes) == 0 || opts.UseIDTokens {
-		opts.Scopes = []string{OAuthScopeEmail} // also implies "openid"
-	} else {
-		opts.Scopes = append([]string(nil), opts.Scopes...) // copy
-		sort.Strings(opts.Scopes)
-	}
-
-	// Fill in blanks with default values.
-	if opts.Audience == "" {
-		opts.Audience = opts.ClientID
-	}
-	if opts.GCEAccountName == "" {
-		opts.GCEAccountName = "default"
-	}
-	if opts.Transport == nil {
-		opts.Transport = http.DefaultTransport
-	}
-	if opts.MinTokenLifetime == 0 {
-		opts.MinTokenLifetime = 2 * time.Minute
-	}
-
-	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
-	if opts.SecretsDir != "" && !filepath.IsAbs(opts.SecretsDir) {
-		var err error
-		opts.SecretsDir, err = filepath.Abs(opts.SecretsDir)
-		if err != nil {
-			panic(fmt.Errorf("failed to get abs path to token cache dir: %s", err))
-		}
-	}
+	opts.PopulateDefaults()
 
 	// See ensureInitialized for the rest of the initialization.
 	auth := &Authenticator{
