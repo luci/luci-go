@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
@@ -114,13 +115,18 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		var tvStatus int64
 		var results []*tvResult
 		var exoExplanationHtmls [][]byte
-		if err := b.FromSpanner(row, &tv.TestId, &tv.VariantHash, &tv.Variant, &tvStatus, &results, &exoExplanationHtmls); err != nil {
+		var tmd spanutil.Compressed
+		if err := b.FromSpanner(row, &tv.TestId, &tv.VariantHash, &tv.Variant, &tmd, &tvStatus, &results, &exoExplanationHtmls); err != nil {
 			return err
 		}
 
 		tv.Status = uipb.TestVariantStatus(tvStatus)
 		if tv.Status == uipb.TestVariantStatus_EXPECTED {
 			panic("query of test variants with unexpected results returned a test variant with only expected results.")
+		}
+
+		if err := populateTestMetadata(tv, tmd); err != nil {
+			return errors.Annotate(err, "error unmarshalling test_metadata for %s", tv.TestId).Err()
 		}
 
 		// Populate tv.Results
@@ -151,7 +157,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	})
 }
 
-func (q *Query) queryTestResults(ctx context.Context, limit int, f func(*pb.TestResult) error) (err error) {
+func (q *Query) queryTestResults(ctx context.Context, limit int, f func(*pb.TestResult, spanutil.Compressed) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
@@ -164,9 +170,10 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(*pb.Test
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
+		var tmd spanutil.Compressed
 		tr := &pb.TestResult{}
 		err := b.FromSpanner(
-			row, &tr.TestId, &tr.VariantHash, &tr.Variant,
+			row, &tr.TestId, &tr.VariantHash, &tr.Variant, &tmd,
 			&invID, &tr.ResultId, &maybeUnexpected, &tr.Status, &tr.StartTime,
 			&micros, &summaryHTML, &tr.Tags,
 		)
@@ -179,7 +186,7 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(*pb.Test
 		testresults.PopulateExpectedField(tr, maybeUnexpected)
 		testresults.PopulateDurationField(tr, micros)
 
-		return f(tr)
+		return f(tr, tmd)
 	})
 }
 
@@ -205,7 +212,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	// expected in that page, we will return q.PageSize test variants instead of
 	// q.PageSize-1.
 	pageSize := q.PageSize + 1
-	err = q.queryTestResults(ctx, pageSize, func(tr *pb.TestResult) error {
+	err = q.queryTestResults(ctx, pageSize, func(tr *pb.TestResult, tmd spanutil.Compressed) error {
 		trLen++
 		if current != nil {
 			if current.TestId == tr.TestId && current.VariantHash == tr.VariantHash {
@@ -240,6 +247,9 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 			},
 		}
 		currentOnlyExpected = tr.Expected
+		if err := populateTestMetadata(current, tmd); err != nil {
+			return errors.Annotate(err, "error unmarshalling test_metadata for %s", current.TestId).Err()
+		}
 		return nil
 	})
 
@@ -341,6 +351,7 @@ var testVariantsWithUnexpectedResultsSQL = `
 			TestId,
 			VariantHash,
 			ANY_VALUE(Variant) Variant,
+			ANY_VALUE(TestMetadata) TestMetadata,
 			COUNTIF(IsUnexpected) num_unexpected,
 			COUNTIF(Status=@skipStatus) num_skipped,
 			COUNT(TestId) num_total,
@@ -375,6 +386,7 @@ var testVariantsWithUnexpectedResultsSQL = `
 			tv.TestId,
 			tv.VariantHash,
 			tv.Variant,
+			tv.TestMetadata,
 			CASE
 				WHEN exonerated.TestId IS NOT NULL THEN @exonerated
 				WHEN num_unexpected = 0 THEN @expected -- should never happen in this query
@@ -396,6 +408,7 @@ var testVariantsWithUnexpectedResultsSQL = `
 		TestId,
 		VariantHash,
 		Variant,
+		TestMetadata,
 		TvStatus,
 		results,
 		exonerationExplanations,
@@ -414,7 +427,8 @@ var allTestResultsSQL = `
 	SELECT
 		TestId,
 		VariantHash,
-		Variant Variant,
+		Variant,
+		TestMetadata,
 		InvocationId,
 		ResultId,
 		IsUnexpected,
@@ -432,3 +446,12 @@ var allTestResultsSQL = `
 	ORDER BY TestId, VariantHash
 	LIMIT @limit
 `
+
+func populateTestMetadata(tv *uipb.TestVariant, tmd spanutil.Compressed) error {
+	if len(tmd) == 0 {
+		return nil
+	}
+
+	tv.TestMetadata = &pb.TestMetadata{}
+	return proto.Unmarshal(tmd, tv.TestMetadata)
+}

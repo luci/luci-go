@@ -21,6 +21,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -110,6 +111,13 @@ func TestQueryTestVariants(t *testing.T) {
 			"test_suite", "foo_unittests",
 			"test_id_prefix", "ninja://tests:tests/")
 
+		tmd := &pb.TestMetadata{
+			Name: "T4",
+			Location: &pb.TestLocation{
+				FileName: "//t4.go",
+				Line:     54,
+			}}
+		tmdBytes, _ := proto.Marshal(tmd)
 		testutil.MustApply(ctx,
 			spanutil.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invocations.ID("inv1"),
@@ -124,6 +132,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"StartTime":       startTime,
 				"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
 				"Tags":            pbutil.StringPairsToStrings(strPairs...),
+				"TestMetadata":    spanutil.Compressed(tmdBytes),
 			}),
 		)
 
@@ -172,6 +181,7 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 				},
 			})
+			So(tvs[0].TestMetadata, ShouldResembleProto, tmd)
 			So(tvs[8].Exonerations[0], ShouldResemble, &pb.TestExoneration{
 				ExplanationHtml: "explanation 0",
 			})

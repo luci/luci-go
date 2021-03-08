@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.resultdb.internal.ui;
 
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/internal/proto/ui;uipb";
@@ -90,6 +91,9 @@ message TestVariant {
 
   // Test exonerations if any test variant is exonerated.
   repeated luci.resultdb.v1.TestExoneration exonerations = 6;
+
+  // Information about the test at the time of its execution.
+  luci.resultdb.v1.TestMetadata test_metadata = 7;
 }
 
 // Outcomes of an execution of the test variant.
