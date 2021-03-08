@@ -22,6 +22,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/retry/transient"
 )
@@ -35,7 +36,10 @@ type iamTokenProvider struct {
 
 // NewIAMTokenProvider returns TokenProvider that uses generateAccessToken IAM
 // API to grab tokens belonging to some service account.
-func NewIAMTokenProvider(ctx context.Context, actAs string, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
+func NewIAMTokenProvider(ctx context.Context, useIDTokens bool, actAs string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
+	if useIDTokens {
+		return nil, errors.New("ID tokens are not supported yet when impersonating via IAM (crbug.com/1184230)")
+	}
 	return &iamTokenProvider{
 		actAs:     actAs,
 		scopes:    scopes,
