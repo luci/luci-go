@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ddaff75c_8b601fd8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-08T18:28:01Z",
+      "side": 1,
+      "message": "Nice! but didn\u0027t we discuss there\u0027s some limitation for enabling \"cq-test\" project on -dev. Have you done anything to fix that?",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 42
+      },
+      "revId": "0e5df3a92f1ed2c8aa3361a0d82047fd69fe2fe7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
