@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "583f6e80_01e6bed2",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Created new tree package.",
+      "parentUuid": "42d9d5a1_e58df288",
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a01b55db_8804a95c",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-03-04T18:33:07Z",
       "side": 1,
       "message": "Nit: add a period.\n\nSo, are there different instances of tree status app for different projects?",
+      "range": {
+        "startLine": 32,
+        "startChar": 74,
+        "endLine": 32,
+        "endChar": 77
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50332442_4b2c1245",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Done \n\n\u003e So, are there different instances of tree status app for different projects?\n\nYes. FWIW, some projects share the same same tree status app. E.g. infra and infra-internal.",
+      "parentUuid": "a01b55db_8804a95c",
       "range": {
         "startLine": 32,
         "startChar": 74,
@@ -81,6 +123,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "882c3f60_84edcc78",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Good point. Done.",
+      "parentUuid": "85f2fa66_79e3b775",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 201
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "63f83735_be8378a8",
@@ -94,6 +160,30 @@
       "writtenOn": "2021-03-04T19:40:28Z",
       "side": 1,
       "message": "run/",
+      "range": {
+        "startLine": 84,
+        "startChar": 50,
+        "endLine": 84,
+        "endChar": 51
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1072a0f2_99b57634",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "63f83735_be8378a8",
       "range": {
         "startLine": 84,
         "startChar": 50,
@@ -127,6 +217,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "49af3fcf_1e3fd2e0",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "56a7c7a1_cfff92af",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 21
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a1ba46e_88f0393e",
@@ -140,6 +254,30 @@
       "writtenOn": "2021-03-04T19:40:28Z",
       "side": 1,
       "message": "this should use server auth anonymous transport, s.t. we get instrumentation.",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 94,
+        "endChar": 5
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "efbb62e7_601aaf3c",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Read the auth impl. Good point. Done.",
+      "parentUuid": "4a1ba46e_88f0393e",
       "range": {
         "startLine": 92,
         "startChar": 3,
@@ -173,6 +311,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2336eb9a_ce52b1f2",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e968875a_4b8ce742",
+      "range": {
+        "startLine": 101,
+        "startChar": 20,
+        "endLine": 101,
+        "endChar": 36
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "897b591a_d3116c3b",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e968875a_4b8ce742",
+      "range": {
+        "startLine": 101,
+        "startChar": 20,
+        "endLine": 101,
+        "endChar": 36
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "07d6b0d9_118f9165",
@@ -186,6 +372,30 @@
       "writtenOn": "2021-03-04T19:40:28Z",
       "side": 1,
       "message": "consider instead providing top level FetchLatest(ctx, endpoint)\nsince client itself isn\u0027t really useful for callers, and \n  treestatus.FetchLatest(ctx, ...)\nis more readable then\n  treestatus.MustTreeStatusClient(ctx).FetchLatest(ctx, ...)",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 116,
+        "endChar": 0
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f30e406_c2147ba0",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "07d6b0d9_118f9165",
       "range": {
         "startLine": 105,
         "startChar": 0,
@@ -219,6 +429,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "adebd0f8_28659a64",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Yes Indeed.",
+      "parentUuid": "591908f1_a937ce0a",
+      "range": {
+        "startLine": 120,
+        "startChar": 13,
+        "endLine": 120,
+        "endChar": 45
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "24ab386b_4e79d0f0",
@@ -236,6 +470,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "86b51cbf_28029cf9",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Exactly. or nil context which should never happen.",
+      "parentUuid": "24ab386b_4e79d0f0",
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "075a359a_cec86757",
@@ -249,6 +501,30 @@
       "writtenOn": "2021-03-04T19:40:28Z",
       "side": 1,
       "message": "also transient, right?",
+      "range": {
+        "startLine": 131,
+        "startChar": 88,
+        "endLine": 131,
+        "endChar": 94
+      },
+      "revId": "92b9370481ecf084cbd48c2e3433bf0c99a59884",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6970ecb4_1c4c8122",
+        "filename": "cv/internal/run/impl/submit/tree.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T01:56:57Z",
+      "side": 1,
+      "message": "Oops missed this one.",
+      "parentUuid": "075a359a_cec86757",
       "range": {
         "startLine": 131,
         "startChar": 88,
