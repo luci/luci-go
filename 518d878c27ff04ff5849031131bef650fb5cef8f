@@ -33,6 +33,24 @@
       "message": "This LGTM, although I think I still don\u0027t know why the Finished event had to be replaced; I think the CL description could be expanded a little.",
       "revId": "518d878c27ff04ff5849031131bef650fb5cef8f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e476488b_fe9df5bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T05:12:53Z",
+      "side": 1,
+      "message": "Because ReportFinishedRun is deprecated in favor of ReportVerifiedRun. Added the motivation to the description.",
+      "parentUuid": "93778112_c97fd932",
+      "revId": "518d878c27ff04ff5849031131bef650fb5cef8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
