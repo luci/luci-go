@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise } from 'mobx-utils';
+import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
 
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
@@ -50,7 +50,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     return fromPromise(this.appState.resultDb.getArtifact({name: this.diffArtifactName}));
   }
   @computed private get diffArtifact() {
-    return this.diffArtifact$.state === 'fulfilled' ? this.diffArtifact$.value : null;
+    return this.diffArtifact$.state === FULFILLED ? this.diffArtifact$.value : null;
   }
 
   @computed
@@ -61,7 +61,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     return fromPromise(this.appState.resultDb.getArtifact({name: this.expectedArtifactName}));
   }
   @computed private get expectedArtifact() {
-    return this.expectedArtifact$.state === 'fulfilled' ? this.expectedArtifact$.value : null;
+    return this.expectedArtifact$.state === FULFILLED ? this.expectedArtifact$.value : null;
   }
 
   @computed
@@ -72,11 +72,11 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     return fromPromise(this.appState.resultDb.getArtifact({name: this.actualArtifactName}));
   }
   @computed private get actualArtifact() {
-    return this.actualArtifact$.state === 'fulfilled' ? this.actualArtifact$.value : null;
+    return this.actualArtifact$.state === FULFILLED ? this.actualArtifact$.value : null;
   }
 
   @computed get isLoading() {
-    return this.expectedArtifact$.state === 'pending' || this.actualArtifact$.state === 'pending' || this.diffArtifact$.state === 'pending';
+    return [this.expectedArtifact$.state, this.actualArtifact$.state, this.diffArtifact$.state].includes(PENDING);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
