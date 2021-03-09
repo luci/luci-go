@@ -46,6 +46,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref prevTestId = '';
   @observable.ref prevVariant?: TestVariant;
   @observable.ref displayVariantId = true;
+  @observable.ref renderCallback: Function | null = null;
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -68,7 +69,18 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   }
 
   @observable.ref private shouldRenderContent = false;
-  @observable.ref renderCallback: Function | null = null;
+
+  @computed
+  private get sourceUrl() {
+    const testLocation = this.variant.testMetadata?.location;
+    if (!testLocation) {
+      return null;
+    }
+    return testLocation.repo
+      + '/+/HEAD'
+      + testLocation.fileName.slice(1)
+      + (testLocation.line ? '#' + testLocation.line : '');
+  }
 
   /**
    * Common prefix between this.variant.testId and this.prevTestId.
@@ -125,7 +137,9 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
           <span
             class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}
           >${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result</span>
-          ${this.variantDef.length === 0 ? '' : '|'}
+          ${this.sourceUrl ? '|' : ''}
+          <a href=${this.sourceUrl} target="_blank" style=${styleMap({display: this.sourceUrl ? '' : 'none'})}>source</a>
+          ${this.variantDef.length !== 0 ? '|' : ''}
           <span class="greyed-out">
             ${this.variantDef.map(([k, v]) => html`
             <span class="kv">
