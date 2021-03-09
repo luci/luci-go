@@ -44,7 +44,7 @@ func SubmitRefreshTasks(ctx context.Context) error {
 	if common.IsDev(ctx) {
 		// Consider only some projects, regardless of which projects are registered.
 		// TODO(crbug/1158505): switch to -dev configs.
-		projects = []string{"infra", "chromium", "chromium-m86", "v8"}
+		projects = []string{"infra", "cq-test"}
 	}
 	tasks := make([]*tq.Task, len(projects))
 	for i, p := range projects {
