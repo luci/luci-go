@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -111,6 +112,18 @@ type Build struct {
 
 	// PubSubCallback, if set, creates notifications for build status changes.
 	PubSubCallback PubSubCallback `gae:"pubsub_callback,noindex"`
+}
+
+// Realm returns this build's auth realm, or an empty string if not opted into the
+// realms experiment.
+func (b *Build) Realm() string {
+	rlm := "+luci.use_realms"
+	for _, e := range b.Experiments {
+		if e == rlm {
+			return fmt.Sprintf("%s:%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket)
+		}
+	}
+	return ""
 }
 
 // Load overwrites this representation of a build by reading the given

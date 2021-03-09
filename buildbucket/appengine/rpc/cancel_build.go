@@ -94,10 +94,10 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 			}
 		}
 		if inf.Proto.Swarming.GetHostname() != "" && inf.Proto.Swarming.TaskId != "" {
-			// TODO(crbug/1091604): Pass the realm if the build is realms-enabled.
 			if err := tasks.CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
 				Hostname: inf.Proto.Swarming.Hostname,
 				TaskId:   inf.Proto.Swarming.TaskId,
+				Realm:    bld.Realm(),
 			}); err != nil {
 				return errors.Annotate(err, "failed to enqueue swarming task cancellation task: %d", bld.ID).Err()
 			}
@@ -142,7 +142,6 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		if err := datastore.Put(ctx, toPut...); err != nil {
 			return errors.Annotate(err, "failed to store build: %d", bld.ID).Err()
 		}
-		// TODO(crbug/1042991): Enqueue BigQuery, Pub/Sub, and ResultDB-related tasks.
 		return nil
 	}, nil)
 	if err != nil {

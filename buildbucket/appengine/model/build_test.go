@@ -91,6 +91,61 @@ func TestBuild(t *testing.T) {
 			})
 		})
 
+		Convey("Realm", func() {
+			Convey("implicitly disabled", func() {
+				b := &Build{
+					ID: 1,
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}
+				So(b.Realm(), ShouldEqual, "")
+			})
+
+			Convey("explicitly disabled", func() {
+				b := &Build{
+					ID: 1,
+					Experiments: []string{
+						"-luci.use_realms",
+					},
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}
+				So(b.Realm(), ShouldEqual, "")
+			})
+
+			Convey("enabled", func() {
+				b := &Build{
+					ID: 1,
+					Experiments: []string{
+						"+enabled",
+						"+luci.use_realms",
+						"-disabled",
+					},
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}
+				So(b.Realm(), ShouldEqual, "project:bucket")
+			})
+		})
+
 		Convey("ToProto", func() {
 			b := &Build{
 				ID: 1,
