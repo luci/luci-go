@@ -38,7 +38,7 @@ message PokePMTask {
 //
 // It exists in order to poke ProjectManager from a transaction.
 //
-// Queue: "manage-project".
+// Queue: "kick-manage-project".
 message KickPokePMTask {
   string luci_project = 1;
   google.protobuf.Timestamp eta = 2;
