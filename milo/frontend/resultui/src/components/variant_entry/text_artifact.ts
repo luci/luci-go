@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement, html, property } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext } from '../../libs/context';
 import { Artifact } from '../../services/resultdb';
@@ -46,11 +46,11 @@ export class TextArtifactElement extends MobxLitElement {
 
   @computed
   private get content() {
-    return this.content$.state === 'fulfilled' ? this.content$.value : '';
+    return this.content$.state === FULFILLED ? this.content$.value : null;
   }
 
   protected render() {
-    if (!this.content) {
+    if (this.content === null) {
       return html`
       <div id="load">
         Loading <milo-dot-spinner></milo-dot-spinner>

@@ -17,7 +17,7 @@ import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from 
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise } from 'mobx-utils';
+import { fromPromise, FULFILLED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -43,7 +43,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     return fromPromise(this.appState.resultDb.getArtifact({name: this.artifactName}));
   }
   @computed private get artifact() {
-    return this.artifact$.state === 'fulfilled' ? this.artifact$.value : null;
+    return this.artifact$.state === FULFILLED ? this.artifact$.value : null;
   }
 
   @computed
@@ -55,7 +55,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     return fromPromise(fetch(this.artifact.fetchUrl!).then((res) => res.text()));
   }
   @computed private get content() {
-    return this.content$.state === 'fulfilled' ? this.content$.value : '';
+    return this.content$.state === FULFILLED ? this.content$.value : null;
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -104,7 +104,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
       </div>
       <div id="content">
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
-        ${sanitizeHTML(Diff2Html.html(this.content, {drawFileList: false, outputFormat: 'side-by-side'}))}
+        ${sanitizeHTML(Diff2Html.html(this.content || '', {drawFileList: false, outputFormat: 'side-by-side'}))}
       </div>
     `;
   }
