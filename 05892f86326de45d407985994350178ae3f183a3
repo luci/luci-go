@@ -16,6 +16,103 @@
       "message": "Sorry for the diff due to moving pckages.",
       "revId": "05892f86326de45d407985994350178ae3f183a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab5d5bfc_d0d6c721",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T14:16:47Z",
+      "side": 1,
+      "message": "lgtm % nits + question for the future",
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6849368d_51c8c7b7",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T14:16:47Z",
+      "side": 1,
+      "message": "prefer no named vars unless needed for defers (see end of the section http://go/go-style/decisions#named-result-parameters)\n\n(i admit, I didn\u0027t follow this myself until recently, but I think it\u0027s a good rule)",
+      "range": {
+        "startLine": 59,
+        "startChar": 52,
+        "endLine": 59,
+        "endChar": 56
+      },
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "788e8e68_656efa53",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T14:16:47Z",
+      "side": 1,
+      "message": "(see below comment first)\nSo, maybe I should rename this to:\n * `Gerrit` as it\u0027s clearer (just like TQ, CLock, CFG and now TreeClient)?\n * or to `G`, if brevity is critical, since GFake isn\u0027t clearly \"Gerrit\" anyway.",
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a4736cf4_a7d4b9f2",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T14:16:47Z",
+      "side": 1,
+      "message": "just TreeClient (shorter and \"Mock\" aspect isn\u0027t important).",
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4db6f3f_8fe135f0",
+        "filename": "cv/internal/tree/tree.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T14:16:47Z",
+      "side": 1,
+      "message": "i don\u0027t think this needs to be public, FetchLatest\u0027s good enough.",
+      "range": {
+        "startLine": 97,
+        "startChar": 5,
+        "endLine": 97,
+        "endChar": 15
+      },
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
