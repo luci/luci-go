@@ -72,7 +72,7 @@ var minRolePerPerm = map[realms.Permission]pb.Acl_Role{
 	BuildsAdd:    pb.Acl_SCHEDULER,
 	BuildsGet:    pb.Acl_READER,
 	BuildsList:   pb.Acl_READER,
-	BuildsCancel: pb.Acl_WRITER,
+	BuildsCancel: pb.Acl_SCHEDULER,
 
 	// Builders.
 	BuildersGet:  pb.Acl_READER,
