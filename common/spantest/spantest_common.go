@@ -125,96 +125,6 @@ func (db *TempDB) Client(ctx context.Context) (*spanner.Client, error) {
 	return spanner.NewClient(ctx, db.Name, db.opts...)
 }
 
-// Drop deletes the database.
-func (db *TempDB) Drop(ctx context.Context) error {
-	client, err := spandb.NewDatabaseAdminClient(ctx, db.opts...)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
-	return client.DropDatabase(ctx, &dbpb.DropDatabaseRequest{
-		Database: db.Name,
-	})
-}
-
-var dbNameAlphabetInversedRe = regexp.MustCompile(`[^\w]+`)
-
-// NewTempDB creates a temporary database with a random name.
-// The caller is responsible for calling Drop on the returned TempDB to
-// cleanup resources after usage. Unless it uses Cloud Spanner Emulator, then
-// the database will be dropped when emulator stops.
-func NewTempDB(ctx context.Context, cfg TempDBConfig, e *Emulator) (*TempDB, error) {
-	instanceName := cfg.InstanceName
-	if instanceName == "" {
-		instanceName = chromeinfra.TestSpannerInstance
-	}
-
-	initStatements, err := cfg.readDDLStatements()
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to read %q", cfg.InitScriptPath).Err()
-	}
-
-	// Use Spanner emulator if available.
-	// TODO(crbug.com/1066993): require Spanner emulator, then NewTempDB function
-	// can be moved in Emulator struct.
-	var opts []option.ClientOption
-	if e != nil {
-		opts = append(opts, e.opts()...)
-	} else {
-		creds, err := cfg.credentials(ctx)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
-	}
-
-	client, err := spandb.NewDatabaseAdminClient(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-	defer client.Close()
-
-	// Generate a random database name.
-	var random uint32
-	if err := binary.Read(rand.Reader, binary.LittleEndian, &random); err != nil {
-		panic(err)
-	}
-	dbName := fmt.Sprintf("tmp%s-%d", time.Now().Format("20060102-"), random)
-	dbName = SanitizeDBName(dbName)
-
-	dbOp, err := client.CreateDatabase(ctx, &dbpb.CreateDatabaseRequest{
-		Parent:          instanceName,
-		CreateStatement: "CREATE DATABASE " + dbName,
-		ExtraStatements: initStatements,
-	})
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create database").Err()
-	}
-	db, err := dbOp.Wait(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create database").Err()
-	}
-
-	return &TempDB{
-		Name: db.Name,
-		opts: opts,
-	}, nil
-}
-
-// SanitizeDBName tranforms name to a valid one.
-// If name is already valid, returns it without changes.
-func SanitizeDBName(name string) string {
-	name = strings.ToLower(name)
-	name = dbNameAlphabetInversedRe.ReplaceAllLiteralString(name, "_")
-	const maxLen = 30
-	if len(name) > maxLen {
-		name = name[:maxLen]
-	}
-	name = strings.TrimRight(name, "_")
-	return name
-}
-
 // Emulator is for starting and stopping a Cloud Spanner Emulator process.
 // TODO(crbug.com/1066993): Make Emulator an interfact with two implementations (*nativeEmulator and *dockerEmulator).
 type Emulator struct {
@@ -297,4 +207,70 @@ func (e *Emulator) NewInstance(ctx context.Context, projectName string) (string,
 	default:
 		return ins.Name, nil
 	}
+}
+
+var dbNameAlphabetInversedRe = regexp.MustCompile(`[^\w]+`)
+
+// NewTempDB creates a temporary database with a random name.
+func (e *Emulator) NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
+	instanceName := cfg.InstanceName
+	if instanceName == "" {
+		instanceName = chromeinfra.TestSpannerInstance
+	}
+
+	initStatements, err := cfg.readDDLStatements()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read %q", cfg.InitScriptPath).Err()
+	}
+
+	creds, err := cfg.credentials(ctx)
+	if err != nil {
+		return nil, err
+	}
+	opts := []option.ClientOption{option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds))}
+
+	client, err := spandb.NewDatabaseAdminClient(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	// Generate a random database name.
+	var random uint32
+	if err := binary.Read(rand.Reader, binary.LittleEndian, &random); err != nil {
+		panic(err)
+	}
+	dbName := fmt.Sprintf("tmp%s-%d", time.Now().Format("20060102-"), random)
+	dbName = SanitizeDBName(dbName)
+
+	dbOp, err := client.CreateDatabase(ctx, &dbpb.CreateDatabaseRequest{
+		Parent:          instanceName,
+		CreateStatement: "CREATE DATABASE " + dbName,
+		ExtraStatements: initStatements,
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create database").Err()
+	}
+	db, err := dbOp.Wait(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create database").Err()
+	}
+
+	return &TempDB{
+		Name: db.Name,
+		opts: opts,
+	}, nil
+}
+
+// SanitizeDBName transforms name to a valid one.
+// If name is already valid, returns it without changes.
+func SanitizeDBName(name string) string {
+	name = strings.ToLower(name)
+	name = dbNameAlphabetInversedRe.ReplaceAllLiteralString(name, "_")
+	const maxLen = 30
+	if len(name) > maxLen {
+		name = name[:maxLen]
+	}
+	name = strings.TrimRight(name, "_")
+	return name
 }
