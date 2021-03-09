@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6908712c_7259ec90",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T18:13:03Z",
+      "side": 1,
+      "message": "\"one time use\" and metric are somewhat confusing, but if you mean that lifetime of this is supposed to be O(weeks) vs O(years), then yes.\n\nI like \"test\" more.",
+      "parentUuid": "375e77d4_890282ac",
+      "range": {
+        "startLine": 36,
+        "startChar": 22,
+        "endLine": 36,
+        "endChar": 49
+      },
+      "revId": "940e4b186dd2ca64f85e7cc6a9308c435815f0e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c0b144f4_3d8db673",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-09T17:55:02Z",
       "side": 1,
       "message": "The grpc metric shows that \u003e 99.998 of GetBuild requests succeeded today. \nI\u0027d move this line down below L89 and add fields for project, bucket, and builder. It will be helpful to track why a bot/project/service/user is querying against what builders.",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 91
+      },
+      "revId": "940e4b186dd2ca64f85e7cc6a9308c435815f0e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2733dffd_7c5060c5",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T18:13:03Z",
+      "side": 1,
+      "message": "I agree it\u0027d useful, but if I do that, metric fields may explode cardinally (pun intended).",
+      "parentUuid": "c0b144f4_3d8db673",
       "range": {
         "startLine": 86,
         "startChar": 1,
