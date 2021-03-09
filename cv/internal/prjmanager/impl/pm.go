@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
@@ -47,11 +48,7 @@ func init() {
 				eta = t.AsTime()
 			}
 			err := pokePMTask(ctx, task.GetLuciProject(), eta)
-			// TODO(tandrii): avoid retries iff we know a new task was already
-			// scheduled for the next second.
-			return common.TQIfy{
-				KnownRetry: []error{eventbox.ErrConcurretMutation},
-			}.Error(ctx, err)
+			return common.TQifyError(ctx, err)
 		},
 	)
 }
@@ -62,12 +59,31 @@ func pokePMTask(ctx context.Context, luciProject string, taskETA time.Time) erro
 		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)
 		// Scheduling new task reduces probability of concurrent tasks in extreme
 		// events.
-		return prjpb.Dispatch(ctx, luciProject, time.Time{})
+		if err := prjpb.Dispatch(ctx, luciProject, time.Time{}); err != nil {
+			return err
+		}
+		// Hard-fail this task to avoid retries and get correct monitoring stats.
+		return errors.New("task arrived too late", tq.Fatal)
 	}
 
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
-	err := eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject})
-	return errors.Annotate(err, "project %q", luciProject).Err()
+	switch err := eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject}); {
+	case err == nil:
+		return nil
+	case err == eventbox.ErrConcurretMutation:
+		// Instead of retrying this task at a later time, which has already
+		// overlapped with another task, and risking another overlap for busy
+		// project, schedule a new one in the future which will get a chance of
+		// deduplication.
+		if err2 := prjpb.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
+			// This should be rare and retry is the best we can do.
+			return errors.Annotate(err2, "project %q", luciProject).Err()
+		}
+		// Hard-fail this task to avoid retries and get correct monitoring stats.
+		return errors.Annotate(err, "project %q", luciProject).Tag(tq.Fatal).Err()
+	default:
+		return errors.Annotate(err, "project %q", luciProject).Err()
+	}
 }
 
 // projectManager implements eventbox.Processor.
