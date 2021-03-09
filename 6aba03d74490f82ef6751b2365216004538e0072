@@ -117,6 +117,30 @@
       },
       "revId": "6aba03d74490f82ef6751b2365216004538e0072",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1a6c7a4_75fd7008",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-09T06:27:44Z",
+      "side": 1,
+      "message": "I see. I\u0027ll fix that in a following CL.",
+      "parentUuid": "ba20e876_10f13923",
+      "range": {
+        "startLine": 333,
+        "startChar": 16,
+        "endLine": 333,
+        "endChar": 82
+      },
+      "revId": "6aba03d74490f82ef6751b2365216004538e0072",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
