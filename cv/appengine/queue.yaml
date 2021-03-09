@@ -1,6 +1,8 @@
 queue:
-- name: manage-project
+- name: kick-manage-project
   rate: 500/s
+- name: manage-project
+  rate: 30/s
 - name: poll-gerrit
   rate: 10/s
 - name: purge-cl

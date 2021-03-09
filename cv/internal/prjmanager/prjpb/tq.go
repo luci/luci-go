@@ -60,7 +60,7 @@ func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "kick-" + ManageProjectTaskClass,
 		Prototype: &KickPokePMTask{},
-		Queue:     "manage-project",
+		Queue:     "kick-manage-project",
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*KickPokePMTask)
