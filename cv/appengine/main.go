@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/servicecfg"
+	"go.chromium.org/luci/cv/internal/tree"
 
 	// import all modules with server/tq handler additions in init() calls,
 	// which are otherwise not imported directly or transitively via imports
@@ -55,11 +56,14 @@ func main() {
 		tq.NewModuleFromFlags(),
 	}
 
-	server.Main(nil, modules, func(srv *server.Server) error {
+	server.Main(nil, modules, func(srv *server.Server) (err error) {
 		if srv.Options.CloudProject == "luci-change-verifier-dev" {
 			srv.Context = common.SetDev(srv.Context)
 		}
 		srv.Context = gerrit.UseProd(srv.Context)
+		if srv.Context, err = tree.InstallProd(srv.Context); err != nil {
+			return err
+		}
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
@@ -76,7 +80,7 @@ func main() {
 			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 		})
 
-		return nil
+		return
 	})
 }
 
