@@ -14,6 +14,7 @@
 
 import { PrpcClient } from '@chopsui/prpc-client';
 
+import { cached, CacheOption } from '../libs/cached_fn';
 import { BuilderID, GitilesCommit } from './buildbucket';
 
 /**
@@ -72,40 +73,25 @@ export interface QueryBlamelistResponse {
 
 export interface GetCurrentUserRequest {}
 
-export interface User {
-  readonly identity: string;
-  readonly email?: string;
-  readonly picture?: string;
-}
 
 const SERVICE = 'luci.milo.v1.MiloInternal';
 
 export class MiloInternal {
-  private prpcClient: PrpcClient;
+  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(accessToken: string) {
-    this.prpcClient = new PrpcClient({host: '', accessToken});
+    const client = new PrpcClient({host: '', accessToken});
+    this.cachedCallFn = cached(
+      (method: string, message: object) => client.call(SERVICE, method, message),
+      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
+    );
   }
 
-  async queryBlamelist(req: QueryBlamelistRequest) {
-    return await this.call(
+  async queryBlamelist(req: QueryBlamelistRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn(
+      cacheOpt,
       'QueryBlamelist',
       req,
     ) as QueryBlamelistResponse;
-  }
-
-  async getCurrentUser(req: GetCurrentUserRequest) {
-    return await this.call(
-      'GetCurrentUser',
-      req,
-    ) as User;
-  }
-
-  private call(method: string, message: object) {
-    return this.prpcClient.call(
-      SERVICE,
-      method,
-      message,
-    );
   }
 }

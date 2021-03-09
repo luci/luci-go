@@ -80,11 +80,19 @@ export class ResultEntryElement extends MobxLitElement {
       : [];
   }
 
-  @computed private get invArtifacts() {
+  @computed private get invArtifacts$() {
     if (!this.appState.resultDb) {
-      return [];
+      // Returns a promise that never resolves when resultDb isn't ready.
+      return fromPromise(Promise.race([]));
     }
-    return this.appState.resultDb.getCachedArtifactsOfInv('invocations/' + this.parentInvId) || [];
+    // TODO(weiweilin): handle pagination.
+    return fromPromise(this.appState.resultDb.listArtifacts({parent: 'invocations/' + this.parentInvId}));
+  }
+
+  @computed private get invArtifacts() {
+    return this.invArtifacts$.state === FULFILLED
+      ? this.invArtifacts$.value.artifacts || []
+      : [];
   }
 
   @computed private get artifactsMapping() {
