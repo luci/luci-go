@@ -169,13 +169,13 @@ import { LitElement } from 'lit-element';
 
 interface ContextEventDetail<Ctx, T extends LitElement & Ctx = LitElement & Ctx> {
   element: T;
+  addDisconnectedEventCB(cb: () => void): void;
 }
 type ContextEvent<Ctx, T extends LitElement & Ctx = LitElement & Ctx> = CustomEvent<ContextEventDetail<Ctx, T>>;
 
 interface ProviderProperties<T> {
   consumers: Set<T>;
   onSubscribeContext?: EventListener;
-  onUnsubscribeContext?: EventListener;
 }
 
 /**
@@ -249,33 +249,22 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
           const consumers = props.consumers;
           const consumer = event.detail.element;
           consumers.add(consumer);
+          event.detail.addDisconnectedEventCB(() => consumers.delete(consumer));
           const newValue = (this as LitElement as T)[contextKey];
           consumers.add(consumer);
           updateConsumer(consumer, newValue);
           event.stopImmediatePropagation();
         }) as EventListener;
 
-        /**
-         * Removes the context consumer from the observer list.
-         */
-        props.onUnsubscribeContext = ((event: ContextEvent<Record<K, Ctx>, T>) => {
-          const consumers = props.consumers;
-          consumers.delete(event.detail.element);
-          event.stopImmediatePropagation();
-        }) as EventListener;
-
         this.addEventListener(`milo-subscribe-context-${contextKey}`, props.onSubscribeContext);
-        this.addEventListener(`milo-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext);
         super.connectedCallback();
       }
 
       disconnectedCallback() {
         const props = providerPropsWeakMap.get(this)!;
         this.removeEventListener(`milo-subscribe-context-${contextKey}`, props.onSubscribeContext!);
-        this.removeEventListener(`milo-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext!);
         super.disconnectedCallback();
       }
-
     }
 
     // Recover the type information that was lost in the down-casting above.
@@ -301,31 +290,35 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
  *  * Unsubscribes from all the contextProviders.
  */
 export function consumeContext<K extends string, Ctx>(contextKey: K) {
-  /**
-   * Emits subscribe or unsubscribe events for the observed context keys.
-   */
-  function emitEvents<T extends LitElement & Record<K, Ctx>>(element: T, type: 'subscribe' | 'unsubscribe') {
-    element.dispatchEvent(new CustomEvent(`milo-${type}-context-${contextKey}`, {
-      detail: {element},
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-    }) as ContextEvent<Record<K, Ctx>, T>);
-  }
-
   // The mixin target class (cls) needs to implement Record<K, Ctx>.
   // i.e Ctx must be assignable to the T[K].
   return function consumerMixin<T extends LitElement & Record<K, Ctx>, C extends Constructor<T>>(cls: C) {
+    const disconnectedEventCBs: Array<() => void> = [];
+
     // TypeScript doesn't allow type parameter in extends or implements
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
     class Consumer extends (cls as Constructor<LitElement>) {
       connectedCallback() {
-        emitEvents(this as LitElement as T, 'subscribe');
+        this.dispatchEvent(new CustomEvent(`milo-subscribe-context-${contextKey}`, {
+          detail: {
+            element: this as LitElement as T,
+            // We need to register callback via subscribe event because
+            // dispatching events in disconnectedCallback is no-op.
+            addDisconnectedEventCB(cb: () => void) {
+              disconnectedEventCBs.push(cb);
+            },
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }) as ContextEvent<Record<K, Ctx>, T>);
         super.connectedCallback();
       }
 
       disconnectedCallback() {
-        emitEvents(this as LitElement as T, 'unsubscribe');
+        for (const cb of disconnectedEventCBs) {
+          cb();
+        }
         super.disconnectedCallback();
       }
     }
