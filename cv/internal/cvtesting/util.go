@@ -47,6 +47,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/config"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/tree"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -64,6 +65,10 @@ type Test struct {
 	Cfg config.TestController
 	// GFake is a Gerrit fake. Defaults to an empty one.
 	GFake *gf.Fake
+	// TreeClient is a mock client for Tree Status App.
+	//
+	// If nil, defaults to an always-open tree.
+	TreeClient tree.Client
 	// TQ allows to run TQ tasks.
 	TQ *tqtesting.Scheduler
 	// Clock allows to move time forward.
@@ -102,6 +107,16 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		t.GFake = &gf.Fake{}
 	}
 
+	if t.TreeClient == nil {
+		t.TreeClient = &tree.MockClient{
+			FetchLatestFn: func(context.Context, string) (tree.Status, error) {
+				return tree.Status{
+					State: tree.Open,
+				}, nil
+			},
+		}
+	}
+
 	ctx = context.Background()
 	if testing.Verbose() {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
@@ -129,6 +144,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	ctx = txndefer.FilterRDS(ctx)
 
 	ctx = t.GFake.Install(ctx)
+	ctx = tree.Install(ctx, t.TreeClient)
 	ctx, t.TQ = tq.TestingContext(ctx, nil)
 	return ctx, t.cleanup
 }
