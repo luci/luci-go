@@ -50,6 +50,11 @@ const (
 	// "openid" scope in the refresh token or the provider doesn't support ID
 	// tokens at all.
 	NoIDToken = "-"
+
+	// NoAccessToken indicates the access token was not returned by the provider.
+	//
+	// This can happen with providers that support only ID tokens.
+	NoAccessToken = "-"
 )
 
 var (
@@ -66,6 +71,10 @@ var (
 	// ErrBadCredentials is returned by MintToken or RefreshToken if provided
 	// offline credentials (like service account key) are invalid.
 	ErrBadCredentials = errors.New("invalid or unavailable service account credentials")
+
+	// ErrAudienceRequired is returned when UseIDTokens is set without specifying
+	// the target audience for ID tokens.
+	ErrAudienceRequired = errors.New("using ID tokens requires specifying an audience string")
 )
 
 // Token is an oauth2.Token with an email and ID token that correspond to it.
@@ -161,7 +170,13 @@ type CacheKey struct {
 	//  * luci_ctx/<digest> when using LUCIContextMethod.
 	Key string `json:"key"`
 
-	// Scopes is the list of requested OAuth scopes.
+	// Scopes is the list of requested OAuth scopes or an ID token audience.
+	//
+	// The token audience is indicated by a fake scope that looks like
+	// "audience:<value>". Cache keys are used only for map indexing, their exact
+	// content doesn't matter. Adding a separate field (like `Audience`) to the
+	// key causes complication with older binaries that read the token cache and
+	// don't know about the new field, so we abuse `Scopes` field instead.
 	Scopes []string `json:"scopes,omitempty"`
 }
 

@@ -41,7 +41,7 @@ func TestLUCIContextProvider(t *testing.T) {
 	baseCtx := lucictx.Set(context.Background(), "local_auth", nil)
 
 	Convey("Requires local_auth", t, func() {
-		_, err := NewLUCIContextTokenProvider(baseCtx, []string{"A"}, http.DefaultTransport)
+		_, err := NewLUCIContextTokenProvider(baseCtx, false, []string{"A"}, "", http.DefaultTransport)
 		So(err, ShouldErrLike, `no "local_auth" in LUCI_CONTEXT`)
 	})
 
@@ -49,7 +49,7 @@ func TestLUCIContextProvider(t *testing.T) {
 		ctx := lucictx.SetLocalAuth(baseCtx, &lucictx.LocalAuth{
 			Accounts: []*lucictx.LocalAuthAccount{{Id: "zzz"}},
 		})
-		_, err := NewLUCIContextTokenProvider(ctx, []string{"A"}, http.DefaultTransport)
+		_, err := NewLUCIContextTokenProvider(ctx, false, []string{"A"}, "", http.DefaultTransport)
 		So(err, ShouldErrLike, `no "default_account_id"`)
 	})
 
@@ -94,7 +94,7 @@ func TestLUCIContextProvider(t *testing.T) {
 			DefaultAccountId: "acc_id",
 		})
 
-		p, err := NewLUCIContextTokenProvider(ctx, []string{"B", "A"}, http.DefaultTransport)
+		p, err := NewLUCIContextTokenProvider(ctx, false, []string{"B", "A"}, "", http.DefaultTransport)
 		So(err, ShouldBeNil)
 
 		Convey("Happy path", func() {
