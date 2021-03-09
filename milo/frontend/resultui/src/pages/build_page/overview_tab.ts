@@ -327,24 +327,14 @@ export class OverviewTabElement extends MobxLitElement {
           <h3>Input Properties</h3>
           <milo-property-viewer
             .properties=${build.input.properties}
-            .foldedLines=${this.configsStore.userConfigs.foldedInputPropLines}
-            .toggleFold=${(line: string, folded: boolean) => {
-              if (this.configsStore.userConfigs.foldedInputPropLines[line] !== folded) {
-                this.configsStore.userConfigs.foldedInputPropLines[line] = folded;
-                this.configsStore.save();
-              }
-            }}
+            .propLineFoldTime=${this.configsStore.userConfigs.inputPropLineFoldTime}
+            .saveFoldTime=${() => this.configsStore.save()}
           ></milo-property-viewer>
           <h3>Output Properties</h3>
           <milo-property-viewer
             .properties=${build.output.properties}
-            .foldedLines=${this.configsStore.userConfigs.foldedOutputPropLines}
-            .toggleFold=${(line: string, folded: boolean) => {
-              if (this.configsStore.userConfigs.foldedOutputPropLines[line] !== folded) {
-                this.configsStore.userConfigs.foldedOutputPropLines[line] = folded;
-                this.configsStore.save();
-              }
-            }}
+            .propLineFoldTime=${this.configsStore.userConfigs.outputPropLineFoldTime}
+            .saveFoldTime=${() => this.configsStore.save()}
           ></milo-property-viewer>
         </div>
       </div>
