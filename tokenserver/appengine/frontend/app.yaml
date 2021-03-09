@@ -27,3 +27,4 @@ entrypoint: >
   -ts-mon-account ${TS_MON_ACCOUNT}
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}
+  -cloud-error-reporting
