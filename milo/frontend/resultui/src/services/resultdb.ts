@@ -79,6 +79,12 @@ export interface TestResult {
   readonly tags?: Tag[];
 }
 
+export interface TestLocation {
+  readonly repo: string;
+  readonly fileName: string;
+  readonly line?: number;
+}
+
 export interface TestExoneration {
   readonly name: string;
   readonly testId: string;
@@ -205,6 +211,7 @@ export interface TestVariant {
   readonly status: TestVariantStatus;
   readonly results?: readonly TestResultBundle[];
   readonly exonerations?: readonly TestExoneration[];
+  readonly testMetadata?: TestMetadata;
 }
 
 export const enum TestVariantStatus {
@@ -214,6 +221,11 @@ export const enum TestVariantStatus {
   FLAKY = 'FLAKY',
   EXONERATED = 'EXONERATED',
   EXPECTED = 'EXPECTED',
+}
+
+export interface TestMetadata {
+  readonly name?: string;
+  readonly location?: TestLocation;
 }
 
 export interface TestResultBundle {
