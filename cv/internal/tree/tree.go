@@ -79,7 +79,7 @@ var clientCtxKey = "go.chromium.org/luci/cv/internal/tree.Client"
 
 // InstallProd puts a production `Client` implementation.
 func InstallProd(ctx context.Context) (context.Context, error) {
-	t, err := auth.GetRPCTransport(ctx, auth.NoAuth, nil)
+	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {
 		return nil, err
 	}
