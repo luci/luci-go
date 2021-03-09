@@ -101,6 +101,34 @@ const variant5: TestVariant = {
   ],
 };
 
+const variant6: TestVariant = {
+  testId: 'invocation-a/test-suite-b/test-5',
+  variant: {def: {'key1': 'val2', 'key2': 'val3'}},
+  variantHash: 'key1:val2|key2:val3',
+  status: TestVariantStatus.EXPECTED,
+  results: [
+    {
+      result: {
+        status: TestStatus.Skip,
+      } as TestResult,
+    },
+  ],
+};
+
+const variant7: TestVariant = {
+  testId: 'invocation-a/test-suite-b/test-5/sub',
+  variant: {def: {'key1': 'val2', 'key2': 'val3'}},
+  variantHash: 'key1:val2|key2:val3',
+  status: TestVariantStatus.EXPECTED,
+  results: [
+    {
+      result: {
+        status: TestStatus.Skip,
+      } as TestResult,
+    },
+  ],
+};
+
 
 const variants = [
   variant1,
@@ -108,6 +136,8 @@ const variants = [
   variant3,
   variant4,
   variant5,
+  variant6,
+  variant7,
 ];
 
 
@@ -122,13 +152,13 @@ describe('parseSearchQuery', () => {
     it('should be case insensitive', () => {
       const filter = parseSearchQuery('id:test-suite-b');
       const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [variant3, variant4, variant5]);
+      assert.deepEqual(filtered, [variant3, variant4, variant5, variant6, variant7]);
     });
 
     it('should interpret normal query as ID query', () => {
       const filter = parseSearchQuery('test-5');
       const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [variant5]);
+      assert.deepEqual(filtered, [variant5, variant6, variant7]);
     });
 
     it('should work with negation', () => {
@@ -154,7 +184,27 @@ describe('parseSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseSearchQuery('-rstatus:pass');
       const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [variant1, variant2, variant4]);
+      assert.deepEqual(filtered, [variant1, variant2, variant4, variant6, variant7]);
+    });
+  });
+
+  describe('TestID query', () => {
+    it('should only keep tests with the same ID', () => {
+      const filter = parseSearchQuery('TestID:invocation-a/test-suite-b/test-5');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant6]);
+    });
+
+    it('should be case sensitive', () => {
+      const filter = parseSearchQuery('testID:invocation-a/test-suite-B/test-5');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant5]);
+    });
+
+    it('should work with negation', () => {
+      const filter = parseSearchQuery('-Testid:invocation-a/test-suite-b/test-5');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [variant1, variant2, variant3, variant4, variant5, variant7]);
     });
   });
 
@@ -169,7 +219,7 @@ describe('parseSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseSearchQuery('-vhash:key1:val1');
       const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [variant2, variant3, variant4, variant5]);
+      assert.deepEqual(filtered, [variant2, variant3, variant4, variant5, variant6, variant7]);
     });
   });
 
@@ -320,6 +370,23 @@ describe('suggestSearchQuery', () => {
     assert.notStrictEqual(suggestions1.find((s) => s.value === '-RStatus:Fail'), undefined);
     assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:fail'), undefined);
     assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:fail'), undefined);
+  });
+
+  it('should suggest TestID query when the query prefix is TestID:', () => {
+    const suggestions1 = suggestSearchQuery('TestID:pass');
+    assert.notStrictEqual(suggestions1.find((s) => s.value === 'TestID:pass'), undefined);
+    assert.notStrictEqual(suggestions1.find((s) => s.value === '-TestID:pass'), undefined);
+
+    const suggestions2 = suggestSearchQuery('-TestID:pass');
+    // When user explicitly typed negative query, don't suggest positive query.
+    assert.strictEqual(suggestions2.find((s) => s.value === 'TestID:pass'), undefined);
+    assert.notStrictEqual(suggestions2.find((s) => s.value === '-TestID:pass'), undefined);
+  });
+
+  it('should suggest TestID query when the query type is a substring of TestID:', () => {
+    const suggestions1 = suggestSearchQuery('esti');
+    assert.notStrictEqual(suggestions1.find((s) => s.value === 'TestID:'), undefined);
+    assert.notStrictEqual(suggestions1.find((s) => s.value === '-TestID:'), undefined);
   });
 
   it('should suggest VHash query when the query prefix is VHash:', () => {
