@@ -95,22 +95,16 @@ func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, 
 	})
 }
 
-// NotifyFinished tells RunManager that Run has finished in CQDaemon.
+// NotifyCQDVerificationCompleted tells RunManager that CQDaemon has completed
+// verifying the provided Run.
 //
 // TODO(crbug/1141880): Remove this event after migration.
-func NotifyFinished(ctx context.Context, runID common.RunID, after time.Duration) error {
-	evt := &eventpb.Event{
-		Event: &eventpb.Event_Finished{
-			Finished: &eventpb.Finished{},
+func NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
+	return sendNow(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_CqdVerificationCompleted{
+			CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
 		},
-	}
-	if after > 0 {
-		t := clock.Now(ctx).Add(after)
-		evt.ProcessAfter = timestamppb.New(t)
-		return send(ctx, runID, evt, t)
-
-	}
-	return sendNow(ctx, runID, evt)
+	})
 }
 
 func sendNow(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {

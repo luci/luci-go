@@ -140,8 +140,8 @@ type triageResult struct {
 		events eventbox.Events
 		cls    common.CLIDs
 	}
-	finishedEvents     eventbox.Events
-	nextReadyEventTime time.Time
+	cqdVerificationCompletedEvents eventbox.Events
+	nextReadyEventTime             time.Time
 }
 
 func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
@@ -170,17 +170,17 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *eventpb.Event_ClUpdated:
 		tr.clUpdatedEvents.events = append(tr.clUpdatedEvents.events, item)
 		tr.clUpdatedEvents.cls = append(tr.clUpdatedEvents.cls, common.CLID(e.GetClUpdated().GetClid()))
-	case *eventpb.Event_Finished:
-		tr.finishedEvents = append(tr.finishedEvents, item)
+	case *eventpb.Event_CqdVerificationCompleted:
+		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
 	default:
 		panic(fmt.Errorf("unknown event: %T [id=%q]", e.GetEvent(), item.ID))
 	}
 }
 
 func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) (ret []eventbox.Transition, err error) {
-	if tr.finishedEvents != nil {
-		t := eventbox.Transition{Events: tr.finishedEvents}
-		t.SideEffectFn, rs, err = rm.handler.OnFinished(ctx, rs)
+	if tr.cqdVerificationCompletedEvents != nil {
+		t := eventbox.Transition{Events: tr.cqdVerificationCompletedEvents}
+		t.SideEffectFn, rs, err = rm.handler.OnCQDVerificationCompleted(ctx, rs)
 		if err != nil {
 			return nil, err
 		}

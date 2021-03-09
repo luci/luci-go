@@ -33,8 +33,9 @@ type Handler interface {
 	// OnCLUpdated decides whether to cancel a Run based on changes to the CLs.
 	OnCLUpdated(context.Context, *state.RunState, common.CLIDs) (eventbox.SideEffectFn, *state.RunState, error)
 
-	// OnFinished finalizes the Run using the finished Run reported by CQDaemon.
-	OnFinished(context.Context, *state.RunState) (eventbox.SideEffectFn, *state.RunState, error)
+	// OnCQDVerificationCompleted finalizes the Run according to the verified
+	// Run reported by CQDaemon.
+	OnCQDVerificationCompleted(context.Context, *state.RunState) (eventbox.SideEffectFn, *state.RunState, error)
 }
 
 // Impl is a prod implementation of Handler interface.
