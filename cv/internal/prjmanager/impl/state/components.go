@@ -126,7 +126,7 @@ func (s *State) scanComponents(ctx context.Context) ([]cAction, []*prjpb.Compone
 					out[i].DecisionTime = timestamppb.New(now)
 					return err
 
-				case when == now:
+				case when.Equal(now):
 					mutex.Lock()
 					actions = append(actions, cAction{i, actor})
 					mutex.Unlock()
