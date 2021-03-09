@@ -66,12 +66,24 @@ var (
 	beginningOfTheWorld = time.Date(2010, 01, 01, 0, 0, 0, 0, time.UTC)
 )
 
-// NewBuildIDs generates the given number of build IDs.
+// NewBuildIDs generates the given number of build IDs in descending order.
 func NewBuildIDs(ctx context.Context, t time.Time, n int) []int64 {
-	// Random component is in [n-1, 2^16).
-	base := idTimeSegment(t) | (int64(mathrand.Intn(ctx, 2^16-(n-1))+(n-1)) << 4) | buildIDVersion
+	// Build ID format [idTimeSegment] [random number] [buildIDVersion]
+	// Generate n build IDs by getting a random number R, then using the n
+	// integers in the range (R-n, R] as the random component while fixing
+	// the time and version components (see package-level comment). Ensure
+	// R is in [n-1, 2^16) so that the range (R-n, R] only contains
+	// non-negative integers.
+	r := mathrand.Intn(ctx, 65536-(n-1)) + (n - 1)
+	base := idTimeSegment(t) | (int64(r) << 4) | buildIDVersion
 	ids := make([]int64, n)
 	for i := range ids {
+		// Returned build IDs are in descending order:
+		// [time] [R] [version]
+		// [time] [R-1] [version]
+		// [time] [R-2] [version]
+		// ...
+		// [time] [R-(n-1)] [version]
 		ids[i] = base - int64(i*(1<<4))
 	}
 	return ids

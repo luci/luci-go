@@ -31,6 +31,7 @@ func TestNewBuildIDs(t *testing.T) {
 	Convey("NewBuildIDs", t, func() {
 		ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(0)))
 		t := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+		So(1<<16, ShouldEqual, 65536)
 
 		Convey("zero", func() {
 			ids := NewBuildIDs(ctx, t, 0)
@@ -40,7 +41,7 @@ func TestNewBuildIDs(t *testing.T) {
 		Convey("one", func() {
 			ids := NewBuildIDs(ctx, t, 1)
 			So(ids, ShouldResemble, []int64{
-				0x7DB4463C7FF00001,
+				0x7DB4463C7FF2FFA1,
 			})
 			So(ids[0]>>63, ShouldEqual, 0)
 			So(ids[0]&0x0FFFFFFFFFFFFFFF>>buildIDTimeSuffixLen, ShouldEqual, 941745227775)
@@ -50,8 +51,8 @@ func TestNewBuildIDs(t *testing.T) {
 		Convey("two", func() {
 			ids := NewBuildIDs(ctx, t, 2)
 			So(ids, ShouldResemble, []int64{
-				0x7DB4463C7FF00071,
-				0x7DB4463C7FF00061,
+				0x7DB4463C7FFA8F71,
+				0x7DB4463C7FFA8F61,
 			})
 			So(ids[0]>>63, ShouldEqual, 0)
 			So(ids[0]&0x0000000000000001, ShouldEqual, buildIDVersion)
