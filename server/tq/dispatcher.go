@@ -1409,7 +1409,7 @@ func checkContainsIdent(callers []string, ident identity.Identity) bool {
 // `msg` is sent to the caller as is. `err` is logged, but not sent.
 func httpReply(c *router.Context, code int, msg string, err error) {
 	if err != nil {
-		logging.Errorf(c.Context, "%s: %s", msg, err)
+		logging.Errorf(c.Context, "server/tq task %s: %s", msg, err)
 	}
 	http.Error(c.Writer, msg, code)
 }
@@ -1420,14 +1420,14 @@ func replyWithErr(c *router.Context, err error) {
 	case err == nil:
 		httpReply(c, 200, "OK", nil)
 	case Fatal.In(err):
-		httpReply(c, 202, "Fatal error", err)
+		httpReply(c, 202, "fatal error", err)
 	case transient.Tag.In(err):
-		httpReply(c, 500, "Transient error", err)
+		httpReply(c, 500, "transient error", err)
 	default:
 		status := 429
 		if code, ok := errors.TagValueIn(httpStatusKey, err); ok {
 			status = code.(int)
 		}
-		httpReply(c, status, "Error", err)
+		httpReply(c, status, "error", err)
 	}
 }
