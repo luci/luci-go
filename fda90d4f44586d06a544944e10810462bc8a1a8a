@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4fd95f76_b4bd26bd",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T23:33:42Z",
+      "side": 1,
+      "message": "nit: SHA2 and it\u0027s hex-encoded",
+      "range": {
+        "startLine": 32,
+        "startChar": 15,
+        "endLine": 32,
+        "endChar": 16
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd2fa679_b00b679c",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T23:33:42Z",
+      "side": 1,
+      "message": "nit: call just once and re-use for L49 (as this isn\u0027t a very cheap op)",
+      "range": {
+        "startLine": 47,
+        "startChar": 74,
+        "endLine": 47,
+        "endChar": 99
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1702311b_df72fc9b",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T23:33:42Z",
+      "side": 1,
+      "message": "afaiu after looking through _test file in this CL,\nthe only codepath tested so far is for 1 req via ScheduleBuild RPC. Right?\n\nIf so, please add a test to cover \u003e1 req, ideally 10+\ns.t. mistakes in future modifications to this code are more likely to be caught.",
+      "range": {
+        "startLine": 273,
+        "startChar": 0,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4fa91324_b5c93253",
+        "filename": "buildbucket/appengine/rpc/schedule_build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1275,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T23:33:42Z",
+      "side": 1,
+      "message": "For future CL where this test doesn\u0027t err: please also add a test where multiple concurrent gorotuines retry ScheduleBuild on *flaky datastore* and ensure they all get the same Build answer at the end.\nThis will provide much better correctness quality than the test here so far.\n\nRobbie et al made it really easy to do, e.g. https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/changelist/model_test.go;l\u003d300?q\u003dchangelist%20model_test.go\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 1266,
+        "startChar": 0,
+        "endLine": 1275,
+        "endChar": 7
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

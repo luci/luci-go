@@ -470,6 +470,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5ddf31be_fe98a306",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T23:33:42Z",
+      "side": 1,
+      "message": "I meant errors.Annotate(...)",
+      "parentUuid": "bc070db5_353caca2",
+      "range": {
+        "startLine": 296,
+        "startChar": 11,
+        "endLine": 296,
+        "endChar": 37
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "87c8bf95_2c774114",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
