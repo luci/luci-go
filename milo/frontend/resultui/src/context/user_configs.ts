@@ -26,6 +26,12 @@ export interface UserConfigs {
     showSucceededSteps: boolean;
     showDebugLogs: boolean;
   };
+  foldedInputPropLines: {
+    [key: string]: boolean;
+  };
+  foldedOutputPropLines: {
+    [key: string]: boolean;
+  };
   askForFeedback: boolean;
   defaultBuildPageTabName: string;
 }
@@ -34,11 +40,13 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   hints: {
     showTestResultsHint: true,
   },
-  askForFeedback: true,
   steps: Object.freeze({
     showSucceededSteps: true,
     showDebugLogs: false,
   }),
+  foldedInputPropLines:  Object.freeze({}),
+  foldedOutputPropLines: Object.freeze({}),
+  askForFeedback: true,
   defaultBuildPageTabName: 'build-overview',
 });
 
