@@ -46,6 +46,30 @@
       },
       "revId": "f045ebf93c3d821063241d7883751b938afb00b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f19768e_9518370f",
+        "filename": "cv/appengine/queue.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T18:33:31Z",
+      "side": 1,
+      "message": "Yes, exactly.\nMy thinking is to support bad push of stack of 50 CLs in a few seconds.",
+      "parentUuid": "1ac1556f_fb4b4c71",
+      "range": {
+        "startLine": 7,
+        "startChar": 8,
+        "endLine": 7,
+        "endChar": 12
+      },
+      "revId": "f045ebf93c3d821063241d7883751b938afb00b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
