@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9131568c_6823c70f",
+        "filename": "buildbucket/appengine/internal/perm/perm_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-09T23:03:08Z",
+      "side": 1,
+      "message": "golint",
+      "revId": "e5be2d5390f36568935d4b8eae6c97d49446d166",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
