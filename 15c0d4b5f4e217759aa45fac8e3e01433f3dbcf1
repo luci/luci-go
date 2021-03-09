@@ -22,6 +22,30 @@
       },
       "revId": "15c0d4b5f4e217759aa45fac8e3e01433f3dbcf1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1993f27c_fb582116",
+        "filename": "milo/frontend/resultui/src/libs/search_query.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-09T00:08:33Z",
+      "side": 1,
+      "message": "The ID filter is not exact. It matches substring and is case insensitive.\nIf we renamed it to TestID, there could be confusion between ID filter and TestID filter.\nWe can rename ID filter to something like IDSubstring. But I think the ID filter will be used more than TestID. Therefore a shorter type name is needed.",
+      "parentUuid": "99b7847c_79a4140d",
+      "range": {
+        "startLine": 47,
+        "startChar": 12,
+        "endLine": 47,
+        "endChar": 19
+      },
+      "revId": "15c0d4b5f4e217759aa45fac8e3e01433f3dbcf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
