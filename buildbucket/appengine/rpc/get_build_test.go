@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -329,5 +330,20 @@ func TestGetBuild(t *testing.T) {
 				So(err, ShouldErrLike, "builder is required")
 			})
 		})
+	})
+}
+
+func TestCategorizeCallerCrBug1186261(t *testing.T) {
+	t.Parallel()
+
+	Convey("categorizeCallerCrBug1186261", t, func() {
+		run := func(s string) string {
+			return categorizeCallerCrBug1186261(identity.Identity(s))
+		}
+		So(run("anonymous:anonymous"), ShouldResemble, "anonymous:anonymous")
+		So(run("user:sa@some-project.iam.gserviceaccount.com"), ShouldResemble, "user:sa@some-project.iam.gserviceaccount.com")
+		So(run("user:me@example.com"), ShouldResemble, "user:<other>")
+		So(run("project:infra"), ShouldResemble, "project:infra")
+		So(run("service:luci-cv"), ShouldResemble, "service:luci-cv")
 	})
 }
