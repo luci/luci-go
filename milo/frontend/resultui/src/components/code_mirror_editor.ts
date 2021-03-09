@@ -32,11 +32,11 @@ const codemirrorStyle = require('codemirror/lib/codemirror.css').default;
 export class CodeMirrorEditorElement extends LitElement {
   @observable.ref value!: string;
   @observable.ref options: CodeMirror.EditorConfiguration | undefined;
-  private editor:CodeMirror.EditorFromTextArea | undefined;
+  onInit = (_editor: CodeMirror.Editor) => {};
 
   protected firstUpdated() {
-    this.editor = CodeMirror.fromTextArea(this.shadowRoot!.getElementById('editor') as HTMLTextAreaElement, this.options);
-    this.editor.refresh();
+    const editor = CodeMirror.fromTextArea(this.shadowRoot!.getElementById('editor') as HTMLTextAreaElement, this.options);
+    this.onInit(editor);
   }
 
   protected render() {
