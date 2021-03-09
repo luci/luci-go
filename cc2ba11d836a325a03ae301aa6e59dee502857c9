@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "3ce81016_205eb519",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-09T22:02:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c281e24_de79bbbc",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "be13f3b7_e79f798a",
         "filename": "cv/internal/bq/bq.go",
         "patchSetId": 4
@@ -77,6 +101,30 @@
       "writtenOn": "2021-03-05T00:36:28Z",
       "side": 1,
       "message": "This should depend on kind of failure.\nLoading Run form datastore giving ErrNoSuchEntity must be a permanent failure.",
+      "range": {
+        "startLine": 49,
+        "startChar": 3,
+        "endLine": 49,
+        "endChar": 40
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fd7af17_9f52585e",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-09T22:02:19Z",
+      "side": 1,
+      "message": "I agree, thanks.",
+      "parentUuid": "6fcdbdec_2352a885",
       "range": {
         "startLine": 49,
         "startChar": 3,
@@ -124,6 +172,30 @@
       "side": 1,
       "message": "Im my POV, I will echo the Generic approach as it looks like the right encapsulation and reusable in the future.",
       "parentUuid": "59ef8f53_d94c3d43",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 13
+      },
+      "revId": "cc2ba11d836a325a03ae301aa6e59dee502857c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "240f1559_934c202a",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-09T22:02:19Z",
+      "side": 1,
+      "message": "I agree with keeping \"internal/bq\" and including generic (non-run-specific) things, which may be re-used in the future for other BQ tables. Changed skeleton.",
+      "parentUuid": "99498bb6_d53760a5",
       "range": {
         "startLine": 62,
         "startChar": 0,
