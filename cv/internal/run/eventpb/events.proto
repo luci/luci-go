@@ -50,14 +50,13 @@ message Event {
     // TODO(yiwzhang): Define following events that Run Manager may receive:
     //  * TryjobUpdated
 
-    // On Finished event, Run Manager will finalize the Run.
+    // On CQDVerificationCompleted event, Run Manager will finalize the Run.
     //
-    // This event SHOULD only be sent by migration api when CQDaemon is still
-    // controlling the execution of the Run and reporting the final Run back
-    // to CV.
+    // This event is sent by migration api when CQDaemon reports a verified
+    // Run back to CV.
     //
     // TODO(crbug/1141880): Remove this event after migration.
-    Finished finished = 30;
+    CQDVerificationCompleted cqd_verification_completed = 30;
   }
 
   // Instructs Run Manager that this event can only be processed after
@@ -91,5 +90,5 @@ message CLUpdated {
   int64 eVersion = 2;
 }
 
-message Finished {
+message CQDVerificationCompleted {
 }

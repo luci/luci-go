@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
@@ -68,14 +69,14 @@ func TestRunManager(t *testing.T) {
 		}{
 			{
 				&eventpb.Event{
-					Event: &eventpb.Event_Finished{
-						Finished: &eventpb.Finished{},
+					Event: &eventpb.Event_CqdVerificationCompleted{
+						CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
 					},
 				},
 				func(ctx context.Context) error {
-					return run.NotifyFinished(ctx, runID, 0)
+					return run.NotifyCQDVerificationCompleted(ctx, runID)
 				},
-				"OnFinished",
+				"OnCQDVerificationCompleted",
 			},
 			{
 				&eventpb.Event{
@@ -253,6 +254,8 @@ type fakeHandler struct {
 	invocations []string
 }
 
+var _ handler.Handler = &fakeHandler{}
+
 func (fh *fakeHandler) Start(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
 	fh.addInvocation("Start")
 	return nil, rs.ShallowCopy(), nil
@@ -261,21 +264,17 @@ func (fh *fakeHandler) Start(ctx context.Context, rs *state.RunState) (eventbox.
 func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
 	fh.addInvocation("Cancel")
 	return nil, rs.ShallowCopy(), nil
-
 }
 
 func (fh *fakeHandler) OnCLUpdated(ctx context.Context, rs *state.RunState, _ common.CLIDs) (eventbox.SideEffectFn, *state.RunState, error) {
 	fh.addInvocation("OnCLUpdated")
 	return nil, rs.ShallowCopy(), nil
-
 }
 
-func (fh *fakeHandler) OnFinished(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
-	fh.addInvocation("OnFinished")
+func (fh *fakeHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+	fh.addInvocation("OnCQDVerificationCompleted")
 	return nil, rs.ShallowCopy(), nil
-
 }
-
 func (fh *fakeHandler) addInvocation(method string) {
 	fh.invocations = append(fh.invocations, method)
 }
