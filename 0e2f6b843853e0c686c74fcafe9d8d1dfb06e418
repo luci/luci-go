@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/9044/test-results?q\u003dID%3Aninja%3A%2F%2Fbase%3Abase_unittests%2FPCScanTest.DanglingReferenceFromFullPage\u0026clean\u003d\n",
       "revId": "0e2f6b843853e0c686c74fcafe9d8d1dfb06e418",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7147f9a2_bf16c332",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-09T03:12:25Z",
+      "side": 1,
+      "message": "This is oppressive language :P. Can we use HEAD here? e.g. https://chromium.googlesource.com/chromium/src/+/HEAD/base/allocator/partition_allocator/pcscan_unittest.cc#251",
+      "range": {
+        "startLine": 80,
+        "startChar": 23,
+        "endLine": 80,
+        "endChar": 28
+      },
+      "revId": "0e2f6b843853e0c686c74fcafe9d8d1dfb06e418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
