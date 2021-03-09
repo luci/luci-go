@@ -46,6 +46,30 @@
       },
       "revId": "342691cbe6c455059ea51a5a5a6eea9ffab1f7e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7daa3841_3c06a646",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-09T03:21:37Z",
+      "side": 1,
+      "message": "Repo is required, I\u0027ll correct L37.",
+      "parentUuid": "b315f3d2_b77cc852",
+      "range": {
+        "startLine": 83,
+        "startChar": 11,
+        "endLine": 83,
+        "endChar": 15
+      },
+      "revId": "342691cbe6c455059ea51a5a5a6eea9ffab1f7e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
