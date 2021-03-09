@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98d2aaf6_6a80711e",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-09T03:13:47Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto\n\non L27, it says \u0027location.repo MUST be specified.\u0027\non L37, it says repo \u0027SHOULD be specified.\u0027\nI guess that means the repo can not be null when it\u0027s a property of a test result or test variant?",
+      "range": {
+        "startLine": 83,
+        "startChar": 11,
+        "endLine": 83,
+        "endChar": 15
+      },
+      "revId": "342691cbe6c455059ea51a5a5a6eea9ffab1f7e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
