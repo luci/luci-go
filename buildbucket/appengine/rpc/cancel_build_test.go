@@ -129,7 +129,7 @@ func TestCancelBuild(t *testing.T) {
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
-								Role:     pb.Acl_WRITER,
+								Role:     pb.Acl_SCHEDULER,
 							},
 						},
 					},
@@ -175,7 +175,7 @@ func TestCancelBuild(t *testing.T) {
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
-								Role:     pb.Acl_WRITER,
+								Role:     pb.Acl_SCHEDULER,
 							},
 						},
 					},
@@ -223,7 +223,7 @@ func TestCancelBuild(t *testing.T) {
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
-								Role:     pb.Acl_WRITER,
+								Role:     pb.Acl_SCHEDULER,
 							},
 						},
 					},
@@ -282,7 +282,7 @@ func TestCancelBuild(t *testing.T) {
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
-								Role:     pb.Acl_WRITER,
+								Role:     pb.Acl_SCHEDULER,
 							},
 						},
 					},

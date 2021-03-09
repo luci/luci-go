@@ -361,7 +361,7 @@ func TestCanUpdateBuild(t *testing.T) {
 
 	Convey("With mocked auth DB", t, func() {
 		member := identity.Identity("member@example.com")
-		not_member := identity.Identity("not-member@example.com")
+		notMember := identity.Identity("not-member@example.com")
 		s := &authtest.FakeState{
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockMembership(member, UpdateBuildAllowedUsers),
@@ -377,7 +377,7 @@ func TestCanUpdateBuild(t *testing.T) {
 		})
 
 		Convey("With a non-member of the updater group", func() {
-			s.Identity = not_member
+			s.Identity = notMember
 			can, err := CanUpdateBuild(ctx)
 			So(err, ShouldBeNil)
 			So(can, ShouldBeFalse)
