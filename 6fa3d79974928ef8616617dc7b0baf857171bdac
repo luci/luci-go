@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "164ede4f_15e98b99",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-09T01:47:36Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6839/overview\n\nUnfortunately, I can\u0027t find a way to unit test this without making the API worse.\nThis is mainly due to\n1. subscribers are not stored as a property of the element, but as a variable in a closure, and\n2. we can\u0027t just store the subscribers as a regular property of the element because there will be conflicts when the decorator is applied multiple times.\n3. we can use synthesised long property name to avoid conflicts but that feels awkward.",
+      "revId": "6fa3d79974928ef8616617dc7b0baf857171bdac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
