@@ -21,30 +21,35 @@ const SPECIAL_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 export type TestVariantFilter = (v: TestVariant) => boolean;
 
 export function parseSearchQuery(searchQuery: string): TestVariantFilter {
-  const filters = searchQuery.toUpperCase().split(' ').map((query) => {
+  const filters = searchQuery.split(' ').map((query) => {
     const match = query.match(SPECIAL_QUERY_RE);
 
     // If the query isn't a special query, treat it as an ID query.
     const [, neg, type, value] = match || ['', '', 'ID', query];
+    const valueUpper = value.toUpperCase();
     const negate = neg === '-';
-    switch (type) {
+    switch (type.toUpperCase()) {
       // Whether the test variant has the specified status.
       case 'STATUS': {
-        const statuses = value.split(',');
+        const statuses = valueUpper.split(',');
         return (v: TestVariant) => negate !== statuses.includes(v.status);
       }
       // Whether there's at least one a test result of the specified status.
       case 'RSTATUS': {
-        const statuses = value.split(',');
+        const statuses = valueUpper.split(',');
         return (v: TestVariant) => negate !== (v.results || []).some((r) => statuses.includes(r.result.status));
       }
       // Whether the test ID contains the query as a substring (case insensitive).
       case 'ID': {
-        return (v: TestVariant) => negate !== v.testId.toUpperCase().includes(value);
+        return (v: TestVariant) => negate !== v.testId.toUpperCase().includes(valueUpper);
+      }
+      // Whether the test ID matches the specified ID (case sensitive).
+      case 'EXACTID': {
+        return (v: TestVariant) => negate !== (v.testId === value);
       }
       // Whether the test variant has the specified variant hash.
       case 'VHASH': {
-        return (v: TestVariant) => negate !== (v.variantHash.toUpperCase() === value);
+        return (v: TestVariant) => negate !== (v.variantHash.toUpperCase() === valueUpper);
       }
       default: {
         throw new Error(`invalid query type: ${type}`);
@@ -84,6 +89,9 @@ const QUERY_TYPE_SUGGESTIONS = [
   {type: 'ID:', explanation: 'Include only tests with the specified substring in their ID (case insensitive)'},
   {type: '-ID:', explanation: 'Exclude tests with the specified substring in their ID (case insensitive)'},
 
+  {type: 'ExactID:', explanation: 'Include only tests with the specified ID (case sensitive)'},
+  {type: '-ExactID:', explanation: 'Exclude tests with the specified ID (case sensitive)'},
+
   {type: 'VHash:', explanation: 'Include only tests with the specified variant hash'},
   {type: '-VHash:', explanation: 'Exclude tests with the specified variant hash'},
 ];
@@ -115,6 +123,7 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
       {value: 'test-id-substr', explanation: 'Filters with no type are treated as ID filters'},
       {value: 'Status:UNEXPECTED,UNEXPECTEDLY_SKIPPED,FLAKY,EXONERATED,EXPECTED', explanation: 'Include only tests with the specified status'},
       {value: 'RStatus:Pass,Fail,Crash,Abort,Skip', explanation: 'Include only tests with at least one run of the specified status'},
+      {value: 'ExactID:test-id', explanation: 'Include only tests with the specified test ID (case sensitive)'},
       {value: 'VHash:2660cde9da304c42', explanation: 'Include only tests with the specified variant hash'},
     ];
   }
