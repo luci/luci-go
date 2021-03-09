@@ -22,6 +22,30 @@
       },
       "revId": "3e3c37bca76592b855087dfec0421a5ca5e1266b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39e4d390_166c5d37",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-09T21:33:27Z",
+      "side": 1,
+      "message": "I believe the \"MD5 would have been fine\" explanation is necessary anyway (currently L46), because the question of \"why are you hashing this\" still arises. At least it comes to my mind.\n\nAnyway done.",
+      "parentUuid": "6bfb3005_0263818e",
+      "range": {
+        "startLine": 32,
+        "startChar": 12,
+        "endLine": 32,
+        "endChar": 16
+      },
+      "revId": "3e3c37bca76592b855087dfec0421a5ca5e1266b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

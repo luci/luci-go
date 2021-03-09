@@ -249,6 +249,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9eb9d83e_fe13acb2",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-09T21:33:27Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "473acb8c_fb4f7384",
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d994654d_6f1a5995",
@@ -416,6 +434,30 @@
       "side": 1,
       "message": "not done.",
       "parentUuid": "d1dfb93e_677a7956",
+      "range": {
+        "startLine": 296,
+        "startChar": 11,
+        "endLine": 296,
+        "endChar": 37
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc070db5_353caca2",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-09T21:33:27Z",
+      "side": 1,
+      "message": "I added some inline comments but I guess I don\u0027t understand what you want done.",
+      "parentUuid": "90b512f1_0eb2f42f",
       "range": {
         "startLine": 296,
         "startChar": 11,
