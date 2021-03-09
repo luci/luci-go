@@ -34,4 +34,4 @@ entrypoint: >
   -ds-cache ${DS_CACHE}
   # Experimental feature crbug/1172373.
   # TODO(tandrii): remove it once it becomes default.
-  -cloud-error-reporting true
+  -cloud-error-reporting

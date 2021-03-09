@@ -158,7 +158,8 @@ var cloudRegionFromGAERegion = map[string]string{
 // Main initializes the server and runs its serving loop until SIGTERM.
 //
 // Registers all options in the default flag set and uses `flag.Parse` to parse
-// them. If 'opts' is nil, the default options will be used.
+// them. If 'opts' is nil, the default options will be used. Only flags are
+// allowed in the command line (no positional arguments).
 //
 // Additionally recognizes GAE_APPLICATION env var as an indicator that the
 // server is running on GAE. This slightly tweaks its behavior to match what GAE
@@ -180,6 +181,9 @@ func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 	srv, err := New(context.Background(), *opts, mods)
 	if err != nil {
 		srv.Fatal(err)
+	}
+	if args := flag.Args(); len(args) > 0 {
+		srv.Fatal(errors.Reason("got unexpected positional command line arguments: %v", args).Err())
 	}
 	if init != nil {
 		if err = init(srv); err != nil {
