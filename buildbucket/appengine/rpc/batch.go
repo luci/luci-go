@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"google.golang.org/grpc/codes"
@@ -56,10 +57,10 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	goIndices := make([]int, 0, len(req.Requests))
 	for i, r := range req.Requests {
 		switch r.Request.(type) {
-		case *pb.BatchRequest_Request_ScheduleBuild, *pb.BatchRequest_Request_CancelBuild:
+		case *pb.BatchRequest_Request_ScheduleBuild:
 			pyIndices = append(pyIndices, i)
 			pyBatchReq.Requests = append(pyBatchReq.Requests, r)
-		case *pb.BatchRequest_Request_GetBuild, *pb.BatchRequest_Request_SearchBuilds:
+		case *pb.BatchRequest_Request_GetBuild, *pb.BatchRequest_Request_SearchBuilds, *pb.BatchRequest_Request_CancelBuild:
 			goIndices = append(goIndices, i)
 			goBatchReq = append(goBatchReq, r)
 		default:
@@ -77,7 +78,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 		logging.Debugf(ctx, "Batch: read operation size - %d", len(goBatchReq))
 	}
 
-	// TODO(crbug.com/1144958): remove calling py after ScheduleBuild and CancelBuild are done.
+	// TODO(crbug.com/1144958): remove calling py after ScheduleBuild is done.
 	pyResC := make(chan *pyBatchResponse)
 	if len(pyBatchReq.Requests) != 0 {
 		go func() {
@@ -107,8 +108,12 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 					ret, e := b.SearchBuilds(ctx, r.GetSearchBuilds())
 					response.Response = &pb.BatchResponse_Response_SearchBuilds{SearchBuilds: ret}
 					err = e
+				case *pb.BatchRequest_Request_CancelBuild:
+					ret, e := b.CancelBuild(ctx, r.GetCancelBuild())
+					response.Response = &pb.BatchResponse_Response_CancelBuild{CancelBuild: ret}
+					err = e
 				default:
-					panic("impossible")
+					panic(fmt.Sprintf("attempted to handle unexpected request type %T", r.Request))
 				}
 				if err != nil {
 					logging.Warningf(ctx, "Error from Go: %s", err)
@@ -135,10 +140,10 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 		logging.Warningf(ctx, "Error from Python service: %s", pyRes.err)
 		gStatus, _ := convertGRPCError(pyRes.err)
 		return nil, appstatus.Error(gStatus.Code(), gStatus.Message())
-	} else {
-		for i, idx := range pyIndices {
-			res.Responses[idx] = pyRes.res.Responses[i]
-		}
+	}
+
+	for i, idx := range pyIndices {
+		res.Responses[idx] = pyRes.res.Responses[i]
 	}
 
 	return res, nil
