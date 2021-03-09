@@ -1,4 +1,6 @@
 queue:
+- name: kick-manage-project
+  rate: 500/s
 - name: manage-project
   rate: 500/s
 - name: poll-gerrit
