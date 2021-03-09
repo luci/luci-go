@@ -51,7 +51,7 @@ type MigrationServer struct {
 func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.ReportRunsRequest) (resp *empty.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
-		return
+		return nil, err
 	}
 
 	project := "<UNKNOWN>"
@@ -65,8 +65,7 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 		cls += len(r.Attempt.GerritChanges)
 	}
 	logging.Infof(ctx, "CQD[%s] is working on %d attempts %d CLs right now", project, len(req.Runs), cls)
-	resp = &empty.Empty{}
-	return
+	return &empty.Empty{}, nil
 }
 
 // ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
@@ -76,20 +75,19 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationpb.ReportVerifiedRunRequest) (resp *empty.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
-		return
+		return nil, err
 	}
 
 	if req.GetRun().GetId() == "" {
-		err = status.Error(codes.InvalidArgument, "empty RunID")
-		return
+		return nil, status.Error(codes.InvalidArgument, "empty RunID")
 	}
 	// TODO(yiwzhang): rename to CQDVerifiedRun and stores additional fields in
 	// in the input request.
 	if err = saveFinishedRun(ctx, req.GetRun()); err != nil {
-		return
+		return nil, err
 	}
 	if err = run.NotifyCQDVerificationCompleted(ctx, common.RunID(req.GetRun().GetId())); err != nil {
-		return
+		return nil, err
 	}
 
 	return &empty.Empty{}, nil
@@ -118,11 +116,10 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *empty.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
-		return
+		return nil, err
 	}
 	if req.AccessToken == "" || req.GerritHost == "" {
-		err = appstatus.Error(codes.InvalidArgument, "access_token and gerrit_host required")
-		return
+		return nil, appstatus.Error(codes.InvalidArgument, "access_token and gerrit_host required")
 	}
 
 	project := "<UNKNOWN>"
@@ -130,21 +127,24 @@ func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.
 		project = i.Value()
 	}
 	logging.Infof(ctx, "CQD[%s] uses netrc access token for %s", project, req.GerritHost)
-	resp = &empty.Empty{}
-	err = gerrit.SaveLegacyNetrcToken(ctx, req.GerritHost, req.AccessToken)
-	return
+	if err = gerrit.SaveLegacyNetrcToken(ctx, req.GerritHost, req.AccessToken); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
 }
 
 // FetchActiveRuns returns all RUNNING runs for the given LUCI Project.
 func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.FetchActiveRunsRequest) (resp *migrationpb.FetchActiveRunsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
-		return
+		return nil, err
 	}
 
 	resp = &migrationpb.FetchActiveRunsResponse{}
-	resp.Runs, err = fetchActiveRuns(ctx, req.GetLuciProject())
-	return
+	if resp.Runs, err = fetchActiveRuns(ctx, req.GetLuciProject()); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (m *MigrationServer) checkAllowed(ctx context.Context) error {
