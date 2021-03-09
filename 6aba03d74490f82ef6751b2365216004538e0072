@@ -93,6 +93,30 @@
       },
       "revId": "6aba03d74490f82ef6751b2365216004538e0072",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba20e876_10f13923",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-09T05:48:20Z",
+      "side": 1,
+      "message": "my concern is that there is no GC. It will accumulate strings from this day and into the future.\n\nI was thinking if we use a set, we\u0027d at least delete expanded strings, but it wouldn\u0027t help in the grand scheme of things.\n\nConsider putting the timestamp as the value (not boolean), and GCing occasionally.",
+      "parentUuid": "16b461d9_1a52cb47",
+      "range": {
+        "startLine": 333,
+        "startChar": 16,
+        "endLine": 333,
+        "endChar": 82
+      },
+      "revId": "6aba03d74490f82ef6751b2365216004538e0072",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
