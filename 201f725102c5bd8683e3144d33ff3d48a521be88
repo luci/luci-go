@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5c5f648_a9ac36d9",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/actor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T02:00:03Z",
+      "side": 1,
+      "message": "oh, you are right. I missed that.",
+      "parentUuid": "18e89566_8a98a3ef",
+      "range": {
+        "startLine": 86,
+        "startChar": 34,
+        "endLine": 86,
+        "endChar": 45
+      },
+      "revId": "201f725102c5bd8683e3144d33ff3d48a521be88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c030de8_4d2c28fa",
