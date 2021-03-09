@@ -16,6 +16,52 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/8852/overview\n\nExpire time is reduced to 60s in the demo.",
       "revId": "f12947c715bd563ef9b46d0c5b4d872c45c96374",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e37baa68_c18c88e7",
+        "filename": "milo/frontend/resultui/src/components/property_viewer.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-09T23:39:45Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 88,
+        "startChar": 14,
+        "endLine": 91,
+        "endChar": 28
+      },
+      "revId": "f12947c715bd563ef9b46d0c5b4d872c45c96374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c8be81bd_b98636c4",
+        "filename": "milo/frontend/resultui/src/context/user_configs.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-09T23:39:45Z",
+      "side": 1,
+      "message": "nit: maybe dedupe the code by making a helper func, inside the constructor",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 78
+      },
+      "revId": "f12947c715bd563ef9b46d0c5b4d872c45c96374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
