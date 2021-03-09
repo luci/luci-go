@@ -39,6 +39,30 @@
       },
       "revId": "9c8aa80226c6e0bfb0882835204c915b33890c65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df179972_43e99c12",
+        "filename": "auth/integration/localauth/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-09T21:12:28Z",
+      "side": 1,
+      "message": "For go errors I prefer \":\". In other places - it depends. Here, it is an HTTP reply body.",
+      "parentUuid": "c314d62c_1f2f8971",
+      "range": {
+        "startLine": 412,
+        "startChar": 39,
+        "endLine": 412,
+        "endChar": 40
+      },
+      "revId": "9c8aa80226c6e0bfb0882835204c915b33890c65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
