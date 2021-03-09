@@ -22,11 +22,12 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 import '../../components/build_step_entry';
-import '../../components/code_mirror_editor';
 import '../../components/link';
 import '../../components/log';
+import '../../components/property_viewer';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getBotLink, getBuildbucketLink, getURLForBuild, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
@@ -38,6 +39,7 @@ import { BuildStatus } from '../../services/buildbucket';
 
 export class OverviewTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref configsStore!: UserConfigsStore;
   @observable.ref buildState!: BuildState;
 
   @observable.ref private showRetryDialog = false;
@@ -259,27 +261,6 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
-  private renderProperties(header: string, properties: {[key: string]: unknown}) {
-    const editorOptions = {
-      mode: {name: 'javascript', json: true},
-      readOnly: true,
-      scrollbarStyle: 'null',
-      matchBrackets: true,
-      lineWrapping: true,
-      foldGutter: true,
-      lineNumbers: true,
-      gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-    };
-
-    return html`
-      <h3>${header}</h3>
-      <milo-code-mirror-editor
-        .value=${JSON.stringify(properties, undefined, 2)}
-        .options=${{...editorOptions}}
-      ></milo-code-mirror-editor>
-    `;
-  }
-
   private renderBuildLogs() {
     const logs = this.buildState.build?.output?.logs;
     if (!logs) {
@@ -343,8 +324,28 @@ export class OverviewTabElement extends MobxLitElement {
           ${this.renderBuildLogs()}
           ${this.renderActionButtons()}
           ${this.renderTags()}
-          ${this.renderProperties('Input Properties', build.input.properties)}
-          ${this.renderProperties('Output Properties', build.output.properties)}
+          <h3>Input Properties</h3>
+          <milo-property-viewer
+            .properties=${build.input.properties}
+            .foldedLines=${this.configsStore.userConfigs.foldedInputPropLines}
+            .toggleFold=${(line: string, folded: boolean) => {
+              if (this.configsStore.userConfigs.foldedInputPropLines[line] !== folded) {
+                this.configsStore.userConfigs.foldedInputPropLines[line] = folded;
+                this.configsStore.save();
+              }
+            }}
+          ></milo-property-viewer>
+          <h3>Output Properties</h3>
+          <milo-property-viewer
+            .properties=${build.output.properties}
+            .foldedLines=${this.configsStore.userConfigs.foldedOutputPropLines}
+            .toggleFold=${(line: string, folded: boolean) => {
+              if (this.configsStore.userConfigs.foldedOutputPropLines[line] !== folded) {
+                this.configsStore.userConfigs.foldedOutputPropLines[line] = folded;
+                this.configsStore.save();
+              }
+            }}
+          ></milo-property-viewer>
         </div>
       </div>
     `;
@@ -447,7 +448,7 @@ export class OverviewTabElement extends MobxLitElement {
       margin-bottom: 10px;
     }
 
-    milo-code-mirror-editor {
+    milo-property-viewer {
       min-width: 600px;
       max-width: 1000px;
     }
@@ -456,6 +457,8 @@ export class OverviewTabElement extends MobxLitElement {
 
 customElement('milo-overview-tab')(
   consumeBuildState(
-    consumeAppState(OverviewTabElement),
+    consumeConfigsStore(
+      consumeAppState(OverviewTabElement),
+    ),
   ),
 );
