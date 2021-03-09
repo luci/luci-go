@@ -17,7 +17,7 @@ import '@material/mwc-icon';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { router } from '../../routes';
@@ -39,7 +39,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
 
   @computed
   private get content() {
-    return this.content$.state === 'fulfilled' ? this.content$.value : '';
+    return this.content$.state === FULFILLED ? this.content$.value : null;
   }
 
   protected render() {
@@ -52,7 +52,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
           (<a href=${this.artifact.fetchUrl} target="_blank">view raw</a>)
         </span>
         <div id="content" slot="content">
-          ${sanitizeHTML(Diff2Html.html(this.content, {drawFileList: false}))}
+          ${sanitizeHTML(Diff2Html.html(this.content || '', {drawFileList: false}))}
         </div>
       </milo-expandable-entry>
     `;
