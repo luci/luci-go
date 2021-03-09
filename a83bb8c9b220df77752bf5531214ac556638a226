@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0dfffe5_04287655",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-09T19:55:12Z",
+      "side": 1,
+      "message": "LGTM with nit/question",
+      "revId": "a83bb8c9b220df77752bf5531214ac556638a226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4acc6f24_06901686",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-09T19:55:12Z",
+      "side": 1,
+      "message": "Did we want to do something for the !ok case? (LUCI project not found?)",
+      "revId": "a83bb8c9b220df77752bf5531214ac556638a226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24d9a348_cabc8791",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-09T19:55:12Z",
+      "side": 1,
+      "message": "nit: transferred",
+      "range": {
+        "startLine": 215,
+        "startChar": 30,
+        "endLine": 215,
+        "endChar": 40
+      },
+      "revId": "a83bb8c9b220df77752bf5531214ac556638a226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a2f61c3b_cb257929",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 709,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-09T19:55:12Z",
+      "side": 1,
+      "message": "This is the \"scenario/situation\", but it\u0027s not super easy for me to see what key behavior is being asserted. Is the important thing that the CL is still unwatched in the state after OnCLsUpdated is called? Or something else?",
+      "revId": "a83bb8c9b220df77752bf5531214ac556638a226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
