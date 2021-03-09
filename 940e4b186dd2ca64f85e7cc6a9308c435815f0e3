@@ -141,6 +141,30 @@
       },
       "revId": "940e4b186dd2ca64f85e7cc6a9308c435815f0e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d82a068_01ceadb0",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-09T18:26:04Z",
+      "side": 1,
+      "message": "Yes, this is what I meant.\nAnd I don\u0027t care enough about what GetBuild fetches to add it.",
+      "parentUuid": "12b9db1b_00f7a038",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 91
+      },
+      "revId": "940e4b186dd2ca64f85e7cc6a9308c435815f0e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
