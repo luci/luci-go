@@ -60,6 +60,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "c6fea7ce_3aaced1b",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T21:28:51Z",
+      "side": 1,
+      "message": "Done. TIL!",
+      "parentUuid": "6849368d_51c8c7b7",
+      "range": {
+        "startLine": 59,
+        "startChar": 52,
+        "endLine": 59,
+        "endChar": 56
+      },
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "788e8e68_656efa53",
         "filename": "cv/internal/cvtesting/util.go",
         "patchSetId": 3
@@ -71,6 +95,24 @@
       "writtenOn": "2021-03-09T14:16:47Z",
       "side": 1,
       "message": "(see below comment first)\nSo, maybe I should rename this to:\n * `Gerrit` as it\u0027s clearer (just like TQ, CLock, CFG and now TreeClient)?\n * or to `G`, if brevity is critical, since GFake isn\u0027t clearly \"Gerrit\" anyway.",
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c09b32a_17d2af57",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T21:28:51Z",
+      "side": 1,
+      "message": "I prefer renaming to `Gerrit` instead of `G` as G could be mis-interpreted (e.g. Google/Github?)",
+      "parentUuid": "788e8e68_656efa53",
       "revId": "05892f86326de45d407985994350178ae3f183a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -92,6 +134,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6645791_3b307efb",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T21:28:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4736cf4_a7d4b9f2",
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4db6f3f_8fe135f0",
@@ -105,6 +165,30 @@
       "writtenOn": "2021-03-09T14:16:47Z",
       "side": 1,
       "message": "i don\u0027t think this needs to be public, FetchLatest\u0027s good enough.",
+      "range": {
+        "startLine": 97,
+        "startChar": 5,
+        "endLine": 97,
+        "endChar": 15
+      },
+      "revId": "05892f86326de45d407985994350178ae3f183a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a4bbe61_a2e603a8",
+        "filename": "cv/internal/tree/tree.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T21:28:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4db6f3f_8fe135f0",
       "range": {
         "startLine": 97,
         "startChar": 5,
