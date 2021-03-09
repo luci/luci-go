@@ -31,7 +31,7 @@ import (
 func TestFakeTokenGenerator(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	Convey("With fakes", t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
 		gen := FakeTokenGenerator{KeepRecord: true}
@@ -44,29 +44,58 @@ func TestFakeTokenGenerator(t *testing.T) {
 		}
 		la, err := srv.Start(ctx)
 		So(err, ShouldBeNil)
-		defer srv.Stop(ctx)
+		Reset(func() { srv.Stop(ctx) })
+		ctx = lucictx.SetLocalAuth(ctx, la)
 
-		for idx, scope := range []string{"A", "B"} {
-			auth := auth.NewAuthenticator(lucictx.SetLocalAuth(ctx, la), auth.SilentLogin, auth.Options{
-				Scopes: []string{scope, "zzz"},
-			})
+		Convey("Access tokens", func() {
+			for idx, scope := range []string{"A", "B"} {
+				auth := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
+					Scopes: []string{scope, "zzz"},
+				})
 
-			email, err := auth.GetEmail()
-			So(err, ShouldBeNil)
-			So(email, ShouldEqual, DefaultFakeEmail)
+				email, err := auth.GetEmail()
+				So(err, ShouldBeNil)
+				So(email, ShouldEqual, DefaultFakeEmail)
 
-			tok, err := auth.GetAccessToken(time.Minute)
-			So(err, ShouldBeNil)
-			So(tok.AccessToken, ShouldEqual, fmt.Sprintf("fake_token_%d", idx))
+				tok, err := auth.GetAccessToken(time.Minute)
+				So(err, ShouldBeNil)
+				So(tok.AccessToken, ShouldEqual, fmt.Sprintf("fake_token_%d", idx))
 
-			// Expiry is rounded to integer number of seconds, since that's the
-			// granularity of OAuth token expiration. Compare int unix timestamps to
-			// account for that.
-			So(tok.Expiry.Unix(), ShouldEqual,
-				testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix())
-		}
+				// Expiry is rounded to integer number of seconds, since that's the
+				// granularity of OAuth token expiration. Compare int unix timestamps to
+				// account for that.
+				So(tok.Expiry.Unix(), ShouldEqual,
+					testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix())
+			}
 
-		So(gen.TokenScopes("fake_token_0"), ShouldResemble, []string{"A", "zzz"})
-		So(gen.TokenScopes("fake_token_1"), ShouldResemble, []string{"B", "zzz"})
+			So(gen.TokenScopes("fake_token_0"), ShouldResemble, []string{"A", "zzz"})
+			So(gen.TokenScopes("fake_token_1"), ShouldResemble, []string{"B", "zzz"})
+		})
+
+		Convey("ID tokens", func() {
+			for idx, aud := range []string{"A", "B"} {
+				auth := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
+					UseIDTokens: true,
+					Audience:    aud,
+				})
+
+				email, err := auth.GetEmail()
+				So(err, ShouldBeNil)
+				So(email, ShouldEqual, DefaultFakeEmail)
+
+				tok, err := auth.GetAccessToken(time.Minute)
+				So(err, ShouldBeNil)
+				So(tok.AccessToken, ShouldEqual, fmt.Sprintf("fake_token_%d", idx))
+
+				// Expiry is rounded to integer number of seconds, since that's the
+				// granularity of OAuth token expiration. Compare int unix timestamps to
+				// account for that.
+				So(tok.Expiry.Unix(), ShouldEqual,
+					testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix())
+			}
+
+			So(gen.TokenScopes("fake_token_0"), ShouldResemble, []string{"audience:A"})
+			So(gen.TokenScopes("fake_token_1"), ShouldResemble, []string{"audience:B"})
+		})
 	})
 }

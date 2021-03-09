@@ -54,17 +54,24 @@ func TestLUCIContextProvider(t *testing.T) {
 	})
 
 	Convey("With mock server", t, func(c C) {
-		requests := make(chan rpcs.GetOAuthTokenRequest, 10000)
+		requests := make(chan interface{}, 10000)
 		responses := make(chan interface{}, 1)
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c.So(r.Method, ShouldEqual, "POST")
-			c.So(r.RequestURI, ShouldEqual, "/rpc/LuciLocalAuthService.GetOAuthToken")
 			c.So(r.Header.Get("Content-Type"), ShouldEqual, "application/json")
 
-			req := rpcs.GetOAuthTokenRequest{}
-			c.So(json.NewDecoder(r.Body).Decode(&req), ShouldBeNil)
-
-			requests <- req
+			switch r.RequestURI {
+			case "/rpc/LuciLocalAuthService.GetOAuthToken":
+				req := rpcs.GetOAuthTokenRequest{}
+				c.So(json.NewDecoder(r.Body).Decode(&req), ShouldBeNil)
+				requests <- req
+			case "/rpc/LuciLocalAuthService.GetIDToken":
+				req := rpcs.GetIDTokenRequest{}
+				c.So(json.NewDecoder(r.Body).Decode(&req), ShouldBeNil)
+				requests <- req
+			default:
+				http.Error(w, "Unknown method", 404)
+			}
 
 			var resp interface{}
 			select {
@@ -75,6 +82,9 @@ func TestLUCIContextProvider(t *testing.T) {
 
 			switch resp := resp.(type) {
 			case rpcs.GetOAuthTokenResponse:
+				w.WriteHeader(200)
+				c.So(json.NewEncoder(w).Encode(resp), ShouldBeNil)
+			case rpcs.GetIDTokenResponse:
 				w.WriteHeader(200)
 				c.So(json.NewEncoder(w).Encode(resp), ShouldBeNil)
 			case int:
@@ -94,61 +104,97 @@ func TestLUCIContextProvider(t *testing.T) {
 			DefaultAccountId: "acc_id",
 		})
 
-		p, err := NewLUCIContextTokenProvider(ctx, false, []string{"B", "A"}, "", http.DefaultTransport)
-		So(err, ShouldBeNil)
-
-		Convey("Happy path", func() {
-			responses <- rpcs.GetOAuthTokenResponse{
-				AccessToken: "zzz",
-				Expiry:      1487456796,
-			}
-
-			tok, err := p.MintToken(ctx, nil)
+		Convey("Access tokens", func() {
+			p, err := NewLUCIContextTokenProvider(ctx, false, []string{"B", "A"}, "ignored", http.DefaultTransport)
 			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &Token{
-				Token: oauth2.Token{
+
+			Convey("Happy path", func() {
+				responses <- rpcs.GetOAuthTokenResponse{
 					AccessToken: "zzz",
-					TokenType:   "Bearer",
-					Expiry:      time.Unix(1487456796, 0).UTC(),
-				},
-				IDToken: NoIDToken,
-				Email:   "some-acc-email@example.com",
+					Expiry:      1487456796,
+				}
+
+				tok, err := p.MintToken(ctx, nil)
+				So(err, ShouldBeNil)
+				So(tok, ShouldResemble, &Token{
+					Token: oauth2.Token{
+						AccessToken: "zzz",
+						TokenType:   "Bearer",
+						Expiry:      time.Unix(1487456796, 0).UTC(),
+					},
+					IDToken: NoIDToken,
+					Email:   "some-acc-email@example.com",
+				})
+
+				So(<-requests, ShouldResemble, rpcs.GetOAuthTokenRequest{
+					BaseRequest: rpcs.BaseRequest{
+						Secret:    []byte("zekret"),
+						AccountID: "acc_id",
+					},
+					Scopes: []string{"B", "A"},
+				})
 			})
 
-			So(<-requests, ShouldResemble, rpcs.GetOAuthTokenRequest{
-				Scopes:    []string{"B", "A"},
-				Secret:    []byte("zekret"),
-				AccountID: "acc_id",
+			Convey("HTTP 500", func() {
+				responses <- 500
+				tok, err := p.MintToken(ctx, nil)
+				So(tok, ShouldBeNil)
+				So(err, ShouldErrLike, `local auth - HTTP 500`)
+				So(transient.Tag.In(err), ShouldBeTrue)
+			})
+
+			Convey("HTTP 403", func() {
+				responses <- 403
+				tok, err := p.MintToken(ctx, nil)
+				So(tok, ShouldBeNil)
+				So(err, ShouldErrLike, `local auth - HTTP 403`)
+				So(transient.Tag.In(err), ShouldBeFalse)
+			})
+
+			Convey("RPC level error", func() {
+				responses <- rpcs.GetOAuthTokenResponse{
+					BaseResponse: rpcs.BaseResponse{
+						ErrorCode:    123,
+						ErrorMessage: "omg, error",
+					},
+				}
+				tok, err := p.MintToken(ctx, nil)
+				So(tok, ShouldBeNil)
+				So(err, ShouldErrLike, `local auth - RPC code 123: omg, error`)
+				So(transient.Tag.In(err), ShouldBeFalse)
 			})
 		})
 
-		Convey("HTTP 500", func() {
-			responses <- 500
-			tok, err := p.MintToken(ctx, nil)
-			So(tok, ShouldBeNil)
-			So(err, ShouldErrLike, `local auth - HTTP 500`)
-			So(transient.Tag.In(err), ShouldBeTrue)
-		})
+		Convey("ID tokens", func() {
+			p, err := NewLUCIContextTokenProvider(ctx, true, []string{"ignored"}, "test-aud", http.DefaultTransport)
+			So(err, ShouldBeNil)
 
-		Convey("HTTP 403", func() {
-			responses <- 403
-			tok, err := p.MintToken(ctx, nil)
-			So(tok, ShouldBeNil)
-			So(err, ShouldErrLike, `local auth - HTTP 403`)
-			So(transient.Tag.In(err), ShouldBeFalse)
-		})
+			Convey("Happy path", func() {
+				responses <- rpcs.GetIDTokenResponse{
+					IDToken: "zzz",
+					Expiry:  1487456796,
+				}
 
-		Convey("RPC level error", func() {
-			responses <- rpcs.GetOAuthTokenResponse{
-				BaseResponse: rpcs.BaseResponse{
-					ErrorCode:    123,
-					ErrorMessage: "omg, error",
-				},
-			}
-			tok, err := p.MintToken(ctx, nil)
-			So(tok, ShouldBeNil)
-			So(err, ShouldErrLike, `local auth - RPC code 123: omg, error`)
-			So(transient.Tag.In(err), ShouldBeFalse)
+				tok, err := p.MintToken(ctx, nil)
+				So(err, ShouldBeNil)
+				So(tok, ShouldResemble, &Token{
+					Token: oauth2.Token{
+						AccessToken: NoAccessToken,
+						TokenType:   "Bearer",
+						Expiry:      time.Unix(1487456796, 0).UTC(),
+					},
+					IDToken: "zzz",
+					Email:   "some-acc-email@example.com",
+				})
+
+				So(<-requests, ShouldResemble, rpcs.GetIDTokenRequest{
+					BaseRequest: rpcs.BaseRequest{
+						Secret:    []byte("zekret"),
+						AccountID: "acc_id",
+					},
+					Audience: "test-aud",
+				})
+			})
 		})
 	})
 }
