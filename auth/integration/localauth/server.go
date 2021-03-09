@@ -45,8 +45,8 @@ import (
 
 // TokenGenerator produces access tokens.
 type TokenGenerator interface {
-	// GenerateToken returns an access token for a combination of scopes (given as
-	// a sorted list of strings without duplicates).
+	// GenerateOAuthToken returns an access token for a combination of scopes
+	// (given as a sorted list of strings without duplicates).
 	//
 	// It is called for each request to the local auth server. It may be called
 	// concurrently from multiple goroutines and must implement its own caching
@@ -67,7 +67,13 @@ type TokenGenerator interface {
 	// If the error implements ErrorWithCode interface, the error code returned to
 	// clients will be grabbed from the error object, otherwise the error code is
 	// set to -1.
-	GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error)
+	GenerateOAuthToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error)
+
+	// GenerateIDToken returns an ID token with the given audience in `aud` claim.
+	//
+	// All details specified in GenerateOAuthToken doc also apply to
+	// GenerateIDToken.
+	GenerateIDToken(ctx context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error)
 
 	// GetEmail returns an email associated with all tokens produced by this
 	// generator or auth.ErrNoEmail if it's not available.
@@ -223,7 +229,9 @@ const minTokenLifetime = 3 * time.Minute
 //  * Logic errors have 200 HTTP status code and error is communicated in
 //    the response body.
 //
-// The only supported method currently is 'GetOAuthToken':
+// Supported methods are:
+//
+// GetOAuthToken:
 //
 //    Request body:
 //    {
@@ -236,6 +244,22 @@ const minTokenLifetime = 3 * time.Minute
 //      "error_code": <int, on success not set or 0>,
 //      "error_message": <string, on success not set>,
 //      "access_token": <string with actual token (on success)>,
+//      "expiry": <int with unix timestamp in seconds (on success)>
+//    }
+//
+// GetIDToken:
+//
+//    Request body:
+//    {
+//      "audience": <string>,
+//      "secret": <string from LUCI_CONTEXT.local_auth.secret>,
+//      "account_id": <ID of some account from LUCI_CONTEXT.local_auth.accounts>
+//    }
+//    Response body:
+//    {
+//      "error_code": <int, on success not set or 0>,
+//      "error_message": <string, on success not set>,
+//      "id_token": <string with actual token (on success)>,
 //      "expiry": <int with unix timestamp in seconds (on success)>
 //    }
 //
@@ -362,13 +386,16 @@ func (h *protocolHandler) routeToImpl(method string, request []byte) (interface{
 	switch method {
 	case "GetOAuthToken":
 		req := &rpcs.GetOAuthTokenRequest{}
-		if err := json.Unmarshal(request, req); err != nil {
-			return nil, &protocolError{
-				Status:  http.StatusBadRequest,
-				Message: fmt.Sprintf("Not JSON body - %s", err),
-			}
+		if err := unmarshalRequest(request, req); err != nil {
+			return nil, err
 		}
 		return h.handleGetOAuthToken(req)
+	case "GetIDToken":
+		req := &rpcs.GetIDTokenRequest{}
+		if err := unmarshalRequest(request, req); err != nil {
+			return nil, err
+		}
+		return h.handleGetIDToken(req)
 	default:
 		return nil, &protocolError{
 			Status:  http.StatusNotFound,
@@ -377,17 +404,23 @@ func (h *protocolHandler) routeToImpl(method string, request []byte) (interface{
 	}
 }
 
+// unmarshalRequest unmarshals JSON body of the request, handling errors.
+func unmarshalRequest(blob []byte, req interface{}) error {
+	if err := json.Unmarshal(blob, req); err != nil {
+		return &protocolError{
+			Status:  http.StatusBadRequest,
+			Message: fmt.Sprintf("Not JSON body - %s", err),
+		}
+	}
+	return nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // RPC implementations.
 
-func (h *protocolHandler) handleGetOAuthToken(req *rpcs.GetOAuthTokenRequest) (*rpcs.GetOAuthTokenResponse, error) {
-	// Validate the request.
-	if err := req.Validate(); err != nil {
-		return nil, &protocolError{
-			Status:  400,
-			Message: fmt.Sprintf("Bad request: %s.", err.Error()),
-		}
-	}
+// checkSecretAndAccount checks the secret string in the request and looks up
+// the TokenGenerator based on the account ID in the request.
+func (h *protocolHandler) checkSecretAndAccount(req *rpcs.BaseRequest) (TokenGenerator, error) {
 	if subtle.ConstantTimeCompare(h.secret, req.Secret) != 1 {
 		return nil, &protocolError{
 			Status:  403,
@@ -401,22 +434,58 @@ func (h *protocolHandler) handleGetOAuthToken(req *rpcs.GetOAuthTokenRequest) (*
 			Message: fmt.Sprintf("Unrecognized account ID %q.", req.AccountID),
 		}
 	}
+	return generator, nil
+}
+
+func (h *protocolHandler) handleGetOAuthToken(req *rpcs.GetOAuthTokenRequest) (*rpcs.GetOAuthTokenResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, &protocolError{
+			Status:  400,
+			Message: fmt.Sprintf("Bad request: %s.", err.Error()),
+		}
+	}
+	generator, err := h.checkSecretAndAccount(&req.BaseRequest)
+	if err != nil {
+		return nil, err
+	}
 
 	// Dedup and sort scopes.
 	scopes := stringset.New(len(req.Scopes))
 	for _, s := range req.Scopes {
 		scopes.Add(s)
 	}
-	sortedScopes := scopes.ToSlice()
-	sort.Strings(sortedScopes)
+	sortedScopes := scopes.ToSortedSlice()
 
-	// Ask the token provider for the token. This may produce ErrorWithCode.
-	tok, err := generator.GenerateToken(h.ctx, sortedScopes, minTokenLifetime)
+	// Note: this may produce ErrorWithCode.
+	tok, err := generator.GenerateOAuthToken(h.ctx, sortedScopes, minTokenLifetime)
 	if err != nil {
 		return nil, err
 	}
 	return &rpcs.GetOAuthTokenResponse{
 		AccessToken: tok.AccessToken,
 		Expiry:      tok.Expiry.Unix(),
+	}, nil
+}
+
+func (h *protocolHandler) handleGetIDToken(req *rpcs.GetIDTokenRequest) (*rpcs.GetIDTokenResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, &protocolError{
+			Status:  400,
+			Message: fmt.Sprintf("Bad request: %s.", err.Error()),
+		}
+	}
+	generator, err := h.checkSecretAndAccount(&req.BaseRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	// Note: this may produce ErrorWithCode.
+	tok, err := generator.GenerateIDToken(h.ctx, req.Audience, minTokenLifetime)
+	if err != nil {
+		return nil, err
+	}
+	return &rpcs.GetIDTokenResponse{
+		IDToken: tok.AccessToken, // this is actually an ID token
+		Expiry:  tok.Expiry.Unix(),
 	}, nil
 }

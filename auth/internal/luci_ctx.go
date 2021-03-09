@@ -30,7 +30,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth/integration/localauth/rpcs"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/lucictx"
@@ -40,6 +39,7 @@ type luciContextTokenProvider struct {
 	localAuth *lucictx.LocalAuth
 	email     string // an email or NoEmail
 	scopes    []string
+	audience  string // not empty iff using ID tokens
 	transport http.RoundTripper
 	cacheKey  CacheKey // used only for in-memory cache
 }
@@ -52,10 +52,6 @@ type luciContextTokenProvider struct {
 //
 // See auth/integration/localauth package for the implementation of the server.
 func NewLUCIContextTokenProvider(ctx context.Context, useIDTokens bool, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
-	if useIDTokens {
-		return nil, errors.New("ID tokens are not supported yet when using LUCI_CONTEXT (crbug.com/1184230)")
-	}
-
 	localAuth := lucictx.GetLocalAuth(ctx)
 	switch {
 	case localAuth == nil:
@@ -94,10 +90,22 @@ func NewLUCIContextTokenProvider(ctx context.Context, useIDTokens bool, scopes [
 	}
 	digest := sha256.Sum256(blob)
 
+	// When using ID tokens, put the audience as a fake scope in the cache key.
+	// See the comment for Scopes in CacheKey.
+	if useIDTokens {
+		if audience == "" {
+			return nil, ErrAudienceRequired
+		}
+		scopes = []string{"audience:" + audience}
+	} else {
+		audience = ""
+	}
+
 	return &luciContextTokenProvider{
 		localAuth: localAuth,
 		email:     email,
 		scopes:    scopes,
+		audience:  audience,
 		transport: transport,
 		cacheKey: CacheKey{
 			Key:    fmt.Sprintf("luci_ctx/%s", hex.EncodeToString(digest[:])),
@@ -123,60 +131,27 @@ func (p *luciContextTokenProvider) CacheKey(ctx context.Context) (*CacheKey, err
 }
 
 func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
-	// Note: deadlines and retries are implemented by Authenticator. MintToken
-	// should just make a single attempt, and mark an error as transient to
-	// trigger a retry, if necessary.
-	request := rpcs.GetOAuthTokenRequest{
-		Scopes:    p.scopes,
-		Secret:    p.localAuth.Secret,
-		AccountID: p.localAuth.DefaultAccountId,
+	if p.audience == "" {
+		return p.mintOAuthToken(ctx)
 	}
-	if err := request.Validate(); err != nil {
-		return nil, err // should not really happen
+	return p.mintIDToken(ctx)
+}
+
+func (p *luciContextTokenProvider) mintOAuthToken(ctx context.Context) (*Token, error) {
+	request := &rpcs.GetOAuthTokenRequest{
+		BaseRequest: rpcs.BaseRequest{
+			Secret:    p.localAuth.Secret,
+			AccountID: p.localAuth.DefaultAccountId,
+		},
+		Scopes: p.scopes,
 	}
-	body, err := json.Marshal(&request)
-	if err != nil {
+	response := &rpcs.GetOAuthTokenResponse{}
+	if err := p.doRPC(ctx, "GetOAuthToken", request, response); err != nil {
 		return nil, err
 	}
-
-	url := fmt.Sprintf("http://127.0.0.1:%d/rpc/LuciLocalAuthService.GetOAuthToken", p.localAuth.RpcPort)
-	logging.Debugf(ctx, "POST %s", url)
-	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(body))
-	if err != nil {
+	if err := p.handleRPCErr(&response.BaseResponse); err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	httpResp, err := ctxhttp.Do(ctx, &http.Client{Transport: p.transport}, httpReq)
-	if err != nil {
-		return nil, transient.Tag.Apply(err)
-	}
-	defer httpResp.Body.Close()
-	respBody, err := ioutil.ReadAll(httpResp.Body)
-	if err != nil {
-		return nil, transient.Tag.Apply(err)
-	}
-
-	if httpResp.StatusCode != 200 {
-		err := fmt.Errorf("local auth - HTTP %d: %s", httpResp.StatusCode, strings.TrimSpace(string(respBody)))
-		if httpResp.StatusCode >= 500 {
-			return nil, transient.Tag.Apply(err)
-		}
-		return nil, err
-	}
-
-	response := rpcs.GetOAuthTokenResponse{}
-	if err := json.Unmarshal(respBody, &response); err != nil {
-		return nil, err
-	}
-	if response.ErrorMessage != "" || response.ErrorCode != 0 {
-		msg := response.ErrorMessage
-		if msg == "" {
-			msg = "unknown error"
-		}
-		return nil, fmt.Errorf("local auth - RPC code %d: %s", response.ErrorCode, msg)
-	}
-
 	return &Token{
 		Token: oauth2.Token{
 			AccessToken: response.AccessToken,
@@ -188,7 +163,85 @@ func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *Token) (
 	}, nil
 }
 
+func (p *luciContextTokenProvider) mintIDToken(ctx context.Context) (*Token, error) {
+	request := &rpcs.GetIDTokenRequest{
+		BaseRequest: rpcs.BaseRequest{
+			Secret:    p.localAuth.Secret,
+			AccountID: p.localAuth.DefaultAccountId,
+		},
+		Audience: p.audience,
+	}
+	response := &rpcs.GetIDTokenResponse{}
+	if err := p.doRPC(ctx, "GetIDToken", request, response); err != nil {
+		return nil, err
+	}
+	if err := p.handleRPCErr(&response.BaseResponse); err != nil {
+		return nil, err
+	}
+	return &Token{
+		Token: oauth2.Token{
+			AccessToken: NoAccessToken,
+			Expiry:      time.Unix(response.Expiry, 0).UTC(),
+			TokenType:   "Bearer",
+		},
+		IDToken: response.IDToken,
+		Email:   p.Email(),
+	}, nil
+}
+
 func (p *luciContextTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
-	// Minting and refreshing is the same thing: a call to local auth server.
+	// Minting and refreshing is the same thing: a call to a local auth server.
 	return p.MintToken(ctx, base)
+}
+
+// doRPC sends a request to the local auth server and parses the response.
+//
+// Note: deadlines and retries are implemented by Authenticator. doRPC should
+// just make a single attempt, and mark an error as transient to trigger a
+// retry, if necessary.
+func (p *luciContextTokenProvider) doRPC(ctx context.Context, method string, req, resp interface{}) error {
+	body, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("http://127.0.0.1:%d/rpc/LuciLocalAuthService.%s", p.localAuth.RpcPort, method)
+	logging.Debugf(ctx, "POST %s", url)
+	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	httpResp, err := ctxhttp.Do(ctx, &http.Client{Transport: p.transport}, httpReq)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+	defer httpResp.Body.Close()
+	respBody, err := ioutil.ReadAll(httpResp.Body)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+
+	if httpResp.StatusCode != 200 {
+		err := fmt.Errorf("local auth - HTTP %d: %s", httpResp.StatusCode, strings.TrimSpace(string(respBody)))
+		if httpResp.StatusCode >= 500 {
+			return transient.Tag.Apply(err)
+		}
+		return err
+	}
+
+	return json.Unmarshal(respBody, resp)
+}
+
+// handleRPCErr handles `error_message` and `error_code` response fields.
+func (p *luciContextTokenProvider) handleRPCErr(resp *rpcs.BaseResponse) error {
+	if resp.ErrorMessage != "" || resp.ErrorCode != 0 {
+		msg := resp.ErrorMessage
+		if msg == "" {
+			msg = "unknown error"
+		}
+		return fmt.Errorf("local auth - RPC code %d: %s", resp.ErrorCode, msg)
+	}
+	return nil
 }

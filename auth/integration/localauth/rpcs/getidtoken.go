@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,25 +18,25 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// GetOAuthTokenRequest is parameters for GetOAuthToken RPC call.
-type GetOAuthTokenRequest struct {
+// GetIDTokenRequest is parameters for GetIDToken RPC call.
+type GetIDTokenRequest struct {
 	BaseRequest
 
-	Scopes []string `json:"scopes"`
+	Audience string `json:"audience"`
 }
 
 // Validate checks that the request is structurally valid.
-func (r *GetOAuthTokenRequest) Validate() error {
-	if len(r.Scopes) == 0 {
-		return errors.New(`field "scopes" is required`)
+func (r *GetIDTokenRequest) Validate() error {
+	if r.Audience == "" {
+		return errors.New(`field "audience" is required`)
 	}
 	return r.BaseRequest.Validate()
 }
 
-// GetOAuthTokenResponse is returned by GetOAuthToken RPC call.
-type GetOAuthTokenResponse struct {
+// GetIDTokenResponse is returned by GetIDToken RPC call.
+type GetIDTokenResponse struct {
 	BaseResponse
 
-	AccessToken string `json:"access_token"`
-	Expiry      int64  `json:"expiry"`
+	IDToken string `json:"id_token"`
+	Expiry  int64  `json:"expiry"`
 }

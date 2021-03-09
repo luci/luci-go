@@ -28,14 +28,14 @@ import (
 
 	"golang.org/x/oauth2"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/lucictx"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type callbackGen struct {
@@ -43,8 +43,12 @@ type callbackGen struct {
 	cb    func(context.Context, []string, time.Duration) (*oauth2.Token, error)
 }
 
-func (g *callbackGen) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+func (g *callbackGen) GenerateOAuthToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 	return g.cb(ctx, scopes, lifetime)
+}
+
+func (g *callbackGen) GenerateIDToken(ctx context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error) {
+	return g.cb(ctx, []string{"audience:" + audience}, lifetime)
 }
 
 func (g *callbackGen) GetEmail() (string, error) {
@@ -104,7 +108,7 @@ func TestProtocol(t *testing.T) {
 		})
 		So(p.DefaultAccountId, ShouldEqual, "acc_id")
 
-		goodRequest := func() *http.Request {
+		goodOAuthRequest := func() *http.Request {
 			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
 				"scopes":     []string{"B", "A"},
 				"secret":     p.Secret,
@@ -112,16 +116,24 @@ func TestProtocol(t *testing.T) {
 			})
 		}
 
-		Convey("Happy path", func() {
+		goodIDTokRequest := func() *http.Request {
+			return prepReq(p, "/rpc/LuciLocalAuthService.GetIDToken", map[string]interface{}{
+				"audience":   "A",
+				"secret":     p.Secret,
+				"account_id": "acc_id",
+			})
+		}
+
+		Convey("Access tokens happy path", func() {
 			responses <- &oauth2.Token{
 				AccessToken: "tok1",
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
-			So(call(goodRequest()), ShouldEqual, `HTTP 200 (json): {"access_token":"tok1","expiry":1454474106}`)
+			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 200 (json): {"access_token":"tok1","expiry":1454474106}`)
 			So(<-requests, ShouldResemble, []string{"A", "B"})
 
 			// application/json is also the default.
-			req := goodRequest()
+			req := goodOAuthRequest()
 			req.Header.Del("Content-Type")
 			responses <- &oauth2.Token{
 				AccessToken: "tok2",
@@ -131,31 +143,50 @@ func TestProtocol(t *testing.T) {
 			So(<-requests, ShouldResemble, []string{"A", "B"})
 		})
 
+		Convey("ID tokens happy path", func() {
+			responses <- &oauth2.Token{
+				AccessToken: "tok1",
+				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
+			}
+			So(call(goodIDTokRequest()), ShouldEqual, `HTTP 200 (json): {"id_token":"tok1","expiry":1454474106}`)
+			So(<-requests, ShouldResemble, []string{"audience:A"})
+
+			// application/json is also the default.
+			req := goodIDTokRequest()
+			req.Header.Del("Content-Type")
+			responses <- &oauth2.Token{
+				AccessToken: "tok2",
+				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
+			}
+			So(call(req), ShouldEqual, `HTTP 200 (json): {"id_token":"tok2","expiry":1454474106}`)
+			So(<-requests, ShouldResemble, []string{"audience:A"})
+		})
+
 		Convey("Panic in token generator", func() {
 			responses <- "omg, panic"
-			So(call(goodRequest()), ShouldEqual, `HTTP 500: Internal Server Error. See logs.`)
+			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 500: Internal Server Error. See logs.`)
 		})
 
 		Convey("Not POST", func() {
-			req := goodRequest()
+			req := goodOAuthRequest()
 			req.Method = "PUT"
 			So(call(req), ShouldEqual, `HTTP 405: Expecting POST`)
 		})
 
 		Convey("Bad URI", func() {
-			req := goodRequest()
+			req := goodOAuthRequest()
 			req.URL.Path = "/zzz"
 			So(call(req), ShouldEqual, `HTTP 404: Expecting /rpc/LuciLocalAuthService.<method>`)
 		})
 
 		Convey("Bad content type", func() {
-			req := goodRequest()
+			req := goodOAuthRequest()
 			req.Header.Set("Content-Type", "bzzzz")
 			So(call(req), ShouldEqual, `HTTP 400: Expecting 'application/json' Content-Type`)
 		})
 
 		Convey("Broken json", func() {
-			req := goodRequest()
+			req := goodOAuthRequest()
 
 			body := `not a json`
 			req.Body = ioutil.NopCloser(bytes.NewBufferString(body))
@@ -165,7 +196,7 @@ func TestProtocol(t *testing.T) {
 		})
 
 		Convey("Huge request", func() {
-			req := goodRequest()
+			req := goodOAuthRequest()
 
 			body := strings.Repeat("z", 64*1024+1)
 			req.Body = ioutil.NopCloser(bytes.NewBufferString(body))
@@ -181,14 +212,24 @@ func TestProtocol(t *testing.T) {
 
 		Convey("No scopes", func() {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
-				"secret": p.Secret,
+				"secret":     p.Secret,
+				"account_id": "acc_id",
 			})
 			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "scopes" is required.`)
 		})
 
+		Convey("No audience", func() {
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetIDToken", map[string]interface{}{
+				"secret":     p.Secret,
+				"account_id": "acc_id",
+			})
+			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "audience" is required.`)
+		})
+
 		Convey("No secret", func() {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
-				"scopes": []string{"B", "A"},
+				"scopes":     []string{"B", "A"},
+				"account_id": "acc_id",
 			})
 			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "secret" is required.`)
 		})
@@ -221,7 +262,7 @@ func TestProtocol(t *testing.T) {
 
 		Convey("Token generator returns fatal error", func() {
 			responses <- fmt.Errorf("fatal!!111")
-			So(call(goodRequest()), ShouldEqual, `HTTP 200 (json): {"error_code":-1,"error_message":"fatal!!111"}`)
+			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 200 (json): {"error_code":-1,"error_message":"fatal!!111"}`)
 		})
 
 		Convey("Token generator returns ErrorWithCode", func() {
@@ -229,12 +270,12 @@ func TestProtocol(t *testing.T) {
 				error: fmt.Errorf("with code"),
 				code:  123,
 			}
-			So(call(goodRequest()), ShouldEqual, `HTTP 200 (json): {"error_code":123,"error_message":"with code"}`)
+			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 200 (json): {"error_code":123,"error_message":"with code"}`)
 		})
 
 		Convey("Token generator returns transient error", func() {
 			responses <- errors.New("transient", transient.Tag)
-			So(call(goodRequest()), ShouldEqual, `HTTP 500: Transient error - transient`)
+			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 500: Transient error - transient`)
 		})
 	})
 }
