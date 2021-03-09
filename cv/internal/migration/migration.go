@@ -92,8 +92,27 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 		return
 	}
 
-	resp = &empty.Empty{}
-	return
+	return &empty.Empty{}, nil
+}
+
+// ReportFinishedRun is used by CQD to report runs it handled to completion.
+//
+// It'll removed upon hitting Milestone 1.
+func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = m.checkAllowed(ctx); err != nil {
+		return nil, err
+	}
+	if k := req.GetRun().GetAttempt().GetKey(); k == "" {
+		return nil, appstatus.Error(codes.InvalidArgument, "attempt key is required")
+	}
+	if err = saveFinishedCQDRun(ctx, req.GetRun()); err != nil {
+		return nil, err
+	}
+	// TODO(tandrii,yiwzhang): actually *finalize* the counterpart CV Runs,
+	// even if CV ID isn't known, as it can be deduced from the CQD's Attempt Key
+	// (assuming CV's generated Runs are compatible).
+	return &empty.Empty{}, nil
 }
 
 func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *empty.Empty, err error) {
