@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/servicecfg"
+	"go.chromium.org/luci/cv/internal/tree"
 
 	// import all modules with server/tq handler additions in init() calls,
 	// which are otherwise not imported directly or transitively via imports
@@ -60,6 +61,10 @@ func main() {
 			srv.Context = common.SetDev(srv.Context)
 		}
 		srv.Context = gerrit.UseProd(srv.Context)
+		var err error
+		if srv.Context, err = tree.InstallProd(srv.Context); err != nil {
+			return err
+		}
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
