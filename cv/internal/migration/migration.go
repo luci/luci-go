@@ -69,8 +69,11 @@ func (m *MigrationServer) ReportRuns(ctx context.Context, req *migrationpb.Repor
 	return
 }
 
-// ReportFinishedRun notifies CV of the Run CQDaemon has just finalized.
-func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationpb.ReportFinishedRunRequest) (resp *empty.Empty, err error) {
+// ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
+// verifying.
+//
+// Only called iff run was given to CQDaemon by CV via FetchActiveRuns.
+func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationpb.ReportVerifiedRunRequest) (resp *empty.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if err = m.checkAllowed(ctx); err != nil {
 		return
@@ -80,10 +83,12 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 		err = status.Error(codes.InvalidArgument, "empty RunID")
 		return
 	}
+	// TODO(yiwzhang): rename to CQDVerifiedRun and stores additional fields in
+	// in the input request.
 	if err = saveFinishedRun(ctx, req.GetRun()); err != nil {
 		return
 	}
-	if err = run.NotifyFinished(ctx, common.RunID(req.GetRun().GetId()), 0); err != nil {
+	if err = run.NotifyCQDVerificationCompleted(ctx, common.RunID(req.GetRun().GetId())); err != nil {
 		return
 	}
 
