@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f3d6560_5a7442f1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-09T18:14:07Z",
+      "side": 1,
+      "message": "eh.. Is it because CQDaemon is currently calling this method? I thought it is not enabled yet though the code is there which is waiting to be changed.",
+      "revId": "6a7f792bb7518c4b2d6ac66ef4bf7f1c6a4af86e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
