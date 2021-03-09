@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37de84e6_307c63dc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-09T22:30:50Z",
+      "side": 1,
+      "message": "Blocked on releasing Cancel to 100%.",
+      "revId": "402fa1771e7dec2a70d690d0abfe25d10fb9488a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d3c0d00_746715f2",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-09T22:30:50Z",
+      "side": 1,
+      "message": "Added more info for myself.",
+      "revId": "402fa1771e7dec2a70d690d0abfe25d10fb9488a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bff399b2_7b3ea8b0",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-09T22:30:50Z",
+      "side": 1,
+      "message": "golint preferred style when the if contains a return.",
+      "revId": "402fa1771e7dec2a70d690d0abfe25d10fb9488a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
