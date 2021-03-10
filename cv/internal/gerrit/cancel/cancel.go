@@ -302,24 +302,37 @@ func (c *change) getLatest(ctx context.Context) (*gerritpb.ChangeInfo, error) {
 
 func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify Notify) error {
 	votes := ci.GetLabels()[trigger.CQLabelName].GetAll()
+	// sort the votes s.t. all zero votes are placed at the end of the slice
+	// and the rest of the votes are ordered by timestamp (descending) at
+	// the beginning of the slice.
 	sort.Slice(votes, func(i, j int) bool {
-		return votes[i].GetDate().AsTime().After(votes[j].GetDate().AsTime())
+		switch {
+		case votes[i].GetValue() == 0:
+			return false
+		case votes[j].GetValue() == 0:
+			return false
+		default:
+			return votes[i].GetDate().AsTime().After(votes[j].GetDate().AsTime())
+		}
 	})
 
 	errs := errors.NewLazyMultiError(len(votes))
-	triggerVoteFound := false
+	needRemoveTriggerVote := false
 	for i, ai := range votes {
-		if ai.GetUser().GetAccountId() == t.GetGerritAccountId() {
-			triggerVoteFound = true
-			continue
+		if ai.GetValue() == 0 {
+			break
 		}
-		errs.Assign(i, c.removeVote(ctx, ai.GetUser().GetAccountId(), "", gerritpb.Notify_NOTIFY_NONE, nil))
+		if accountID := ai.GetUser().GetAccountId(); accountID == t.GetGerritAccountId() {
+			needRemoveTriggerVote = true
+		} else {
+			errs.Assign(i, c.removeVote(ctx, accountID, "", gerritpb.Notify_NOTIFY_NONE, nil))
+		}
 	}
 
 	switch n, nd := notify.toGerritNotify(votes); {
 	case errs.Get() != nil:
 		return common.MostSevereError(errs.Get())
-	case !triggerVoteFound:
+	case !needRemoveTriggerVote:
 		// No need to remove triggering votes, post message only.
 		return c.annotateGerritErr(ctx, c.postGerritMsg(ctx, ci, msg, t, n, nd), "post message")
 	default:
