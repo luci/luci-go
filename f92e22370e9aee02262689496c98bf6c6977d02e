@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "73be7b1c_a90ebf75",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T03:35:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7407b5c3_3da32165",
+      "range": {
+        "startLine": 142,
+        "startChar": 6,
+        "endLine": 142,
+        "endChar": 7
+      },
+      "revId": "f92e22370e9aee02262689496c98bf6c6977d02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "630e4ae5_cec730da",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-03-09T19:42:31Z",
       "side": 1,
       "message": "Optionally you could put quotes or parens around the mode, e.g.\n   \u0027... its mode \"FullRun\" does not match...\u0027 instead of\n   \u0027... its mode FullRun does not match...\u0027",
+      "range": {
+        "startLine": 152,
+        "startChar": 42,
+        "endLine": 152,
+        "endChar": 69
+      },
+      "revId": "f92e22370e9aee02262689496c98bf6c6977d02e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a03ded3_ce74082f",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T03:35:22Z",
+      "side": 1,
+      "message": "👍 done.",
+      "parentUuid": "630e4ae5_cec730da",
       "range": {
         "startLine": 152,
         "startChar": 42,
