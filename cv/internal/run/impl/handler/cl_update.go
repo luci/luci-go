@@ -38,8 +38,8 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		err := errors.Reason("CRITICAL: Received CLUpdated events but Run is in unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == run.Status_FINALIZING || run.IsEnded(status):
-		// Run is final or finalizing, update on CL shouldn't change the Run state.
+	case status == run.Status_SUBMITTING || run.IsEnded(status):
+		// Run is ended or submitting, update on CL shouldn't change the Run state.
 		return nil, rs, nil
 	}
 	clids.Dedupe()
