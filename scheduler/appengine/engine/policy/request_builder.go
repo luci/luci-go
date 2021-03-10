@@ -85,6 +85,9 @@ func (r *RequestBuilder) FromNoopTrigger(t *scheduler.NoopTrigger) {
 
 // FromGitilesTrigger derives the request properties from the given gitiles
 // trigger.
+//
+// TODO(crbug.com/1182002): Remove properties/tags modifications here once there
+// are no in-flight triggers that might hit Buildbucket v1 code path.
 func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 	repo, err := gitiles.NormalizeRepoURL(t.Repo, false)
 	if err != nil {

@@ -17,21 +17,24 @@ package buildbucket
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
+	"sort"
 	"strings"
+	"sync/atomic"
 	"testing"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/api/pubsub/v1"
+	"google.golang.org/protobuf/types/known/structpb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
+	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -147,7 +150,7 @@ func fakeController(testSrvURL string) *tasktest.TestController {
 			Server:  testSrvURL,
 			Bucket:  "test-bucket",
 			Builder: "builder",
-			Tags:    []string{"a:b", "c:d"},
+			Tags:    []string{"a:from-task-def", "b:from-task-def"},
 		},
 		Req: task.Request{
 			IncomingTriggers: []*internal.Trigger{
@@ -224,100 +227,93 @@ func TestFullFlow(t *testing.T) {
 	t.Parallel()
 
 	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
-		mockRunning := true
+		scheduleRequest := make(chan *bbpb.ScheduleBuildRequest, 1)
+		mockRunning := int64(1)
 
-		var putRequest *bbv1.LegacyApiPutRequestMessage
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			resp := ""
-			switch {
-			case r.Method == "PUT" && r.URL.Path == "/_ah/api/buildbucket/v1/builds":
-				ctx.So(putRequest, ShouldBeNil)
-				putRequest = &bbv1.LegacyApiPutRequestMessage{}
-				err := json.NewDecoder(r.Body).Decode(putRequest)
-				ctx.So(err, ShouldBeNil)
-
-				// There's more stuff in actual response that we don't use.
-				resp = `{
-					"build": {
-						"id": "9025781602559305888",
-						"status": "STARTED",
-						"url": "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10"
-					}
-				}`
-			case r.Method == "GET" && r.URL.Path == "/_ah/api/buildbucket/v1/builds/9025781602559305888":
-				if mockRunning {
-					resp = `{
-						"build": {
-							"id": "9025781602559305888",
-							"status": "STARTED"
-						}
-					}`
-				} else {
-					resp = `{
-						"build": {
-							"id": "9025781602559305888",
-							"status": "COMPLETED",
-							"result": "SUCCESS"
-						}
-					}`
+		srv := BuildbucketFake{
+			ScheduleBuild: func(req *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
+				scheduleRequest <- req
+				return &bbpb.Build{
+					Id:     9025781602559305888,
+					Status: bbpb.Status_STARTED,
+				}, nil
+			},
+			GetBuildV1: func(bid int64) (*bbv1.LegacyApiBuildResponseMessage, error) {
+				if bid != 9025781602559305888 {
+					return nil, fmt.Errorf("wrong build ID")
 				}
-			default:
-				ctx.Printf("Unknown URL fetch - %s %s\n", r.Method, r.URL.Path)
-				w.WriteHeader(400)
-				return
-			}
-			w.WriteHeader(200)
-			w.Write([]byte(resp))
-		}))
-		defer ts.Close()
+				if atomic.LoadInt64(&mockRunning) == 1 {
+					return &bbv1.LegacyApiBuildResponseMessage{
+						Build: &bbv1.LegacyApiCommonBuildMessage{
+							Id:     bid,
+							Status: "STARTED",
+						},
+					}, nil
+				}
+				return &bbv1.LegacyApiBuildResponseMessage{
+					Build: &bbv1.LegacyApiCommonBuildMessage{
+						Id:     bid,
+						Status: "COMPLETED",
+						Result: "SUCCESS",
+					},
+				}, nil
+			},
+		}
+		srv.Start()
+		defer srv.Stop()
 
 		c := memory.Use(context.Background())
 		mgr := TaskManager{}
-		ctl := fakeController(ts.URL)
+		ctl := fakeController(srv.URL())
 
 		// Launch.
 		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status:   task.StatusRunning,
 			TaskData: []byte(`{"build_id":"9025781602559305888"}`),
-			ViewURL:  "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10",
+			ViewURL:  srv.URL() + "/build/9025781602559305888",
 		})
 
-		So(putRequest, ShouldResemble, &bbv1.LegacyApiPutRequestMessage{
-			Bucket:            "test-bucket",
-			ClientOperationId: "1",
-			ParametersJson: normalizeJSON(`{
-				"builder_name": "builder",
-				"properties": {
-					"$recipe_engine/scheduler":{
-						"hostname": "app.example.com",
-						"triggers": [
-							{
-								"id": "trigger",
-								"title": "Trigger",
-								"url": "https://trigger.example.com",
-								"gitiles": {
-									"repo":     "https://chromium.googlesource.com/chromium/src",
-									"ref":      "refs/heads/master",
-									"revision": "deadbeef"
-								}
+		So(<-scheduleRequest, ShouldResembleProto, &bbpb.ScheduleBuildRequest{
+			RequestId: "1",
+			Builder: &bbpb.BuilderID{
+				Project: "some-project",
+				Bucket:  "test-bucket",
+				Builder: "builder",
+			},
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Id:      "deadbeef",
+				Ref:     "refs/heads/master",
+			},
+			Properties: structFromJSON(`{
+				"$recipe_engine/scheduler": {
+					"hostname": "app.example.com",
+					"triggers": [
+						{
+							"id": "trigger",
+							"title": "Trigger",
+							"url": "https://trigger.example.com",
+							"gitiles": {
+								"repo":     "https://chromium.googlesource.com/chromium/src",
+								"ref":      "refs/heads/master",
+								"revision": "deadbeef"
 							}
-						]
-					}
+						}
+					]
 				}
 			}`),
-			Tags: []string{
-				"builder:builder",
-				"scheduler_invocation_id:1",
-				"scheduler_job_id:some-project/some-job",
-				"user_agent:app",
-				"a:b",
-				"c:d",
+			Tags: []*bbpb.StringPair{
+				{Key: "scheduler_invocation_id", Value: "1"},
+				{Key: "scheduler_job_id", Value: "some-project/some-job"},
+				{Key: "user_agent", Value: "app"},
+				{Key: "a", Value: "from-task-def"},
+				{Key: "b", Value: "from-task-def"},
 			},
-			PubsubCallback: &bbv1.LegacyApiPubSubCallbackMessage{
-				AuthToken: "auth_token",
-				Topic:     "topic",
+			Notify: &bbpb.NotificationConfig{
+				PubsubTopic: "topic",
+				UserData:    []byte("auth_token"),
 			},
 		})
 
@@ -340,7 +336,7 @@ func TestFullFlow(t *testing.T) {
 		})
 
 		// Process finish notification.
-		mockRunning = false
+		atomic.StoreInt64(&mockRunning, 0)
 		So(mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), ShouldBeNil)
 		So(ctl.TaskState.Status, ShouldEqual, task.StatusSucceeded)
 	})
@@ -350,40 +346,31 @@ func TestAbort(t *testing.T) {
 	t.Parallel()
 
 	Convey("LaunchTask and AbortTask work", t, func(ctx C) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			resp := ""
-			switch {
-			case r.Method == "PUT" && r.URL.Path == "/_ah/api/buildbucket/v1/builds":
-				// There's more stuff in actual response that we don't use.
-				resp = `{
-					"build": {
-						"id": "9025781602559305888",
-						"status": "STARTED",
-						"url": "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10"
-					}
-				}`
-			case r.Method == "POST" && r.URL.Path == "/_ah/api/buildbucket/v1/builds/9025781602559305888/cancel":
-				resp = `{
-					"build": {
-						"id": "9025781602559305888",
-						"status": "CANCELED",
-						"url": "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10"
-					}
-				}`
-			default:
-				ctx.Printf("Unknown URL fetch - %s %s\n", r.Method, r.URL.Path)
-				w.WriteHeader(400)
-				return
-			}
-			w.WriteHeader(200)
-			w.Write([]byte(resp))
-		}))
-		defer ts.Close()
+		srv := BuildbucketFake{
+			ScheduleBuild: func(req *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
+				return &bbpb.Build{
+					Id:     9025781602559305888,
+					Status: bbpb.Status_STARTED,
+				}, nil
+			},
+			CancelBuildV1: func(bid int64) (*bbv1.LegacyApiBuildResponseMessage, error) {
+				if bid != 9025781602559305888 {
+					return nil, fmt.Errorf("wrong build ID")
+				}
+				return &bbv1.LegacyApiBuildResponseMessage{
+					Build: &bbv1.LegacyApiCommonBuildMessage{
+						Id:     bid,
+						Status: "CANCELED",
+					},
+				}, nil
+			},
+		}
+		srv.Start()
+		defer srv.Stop()
 
 		c := memory.Use(context.Background())
 		mgr := TaskManager{}
-		ctl := fakeController(ts.URL)
+		ctl := fakeController(srv.URL())
 
 		// Launch and kill.
 		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
@@ -395,55 +382,172 @@ func TestTriggeredFlow(t *testing.T) {
 	t.Parallel()
 
 	Convey("LaunchTask with GitilesTrigger works", t, func(ctx C) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			r.UserAgent()
-			resp := ""
-			switch {
-			case r.Method == "PUT" && r.URL.Path == "/_ah/api/buildbucket/v1/builds":
-				// There's more stuff in actual response that we don't use.
-				resp = `{
-					"build": {
-						"id": "9025781602559305888",
-						"status": "STARTED",
-						"url": "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10"
-					}
-				}`
-			case r.Method == "GET" && r.URL.Path == "/_ah/api/buildbucket/v1/builds/9025781602559305888":
-				resp = `{
-						"build": {
-							"id": "9025781602559305888",
-							"status": "COMPLETED",
-							"result": "SUCCESS"
-						}
-					}`
-			default:
-				ctx.Printf("Unknown URL fetch - %s %s\n", r.Method, r.URL.Path)
-				w.WriteHeader(400)
-				return
-			}
-			w.WriteHeader(200)
-			w.Write([]byte(resp))
-		}))
-		defer ts.Close()
+		scheduleRequest := make(chan *bbpb.ScheduleBuildRequest, 1)
+
+		srv := BuildbucketFake{
+			ScheduleBuild: func(req *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
+				scheduleRequest <- req
+				return &bbpb.Build{
+					Id:     9025781602559305888,
+					Status: bbpb.Status_STARTED,
+				}, nil
+			},
+			GetBuildV1: func(bid int64) (*bbv1.LegacyApiBuildResponseMessage, error) {
+				if bid != 9025781602559305888 {
+					return nil, fmt.Errorf("wrong build ID")
+				}
+				return &bbv1.LegacyApiBuildResponseMessage{
+					Build: &bbv1.LegacyApiCommonBuildMessage{
+						Id:     bid,
+						Status: "COMPLETED",
+						Result: "SUCCESS",
+					},
+				}, nil
+			},
+		}
+		srv.Start()
+		defer srv.Stop()
 
 		c := memory.Use(context.Background())
 		mgr := TaskManager{}
-		ctl := fakeController(ts.URL)
+		ctl := fakeController(srv.URL())
 
-		ctl.Req = task.Request{
-			IncomingTriggers: []*internal.Trigger{
-				{Id: "1", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "baadcafe")},
-				{Id: "2", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "deadbeef")},
-			},
+		schedule := func(triggers []*internal.Trigger) *bbpb.ScheduleBuildRequest {
+			// Prepare the request the same way the engine does using RequestBuilder.
+			req := policy.RequestBuilder{}
+			req.FromTrigger(triggers[len(triggers)-1])
+			req.IncomingTriggers = triggers
+			ctl.Req = req.Request
+
+			// Launch with triggers,
+			So(mgr.LaunchTask(c, ctl), ShouldBeNil)
+			So(ctl.TaskState, ShouldResemble, task.State{
+				Status:   task.StatusRunning,
+				TaskData: []byte(`{"build_id":"9025781602559305888"}`),
+				ViewURL:  srv.URL() + "/build/9025781602559305888",
+			})
+
+			return <-scheduleRequest
 		}
 
-		// Launch with triggers,
-		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
-		So(ctl.TaskState, ShouldResemble, task.State{
-			Status:   task.StatusRunning,
-			TaskData: []byte(`{"build_id":"9025781602559305888"}`),
-			ViewURL:  "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10",
+		Convey("Gitiles triggers", func() {
+			req := schedule([]*internal.Trigger{
+				{
+					Id: "1",
+					Payload: &internal.Trigger_Gitiles{
+						Gitiles: &api.GitilesTrigger{
+							Repo:     "https://r.googlesource.com/repo",
+							Ref:      "refs/heads/master",
+							Revision: "baadcafe",
+						},
+					},
+				},
+				{
+					Id: "2",
+					Payload: &internal.Trigger_Gitiles{
+						Gitiles: &api.GitilesTrigger{
+							Repo:       "https://r.googlesource.com/repo",
+							Ref:        "refs/heads/master",
+							Revision:   "deadbeef",
+							Tags:       []string{"extra:tag", "gitiles_ref:refs/heads/master"},
+							Properties: structFromJSON(`{"extra_prop": "val", "branch": "ignored"}`),
+						},
+					},
+				},
+			})
+
+			// Used the last trigger to get the commit.
+			So(req.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+				Host:    "r.googlesource.com",
+				Project: "repo",
+				Id:      "deadbeef",
+				Ref:     "refs/heads/master",
+			})
+
+			// Properties are sanitized.
+			So(structKeys(req.Properties), ShouldResemble, []string{
+				"$recipe_engine/scheduler",
+				"extra_prop",
+			})
+
+			// Tags are sanitized too.
+			So(req.Tags, ShouldResembleProto, []*bbpb.StringPair{
+				{Key: "scheduler_invocation_id", Value: "1"},
+				{Key: "scheduler_job_id", Value: "some-project/some-job"},
+				{Key: "user_agent", Value: "app"},
+				{Key: "a", Value: "from-task-def"},
+				{Key: "b", Value: "from-task-def"},
+				{Key: "extra", Value: "tag"},
+			})
+		})
+
+		Convey("Reconstructs gitiles commit from generic trigger", func() {
+			req := schedule([]*internal.Trigger{
+				{
+					Id: "1",
+					Payload: &internal.Trigger_Buildbucket{
+						Buildbucket: &api.BuildbucketTrigger{
+							Properties: structFromJSON(`{
+								"repository": "https://r.googlesource.com/repo",
+								"branch": "master",
+								"revision": "deadbeef",
+								"extra_prop": "val"
+							}`),
+							Tags: []string{
+								"buildset:commit/git/deadbeef",
+								"buildset:commit/gitiles/r.googlesource.com/repo/+/deadbeef",
+								"gitiles_ref:refs/heads/master",
+								"extra:tag",
+							},
+						},
+					},
+				},
+			})
+
+			// Reconstructed gitiles commit from properties.
+			So(req.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+				Host:    "r.googlesource.com",
+				Project: "repo",
+				Id:      "deadbeef",
+				Ref:     "refs/heads/master",
+			})
+
+			// Properties are sanitized.
+			So(structKeys(req.Properties), ShouldResemble, []string{
+				"$recipe_engine/scheduler",
+				"extra_prop",
+			})
+
+			// Tags are sanitized too.
+			So(req.Tags, ShouldResembleProto, []*bbpb.StringPair{
+				{Key: "scheduler_invocation_id", Value: "1"},
+				{Key: "scheduler_job_id", Value: "some-project/some-job"},
+				{Key: "user_agent", Value: "app"},
+				{Key: "a", Value: "from-task-def"},
+				{Key: "b", Value: "from-task-def"},
+				{Key: "extra", Value: "tag"},
+			})
+		})
+
+		Convey("Branch is optional when reconstructing", func() {
+			req := schedule([]*internal.Trigger{
+				{
+					Id: "1",
+					Payload: &internal.Trigger_Buildbucket{
+						Buildbucket: &api.BuildbucketTrigger{
+							Properties: structFromJSON(`{
+								"repository": "https://r.googlesource.com/repo",
+								"revision": "deadbeef"
+							}`),
+						},
+					},
+				},
+			})
+			So(req.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+				Host:    "r.googlesource.com",
+				Project: "repo",
+				Id:      "deadbeef",
+			})
 		})
 	})
 }
@@ -457,8 +561,14 @@ func TestPassedTriggers(t *testing.T) {
 		triggers := make([]*internal.Trigger, 0, maxTriggersAsSchedulerProperty+10)
 		add := func(i int) {
 			triggers = append(triggers, &internal.Trigger{
-				Id:      fmt.Sprintf("id=%d", i),
-				Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", fmt.Sprintf("sha1=%d", i)),
+				Id: fmt.Sprintf("id=%d", i),
+				Payload: &internal.Trigger_Gitiles{
+					Gitiles: &api.GitilesTrigger{
+						Repo:     "https://r.googlesource.com/repo",
+						Ref:      "refs/heads/master",
+						Revision: fmt.Sprintf("sha1=%d", i),
+					},
+				},
 			})
 		}
 		for i := 0; i < maxTriggersAsSchedulerProperty; i++ {
@@ -510,17 +620,20 @@ func TestExamineNotification(t *testing.T) {
 	})
 }
 
-func makePayload(repo, ref, rev string) *internal.Trigger_Gitiles {
-	return &internal.Trigger_Gitiles{
-		Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: rev},
+func structFromJSON(json string) *structpb.Struct {
+	r := strings.NewReader(json)
+	s := &structpb.Struct{}
+	if err := (&jsonpb.Unmarshaler{}).Unmarshal(r, s); err != nil {
+		panic(err)
 	}
+	return s
 }
 
-func normalizeJSON(jsonValue string) string {
-	var val interface{}
-	err := json.Unmarshal([]byte(jsonValue), &val)
-	So(err, ShouldBeNil)
-	ret, err := json.Marshal(val)
-	So(err, ShouldBeNil)
-	return string(ret)
+func structKeys(s *structpb.Struct) []string {
+	keys := make([]string, 0, len(s.Fields))
+	for k := range s.Fields {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
