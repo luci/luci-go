@@ -198,16 +198,22 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		Eversion: int64(cl.EVersion),
 		Status:   prjpb.PCL_UNKNOWN,
 	}
-	if cl.Snapshot == nil {
+
+	switch d, ok := cl.DependentMeta.GetByProject()[s.PB.GetLuciProject()]; {
+	case ok && d.GetNoAccess():
+		logging.Warningf(ctx, "This project has no access to CL(%d %s) as of %s", cl.ID, cl.ExternalID, d.GetUpdateTime().AsTime())
+		pcl.Status = prjpb.PCL_UNWATCHED
 		return pcl
-	}
-	if cl.Snapshot.GetGerrit() == nil {
+	case cl.Snapshot == nil:
+		// Need more time to fetch this.
+		return pcl
+	case cl.Snapshot.GetGerrit() == nil:
 		panic("only Gerrit CLs supported for now")
 	}
 
 	// Check ApplicableConfig as recorded by CL updater. This may be stale if one
-	// LUCI project transfered responsibility for a CL to another LUCI project,
-	// but eventually it'll catch up.
+	// LUCI project has recently transferred responsibility for a CL to another
+	// LUCI project, but eventually it'll catch up.
 	var ap *changelist.ApplicableConfig_Project
 	for _, proj := range cl.ApplicableConfig.GetProjects() {
 		if proj.GetName() == s.PB.GetLuciProject() {
