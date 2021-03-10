@@ -16,7 +16,6 @@ package migration
 
 import (
 	"context"
-	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -113,46 +112,19 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, e
 	return ret, nil
 }
 
-// FinishedRun contains info about a finished Run reported by CQDaemon.
-type FinishedRun struct {
-	_kind string `gae:"$kind,migration.FinishedRun"`
+// VerifiedCQDRun is the Run reported by CQDaemon after verification
+// completes.
+type VerifiedCQDRun struct {
+	_kind string `gae:"$kind,migration.VerifiedCQDRun"`
 	// ID is ID of this Run in CV.
 	ID common.RunID `gae:"$id"`
-
-	// TODO(yiwzhang): Remove the two fields below when re-implementing run
-	// finalization, as they are both derived from Attempt and redundant.
-
-	// Status is the final Run Status. MUST be one of the terminal statuses.
-	Status run.Status `gae:",noindex"`
-	// EndTime is the time when this Run ends.
-	EndTime time.Time `gae:",noindex"`
-
-	// The Attempt proto as sent by CQDaemon
+	// Attempt is the Attempt proto as sent by CQDaemon
 	//
 	// This includes tryjobs and other fields that will be sent to the
 	// BQ table after any attempt to submit CLs.
 	Attempt *cvbqpb.Attempt
-}
-
-var terminalStatusMapping = map[cvbqpb.AttemptStatus]run.Status{
-	cvbqpb.AttemptStatus_SUCCESS:       run.Status_SUCCEEDED,
-	cvbqpb.AttemptStatus_FAILURE:       run.Status_FAILED,
-	cvbqpb.AttemptStatus_INFRA_FAILURE: run.Status_FAILED,
-	cvbqpb.AttemptStatus_ABORTED:       run.Status_CANCELLED,
-}
-
-func saveFinishedRun(ctx context.Context, mr *migrationpb.Run) error {
-	attempt := mr.GetAttempt()
-	terminalStatus, ok := terminalStatusMapping[attempt.GetStatus()]
-	if !ok {
-		return errors.Reason("expected terminal status for Attempt %q; got %s", attempt.GetKey(), attempt.GetStatus()).Err()
-	}
-	rid := common.RunID(mr.GetId())
-	fr := &FinishedRun{
-		ID:      rid,
-		Status:  terminalStatus,
-		EndTime: attempt.GetEndTime().AsTime(),
-		Attempt: attempt,
-	}
-	return errors.Annotate(datastore.Put(ctx, fr), "failed to put FinishedRun %q", rid).Tag(transient.Tag).Err()
+	// Action describes what CV SHOULD do for this Run.
+	Action migrationpb.ReportVerifiedRunRequest_Action `gae:",noindex"`
+	// FinalMsg is the message to post to Gerrit in case of `ACTION_FAIL`.
+	FinalMsg string `gae:",noindex"`
 }
