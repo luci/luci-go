@@ -23,14 +23,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/api/pubsub/v1"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
-
-	"github.com/golang/protobuf/proto"
-	structpb "github.com/golang/protobuf/ptypes/struct"
-
-	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
 )
@@ -322,16 +321,11 @@ type Request struct {
 
 	// IncomingTriggers is a list of all triggers consumed by this invocation.
 	//
-	// Task managers may use them, but they are encouraged to accept task
-	// parameters through Properties and Tags instead.
-	//
 	// Already sorted by time they were emitted (oldest first).
 	IncomingTriggers []*internal.Trigger
 
 	// Properties are arbitrary key-value pairs derived from the triggers by the
 	// triggering policy function and interpreted by the triggered task manager.
-	//
-	// TODO(vadimsh): Needs more structure :(
 	Properties *structpb.Struct
 
 	// Tags are arbitrary "<key>:<value>" pairs derived from the triggers by the
@@ -340,8 +334,6 @@ type Request struct {
 	// Primarily used for indexing and correlation of jobs/invocations with
 	// each other (including across different services). Task managers can pass
 	// them down the stack.
-	//
-	// TODO(vadimsh): Needs more structure :(
 	Tags []string
 
 	// DebugLog is optional multi-line string to put in the invocation debug log
@@ -353,6 +345,14 @@ type Request struct {
 	// This field is used internally by the engine. Task managers will never see
 	// it set.
 	DebugLog string
+}
+
+// LastTrigger is the most recent trigger from IncomingTriggers list or nil.
+func (r *Request) LastTrigger() *internal.Trigger {
+	if t := r.IncomingTriggers; len(t) > 0 {
+		return t[len(t)-1]
+	}
+	return nil
 }
 
 // TriggerIDs extracts list of IDs from IncomingTriggers.
