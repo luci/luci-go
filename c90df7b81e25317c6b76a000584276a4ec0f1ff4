@@ -16,6 +16,23 @@
       "message": "Demo:\nhttps://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/b/8853206422357512880/blamelist\n",
       "revId": "c90df7b81e25317c6b76a000584276a4ec0f1ff4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a663beb1_6be58cd7",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-10T01:57:05Z",
+      "side": 1,
+      "message": "should this be consistent with the other one?",
+      "revId": "c90df7b81e25317c6b76a000584276a4ec0f1ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
