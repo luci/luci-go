@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5608ee2c_66d262eb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-10T06:38:13Z",
+      "side": 1,
+      "message": "PTAL. I think we might be able to reuse the same structure defined in ReportFinishedRun: https://crrev.com/c/2744148 . But I haven\u0027t given a deep thought on it. I think we\u0027ll have a better idea once we complete the doc for the workflow at the migration time. So it\u0027s okay to land this first and it\u0027s trivial to change it in the RM code later if we decide to have a different struct.",
+      "revId": "1efcf450b1c8e04a628e952bb0c1447c3c250d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
