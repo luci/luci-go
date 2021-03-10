@@ -470,7 +470,7 @@ func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
 		when = testclock.TestRecentTimeUTC.Add(10 * time.Hour)
 		who = U("user-1")
 	case len(timeAndUser) != 2:
-		panic(fmt.Errorf("incorret usage, must have 2 params, not %d", len(timeAndUser)))
+		panic(fmt.Errorf("incorrect usage, must have 2 params, not %d", len(timeAndUser)))
 	default:
 		var ok bool
 		if when, ok = timeAndUser[0].(time.Time); !ok {
@@ -487,24 +487,28 @@ func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
 		}
 	}
 
-	ai := &gerritpb.ApprovalInfo{User: who, Date: timestamppb.New(when), Value: int32(value)}
+	ai := &gerritpb.ApprovalInfo{
+		User:  who,
+		Date:  timestamppb.New(when),
+		Value: int32(value),
+	}
 	return func(ci *gerritpb.ChangeInfo) {
 		if ci.GetLabels() == nil {
 			ci.Labels = map[string]*gerritpb.LabelInfo{}
 		}
 		switch li, ok := ci.GetLabels()[label]; {
-		case !ok && ai.Value != 0:
+		case !ok:
 			ci.GetLabels()[label] = &gerritpb.LabelInfo{
 				All: []*gerritpb.ApprovalInfo{ai},
 			}
 		case ok:
-			for i := range li.GetAll() {
-				if li.All[i].GetUser().GetAccountId() == ai.GetUser().GetAccountId() {
-					if ai.Value == 0 {
-						li.All = append(li.All[:i], li.All[i+1:]...)
-					} else {
-						li.All[i] = ai
-					}
+			for i, existing := range li.GetAll() {
+				switch {
+				case existing.GetUser().GetAccountId() != ai.GetUser().GetAccountId():
+				case existing.GetDate().AsTime().After(ai.Date.AsTime()):
+					panic(fmt.Errorf("label %s already has a vote from user %d with a newer timestamp", label, who.GetAccountId()))
+				default:
+					li.All[i] = ai
 					return
 				}
 			}
