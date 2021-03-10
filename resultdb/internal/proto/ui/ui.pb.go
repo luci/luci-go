@@ -272,6 +272,10 @@ type TestVariant struct {
 	// Test exonerations if any test variant is exonerated.
 	Exonerations []*v1.TestExoneration `protobuf:"bytes,6,rep,name=exonerations,proto3" json:"exonerations,omitempty"`
 	// Information about the test at the time of its execution.
+	//
+	// All test results of the same test variant should report the same test
+	// metadata. This RPC relies on this rule and returns test metadata from
+	// *arbitrary* result of the test variant.
 	TestMetadata *v1.TestMetadata `protobuf:"bytes,7,opt,name=test_metadata,json=testMetadata,proto3" json:"test_metadata,omitempty"`
 }
 
