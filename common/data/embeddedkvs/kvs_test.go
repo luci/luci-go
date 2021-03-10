@@ -33,8 +33,12 @@ func TestCache(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		So(k.Set("key1", []byte("value1")), ShouldBeNil)
-		So(k.Set("key2", []byte("value2")), ShouldBeNil)
-		So(k.Set("key3", []byte("value3")), ShouldBeNil)
+
+		So(k.SetMulti(func(set func(key string, value []byte) error) error {
+			So(set("key2", []byte("value2")), ShouldBeNil)
+			So(set("key3", []byte("value3")), ShouldBeNil)
+			return nil
+		}), ShouldBeNil)
 
 		var mu sync.Mutex
 		var keys []string
