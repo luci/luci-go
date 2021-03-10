@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "43aeb22c_89ac6d1b",
+        "filename": "resultdb/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-10T19:51:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "82fd768e_f4f5077d",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 1
+      },
+      "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7c0a8069_93fa2660",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-03-10T07:22:53Z",
       "side": 1,
       "message": "Maybe, the following could be better, as it will tell the users what to do to install the emulator, as documented in https://cloud.google.com/spanner/docs/emulator#gcloud_cli.\n\n\n```\n# this will prompt you to download and install the emulator, if you haven\u0027t installed it yet.\n$ gcloud emulators spanner start\n```",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 71
+      },
+      "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "979d6225_bf502ed7",
+        "filename": "resultdb/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-10T19:51:28Z",
+      "side": 1,
+      "message": "using `gcloud emulators spanner start` to see an emulator is running is probably fine. But I\u0027m not sure about the part of telling people to install. I mean, my intention of this CL is that we can use the bundled gcloud which includes emulator. If we end up telling people to install emulator, then maybe we don\u0027t even need this change.",
+      "parentUuid": "7c0a8069_93fa2660",
       "range": {
         "startLine": 14,
         "startChar": 0,
