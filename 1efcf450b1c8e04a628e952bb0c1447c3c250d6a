@@ -16,6 +16,87 @@
       "message": "PTAL. I think we might be able to reuse the same structure defined in ReportFinishedRun: https://crrev.com/c/2744148 . But I haven\u0027t given a deep thought on it. I think we\u0027ll have a better idea once we complete the doc for the workflow at the migration time. So it\u0027s okay to land this first and it\u0027s trivial to change it in the RM code later if we decide to have a different struct.",
       "revId": "1efcf450b1c8e04a628e952bb0c1447c3c250d6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "776cc1e2_fb623036",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:46:51Z",
+      "side": 1,
+      "message": "agree \u003d\u003d we don\u0027t need to worry about structure re-use.",
+      "parentUuid": "5608ee2c_66d262eb",
+      "revId": "1efcf450b1c8e04a628e952bb0c1447c3c250d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53791bc0_5651699e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:46:51Z",
+      "side": 1,
+      "message": "lgtm % 1 comment about fields",
+      "revId": "1efcf450b1c8e04a628e952bb0c1447c3c250d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c780036_bcaf4963",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:46:51Z",
+      "side": 1,
+      "message": "FYI (still not done with doc), but I think this won\u0027t always be known:\n 1 CQD may start working on a run while CQD is the decision maker\n 2 config change -\u003e CV is decision maker\n 3 CQD calls ReportVerifiedRun.\n\nI don\u0027t know what\u0027s easier -- somehow force CQD to assign CV ID to all attempts as soon as (2) happens OR to figure out which CV ID corresponds to the provided attempt key.",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "1efcf450b1c8e04a628e952bb0c1447c3c250d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "868d21a6_63bbaf5e",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:46:51Z",
+      "side": 1,
+      "message": "why do you need these fields if can just stick entire proto payload as one field s.t. we can easily add more fields *to proto* in the future?",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 96,
+        "endChar": 34
+      },
+      "revId": "1efcf450b1c8e04a628e952bb0c1447c3c250d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
