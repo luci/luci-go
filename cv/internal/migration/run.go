@@ -18,7 +18,9 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -155,4 +157,55 @@ func saveFinishedRun(ctx context.Context, mr *migrationpb.Run) error {
 		Attempt: attempt,
 	}
 	return errors.Annotate(datastore.Put(ctx, fr), "failed to put FinishedRun %q", rid).Tag(transient.Tag).Err()
+}
+
+// FinishedCQDRun contains info about a finished Run reported by the CQDaemon.
+//
+// To be removed after the first milestone is reached.
+type FinishedCQDRun struct {
+	_kind string `gae:"$kind,migration.FinishedCQDRun"`
+	// AttemptKey is the CQD ID of the Run.
+	//
+	// Once CV starts creating Runs, the CV's Run for the same Run will contain
+	// the AttemptKey as a substring.
+	AttemptKey string `gae:"$id"`
+	// RunID may be set if CQD is aware of the RunID.
+	//
+	// For example, if milestone 1 migration is rolled back, some attempts may
+	// have associated RunID.
+	//
+	// Although the CV RunID, if known, is also stored in the Payload,
+	// a separate field is necessary for Datastore indexing.
+	RunID common.RunID
+	// RecordTime is when this entity was inserted.
+	UpdateTime time.Time `gae:",noindex"`
+	// Everything that CQD has sent.
+	Payload *migrationpb.Run
+}
+
+func saveFinishedCQDRun(ctx context.Context, mr *migrationpb.Run) error {
+	key := mr.GetAttempt().GetKey()
+	try := 0
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		try++
+		f := FinishedCQDRun{AttemptKey: key}
+		switch err := datastore.Get(ctx, &f); {
+		case err == datastore.ErrNoSuchEntity:
+			// expected.
+		case err != nil:
+			return err
+		default:
+			logging.Warningf(ctx, "Overwriting FinishedCQDRun %q in %d-th try", key, try)
+		}
+		f = FinishedCQDRun{
+			AttemptKey: key,
+			UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+			Payload:    mr,
+		}
+		if id := f.Payload.GetId(); id != "" {
+			f.RunID = common.RunID(id)
+		}
+		return datastore.Put(ctx, &f)
+	}, nil)
+	return errors.Annotate(err, "failed to record FinishedCQDRun %q after %d tries", key, try).Tag(transient.Tag).Err()
 }

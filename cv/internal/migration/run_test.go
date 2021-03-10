@@ -36,6 +36,8 @@ import (
 )
 
 func TestFetchActiveRuns(t *testing.T) {
+	t.Parallel()
+
 	Convey("FetchActiveRuns", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
@@ -218,7 +220,9 @@ func TestFetchActiveRuns(t *testing.T) {
 	})
 }
 
-func TestHelperFunctions(t *testing.T) {
+func TestSaveFinishedRun(t *testing.T) {
+	t.Parallel()
+
 	Convey("saveFinishedRun", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
@@ -266,6 +270,41 @@ func TestHelperFunctions(t *testing.T) {
 			fr := &FinishedRun{ID: "chromium/1111111111111-cafecafe"}
 			So(datastore.Get(ctx, fr), ShouldBeNil)
 			So(fr.Attempt, ShouldResembleProto, attempt)
+		})
+	})
+}
+
+func TestSaveFinishedCQDRun(t *testing.T) {
+	t.Parallel()
+
+	Convey("saveFinishedCQDRun", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		mr := &migrationpb.Run{
+			Attempt: &cvbqpb.Attempt{
+				Key: "samekeyhash",
+				// Other fields are populated in practice, but this ingores that.
+			},
+			Cls: nil, // ditto
+		}
+
+		Convey("unknown CV ID", func() {
+			So(saveFinishedCQDRun(ctx, mr), ShouldBeNil)
+			f := FinishedCQDRun{AttemptKey: "samekeyhash"}
+			So(datastore.Get(ctx, &f), ShouldBeNil)
+			So(f.Payload, ShouldResembleProto, mr)
+			So(f.RunID == "", ShouldBeTrue)
+
+			Convey("with known CV ID", func() {
+				mr.Id = "known-cv-id/123123-samekeyhash"
+				So(saveFinishedCQDRun(ctx, mr), ShouldBeNil)
+				f := FinishedCQDRun{AttemptKey: "samekeyhash"}
+				So(datastore.Get(ctx, &f), ShouldBeNil)
+				So(f.Payload, ShouldResembleProto, mr)
+				So(f.RunID, ShouldResemble, common.RunID(mr.Id))
+			})
 		})
 	})
 }
