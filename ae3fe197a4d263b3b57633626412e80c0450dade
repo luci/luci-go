@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3982dfd7_51271d37",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-10T20:59:45Z",
+      "side": 1,
+      "message": "PTAL\n\nTested by running:\n\n  ./luci-auth context \\\n    -act-as-service-account adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com \\\n    -act-via-realm \"@internal:testing\" \\\n    -token-server-host luci-token-server-dev.appspot.com \\\n    -- ./luci-auth info -use-id-token -audience example.com\n\nWhich produced:\n\n  Logged in as adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com.\n\n  ID token details:\n    Issuer: https://accounts.google.com\n    Subject: ...\n    Audience: example.com",
+      "revId": "ae3fe197a4d263b3b57633626412e80c0450dade",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
