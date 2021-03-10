@@ -269,8 +269,10 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	// task creation tasks are only created if everything else has succeeded (since everything can't be done
 	// in one transaction).
 	err = parallel.WorkPool(64, func(work chan<- func() error) {
-		for _, b := range blds {
+		for i, b := range blds {
 			b := b
+			// blds and reqs slices map 1:1.
+			reqID := reqs[i].RequestId
 			work <- func() error {
 				toPut := []interface{}{b}
 				if b.Proto.Infra != nil {
@@ -289,8 +291,24 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 						},
 					})
 				}
+				r := model.NewRequestID(ctx, b.ID, now, reqID)
 
-				err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				// Write the entities and trigger a task queue task to create the Swarming task.
+				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					// Deduplicate by request ID.
+					if reqID != "" {
+						switch err := datastore.Get(ctx, r); {
+						case err == datastore.ErrNoSuchEntity:
+							toPut = append(toPut, r)
+						case err != nil:
+							return errors.Annotate(err, "failed to deduplicate request ID: %d", b.ID).Err()
+						default:
+							// TODO(crbug/1042991): Fetch existing build and deduplicate instead of erring.
+							return errors.Reason("request ID reuse: %s", reqID).Err()
+						}
+					}
+
+					// Request was not a duplicate.
 					switch err := datastore.Get(ctx, &model.Build{ID: b.ID}); {
 					case err == nil:
 						return appstatus.Errorf(codes.AlreadyExists, "build already exists: %d", b.ID)
