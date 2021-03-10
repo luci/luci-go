@@ -5,7 +5,7 @@ queue:
   rate: 30/s
 - name: poll-gerrit
   rate: 10/s
-- name: purge-cl
+- name: purge-project-cl
   rate: 30/s
 - name: refresh-project-config
   rate: 1000/m
