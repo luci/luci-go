@@ -90,8 +90,10 @@ func allowsArbitraryScopes(opts *auth.Options) bool {
 // generating ID tokens for arbitrary audience.
 func allowsArbitraryAudience(opts *auth.Options) bool {
 	// Only UserCredentialsMethod hardcodes audience in the token based on the
-	// OAuth2 client ID used to generate it.
-	return opts.Method != auth.UserCredentialsMethod
+	// OAuth2 client ID used to generate it. Additionally, when we use an
+	// impersonation API, we can request any audience we want, even when using
+	// UserCredentialsMethod to authenticate calls to this impersonation API.
+	return opts.Method != auth.UserCredentialsMethod || opts.ActAsServiceAccount != ""
 }
 
 type generator struct {
