@@ -518,6 +518,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "90110532_46ed754a",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T22:02:26Z",
+      "side": 1,
+      "message": "\u003e Everything inside is annotated\nInside the *inline function*, yes.\nHowever, the source of errors isn\u0027t limited to inline function.\nMany, and probably most, will be due to transaction commit failure, which runs after the inline func.\n\n\u003e You\u0027re just making the error string needlessly longer.\nIf one mindLessly annotates resulting error, then yes.\nI prefer to annotate mindFully, s.t. I can preserve transient/non-transient nature of errors (hat tip to Vadim):\n\nvar inner error\nerr :\u003d datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {\n  defer func(){inner \u003d err}()\n  // annotate or even return non-annotated errors as before\n}\nswitch{\ncase inner !\u003d nil:\n  // if this was non-transient, it\u0027d remain non-transient\n  return inner \ncase err !\u003d nil:\n  return errors.Annotate(err, \"blah blah\").Tag(transient.Tag).Err()\n}\n\n\n\nFinally, \"Reviewed\" to me doesn\u0027t mean a warranty that code is 100% correct and ideally written. So, if I can spot problems, especially in a new codebase actively being developed, I see it as my reviewer duty to point them out.",
+      "parentUuid": "fa61e417_f958bfb1",
+      "range": {
+        "startLine": 296,
+        "startChar": 11,
+        "endLine": 296,
+        "endChar": 37
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "87c8bf95_2c774114",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1

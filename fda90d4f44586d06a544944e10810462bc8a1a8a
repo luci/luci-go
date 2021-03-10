@@ -142,6 +142,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "063cced6_e910870f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T22:02:26Z",
+      "side": 1,
+      "message": "thanks.",
+      "parentUuid": "061266a2_1037c6a7",
+      "range": {
+        "startLine": 273,
+        "startChar": 0,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4fa91324_b5c93253",
@@ -179,6 +203,30 @@
       "side": 1,
       "message": "You mean emulating a user making a ScheduleBuild call that fails followed by another which dedupes?",
       "parentUuid": "4fa91324_b5c93253",
+      "range": {
+        "startLine": 1266,
+        "startChar": 0,
+        "endLine": 1275,
+        "endChar": 7
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "faa8e1cb_4a2dee10",
+        "filename": "buildbucket/appengine/rpc/schedule_build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1275,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T22:02:26Z",
+      "side": 1,
+      "message": "yes, but w/o user waiting for the first call to *finish*, hence multiple concurrent goroutines.",
+      "parentUuid": "4469c55c_a1ef5f0c",
       "range": {
         "startLine": 1266,
         "startChar": 0,
