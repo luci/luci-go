@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ca132aa_ec0f742b",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 645,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T20:08:24Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 645,
+        "startChar": 34,
+        "endLine": 645,
+        "endChar": 40
+      },
+      "revId": "bee8a86917a5670aba80ba73883d02d9a3c18e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
