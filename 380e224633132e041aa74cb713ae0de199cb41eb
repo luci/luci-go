@@ -16,6 +16,24 @@
       "message": "I currently get the following:\n\n../../../common/api/gerrit/rest.go:358:10: cannot use comment (type gerrit.Comment) as type *gerrit.Comment in append\n../../../common/api/gerrit/rest.go:358:10: append(lccr.Comments[k].Comments, comment) evaluated but not used\n\nI\u0027ve tried a few other things, notably \"lccr.Comments[k].comments\" which gets me:\n\n../../../common/api/gerrit/rest.go:358:27: lccr.Comments[k].comments undefined (type *gerrit.CommentList has no field or method comments, but does have Comments)",
       "revId": "380e224633132e041aa74cb713ae0de199cb41eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eff325fa_5af511f5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2021-03-10T16:42:53Z",
+      "side": 1,
+      "message": "you need \u0026comment, it says it\u0027s a slice of pointers, not a slice of structs.",
+      "parentUuid": "c2d31ef5_876cc648",
+      "revId": "380e224633132e041aa74cb713ae0de199cb41eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
