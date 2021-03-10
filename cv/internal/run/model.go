@@ -85,10 +85,11 @@ type Run struct {
 	// RunManager may update the ConfigGroup in the middle of the Run if it is
 	// notified that a new version of Config has been imported into CV.
 	ConfigGroupID config.ConfigGroupID `gae:",noindex"`
-	// CLs are IDs of all CLs invovled in this Run.
+	// CLs are IDs of all CLs involved in this Run.
 	CLs []common.CLID `gae:",noindex"`
+	// Submission is the current state of Run Submission.
+	Submission *Submission
 	// TODO(yiwzhang): Define
-	//  * GerritAction (including posting comments and removing CQ labels).
 	//  * RemainingTryjobQuota: Run-level Tryjob quota.
 }
 
@@ -131,8 +132,11 @@ type RunCL struct {
 	_kind string `gae:"$kind,RunCL"`
 
 	// ID is the CL internal ID.
-	ID      common.CLID    `gae:"$id"`
-	Run     *datastore.Key `gae:"$parent"`
-	Detail  *changelist.Snapshot
-	Trigger *Trigger
+	ID common.CLID `gae:"$id"`
+	// Run is the datastore key of the Run this RunCL belongs to.
+	Run *datastore.Key `gae:"$parent"`
+	// RunEVersion is the EVersion of
+	RunEVersion int `gae:",noindex"`
+	Detail      *changelist.Snapshot
+	Trigger     *Trigger
 }
