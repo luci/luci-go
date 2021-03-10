@@ -85,7 +85,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return run.Cancel(ctx, runID)
+					return run.CancelNow(ctx, runID)
 				},
 				"Cancel",
 			},
@@ -186,7 +186,7 @@ func TestRunManager(t *testing.T) {
 			fh := &fakeHandler{}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
 			run.Start(ctx, runID)
-			run.Cancel(ctx, runID)
+			run.CancelNow(ctx, runID)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
 			So(fh.invocations, ShouldResemble, []string{"Cancel"})
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)

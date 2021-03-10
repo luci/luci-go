@@ -51,13 +51,7 @@ func Poke(ctx context.Context, runID common.RunID, after time.Duration) error {
 			Poke: &eventpb.Poke{},
 		},
 	}
-	if after > 0 {
-		t := clock.Now(ctx).Add(after)
-		evt.ProcessAfter = timestamppb.New(t)
-		return send(ctx, runID, evt, t)
-
-	}
-	return sendNow(ctx, runID, evt)
+	return sendAfter(ctx, runID, evt, after)
 }
 
 // UpdateConfig tells RunManager to update the given Run to new config.
@@ -72,15 +66,23 @@ func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion
 	})
 }
 
+// CancelNow tells RunManager to cancel the given Run immediately.
+//
+// TODO(yiwzhang,tandrii): support reason.
+func CancelNow(ctx context.Context, runID common.RunID) error {
+	return Cancel(ctx, runID, 0)
+}
+
 // Cancel tells RunManager to cancel the given Run.
 //
 // TODO(yiwzhang,tandrii): support reason.
-func Cancel(ctx context.Context, runID common.RunID) error {
-	return sendNow(ctx, runID, &eventpb.Event{
+func Cancel(ctx context.Context, runID common.RunID, after time.Duration) error {
+	evt := &eventpb.Event{
 		Event: &eventpb.Event_Cancel{
 			Cancel: &eventpb.Cancel{},
 		},
-	})
+	}
+	return sendAfter(ctx, runID, evt, after)
 }
 
 // NotifyCLUpdated informs RunManager that given CL has a new version available.
@@ -109,6 +111,15 @@ func NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) err
 
 func sendNow(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
 	return send(ctx, runID, evt, time.Time{})
+}
+
+func sendAfter(ctx context.Context, runID common.RunID, evt *eventpb.Event, after time.Duration) error {
+	if after > 0 {
+		t := clock.Now(ctx).Add(after)
+		evt.ProcessAfter = timestamppb.New(t)
+		return send(ctx, runID, evt, t)
+	}
+	return sendNow(ctx, runID, evt)
 }
 
 func send(ctx context.Context, runID common.RunID, evt *eventpb.Event, eta time.Time) error {
