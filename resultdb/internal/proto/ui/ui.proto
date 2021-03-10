@@ -93,6 +93,10 @@ message TestVariant {
   repeated luci.resultdb.v1.TestExoneration exonerations = 6;
 
   // Information about the test at the time of its execution.
+  //
+  // All test results of the same test variant should report the same test
+  // metadata. This RPC relies on this rule and returns test metadata from
+  // *arbitrary* result of the test variant.
   luci.resultdb.v1.TestMetadata test_metadata = 7;
 }
 
