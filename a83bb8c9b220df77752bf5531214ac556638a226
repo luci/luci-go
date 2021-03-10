@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "68a37528_2301ec77",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T03:39:57Z",
+      "side": 1,
+      "message": "!ok is the expected case: DependentMeta is set iff Snapshot isn\u0027t set as a result of UpdateBuild call. See changelist/model.go I\u0027ve just updated in the latest patchset.",
+      "parentUuid": "4acc6f24_06901686",
+      "revId": "a83bb8c9b220df77752bf5531214ac556638a226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "24d9a348_cabc8791",
@@ -58,6 +76,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "69b02f89_7e390857",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T03:39:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24d9a348_cabc8791",
+      "range": {
+        "startLine": 215,
+        "startChar": 30,
+        "endLine": 215,
+        "endChar": 40
+      },
+      "revId": "a83bb8c9b220df77752bf5531214ac556638a226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a2f61c3b_cb257929",
@@ -71,6 +113,24 @@
       "writtenOn": "2021-03-09T19:55:12Z",
       "side": 1,
       "message": "This is the \"scenario/situation\", but it\u0027s not super easy for me to see what key behavior is being asserted. Is the important thing that the CL is still unwatched in the state after OnCLsUpdated is called? Or something else?",
+      "revId": "a83bb8c9b220df77752bf5531214ac556638a226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd3585d0_f5a734be",
+        "filename": "cv/internal/prjmanager/impl/state/state_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 709,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T03:39:57Z",
+      "side": 1,
+      "message": "It\u0027s important that it\u0027s stil unwatched. PTAL again -- i\u0027ve added comemnt.",
+      "parentUuid": "a2f61c3b_cb257929",
       "revId": "a83bb8c9b220df77752bf5531214ac556638a226",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
