@@ -706,6 +706,35 @@ func TestOnCLsUpdated(t *testing.T) {
 			})
 		})
 
+		Convey("Invalid dep of some other CL must be marked as unwatched", func() {
+			// For example, if user made a typo in `CQ-Depend`, e.g.:
+			//    `CQ-Depend: chromiAm:123`
+			// then CL Updater will create an entity for such CL anyway,
+			// but eventually fill it with DependentMeta stating that this LUCI
+			// project has no access to it.
+			// Note that such typos may be malicious, so PM must treat such CLs as not
+			// found regardless of whether they actually exist in Gerrit.
+			cl404 := ct.runCLUpdater(ctx, 404)
+			So(cl404.Snapshot, ShouldBeNil)
+			So(cl404.ApplicableConfig, ShouldBeNil)
+			So(cl404.DependentMeta.GetByProject(), ShouldContainKey, ct.lProject)
+			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
+				int64(cl404.ID): 1,
+			})
+			So(err, ShouldBeNil)
+			So(s0.PB, ShouldResembleProto, pb0)
+			So(sideEffect, ShouldBeNil)
+			pb1 := proto.Clone(pb0).(*prjpb.PState)
+			pb1.Pcls = append(pb0.Pcls, &prjpb.PCL{
+				Clid:               int64(cl404.ID),
+				Eversion:           1,
+				ConfigGroupIndexes: []int32{},
+				Status:             prjpb.PCL_UNWATCHED,
+			})
+			pb1.DirtyComponents = true
+			So(s1.PB, ShouldResembleProto, pb1)
+		})
+
 		Convey("non-STARTED project ignores all CL events", func() {
 			s0.PB.Status = prjpb.Status_STOPPING
 			s1, sideEffect, err := s0.OnCLsUpdated(ctx, map[int64]int64{
