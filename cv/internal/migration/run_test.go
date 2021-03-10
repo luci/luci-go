@@ -220,60 +220,6 @@ func TestFetchActiveRuns(t *testing.T) {
 	})
 }
 
-func TestSaveFinishedRun(t *testing.T) {
-	t.Parallel()
-
-	Convey("saveFinishedRun", t, func() {
-		ct := cvtesting.Test{}
-		ctx, cancel := ct.SetUp()
-		defer cancel()
-
-		attempt := &cvbqpb.Attempt{
-			Key:                  "f001234",
-			ConfigGroup:          "maingroup",
-			LuciProject:          "chromium",
-			ClGroupKey:           "b004321",
-			EquivalentClGroupKey: "c003333",
-			StartTime:            timestamppb.New(clock.Now(ctx).Add(-2 * time.Minute)),
-			EndTime:              timestamppb.New(clock.Now(ctx).Add(-1 * time.Minute)),
-			Builds: []*cvbqpb.Build{
-				{
-					Id:       423143214321,
-					Host:     "cr-buildbucket.appspot.com",
-					Origin:   cvbqpb.Build_NOT_REUSED,
-					Critical: false,
-				},
-			},
-			GerritChanges: []*cvbqpb.GerritChange{
-				{
-					Host:                       "https://chromium-review.googlesource.com/",
-					Project:                    "chromium/src",
-					Change:                     11111,
-					Patchset:                   7,
-					EarliestEquivalentPatchset: 6,
-					Mode:                       cvbqpb.Mode_FULL_RUN,
-					SubmitStatus:               cvbqpb.GerritChange_PENDING,
-				},
-			},
-			Status:               cvbqpb.AttemptStatus_SUCCESS,
-			Substatus:            cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
-			HasCustomRequirement: false,
-		}
-		mr := &migrationpb.Run{
-			Attempt: attempt,
-			Id:      "chromium/1111111111111-cafecafe",
-			Cls:     []*migrationpb.RunCL{},
-		}
-
-		Convey("saves Attempt proto", func() {
-			So(saveFinishedRun(ctx, mr), ShouldBeNil)
-			fr := &FinishedRun{ID: "chromium/1111111111111-cafecafe"}
-			So(datastore.Get(ctx, fr), ShouldBeNil)
-			So(fr.Attempt, ShouldResembleProto, attempt)
-		})
-	})
-}
-
 func TestSaveFinishedCQDRun(t *testing.T) {
 	t.Parallel()
 
