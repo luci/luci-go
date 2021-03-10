@@ -15,10 +15,14 @@
 package impl
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/server/tq/tqtesting"
+	"google.golang.org/protobuf/types/known/durationpb"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -32,7 +36,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestCLPurgingEndToEnd(t *testing.T) {
+func TestE2ECLPurgingWithoutOwner(t *testing.T) {
 	t.Parallel()
 
 	Convey("PM purges CLs without owner's email", t, func() {
@@ -89,6 +93,96 @@ func TestCLPurgingEndToEnd(t *testing.T) {
 
 		/////////////////////////    Verify   ////////////////////////////////
 		So(trigger.Find(ct.GFake.GetChange(gHost, 43).Info), ShouldBeNil)
+		p, err := prjmanager.Load(ctx, lProject)
+		So(err, ShouldBeNil)
+		So(p.State.GetPcls(), ShouldBeEmpty)
+		So(p.State.GetComponents(), ShouldBeEmpty)
+	})
+}
+
+func TestE2ECLPurgingWithUnwatchedDeps(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges CL with dep outside the project after waiting stabilization_delay", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := cvtesting.Test{AppID: "cv"}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		// Enable CV management of Runs for all projects.
+		settings := &migrationpb.Settings{
+			ApiHosts: []*migrationpb.Settings_ApiHost{
+				{
+					Host:          "cv.appspot.com",
+					Prod:          true,
+					ProjectRegexp: []string{".+"},
+				},
+			},
+			UseCvRuns: &migrationpb.Settings_UseCVRuns{
+				ProjectRegexp: []string{".+"},
+			},
+		}
+		So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
+
+		const (
+			lProject = "chromium"
+			gHost    = "chromium-review.example.com"
+			gRepo    = "chromium/src"
+			gChange  = 33
+
+			lProject2 = "webrtc"
+			gHost2    = "webrtc-review.example.com"
+			gRepo2    = "src"
+			gChange2  = 22
+		)
+		tStart := ct.Clock.Now()
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref("refs/heads/main"),
+			gf.Updated(tStart), gf.CQ(+2, tStart, gf.U("user-1")),
+			gf.Owner("user-1"),
+			gf.Desc(fmt.Sprintf("T\n\nCq-Depend: webrtc:%d", gChange2)),
+		)))
+		ct.GFake.AddFrom(gf.WithCIs(gHost2, gf.ACLRestricted(lProject2), gf.CI(
+			gChange2, gf.Project(gRepo2), gf.Ref("refs/heads/main"),
+			gf.Updated(tStart), gf.CQ(+2, tStart, gf.U("user-1")),
+			gf.Owner("user-1"),
+		)))
+
+		const stabilizationDelay = 2 * time.Minute
+		cfg1 := singleRepoConfig(gHost, gRepo)
+		cfg1.GetConfigGroups()[0].CombineCls = &cfgpb.CombineCLs{
+			StabilizationDelay: durationpb.New(stabilizationDelay),
+		}
+		ct.Cfg.Create(ctx, lProject, cfg1)
+		ct.Cfg.Create(ctx, lProject2, singleRepoConfig(gHost2, gRepo2))
+
+		/////////////////////////    Run CV   ////////////////////////////////
+		// Let CV do its work, but don't wait forever. Use ever recurring pollers
+		// for indication of progress.
+		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
+		for i := 0; i < 20; i++ {
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(pollertask.ClassID))
+			if trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil {
+				break
+			}
+		}
+		// Ensure PM had a chance to react to CLUpdated event.
+		if len(pmtest.Projects(ct.TQ.Tasks())) > 0 {
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
+		}
+
+		/////////////////////////    Verify   ////////////////////////////////
+		ci := ct.GFake.GetChange(gHost, gChange).Info
+		So(trigger.Find(ci), ShouldBeNil)
+		So(ci.GetMessages(), ShouldHaveLength, 1)
+		So(
+			ci.GetMessages()[0].GetDate().AsTime(),
+			ShouldHappenAfter,
+			tStart.Add(stabilizationDelay),
+		)
+
 		p, err := prjmanager.Load(ctx, lProject)
 		So(err, ShouldBeNil)
 		So(p.State.GetPcls(), ShouldBeEmpty)
