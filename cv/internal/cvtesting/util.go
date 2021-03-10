@@ -155,6 +155,10 @@ func (t *Test) cleanup() {
 	}
 }
 
+func (t *Test) RoundTestClock(multiple time.Duration) {
+	t.Clock.Set(t.Clock.Now().Add(multiple).Truncate(multiple))
+}
+
 func (t *Test) installDS(ctx context.Context) context.Context {
 	if t.AppID == "" {
 		t.AppID = "dev~app" // default in memory package.

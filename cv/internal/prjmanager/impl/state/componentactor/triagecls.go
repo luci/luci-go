@@ -16,12 +16,13 @@ package componentactor
 
 import (
 	"fmt"
+	"time"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-// triageCLs computes and sets .cls and .reverseDeps.
+// triageCLs computes and sets .cls, .reverseDeps.
 func (a *Actor) triageCLs() {
 	a.cls = make(map[int64]*clInfo, len(a.c.GetClids()))
 	for _, clid := range a.c.GetClids() {
@@ -40,17 +41,11 @@ func (a *Actor) triageCLs() {
 	a.reverseDeps = map[int64][]int64{}
 	for clid, info := range a.cls {
 		a.triageCL(clid, info)
-		switch {
-		case info.ready:
+		if info.ready {
 			info.deps.iterateNotSubmitted(info.pcl, func(dep *changelist.Dep) {
 				did := dep.GetClid()
 				a.reverseDeps[did] = append(a.reverseDeps[did], clid)
 			})
-		case info.purgeReason != nil:
-			if a.toPurge == nil {
-				a.toPurge = make(map[int64]struct{}, 1)
-			}
-			a.toPurge[clid] = struct{}{}
 		}
 	}
 }
@@ -66,7 +61,31 @@ type clInfo struct {
 	triagedCL
 }
 
+// lastTriggered returns the last triggered time among this CL and its triggered
+// deps. Can be zero time.Time if neither are triggered.
+func (c *clInfo) lastTriggered() time.Time {
+	thisPB := c.pcl.GetTrigger().GetTime()
+	switch {
+	case thisPB == nil && c.deps == nil:
+		return time.Time{}
+	case thisPB == nil:
+		return c.deps.lastTriggered
+	case c.deps == nil || c.deps.lastTriggered.IsZero():
+		return thisPB.AsTime()
+	default:
+		this := thisPB.AsTime()
+		if c.deps.lastTriggered.Before(this) {
+			return this
+		}
+		return c.deps.lastTriggered
+	}
+}
+
 // triagedCL is the result of CL triage (see triageCL()).
+//
+// Note: doesn't take into account `combine_cls.stabilization_delay`,
+// Thus a CL may be ready or with purgeReason but due to stabilization delay,
+// it shouldn't be acted upon *yet*.
 type triagedCL struct {
 	// deps are triaged deps, set only if CL is watched by exactly 1 config group.
 	// of the current project.
