@@ -130,6 +130,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "74ad7a67_dabfdba6",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 643,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-10T20:07:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4034520c_1db1860a",
+      "range": {
+        "startLine": 643,
+        "startChar": 7,
+        "endLine": 643,
+        "endChar": 21
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8461f96e_072d59c7",
