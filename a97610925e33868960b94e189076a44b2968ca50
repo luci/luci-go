@@ -224,6 +224,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8463984_8f849338",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 653,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T19:57:20Z",
+      "side": 1,
+      "message": "ah, true.",
+      "parentUuid": "91bcb707_cf64765e",
+      "range": {
+        "startLine": 653,
+        "startChar": 21,
+        "endLine": 653,
+        "endChar": 25
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4be2bf68_84cf4748",
@@ -466,6 +490,30 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "3ea6dc4f_5ec82ea8",
+      "range": {
+        "startLine": 534,
+        "startChar": 3,
+        "endLine": 536,
+        "endChar": 33
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ec29534_7ab88949",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 536,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T19:57:20Z",
+      "side": 1,
+      "message": "wow, looks better than I imagined. Thanks.",
+      "parentUuid": "e1df5549_cb5200f4",
       "range": {
         "startLine": 534,
         "startChar": 3,
