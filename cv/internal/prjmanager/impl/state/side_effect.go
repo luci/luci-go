@@ -107,7 +107,7 @@ func (c *CancelIncompleteRuns) Do(ctx context.Context) error {
 			id := id
 			work <- func() error {
 				// TODO(tandrii): pass "Project disabled" as a reason.
-				return run.Cancel(ctx, id)
+				return run.CancelNow(ctx, id)
 			}
 		}
 	})

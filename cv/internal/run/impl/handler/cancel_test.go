@@ -20,11 +20,14 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -71,8 +74,21 @@ func TestCancel(t *testing.T) {
 			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 
+		Convey("Cancels SUBMITTING Run", func() {
+			rs.Run.Status = run.Status_SUBMITTING
+			se, newrs, err := h.Cancel(ctx, rs)
+			So(err, ShouldBeNil)
+			So(newrs, ShouldEqual, rs)
+			So(se(ctx), ShouldBeNil)
+			runtest.AssertInEventbox(ctx, rs.Run.ID, &eventpb.Event{
+				Event: &eventpb.Event_Cancel{
+					Cancel: &eventpb.Cancel{},
+				},
+				ProcessAfter: timestamppb.New(clock.Now(ctx).Add(10 * time.Second)),
+			})
+		})
+
 		statuses := []run.Status{
-			run.Status_FINALIZING,
 			run.Status_SUCCEEDED,
 			run.Status_FAILED,
 			run.Status_CANCELLED,
