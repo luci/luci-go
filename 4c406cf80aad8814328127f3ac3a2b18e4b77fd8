@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4331644f_81acf4f2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-10T06:51:17Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "4c406cf80aad8814328127f3ac3a2b18e4b77fd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38c5cdb5_aca19fdf",
+        "filename": "cv/internal/run/impl/handler/cancel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-10T06:51:17Z",
+      "side": 1,
+      "message": "Since it is possible that RunStatus revert back from SUBMITTING to WAITING_FOR_SUBMISSION. I think we should keep trying to cancel till it either actually end or go back to WAITING_FOR_SUBMISSION.",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 42,
+        "endChar": 3
+      },
+      "revId": "4c406cf80aad8814328127f3ac3a2b18e4b77fd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
