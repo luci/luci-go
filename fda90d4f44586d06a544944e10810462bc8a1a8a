@@ -235,6 +235,30 @@
       },
       "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f5eb552b_17c4d5db",
+        "filename": "buildbucket/appengine/rpc/schedule_build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1275,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-10T22:28:44Z",
+      "side": 1,
+      "message": "In such a test would the goroutines race every time it runs?\n\nAlso consider linking at pinned revisions, your link just goes to a }) right now which I\u0027m not necessarily sure is the intended line.",
+      "parentUuid": "faa8e1cb_4a2dee10",
+      "range": {
+        "startLine": 1266,
+        "startChar": 0,
+        "endLine": 1275,
+        "endChar": 7
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

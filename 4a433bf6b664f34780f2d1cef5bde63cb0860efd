@@ -542,6 +542,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9954e423_2f7dcc1f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-10T22:28:44Z",
+      "side": 1,
+      "message": "I think that asking for this pattern to be implemented is outside the scope of this particular review. I could say your SWE duty is to file a bug or even send a CL rather than expand the scope of this code review.\n\nYour proposal may be better served by checking every place a transaction is done in an RPC handler and ensuring this pattern is implemented. If I handle it right now then it makes this CL less focused and only fixes it in one place.",
+      "parentUuid": "90110532_46ed754a",
+      "range": {
+        "startLine": 296,
+        "startChar": 11,
+        "endLine": 296,
+        "endChar": 37
+      },
+      "revId": "4a433bf6b664f34780f2d1cef5bde63cb0860efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "87c8bf95_2c774114",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
