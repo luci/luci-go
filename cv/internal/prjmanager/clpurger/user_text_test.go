@@ -125,7 +125,7 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 				are not watched by the same LUCI project:
 				  * https://x-review.googlesource.com/101
 
-				Please, check Cq-Depend
+				Please check Cq-Depend
 			`))
 			})
 			Convey("WrongConfigGroup", func() {
@@ -141,7 +141,7 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 				invalidDeps.IncompatMode = []*changelist.Dep{deps[102], deps[101]}
 				s := mustFormat()
 				So(s, ShouldContainSubstring, text.Doc(`
-				its mode FullRun does not match mode on its dependencies:
+				its mode "FullRun" does not match mode on its dependencies:
 				  * https://x-review.googlesource.com/101
 				  * https://x-review.googlesource.com/102
 			`))
