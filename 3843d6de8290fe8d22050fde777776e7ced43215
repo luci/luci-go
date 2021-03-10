@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5fc8b778_8fc83558",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-10T03:35:57Z",
+      "side": 1,
+      "message": "Demo:\nhttps://weiweilin-0-dot-luci-milo.appspot.com/ui/p/turquoise/builders/global.try/smart_display_eng_arrested.astro-release/b8853258963635341344/test-results?q\u003dExactID%3Afuchsia-pkg%3A%2F%2Ffuchsia.com%2Ffactory-reset-tests%23meta%2Ffactory-reset-tests.cmx+\u0026clean\u003d\n",
+      "revId": "3843d6de8290fe8d22050fde777776e7ced43215",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
