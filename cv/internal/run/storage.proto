@@ -71,3 +71,27 @@ message Trigger {
   // Gerrit account ID. Always known.
   int64 gerrit_account_id = 4;
 }
+
+// Submission describes the current state of Run submission.
+message Submission {
+  // The deadline for the current submission attempt.
+  //
+  // If the deadline is not set or has already expired, a RunManager task
+  // can claim the exclusive privilege by setting the deadline to a future
+  // timestamp (generally, end of task deadline).
+  google.protobuf.Timestamp deadline = 1;
+  // Number of times this submission have been attempted.
+  //
+  // Fail the submission if it exceeds the max attempt count.
+  int32 attempt_count = 2;
+  // IDs of all CLs that should be submitted in this submission.
+  //
+  // Must be ordered in submission order.
+  repeated int64 cls = 3;
+  // IDs of all CLs that have been submitted successfully already.
+  repeated int64 submitted_cls = 4;
+  // If True, Tree is currently in open state.
+  bool tree_open = 10;
+  // The timestamp when the Tree status was last fetched.
+  google.protobuf.Timestamp last_tree_check_time = 11;
+}
