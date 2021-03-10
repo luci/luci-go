@@ -81,6 +81,7 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 	if req.GetRun().GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "empty RunID")
 	}
+	logging.Debugf(ctx, "ReportVerifiedRun(key %q, CV ID %q)", req.GetRun().GetAttempt().GetKey(), req.GetRun().GetId())
 	// TODO(yiwzhang): rename to CQDVerifiedRun and stores additional fields in
 	// in the input request.
 	if err = saveFinishedRun(ctx, req.GetRun()); err != nil {
@@ -104,6 +105,7 @@ func (m *MigrationServer) ReportFinishedRun(ctx context.Context, req *migrationp
 	if k := req.GetRun().GetAttempt().GetKey(); k == "" {
 		return nil, appstatus.Error(codes.InvalidArgument, "attempt key is required")
 	}
+	logging.Debugf(ctx, "ReportFinishedRun(key %q, CV ID %q)", req.GetRun().GetAttempt().GetKey(), req.GetRun().GetId())
 	if err = saveFinishedCQDRun(ctx, req.GetRun()); err != nil {
 		return nil, err
 	}
