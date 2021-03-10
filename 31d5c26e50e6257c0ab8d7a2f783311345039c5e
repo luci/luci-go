@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1c5d26a_1eb1c283",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-10T20:49:42Z",
+      "side": 1,
+      "message": "PTAL\n\nTested by running:\n\n  ./luci-auth context \\\n    -act-as-service-account playground@vadimsh-playground.iam.gserviceaccount.com \\\n    -- ./luci-auth info -use-id-token -audience example.com\n\nWhich printed:\n\n  Logged in as playground@vadimsh-playground.iam.gserviceaccount.com.\n\n  ID token details:\n    Issuer: https://accounts.google.com\n    Subject: ....\n    Audience: example.com",
+      "revId": "31d5c26e50e6257c0ab8d7a2f783311345039c5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
