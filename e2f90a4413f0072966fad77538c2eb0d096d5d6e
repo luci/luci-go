@@ -110,6 +110,30 @@
       },
       "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6631c2a8_a11010b0",
+        "filename": "resultdb/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-10T20:49:16Z",
+      "side": 1,
+      "message": "All Linux users will have to install the emulators, unless one installed the gcloud sdk manually w/o the system\u0027s packaging tool, such as apt-get/yum/emerge/etc.\n\n```\n$ gcloud emulators spanner start\nYou cannot perform this action because the Cloud SDK component manager\nis disabled for this installation. You can run the following command\nto achieve the same result for this installation:\n\nsudo apt-get install google-cloud-sdk-spanner-emulator\n```\n\nI guess that it will likely show instructions of or links to the docker with spanner emulator, if the command was run in Mac or Windows.",
+      "parentUuid": "979d6225_bf502ed7",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 71
+      },
+      "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
