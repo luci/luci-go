@@ -1248,6 +1248,60 @@ func TestScheduleBuild(t *testing.T) {
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
+
+				Convey("request ID", func() {
+					req := &pb.ScheduleBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						RequestId: "id",
+					}
+					So(datastore.Put(ctx, &model.Builder{
+						Parent: model.BucketKey(ctx, "project", "bucket"),
+						ID:     "builder",
+					}), ShouldBeNil)
+
+					Convey("deduplication", func() {
+						So(datastore.Put(ctx, &model.RequestID{
+							ID: "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
+						}), ShouldBeNil)
+
+						rsp, err := srv.ScheduleBuild(ctx, req)
+						So(err, ShouldErrLike, "request ID reuse")
+						So(rsp, ShouldBeNil)
+						So(sch.Tasks(), ShouldBeEmpty)
+					})
+
+					Convey("ok", func() {
+						rsp, err := srv.ScheduleBuild(ctx, req)
+						So(err, ShouldBeNil)
+						So(rsp, ShouldResembleProto, &pb.Build{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+							Id:         9021868963221667745,
+							Input:      &pb.Build_Input{},
+						})
+						So(sch.Tasks(), ShouldHaveLength, 1)
+
+						r := &model.RequestID{
+							ID: "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
+						}
+						So(datastore.Get(ctx, r), ShouldBeNil)
+						So(r, ShouldResemble, &model.RequestID{
+							ID:         "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
+							BuildID:    9021868963221667745,
+							CreatedBy:  "user:caller@example.com",
+							CreateTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+							RequestID:  "id",
+						})
+					})
+				})
 			})
 		})
 
