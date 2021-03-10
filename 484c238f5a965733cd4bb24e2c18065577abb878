@@ -33,6 +33,24 @@
       "message": "Come to think of it, we probably shouldn\u0027t schedule the build and then return \"not implemented\". So I will have to change this when we try to release schedule. But it\u0027s fine for now since schedule traffic hits python directly so this code is never used.",
       "revId": "484c238f5a965733cd4bb24e2c18065577abb878",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86093fb9_db06c7a3",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T22:05:30Z",
+      "side": 1,
+      "message": "Good point!",
+      "parentUuid": "4c6fc2d5_ed3fd6f3",
+      "revId": "484c238f5a965733cd4bb24e2c18065577abb878",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
