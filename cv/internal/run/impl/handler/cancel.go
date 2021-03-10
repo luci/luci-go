@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -35,11 +36,13 @@ func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (eventbox.SideEffec
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == run.Status_FINALIZING:
-		logging.Debugf(ctx, "can't cancel run as it is currently finalizing")
-		return nil, rs, nil
+	case status == run.Status_SUBMITTING:
+		logging.Debugf(ctx, "Run is currently submitting, try cancel after 10 seconds")
+		return func(ctx context.Context) error {
+			return run.Cancel(ctx, rs.Run.ID, 10*time.Second)
+		}, rs, nil
 	case run.IsEnded(status):
-		logging.Debugf(ctx, "can't cancel an already ended run")
+		logging.Debugf(ctx, "skip cancellation because Run has already ended.")
 		return nil, rs, nil
 	}
 
