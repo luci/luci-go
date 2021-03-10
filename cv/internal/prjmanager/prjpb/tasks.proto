@@ -20,6 +20,7 @@ option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 import "go.chromium.org/luci/cv/internal/run/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
 
@@ -69,6 +70,9 @@ message PurgeCLTask {
     }
 
     message InvalidDeps {
+      repeated cv.changelist.Dep unwatched = 1;
+      repeated cv.changelist.Dep wrong_config_group = 2;
+      repeated cv.changelist.Dep incompat_mode = 3;
     }
   }
 
