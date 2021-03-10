@@ -298,7 +298,7 @@ func TestCLsTriage(t *testing.T) {
 						purgeReason: &prjpb.PurgeCLTask_Reason{
 							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
 								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
-									// TODO(tandrii): fill in the cause.
+									IncompatMode: sup.PCL(3).GetDeps(),
 								},
 							},
 						},
@@ -308,7 +308,7 @@ func TestCLsTriage(t *testing.T) {
 						},
 					},
 				})
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: struct{}{}})
+				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: {}})
 			})
 
 			Convey("CL1 submitted but still with Run, CL2 CQ+1 is OK, CL3 CQ+2 is purged", func() {
@@ -334,7 +334,7 @@ func TestCLsTriage(t *testing.T) {
 						purgeReason: &prjpb.PurgeCLTask_Reason{
 							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
 								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
-									// TODO(tandrii): fill in the cause.
+									IncompatMode: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
 								},
 							},
 						},
@@ -345,7 +345,7 @@ func TestCLsTriage(t *testing.T) {
 						},
 					},
 				})
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: struct{}{}})
+				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: {}})
 			})
 		})
 
@@ -406,7 +406,7 @@ func TestCLsTriage(t *testing.T) {
 						purgeReason: &prjpb.PurgeCLTask_Reason{
 							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
 								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
-									// TODO(tandrii): fill in the cause.
+									IncompatMode: sup.PCL(3).GetDeps(),
 								},
 							},
 						},
@@ -416,13 +416,13 @@ func TestCLsTriage(t *testing.T) {
 						},
 					},
 				})
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: struct{}{}})
+				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: {}})
 			})
 
 			Convey("Dependencies in diff config groups are not allowed", func() {
-				sup.PCL(1).ConfigGroupIndexes = []int32{combIdx}
-				sup.PCL(2).ConfigGroupIndexes = []int32{anotherIdx}
-				sup.PCL(3).ConfigGroupIndexes = []int32{combIdx}
+				sup.PCL(1).ConfigGroupIndexes = []int32{combIdx}    // depends on 2
+				sup.PCL(2).ConfigGroupIndexes = []int32{anotherIdx} // depends on 1
+				sup.PCL(3).ConfigGroupIndexes = []int32{combIdx}    // depends on 1(OK) and 2.
 				a := triageCLs(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				So(a.reverseDeps, ShouldBeEmpty)
 				for _, info := range a.cls {
@@ -430,12 +430,12 @@ func TestCLsTriage(t *testing.T) {
 					So(info.purgeReason, ShouldResembleProto, &prjpb.PurgeCLTask_Reason{
 						Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
 							InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
-								// TODO(tandrii): fill in the cause.
+								WrongConfigGroup: info.triagedCL.deps.wrongConfigGroup,
 							},
 						},
 					})
 				}
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{1: struct{}{}, 2: struct{}{}, 3: struct{}{}})
+				So(a.toPurge, ShouldResemble, map[int64]struct{}{1: {}, 2: {}, 3: {}})
 
 				Convey("unless dependency is already submitted", func() {
 					sup.PCL(2).Trigger = nil

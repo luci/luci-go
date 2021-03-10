@@ -82,6 +82,21 @@ func (t *triagedDeps) OK() bool {
 	return true
 }
 
+func (t *triagedDeps) makePurgeReason() *prjpb.PurgeCLTask_Reason {
+	if t.OK() {
+		panic("makePurgeReason must be called only iff !OK")
+	}
+	return &prjpb.PurgeCLTask_Reason{
+		Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
+			InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+				Unwatched:        t.unwatched,
+				IncompatMode:     t.incompatMode,
+				WrongConfigGroup: t.wrongConfigGroup,
+			},
+		},
+	}
+}
+
 // categorize adds dep to the applicable slice (if any).
 //
 // pcl is dependent PCL, which must be triggered.

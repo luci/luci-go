@@ -201,13 +201,7 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 		if info.deps = a.triageDeps(pcl, cgIndexes[0]); info.deps.OK() {
 			info.ready = true
 		} else {
-			info.purgeReason = &prjpb.PurgeCLTask_Reason{
-				Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
-					InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
-						// TODO: fill in the cause.
-					},
-				},
-			}
+			info.purgeReason = info.deps.makePurgeReason()
 		}
 	default:
 		cgNames := make([]string, len(cgIndexes))

@@ -71,6 +71,20 @@ func (e ExternalID) ParseGobID() (host string, change int64, err error) {
 	return
 }
 
+// URL returns URL to the CL.
+func (e ExternalID) URL() (string, error) {
+	parts := strings.SplitN(string(e), "/", 2)
+	if len(parts) != 2 {
+		return "", errors.Reason("invalid ExternalID: %q", e).Err()
+	}
+	switch kind, remaining := parts[0], parts[1]; kind {
+	case "gerrit":
+		return "https://" + remaining, nil
+	default:
+		return "", errors.Reason("unrecognized ExternalID: %q", e).Err()
+	}
+}
+
 // Notify is called with the updated CL in a transaction context after
 // CL is successfully created/updated.
 type Notify func(ctx context.Context, cl *CL) error
@@ -117,6 +131,9 @@ type CL struct {
 	// It's updated transactionally with the Run being modified.
 	IncompleteRuns common.RunIDs `gae:",noindex"`
 }
+
+// URL returns URL to the CL.
+func (cl *CL) URL() (string, error) { return cl.ExternalID.URL() }
 
 // Mutate mutates the CL by executing `mut`.
 //

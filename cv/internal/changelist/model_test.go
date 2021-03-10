@@ -49,9 +49,14 @@ func TestCL(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		eid, err := GobID("x-review.example.com", 12)
+		So(err, ShouldBeNil)
+
 		Convey("Gerrit ExternalID", func() {
+			u, err := eid.URL()
 			So(err, ShouldBeNil)
-			_, err := GobID("https://example.com", 12)
+			So(u, ShouldEqual, "https://x-review.example.com/12")
+
+			_, err = GobID("https://example.com", 12)
 			So(err, ShouldErrLike, "invalid host")
 		})
 
