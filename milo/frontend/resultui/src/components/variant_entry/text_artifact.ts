@@ -31,7 +31,7 @@ export class TextArtifactElement extends MobxLitElement {
   @observable.ref artifacts!: Map<string, Artifact>;
 
   @computed
-  private get fetchUrl(): string|undefined {
+  private get fetchUrl(): string | undefined {
     const artifact = this.artifacts.get((this.isInvLevelArtifact ? 'inv-level/' : '') + this.artifactID);
     return artifact ? artifact.fetchUrl : '';
   }
@@ -57,8 +57,18 @@ export class TextArtifactElement extends MobxLitElement {
       </div>
       `;
     }
+
+    if (this.content === '') {
+      const label = this.isInvLevelArtifact ? 'Inv-level artifact' : 'Artifact';
+      return html`
+        <div>
+          ${label}: <i>${this.artifactID}</i> is empty.
+        </div>
+      `;
+    }
+
     return html`
-        <pre>${this.content}</pre>
+      <pre>${this.content}</pre>
     `;
   }
 
