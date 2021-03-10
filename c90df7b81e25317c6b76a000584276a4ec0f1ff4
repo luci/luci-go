@@ -69,6 +69,24 @@
       "parentUuid": "a77d7c66_55ef1bf8",
       "revId": "c90df7b81e25317c6b76a000584276a4ec0f1ff4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e36bafc2_2ba067ea",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-10T02:04:02Z",
+      "side": 1,
+      "message": "two negations. Do you mean \"if you have opted out...\" ?",
+      "parentUuid": "006d5ae0_9b416376",
+      "revId": "c90df7b81e25317c6b76a000584276a4ec0f1ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
