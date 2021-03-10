@@ -100,6 +100,7 @@ func purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	if err != nil {
 		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
 	}
+	logging.Debugf(ctx, "procceding to purge CL due to\n%s", msg)
 	err = cancel.Cancel(ctx, cancel.Input{
 		LUCIProject:      task.GetLuciProject(),
 		CL:               cl,
@@ -112,6 +113,7 @@ func purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	})
 	switch {
 	case err == nil:
+		logging.Debugf(ctx, "purging done")
 	case cancel.ErrPreconditionFailedTag.In(err):
 		logging.Debugf(ctx, "cancel is not necessary: %s", err)
 	case cancel.ErrPermanentTag.In(err):

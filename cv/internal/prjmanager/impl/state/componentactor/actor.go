@@ -78,7 +78,14 @@ func New(c *prjpb.Component, s Supporter) *Actor {
 // NextActionTime implements componentActor.
 func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, error) {
 	a.triageCLs()
-	return a.stageNewRuns(ctx)
+	when, err := a.stageNewRuns(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if len(a.toPurge) > 0 {
+		when = now
+	}
+	return when, nil
 }
 
 // Act implements state.componentActor.
@@ -92,10 +99,18 @@ func (a *Actor) Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask
 	case len(newPruns) > 0:
 		c.Pruns, _ = c.COWPRuns(nil, newPruns)
 	}
-
-	// TODO: cancelations
-	// TODO: purges
-	return c, nil, nil
+	// TODO(tandrii): cancelations
+	var pts []*prjpb.PurgeCLTask
+	if len(a.toPurge) > 0 {
+		pts = make([]*prjpb.PurgeCLTask, 0, len(a.toPurge))
+		for clid := range a.toPurge {
+			pts = append(pts, &prjpb.PurgeCLTask{
+				Reason:    a.cls[clid].purgeReason,
+				PurgingCl: &prjpb.PurgingCL{Clid: clid},
+			})
+		}
+	}
+	return c, pts, nil
 }
 
 func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
