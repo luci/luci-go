@@ -32,16 +32,22 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/appengine/tq"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth/realms"
 
+	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -146,14 +152,12 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 func defaultTags(c context.Context, ctl task.Controller, cfg *messages.BuildbucketTask) map[string]string {
 	if c != nil {
 		return map[string]string{
-			"builder":                 cfg.Builder,
 			"scheduler_invocation_id": fmt.Sprintf("%d", ctl.InvocationID()),
 			"scheduler_job_id":        ctl.JobID(),
 			"user_agent":              info.AppID(c),
 		}
 	}
 	return map[string]string{
-		"builder":                 "",
 		"scheduler_invocation_id": "",
 		"scheduler_job_id":        "",
 		"user_agent":              "",
@@ -187,9 +191,9 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.BuildbucketTask) // already validated
 	req := ctl.Request()
 
-	// Validate readiness for v2 Buildbucket API. It should always pass, since
-	// the config has been validated already.
-	_, err := builderID(cfg, ctl.RealmID())
+	// Generate full builder ID from the config. It should succeed since the
+	// config has been validated already.
+	bid, err := builderID(cfg, ctl.RealmID())
 	if err != nil {
 		return errors.Annotate(err, "unexpected bad bucket name in the task config").Err()
 	}
@@ -213,31 +217,51 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	}
 
 	// TODO(crbug.com/981945, crbug.com/939368): re-enable in chromium
-	if !strings.HasPrefix(cfg.Bucket, "luci.chromium.") && !strings.HasPrefix(cfg.Bucket, "luci.chrome.") {
+	if bid.Project != "chromium" && bid.Project != "chrome" {
 		var err error
 		if props.Fields["$recipe_engine/scheduler"], err = schedulerProperty(c, ctl); err != nil {
 			return fmt.Errorf("failed to generate scheduled property - %s", err)
 		}
 	}
 
-	// Prepare JSON blob for Buildbucket. encoding/json and jsonpb doesn't
-	// interoperate with each other, so stick with jsonpb for this.
-	paramsJSON, err := (&jsonpb.Marshaler{}).MarshalToString(&structpb.Struct{
-		Fields: map[string]*structpb.Value{
-			"builder_name": strProtoValue(cfg.Builder),
-			"properties": {
-				Kind: &structpb.Value_StructValue{
-					StructValue: props,
-				},
-			},
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to marshal parameters JSON - %s", err)
+	// Extract GitilesCommit from the most recent trigger, if possible.
+	var commit *bbpb.GitilesCommit
+	if last := req.LastTrigger(); last != nil {
+		if gt := last.GetGitiles(); gt != nil {
+			commit, err = triggerToCommit(gt)
+			if err != nil {
+				return errors.Annotate(err, "failed to prepare gitiles_commit").Err()
+			}
+		}
 	}
 
-	// Make sure Buildbucket can publish PubSub messages, grab token that would
-	// identify this invocation when receiving PubSub notifications.
+	// Process properties and tags that were used in Buildbucket v1 API, but now
+	// are forbidden in Buildbucket v2 API in favor of GitilesCommit. Some LUCI
+	// Scheduler users may still pass them via EmitTriggers.
+	commitFromProps, poppedTags, err := popCommitFromProps(props, &tags)
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "bad properties").Err()
+	case commit == nil && commitFromProps != nil:
+		ctl.DebugLog("crbug.com/1182002: Reconstructed gitiles commit from properties")
+		commit = commitFromProps
+	case commit != nil && commitFromProps != nil:
+		if proto.Equal(commit, commitFromProps) {
+			ctl.DebugLog("Popped gitiles commit info from properties and tags")
+		} else {
+			ctl.DebugLog("crbug.com/1182002: Gitiles commit from triggers doesn't match the one from properties")
+			ctl.DebugLog("From triggers:\n%s", protoToJSON(commit))
+			ctl.DebugLog("From properties:\n%s", protoToJSON(commitFromProps))
+			ctl.DebugLog("Using the one from properties")
+			commit = commitFromProps // to match pre-v2 logic
+		}
+	}
+	for _, t := range poppedTags {
+		ctl.DebugLog("Popped a tag as redundant: %s", t)
+	}
+
+	// Make sure Buildbucket can publish PubSub messages, grab the token that
+	// would identify this invocation when receiving PubSub notifications.
 	serverURL := makeServerURL(cfg.Server)
 	ctl.DebugLog("Preparing PubSub topic for %q", serverURL)
 	topic, authToken, err := ctl.PrepareTopic(c, serverURL)
@@ -248,71 +272,63 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.DebugLog("PubSub topic is %q", topic)
 
 	// Prepare the request.
-	request := bbv1.LegacyApiPutRequestMessage{
-		Bucket:            cfg.Bucket,
-		ClientOperationId: fmt.Sprintf("%d", ctl.InvocationID()),
-		ParametersJson:    paramsJSON,
-		Tags:              tags,
-		PubsubCallback: &bbv1.LegacyApiPubSubCallbackMessage{
-			AuthToken: "...", // set a bit later, after printing this struct
-			Topic:     topic,
+	request := &bbpb.ScheduleBuildRequest{
+		RequestId:     fmt.Sprintf("%d", ctl.InvocationID()),
+		Builder:       bid,
+		Properties:    props,
+		GitilesCommit: commit,
+		Tags:          toBuildbucketPairs(tags),
+		Notify: &bbpb.NotificationConfig{
+			PubsubTopic: topic,
+			UserData:    nil, // set a bit later, after printing this struct
 		},
 	}
 
-	// Serialize for debug log without auth token.
-	blob, err := json.MarshalIndent(&request, "", "  ")
-	if err != nil {
-		return err
-	}
-	ctl.DebugLog("Buildbucket request:\n%s", blob)
-	request.PubsubCallback.AuthToken = authToken // can put the token now
+	// Serialize for debug log without PubSub auth token.
+	ctl.DebugLog("Buildbucket request:\n%s", protoToJSON(request))
+	request.Notify.UserData = []byte(authToken) // can put the token now
 
 	// The next call may take a while. Dump the current log to the datastore.
 	// Ignore errors here, it is best effort attempt to update the log.
 	ctl.Save(c)
 
 	// Send the request.
-	var resp *bbv1.LegacyApiBuildResponseMessage
-	err = m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
-		resp, err = bb.Put(&request).Context(c).Do()
+	var build *bbpb.Build
+	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbpb.BuildsClient) (err error) {
+		build, err = bb.ScheduleBuild(ctx, request)
 		return
 	})
 	if err != nil {
-		ctl.DebugLog("Failed to add buildbucket build - %s", err)
-		return utils.WrapAPIError(err)
+		ctl.DebugLog("Failed to schedule Buildbucket build - %s", err)
+		return grpcutil.WrapIfTransient(err)
 	}
 
-	// Dump response in full to the debug log. It doesn't contain any secrets.
-	blob, err = json.MarshalIndent(resp, "", "  ")
-	if err != nil {
-		return err
-	}
-	ctl.DebugLog("Buildbucket response:\n%s", blob)
+	// Dump the response in full to the debug log. It doesn't contain any secrets.
+	ctl.DebugLog("Scheduled build:\n%s", protoToJSON(build))
 
-	if resp.Error != nil {
-		ctl.DebugLog("Buildbucket returned error %q: %s", resp.Error.Reason, resp.Error.Message)
-		return fmt.Errorf("buildbucket error %q - %s", resp.Error.Reason, resp.Error.Message)
-	}
-	if resp.Build == nil {
-		ctl.DebugLog("Buildbucket response is not valid, missing 'build'")
-		return fmt.Errorf("bad buildbucket response, no 'build' field")
-	}
-
-	// Save build id in the invocation, will be used later to make RPCs to
-	// Buildbucket.
-	if err := writeTaskData(ctl, &taskData{BuildID: resp.Build.Id}); err != nil {
+	// Save the build ID in the invocation, will be used later to make RPCs to
+	// Buildbucket to check build's status.
+	if err := writeTaskData(ctl, &taskData{BuildID: build.Id}); err != nil {
 		return err
 	}
 
 	// Successfully launched.
 	ctl.State().Status = task.StatusRunning
-	ctl.State().ViewURL = resp.Build.Url
+	ctl.State().ViewURL = fmt.Sprintf("%s/build/%d", serverURL, build.Id)
 	ctl.DebugLog("Task URL: %s", ctl.State().ViewURL)
 
-	// Maybe finished already? It can happen if we are retrying a call with same
-	// ClientOperationId as a finished one.
-	if resp.Build.Status == "COMPLETED" {
-		m.handleBuildResult(c, ctl, resp.Build)
+	// Maybe finished already? It can happen if we are retrying the call with the
+	// same RequestId as a finished one.
+	switch build.Status {
+	case bbpb.Status_SCHEDULED, bbpb.Status_STARTED:
+		// do nothing, the invocation is still active
+	case bbpb.Status_SUCCESS:
+		ctl.State().Status = task.StatusSucceeded
+	case bbpb.Status_FAILURE, bbpb.Status_INFRA_FAILURE, bbpb.Status_CANCELED:
+		ctl.State().Status = task.StatusFailed
+	default:
+		ctl.DebugLog("Unexpected Build status %v, marking the invocation as failed", build.Status)
+		ctl.State().Status = task.StatusFailed
 	}
 
 	// This will schedule status check if the task is actually running.
@@ -347,7 +363,7 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 	}
 
 	// Ask Buildbucket to kill this build.
-	return utils.WrapAPIError(m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) error {
+	return utils.WrapAPIError(m.withBuildbucketV1(c, ctl, func(c context.Context, bb *bbv1.Service) error {
 		_, err := bb.Cancel(taskData.BuildID, &bbv1.LegacyApiCancelRequestBodyMessage{}).Context(c).Do()
 		return err
 	}))
@@ -404,17 +420,18 @@ func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnl
 
 func makeServerURL(s string) string {
 	if strings.HasPrefix(s, "http://") {
-		// Used only in tests where we hardcode http in cfg.Server because local server is http not https.
+		// Used only in tests where we hardcode http in cfg.Server because local
+		// server is http not https.
 		return s
 	}
 	return "https://" + s
 }
 
-// withBuildbucket makes a Buildbucket API client and calls the callback.
+// withBuildbucketV1 makes a Buildbucket v1 API client and calls the callback.
 //
 // The callback runs under a new context with 1 min deadline. Make sure to pass
 // it to call RPCs by using call.Context(c).
-func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb func(context.Context, *bbv1.Service) error) error {
+func (m TaskManager) withBuildbucketV1(c context.Context, ctl task.Controller, cb func(context.Context, *bbv1.Service) error) error {
 	c, cancel := clock.WithTimeout(c, time.Minute)
 	defer cancel()
 
@@ -431,6 +448,33 @@ func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb 
 	service.BasePath = makeServerURL(cfg.Server) + "/_ah/api/buildbucket/v1/"
 
 	return cb(c, service)
+}
+
+// withBuildbucket makes a Buildbucket Builds API client and calls the callback.
+//
+// The callback runs under a new context with 1 min deadline.
+func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb func(context.Context, bbpb.BuildsClient) error) error {
+	c, cancel := clock.WithTimeout(c, time.Minute)
+	defer cancel()
+
+	prpcClient := &prpc.Client{Options: prpc.DefaultOptions()}
+	var err error
+	if prpcClient.C, err = ctl.GetClient(c); err != nil {
+		return err
+	}
+
+	cfg := ctl.Task().(*messages.BuildbucketTask)
+	switch {
+	case strings.HasPrefix(cfg.Server, "https://"):
+		prpcClient.Host = strings.TrimPrefix(cfg.Server, "https://")
+	case strings.HasPrefix(cfg.Server, "http://"):
+		prpcClient.Host = strings.TrimPrefix(cfg.Server, "http://")
+		prpcClient.Options.Insecure = true
+	default:
+		prpcClient.Host = cfg.Server
+	}
+
+	return cb(c, bbpb.NewBuildsClient(prpcClient))
 }
 
 // checkBuildStatusLater schedules a delayed call to checkBuildStatus if the
@@ -466,7 +510,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 
 	// Fetch build result from buildbucket.
 	var resp *bbv1.LegacyApiBuildResponseMessage
-	err = m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
+	err = m.withBuildbucketV1(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
 		resp, err = bb.Get(taskData.BuildID).Context(c).Do()
 		return
 	})
@@ -499,7 +543,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 		return fmt.Errorf("bad buildbucket response, no 'build' field")
 	}
 
-	m.handleBuildResult(c, ctl, resp.Build)
+	m.handleBuildResultV1(c, ctl, resp.Build)
 	if ctl.State().Status.Final() {
 		ctl.DebugLog("Buildbucket build:\n%s", blob)
 	}
@@ -507,9 +551,9 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	return nil
 }
 
-// handleBuildResult processes buildbucket results message updating the state
+// handleBuildResultV1 processes buildbucket results message updating the state
 // of the invocation.
-func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *bbv1.LegacyApiCommonBuildMessage) {
+func (m TaskManager) handleBuildResultV1(c context.Context, ctl task.Controller, r *bbv1.LegacyApiCommonBuildMessage) {
 	ctl.DebugLog(
 		"Build %d: status %q, result %q, failure_reason %q, cancelation_reason %q",
 		r.Id, r.Status, r.Result, r.FailureReason, r.CancelationReason)
@@ -527,7 +571,7 @@ func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r
 //
 // Returns an error if some fields are invalid or there's not enough
 // information.
-func builderID(cfg *messages.BuildbucketTask, realmID string) (*buildbucketpb.BuilderID, error) {
+func builderID(cfg *messages.BuildbucketTask, realmID string) (*bbpb.BuilderID, error) {
 	var project, bucket string
 
 	switch {
@@ -561,11 +605,92 @@ func builderID(cfg *messages.BuildbucketTask, realmID string) (*buildbucketpb.Bu
 		return nil, fmt.Errorf("'builder' field is required")
 	}
 
-	return &buildbucketpb.BuilderID{
+	return &bbpb.BuilderID{
 		Project: project,
 		Bucket:  bucket,
 		Builder: cfg.Builder,
 	}, nil
+}
+
+// triggerToCommit converts a gitiles trigger to a buildbucket gitiles commit.
+func triggerToCommit(t *scheduler.GitilesTrigger) (*bbpb.GitilesCommit, error) {
+	repo, err := gitiles.NormalizeRepoURL(t.Repo, false)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad repo URL %q", t.Repo).Err()
+	}
+	return &bbpb.GitilesCommit{
+		Host:    repo.Host,
+		Project: strings.TrimPrefix(repo.Path, "/"),
+		Id:      t.Revision,
+		Ref:     t.Ref,
+	}, nil
+}
+
+// popCommitFromProps tries to reconstruct GitilesCommit from properties.
+//
+// Removes gitiles commit information from properties and tags (modifying them
+// in-place), since Buildbucket v2 refuses to accept it there.
+//
+// Returns the extracted commit (or nil) and removed tags (if any).
+func popCommitFromProps(props *structpb.Struct, tags *[]string) (commit *bbpb.GitilesCommit, popped []string, err error) {
+	pop := func(key string) string {
+		if field := props.Fields[key]; field != nil {
+			delete(props.Fields, key)
+			return field.GetStringValue()
+		}
+		return ""
+	}
+
+	ref := pop("branch")
+	if ref != "" && !strings.HasPrefix(ref, "refs/") {
+		ref = "refs/heads/" + ref
+	}
+
+	commit = &bbpb.GitilesCommit{
+		Ref: ref,
+		Id:  pop("revision"),
+	}
+	if repo := pop("repository"); repo != "" {
+		repoURL, err := gitiles.NormalizeRepoURL(repo, false)
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "bad 'repository'").Err()
+		}
+		commit.Host = repoURL.Host
+		commit.Project = strings.TrimPrefix(repoURL.Path, "/")
+	}
+
+	// Can survive without `ref`, require everything else.
+	if commit.Host == "" || commit.Project == "" || commit.Id == "" {
+		return nil, nil, nil
+	}
+
+	// Tags that match the reconstructed commit.
+	t1 := strpair.Format(bbv1.TagBuildSet, protoutil.GitilesBuildSet(commit))
+	t2 := strpair.Format(bbv1.TagBuildSet, "commit/git/"+commit.Id)
+	t3 := strpair.Format("gitiles_ref", commit.Ref)
+
+	// Pop them from the tag list, Buildbucket v2 API doesn't need them.
+	kept := (*tags)[:0]
+	for _, tag := range *tags {
+		if tag == t1 || tag == t2 || tag == t3 {
+			popped = append(popped, tag)
+		} else {
+			kept = append(kept, tag)
+		}
+	}
+	*tags = kept
+
+	return
+}
+
+// toBuildbucketPairs converts a list of "key:value" to a list of StringPair.
+func toBuildbucketPairs(s []string) []*bbpb.StringPair {
+	out := make([]*bbpb.StringPair, len(s))
+	for i, kv := range s {
+		k, v := strpair.Parse(kv)
+		out[i] = &bbpb.StringPair{Key: k, Value: v}
+	}
+	return out
 }
 
 func strProtoValue(s string) *structpb.Value {
@@ -574,6 +699,15 @@ func strProtoValue(s string) *structpb.Value {
 			StringValue: s,
 		},
 	}
+}
+
+// protoToJSON is used to pretty-print proto messages in debug logs.
+func protoToJSON(p proto.Message) string {
+	var buf bytes.Buffer
+	if err := (&jsonpb.Marshaler{Indent: "  "}).Marshal(&buf, p); err != nil {
+		return fmt.Sprintf("<failed to marshal proto to JSON: %s>", err)
+	}
+	return buf.String()
 }
 
 // schedulerProperty returns "$recipe_engine/scheduler" property value.
