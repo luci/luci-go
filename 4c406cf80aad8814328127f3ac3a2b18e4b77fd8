@@ -39,6 +39,53 @@
       },
       "revId": "4c406cf80aad8814328127f3ac3a2b18e4b77fd8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d9fbd52_5492d2cf",
+        "filename": "cv/internal/run/impl/handler/cancel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T18:13:13Z",
+      "side": 1,
+      "message": "ha, since I was reviewing your CL  bottom -\u003e up,\nI\u0027ve just wrote similar concern about CLUpdated event and suggested to either not consume event or record event for later processing inside RM.state.\n\nWhat you do here is #3 approach -- consume \u0026\u0026 but re-insert the same event.\nThis has some downsides:\n * more DS mutation churn\n * creates more kick/poke RM tasks\n   -\u003e can be addressed by using eventbox.Add directly\nbut major upside:\n * it\u0027s simpler than 2 other alternatives.\n\nI don\u0027t know which one is better. I\u0027m OK starting with this one.",
+      "parentUuid": "38c5cdb5_aca19fdf",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 42,
+        "endChar": 3
+      },
+      "revId": "4c406cf80aad8814328127f3ac3a2b18e4b77fd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ef58c37_1c5bcf0a",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T18:13:13Z",
+      "side": 1,
+      "message": "Unfortunately, it should **iff** run goes back to non-final state.\nBut this code currently consumes the event s.t. it\u0027ll be forever forgotten.\n\ne.g. \nt0: CQ+2\n...\nt1  RM task #1: status :\u003d SUBMITTING\nt2  RM task #1: cv \u003d\u003e gerrit.submit() .... (and waits)\nt3 (meanwhile) user changes their mind and removes CQ+2 and/or uploads new patchset, which wins the race against submit RPC.\nt4  poller notices CL is updated -\u003e clupdater saves new spanshot and notifies RM\nt5  RM task #2: processes OnCLUpdated\nt6  RM task #1: gerrit.submit() finally responds with 500.\n\n\u003d\u003e what will Run\u0027s status be and how will RM task #1 set it?\n\n\n\nI suspect the easiest is not **consuming** any CLUpdated event in such a state in RM task #2,\nsuch that at t6, RM task #1 can first, process\u0026consume events which do change SUBMITTING status to WAITING_FOR_SUBMIT, and then process \u0026 consume events to reach CANCELLED.\n\nOr, we can record the unprocessed events in RM\u0027s state and then during next ProcessBatch triage union of (new events, RM.state.events). But this may be more work (i\u0027m not sure)\n\nIf you agree with above, then I\u0027m OK with a TODO in this CL.\n\n\nUpdate: let\u0027s continue discussing above.",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 21
+      },
+      "revId": "4c406cf80aad8814328127f3ac3a2b18e4b77fd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
