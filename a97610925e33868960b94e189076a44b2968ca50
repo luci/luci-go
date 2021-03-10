@@ -84,6 +84,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6c5866b1_e75367c7",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 643,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T19:53:21Z",
+      "side": 1,
+      "message": "Beacuse\n1. BB V1 api handler, seeing \"branch:master\", auto-upgrades it to refs/heads/master before populating Build.GitilesCommit proto.\n2. BB v2 *may* abort with INVALID ARGUMENT if GitilesCommit.ref doesn\u0027t start with \"refs/\".\n\nSince I\u0027m not sure about (2), I was asking.",
+      "parentUuid": "f62b883f_74ad207d",
+      "range": {
+        "startLine": 643,
+        "startChar": 7,
+        "endLine": 643,
+        "endChar": 21
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8461f96e_072d59c7",
         "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
         "patchSetId": 2
