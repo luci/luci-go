@@ -43,7 +43,7 @@ func init() {
 		ID:        prjpb.PurgeCLTaskClass,
 		Prototype: &prjpb.PurgeCLTask{},
 		Queue:     "purge-project-cl",
-		Quiet:     true,
+		Quiet:     false,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
 			err := PurgeCL(ctx, task)
