@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "166f858b_40ad8862",
+        "filename": "cv/internal/migration/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-10T01:22:41Z",
+      "side": 1,
+      "message": "Del",
+      "range": {
+        "startLine": 210,
+        "startChar": 47,
+        "endLine": 210,
+        "endChar": 55
+      },
+      "revId": "9e450fd5dd2bb14638bdfa993a004c710cd27fa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
