@@ -16,6 +16,247 @@
       "message": "PTAL",
       "revId": "a97610925e33868960b94e189076a44b2968ca50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2112ffca_289af0d6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "lgtm % minor comments\n\nit\u0027s funny that CQ went through similar transition:\nin CQ it was a bit easier as there were no custom props/tags during *schedule*,\nbut harder because a) skia and b) search has to recognize builds CQ didn\u0027t trigger (and this is why cq is still using search v1 😭)\n\nNow, I am hoping that nobody was abusing custom tags/props to trigger builds with GerritChanges using Scheduler API, as this will break them.",
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1ff7e5ae_ac70a6d8",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 643,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "does bb auto-upgrade `master`  to refs/heads/master?",
+      "range": {
+        "startLine": 643,
+        "startChar": 7,
+        "endLine": 643,
+        "endChar": 21
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8461f96e_072d59c7",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 650,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "this silentely drops malformed repo. Intentional?",
+      "range": {
+        "startLine": 646,
+        "startChar": 0,
+        "endLine": 650,
+        "endChar": 3
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4549d56a_52e1ce2a",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 653,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "nit: host, repo",
+      "range": {
+        "startLine": 653,
+        "startChar": 21,
+        "endLine": 653,
+        "endChar": 25
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4be2bf68_84cf4748",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 687,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "strpair.Parse(kv)",
+      "range": {
+        "startLine": 681,
+        "startChar": 10,
+        "endLine": 687,
+        "endChar": 3
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19b4ba4b_1d57519d",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_fakes_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "Nice!",
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b27150da_cda449cb",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "wdyt about making these:\n \"a:from-task-def\", \"c:from-task-def\"\n?\n\n(I took me 2 minute to figure it out via codesearch while asserting tests)",
+      "range": {
+        "startLine": 152,
+        "startChar": 21,
+        "endLine": 152,
+        "endChar": 35
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "46a679b7_d235e58e",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 452,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "dumb question: this is when someone creates a custom Gitiles trigger via e.g. recipe_engine/scheduler api, right?",
+      "range": {
+        "startLine": 451,
+        "startChar": 0,
+        "endLine": 452,
+        "endChar": 80
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c6293d6_012bfb37",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "imo, worth adding extra tag/prop here, too, even though *currently* they are handled by exact same codepath as the above test./",
+      "range": {
+        "startLine": 511,
+        "startChar": 7,
+        "endLine": 520,
+        "endChar": 9
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ea6dc4f_5ec82ea8",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 536,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "how about asserting the top-level property keys?\n(otherwise, it\u0027s not immediately clear that anything was at all sanitizied, as original trigger is right inside $recipe_engine/scheduler).",
+      "range": {
+        "startLine": 534,
+        "startChar": 3,
+        "endLine": 536,
+        "endChar": 33
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d00f0fd_c5af37c6",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-10T17:03:10Z",
+      "side": 1,
+      "message": "where to do these come from?\nah, i see. Added comment above.",
+      "range": {
+        "startLine": 563,
+        "startChar": 0,
+        "endLine": 564,
+        "endChar": 27
+      },
+      "revId": "a97610925e33868960b94e189076a44b2968ca50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
