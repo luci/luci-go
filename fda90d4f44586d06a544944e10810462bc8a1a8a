@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0a9d88f_9cc6ffe8",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-10T21:04:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4fd95f76_b4bd26bd",
+      "range": {
+        "startLine": 32,
+        "startChar": 15,
+        "endLine": 32,
+        "endChar": 16
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cd2fa679_b00b679c",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-09T23:33:42Z",
       "side": 1,
       "message": "nit: call just once and re-use for L49 (as this isn\u0027t a very cheap op)",
+      "range": {
+        "startLine": 47,
+        "startChar": 74,
+        "endLine": 47,
+        "endChar": 99
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41366c7a_ab8e088f",
+        "filename": "buildbucket/appengine/model/requestid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-10T21:04:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd2fa679_b00b679c",
       "range": {
         "startLine": 47,
         "startChar": 74,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "061266a2_1037c6a7",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-10T21:04:36Z",
+      "side": 1,
+      "message": "I will take a look separately from this CL.",
+      "parentUuid": "1702311b_df72fc9b",
+      "range": {
+        "startLine": 273,
+        "startChar": 0,
+        "endLine": 275,
+        "endChar": 29
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4fa91324_b5c93253",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-03-09T23:33:42Z",
       "side": 1,
       "message": "For future CL where this test doesn\u0027t err: please also add a test where multiple concurrent gorotuines retry ScheduleBuild on *flaky datastore* and ensure they all get the same Build answer at the end.\nThis will provide much better correctness quality than the test here so far.\n\nRobbie et al made it really easy to do, e.g. https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/changelist/model_test.go;l\u003d300?q\u003dchangelist%20model_test.go\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 1266,
+        "startChar": 0,
+        "endLine": 1275,
+        "endChar": 7
+      },
+      "revId": "fda90d4f44586d06a544944e10810462bc8a1a8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4469c55c_a1ef5f0c",
+        "filename": "buildbucket/appengine/rpc/schedule_build_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1275,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-10T21:04:36Z",
+      "side": 1,
+      "message": "You mean emulating a user making a ScheduleBuild call that fails followed by another which dedupes?",
+      "parentUuid": "4fa91324_b5c93253",
       "range": {
         "startLine": 1266,
         "startChar": 0,
