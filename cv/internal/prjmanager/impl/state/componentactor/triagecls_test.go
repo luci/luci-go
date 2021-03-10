@@ -217,8 +217,6 @@ func TestCLsTriage(t *testing.T) {
 					},
 				}
 				So(a.cls[1], shouldResembleTriagedCL, expected)
-				// And CL should in fact be purged.
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{1: {}})
 
 				Convey("not even if inside 1+ Runs, but Run protects from purging", func() {
 					a := triageCLs(&prjpb.Component{
@@ -270,6 +268,7 @@ func TestCLsTriage(t *testing.T) {
 				for _, info := range a.cls {
 					So(info.ready, ShouldBeTrue)
 					So(info.deps.OK(), ShouldBeTrue)
+					So(info.lastTriggered(), ShouldResemble, epoch)
 				}
 			})
 
@@ -308,7 +307,6 @@ func TestCLsTriage(t *testing.T) {
 						},
 					},
 				})
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: {}})
 			})
 
 			Convey("CL1 submitted but still with Run, CL2 CQ+1 is OK, CL3 CQ+2 is purged", func() {
@@ -345,7 +343,6 @@ func TestCLsTriage(t *testing.T) {
 						},
 					},
 				})
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: {}})
 			})
 		})
 
@@ -416,7 +413,6 @@ func TestCLsTriage(t *testing.T) {
 						},
 					},
 				})
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{3: {}})
 			})
 
 			Convey("Dependencies in diff config groups are not allowed", func() {
@@ -435,7 +431,6 @@ func TestCLsTriage(t *testing.T) {
 						},
 					})
 				}
-				So(a.toPurge, ShouldResemble, map[int64]struct{}{1: {}, 2: {}, 3: {}})
 
 				Convey("unless dependency is already submitted", func() {
 					sup.PCL(2).Trigger = nil
@@ -447,7 +442,6 @@ func TestCLsTriage(t *testing.T) {
 						So(info.purgeReason, ShouldBeNil)
 						So(info.deps.submitted, ShouldResembleProto, []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_SOFT}})
 					}
-					So(a.toPurge, ShouldBeEmpty)
 				})
 			})
 		})
