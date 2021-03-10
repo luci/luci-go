@@ -16,6 +16,52 @@
       "message": "PTAL",
       "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "82fd768e_f4f5077d",
+        "filename": "resultdb/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-10T07:22:53Z",
+      "side": 1,
+      "message": "s/t/T",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 1
+      },
+      "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c0a8069_93fa2660",
+        "filename": "resultdb/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-10T07:22:53Z",
+      "side": 1,
+      "message": "Maybe, the following could be better, as it will tell the users what to do to install the emulator, as documented in https://cloud.google.com/spanner/docs/emulator#gcloud_cli.\n\n\n```\n# this will prompt you to download and install the emulator, if you haven\u0027t installed it yet.\n$ gcloud emulators spanner start\n```",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 71
+      },
+      "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
