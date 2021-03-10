@@ -26,11 +26,15 @@ export interface UserConfigs {
     showSucceededSteps: boolean;
     showDebugLogs: boolean;
   };
-  foldedInputPropLines: {
-    [key: string]: boolean;
+  inputPropLineFoldTime: {
+    // the key is the folded line.
+    // the value is the last accessed time.
+    [key: string]: number;
   };
-  foldedOutputPropLines: {
-    [key: string]: boolean;
+  outputPropLineFoldTime: {
+    // the key is the folded line.
+    // the value is the last accessed time.
+    [key: string]: number;
   };
   askForFeedback: boolean;
   defaultBuildPageTabName: string;
@@ -44,8 +48,8 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
     showSucceededSteps: true,
     showDebugLogs: false,
   }),
-  foldedInputPropLines:  Object.freeze({}),
-  foldedOutputPropLines: Object.freeze({}),
+  inputPropLineFoldTime:  Object.freeze({}),
+  outputPropLineFoldTime: Object.freeze({}),
   askForFeedback: true,
   defaultBuildPageTabName: 'build-overview',
 });
@@ -55,13 +59,23 @@ export class UserConfigsStore {
 
   @observable readonly userConfigs = merge<{}, UserConfigs>({}, DEFAULT_USER_CONFIGS);
 
-  constructor() {
-    const storedConfigsStr = window.localStorage.getItem(UserConfigsStore.KEY) || '{}';
+  constructor(private readonly storage = window.localStorage) {
+    const storedConfigsStr = storage.getItem(UserConfigsStore.KEY) || '{}';
     merge(this.userConfigs, JSON.parse(storedConfigsStr));
+
+    const fourWeeksAgo = Date.now() - 2419200000;
+    this.deleteStaleKeys(this.userConfigs.inputPropLineFoldTime, fourWeeksAgo);
+    this.deleteStaleKeys(this.userConfigs.outputPropLineFoldTime, fourWeeksAgo);
+  }
+
+  private deleteStaleKeys(records: {[key: string]: number}, beforeTimestamp: number) {
+    Object.entries(records)
+      .filter(([, timestamp]) => timestamp < beforeTimestamp)
+      .forEach(([key]) => delete records[key]);
   }
 
   save() {
-    window.localStorage.setItem(UserConfigsStore.KEY, JSON.stringify(this.userConfigs));
+    this.storage.setItem(UserConfigsStore.KEY, JSON.stringify(this.userConfigs));
   }
 }
 

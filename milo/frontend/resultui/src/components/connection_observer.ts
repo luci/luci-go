@@ -36,14 +36,14 @@ export class ConnectionObserverElement<T> extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.dispatchEvent(new CustomEvent(
+    this.dispatchEvent(new CustomEvent<ConnectionEventDetail<T>>(
       this.eventType,
       {
         bubbles: true,
         composed: true,
         detail: {
           data: this.data,
-          addDisconnectedEventCB: (cb: (data: T) => void) => {
+          addDisconnectedCB: (cb: (data: T) => void) => {
             this.disconnectedListeners.push(cb);
           },
         },

@@ -26,8 +26,8 @@ const LEFT_RIGHT_ARROW = '\u2194';
 @customElement('milo-property-viewer')
 export class PropertyViewerElement extends MobxLitElement {
   @observable.ref properties!: {[key: string]: unknown};
-  @observable.ref foldedLines!: {[key: string]: boolean};
-  toggleFold = (_line: string, _fold: boolean) => {};
+  @observable.ref propLineFoldTime!: {[key: string]: number};
+  saveFoldTime = () => {};
 
   @computed private get formattedValue() {
     return JSON.stringify(this.properties, undefined, 2);
@@ -68,6 +68,15 @@ export class PropertyViewerElement extends MobxLitElement {
     },
   };
 
+  private toggleFold(line: string, folded: boolean) {
+    if (folded) {
+      this.propLineFoldTime[line] = Date.now();
+    } else {
+      delete this.propLineFoldTime[line];
+    }
+    this.saveFoldTime();
+  }
+
   protected render() {
     return html`
       <milo-code-mirror-editor
@@ -75,20 +84,22 @@ export class PropertyViewerElement extends MobxLitElement {
         .options=${this.editorOptions}
         .onInit=${(editor: CodeMirror.Editor) => {
           this.formattedValueLines.forEach((line, lineIndex) => {
-            if (this.foldedLines[line]) {
+            if (this.propLineFoldTime[line]) {
+              // This triggers folded-root-lvl-prop then this.toggleFold which
+              // updates the timestamp in this.propLineFoldTime[line].
+              // As a result, recently accessed this.propLineFoldTime[line] is
+              // kept fresh.
               editor.foldCode(lineIndex);
             }
           });
         }}
         @folded-root-lvl-prop=${(e: ConnectionEvent<string>) => {
-          if (!this.foldedLines[e.detail.data]) {
-            this.toggleFold(e.detail.data, true);
-          }
+          this.toggleFold(e.detail.data, true);
 
           e.detail.addDisconnectedCB((data) => {
             // If the widget is disconnected because the property
             // viewer is disconnected, ignore.
-            if (this.isConnected && this.foldedLines[data]) {
+            if (this.isConnected) {
               this.toggleFold(data, false);
             }
           });
