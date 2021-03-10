@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b753be67_c196cac3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-10T20:02:28Z",
+      "side": 1,
+      "message": "PTAL.\n\nI\u0027m surprised that I didn\u0027t create the queue until now.",
+      "revId": "487a7b64e94a44b44cdeb5081b9e6793c5d3fb2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
