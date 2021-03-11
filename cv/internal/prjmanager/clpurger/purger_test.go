@@ -136,17 +136,18 @@ func TestPurgeCL(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clAfter.EVersion)
 				assertPMNotified("op-2")
+				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
 		})
 
 		Convey("Even if no purging is done, PM is always notified", func() {
-			defer func() { assertPMNotified("op") }()
-
 			Convey("Task arrives after the deadline", func() {
 				task.PurgingCl.Deadline = timestamppb.New(ct.Clock.Now().Add(-time.Minute))
 				So(Schedule(ctx, task), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
+				assertPMNotified("op")
+				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
 
 			Convey("Trigger is no longer matching latest CL Snapshot", func() {
@@ -157,6 +158,9 @@ func TestPurgeCL(t *testing.T) {
 				So(Schedule(ctx, task), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
+				assertPMNotified("op")
+				// The PM task should be ASAP.
+				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
 
 			Convey("Doesn't purge if CV isn't managing Runs for the project", func() {
@@ -166,6 +170,9 @@ func TestPurgeCL(t *testing.T) {
 				So(Schedule(ctx, task), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
+				assertPMNotified("op")
+				// Should create PM task with ETA ~1 minute later.
+				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenAfter, ct.Clock.Now().Add(time.Minute-2*time.Second))
 			})
 		})
 	})
