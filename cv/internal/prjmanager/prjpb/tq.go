@@ -27,23 +27,23 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// PokeInterval is target frequency of executions of PokePmTask.
+// PMTaskInterval is target frequency of executions of ManageProjectTask.
 //
 // See Dispatch() for details.
-const PokeInterval = time.Second
+const PMTaskInterval = time.Second
 
 // MaxAcceptableDelay prevents TQ tasks which arrive too late from invoking PM.
 //
-// MaxAcceptableDelay / PokeInterval effectively limits # concurrent invocations
-// of PM on the same project that may happen due to task retries, delays, and
-// queue throttling.
+// MaxAcceptableDelay / PMTaskInterval effectively limits # concurrent
+// invocations of PM on the same project that may happen due to task retries,
+// delays, and queue throttling.
 //
 // Do not set too low, as this may prevent actual PM invoking from happening at
 // all if the TQ is overloaded.
 const MaxAcceptableDelay = 60 * time.Second
 
-// PokePMTaskRef is used by PM implementation to add its handler.
-var PokePMTaskRef tq.TaskClassRef
+// ManageProjectTaskRef is used by PM implementation to add its handler.
+var ManageProjectTaskRef tq.TaskClassRef
 
 const (
 	ManageProjectTaskClass = "manage-project"
@@ -51,19 +51,19 @@ const (
 )
 
 func init() {
-	PokePMTaskRef = tq.RegisterTaskClass(tq.TaskClass{
+	ManageProjectTaskRef = tq.RegisterTaskClass(tq.TaskClass{
 		ID:        ManageProjectTaskClass,
-		Prototype: &PokePMTask{},
+		Prototype: &ManageProjectTask{},
 		Queue:     "manage-project",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "kick-" + ManageProjectTaskClass,
-		Prototype: &KickPokePMTask{},
+		Prototype: &KickManageProjectTask{},
 		Queue:     "kick-manage-project",
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*KickPokePMTask)
+			task := payload.(*KickManageProjectTask)
 			var eta time.Time
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
@@ -74,17 +74,17 @@ func init() {
 	})
 }
 
-// Dispatch ensures invocation of ProjectManager via PokePMTask.
+// Dispatch ensures invocation of ProjectManager via ManageProjectTask.
 //
 // ProjectManager will be invoked at approximately no earlier than both:
 // * eta time
 // * next possible.
 func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	if datastore.CurrentTransaction(ctx) != nil {
-		// TODO(tandrii): use txndefer to immediately trigger a PokePMTask after
+		// TODO(tandrii): use txndefer to immediately trigger a ManageProjectTask after
 		// transaction completes to reduce latency in *most* circumstances.
-		// The KickPokePMTask is still required for correctness.
-		payload := &KickPokePMTask{LuciProject: luciProject}
+		// The KickManageProjectTask is still required for correctness.
+		payload := &KickManageProjectTask{LuciProject: luciProject}
 		if !eta.IsZero() {
 			payload.Eta = timestamppb.New(eta)
 		}
@@ -96,8 +96,8 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	}
 
 	// If actual local clock is more than `clockDrift` behind, the "next" computed
-	// PokePMTask moment might be already executing, meaning task dedup will
-	// ensure no new task will be scheduled AND the already executing run
+	// ManageProjectTask moment might be already executing, meaning task dedup
+	// will ensure no new task will be scheduled AND the already executing run
 	// might not have read the Event that was just written.
 	// Thus, this should be large for safety. However, large value leads to higher
 	// latency of event processing of non-busy ProjectManagers.
@@ -108,11 +108,11 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	if eta.IsZero() || eta.Before(now) {
 		eta = now
 	}
-	eta = eta.Truncate(PokeInterval).Add(PokeInterval)
+	eta = eta.Truncate(PMTaskInterval).Add(PMTaskInterval)
 	return tq.AddTask(ctx, &tq.Task{
 		Title:            luciProject,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", luciProject, eta.UnixNano()),
 		ETA:              eta,
-		Payload:          &PokePMTask{LuciProject: luciProject, Eta: timestamppb.New(eta)},
+		Payload:          &ManageProjectTask{LuciProject: luciProject, Eta: timestamppb.New(eta)},
 	})
 }

@@ -25,29 +25,30 @@ import "go.chromium.org/luci/cv/internal/run/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
 
 
-// PokePMTask sends a signal to ProjectManager to process events.
+// ManageProjectTask sends a signal to ProjectManager to process events.
 //
 // Always used with de-duplication and thus can't be created from a transaction.
 //
 // Queue: "manage-project".
-message PokePMTask {
+message ManageProjectTask {
   string luci_project = 1;
   google.protobuf.Timestamp eta = 2;
 }
 
-// KickPokePMTask starts a task to actually enqueue PokePMTask.
+// KickManageProjectTask starts a task to actually enqueue ManageProjectTask.
 //
-// It exists in order to poke ProjectManager from a transaction.
+// It exists in order to send a deduplicatable ManageProjectTask from a
+// transaction.
 //
 // Queue: "kick-manage-project".
-message KickPokePMTask {
+message KickManageProjectTask {
   string luci_project = 1;
   google.protobuf.Timestamp eta = 2;
 }
 
 // PurgeCLTask starts a task to purge a CL.
 //
-// Queue: "purge-cls".
+// Queue: "purge-project-cl".
 message PurgeCLTask {
   string luci_project = 1;
   PurgingCL purging_cl = 2;
