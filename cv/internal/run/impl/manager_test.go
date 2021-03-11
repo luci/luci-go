@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
@@ -173,7 +172,7 @@ func TestRunManager(t *testing.T) {
 				eventTestcases[i], eventTestcases[j] = eventTestcases[j], eventTestcases[i]
 			})
 			for _, etc := range eventTestcases {
-				if etc.event.GetCancel() == nil {
+				if etc.event.GetCancel() == nil && etc.invokedHandlerMethod != "" {
 					So(etc.sendFn(ctx), ShouldBeNil)
 				}
 			}
@@ -256,24 +255,24 @@ type fakeHandler struct {
 
 var _ handler.Handler = &fakeHandler{}
 
-func (fh *fakeHandler) Start(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+func (fh *fakeHandler) Start(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
 	fh.addInvocation("Start")
-	return nil, rs.ShallowCopy(), nil
+	return &handler.Result{State: rs.ShallowCopy(), PerserveEvents: true}, nil
 }
 
-func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
 	fh.addInvocation("Cancel")
-	return nil, rs.ShallowCopy(), nil
+	return &handler.Result{State: rs.ShallowCopy(), PerserveEvents: true}, nil
 }
 
-func (fh *fakeHandler) OnCLUpdated(ctx context.Context, rs *state.RunState, _ common.CLIDs) (eventbox.SideEffectFn, *state.RunState, error) {
+func (fh *fakeHandler) OnCLUpdated(ctx context.Context, rs *state.RunState, _ common.CLIDs) (*handler.Result, error) {
 	fh.addInvocation("OnCLUpdated")
-	return nil, rs.ShallowCopy(), nil
+	return &handler.Result{State: rs.ShallowCopy(), PerserveEvents: true}, nil
 }
 
-func (fh *fakeHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+func (fh *fakeHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
 	fh.addInvocation("OnCQDVerificationCompleted")
-	return nil, rs.ShallowCopy(), nil
+	return &handler.Result{State: rs.ShallowCopy(), PerserveEvents: true}, nil
 }
 func (fh *fakeHandler) addInvocation(method string) {
 	fh.invocations = append(fh.invocations, method)
