@@ -71,8 +71,15 @@ func TestCancel(t *testing.T) {
 			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 
+		Convey("Cancels SUBMITTING Run", func() {
+			rs.Run.Status = run.Status_SUBMITTING
+			se, newrs, err := h.Cancel(ctx, rs)
+			So(err, ShouldBeNil)
+			So(newrs, ShouldEqual, rs)
+			So(se, ShouldBeNil)
+		})
+
 		statuses := []run.Status{
-			run.Status_FINALIZING,
 			run.Status_SUCCEEDED,
 			run.Status_FAILED,
 			run.Status_CANCELLED,

@@ -32,11 +32,23 @@ enum Status {
   PENDING = 1;
   // Run is running.
   RUNNING = 2;
-  // Run is finalizing.
+  // Run is waiting for submission.
   //
-  // A Run can't be cancelled while finalizing. A run must transition to a
-  // non-cancelled terminal status after finalizing period completes.
-  FINALIZING = 3;
+  // Run is in this status if one of the following scenario is true:
+  //   1. Tree is closed at the time Run attempts to submit.
+  //   2. There is another Run in the same LUCI Project that is currently
+  //      submitting.
+  //   3. The submission is rate limited according to the submit option in
+  //      Project Config.
+  //
+  // This status is cancellable.
+  WAITING_FOR_SUBMISSION = 4;
+  // Run is submitting.
+  //
+  // A Run can't be cancelled while submitting. A Run may transition from
+  // this status to either `WAITING_FOR_SUBMISSION` status or a non-cancelled
+  // terminal status.
+  SUBMITTING = 5;
 
   // End of non-terminal status; MUST have value less than `ENDED_MASK`.
 
