@@ -21,20 +21,29 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
 var cfgContextKey = "auth.Config context key"
 
+// ErrIDTokensNotSupported is returned by IDTokenProvider if the environment
+// doesn't have a working ID token provider.
+var ErrIDTokensNotSupported = errors.New("ID tokens are not supported in this environment")
+
 // DBProvider is a callback that returns most recent DB instance.
 //
 // DB represents a snapshot of user groups used for authorization checks.
 type DBProvider func(c context.Context) (authdb.DB, error)
 
-// AccessTokenProvider knows how to generate OAuth2 access token for the
+// AccessTokenProvider knows how to generate OAuth2 access tokens for the
 // service account belonging to the server itself.
 type AccessTokenProvider func(c context.Context, scopes []string) (*oauth2.Token, error)
+
+// IDTokenProvider knows how to generate ID tokens for the service account
+// belonging to the server itself.
+type IDTokenProvider func(c context.Context, audience string) (*oauth2.Token, error)
 
 // AnonymousTransportProvider returns http.RoundTriper that can make
 // unauthenticated HTTP requests.
@@ -63,9 +72,18 @@ type Config struct {
 	// Used to implement '/auth/api/v1/server/(certificates|info)' routes.
 	Signer signing.Signer
 
-	// AccessTokenProvider knows how to generate OAuth2 access token for the
+	// AccessTokenProvider knows how to generate OAuth2 access tokens for the
 	// service account belonging to the server itself.
 	AccessTokenProvider AccessTokenProvider
+
+	// IDTokenProvider knows how to generate ID tokens for the service account
+	// belonging to the server itself.
+	//
+	// Optional. If not set or if it returns ErrIDTokensNotSupported, the server
+	// will fallback to using generateIdToken IAM RPC targeting its own account.
+	// It requires the service account to have iam.serviceAccountTokenCreator role
+	// on itself, which is a bit weird and not default.
+	IDTokenProvider IDTokenProvider
 
 	// AnonymousTransport returns http.RoundTriper that can make unauthenticated
 	// HTTP requests.
