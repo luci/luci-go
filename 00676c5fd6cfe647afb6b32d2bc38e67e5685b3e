@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66789e81_569ce440",
+        "filename": "auth/internal/gce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T21:35:06Z",
+      "side": 1,
+      "message": "have you thought about having a const CacheKeyHackScopeAudiencePrefix \u003d \"audience:\",\nwhich would help narrow down codesearch whenever we try to remove the hack (if ever)?\n\n(i am thinking that code comments are more likely to diverge or even lost with time)",
+      "range": {
+        "startLine": 100,
+        "startChar": 20,
+        "endLine": 100,
+        "endChar": 31
+      },
+      "revId": "00676c5fd6cfe647afb6b32d2bc38e67e5685b3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dfba9c7_f5d7283a",
+        "filename": "auth/internal/gce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T21:35:06Z",
+      "side": 1,
+      "message": "oh, so so this doesn\u0027t obey context?",
+      "range": {
+        "startLine": 145,
+        "startChar": 26,
+        "endLine": 145,
+        "endChar": 56
+      },
+      "revId": "00676c5fd6cfe647afb6b32d2bc38e67e5685b3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
