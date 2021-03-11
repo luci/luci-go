@@ -76,6 +76,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "77f2cb2e_0ee59daf",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T06:48:43Z",
+      "side": 1,
+      "message": "Ack. If it\u0027s later, then it\u0027s possible the we get an empty RunID. I\u0027ll keep it as is at this moment.",
+      "parentUuid": "8c780036_bcaf4963",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "1efcf450b1c8e04a628e952bb0c1447c3c250d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "868d21a6_63bbaf5e",
@@ -89,6 +113,30 @@
       "writtenOn": "2021-03-10T17:46:51Z",
       "side": 1,
       "message": "why do you need these fields if can just stick entire proto payload as one field s.t. we can easily add more fields *to proto* in the future?",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 96,
+        "endChar": 34
+      },
+      "revId": "1efcf450b1c8e04a628e952bb0c1447c3c250d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "456bc8f2_42e2e166",
+        "filename": "cv/internal/migration/migration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T06:48:43Z",
+      "side": 1,
+      "message": "Maybe I\u0027m not used to put the entire request object in the datastore entity. But you are right, it\u0027s easier for us to add fields in the future.",
+      "parentUuid": "868d21a6_63bbaf5e",
       "range": {
         "startLine": 94,
         "startChar": 2,
