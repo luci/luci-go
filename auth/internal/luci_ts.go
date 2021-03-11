@@ -25,7 +25,6 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
@@ -55,20 +54,29 @@ type luciTSTokenProvider struct {
 	actAs     string
 	realm     string
 	scopes    []string
+	audience  string // not empty iff using ID tokens
 	transport http.RoundTripper
 	cacheKey  CacheKey
 }
 
 func init() {
 	NewLUCITSTokenProvider = func(ctx context.Context, useIDTokens bool, host, actAs, realm string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
+		// When using ID tokens, put the audience as a fake scope in the cache key.
+		// See the comment for Scopes in CacheKey.
 		if useIDTokens {
-			return nil, errors.New("ID tokens are not supported yet when impersonating via LUCI (crbug.com/1184230)")
+			if audience == "" {
+				return nil, ErrAudienceRequired
+			}
+			scopes = []string{"audience:" + audience}
+		} else {
+			audience = ""
 		}
 		return &luciTSTokenProvider{
 			host:      host,
 			actAs:     actAs,
 			realm:     realm,
 			scopes:    scopes,
+			audience:  audience,
 			transport: transport,
 			cacheKey: CacheKey{
 				Key:    fmt.Sprintf("luci_ts/%s/%s/%s", actAs, host, realm),
@@ -112,25 +120,39 @@ func (p *luciTSTokenProvider) MintToken(ctx context.Context, base *Token) (*Toke
 	// TODO(crbug.com/1179629): pRPC doesn't handle outgoing meatadata well.
 	ctx = metadata.NewOutgoingContext(ctx, nil)
 
-	resp, err := client.MintServiceAccountToken(ctx, &minter.MintServiceAccountTokenRequest{
-		TokenKind:           minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
+	req := &minter.MintServiceAccountTokenRequest{
 		ServiceAccount:      p.actAs,
 		Realm:               p.realm,
-		OauthScope:          p.scopes,
 		MinValidityDuration: int64(requestedMinValidityDuration / time.Second),
-	})
+	}
+	if p.audience != "" {
+		req.TokenKind = minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN
+		req.IdTokenAudience = p.audience
+	} else {
+		req.TokenKind = minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN
+		req.OauthScope = p.scopes
+	}
 
+	resp, err := client.MintServiceAccountToken(ctx, req)
 	if err != nil {
 		return nil, grpcutil.WrapIfTransient(err)
 	}
 
+	accessToken := NoAccessToken
+	idToken := NoIDToken
+	if p.audience != "" {
+		idToken = resp.Token
+	} else {
+		accessToken = resp.Token
+	}
+
 	return &Token{
 		Token: oauth2.Token{
-			AccessToken: resp.Token,
+			AccessToken: accessToken,
 			Expiry:      google.TimeFromProto(resp.Expiry),
 			TokenType:   "Bearer",
 		},
-		IDToken: NoIDToken,
+		IDToken: idToken,
 		Email:   p.Email(),
 	}, nil
 }
