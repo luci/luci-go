@@ -4,7 +4,15 @@
 
 #### Linux
 
-From command line, run: `sudo apt-get install google-cloud-sdk-spanner-emulator`
+The Cloud Spanner Emulator is part of the bundled gcloud, to make sure it's installed:
+
+```
+cd infra
+gclient runhooks
+eval `./go/env.py`
+which gcloud # should show bundled gcloud
+gcloud components list # should see cloud-spanner-emulator is installed
+```
 
 #### Mac
 
