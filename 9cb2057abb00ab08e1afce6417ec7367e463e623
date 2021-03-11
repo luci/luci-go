@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6695497c_e31f913f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T07:15:08Z",
+      "side": 1,
+      "message": "cl",
+      "range": {
+        "startLine": 11,
+        "startChar": 10,
+        "endLine": 11,
+        "endChar": 12
+      },
+      "revId": "9cb2057abb00ab08e1afce6417ec7367e463e623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c161db61_e9a0f448",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T07:15:08Z",
+      "side": 1,
+      "message": "Where do we enforce this before?",
+      "range": {
+        "startLine": 12,
+        "startChar": 5,
+        "endLine": 12,
+        "endChar": 27
+      },
+      "revId": "9cb2057abb00ab08e1afce6417ec7367e463e623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
