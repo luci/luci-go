@@ -12,11 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export interface CacheConfig<T extends unknown[]> {
+export interface CacheConfig<T extends unknown[], V> {
   /**
    * Computes a cache key given the parameters.
    */
   key: (...params: T) => unknown;
+
+  /**
+   * When the promise resolves or rejects, the cache is invalidated.
+   *
+   * When not specified, caches are kept indefinitely.
+   */
+  // Return a promise instead of a simple number so the function can await on
+  // result if the cache duration depends on it.
+  expire?: (params: T, result: V) => Promise<void>;
 }
 
 export enum CacheOption {
@@ -41,9 +50,9 @@ export enum CacheOption {
  */
 export function cached<T extends unknown[], V>(
   fn: (...params: T) => V,
-  config: CacheConfig<T>,
+  config: CacheConfig<T, V>,
 ): (opt: CacheOption, ...params: T) => V {
-  const cache = new Map<unknown, V>();
+  const cache = new Map<unknown, [V]>();
 
   return (opt: CacheOption, ...params: T) => {
     if (opt === CacheOption.NoCache) {
@@ -51,8 +60,22 @@ export function cached<T extends unknown[], V>(
     }
     const key = config.key(...params);
     if (opt === CacheOption.ForceRefresh || !cache.has(key)) {
-      cache.set(key, fn(...params));
+      // Wraps in [] to create a unique reference.
+      const value: [V] = [fn(...params)];
+      const deleteCache = () => {
+        // Only invalidate the cache when it has not been refreshed yet.
+        if (cache.get(key) === value) {
+          cache.delete(key);
+        }
+      };
+      // Also invalidates the cache when the promise is rejected to prevent
+      // unexpected cache build up.
+      config.expire?.(params, value[0]).finally(deleteCache);
+
+      // Set the cache after config.expire call so there's no memory leak when
+      // config.expire throws.
+      cache.set(key, value);
     }
-    return cache.get(key) as V;
+    return cache.get(key)![0];
   };
 }
