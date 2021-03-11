@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd7b8267_873e3f89",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T00:48:06Z",
+      "side": 1,
+      "message": "👍I wanted to suggest, but I didn\u0027t want to delay the CL.",
+      "range": {
+        "startLine": 312,
+        "startChar": 2,
+        "endLine": 314,
+        "endChar": 11
+      },
+      "revId": "3b34f5595dd7df0abe1d09db14b1989f33d84065",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
