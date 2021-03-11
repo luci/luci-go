@@ -205,18 +205,19 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 		tempDir = ac.tmpDir
 	}
 
-	// Expand AuthSelectMethod into the actual method. We'll be checking it later.
-	// We do this expansion now to consistently use new 'opts' through out.
-	opts := ac.Options
-	if opts.Method == auth.AutoSelectMethod {
-		opts.Method = auth.SelectBestMethod(ctx, opts)
-	}
+	// Make a generator that will be used to generate tokens for subprocesses
+	// that request them via LUCI_CONTEXT protocol or via GCE metadata emulation.
+	tokens := auth.NewTokenGenerator(ctx, ac.Options)
+	opts := tokens.Options() // normalized, with opts.Method populated
 
-	// Construct the authenticator to be used directly by the helpers hosted in
-	// the current process (devshell, gsutil, firebase) and by the new
-	// localauth.Server (if we are going to launch it). Out-of-process helpers
-	// (git, docker) will use LUCI_CONTEXT protocol.
-	ac.authenticator = auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+	// Construct the OAuth2 authenticator to be used directly by the helpers
+	// hosted in the current process (devshell, gsutil, firebase) using scopes
+	// passed via ac.Options. Out-of-process helpers (git, docker) will use
+	// `tokens` via the LUCI_CONTEXT protocol or GCE metadata server emulation.
+	ac.authenticator, err = tokens.Authenticator(opts.Scopes, "")
+	if err != nil {
+		return errors.Annotate(err, "failed to construct authenticator for %q account", ac.ID).Err()
+	}
 
 	// Figure out what email is associated with this account (if any).
 	ac.email, err = ac.authenticator.GetEmail()
@@ -243,7 +244,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 	// ambient credentials on their own and fail (or proceed) appropriately.
 	canInherit := opts.Method == auth.LUCIContextMethod && opts.ActAsServiceAccount == ""
 	if !canInherit && !ac.anonymous {
-		if ac.luciSrv, ac.localAuth, err = launchSrv(ctx, opts, ac.ID); err != nil {
+		if ac.luciSrv, ac.localAuth, err = launchSrv(ctx, tokens, ac.ID); err != nil {
 			return errors.Annotate(err, "failed to launch local auth server for %q account", ac.ID).Err()
 		}
 	}
@@ -266,7 +267,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 		}
 	}
 	if ac.EnableGCEEmulation {
-		if err := ac.setupGCEEmulationAuth(ctx, tempDir); err != nil {
+		if err := ac.setupGCEEmulationAuth(ctx, tokens, tempDir); err != nil {
 			return err
 		}
 	}
@@ -455,13 +456,13 @@ func (ac *Context) Report(ctx context.Context) {
 //
 // Returns the server itself (so it can be stopped) and also LocalAuth section
 // that can be put into LUCI_CONTEXT to make subprocesses use the server.
-func launchSrv(ctx context.Context, opts auth.Options, accID string) (*localauth.Server, *lucictx.LocalAuth, error) {
+func launchSrv(ctx context.Context, tokens *auth.TokenGenerator, accID string) (*localauth.Server, *lucictx.LocalAuth, error) {
 	// We currently always setup a context with one account (which is also
 	// default). It means if we override some existing LUCI_CONTEXT, all
 	// non-default accounts there are "forgotten".
 	srv := &localauth.Server{
 		TokenGenerators: map[string]localauth.TokenGenerator{
-			accID: auth.NewTokenGenerator(ctx, opts),
+			accID: tokens,
 		},
 		DefaultAccountID: accID,
 	}
@@ -578,19 +579,17 @@ func (ac *Context) setupDevShellAuth(ctx context.Context, tempDir string) error 
 	return nil
 }
 
-func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tempDir string) error {
+func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tokens *auth.TokenGenerator, tempDir string) error {
 	// Launch the fake GCE metadata server.
 	botoGCEAccount := ""
 	if !ac.anonymous {
-		source, err := ac.authenticator.TokenSource()
-		if err != nil {
-			return errors.Annotate(err, "failed to get token source for %q account", ac.ID).Err()
-		}
 		ac.gcemetaSrv = &gcemeta.Server{
-			Source: source,
-			Email:  ac.email,
-			Scopes: ac.Options.Scopes,
+			Generator:        tokens,
+			Email:            ac.email,
+			Scopes:           tokens.Options().Scopes,
+			MinTokenLifetime: tokens.Options().MinTokenLifetime,
 		}
+		var err error
 		if ac.gcemetaAddr, err = ac.gcemetaSrv.Start(ctx); err != nil {
 			return errors.Annotate(err, "failed to start fake GCE metadata server for %q account", ac.ID).Err()
 		}
