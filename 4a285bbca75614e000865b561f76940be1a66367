@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a2c4ee98_74c1ac78",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-11T17:14:22Z",
+      "side": 1,
+      "message": "maybe say that the promise must fullfill/reject eventually, otherwise it will result in a memory leak",
+      "revId": "4a285bbca75614e000865b561f76940be1a66367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "71577527_0af56267",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-11T17:14:22Z",
+      "side": 1,
+      "message": "seems unnecessary? compiler already knows that fn returns V",
+      "range": {
+        "startLine": 64,
+        "startChar": 17,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "4a285bbca75614e000865b561f76940be1a66367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "322efee4_93bc1b51",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-11T17:14:22Z",
+      "side": 1,
+      "message": "finally(() \u003d\u003e {...})",
+      "range": {
+        "startLine": 74,
+        "startChar": 40,
+        "endLine": 74,
+        "endChar": 44
+      },
+      "revId": "4a285bbca75614e000865b561f76940be1a66367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
