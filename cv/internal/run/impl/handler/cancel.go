@@ -35,11 +35,14 @@ func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (eventbox.SideEffec
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == run.Status_FINALIZING:
-		logging.Debugf(ctx, "can't cancel run as it is currently finalizing")
+	case status == run.Status_SUBMITTING:
+		logging.Debugf(ctx, "Run cancellation can't be fulfilled at this time as Run is currently submitting.")
+		// TODO(yiwzhang): This function should tell RM not to consume the Cancel
+		// event so that when RM finishes submitting, it will be able to process
+		// the Cancel Event and see if any action needs to be taken.
 		return nil, rs, nil
 	case run.IsEnded(status):
-		logging.Debugf(ctx, "can't cancel an already ended run")
+		logging.Debugf(ctx, "skip cancellation because Run has already ended.")
 		return nil, rs, nil
 	}
 
