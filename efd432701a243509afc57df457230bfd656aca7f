@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ddf0e77f_c2e7a2db",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T02:29:44Z",
+      "side": 1,
+      "message": "so, is server.Server CL next?",
+      "revId": "efd432701a243509afc57df457230bfd656aca7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e247146_aef06cd7",
+        "filename": "auth/auth_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 724,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T02:29:44Z",
+      "side": 1,
+      "message": "i wrote the same code like 3 times 😄",
+      "range": {
+        "startLine": 721,
+        "startChar": 0,
+        "endLine": 724,
+        "endChar": 2
+      },
+      "revId": "efd432701a243509afc57df457230bfd656aca7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "daa22b5f_82a48793",
+        "filename": "auth/generator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T02:29:44Z",
+      "side": 1,
+      "message": "nit-nit, iirc, for a rename + refactor, year ought to remain 2017",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "efd432701a243509afc57df457230bfd656aca7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
