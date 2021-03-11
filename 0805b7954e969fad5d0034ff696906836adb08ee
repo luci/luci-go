@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a685dd7f_05e58f92",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-11T23:34:00Z",
+      "side": 1,
+      "message": "Schedule is more complex than cancel and more schedule requests come from batches, so I think we should support a traffic split here so we can release it at the same pace as non-batched requests.\n\nFor comparison: we launched non-batched cancel to 100% then switched batched cancellation requests from 0% to 100% at once.",
+      "revId": "0805b7954e969fad5d0034ff696906836adb08ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
