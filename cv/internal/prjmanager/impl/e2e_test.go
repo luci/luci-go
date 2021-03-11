@@ -177,11 +177,7 @@ func TestE2ECLPurgingWithUnwatchedDeps(t *testing.T) {
 		ci := ct.GFake.GetChange(gHost, gChange).Info
 		So(trigger.Find(ci), ShouldBeNil)
 		So(ci.GetMessages(), ShouldHaveLength, 1)
-		So(
-			ci.GetMessages()[0].GetDate().AsTime(),
-			ShouldHappenAfter,
-			tStart.Add(stabilizationDelay),
-		)
+		So(gf.LastMessage(ci).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
 
 		p, err := prjmanager.Load(ctx, lProject)
 		So(err, ShouldBeNil)
