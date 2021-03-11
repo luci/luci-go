@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "61dde864_98555c66",
+        "filename": "resultdb/internal/artifacts/artifact.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-11T17:22:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dbd4a05b_ad0e81de",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 115,
+        "endChar": 9
+      },
+      "revId": "ed6bc1204e0e5cec8f4edd43db90a10930709e10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2d8c3dc1_dd6def62",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-03-11T02:35:41Z",
       "side": 1,
       "message": "nittty nit: we add the prefix unnecessarily here (spending space on concatenation). We really need it only in L435-436",
+      "range": {
+        "startLine": 429,
+        "startChar": 27,
+        "endLine": 429,
+        "endChar": 40
+      },
+      "revId": "ed6bc1204e0e5cec8f4edd43db90a10930709e10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa4e4c64_6940388b",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-11T17:22:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d8c3dc1_dd6def62",
       "range": {
         "startLine": 429,
         "startChar": 27,
