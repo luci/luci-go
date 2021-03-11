@@ -70,7 +70,7 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 	switch err := eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject}); {
 	case err == nil:
 		return nil
-	case err == eventbox.ErrConcurretMutation:
+	case eventbox.IsErrConcurretMutation(err):
 		// Instead of retrying this task at a later time, which has already
 		// overlapped with another task, and risking another overlap for busy
 		// project, schedule a new one in the future which will get a chance of

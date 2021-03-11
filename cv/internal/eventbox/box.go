@@ -61,6 +61,16 @@ func List(ctx context.Context, recipient *datastore.Key) (Events, error) {
 // ErrConcurretMutation indicates concurrent mutation.
 var ErrConcurretMutation = errors.New("Concurrent mutation")
 
+// IsErrConcurretMutation checks if error is due to concurrent mutation.
+func IsErrConcurretMutation(err error) bool {
+	ret := false
+	errors.WalkLeaves(err, func(e error) bool {
+		ret = (e == ErrConcurretMutation)
+		return !ret // return false means stop traversing.
+	})
+	return ret
+}
+
 // ProcessBatch reliably processes events, while transactionally modifying state
 // and performing arbitrary side effects.
 //
