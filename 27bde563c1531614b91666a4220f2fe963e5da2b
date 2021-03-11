@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f382e27_68332d2d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T21:00:32Z",
+      "side": 1,
+      "message": "It is perfectly safe...",
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "43f61b85_c0277ef6",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1415,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T21:00:32Z",
+      "side": 1,
+      "message": "This is new, will result in User-Agent header appended to some calls made to Google Cloud IAM and LUCI Token Server.",
+      "range": {
+        "startLine": 1413,
+        "startChar": 0,
+        "endLine": 1415,
+        "endChar": 31
+      },
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "882ee4ad_7ff60f44",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1427,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T21:00:32Z",
+      "side": 1,
+      "message": "Just move from no longer existing initTokenSource.",
+      "range": {
+        "startLine": 1417,
+        "startChar": 0,
+        "endLine": 1427,
+        "endChar": 41
+      },
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f1d6d96_0871bca8",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1468,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T21:00:32Z",
+      "side": 1,
+      "message": "nothing new here, Gerrit is drunk",
+      "range": {
+        "startLine": 1449,
+        "startChar": 0,
+        "endLine": 1468,
+        "endChar": 3
+      },
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
