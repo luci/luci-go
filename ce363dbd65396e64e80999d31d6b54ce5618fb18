@@ -576,6 +576,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc608bdd_042f08db",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-11T02:45:40Z",
+      "side": 1,
+      "message": "nobody suggested caching? :) where did it come from?\n\nbut now that the code is simpler, it is not needed indeed",
+      "parentUuid": "758fe29e_1b164da6",
+      "range": {
+        "startLine": 203,
+        "startChar": 3,
+        "endLine": 204,
+        "endChar": 61
+      },
+      "revId": "ce363dbd65396e64e80999d31d6b54ce5618fb18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e2421cb4_5ad9e5cb",
