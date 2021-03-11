@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "012d0bf4_d9818ab3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T03:04:26Z",
+      "side": 1,
+      "message": "No, modification of GCE metadata emulator to support ID tokens.",
+      "parentUuid": "ddf0e77f_c2e7a2db",
+      "revId": "efd432701a243509afc57df457230bfd656aca7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "9e247146_aef06cd7",
         "filename": "auth/auth_test.go",
         "patchSetId": 1
@@ -54,6 +72,30 @@
       "writtenOn": "2021-03-11T02:29:44Z",
       "side": 1,
       "message": "nit-nit, iirc, for a rename + refactor, year ought to remain 2017",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "efd432701a243509afc57df457230bfd656aca7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45e550e7_efd9fefa",
+        "filename": "auth/generator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T03:04:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "daa22b5f_82a48793",
       "range": {
         "startLine": 1,
         "startChar": 15,
