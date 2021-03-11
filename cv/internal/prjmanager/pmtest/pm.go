@@ -37,9 +37,9 @@ import (
 func Projects(in tqtesting.TaskList) (projects []string) {
 	for _, t := range in.SortByETA() {
 		switch v := t.Payload.(type) {
-		case *prjpb.PokePMTask:
+		case *prjpb.ManageProjectTask:
 			projects = append(projects, v.GetLuciProject())
-		case *prjpb.KickPokePMTask:
+		case *prjpb.KickManageProjectTask:
 			projects = append(projects, v.GetLuciProject())
 		}
 	}
@@ -59,16 +59,16 @@ func iterEventBox(ctx context.Context, project string, cb func(*prjpb.Event)) {
 
 // ETAsOf returns sorted list of ETAs for a given project.
 //
-// Includes ETAs encoded in KickPokePMTask tasks.
+// Includes ETAs encoded in KickManageProjectTask tasks.
 func ETAsOF(in tqtesting.TaskList, luciProject string) []time.Time {
 	var out []time.Time
 	for _, t := range in {
 		switch v := t.Payload.(type) {
-		case *prjpb.PokePMTask:
+		case *prjpb.ManageProjectTask:
 			if v.GetLuciProject() == luciProject {
 				out = append(out, t.ETA)
 			}
-		case *prjpb.KickPokePMTask:
+		case *prjpb.KickManageProjectTask:
 			if v.GetLuciProject() == luciProject {
 				out = append(out, v.GetEta().AsTime())
 			}
@@ -80,7 +80,7 @@ func ETAsOF(in tqtesting.TaskList, luciProject string) []time.Time {
 
 // LatestETAof returns time.Time of the latest task for a given project.
 //
-// Includes ETAs encoded in KickPokePMTask tasks.
+// Includes ETAs encoded in KickManageProjectTask tasks.
 // If none, returns Zero time.Time{}.
 func LatestETAof(in tqtesting.TaskList, luciProject string) time.Time {
 	ts := ETAsOF(in, luciProject)

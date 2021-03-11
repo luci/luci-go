@@ -38,9 +38,9 @@ import (
 )
 
 func init() {
-	prjpb.PokePMTaskRef.AttachHandler(
+	prjpb.ManageProjectTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*prjpb.PokePMTask)
+			task := payload.(*prjpb.ManageProjectTask)
 			// TODO(tandrii): after all tasks have ETA set, remove this backwards
 			// compatibility code.
 			eta := clock.Now(ctx)
