@@ -722,6 +722,30 @@
       },
       "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1feda0c_7bf6854f",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-11T02:35:41Z",
+      "side": 1,
+      "message": "validateInvocationToken may return an appstatus-annotated error: \nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/invocation.go;l\u003d97?q\u003dvalidateInvocationToken\n\nan attempt to appstatus-annotate an error that is already appstatus-annotated, will result in a panic. Thus it is not sfe.\n\nfunctions that *may* return an appstatusa-annotated error should say that in the comment, e.g. https://source.chromium.org/search?q\u003d%2F%2F.%2Bappstatus%20-f:appstatus%20lang:go%20f:luci",
+      "parentUuid": "31a96612_a7a30413",
+      "range": {
+        "startLine": 178,
+        "startChar": 14,
+        "endLine": 178,
+        "endChar": 78
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
