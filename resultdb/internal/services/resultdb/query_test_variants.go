@@ -62,10 +62,11 @@ func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVari
 		if tvs, token, err = q.Fetch(ctx); err != nil {
 			return nil, errors.Annotate(err, "failed to read test variants").Err()
 		}
-		q.PageToken = token
-		if outOfTime(ctx) {
+
+		if token == "" || outOfTime(ctx) {
 			break
 		}
+		q.PageToken = token
 	}
 
 	return &uipb.QueryTestVariantsResponse{
