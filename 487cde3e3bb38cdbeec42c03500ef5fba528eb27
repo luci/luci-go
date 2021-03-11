@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "23c74f15_cf6e4741",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T18:37:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e45b9d6f_bd6764cb",
+      "range": {
+        "startLine": 50,
+        "startChar": 10,
+        "endLine": 50,
+        "endChar": 20
+      },
+      "revId": "487cde3e3bb38cdbeec42c03500ef5fba528eb27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "08092213_ea8354ce",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-11T18:16:41Z",
       "side": 1,
       "message": "s/purge-cls/purge-project-cl",
+      "range": {
+        "startLine": 51,
+        "startChar": 11,
+        "endLine": 51,
+        "endChar": 20
+      },
+      "revId": "487cde3e3bb38cdbeec42c03500ef5fba528eb27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "979c35d5_bf21e7fc",
+        "filename": "cv/internal/prjmanager/prjpb/tasks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T18:37:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08092213_ea8354ce",
       "range": {
         "startLine": 51,
         "startChar": 11,
