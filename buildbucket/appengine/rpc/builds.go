@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 
@@ -52,15 +51,6 @@ var (
 		"status_details",
 		"update_time",
 	)
-
-	// onboardedRPCs is a collection of the RPC method names that have been fully
-	// migrated to Go.
-	onboardedRPCs = stringset.Set{
-		"Batch":        struct{}{},
-		"GetBuild":     struct{}{},
-		"SearchBuilds": struct{}{},
-		"UpdateBuild":  struct{}{},
-	}
 )
 
 // TODO(crbug/1042991): Move to a common location.
@@ -91,7 +81,7 @@ func getBuildsSubMask(fields *field_mask.FieldMask) (*mask.Mask, error) {
 // TODO(crbug/1042991): Remove once methods are implemented.
 func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	err = commonPostlude(ctx, methodName, rsp, err)
-	if onboardedRPCs.Has(methodName) || methodName == "CancelBuild" {
+	if methodName != "ScheduleBuild" {
 		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
@@ -103,7 +93,7 @@ func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Mes
 // Used to aid in development.
 // TODO(crbug/1042991): Remove once methods are implemented.
 func buildsServicePrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
-	if onboardedRPCs.Has(methodName) {
+	if methodName != "ScheduleBuild" {
 		return ctx, nil
 	}
 	return logDetails(ctx, methodName, req)
