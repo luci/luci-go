@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -58,8 +59,21 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	for i, r := range req.Requests {
 		switch r.Request.(type) {
 		case *pb.BatchRequest_Request_ScheduleBuild:
-			pyIndices = append(pyIndices, i)
-			pyBatchReq.Requests = append(pyBatchReq.Requests, r)
+			pct := 0
+			switch ctx.Value("env") {
+			case "Dev":
+				pct = 0
+			case "Test":
+				pct = 100
+			}
+			if mathrand.Intn(ctx, 100) < pct {
+				logDetails(ctx, "Batch (ScheduleBuild)", r)
+				goIndices = append(goIndices, i)
+				goBatchReq = append(goBatchReq, r)
+			} else {
+				pyIndices = append(pyIndices, i)
+				pyBatchReq.Requests = append(pyBatchReq.Requests, r)
+			}
 		case *pb.BatchRequest_Request_GetBuild, *pb.BatchRequest_Request_SearchBuilds, *pb.BatchRequest_Request_CancelBuild:
 			goIndices = append(goIndices, i)
 			goBatchReq = append(goBatchReq, r)
@@ -111,6 +125,10 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 				case *pb.BatchRequest_Request_CancelBuild:
 					ret, e := b.CancelBuild(ctx, r.GetCancelBuild())
 					response.Response = &pb.BatchResponse_Response_CancelBuild{CancelBuild: ret}
+					err = e
+				case *pb.BatchRequest_Request_ScheduleBuild:
+					ret, e := b.ScheduleBuild(ctx, r.GetScheduleBuild())
+					response.Response = &pb.BatchResponse_Response_ScheduleBuild{ScheduleBuild: ret}
 					err = e
 				default:
 					panic(fmt.Sprintf("attempted to handle unexpected request type %T", r.Request))
