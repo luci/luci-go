@@ -12,27 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package localauth
+package auth
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/oauth2"
-
-	"go.chromium.org/luci/auth"
 )
+
+// TokenGenerator manages a collection of Authenticators to generate tokens with
+// scopes or audiences not known in advance.
+//
+// It is primarily useful as a building block for `luci-auth context` mechanism.
+type TokenGenerator struct {
+	ctx                     context.Context
+	opts                    Options
+	allowsArbitraryScopes   bool
+	allowsArbitraryAudience bool
+
+	lock           sync.RWMutex
+	authenticators map[string]*Authenticator
+}
 
 // NewTokenGenerator constructs a TokenGenerator that can generate tokens with
 // an arbitrary set of scopes or audiences, if given options allow.
 //
-// It creates one or more auth.Authenticator instances internally (per
-// combination of requested parameters) using given 'opts' as a basis for
-// auth options.
+// It creates one or more Authenticator instances internally (per combination of
+// requested parameters) using given `opts` as a basis for auth options.
 //
 // If given options allow minting tokens with arbitrary scopes, then opts.Scopes
 // are ignored and they are instead substituted with the scopes requested in
@@ -47,19 +57,19 @@ import (
 // is still useful sometimes, since some fixed scopes can actually cover a lot
 // of other scopes (e.g. "cloud-platform" scopes covers a ton of more fine grain
 // Cloud scopes).
-func NewTokenGenerator(ctx context.Context, opts auth.Options) (TokenGenerator, error) {
-	if opts.Method == auth.AutoSelectMethod {
-		opts.Method = auth.SelectBestMethod(ctx, opts)
+func NewTokenGenerator(ctx context.Context, opts Options) *TokenGenerator {
+	if opts.Method == AutoSelectMethod {
+		opts.Method = SelectBestMethod(ctx, opts)
 	}
 	opts.UseIDTokens = false // to preserve opts.Scopes in PopulateDefaults
 	opts.PopulateDefaults()
-	return &generator{
+	return &TokenGenerator{
 		ctx:                     ctx,
 		opts:                    opts,
 		allowsArbitraryScopes:   allowsArbitraryScopes(&opts),
 		allowsArbitraryAudience: allowsArbitraryAudience(&opts),
-		authenticators:          map[string]*auth.Authenticator{},
-	}, nil
+		authenticators:          map[string]*Authenticator{},
+	}
 }
 
 // allowsArbitraryScopes returns true if given authenticator options allow
@@ -68,13 +78,13 @@ func NewTokenGenerator(ctx context.Context, opts auth.Options) (TokenGenerator, 
 // For example, using a private key to sign assertions allows to mint tokens
 // for any set of scopes (since there's no restriction on what scopes we can
 // put into JWT to be signed).
-func allowsArbitraryScopes(opts *auth.Options) bool {
+func allowsArbitraryScopes(opts *Options) bool {
 	switch {
-	case opts.Method == auth.ServiceAccountMethod:
+	case opts.Method == ServiceAccountMethod:
 		// A private key can be used to generate tokens with any combination of
 		// scopes.
 		return true
-	case opts.Method == auth.LUCIContextMethod:
+	case opts.Method == LUCIContextMethod:
 		// We can ask the local auth server for any combination of scopes.
 		return true
 	case opts.ActAsServiceAccount != "":
@@ -88,51 +98,56 @@ func allowsArbitraryScopes(opts *auth.Options) bool {
 
 // allowsArbitraryAudience returns true if given authenticator options allow
 // generating ID tokens for arbitrary audience.
-func allowsArbitraryAudience(opts *auth.Options) bool {
+func allowsArbitraryAudience(opts *Options) bool {
 	// Only UserCredentialsMethod hardcodes audience in the token based on the
 	// OAuth2 client ID used to generate it. Additionally, when we use an
 	// impersonation API, we can request any audience we want, even when using
 	// UserCredentialsMethod to authenticate calls to this impersonation API.
-	return opts.Method != auth.UserCredentialsMethod || opts.ActAsServiceAccount != ""
+	return opts.Method != UserCredentialsMethod || opts.ActAsServiceAccount != ""
 }
 
-type generator struct {
-	ctx                     context.Context
-	opts                    auth.Options
-	allowsArbitraryScopes   bool
-	allowsArbitraryAudience bool
-
-	lock           sync.RWMutex
-	authenticators map[string]*auth.Authenticator
+// Options returns the base options used to construct new authenticators.
+//
+// They are normalized with all defaults filled in.
+func (g *TokenGenerator) Options() Options {
+	return g.opts
 }
 
-func (g *generator) authenticator(scopes []string, audience string) (*auth.Authenticator, error) {
+// Authenticator returns an authenticator that uses access or ID tokens.
+//
+// Either `scopes` or `audience` (but not both) should be given. If `scopes`
+// are given, the returned authenticator will use access tokens with these
+// scopes. If `audience` is given, the returned authenticator will use ID tokens
+// with this audience.
+//
+// The returned authenticator uses the context passed to NewTokenGenerator for
+// logging.
+func (g *TokenGenerator) Authenticator(scopes []string, audience string) (*Authenticator, error) {
 	var cacheKey string
 
 	switch {
+	case len(scopes) != 0 && audience != "":
+		return nil, errors.New("either scopes or audience should be given, not both")
+
 	case len(scopes) != 0:
-		// For auth methods that don't allow changing scopes, just use the predefined
-		// ones and hope they are sufficient for the caller.
+		// For auth methods that don't allow changing scopes, just use the
+		// predefined ones and hope they are sufficient for the caller.
 		if !g.allowsArbitraryScopes {
 			scopes = g.opts.Scopes
+		} else {
+			scopes = normalizeScopes(scopes)
 		}
-		// We use '\n' as separator. It should not appear in the scopes.
-		for _, s := range scopes {
-			if strings.ContainsRune(s, '\n') {
-				return nil, fmt.Errorf("bad scope: %q", s)
-			}
-		}
-		// Note: scopes are already sorted per Server{...} contract.
-		cacheKey = "access_token\n" + strings.Join(scopes, "\n")
+		cacheKey = "oauth\x00" + strings.Join(scopes, "\x00")
+
 	case audience != "":
 		// For auth methods that don't allow changing audience, just use the
 		// predefined one and hope it is sufficient for the caller.
 		if !g.allowsArbitraryAudience {
 			audience = g.opts.Audience
 		}
-		cacheKey = "id_token\n" + audience
+		cacheKey = "oidc\x00" + audience
+
 	default:
-		// This should not be happening.
 		return nil, errors.New("no scopes or audience are given")
 	}
 
@@ -149,7 +164,7 @@ func (g *generator) authenticator(scopes []string, audience string) (*auth.Authe
 			opts.UseIDTokens = len(scopes) == 0
 			opts.Scopes = scopes
 			opts.Audience = audience
-			authenticator = auth.NewAuthenticator(g.ctx, auth.SilentLogin, opts)
+			authenticator = NewAuthenticator(g.ctx, SilentLogin, opts)
 			g.authenticators[cacheKey] = authenticator
 		}
 	}
@@ -157,29 +172,39 @@ func (g *generator) authenticator(scopes []string, audience string) (*auth.Authe
 	return authenticator, nil
 }
 
-func (g *generator) GenerateOAuthToken(_ context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+// GenerateOAuthToken returns an access token for a combination of scopes.
+//
+// The returned token lives for at least given `lifetime` duration, but it may
+// live longer.
+func (g *TokenGenerator) GenerateOAuthToken(_ context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 	if len(scopes) == 0 {
 		return nil, errors.New("got empty list of OAuth scopes")
 	}
-	a, err := g.authenticator(scopes, "")
+	a, err := g.Authenticator(scopes, "")
 	if err != nil {
 		return nil, err
 	}
 	return a.GetAccessToken(lifetime)
 }
 
-func (g *generator) GenerateIDToken(_ context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error) {
+// GenerateIDToken returns an ID token with the given audience in `aud` claim.
+//
+// The returned token lives for at least given `lifetime` duration, but it may
+// live longer.
+func (g *TokenGenerator) GenerateIDToken(_ context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error) {
 	if audience == "" {
 		return nil, errors.New("got empty ID token audience")
 	}
-	a, err := g.authenticator(nil, audience)
+	a, err := g.Authenticator(nil, audience)
 	if err != nil {
 		return nil, err
 	}
 	return a.GetAccessToken(lifetime)
 }
 
-func (g *generator) GetEmail() (string, error) {
+// GetEmail returns an email associated with all tokens produced by this
+// generator or ErrNoEmail if it's not available.
+func (g *TokenGenerator) GetEmail() (string, error) {
 	// First try to fish out the email from existing cached authenticators.
 	var email string
 	g.lock.RLock()
@@ -195,7 +220,7 @@ func (g *generator) GetEmail() (string, error) {
 	}
 
 	// Give up and construct a new authenticator just to get the email.
-	a, err := g.authenticator([]string{auth.OAuthScopeEmail}, "")
+	a, err := g.Authenticator([]string{OAuthScopeEmail}, "")
 	if err != nil {
 		return "", err
 	}
