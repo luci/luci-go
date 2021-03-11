@@ -746,6 +746,30 @@
       },
       "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89d5dd6c_19fc0aff",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-11T02:50:45Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/invocation.go;l\u003d97?q\u003dvalidateInvocationToken\n\nThe linked function is mutateInvocation(), not validateInvocationToken().\nAlso, neither of validateInvocationToken [1] nor TokenKind.Validate [2] claims that they may return an appstatus annotated error.\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/invocation.go;l\u003d70-75\n[2]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/server/tokens/tokens.go;l\u003d133-142\n\nI can still add the check of `if appstatus.Get(err)`, whether validateInvocationToken() may return an appstatus annotated error or not, but as I mentioned, if we ask business logic to add such checks blindly, then appstatus should provide an helper function to make the check easier, I think. WDYT?",
+      "parentUuid": "c1feda0c_7bf6854f",
+      "range": {
+        "startLine": 178,
+        "startChar": 14,
+        "endLine": 178,
+        "endChar": 78
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
