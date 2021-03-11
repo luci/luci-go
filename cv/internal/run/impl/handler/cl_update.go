@@ -38,8 +38,13 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		err := errors.Reason("CRITICAL: Received CLUpdated events but Run is in unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == run.Status_FINALIZING || run.IsEnded(status):
-		// Run is final or finalizing, update on CL shouldn't change the Run state.
+	case status == run.Status_SUBMITTING || run.IsEnded(status):
+		// TODO(yiwzhang): This function should tell RM not to consume the Cancel
+		// event so that when RM finishes submitting, it will be able to process
+		// the Cancel Event and see if any action needs to be taken.
+		return nil, rs, nil
+	case run.IsEnded(status):
+		// Run is ended, update on CL shouldn't change the Run state.
 		return nil, rs, nil
 	}
 	clids.Dedupe()
