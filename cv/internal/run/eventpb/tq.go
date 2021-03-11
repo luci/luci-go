@@ -28,25 +28,29 @@ import (
 	"go.chromium.org/luci/server/tq"
 )
 
-// PokeInterval is target frequency of executions of PokeRunTask.
-//
-// See Dispatch() for details.
-const PokeInterval = time.Second
+const (
+	// PokeRunTaskClassID is the ID of PokeRun TaskClass.
+	PokeRunTaskClassID = "manage-run"
+	// PokeInterval is target frequency of executions of PokeRunTask.
+	//
+	// See Dispatch() for details.
+	PokeInterval = time.Second
+)
 
 // PokeRunTaskRef is used by RunManager implementation to add its handler.
 var PokeRunTaskRef tq.TaskClassRef
 
 func init() {
 	PokeRunTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "poke-manage-run",
+		ID:        PokeRunTaskClassID,
 		Prototype: &PokeRunTask{},
 		Queue:     "manage-run",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "manage-run",
+		ID:        fmt.Sprintf("kick-%s", PokeRunTaskClassID),
 		Prototype: &KickPokeRunTask{},
-		Queue:     "manage-run",
+		Queue:     "kick-manage-run",
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*KickPokeRunTask)
