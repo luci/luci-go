@@ -175,7 +175,8 @@ func (g *TokenGenerator) Authenticator(scopes []string, audience string) (*Authe
 // GenerateOAuthToken returns an access token for a combination of scopes.
 //
 // The returned token lives for at least given `lifetime` duration, but it may
-// live longer.
+// live longer. If `lifetime` is zero, a default lifetime from auth.Options will
+// be used.
 func (g *TokenGenerator) GenerateOAuthToken(_ context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 	if len(scopes) == 0 {
 		return nil, errors.New("got empty list of OAuth scopes")
@@ -184,13 +185,17 @@ func (g *TokenGenerator) GenerateOAuthToken(_ context.Context, scopes []string, 
 	if err != nil {
 		return nil, err
 	}
+	if lifetime == 0 {
+		lifetime = g.opts.MinTokenLifetime
+	}
 	return a.GetAccessToken(lifetime)
 }
 
 // GenerateIDToken returns an ID token with the given audience in `aud` claim.
 //
 // The returned token lives for at least given `lifetime` duration, but it may
-// live longer.
+// live longer. If `lifetime` is zero, a default lifetime from auth.Options will
+// be used.
 func (g *TokenGenerator) GenerateIDToken(_ context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error) {
 	if audience == "" {
 		return nil, errors.New("got empty ID token audience")
@@ -198,6 +203,9 @@ func (g *TokenGenerator) GenerateIDToken(_ context.Context, audience string, lif
 	a, err := g.Authenticator(nil, audience)
 	if err != nil {
 		return nil, err
+	}
+	if lifetime == 0 {
+		lifetime = g.opts.MinTokenLifetime
 	}
 	return a.GetAccessToken(lifetime)
 }
@@ -220,7 +228,7 @@ func (g *TokenGenerator) GetEmail() (string, error) {
 	}
 
 	// Give up and construct a new authenticator just to get the email.
-	a, err := g.Authenticator([]string{OAuthScopeEmail}, "")
+	a, err := g.Authenticator(g.opts.Scopes, "")
 	if err != nil {
 		return "", err
 	}
