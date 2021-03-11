@@ -17,6 +17,7 @@ package artifacts
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"cloud.google.com/go/spanner"
@@ -107,4 +108,23 @@ func Read(ctx context.Context, name string) (*pb.Artifact, error) {
 		ret.SizeBytes = size.Int64
 		return ret, nil
 	}
+}
+
+const (
+	// HashFunc is the name of the hash func used for generating RBECASHash.
+	hashFunc      = "sha256"
+	hashPrefix    = hashFunc + ":"
+	sha256Pattern = `[0-9a-f]{64}$`
+)
+
+var ContentHashRe = regexp.MustCompile(fmt.Sprintf(`^%s:%s$`, hashFunc, sha256Pattern))
+
+// AddHashPrefix adds HashFunc to a given hash string.
+func AddHashPrefix(hash string) string {
+	return strings.Join([]string{hashPrefix, hash}, "")
+}
+
+// TrimHashPrefix removes HashFunc from a given hash string.
+func TrimHashPrefix(hash string) string {
+	return strings.TrimPrefix(hash, hashPrefix)
 }

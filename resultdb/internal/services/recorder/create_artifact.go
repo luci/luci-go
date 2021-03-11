@@ -23,7 +23,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -58,8 +57,6 @@ const (
 	updateTokenHeaderKey         = "Update-Token"
 	maxArtifactContentSize       = 64 * 1024 * 1024 // 64 MiB.
 )
-
-var artifactContentHashRe = regexp.MustCompile("^sha256:[0-9a-f]{64}$")
 
 // artifactCreationHandler can handle artifact creation requests.
 //
@@ -119,10 +116,6 @@ type artifactCreator struct {
 	size int64
 }
 
-func (ac *artifactCreator) sha256Hash() string {
-	return strings.TrimPrefix(ac.hash, "sha256:")
-}
-
 func (ac *artifactCreator) handle(c *router.Context) error {
 	ctx := c.Context
 
@@ -144,7 +137,7 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 	// all cases.
 	ver := &digestVerifier{
 		r:            c.Request.Body,
-		expectedHash: ac.sha256Hash(),
+		expectedHash: artifacts.TrimHashPrefix(ac.hash),
 		expectedSize: ac.size,
 		actualHash:   sha256.New(),
 	}
@@ -278,7 +271,7 @@ func (ac *artifactCreator) genWriteResourceName(ctx context.Context) string {
 		"%s/uploads/%s/blobs/%s/%d",
 		ac.RBEInstance,
 		uuid.Must(uuid.FromBytes(uuidBytes)),
-		ac.sha256Hash(),
+		artifacts.TrimHashPrefix(ac.hash),
 		ac.size)
 }
 
@@ -302,8 +295,8 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	switch ac.hash = c.Request.Header.Get(artifactContentHashHeaderKey); {
 	case ac.hash == "":
 		return appstatus.Errorf(codes.InvalidArgument, "%s header is missing", artifactContentHashHeaderKey)
-	case !artifactContentHashRe.MatchString(ac.hash):
-		return appstatus.Errorf(codes.InvalidArgument, "%s header value does not match %s", artifactContentHashHeaderKey, artifactContentHashRe)
+	case !artifacts.ContentHashRe.MatchString(ac.hash):
+		return appstatus.Errorf(codes.InvalidArgument, "%s header value does not match %s", artifactContentHashHeaderKey, artifacts.ContentHashRe)
 	}
 
 	// Parse and validate the size.
@@ -426,20 +419,21 @@ func (v *digestVerifier) ReadVerify(ctx context.Context) (err error) {
 	if v.actualSize != v.expectedSize {
 		return appstatus.Errorf(
 			codes.InvalidArgument,
-			"Content-Length header value %d does not match the length of the request body which is %d",
+			"Content-Length header value %d does not match the length of the request body, %d",
 			v.expectedSize,
 			v.actualSize,
 		)
 	}
 
 	// Verify hash.
-	actualHash := hex.EncodeToString(v.actualHash.Sum(nil))
-	if actualHash != v.expectedHash {
+	hashFromBody := hex.EncodeToString(v.actualHash.Sum(nil))
+	hashFromHeader := v.expectedHash
+	if hashFromBody != hashFromHeader {
 		return appstatus.Errorf(
 			codes.InvalidArgument,
-			`Content-Hash header value "sha256:%s" does not match the hash of the request body which is "sha256:%s"`,
-			v.expectedHash,
-			actualHash,
+			`Content-Hash header value "%s" does not match the hash of the request body, "%s"`,
+			artifacts.AddHashPrefix(hashFromHeader),
+			artifacts.AddHashPrefix(hashFromBody),
 		)
 	}
 

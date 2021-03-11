@@ -281,7 +281,7 @@ func TestCreateArtifact(t *testing.T) {
 					rec.Body.String(),
 					ShouldEqual,
 					`Content-Hash header value "sha256:baaaaada5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824" `+
-						`does not match the hash of the request body which is "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"`+
+						`does not match the hash of the request body, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"`+
 						"\n")
 			})
 
@@ -291,7 +291,7 @@ func TestCreateArtifact(t *testing.T) {
 
 				rec := send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 100, tok, "hello", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldEqual, "Content-Length header value 100 does not match the length of the request body which is 5\n")
+				So(rec.Body.String(), ShouldEqual, "Content-Length header value 100 does not match the length of the request body, 5\n")
 			})
 		})
 
