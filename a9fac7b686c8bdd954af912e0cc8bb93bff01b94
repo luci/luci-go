@@ -50,6 +50,63 @@
       "message": "It works on GKE too! My expectations are exceeded.",
       "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "12bf2280_4fc38da0",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 701,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T22:05:31Z",
+      "side": 1,
+      "message": "do you think we can hit transient issue, esp. on startups, that will force us to go cumbersome route *sometimes* and with some bug in one of the codepath result in weird heisenbugs?",
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9b6c6241_e7da65fa",
+        "filename": "server/auth/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T22:05:31Z",
+      "side": 1,
+      "message": "hm, this error isn\u0027t returned by anything *yet*.\n\nIs this like a future opt out?\n\nI think I don\u0027t when would server/server.go setup in this CL lead to ever going into IAM PRC.",
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b8f1769_7a7352f0",
+        "filename": "server/auth/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T22:05:31Z",
+      "side": 1,
+      "message": "confusing; you are referring to \"IAM RPC\", not the IDTokenProvider field.\nHow about \"The generateIdToken IAM RPC requires ...\"?",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 84,
+        "endChar": 6
+      },
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
