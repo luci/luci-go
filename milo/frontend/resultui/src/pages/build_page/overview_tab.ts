@@ -345,16 +345,19 @@ export class OverviewTabElement extends MobxLitElement {
     #main {
       margin: 10px 16px;
     }
-    @media screen and (min-width: 1500px) {
+    @media screen and (min-width: 1300px) {
       #main {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: auto 1fr;
         grid-gap: 20px;
       }
-      .first-column,
-      .second-column {
-        overflow: hidden;
-      }
+    }
+    .first-column {
+      overflow: hidden;
+      min-width: 50vw;
+    }
+    .second-column {
+      overflow: hidden;
     }
 
     h3 {
