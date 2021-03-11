@@ -18,6 +18,46 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "da034978_23ba6e66",
+        "filename": "auth/generator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T23:28:11Z",
+      "side": 1,
+      "message": "lifetime",
+      "range": {
+        "startLine": 178,
+        "startChar": 20,
+        "endLine": 178,
+        "endChar": 27
+      },
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "322b8664_77bf965d",
+        "filename": "auth/generator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T23:28:11Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "43f61b85_c0277ef6",
@@ -77,6 +117,30 @@
       "writtenOn": "2021-03-11T21:00:32Z",
       "side": 1,
       "message": "nothing new here, Gerrit is drunk",
+      "range": {
+        "startLine": 1449,
+        "startChar": 0,
+        "endLine": 1468,
+        "endChar": 3
+      },
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ee0fcb1_efe7a7a4",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1468,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T23:28:11Z",
+      "side": 1,
+      "message": "but you\u0027ve moved it down, and I believe loooong comment about -token-cache-dir has larger weight for Gerrit 😄\n\nBut your comment is appreciated.",
+      "parentUuid": "5f1d6d96_0871bca8",
       "range": {
         "startLine": 1449,
         "startChar": 0,
