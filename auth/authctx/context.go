@@ -456,17 +456,12 @@ func (ac *Context) Report(ctx context.Context) {
 // Returns the server itself (so it can be stopped) and also LocalAuth section
 // that can be put into LUCI_CONTEXT to make subprocesses use the server.
 func launchSrv(ctx context.Context, opts auth.Options, accID string) (*localauth.Server, *lucictx.LocalAuth, error) {
-	gen, err := localauth.NewTokenGenerator(ctx, opts)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	// We currently always setup a context with one account (which is also
 	// default). It means if we override some existing LUCI_CONTEXT, all
 	// non-default accounts there are "forgotten".
 	srv := &localauth.Server{
 		TokenGenerators: map[string]localauth.TokenGenerator{
-			accID: gen,
+			accID: auth.NewTokenGenerator(ctx, opts),
 		},
 		DefaultAccountID: accID,
 	}
