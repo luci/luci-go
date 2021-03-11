@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "957f2c1c_8d859e98",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T21:30:02Z",
+      "side": 1,
+      "message": "Totally untested on real GAE/GKE yet, but I believe this code path is not used yet either.\n\nThe only place where WithIDTokenAudience is used is SoM, which is a GAEv1 app. IDTokenProvider is nil there, so it will keep using generateIdToken IAM method.",
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
