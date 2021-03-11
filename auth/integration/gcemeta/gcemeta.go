@@ -42,14 +42,26 @@ import (
 	"go.chromium.org/luci/auth/integration/internal/localsrv"
 )
 
+// TokenGenerator produces access and ID tokens.
+//
+// The canonical implementation is &auth.TokenGenerator{}.
+type TokenGenerator interface {
+	// GenerateOAuthToken returns an access token for a combination of scopes.
+	GenerateOAuthToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error)
+	// GenerateIDToken returns an ID token with the given audience in `aud` claim.
+	GenerateIDToken(ctx context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error)
+}
+
 // Server runs a local fake GCE metadata server.
 type Server struct {
-	// Source is used to obtain OAuth2 tokens.
-	Source oauth2.TokenSource
-	// Email is the email associated with the token.
+	// Generator is used to obtain OAuth2 and ID tokens.
+	Generator TokenGenerator
+	// Email is the email associated with generated tokens.
 	Email string
-	// Scopes is a list of scopes associated with the token.
+	// Scopes is a list of scopes to put into generated OAuth2 tokens.
 	Scopes []string
+	// MinTokenLifetime is a minimum lifetime left in returned tokens.
+	MinTokenLifetime time.Duration
 	// Port is a local TCP port to bind to or 0 to allow the OS to pick one.
 	Port int
 
@@ -116,8 +128,10 @@ func (s *Server) installRoutes(mux *http.ServeMux) {
 		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/email", s.accountEmailHandler)
 		// Used (at least) by gsutil instead of '/?recursive=True'.
 		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/scopes", s.accountScopesHandler)
-		// Used to actually mint tokens.
+		// Used to mint access tokens.
 		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/token", s.accountTokenHandler)
+		// Used to mint ID tokens.
+		mux.HandleFunc("/computeMetadata/v1/instance/service-accounts/"+acc+"/identity", s.accountIdentityHandler)
 	}
 }
 
@@ -147,7 +161,7 @@ func (s *Server) accountScopesHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) accountTokenHandler(rw http.ResponseWriter, r *http.Request) {
-	tok, err := s.Source.Token()
+	tok, err := s.Generator.GenerateOAuthToken(r.Context(), s.Scopes, s.MinTokenLifetime)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Failed to mint the token - %s", err), http.StatusInternalServerError)
 		return
@@ -157,6 +171,20 @@ func (s *Server) accountTokenHandler(rw http.ResponseWriter, r *http.Request) {
 		"expires_in":   time.Until(tok.Expiry) / time.Second,
 		"token_type":   "Bearer",
 	})
+}
+
+func (s *Server) accountIdentityHandler(rw http.ResponseWriter, r *http.Request) {
+	aud := r.URL.Query().Get("audience")
+	if aud == "" {
+		http.Error(rw, "`audience` is required", 400)
+		return
+	}
+	tok, err := s.Generator.GenerateIDToken(r.Context(), aud, s.MinTokenLifetime)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("Failed to mint the token - %s", err), http.StatusInternalServerError)
+		return
+	}
+	replyText(rw, tok.AccessToken)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
