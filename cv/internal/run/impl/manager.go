@@ -36,10 +36,10 @@ import (
 )
 
 func init() {
-	eventpb.PokeRunTaskRef.AttachHandler(
+	eventpb.ManageRunTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*eventpb.PokeRunTask)
-			err := pokeRunTask(ctx, common.RunID(task.GetRunId()))
+			task := payload.(*eventpb.ManageRunTask)
+			err := manageRun(ctx, common.RunID(task.GetRunId()))
 			// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
 			// already scheduled for the next second.
 			return common.TQifyError(ctx, err)
@@ -51,7 +51,7 @@ var pokeInterval = 5 * time.Minute
 
 var fakeHandlerKey = "Fake Run Events Handler"
 
-func pokeRunTask(ctx context.Context, runID common.RunID) error {
+func manageRun(ctx context.Context, runID common.RunID) error {
 	ctx = logging.SetField(ctx, "run", runID)
 	recipient := datastore.MakeKey(ctx, run.RunKind, string(runID))
 	rm := &runManager{runID: runID}

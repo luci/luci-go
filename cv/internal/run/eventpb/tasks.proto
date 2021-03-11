@@ -21,20 +21,21 @@ option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 import "google/protobuf/timestamp.proto";
 
 
-// PokeRunTask sends a signal to RunManager to process events.
+// ManageRunTask sends a signal to RunManager to process events.
 //
-// Always used with de-duplication and thus can't be created from a transaction.
+// Always used with de-duplication and thus can't be created from a
+// transaction.
 //
 // Queue: "manage-run".
-message PokeRunTask {
+message ManageRunTask {
   string run_id = 1;
 }
 
-// KickPokeRunTask starts a task to actually enqueue PokeRunTask. It exists in
-// order to poke RunManager from a transaction.
+// KickManageRunTask starts a task to actually enqueue ManageRunTask. It exists
+// in order to send a deduplicatable ManageRunTask from a transaction.
 //
 // Queue: "kick-manage-run".
-message KickPokeRunTask {
+message KickManageRunTask {
   string run_id = 1;
   google.protobuf.Timestamp eta = 2;
 }
