@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "57ba581b_0a33f325",
+        "filename": "cv/appengine/queue.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T00:41:38Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "9c8f4eba_388270ba",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 12
+      },
+      "revId": "487a7b64e94a44b44cdeb5081b9e6793c5d3fb2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "59fd7aa6_5c3f5d33",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-03-10T20:06:09Z",
       "side": 1,
       "message": "let\u0027s use `manage-run`\n(since \"poke\" is actually specialized event name)\n\nIdeally, we should rename the Go names of the tasks, too (e..g ManageRunTask) -- I was meaning to do this for PM for quite some time now... You decide what to do and not do in this CL.",
+      "range": {
+        "startLine": 33,
+        "startChar": 23,
+        "endLine": 33,
+        "endChar": 27
+      },
+      "revId": "487a7b64e94a44b44cdeb5081b9e6793c5d3fb2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54669561_f4983cbe",
+        "filename": "cv/internal/run/eventpb/tq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T00:41:38Z",
+      "side": 1,
+      "message": "Agreed. I change the value in this CL, I will have a follow-up CL to get rid of poke run.",
+      "parentUuid": "59fd7aa6_5c3f5d33",
       "range": {
         "startLine": 33,
         "startChar": 23,
