@@ -16,7 +16,6 @@ package migration
 
 import (
 	"context"
-	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

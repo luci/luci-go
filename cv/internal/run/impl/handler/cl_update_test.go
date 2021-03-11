@@ -90,7 +90,7 @@ func TestOnCLUpdated(t *testing.T) {
 
 			}
 			statuses := []run.Status{
-				run.Status_FINALIZING,
+				run.Status_SUBMITTING,
 				run.Status_SUCCEEDED,
 				run.Status_FAILED,
 				run.Status_CANCELLED,
