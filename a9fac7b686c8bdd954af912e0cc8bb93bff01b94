@@ -123,6 +123,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "95f4a9cc_fff25832",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 701,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T23:03:53Z",
+      "side": 1,
+      "message": "\u003e  Note that currently this error is not returned by anything at all.\n\nYeah, that\u0027s what started the confusion, but key mistake of mine was conflating server/auth with server/server.go.\n\n\u003e Removed ErrIDTokensNotSupported.\n\nOh, I liked it, if you want -- you may bring it back, but if so, please mention\nthis in the doc:\n\n\u003e  It should do it only if it is sure ID tokens are not supported",
+      "parentUuid": "4efc459e_73e43a5f",
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9b6c6241_e7da65fa",
@@ -154,6 +172,24 @@
       "side": 1,
       "message": "\u003e Is this like a future opt out?\n\nYes. I think I can remove it if you prefer.\n\n\u003e I think I don\u0027t when would server/server.go setup in this CL lead to ever going into IAM PRC.\n\nserver/server.go will never use IAM RPC. But server/auth is also used by GAEv1 and by GAE Flex servers which do not use server.go (and they do not populate IDTokenProvider).",
       "parentUuid": "9b6c6241_e7da65fa",
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c24295d_a3aa5e8a",
+        "filename": "server/auth/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T23:03:53Z",
+      "side": 1,
+      "message": "ah, well, so now everything makes sense.",
+      "parentUuid": "6ccff993_3d5abf97",
       "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
