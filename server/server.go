@@ -1461,6 +1461,9 @@ func (s *Server) initAuthStart() error {
 		AccessTokenProvider: func(ctx context.Context, scopes []string) (*oauth2.Token, error) {
 			return tokens.GenerateOAuthToken(ctx, scopes, 0)
 		},
+		IDTokenProvider: func(ctx context.Context, audience string) (*oauth2.Token, error) {
+			return tokens.GenerateIDToken(ctx, audience, 0)
+		},
 		AnonymousTransport: func(context.Context) http.RoundTripper { return rootTransport },
 		FrontendClientID:   func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
 		EndUserIP:          getRemoteIP,
