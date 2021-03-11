@@ -698,6 +698,30 @@
       },
       "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31a96612_a7a30413",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-11T02:17:50Z",
+      "side": 1,
+      "message": "I don\u0027t see any points, from server/tokens/tokens.go or any of its dependent packages, that returns appstatus. Thus, the current implementation is safe.\n\nThat said, I don\u0027t think this is very maintainable. It\u0027s not always clear, whether a function could return an appstatus, if the call stack is large. It\u0027s not reasonable either, if we ask all application logic to have the following statements blindly.\n```\nerr :\u003d myFunc(arg)\nif _, ok :\u003d appstatus.Get(err); ok {\n  return err\n}\nreturn appstatus.Errorf(codes.ABC, \"%s\", err)\n```\n\nInstead, appstatus should provide a helper function that does the job, like below\n```\nif err :\u003d myFunc(arg); err !\u003d nil {\n  // This will override the existing appstatus code with the new code,\n  // if the input err was already an appstatus error. If not, then\n  // it will be just appstatus.Errorf(codes.ABC, \"message\")\n  return appstatus.Annotate(codes.ABC, \"message\")\n}\n```\n\nIn short, I won\u0027t fix this general problem in this CL. The current implementation of validateUpdateToken() won\u0027t return an appstatus error. If we want a robust solution, appstatus should provide one. If this SG, then I can write a separate CL for appstatus.",
+      "parentUuid": "e96c2234_e86ebba6",
+      "range": {
+        "startLine": 178,
+        "startChar": 14,
+        "endLine": 178,
+        "endChar": 78
+      },
+      "revId": "3345d0a06e2b1cc0341e62717283327ce61d1702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
