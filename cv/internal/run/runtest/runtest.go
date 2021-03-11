@@ -36,9 +36,9 @@ import (
 func Runs(in tqtesting.TaskList) (runs common.RunIDs) {
 	for _, t := range in.SortByETA() {
 		switch v := t.Payload.(type) {
-		case *eventpb.PokeRunTask:
+		case *eventpb.ManageRunTask:
 			runs = append(runs, common.RunID(v.GetRunId()))
-		case *eventpb.KickPokeRunTask:
+		case *eventpb.KickManageRunTask:
 			runs = append(runs, common.RunID(v.GetRunId()))
 		}
 	}
@@ -57,7 +57,7 @@ func Tasks(in tqtesting.TaskList) tqtesting.TaskList {
 	ret := make(tqtesting.TaskList, 0, len(in))
 	for _, t := range in.SortByETA() {
 		switch t.Payload.(type) {
-		case *eventpb.PokeRunTask, *eventpb.KickPokeRunTask:
+		case *eventpb.ManageRunTask, *eventpb.KickManageRunTask:
 			ret = append(ret, t)
 		}
 	}

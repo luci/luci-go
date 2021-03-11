@@ -29,31 +29,31 @@ import (
 )
 
 const (
-	// PokeRunTaskClassID is the ID of PokeRun TaskClass.
-	PokeRunTaskClassID = "manage-run"
-	// PokeInterval is target frequency of executions of PokeRunTask.
+	// ManageRunTaskClassID is the ID of ManageRunTask Class.
+	ManageRunTaskClassID = "manage-run"
+	// taskInterval is target frequency of executions of ManageRunTask.
 	//
 	// See Dispatch() for details.
-	PokeInterval = time.Second
+	taskInterval = time.Second
 )
 
-// PokeRunTaskRef is used by RunManager implementation to add its handler.
-var PokeRunTaskRef tq.TaskClassRef
+// ManageRunTaskRef is used by RunManager implementation to add its handler.
+var ManageRunTaskRef tq.TaskClassRef
 
 func init() {
-	PokeRunTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        PokeRunTaskClassID,
-		Prototype: &PokeRunTask{},
+	ManageRunTaskRef = tq.RegisterTaskClass(tq.TaskClass{
+		ID:        ManageRunTaskClassID,
+		Prototype: &ManageRunTask{},
 		Queue:     "manage-run",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        fmt.Sprintf("kick-%s", PokeRunTaskClassID),
-		Prototype: &KickPokeRunTask{},
+		ID:        fmt.Sprintf("kick-%s", ManageRunTaskClassID),
+		Prototype: &KickManageRunTask{},
 		Queue:     "kick-manage-run",
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*KickPokeRunTask)
+			task := payload.(*KickManageRunTask)
 			var eta time.Time
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
@@ -64,14 +64,14 @@ func init() {
 	})
 }
 
-// Dispatch ensures invocation of RunManager via PokeRunTask.
+// Dispatch ensures invocation of RunManager via ManageRunTask.
 //
 // RunManager will be invoked at approximately no earlier than both:
 //  * eta time (if given)
 //  * next possible.
 func Dispatch(ctx context.Context, runID string, eta time.Time) error {
 	if datastore.CurrentTransaction(ctx) != nil {
-		payload := &KickPokeRunTask{RunId: runID}
+		payload := &KickManageRunTask{RunId: runID}
 		if !eta.IsZero() {
 			payload.Eta = timestamppb.New(eta)
 		}
@@ -82,7 +82,7 @@ func Dispatch(ctx context.Context, runID string, eta time.Time) error {
 	}
 
 	// If actual local clock is more than `clockDrift` behind, the "next" computed
-	// PokeRunTask moment might be already executing, meaning task dedup will
+	// ManageRunTask moment might be already executing, meaning task dedup will
 	// ensure no new task will be scheduled AND the already executing run
 	// might not have read the Event that was just written.
 	// Thus, for safety, this should be large, however, will also leads to higher
@@ -94,10 +94,10 @@ func Dispatch(ctx context.Context, runID string, eta time.Time) error {
 	if eta.IsZero() || eta.Before(now) {
 		eta = now
 	}
-	eta = eta.Truncate(PokeInterval).Add(PokeInterval)
+	eta = eta.Truncate(taskInterval).Add(taskInterval)
 	return tq.AddTask(ctx, &tq.Task{
 		DeduplicationKey: fmt.Sprintf("%s\n%d", runID, eta.UnixNano()),
 		ETA:              eta,
-		Payload:          &PokeRunTask{RunId: runID},
+		Payload:          &ManageRunTask{RunId: runID},
 	})
 }
