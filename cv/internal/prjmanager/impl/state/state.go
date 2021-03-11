@@ -168,9 +168,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 	}
 }
 
-// Poke checks PM & world state and acts if necessary.
-//
-// For example, multi-CL Runs can be created if stabilization delay has passed.
+// Poke propagates "the poke" downstream to Poller & Runs.
 func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 	s.ensureNotYetCloned()
 
@@ -183,14 +181,14 @@ func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 		// downstream.
 		return newState, sideEffect, nil
 	}
-	// Propagate downstream.
+
+	// Propagate downstream directly.
 	if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 		return nil, nil, err
 	}
 	if err := s.pokeRuns(ctx); err != nil {
 		return nil, nil, err
 	}
-	// TODO(tandrii): implement.
 	return s, nil, nil
 }
 
