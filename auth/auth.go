@@ -80,6 +80,10 @@ var (
 	// a programming error.
 	ErrBadOptions = errors.New("bad authenticator options")
 
+	// ErrAudienceRequired is returned when UseIDTokens is set without specifying
+	// the target audience for ID tokens.
+	ErrAudienceRequired = errors.New("using ID tokens requires specifying an audience string")
+
 	// ErrNoIDToken is returned by GetAccessToken when UseIDTokens option is true,
 	// but the authentication method doesn't actually support ID tokens either
 	// inherently by its nature (e.g. not implemented) or due to its configuration
@@ -1455,6 +1459,26 @@ func normalizeScopes(s []string) []string {
 	return s // already sorted and dedupped
 }
 
+// prepPhonyIDTokenScope checks `useIDTokens`.
+//
+// If it is true, requires the audience to be set and replaces scopes with
+// a phony "audience:<value>" scope to be used as a cache key (and ignored by
+// the providers, since they don't use OAuth2 scopes when minting ID tokens).
+// See also comment for Scopes in internal.CacheKey.
+//
+// If `useIDTokens` is false, clears `audience`.
+//
+// As a result, the audience is set if and only if `useIDTokens` is true.
+func prepPhonyIDTokenScope(useIDTokens bool, scopes []string, audience string) (scopesOut []string, audienceOut string, err error) {
+	if useIDTokens {
+		if audience == "" {
+			return nil, "", ErrAudienceRequired
+		}
+		return []string{"audience:" + audience}, audience, nil
+	}
+	return scopes, "", nil
+}
+
 // makeBaseTokenProvider creates TokenProvider implementation based on options.
 //
 // opts.Scopes and opts.UseIDTokens are ignored, `scopes` and `useIDTokens` are
@@ -1465,6 +1489,19 @@ func normalizeScopes(s []string) []string {
 func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, useIDTokens bool) (internal.TokenProvider, error) {
 	if opts.testingBaseTokenProvider != nil {
 		return opts.testingBaseTokenProvider, nil
+	}
+
+	// Only UserCredentialsMethod can generate ID tokens and access tokens at
+	// the same time. All other methods can do only ID tokens or only access
+	// tokens. prepPhonyIDTokenScope checks/mutates the parameters accordingly,
+	// see its doc.
+	audience := opts.Audience
+	if opts.Method != UserCredentialsMethod {
+		var err error
+		scopes, audience, err = prepPhonyIDTokenScope(useIDTokens, scopes, audience)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	switch opts.Method {
@@ -1483,24 +1520,21 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 		}
 		return internal.NewServiceAccountTokenProvider(
 			ctx,
-			useIDTokens,
 			opts.ServiceAccountJSON,
 			serviceAccountPath,
 			scopes,
-			opts.Audience)
+			audience)
 	case GCEMetadataMethod:
 		return internal.NewGCETokenProvider(
 			ctx,
-			useIDTokens,
 			opts.GCEAccountName,
 			scopes,
-			opts.Audience)
+			audience)
 	case LUCIContextMethod:
 		return internal.NewLUCIContextTokenProvider(
 			ctx,
-			useIDTokens,
 			scopes,
-			opts.Audience,
+			audience,
 			opts.Transport)
 	default:
 		return nil, fmt.Errorf("auth: unrecognized authentication method: %s", opts.Method)
@@ -1514,12 +1548,15 @@ func makeIAMTokenProvider(ctx context.Context, opts *Options) (internal.TokenPro
 	if opts.testingIAMTokenProvider != nil {
 		return opts.testingIAMTokenProvider, nil
 	}
+	scopes, audience, err := prepPhonyIDTokenScope(opts.UseIDTokens, opts.Scopes, opts.Audience)
+	if err != nil {
+		return nil, err
+	}
 	return internal.NewIAMTokenProvider(
 		ctx,
-		opts.UseIDTokens,
 		opts.ActAsServiceAccount,
-		opts.Scopes,
-		opts.Audience,
+		scopes,
+		audience,
 		opts.Transport)
 }
 
@@ -1533,13 +1570,16 @@ func makeLUCITokenProvider(ctx context.Context, opts *Options) (internal.TokenPr
 	if internal.NewLUCITSTokenProvider == nil {
 		return nil, errors.New("support for impersonation through LUCI is not compiled into this binary")
 	}
+	scopes, audience, err := prepPhonyIDTokenScope(opts.UseIDTokens, opts.Scopes, opts.Audience)
+	if err != nil {
+		return nil, err
+	}
 	return internal.NewLUCITSTokenProvider(
 		ctx,
-		opts.UseIDTokens,
 		opts.TokenServerHost,
 		opts.ActAsServiceAccount,
 		opts.ActViaLUCIRealm,
-		opts.Scopes,
-		opts.Audience,
+		scopes,
+		audience,
 		opts.Transport)
 }
