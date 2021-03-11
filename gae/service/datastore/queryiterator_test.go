@@ -170,32 +170,6 @@ func TestStartQueryIterator(t *testing.T) {
 			So(err, ShouldResemble, Stop)
 		})
 
-		Convey("cancel", func() {
-			fq, err := dq.Finalize()
-			So(err, ShouldBeNil)
-			qi := startQueryIterator(ctx, fq)
-
-			cancel()
-			<-ctx.Done() // wait till the cancellation propagates
-
-			// When calling `cancel()`, one rawQueryResult may already be put into the itemCh.
-			// So it asserts the two possible scenarios: 1) one rawQueryResult with a followed Stop signal.
-			// 2) qi.Next() directly returns a Stop signal.
-			err = qi.Next()
-			if err == nil {
-				So(qi.currentQueryResult, ShouldResemble, &rawQueryResult{
-					key: MakeKey(ctx, "Kind", 1),
-					data: PropertyMap{
-						"Value": MkProperty(0),
-					},
-				})
-				err = qi.Next()
-				So(err, ShouldResemble, Stop)
-			} else {
-				So(err, ShouldResemble, Stop)
-			}
-		})
-
 		Convey("not found", func() {
 			fds.entities = 0
 			fq, err := dq.Finalize()
