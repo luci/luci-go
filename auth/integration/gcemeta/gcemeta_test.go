@@ -28,17 +28,32 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+type fakeGenerator struct {
+	accessToken *oauth2.Token
+	idToken     string
+}
+
+func (f *fakeGenerator) GenerateOAuthToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+	return f.accessToken, nil
+}
+
+func (f *fakeGenerator) GenerateIDToken(ctx context.Context, audience string, lifetime time.Duration) (*oauth2.Token, error) {
+	return &oauth2.Token{AccessToken: f.idToken}, nil
+}
+
 func TestServer(t *testing.T) {
-	fakeToken := &oauth2.Token{
-		AccessToken: "fake_token",
+	fakeAccessToken := &oauth2.Token{
+		AccessToken: "fake_access_token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
+	fakeIDToken := "fake_id_token"
 
 	ctx := context.Background()
 	srv := Server{
-		Source: oauth2.StaticTokenSource(fakeToken),
-		Email:  "fake@example.com",
-		Scopes: []string{"scope1", "scope2"},
+		Generator:        &fakeGenerator{fakeAccessToken, fakeIDToken},
+		Email:            "fake@example.com",
+		Scopes:           []string{"scope1", "scope2"},
+		MinTokenLifetime: 2 * time.Minute,
 	}
 
 	// Need to set GCE_METADATA_HOST once before all tests because 'metadata'
@@ -85,16 +100,26 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		Convey("Token source works", func() {
+		Convey("OAuth2 token source works", func() {
 			ts := google.ComputeTokenSource("default", "ignored-scopes")
 			tok, err := ts.Token()
 			So(err, ShouldBeNil)
 			// Do not put tokens into logs, in case we somehow accidentally hit real
 			// metadata server with real tokens.
-			if tok.AccessToken != fakeToken.AccessToken {
+			if tok.AccessToken != fakeAccessToken.AccessToken {
 				panic("Bad token")
 			}
 			So(time.Until(tok.Expiry), ShouldBeGreaterThan, 55*time.Minute)
+		})
+
+		Convey("ID token fetch works", func() {
+			reply, err := metadata.Get("instance/service-accounts/default/identity?audience=boo&format=ignored")
+			So(err, ShouldBeNil)
+			// Do not put tokens into logs, in case we somehow accidentally hit real
+			// metadata server with real tokens.
+			if reply != fakeIDToken {
+				panic("Bad token")
+			}
 		})
 
 		Convey("Unsupported metadata call", func() {
