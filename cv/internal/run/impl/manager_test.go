@@ -147,7 +147,7 @@ func TestRunManager(t *testing.T) {
 				So(et.sendFn(ctx), ShouldBeNil)
 				runtest.AssertInEventbox(ctx, runID, et.event)
 				So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.PokeRunTaskClassID))
 				if et.invokedHandlerMethod == "" {
 					So(fh.invocations, ShouldBeEmpty)
 				} else {
@@ -177,7 +177,7 @@ func TestRunManager(t *testing.T) {
 					So(etc.sendFn(ctx), ShouldBeNil)
 				}
 			}
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.PokeRunTaskClassID))
 			So(fh.invocations, ShouldResemble, expectInvokedMethods)
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
 		})
@@ -187,7 +187,7 @@ func TestRunManager(t *testing.T) {
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
 			run.Start(ctx, runID)
 			run.Cancel(ctx, runID)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.PokeRunTaskClassID))
 			So(fh.invocations, ShouldResemble, []string{"Cancel"})
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
 			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{
@@ -218,7 +218,7 @@ func TestRunManager(t *testing.T) {
 		Convey("Recursive", func() {
 			So(run.PokeNow(ctx, runID), ShouldBeNil)
 			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.PokeRunTaskClassID))
 			for i := 0; i < 10; i++ {
 				now := clock.Now(ctx)
 				runtest.AssertInEventbox(ctx, runID, &eventpb.Event{
@@ -227,14 +227,14 @@ func TestRunManager(t *testing.T) {
 					},
 					ProcessAfter: timestamppb.New(now.Add(pokeInterval)),
 				})
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.PokeRunTaskClassID))
 			}
 		})
 
 		Convey("Existing event due during the interval", func() {
 			So(run.PokeNow(ctx, runID), ShouldBeNil)
 			So(run.Poke(ctx, runID, 30*time.Second), ShouldBeNil)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask("poke-manage-run"))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.PokeRunTaskClassID))
 
 			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{
 				Event: &eventpb.Event_Poke{

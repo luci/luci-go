@@ -90,7 +90,7 @@ func (x *PokeRunTask) GetRunId() string {
 // KickPokeRunTask starts a task to actually enqueue PokeRunTask. It exists in
 // order to poke RunManager from a transaction.
 //
-// Queue: "manage-run".
+// Queue: "kick-manage-run".
 type KickPokeRunTask struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

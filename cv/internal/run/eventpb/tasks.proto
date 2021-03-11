@@ -33,7 +33,7 @@ message PokeRunTask {
 // KickPokeRunTask starts a task to actually enqueue PokeRunTask. It exists in
 // order to poke RunManager from a transaction.
 //
-// Queue: "manage-run".
+// Queue: "kick-manage-run".
 message KickPokeRunTask {
   string run_id = 1;
   google.protobuf.Timestamp eta = 2;
