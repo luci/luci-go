@@ -17,12 +17,11 @@ package handler
 import (
 	"context"
 
-	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
 // OnCQDVerificationCompleted finalizes the Run according to the verified
 // Run reported by CQDaemon.
-func (*Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+func (*Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*Result, error) {
 	panic("implement")
 }
