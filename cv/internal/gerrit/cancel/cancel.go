@@ -307,19 +307,22 @@ func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeI
 	})
 
 	errs := errors.NewLazyMultiError(len(votes))
-	triggerVoteFound := false
-	for i, ai := range votes {
-		if ai.GetUser().GetAccountId() == t.GetGerritAccountId() {
-			triggerVoteFound = true
-			continue
+	needRemoveTriggerVote := false
+	for i, vote := range votes {
+		switch accountID := vote.GetUser().GetAccountId(); {
+		case vote.GetValue() == 0:
+			// no-op
+		case accountID == t.GetGerritAccountId():
+			needRemoveTriggerVote = true
+		default:
+			errs.Assign(i, c.removeVote(ctx, accountID, "", gerritpb.Notify_NOTIFY_NONE, nil))
 		}
-		errs.Assign(i, c.removeVote(ctx, ai.GetUser().GetAccountId(), "", gerritpb.Notify_NOTIFY_NONE, nil))
 	}
 
 	switch n, nd := notify.toGerritNotify(votes); {
 	case errs.Get() != nil:
 		return common.MostSevereError(errs.Get())
-	case !triggerVoteFound:
+	case !needRemoveTriggerVote:
 		// No need to remove triggering votes, post message only.
 		return c.annotateGerritErr(ctx, c.postGerritMsg(ctx, ci, msg, t, n, nd), "post message")
 	default:
