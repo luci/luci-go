@@ -151,6 +151,30 @@
       },
       "revId": "4c406cf80aad8814328127f3ac3a2b18e4b77fd8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "964beabc_e2b9dc12",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-11T02:51:55Z",
+      "side": 1,
+      "message": "SGTM.",
+      "parentUuid": "7c480349_5b015e21",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 21
+      },
+      "revId": "4c406cf80aad8814328127f3ac3a2b18e4b77fd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
