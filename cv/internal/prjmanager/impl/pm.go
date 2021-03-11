@@ -38,22 +38,22 @@ import (
 )
 
 func init() {
-	prjpb.PokePMTaskRef.AttachHandler(
+	prjpb.ManageProjectTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*prjpb.PokePMTask)
+			task := payload.(*prjpb.ManageProjectTask)
 			// TODO(tandrii): after all tasks have ETA set, remove this backwards
 			// compatibility code.
 			eta := clock.Now(ctx)
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
 			}
-			err := pokePMTask(ctx, task.GetLuciProject(), eta)
+			err := manageProject(ctx, task.GetLuciProject(), eta)
 			return common.TQifyError(ctx, err)
 		},
 	)
 }
 
-func pokePMTask(ctx context.Context, luciProject string, taskETA time.Time) error {
+func manageProject(ctx context.Context, luciProject string, taskETA time.Time) error {
 	ctx = logging.SetField(ctx, "project", luciProject)
 	if delay := clock.Now(ctx).Sub(taskETA); delay > prjpb.MaxAcceptableDelay {
 		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)

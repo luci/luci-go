@@ -279,7 +279,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 			i := i
 			go func() {
 				defer wg.Done()
-				errs[i] = pokePMTask(ctx, lProject, now)
+				errs[i] = manageProject(ctx, lProject, now)
 			}()
 		}
 		wg.Wait()

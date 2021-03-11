@@ -261,7 +261,7 @@ func TestComponentsActions(t *testing.T) {
 				pb.NextEvalTime = timestamppb.New(now)
 				So(state2.PB, ShouldResembleProto, pb)
 				// Self-poke task must be scheduled for earliest possible from now.
-				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(prjpb.PokeInterval)), ShouldNotBeEmpty)
+				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(prjpb.PMTaskInterval)), ShouldNotBeEmpty)
 			})
 		})
 
@@ -315,7 +315,7 @@ func TestComponentsActions(t *testing.T) {
 				pb.NextEvalTime = timestamppb.New(now)
 				So(state2.PB, ShouldResembleProto, pb)
 				// Self-poke task must be scheduled for earliest possible from now.
-				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(prjpb.PokeInterval)), ShouldNotBeEmpty)
+				So(pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(prjpb.PMTaskInterval)), ShouldNotBeEmpty)
 			})
 		})
 
