@@ -634,10 +634,10 @@ func TestSetReview(t *testing.T) {
 					},
 				})
 				So(latestCI().GetUpdated().AsTime(), ShouldHappenAfter, ciBefore.GetUpdated().AsTime())
-				So(latestCI().GetLabels()["Commit-Queue"].GetAll(), ShouldBeEmpty)
+				So(NonZeroVotes(latestCI(), "Commit-Queue"), ShouldBeEmpty)
 			})
 
-			Convey("existing new voter", func() {
+			Convey("new voter", func() {
 				res, err := client.SetReview(ctx, &gerritpb.SetReviewRequest{
 					Number: 10001,
 					Labels: map[string]int32{

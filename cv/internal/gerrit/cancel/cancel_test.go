@@ -15,6 +15,7 @@
 package cancel
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -47,9 +48,10 @@ func TestCancel(t *testing.T) {
 		const gHost = "x-review.example.com"
 		const lProject = "lProject"
 		const changeNum = 10001
+		triggerTime := ct.Clock.Now().Add(-2 * time.Minute)
 		ci := gf.CI(
 			10001, gf.PS(2),
-			gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), user),
+			gf.CQ(2, triggerTime, user),
 			gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
 		So(trigger.Find(ci).GerritAccountId, ShouldEqual, 100)
 		cl := &changelist.CL{
@@ -143,7 +145,7 @@ func TestCancel(t *testing.T) {
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
 			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
-			So(resultCI.Info.GetLabels()[trigger.CQLabelName].GetAll(), ShouldBeEmpty)
+			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
 			var setReviewReq *gerritpb.SetReviewRequest
 			for _, req := range ct.GFake.Requests() {
 				if r, ok := req.(*gerritpb.SetReviewRequest); ok {
@@ -182,7 +184,7 @@ func TestCancel(t *testing.T) {
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
 			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
-			So(resultCI.Info.GetLabels()[trigger.CQLabelName].GetAll(), ShouldBeEmpty)
+			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
 			actualRemovingOrder := []int64{}
 			for _, req := range ct.GFake.Requests() {
 				if r, ok := req.(*gerritpb.SetReviewRequest); ok {
@@ -209,6 +211,31 @@ func TestCancel(t *testing.T) {
 			So(actualRemovingOrder, ShouldResemble, expectedRemovingOrder)
 		})
 
+		Convey("Skips zero votes", func() {
+			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
+				gf.CQ(0, clock.Now(ctx).Add(-90*time.Second), gf.U("user-101"))(c.Info)
+				gf.CQ(0, clock.Now(ctx).Add(-100*time.Second), gf.U("user-102"))(c.Info)
+				gf.CQ(0, clock.Now(ctx).Add(-110*time.Second), gf.U("user-103"))(c.Info)
+			})
+
+			err := Cancel(ctx, input)
+			So(err, ShouldBeNil)
+			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
+			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
+			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
+			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
+			count := 0
+			for _, req := range ct.GFake.Requests() {
+				if r, ok := req.(*gerritpb.SetReviewRequest); ok {
+					So(r.OnBehalfOf, ShouldEqual, user.GetAccountId())
+					count++
+				}
+			}
+			if count != 1 {
+				So(fmt.Sprintf("expected exactly one request to remove vote on behalf of user-%d; got %d", user.GetAccountId(), count), ShouldBeEmpty)
+			}
+		})
+
 		Convey("Post Message even if triggering votes has been removed already", func() {
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				gf.CQ(0, clock.Now(ctx), user)(c.Info)
@@ -231,7 +258,13 @@ func TestCancel(t *testing.T) {
 			So(err, ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
 			So(ErrPermanentTag.In(err), ShouldBeTrue)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(resultCI.Info.GetLabels()[trigger.CQLabelName].GetAll(), ShouldNotBeEmpty)
+			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+				{
+					User:  user,
+					Value: 2,
+					Date:  timestamppb.New(triggerTime),
+				},
+			})
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
 			expectedMsg := input.Message + `
 
@@ -249,7 +282,13 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 			So(err, ShouldErrLike, "no permission to remove vote x-review.example.com/10001")
 			So(ErrPermanentTag.In(err), ShouldBeTrue)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
-			So(resultCI.Info.GetLabels()[trigger.CQLabelName].GetAll(), ShouldNotBeEmpty)
+			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldResembleProto, []*gerritpb.ApprovalInfo{
+				{
+					User:  user,
+					Value: 2,
+					Date:  timestamppb.New(triggerTime),
+				},
+			})
 			So(resultCI.Info.GetMessages(), ShouldBeEmpty)
 		})
 	})
