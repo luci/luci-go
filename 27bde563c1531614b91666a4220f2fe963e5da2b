@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5b9bc4fa_dff7e6b9",
+        "filename": "auth/generator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T23:57:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da034978_23ba6e66",
+      "range": {
+        "startLine": 178,
+        "startChar": 20,
+        "endLine": 178,
+        "endChar": 27
+      },
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "322b8664_77bf965d",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-03-11T23:28:11Z",
       "side": 1,
       "message": "ditto",
+      "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "177e6e52_f5db82b6",
+        "filename": "auth/generator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T23:57:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "322b8664_77bf965d",
       "revId": "27bde563c1531614b91666a4220f2fe963e5da2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
