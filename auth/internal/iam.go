@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
@@ -30,6 +31,7 @@ import (
 type iamTokenProvider struct {
 	actAs     string
 	scopes    []string
+	audience  string // not empty iff using ID tokens
 	transport http.RoundTripper
 	cacheKey  CacheKey
 }
@@ -37,12 +39,20 @@ type iamTokenProvider struct {
 // NewIAMTokenProvider returns TokenProvider that uses generateAccessToken IAM
 // API to grab tokens belonging to some service account.
 func NewIAMTokenProvider(ctx context.Context, useIDTokens bool, actAs string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
+	// When using ID tokens, put the audience as a fake scope in the cache key.
+	// See the comment for Scopes in CacheKey.
 	if useIDTokens {
-		return nil, errors.New("ID tokens are not supported yet when impersonating via IAM (crbug.com/1184230)")
+		if audience == "" {
+			return nil, ErrAudienceRequired
+		}
+		scopes = []string{"audience:" + audience}
+	} else {
+		audience = ""
 	}
 	return &iamTokenProvider{
 		actAs:     actAs,
 		scopes:    scopes,
+		audience:  audience,
 		transport: transport,
 		cacheKey: CacheKey{
 			Key:    fmt.Sprintf("iam/%s", actAs),
@@ -76,14 +86,39 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 			},
 		},
 	}
-	tok, err := client.GenerateAccessToken(ctx, p.actAs, p.scopes, nil, 0)
-	if err == nil {
-		return &Token{
-			Token:   *tok,
-			IDToken: NoIDToken,
-			Email:   p.Email(),
-		}, nil
+
+	var err error
+
+	if p.audience != "" {
+		var tok string
+		tok, err = client.GenerateIDToken(ctx, p.actAs, p.audience, true, nil)
+		if err == nil {
+			claims, err := ParseIDTokenClaims(tok)
+			if err != nil {
+				return nil, errors.Annotate(err, "IAM service returned bad ID token").Err()
+			}
+			return &Token{
+				Token: oauth2.Token{
+					TokenType:   "Bearer",
+					AccessToken: NoAccessToken,
+					Expiry:      time.Unix(claims.Exp, 0),
+				},
+				IDToken: tok,
+				Email:   p.Email(),
+			}, nil
+		}
+	} else {
+		var tok *oauth2.Token
+		tok, err = client.GenerateAccessToken(ctx, p.actAs, p.scopes, nil, 0)
+		if err == nil {
+			return &Token{
+				Token:   *tok,
+				IDToken: NoIDToken,
+				Email:   p.Email(),
+			}, nil
+		}
 	}
+
 	// Any 4** HTTP response is a fatal error. Everything else is transient.
 	if apiErr, _ := err.(*googleapi.Error); apiErr != nil && apiErr.Code < 500 {
 		return nil, err
