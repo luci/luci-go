@@ -78,14 +78,20 @@ func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist
 //
 // The ultimate result of CL purge is the updated state of a CL itself, thus no
 // information is provided here.
-func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string) error {
-	return send(ctx, luciProject, &prjpb.Event{
+//
+// TODO(tandrii): remove eta parameter once CV does all the purging.
+func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string, eta time.Time) error {
+	err := sendWithoutDispatch(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_PurgeCompleted{
 			PurgeCompleted: &prjpb.PurgeCompleted{
 				OperationId: operationID,
 			},
 		},
 	})
+	if err != nil {
+		return err
+	}
+	return prjpb.Dispatch(ctx, luciProject, eta)
 }
 
 // NotifyRunCreated is sent by ProjectManager to itself within a Run creation
