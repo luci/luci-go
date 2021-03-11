@@ -44,9 +44,10 @@ import (
 )
 
 // TokenGenerator produces access tokens.
+//
+// The canonical implementation is &auth.TokenGenerator{}.
 type TokenGenerator interface {
-	// GenerateOAuthToken returns an access token for a combination of scopes
-	// (given as a sorted list of strings without duplicates).
+	// GenerateOAuthToken returns an access token for a combination of scopes.
 	//
 	// It is called for each request to the local auth server. It may be called
 	// concurrently from multiple goroutines and must implement its own caching
