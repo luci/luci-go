@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -55,6 +56,7 @@ var globalGCELock sync.Mutex
 type gceTokenProvider struct {
 	account  string
 	email    string
+	audience string // not empty iff using ID tokens
 	cacheKey CacheKey
 }
 
@@ -89,8 +91,15 @@ func retryParams() retry.Iterator {
 
 // attemptInit attempts to initialize GCE token provider.
 func attemptInit(ctx context.Context, useIDTokens bool, account string, scopes []string, audience string) (TokenProvider, error) {
+	// When using ID tokens, put the audience as a fake scope in the cache key.
+	// See the comment for Scopes in CacheKey.
 	if useIDTokens {
-		return nil, errors.New("ID tokens are not supported yet when using GCE metadata server (crbug.com/1184230)")
+		if audience == "" {
+			return nil, ErrAudienceRequired
+		}
+		scopes = []string{"audience:" + audience}
+	} else {
+		audience = ""
 	}
 
 	// This mutex is used to avoid hitting GKE metadata server concurrently if
@@ -132,23 +141,26 @@ func attemptInit(ctx context.Context, useIDTokens bool, account string, scopes [
 	// The exception is non-cloud scopes (like gerritcodereview or G Suite). To
 	// use such scopes, one will have to use impersonation through Cloud IAM APIs,
 	// which *are* covered by cloud-platform (see ActAsServiceAccount in auth.go).
-	availableScopes, err := metadataClient.Scopes(account)
-	if err != nil {
-		return nil, transient.Tag.Apply(err)
-	}
-	availableSet := stringset.NewFromSlice(availableScopes...)
-	if !availableSet.Has("https://www.googleapis.com/auth/cloud-platform") {
-		for _, requested := range scopes {
-			if !availableSet.Has(requested) {
-				logging.Warningf(ctx, "GCE service account %q doesn't have required scope %q (all scopes: %q)", account, requested, availableScopes)
-				return nil, ErrInsufficientAccess
+	if !useIDTokens {
+		availableScopes, err := metadataClient.Scopes(account)
+		if err != nil {
+			return nil, transient.Tag.Apply(err)
+		}
+		availableSet := stringset.NewFromSlice(availableScopes...)
+		if !availableSet.Has("https://www.googleapis.com/auth/cloud-platform") {
+			for _, requested := range scopes {
+				if !availableSet.Has(requested) {
+					logging.Warningf(ctx, "GCE service account %q doesn't have required scope %q (all scopes: %q)", account, requested, availableScopes)
+					return nil, ErrInsufficientAccess
+				}
 			}
 		}
 	}
 
 	return &gceTokenProvider{
-		account: account,
-		email:   email,
+		account:  account,
+		email:    email,
+		audience: audience,
 		cacheKey: CacheKey{
 			Key:    fmt.Sprintf("gce/%s", account),
 			Scopes: scopes,
@@ -178,13 +190,48 @@ func (p *gceTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 	// state in the current process.
 	globalGCELock.Lock()
 	defer globalGCELock.Unlock()
+	if p.audience != "" {
+		return p.mintIDToken(ctx)
+	}
+	return p.mintAccessToken(ctx)
+}
 
-	// Note: this code is very similar to ComputeTokenSource(p.account).Token()
-	// from [1], except it uses our custom metadataClient which is more forgiving
-	// of the slowness of the gke-metadata-server.
-	//
-	// [1]: google/google.go file in https://github.com/golang/oauth2
+// mintIDToken calls /identity metadata server endpoint.
+func (p gceTokenProvider) mintIDToken(ctx context.Context) (*Token, error) {
+	v := url.Values{
+		"audience": []string{p.audience},
+		"format":   []string{"full"}, // include VM instance info into claims
+	}
+	urlSuffix := fmt.Sprintf("instance/service-accounts/%s/identity?%s", p.account, v.Encode())
+	token, err := metadataClient.Get(urlSuffix)
+	if err != nil {
+		return nil, errors.Annotate(err, "auth/gce: metadata server call failed").Tag(transient.Tag).Err()
+	}
 
+	claims, err := ParseIDTokenClaims(token)
+	if err != nil {
+		return nil, errors.Annotate(err, "auth/gce: metadata server returned invalid ID token").Err()
+	}
+
+	return &Token{
+		Token: oauth2.Token{
+			TokenType:   "Bearer",
+			AccessToken: NoAccessToken,
+			Expiry:      time.Unix(claims.Exp, 0),
+		},
+		IDToken: token,
+		Email:   p.Email(),
+	}, nil
+}
+
+// mintAccessToken calls /token metadata server endpoint.
+//
+// Note: this code is very similar to ComputeTokenSource(p.account).Token()
+// from [1], except it uses our custom metadataClient which is more forgiving
+// of the slowness of the gke-metadata-server.
+//
+// [1]: google/google.go file in https://github.com/golang/oauth2
+func (p *gceTokenProvider) mintAccessToken(ctx context.Context) (*Token, error) {
 	tokenJSON, err := metadataClient.Get("instance/service-accounts/" + p.account + "/token")
 	if err != nil {
 		return nil, errors.Annotate(err, "auth/gce: metadata server call failed").Tag(transient.Tag).Err()
