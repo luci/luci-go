@@ -23,12 +23,16 @@ import (
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/mock"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -43,7 +47,7 @@ func TestBatch(t *testing.T) {
 	Convey("Batch", t, func() {
 		mockPyBBClient := pb.NewMockBuildsClient(gomock.NewController(t))
 		srv := &Builds{testPyBuildsClient: mockPyBBClient}
-		ctx := memory.Use(context.Background())
+		ctx, _ := tq.TestingContext(txndefer.FilterRDS(memory.Use(context.Background())), nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -59,7 +63,7 @@ func TestBatch(t *testing.T) {
 					Acls: []*pb.Acl{
 						{
 							Identity: "user:caller@example.com",
-							Role:     pb.Acl_READER,
+							Role:     pb.Acl_WRITER,
 						},
 					},
 				},
@@ -246,12 +250,11 @@ func TestBatch(t *testing.T) {
 			So(res, ShouldResembleProto, expectedRes)
 		})
 
-		Convey("schedule and cancel in req", func() {
+		Convey("schedule req", func() {
 			req := &pb.BatchRequest{}
 			err := jsonpb.UnmarshalString(`{
 				"requests": [
-					{"scheduleBuild": {}},
-					{"cancelBuild": {}}
+					{"scheduleBuild": {}}
 				]
 			}`, req)
 			So(err, ShouldBeNil)
@@ -260,15 +263,47 @@ func TestBatch(t *testing.T) {
 					{Response: &pb.BatchResponse_Response_ScheduleBuild{
 						ScheduleBuild: &pb.Build{Id: 1},
 					}},
-					{Response: &pb.BatchResponse_Response_CancelBuild{
-						CancelBuild: &pb.Build{Id: 2},
-					}},
 				},
 			}
 			mockPyBBClient.EXPECT().Batch(ctx, mock.EqProto(req)).Return(mockRes, nil)
 			actualRes, err := srv.Batch(ctx, req)
 			So(err, ShouldBeNil)
 			So(actualRes, ShouldResembleProto, mockRes)
+		})
+
+		Convey("cancel req", func() {
+			now := testclock.TestRecentTimeLocal
+			ctx, _ = testclock.UseTime(ctx, now)
+			req := &pb.BatchRequest{
+				Requests: []*pb.BatchRequest_Request{
+					{Request: &pb.BatchRequest_Request_CancelBuild{
+						CancelBuild: &pb.CancelBuildRequest{
+							Id:              1,
+							SummaryMarkdown: "summary",
+						},
+					}},
+				},
+			}
+			res, err := srv.Batch(ctx, req)
+			expectedRes := &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_CancelBuild{
+						CancelBuild: &pb.Build{
+							Id: 1,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder1",
+							},
+							EndTime: timestamppb.New(now),
+							Input:   &pb.Build_Input{},
+							Status:  pb.Status_CANCELED,
+						},
+					}},
+				},
+			}
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, expectedRes)
 		})
 
 		Convey("get, schedule, search and cancel in req", func() {
@@ -284,17 +319,13 @@ func TestBatch(t *testing.T) {
 			expectedPyReq := &pb.BatchRequest{}
 			err = jsonpb.UnmarshalString(`{
 				"requests": [
-					{"scheduleBuild": {}},
-					{"cancelBuild": {}}
+					{"scheduleBuild": {}}
 				]}`, expectedPyReq)
 			So(err, ShouldBeNil)
 			mockRes := &pb.BatchResponse{
 				Responses: []*pb.BatchResponse_Response{
 					{Response: &pb.BatchResponse_Response_ScheduleBuild{
 						ScheduleBuild: &pb.Build{Id: 1},
-					}},
-					{Response: &pb.BatchResponse_Response_CancelBuild{
-						CancelBuild: &pb.Build{Id: 2},
 					}},
 				},
 			}
@@ -329,7 +360,12 @@ func TestBatch(t *testing.T) {
 							Builds: []*pb.Build{build1, build2},
 						},
 					}},
-					mockRes.Responses[1],
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    3,
+							Message: "bad request: id is required",
+						},
+					}},
 				},
 			}
 			So(err, ShouldBeNil)
@@ -340,7 +376,7 @@ func TestBatch(t *testing.T) {
 			req := &pb.BatchRequest{}
 			err := jsonpb.UnmarshalString(`{
 				"requests": [
-					{"cancelBuild": {}}
+					{"scheduleBuild": {}}
 				]
 			}`, req)
 			So(err, ShouldBeNil)
@@ -354,7 +390,7 @@ func TestBatch(t *testing.T) {
 			req := &pb.BatchRequest{}
 			err := jsonpb.UnmarshalString(`{
 				"requests": [
-					{"cancelBuild": {}}
+					{"scheduleBuild": {}}
 				]
 			}`, req)
 			So(err, ShouldBeNil)
