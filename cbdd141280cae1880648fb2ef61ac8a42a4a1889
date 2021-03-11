@@ -60,6 +60,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d1981181_621a050d",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T00:43:27Z",
+      "side": 1,
+      "message": "It\u0027s a failed optimization 😞",
+      "parentUuid": "2efffba9_4a31c7c5",
+      "range": {
+        "startLine": 305,
+        "startChar": 18,
+        "endLine": 305,
+        "endChar": 73
+      },
+      "revId": "cbdd141280cae1880648fb2ef61ac8a42a4a1889",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "47c747cd_b19afa3c",
         "filename": "cv/internal/gerrit/gerritfake/utils.go",
         "patchSetId": 3
@@ -71,6 +95,30 @@
       "writtenOn": "2021-03-10T23:38:25Z",
       "side": 1,
       "message": "this is 👍, but have you considered NonZeroVotes(ci, label) helper function?\nIt\u0027d be typed and allow for\n  So(gf.NonZeroVotes(ci, \"Commit-Queue\"), ShouldBeEmpty)\n  So(gf.NonZeroVotes(ci, \"Commit-Queue\"), ShouldResemble, []...)",
+      "range": {
+        "startLine": 23,
+        "startChar": 3,
+        "endLine": 23,
+        "endChar": 21
+      },
+      "revId": "cbdd141280cae1880648fb2ef61ac8a42a4a1889",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "42dc3d32_07098f1e",
+        "filename": "cv/internal/gerrit/gerritfake/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T00:43:27Z",
+      "side": 1,
+      "message": "It\u0027s indeed better. Changed.",
+      "parentUuid": "47c747cd_b19afa3c",
       "range": {
         "startLine": 23,
         "startChar": 3,
