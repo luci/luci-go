@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3ee3df6_4dd19308",
+        "filename": "cv/internal/gerrit/gerritfake/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-11T06:54:35Z",
+      "side": 1,
+      "message": "naming nit: I feel like ShouldContainInLastMessage is more idiomatic in go.",
+      "range": {
+        "startLine": 53,
+        "startChar": 5,
+        "endLine": 53,
+        "endChar": 28
+      },
+      "revId": "87aa14556a80ac4f1e899ccf794eff196a11d97c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
