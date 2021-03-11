@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aaf19f3a_e7c749c1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T03:49:28Z",
+      "side": 1,
+      "message": "PTAL.\n\nNominally tested by:\n\n  ./luci-auth context -service-account-json ~/playground.json \\\n    -- ./luci-auth info -service-account-json :gce -use-id-token -audience example.com\n\n  Logged in as playground@vadimsh-playground.iam.gserviceaccount.com.\n\n  ID token details:\n    Issuer: https://accounts.google.com\n    Subject: ...\n    Audience: example.com\n\nI haven\u0027t tested yet on real GCE or GAE or with GKE Workload Identities. This will be important when switching server.Server to request ID tokens natively from the metadata server instead of always using IAM self-impersonation (that requires special permissions).",
+      "revId": "2c82c0506165be7d68c04fd9d70160508592e49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
