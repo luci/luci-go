@@ -536,7 +536,7 @@ func TestTransport(t *testing.T) {
 		So(tok.AccessToken, ShouldEqual, "minted")
 
 		cacheKey, _ := tokenProvider.CacheKey(ctx)
-		cached, err := auth.testingCache.GetToken(cacheKey)
+		cached, err := auth.opts.testingCache.GetToken(cacheKey)
 		So(err, ShouldBeNil)
 		So(cached.AccessToken, ShouldEqual, "minted")
 
@@ -622,7 +622,7 @@ func TestOptionalLogin(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(tok, ShouldBeNil)
 		cacheKey, _ := tokenProvider.CacheKey(ctx)
-		cached, err := auth.testingCache.GetToken(cacheKey)
+		cached, err := auth.opts.testingCache.GetToken(cacheKey)
 		So(cached, ShouldBeNil)
 		So(err, ShouldBeNil)
 
@@ -689,7 +689,7 @@ func TestGetEmail(t *testing.T) {
 		// GetAccessToken picks up the refreshed token too.
 		oauthTok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "some refreshed token")
+		So(oauthTok.AccessToken, ShouldEqual, "some refreshed access token")
 	})
 
 	Convey("No email triggers ErrNoEmail", t, func() {
@@ -715,6 +715,32 @@ func TestGetEmail(t *testing.T) {
 	})
 }
 
+func TestNormalizeScopes(t *testing.T) {
+	t.Parallel()
+
+	checkExactSameSlice := func(a, b []string) {
+		So(a, ShouldResemble, b)
+		So(&a[0], ShouldEqual, &b[0])
+	}
+
+	Convey("Works", t, func() {
+		So(normalizeScopes(nil), ShouldBeNil)
+
+		// Doesn't copy already normalized slices.
+		slice := []string{"a"}
+		checkExactSameSlice(slice, normalizeScopes(slice))
+		slice = []string{"a", "b"}
+		checkExactSameSlice(slice, normalizeScopes(slice))
+		slice = []string{"a", "b", "c"}
+		checkExactSameSlice(slice, normalizeScopes(slice))
+
+		// Removes dups and sorts.
+		So(normalizeScopes([]string{"b", "a"}), ShouldResemble, []string{"a", "b"})
+		So(normalizeScopes([]string{"a", "a"}), ShouldResemble, []string{"a"})
+		So(normalizeScopes([]string{"a", "b", "a"}), ShouldResemble, []string{"a", "b"})
+	})
+}
+
 func newAuth(loginMode LoginMode, base, iam internal.TokenProvider, actAs string) (*Authenticator, context.Context) {
 	// Use auto-advancing fake time.
 	ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(123)))
@@ -724,10 +750,10 @@ func newAuth(loginMode LoginMode, base, iam internal.TokenProvider, actAs string
 	})
 	a := NewAuthenticator(ctx, loginMode, Options{
 		ActAsServiceAccount:      actAs,
+		testingCache:             &internal.MemoryTokenCache{},
 		testingBaseTokenProvider: base,
 		testingIAMTokenProvider:  iam,
 	})
-	a.testingCache = &internal.MemoryTokenCache{}
 	return a, ctx
 }
 
@@ -736,7 +762,7 @@ func cacheToken(a *Authenticator, p internal.TokenProvider, tok *internal.Token)
 	if err != nil {
 		panic(err)
 	}
-	err = a.testingCache.PutToken(cacheKey, tok)
+	err = a.opts.testingCache.PutToken(cacheKey, tok)
 	if err != nil {
 		panic(err)
 	}
@@ -754,6 +780,7 @@ type fakeTokenProvider struct {
 
 	mintTokenCalled    bool
 	refreshTokenCalled bool
+	useIDTokens        bool
 
 	baseTokenInMint    *internal.Token
 	baseTokenInRefresh *internal.Token
@@ -786,9 +813,17 @@ func (p *fakeTokenProvider) MintToken(ctx context.Context, base *internal.Token)
 	if p.tokenToMint != nil {
 		return p.tokenToMint, nil
 	}
+	idTok := internal.NoIDToken
+	accessTok := internal.NoAccessToken
+	if p.useIDTokens {
+		idTok = "some minted ID token"
+	} else {
+		accessTok = "some minted access token"
+	}
 	return &internal.Token{
-		Token: oauth2.Token{AccessToken: "some minted token"},
-		Email: "some-email-minttoken@example.com",
+		Token:   oauth2.Token{AccessToken: accessTok},
+		IDToken: idTok,
+		Email:   "some-email-minttoken@example.com",
 	}, nil
 }
 
@@ -808,8 +843,16 @@ func (p *fakeTokenProvider) RefreshToken(ctx context.Context, prev, base *intern
 	if p.tokenToRefresh != nil {
 		return p.tokenToRefresh, nil
 	}
+	idTok := internal.NoIDToken
+	accessTok := internal.NoAccessToken
+	if p.useIDTokens {
+		idTok = "some refreshed ID token"
+	} else {
+		accessTok = "some refreshed access token"
+	}
 	return &internal.Token{
-		Token: oauth2.Token{AccessToken: "some refreshed token"},
-		Email: "some-email-refreshtoken@example.com",
+		Token:   oauth2.Token{AccessToken: accessTok},
+		IDToken: idTok,
+		Email:   "some-email-refreshtoken@example.com",
 	}, nil
 }

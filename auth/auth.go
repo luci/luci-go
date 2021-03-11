@@ -36,7 +36,6 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -48,6 +47,7 @@ import (
 
 	"go.chromium.org/luci/auth/internal"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -421,6 +421,8 @@ type Options struct {
 	// token is cached incorrectly it may expire before it is checked).
 	MinTokenLifetime time.Duration
 
+	// testingCache is used in unit tests.
+	testingCache internal.TokenCache
 	// testingBaseTokenProvider is used in unit tests.
 	testingBaseTokenProvider internal.TokenProvider
 	// testingIAMTokenProvider is used in unit tests.
@@ -432,13 +434,11 @@ type Options struct {
 // It is called automatically by NewAuthenticator. Use it only if you need to
 // normalize and examine auth.Options before passing them to NewAuthenticator.
 func (opts *Options) PopulateDefaults() {
-	// Add default scope, sort scopes.
+	// Set the default scope, sort and dedup scopes.
 	if len(opts.Scopes) == 0 || opts.UseIDTokens {
 		opts.Scopes = []string{OAuthScopeEmail} // also implies "openid"
-	} else {
-		opts.Scopes = append([]string(nil), opts.Scopes...) // copy
-		sort.Strings(opts.Scopes)
 	}
+	opts.Scopes = normalizeScopes(opts.Scopes)
 
 	// Fill in blanks with default values.
 	if opts.Audience == "" {
@@ -507,11 +507,10 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 // Authenticator also knows how to run interactive login flow, if required.
 type Authenticator struct {
 	// Immutable members.
-	loginMode    LoginMode
-	opts         *Options
-	transport    http.RoundTripper
-	ctx          context.Context
-	testingCache internal.TokenCache // set in unit tests
+	loginMode LoginMode
+	opts      *Options
+	transport http.RoundTripper
+	ctx       context.Context
 
 	// Mutable members.
 	lock sync.RWMutex
@@ -1013,12 +1012,9 @@ func (a *Authenticator) ensureInitialized() error {
 	// and any of the providers is not "lightweight" (so it makes sense to
 	// actually hit the disk, rather then call the provider each time new token is
 	// needed).
-	//
-	// Note also that tests set a.testingCache before ensureInitialized() is
-	// called to mock the cache. Respect this.
-	if a.testingCache != nil {
-		a.baseToken.cache = a.testingCache
-		a.authToken.cache = a.testingCache
+	if a.opts.testingCache != nil {
+		a.baseToken.cache = a.opts.testingCache
+		a.authToken.cache = a.opts.testingCache
 	} else {
 		cache := internal.ProcTokenCache
 		if !a.baseToken.provider.Lightweight() || !a.authToken.provider.Lightweight() {
@@ -1445,6 +1441,19 @@ func (t *tokenWithProvider) refreshTokenWithRetries(ctx context.Context, prev, b
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
+
+// normalizeScopes sorts the list of scopes and removes dups.
+//
+// Doesn't modify the original slice.
+func normalizeScopes(s []string) []string {
+	for i := 1; i < len(s); i++ {
+		if s[i] <= s[i-1] { // not sorted or has dups
+			sorted := stringset.NewFromSlice(s...)
+			return sorted.ToSortedSlice()
+		}
+	}
+	return s // already sorted and dedupped
+}
 
 // makeBaseTokenProvider creates TokenProvider implementation based on options.
 //
