@@ -15,6 +15,7 @@
 package sink
 
 import (
+	"mime"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -47,8 +48,12 @@ func validateArtifact(art *sinkpb.Artifact) error {
 	if art.GetFilePath() == "" && art.GetContents() == nil {
 		return errors.Reason("body: either file_path or contents must be provided").Err()
 	}
-	// TODO(1017288) - validate content_type
-	// skip `ContentType`
+	if art.GetContentType() != "" {
+		_, _, err := mime.ParseMediaType(art.ContentType)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
