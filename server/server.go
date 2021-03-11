@@ -92,7 +92,6 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/sdlogger"
 	"go.chromium.org/luci/common/system/signals"
-	"go.chromium.org/luci/common/trace"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/monitor"
@@ -170,7 +169,9 @@ func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 	mathrand.SeedRandomly()
 	if opts == nil {
 		opts = &Options{
-			ClientAuth: chromeinfra.DefaultAuthOptions(),
+			ClientAuth: chromeinfra.SetDefaultAuthOptions(clientauth.Options{
+				Scopes: auth.CloudOAuthScopes, // matters only when using UserCredentialsMethod
+			}),
 		}
 	}
 
@@ -560,11 +561,8 @@ type Server struct {
 	tsmon   *tsmon.State    // manages flushing of tsmon metrics
 	sampler octrace.Sampler // trace sampler to use for top level spans
 
-	signer *signerImpl // the signer used by the auth system
-
-	authM        sync.RWMutex
-	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
-	authDB       atomic.Value          // last known good authdb.DB instance
+	signer *signerImpl  // the signer used by the auth system
+	authDB atomic.Value // last known good authdb.DB instance
 
 	runningAs string // email of an account the server runs as
 }
@@ -648,15 +646,14 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 
 	srv = &Server{
-		Context:      ctx,
-		Options:      opts,
-		startTime:    clock.Now(ctx).UTC(),
-		ready:        make(chan struct{}),
-		done:         make(chan struct{}),
-		rnd:          rand.New(rand.NewSource(seed)),
-		bgrDone:      make(chan struct{}),
-		authPerScope: map[string]scopedAuth{},
-		sampler:      octrace.NeverSample(),
+		Context:   ctx,
+		Options:   opts,
+		startTime: clock.Now(ctx).UTC(),
+		ready:     make(chan struct{}),
+		done:      make(chan struct{}),
+		rnd:       rand.New(rand.NewSource(seed)),
+		bgrDone:   make(chan struct{}),
+		sampler:   octrace.NeverSample(),
 	}
 
 	// Cleanup what we can on failures.
@@ -1410,24 +1407,24 @@ func (s *Server) initAuthStart() error {
 		return nil
 	})
 
-	// Prepare partially initialized signer for the auth.Config. It will be fully
-	// initialized in initAuthFinish once we have a working auth context that can
-	// call IAM.
-	s.signer = &signerImpl{srv: s}
+	// Initialize the token generator based on s.Options.ClientAuth.
+	opts := s.Options.ClientAuth
 
-	// Initialize the state in the context.
-	s.Context = auth.Initialize(s.Context, &auth.Config{
-		DBProvider: func(context.Context) (authdb.DB, error) {
-			db, _ := s.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
-			return db, nil
-		},
-		Signer:              s.signer,
-		AccessTokenProvider: s.getAccessToken,
-		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
-		FrontendClientID:    func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
-		EndUserIP:           getRemoteIP,
-		IsDevMode:           !s.Options.Prod,
-	})
+	// Use `rootTransport` for calls made by the token generator (e.g. when
+	// refreshing tokens).
+	opts.Transport = rootTransport
+
+	// We aren't going to use the authenticator's transport (and thus its
+	// monitoring), only the token source. DisableMonitoring == true removes some
+	// log spam.
+	opts.DisableMonitoring = true
+
+	// GAE v2 is very aggressive in caching the token internally (in the metadata
+	// server) and refreshing it only when it is very close to its expiration. We
+	// need to match this behavior in our in-process cache, otherwise
+	// GetAccessToken complains that the token refresh procedure doesn't actually
+	// change the token (because the metadata server returned the cached one).
+	opts.MinTokenLifetime = 20 * time.Second
 
 	// The default value for ClientAuth.SecretsDir is usually hardcoded to point
 	// to where the token cache is located on developer machines (~/.config/...).
@@ -1442,8 +1439,33 @@ func (s *Server) initAuthStart() error {
 	// This is useful when running containers locally: developer's credentials
 	// on the host machine can be mounted inside the container.
 	if s.Options.Prod || s.Options.TokenCacheDir != "" {
-		s.Options.ClientAuth.SecretsDir = s.Options.TokenCacheDir
+		opts.SecretsDir = s.Options.TokenCacheDir
 	}
+
+	// Annotate the context used for logging from the token generator.
+	ctx := logging.SetField(s.Context, "activity", "luci.auth")
+	tokens := clientauth.NewTokenGenerator(ctx, opts)
+
+	// Prepare partially initialized signer for the auth.Config. It will be fully
+	// initialized in initAuthFinish once we have a working auth context that can
+	// call IAM.
+	s.signer = &signerImpl{srv: s}
+
+	// Initialize the state in the context.
+	s.Context = auth.Initialize(s.Context, &auth.Config{
+		DBProvider: func(context.Context) (authdb.DB, error) {
+			db, _ := s.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
+			return db, nil
+		},
+		Signer: s.signer,
+		AccessTokenProvider: func(ctx context.Context, scopes []string) (*oauth2.Token, error) {
+			return tokens.GenerateOAuthToken(ctx, scopes, 0)
+		},
+		AnonymousTransport: func(context.Context) http.RoundTripper { return rootTransport },
+		FrontendClientID:   func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
+		EndUserIP:          getRemoteIP,
+		IsDevMode:          !s.Options.Prod,
+	})
 
 	// Note: we initialize a token source for one arbitrary set of scopes here. In
 	// many practical cases this is sufficient to verify that credentials are
@@ -1452,16 +1474,24 @@ func (s *Server) initAuthStart() error {
 	// we can generate tokens with *any* scope, since there's no restrictions on
 	// what scopes are accessible to a service account, as long as the private key
 	// is valid (which we just verified by generating some token).
-	au, err := s.initTokenSource(auth.CloudOAuthScopes)
+	_, err := tokens.GenerateOAuthToken(ctx, auth.CloudOAuthScopes, 0)
 	if err != nil {
+		// ErrLoginRequired may happen only when running the server locally using
+		// developer's credentials. Let them know how the problem can be fixed.
+		if !s.Options.Prod && err == clientauth.ErrLoginRequired {
+			scopes := fmt.Sprintf("-scopes %q", strings.Join(auth.CloudOAuthScopes, " "))
+			if opts.ActAsServiceAccount != "" && opts.ActViaLUCIRealm == "" {
+				scopes = "-scopes-iam"
+			}
+			logging.Errorf(s.Context, "Looks like you run the server locally and it doesn't have credentials for some OAuth scopes")
+			logging.Errorf(s.Context, "Run the following command to set them up: ")
+			logging.Errorf(s.Context, "  $ luci-auth login %s", scopes)
+		}
 		return errors.Annotate(err, "failed to initialize the token source").Err()
-	}
-	if _, err := au.source.Token(); err != nil {
-		return errors.Annotate(err, "failed to mint an initial token").Err()
 	}
 
 	// Report who we are running as. Useful when debugging access issues.
-	switch email, err := au.authen.GetEmail(); {
+	switch email, err := tokens.GetEmail(); {
 	case err == nil:
 		logging.Infof(s.Context, "Running as %s", email)
 		s.runningAs = email
@@ -1493,90 +1523,6 @@ func (s *Server) initAuthFinish() error {
 	}
 
 	return nil
-}
-
-// getAccessToken generates OAuth access tokens to use for requests made by
-// the server itself.
-//
-// It should implement caching internally. This function may be called very
-// often, concurrently, from multiple goroutines.
-func (s *Server) getAccessToken(c context.Context, scopes []string) (_ *oauth2.Token, err error) {
-	key := strings.Join(scopes, " ")
-
-	_, span := trace.StartSpan(c, "go.chromium.org/luci/server.GetAccessToken")
-	span.Attribute("cr.dev/scopes", key)
-	defer func() { span.End(err) }()
-
-	s.authM.RLock()
-	au, ok := s.authPerScope[key]
-	s.authM.RUnlock()
-
-	if !ok {
-		if au, err = s.initTokenSource(scopes); err != nil {
-			return nil, err
-		}
-	}
-
-	return au.source.Token()
-}
-
-// initTokenSource initializes a token source for a given list of scopes.
-//
-// If such token source was already initialized, just returns it and its
-// parent authenticator.
-func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
-	key := strings.Join(scopes, " ")
-
-	s.authM.Lock()
-	defer s.authM.Unlock()
-
-	au, ok := s.authPerScope[key]
-	if ok {
-		return au, nil
-	}
-
-	// Use ClientAuth as a base template for options, so users of Server{...} have
-	// ability to customize various aspects of token generation.
-	opts := s.Options.ClientAuth
-	opts.Scopes = scopes
-
-	// We aren't going to use the transport (and thus its monitoring), only the
-	// token source. DisableMonitoring == true removes some log spam.
-	opts.DisableMonitoring = true
-
-	// GAE v2 is very aggressive in caching the token internally (in the metadata
-	// server) and refreshing it only when it is very close to its expiration. We
-	// need to match this behavior in our in-process cache, otherwise
-	// GetAccessToken complains that the token refresh procedure doesn't actually
-	// change the token (because the metadata server returned the cached one).
-	opts.MinTokenLifetime = 20 * time.Second
-
-	// Note: we are using the root context here (not request-scoped context passed
-	// to getAccessToken) because the authenticator *outlives* the request (by
-	// being cached), thus it needs a long-living context.
-	ctx := logging.SetField(s.Context, "activity", "luci.auth")
-	au.authen = clientauth.NewAuthenticator(ctx, clientauth.SilentLogin, opts)
-	var err error
-	au.source, err = au.authen.TokenSource()
-
-	if err != nil {
-		// ErrLoginRequired may happen only when running the server locally using
-		// developer's credentials. Let them know how the problem can be fixed.
-		if !s.Options.Prod && err == clientauth.ErrLoginRequired {
-			if opts.ActAsServiceAccount != "" {
-				// Per clientauth.Options doc, IAM is the scope required to use
-				// ActAsServiceAccount feature.
-				scopes = []string{clientauth.OAuthScopeIAM}
-			}
-			logging.Errorf(s.Context, "Looks like you run the server locally and it doesn't have credentials for some OAuth scopes")
-			logging.Errorf(s.Context, "Run the following command to set them up: ")
-			logging.Errorf(s.Context, "  $ luci-auth login -scopes %q", strings.Join(scopes, " "))
-		}
-		return scopedAuth{}, err
-	}
-
-	s.authPerScope[key] = au
-	return au, nil
 }
 
 // initAuthDB interprets -auth-db-* flags and sets up fetching of AuthDB.
