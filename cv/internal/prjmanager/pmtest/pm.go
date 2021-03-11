@@ -78,7 +78,19 @@ func ETAsOF(in tqtesting.TaskList, luciProject string) []time.Time {
 	return out
 }
 
-// ETAsWithin erturns sorted list of ETAs for a given project in t+-d range.
+// LatestETAof returns time.Time of the latest task for a given project.
+//
+// Includes ETAs encoded in KickPokePMTask tasks.
+// If none, returns Zero time.Time{}.
+func LatestETAof(in tqtesting.TaskList, luciProject string) time.Time {
+	ts := ETAsOF(in, luciProject)
+	if len(ts) == 0 {
+		return time.Time{}
+	}
+	return ts[len(ts)-1]
+}
+
+// ETAsWithin returns sorted list of ETAs for a given project in t+-d range.
 func ETAsWithin(in tqtesting.TaskList, luciProject string, d time.Duration, t time.Time) []time.Time {
 	out := ETAsOF(in, luciProject)
 	for len(out) > 0 && out[0].Before(t.Add(-d)) {

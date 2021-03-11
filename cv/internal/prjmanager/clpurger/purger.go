@@ -63,21 +63,37 @@ func Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
 func PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 	ctx = logging.SetField(ctx, "cl", task.GetPurgingCl().GetClid())
+	now := clock.Now(ctx)
+
+	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, task.GetLuciProject()); {
+	case err != nil:
+		return err
+	case !yes:
+		logging.Warningf(ctx, "this app isn't managing Runs for the project")
+		// Don't notify PM immediately to give CQD more time do the same CL purge,
+		// otherwise PM will re-create purge task.
+		return notifyPM(ctx, task, now.Add(time.Minute))
+	}
 
 	d := task.GetPurgingCl().GetDeadline()
 	if d == nil {
 		return errors.Reason("no deadline given in %s", task).Err()
 	}
-	if t := d.AsTime(); t.Before(clock.Now(ctx)) {
-		logging.Warningf(ctx, "purging task running too late (deadline %s, now %s)", t, clock.Now(ctx).UTC())
-	} else {
-		dctx, cancel := clock.WithDeadline(ctx, t)
+	switch dt := d.AsTime(); {
+	case dt.Before(now):
+		logging.Warningf(ctx, "purging task running too late (deadline %s, now %s)", dt, now)
+	default:
+		dctx, cancel := clock.WithDeadline(ctx, dt)
 		defer cancel()
 		if err := purgeWithDeadline(dctx, task); err != nil {
 			return err
 		}
 	}
-	return prjmanager.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl().GetOperationId())
+	return notifyPM(ctx, task, time.Time{} /*wake up PM ASAP*/)
+}
+
+func notifyPM(ctx context.Context, task *prjpb.PurgeCLTask, eta time.Time) error {
+	return prjmanager.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl().GetOperationId(), eta)
 }
 
 func purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
@@ -86,13 +102,6 @@ func purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
 		return errors.Annotate(err, "failed to load %d", cl.ID).Tag(transient.Tag).Err()
 	}
 	if !needsPurging(ctx, cl, task) {
-		return nil
-	}
-	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, task.GetLuciProject()); {
-	case err != nil:
-		return err
-	case !yes:
-		logging.Warningf(ctx, "this app isn't managing Runs for the project")
 		return nil
 	}
 
