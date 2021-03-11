@@ -89,6 +89,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "526f29a7_1a4431fe",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 701,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T22:32:32Z",
+      "side": 1,
+      "message": "No. The implementation must return ErrIDTokensNotSupported *exactly*. It should do it only if it is sure ID tokens are not supported. Note that currently this error is not returned by anything at all. I can remove this if you prefer. I was assuming we\u0027ll need to use it to signal that GKE stuff is broken, but looks like we won\u0027t be needing that.",
+      "parentUuid": "12bf2280_4fc38da0",
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9b6c6241_e7da65fa",
         "filename": "server/auth/config.go",
         "patchSetId": 1
@@ -100,6 +118,24 @@
       "writtenOn": "2021-03-11T22:05:31Z",
       "side": 1,
       "message": "hm, this error isn\u0027t returned by anything *yet*.\n\nIs this like a future opt out?\n\nI think I don\u0027t when would server/server.go setup in this CL lead to ever going into IAM PRC.",
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ccff993_3d5abf97",
+        "filename": "server/auth/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T22:32:32Z",
+      "side": 1,
+      "message": "\u003e Is this like a future opt out?\n\nYes. I think I can remove it if you prefer.\n\n\u003e I think I don\u0027t when would server/server.go setup in this CL lead to ever going into IAM PRC.\n\nserver/server.go will never use IAM RPC. But server/auth is also used by GAEv1 and by GAE Flex servers which do not use server.go (and they do not populate IDTokenProvider).",
+      "parentUuid": "9b6c6241_e7da65fa",
       "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
