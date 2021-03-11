@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d0c0e6d_234b151e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T03:39:31Z",
+      "side": 1,
+      "message": "PTAL. This is mostly useful to be able to do integration test for the next CL which will add ID tokens support for \"-service-account-json :gce\" case (i.e. when fetching them from the GCE metadata server).",
+      "revId": "06c7ce36c09ea5a1c157d790dde8c152f72f794b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
