@@ -24,7 +24,10 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -78,17 +81,24 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 		return nil, err
 	}
 
-	if req.GetRun().GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "empty RunID")
+	rid := common.RunID(req.GetRun().GetId())
+	if rid == "" {
+		err = status.Error(codes.InvalidArgument, "empty RunID")
+		return
 	}
-	logging.Debugf(ctx, "ReportVerifiedRun(key %q, CV ID %q)", req.GetRun().GetAttempt().GetKey(), req.GetRun().GetId())
-	// TODO(yiwzhang): rename to CQDVerifiedRun and stores additional fields in
-	// in the input request.
-	if err = saveFinishedRun(ctx, req.GetRun()); err != nil {
-		return nil, err
+	logging.Debugf(ctx, "ReportVerifiedRun(key %q, CV ID %q)", req.GetRun().GetAttempt().GetKey(), rid)
+
+	vr := &VerifiedCQDRun{
+		ID:      rid,
+		Payload: req,
 	}
-	if err = run.NotifyCQDVerificationCompleted(ctx, common.RunID(req.GetRun().GetId())); err != nil {
-		return nil, err
+	vr.Payload.Run.Id = "" // available as key.
+	if err = datastore.Put(ctx, vr); err != nil {
+		err = errors.Annotate(err, "failed to put VerifiedRun %q", rid).Tag(transient.Tag).Err()
+		return
+	}
+	if err = run.NotifyCQDVerificationCompleted(ctx, rid); err != nil {
+		return
 	}
 
 	return &empty.Empty{}, nil
