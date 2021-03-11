@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a608118e_c96d2f34",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-11T22:52:46Z",
+      "side": 1,
+      "message": "Fixed the mem leak.",
+      "parentUuid": "a2c4ee98_74c1ac78",
+      "revId": "4a285bbca75614e000865b561f76940be1a66367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "71577527_0af56267",
@@ -41,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "efd536d0_848d3082",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-11T22:52:46Z",
+      "side": 1,
+      "message": "Compiler will assume the type to be V[] (an array).\nBut we want [V] (tuple with 1 element).",
+      "parentUuid": "71577527_0af56267",
+      "range": {
+        "startLine": 64,
+        "startChar": 17,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "4a285bbca75614e000865b561f76940be1a66367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "322efee4_93bc1b51",
@@ -54,6 +96,30 @@
       "writtenOn": "2021-03-11T17:14:22Z",
       "side": 1,
       "message": "finally(() \u003d\u003e {...})",
+      "range": {
+        "startLine": 74,
+        "startChar": 40,
+        "endLine": 74,
+        "endChar": 44
+      },
+      "revId": "4a285bbca75614e000865b561f76940be1a66367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b79f776_39353721",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-11T22:52:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "322efee4_93bc1b51",
       "range": {
         "startLine": 74,
         "startChar": 40,
