@@ -15,6 +15,8 @@
 package gerritfake
 
 import (
+	"github.com/smartystreets/assertions"
+
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
@@ -33,4 +35,37 @@ func NonZeroVotes(ci *gerritpb.ChangeInfo, label string) []*gerritpb.ApprovalInf
 		}
 	}
 	return ret
+}
+
+// LastMessage returns the last message from the Gerrit Change.
+//
+// Return nil if there are no messages.
+func LastMessage(ci *gerritpb.ChangeInfo) *gerritpb.ChangeMessageInfo {
+	ms := ci.GetMessages()
+	if l := len(ms); l > 0 {
+		return ms[l-1]
+	}
+	return nil
+}
+
+// ShouldLastMessageContain asserts the last posted message on a ChangeInfo
+// contains the expected substring.
+func ShouldLastMessageContain(actual interface{}, oneSubstring ...interface{}) string {
+	if len(oneSubstring) != 1 {
+		panic("exactly 1 substring required")
+	}
+	if diff := assertions.ShouldHaveSameTypeAs(oneSubstring[0], string("")); diff != "" {
+		return diff
+	}
+	if diff := assertions.ShouldHaveSameTypeAs(actual, (*gerritpb.ChangeInfo)(nil)); diff != "" {
+		return diff
+	}
+	ci := actual.(*gerritpb.ChangeInfo)
+	expected := oneSubstring[0].(string)
+
+	last := LastMessage(ci)
+	if last == nil {
+		return "ChangeInfo has no messages"
+	}
+	return assertions.ShouldContainSubstring(last.GetMessage(), expected)
 }

@@ -124,8 +124,9 @@ func TestPurgeCL(t *testing.T) {
 
 			clAfter := loadCL()
 			So(clAfter.EVersion, ShouldBeGreaterThan, clBefore.EVersion)
-			So(trigger.Find(clAfter.Snapshot.GetGerrit().GetInfo()), ShouldBeNil)
-			So(lastMessageOf(clAfter), ShouldContainSubstring, "owner doesn't have a preferred email")
+			ciAfter := clAfter.Snapshot.GetGerrit().GetInfo()
+			So(trigger.Find(ciAfter), ShouldBeNil)
+			So(ciAfter, gf.ShouldLastMessageContain, "owner doesn't have a preferred email")
 			assertPMNotified("op")
 
 			Convey("Idempotent: if TQ task is retried, just notify PM", func() {
@@ -197,12 +198,4 @@ func makeConfig(gHost string, gRepo string) *cfgpb.Config {
 			},
 		},
 	}
-}
-
-func lastMessageOf(cl *changelist.CL) string {
-	msgs := cl.Snapshot.GetGerrit().GetInfo().GetMessages()
-	if len(msgs) == 0 {
-		panic("no messages")
-	}
-	return msgs[0].GetMessage()
 }
