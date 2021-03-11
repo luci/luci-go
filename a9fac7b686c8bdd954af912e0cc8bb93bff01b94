@@ -105,6 +105,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4efc459e_73e43a5f",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 701,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T22:37:41Z",
+      "side": 1,
+      "message": "Removed ErrIDTokensNotSupported.",
+      "parentUuid": "526f29a7_1a4431fe",
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9b6c6241_e7da65fa",
@@ -153,6 +171,30 @@
       "writtenOn": "2021-03-11T22:05:31Z",
       "side": 1,
       "message": "confusing; you are referring to \"IAM RPC\", not the IDTokenProvider field.\nHow about \"The generateIdToken IAM RPC requires ...\"?",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 84,
+        "endChar": 6
+      },
+      "revId": "a9fac7b686c8bdd954af912e0cc8bb93bff01b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ff22d7f_d1308ac1",
+        "filename": "server/auth/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-11T22:37:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b8f1769_7a7352f0",
       "range": {
         "startLine": 84,
         "startChar": 4,
