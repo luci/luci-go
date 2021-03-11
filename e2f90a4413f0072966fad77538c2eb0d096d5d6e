@@ -134,6 +134,30 @@
       },
       "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d3078e1_9a19014d",
+        "filename": "resultdb/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-11T05:51:31Z",
+      "side": 1,
+      "message": "Linux users don\u0027t need to install the emulator separately, if they follow this guidance (`gclient runhooks` will do that).\n\nAnyways, I\u0027ll land this change as it is. And we can continue the discussion.",
+      "parentUuid": "6631c2a8_a11010b0",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 71
+      },
+      "revId": "e2f90a4413f0072966fad77538c2eb0d096d5d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
