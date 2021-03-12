@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c363f61b_2f166ec2",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-12T18:56:30Z",
+      "side": 1,
+      "message": "Added doc to explain each result.\n\n\u003e what\u0027s PRECONDITION? like no more slot in Submission Queue?\n\nNot really. I think mostly for tree closure. I think there could be a race that a tree can be closed while CV saves state transition but before submission happens. So I think I should check the tree status again at the beginning of submission to mitigate such race condition (though rarely happens). \n\n\u003e PERMANENT? like no permission to call Submit?\n\nexactly.",
+      "parentUuid": "215785ac_9324c52f",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 23
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "08745203_b456a619",
         "filename": "cv/internal/run/impl/handler/handler.go",
         "patchSetId": 2
@@ -54,6 +78,30 @@
       "writtenOn": "2021-03-12T17:27:17Z",
       "side": 1,
       "message": "makes",
+      "range": {
+        "startLine": 54,
+        "startChar": 61,
+        "endLine": 54,
+        "endChar": 65
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "78ef5bb1_ccca4cd2",
+        "filename": "cv/internal/run/impl/handler/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-12T18:56:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08745203_b456a619",
       "range": {
         "startLine": 54,
         "startChar": 61,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b28f7c90_191ed7b3",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-12T18:56:30Z",
+      "side": 1,
+      "message": "Good point.",
+      "parentUuid": "cfe8f659_191dbce1",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 42
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "118d0891_aa74c5de",
@@ -110,6 +182,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "91b5deed_72fc9d92",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-12T18:56:30Z",
+      "side": 1,
+      "message": "Correct. \n\nI only expect at most 1 attempt running and at most 1 event for the same attempt in the eventbox at the any time. I mean I could be more restrictive here but I also want to make sure CV can make progress unless something is fundamentally wrong. WDYT?",
+      "parentUuid": "118d0891_aa74c5de",
+      "range": {
+        "startLine": 194,
+        "startChar": 2,
+        "endLine": 195,
+        "endChar": 163
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "35cb99c2_60873acc",
@@ -123,6 +219,24 @@
       "writtenOn": "2021-03-12T17:27:17Z",
       "side": 1,
       "message": "agree with the order of processing the events.",
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6488707b_14eb273b",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-12T18:56:30Z",
+      "side": 1,
+      "message": "😄",
+      "parentUuid": "35cb99c2_60873acc",
       "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
