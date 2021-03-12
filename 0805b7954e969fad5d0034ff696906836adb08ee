@@ -16,6 +16,46 @@
       "message": "Schedule is more complex than cancel and more schedule requests come from batches, so I think we should support a traffic split here so we can release it at the same pace as non-batched requests.\n\nFor comparison: we launched non-batched cancel to 100% then switched batched cancellation requests from 0% to 100% at once.",
       "revId": "0805b7954e969fad5d0034ff696906836adb08ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23353700_cf40731e",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-12T00:13:17Z",
+      "side": 1,
+      "message": "From main.go - http://shortn/_STiXpQHRV6, the \"env\" value is set to either Dev or Prod. No \"Test\".",
+      "range": {
+        "startLine": 66,
+        "startChar": 9,
+        "endLine": 66,
+        "endChar": 13
+      },
+      "revId": "0805b7954e969fad5d0034ff696906836adb08ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff1fea78_c098eaed",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-12T00:13:17Z",
+      "side": 1,
+      "message": "This doesn\u0027t achieve to release the same pace as non-batched req. The pct of single ScheduleBuild req is controlled by the params of  `makeOverride()`. I think we can add another value in Context to pass the pct - ctx.Context \u003d context.WithValue(ctx.Context, \"pct\", pct) at this line http://shortn/_lDAEr4xmOe",
+      "revId": "0805b7954e969fad5d0034ff696906836adb08ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
