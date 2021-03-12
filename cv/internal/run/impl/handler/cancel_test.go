@@ -46,37 +46,40 @@ func TestCancel(t *testing.T) {
 
 		Convey("Cancels PENDING Run", func() {
 			rs.Run.Status = run.Status_PENDING
-			se, newrs, err := h.Cancel(ctx, rs)
+			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
-			So(newrs.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
 			now := clock.Now(ctx).UTC()
-			So(newrs.Run.StartTime, ShouldResemble, now)
-			So(newrs.Run.EndTime, ShouldResemble, now)
-			So(se, ShouldNotBeNil)
-			So(se(ctx), ShouldBeNil)
+			So(res.State.Run.StartTime, ShouldResemble, now)
+			So(res.State.Run.EndTime, ShouldResemble, now)
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.SideEffectFn(ctx), ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
 			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 
 		Convey("Cancels RUNNING Run", func() {
 			rs.Run.Status = run.Status_RUNNING
 			rs.Run.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
-			se, newrs, err := h.Cancel(ctx, rs)
+			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
-			So(newrs.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
 			now := clock.Now(ctx).UTC()
-			So(newrs.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
-			So(newrs.Run.EndTime, ShouldResemble, now)
-			So(se, ShouldNotBeNil)
-			So(se(ctx), ShouldBeNil)
+			So(res.State.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
+			So(res.State.Run.EndTime, ShouldResemble, now)
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.SideEffectFn(ctx), ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
 			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 
 		Convey("Cancels SUBMITTING Run", func() {
 			rs.Run.Status = run.Status_SUBMITTING
-			se, newrs, err := h.Cancel(ctx, rs)
+			res, err := h.Cancel(ctx, rs)
 			So(err, ShouldBeNil)
-			So(newrs, ShouldEqual, rs)
-			So(se, ShouldBeNil)
+			So(res.State, ShouldEqual, rs)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeTrue)
 		})
 
 		statuses := []run.Status{
@@ -89,10 +92,11 @@ func TestCancel(t *testing.T) {
 				rs.Run.Status = status
 				rs.Run.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
 				rs.Run.EndTime = clock.Now(ctx).UTC().Add(-30 * time.Second)
-				se, newrs, err := h.Cancel(ctx, rs)
+				res, err := h.Cancel(ctx, rs)
 				So(err, ShouldBeNil)
-				So(newrs, ShouldEqual, rs)
-				So(se, ShouldBeNil)
+				So(res.State, ShouldEqual, rs)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
 			})
 		}
 	})
