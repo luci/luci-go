@@ -19,7 +19,12 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -79,10 +84,16 @@ func New(c *prjpb.Component, s Supporter) *Actor {
 // NextActionTime implements componentActor.
 func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, error) {
 	a.triageCLs()
+
 	when, err := a.stageNewRuns(ctx)
-	if err != nil {
+	switch {
+	case err != nil:
 		return time.Time{}, err
+	case len(a.runBuilders) > 0:
+		// Required by the componentActor.NextActionTime
+		when = now
 	}
+
 	if w := a.stagePurges(ctx, now); !w.IsZero() && (when.IsZero() || w.Before(when)) {
 		when = w
 	}
@@ -105,8 +116,36 @@ func (a *Actor) Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask
 }
 
 func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
-	// TODO: implement.
-	return nil, nil
+	if len(a.runBuilders) == 0 {
+		return nil, nil
+	}
+	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, a.runBuilders[0].LUCIProject); {
+	case err != nil:
+		return nil, err
+	case !yes:
+		// This a is temporary safeguard against creation of LOTS of Runs,
+		// that won't be finalized.
+		// TODO(tandrii): delete this check once RunManager cancels Runs based on
+		// user actions and finalizes based on CQD reports.
+		logging.Debugf(ctx, "would have created %d Runs", len(a.runBuilders))
+		return nil, nil
+	}
+
+	toAdd := make([]*prjpb.PRun, 0, len(a.runBuilders))
+	var errs errors.MultiError
+	for _, rb := range a.runBuilders {
+		switch r, err := rb.Create(ctx); {
+		case err != nil:
+			errs = append(errs, err)
+		default:
+			toAdd = append(toAdd, prjpb.MakePRun(r))
+		}
+	}
+	if len(errs) > 0 {
+		err := common.MostSevereError(errs)
+		return nil, errors.Annotate(err, "failed to create %d Runs, most severe error:", len(errs)).Err()
+	}
+	return toAdd, nil
 }
 
 type supporterWrapper struct {

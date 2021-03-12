@@ -172,18 +172,27 @@ func (t *Test) RoundTestClock(multiple time.Duration) {
 // Not goroutine-safe, do not call concurrently.
 func (t *Test) EnableCVRunManagement(ctx context.Context, lProject string) {
 	if t.migrationSettings == nil {
-		t.migrationSettings = &migrationpb.Settings{
-			ApiHosts: []*migrationpb.Settings_ApiHost{
-				{
-					Host:          info.TrimmedAppID(ctx) + ".appspot.com",
-					Prod:          true,
-					ProjectRegexp: []string{".+"},
-				},
-			},
-			UseCvRuns: &migrationpb.Settings_UseCVRuns{},
-		}
+		// Disable actual (re-)initializes the migration state.
+		t.DisableCVRunManagement(ctx)
 	}
 	t.migrationSettings.UseCvRuns.ProjectRegexp = append(t.migrationSettings.UseCvRuns.ProjectRegexp, lProject)
+	So(servicecfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
+}
+
+// DisableCVRunManagement disables CV Run management for all projects.
+//
+// Not goroutine-safe, do not call concurrently.
+func (t *Test) DisableCVRunManagement(ctx context.Context) {
+	t.migrationSettings = &migrationpb.Settings{
+		ApiHosts: []*migrationpb.Settings_ApiHost{
+			{
+				Host:          info.TrimmedAppID(ctx) + ".appspot.com",
+				Prod:          true,
+				ProjectRegexp: []string{".+"},
+			},
+		},
+		UseCvRuns: &migrationpb.Settings_UseCVRuns{},
+	}
 	So(servicecfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
 }
 
