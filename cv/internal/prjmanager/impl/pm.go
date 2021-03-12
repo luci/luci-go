@@ -41,13 +41,7 @@ func init() {
 	prjpb.ManageProjectTaskRef.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.ManageProjectTask)
-			// TODO(tandrii): after all tasks have ETA set, remove this backwards
-			// compatibility code.
-			eta := clock.Now(ctx)
-			if t := task.GetEta(); t != nil {
-				eta = t.AsTime()
-			}
-			err := manageProject(ctx, task.GetLuciProject(), eta)
+			err := manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQifyError(ctx, err)
 		},
 	)
