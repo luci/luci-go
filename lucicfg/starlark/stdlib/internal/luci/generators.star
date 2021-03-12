@@ -15,6 +15,7 @@
 """Implementation of various LUCI *.cfg file generators."""
 
 load("@stdlib//internal/error.star", "error")
+load("@stdlib//internal/experiments.star", "experiments")
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/time.star", "time")
@@ -123,7 +124,7 @@ def filter_acls(acls, roles):
     """Keeps only ACL entries that have any of given roles."""
     return [a for a in acls if a.role in roles]
 
-def lagacy_bucket_name(bucket_name, project_name):
+def legacy_bucket_name(bucket_name, project_name):
     """Prefixes the bucket name with `luci.<project>.`."""
     if bucket_name.startswith("luci."):
         fail("seeing long bucket name %r, shouldn't be possible" % bucket_name)
@@ -413,6 +414,9 @@ _scheduler_roles = {
     acl.SCHEDULER_OWNER: scheduler_pb.Acl.OWNER,
 }
 
+# Enables generation of shorter BuildbucketTask protos.
+_scheduler_use_bb_v2 = experiments.register("crbug.com/1182002")
+
 def gen_scheduler_cfg(ctx):
     """Generates scheduler.cfg.
 
@@ -532,11 +536,7 @@ def gen_scheduler_cfg(ctx):
             ])),
             schedule = builder.props.schedule,
             triggering_policy = builder.props.triggering_policy,
-            buildbucket = scheduler_pb.BuildbucketTask(
-                server = buildbucket.host,
-                bucket = lagacy_bucket_name(builder.props.bucket, project_name),
-                builder = builder.props.name,
-            ),
+            buildbucket = _scheduler_task(builder, buildbucket, project_name),
         ))
     cfg.job = sorted(cfg.job, key = lambda x: x.id)
 
@@ -599,6 +599,19 @@ def _scheduler_identity(a):
     if a.project:
         return "project:" + a.project
     fail("impossible")
+
+def _scheduler_task(builder, buildbucket, project_name):
+    """Produces scheduler_pb.BuildbucketTask for a scheduler job."""
+    bucket = None
+    if not _scheduler_use_bb_v2.is_enabled():
+        bucket = legacy_bucket_name(builder.props.bucket, project_name)
+    elif builder.props.realm != builder.props.bucket:
+        bucket = builder.props.bucket
+    return scheduler_pb.BuildbucketTask(
+        server = buildbucket.host,
+        bucket = bucket,
+        builder = builder.props.name,
+    )
 
 ################################################################################
 ## milo.cfg.
@@ -760,7 +773,7 @@ def _milo_builder_pb(entry, view, project_name, seen):
     seen[builder.key] = entry
 
     builder_pb.name = "buildbucket/%s/%s" % (
-        lagacy_bucket_name(
+        legacy_bucket_name(
             builder.props.bucket,
             builder.props.project or project_name,
         ),
