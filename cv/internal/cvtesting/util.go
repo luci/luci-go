@@ -45,8 +45,10 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/config"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/cv/internal/tree"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -82,8 +84,13 @@ type Test struct {
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
 
-	// Override default AppID for in-memory tests.
+	// AppID overrides default AppID for in-memory tests.
 	AppID string
+
+	// migrationSettings are migration settings during CQD -> CV migration.
+	//
+	// Not installed into context by default.
+	migrationSettings *migrationpb.Settings
 
 	// cleanups are executed in reverse order in cleanup().
 	cleanups []func()
@@ -157,6 +164,27 @@ func (t *Test) cleanup() {
 
 func (t *Test) RoundTestClock(multiple time.Duration) {
 	t.Clock.Set(t.Clock.Now().Add(multiple).Truncate(multiple))
+}
+
+// EnableCVRunManagement opts in the given project for CV managing Runs.
+//
+// Can be called multiple times to add more than 1 project.
+// Not goroutine-safe, do not call concurrently.
+func (t *Test) EnableCVRunManagement(ctx context.Context, lProject string) {
+	if t.migrationSettings == nil {
+		t.migrationSettings = &migrationpb.Settings{
+			ApiHosts: []*migrationpb.Settings_ApiHost{
+				{
+					Host:          info.TrimmedAppID(ctx) + ".appspot.com",
+					Prod:          true,
+					ProjectRegexp: []string{".+"},
+				},
+			},
+			UseCvRuns: &migrationpb.Settings_UseCVRuns{},
+		}
+	}
+	t.migrationSettings.UseCvRuns.ProjectRegexp = append(t.migrationSettings.UseCvRuns.ProjectRegexp, lProject)
+	So(servicecfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
 }
 
 func (t *Test) installDS(ctx context.Context) context.Context {

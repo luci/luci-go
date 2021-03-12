@@ -23,7 +23,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	pollertask "go.chromium.org/luci/cv/internal/gerrit/poller/task"
@@ -31,7 +30,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/cv/internal/servicecfg"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -45,24 +43,11 @@ func TestE2ECLPurgingWithoutOwner(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		// Enable CV management of Runs for all projects.
-		settings := &migrationpb.Settings{
-			ApiHosts: []*migrationpb.Settings_ApiHost{
-				{
-					Host:          "cv.appspot.com",
-					Prod:          true,
-					ProjectRegexp: []string{".+"},
-				},
-			},
-			UseCvRuns: &migrationpb.Settings_UseCVRuns{
-				ProjectRegexp: []string{".+"},
-			},
-		}
-		So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
-
 		const lProject = "infra"
 		const gHost = "g-review"
 		const gRepo = "re/po"
+
+		ct.EnableCVRunManagement(ctx, lProject)
 
 		ci := gf.CI(
 			43, gf.Project(gRepo), gf.Ref("refs/heads/main"),
@@ -105,24 +90,9 @@ func TestE2ECLPurgingWithUnwatchedDeps(t *testing.T) {
 
 	Convey("PM purges CL with dep outside the project after waiting stabilization_delay", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
-		ct := cvtesting.Test{AppID: "cv"}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-
-		// Enable CV management of Runs for all projects.
-		settings := &migrationpb.Settings{
-			ApiHosts: []*migrationpb.Settings_ApiHost{
-				{
-					Host:          "cv.appspot.com",
-					Prod:          true,
-					ProjectRegexp: []string{".+"},
-				},
-			},
-			UseCvRuns: &migrationpb.Settings_UseCVRuns{
-				ProjectRegexp: []string{".+"},
-			},
-		}
-		So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
 		const (
 			lProject = "chromium"
@@ -135,6 +105,10 @@ func TestE2ECLPurgingWithUnwatchedDeps(t *testing.T) {
 			gRepo2    = "src"
 			gChange2  = 22
 		)
+		// Enable CV management of both projects.
+		ct.EnableCVRunManagement(ctx, lProject)
+		ct.EnableCVRunManagement(ctx, lProject2)
+
 		tStart := ct.Clock.Now()
 
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
