@@ -16,55 +16,22 @@ package embeddedkvs
 
 import (
 	"context"
-	"os"
 
-	"go.etcd.io/bbolt"
+	"github.com/dgraph-io/badger/v3"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 )
 
 type KVS struct {
-	db *bbolt.DB
+	db *badger.DB
 }
-
-var bucketName = []byte("b")
 
 // New instantiates KVS.
 func New(ctx context.Context, path string) (*KVS, error) {
-	logger := logging.Get(ctx)
-
-	if s, err := os.Stat(path); err == nil {
-		logger.Infof("initial cache file size is %d", s.Size())
-	}
-
-	db, err := bbolt.Open(path, 0600, &bbolt.Options{
-		// These are necessary to reduce disk access during db operations.
-		// https://pkg.go.dev/go.etcd.io/bbolt/#DB
-		NoSync:         true,
-		NoFreelistSync: true,
-
-		// This is for fast cache load.
-		// https://crbug.com/1172879.
-		FreelistType: bbolt.FreelistMapType,
-	})
+	db, err := badger.Open(badger.DefaultOptions(path).WithLoggingLevel(badger.WARNING))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to open database: %s", path).Err()
-	}
-
-	if err := db.Update(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists(bucketName)
-		if err != nil {
-			return errors.Annotate(err, "failed to create bucket: %s", bucketName).Err()
-		}
-
-		logger.Infof("the number of initial key value is %d", b.Stats().KeyN)
-
-		return nil
-	}); err != nil {
-		db.Close()
-		return nil, errors.Annotate(err, "failed to initilize database").Err()
 	}
 
 	return &KVS{
@@ -84,8 +51,8 @@ func (k *KVS) Close() error {
 //
 // This should be called in parallel for efficient storing.
 func (k *KVS) Set(key string, value []byte) error {
-	if err := k.db.Batch(func(tx *bbolt.Tx) error {
-		return tx.Bucket(bucketName).Put([]byte(key), value)
+	if err := k.db.Update(func(txn *badger.Txn) error {
+		return txn.Set([]byte(key), value)
 	}); err != nil {
 		return errors.Annotate(err, "failed to put %s", key).Err()
 	}
@@ -94,18 +61,22 @@ func (k *KVS) Set(key string, value []byte) error {
 
 // GetMulti calls |fn| in parallel for cached entries.
 func (k *KVS) GetMulti(keys []string, fn func(key string, value []byte) error) error {
-	if err := k.db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket(bucketName)
-
+	if err := k.db.View(func(txn *badger.Txn) error {
 		var eg errgroup.Group
 		for _, key := range keys {
-			value := bucket.Get([]byte(key))
-			if value == nil {
-				continue
-			}
 			key := key
 			eg.Go(func() error {
-				return fn(string(key), value)
+				item, err := txn.Get([]byte(key))
+				if err == badger.ErrKeyNotFound {
+					return nil
+				}
+				if err != nil {
+					return errors.Annotate(err, "failed to get %s", key).Err()
+				}
+				return item.Value(func(val []byte) error {
+					return fn(key, val)
+				})
+
 			})
 		}
 
@@ -119,11 +90,20 @@ func (k *KVS) GetMulti(keys []string, fn func(key string, value []byte) error) e
 
 // ForEach executes a function for each key/value pair in KVS.
 func (k *KVS) ForEach(fn func(key string, value []byte) error) error {
-	err := k.db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket(bucketName)
-		return bucket.ForEach(func(key, value []byte) error {
-			return fn(string(key), value)
-		})
+	err := k.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+
+			if err := item.Value(func(val []byte) error {
+				return fn(string(item.Key()), val)
+			}); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 	if err != nil {
 		return errors.Annotate(err, "failed to iterate").Err()
