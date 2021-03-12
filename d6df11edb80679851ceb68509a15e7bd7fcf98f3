@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f48e6f2d_507f5e01",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-12T08:19:15Z",
+      "side": 1,
+      "message": "annotate?",
+      "revId": "d6df11edb80679851ceb68509a15e7bd7fcf98f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
