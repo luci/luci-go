@@ -103,6 +103,38 @@ func TestGetProject(t *testing.T) {
 	})
 }
 
+func TestGetRun(t *testing.T) {
+	t.Parallel()
+
+	Convey("GetRun works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const rid = "proj/123-deadbeef"
+		d := DiagnosticServer{}
+
+		Convey("without access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+			})
+			_, err := d.GetRun(ctx, &diagnosticpb.GetRunRequest{Id: rid})
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("with access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+			Convey("not exists", func() {
+				_, err := d.GetRun(ctx, &diagnosticpb.GetRunRequest{Id: rid})
+				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			})
+		})
+	})
+}
+
 func TestGetCL(t *testing.T) {
 	t.Parallel()
 

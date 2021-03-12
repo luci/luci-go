@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion7
 type DiagnosticClient interface {
 	// GetProject returns current Project state.
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error)
+	// GetRun returns current Run state.
+	GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*GetRunResponse, error)
 	// GetCL returns current CL state.
 	GetCL(ctx context.Context, in *GetCLRequest, opts ...grpc.CallOption) (*GetCLResponse, error)
 	// GetPoller returns current Poller state.
@@ -43,6 +45,15 @@ func NewDiagnosticClient(cc grpc.ClientConnInterface) DiagnosticClient {
 func (c *diagnosticClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*GetProjectResponse, error) {
 	out := new(GetProjectResponse)
 	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/GetProject", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *diagnosticClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*GetRunResponse, error) {
+	out := new(GetRunResponse)
+	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/GetRun", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +102,8 @@ func (c *diagnosticClient) RefreshProjectCLs(ctx context.Context, in *RefreshPro
 type DiagnosticServer interface {
 	// GetProject returns current Project state.
 	GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error)
+	// GetRun returns current Run state.
+	GetRun(context.Context, *GetRunRequest) (*GetRunResponse, error)
 	// GetCL returns current CL state.
 	GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error)
 	// GetPoller returns current Poller state.
@@ -110,6 +123,9 @@ type UnimplementedDiagnosticServer struct {
 
 func (UnimplementedDiagnosticServer) GetProject(context.Context, *GetProjectRequest) (*GetProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProject not implemented")
+}
+func (UnimplementedDiagnosticServer) GetRun(context.Context, *GetRunRequest) (*GetRunResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRun not implemented")
 }
 func (UnimplementedDiagnosticServer) GetCL(context.Context, *GetCLRequest) (*GetCLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCL not implemented")
@@ -150,6 +166,24 @@ func _Diagnostic_GetProject_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DiagnosticServer).GetProject(ctx, req.(*GetProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Diagnostic_GetRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DiagnosticServer).GetRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/diagnostic.Diagnostic/GetRun",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiagnosticServer).GetRun(ctx, req.(*GetRunRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -236,6 +270,10 @@ var Diagnostic_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProject",
 			Handler:    _Diagnostic_GetProject_Handler,
+		},
+		{
+			MethodName: "GetRun",
+			Handler:    _Diagnostic_GetRun_Handler,
 		},
 		{
 			MethodName: "GetCL",

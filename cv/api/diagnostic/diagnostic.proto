@@ -25,6 +25,8 @@ import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 import "go.chromium.org/luci/cv/internal/gerrit/poller/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/events.proto";
+import "go.chromium.org/luci/cv/internal/run/eventpb/events.proto";
+import "go.chromium.org/luci/cv/internal/run/storage.proto";
 
 
 // Diagnostic service is CV maintainers only.
@@ -34,6 +36,9 @@ service Diagnostic {
 
   // GetProject returns current Project state.
   rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+
+  // GetRun returns current Run state.
+  rpc GetRun(GetRunRequest) returns (GetRunResponse);
 
   // GetCL returns current CL state.
   rpc GetCL(GetCLRequest) returns (GetCLResponse);
@@ -54,14 +59,40 @@ message GetProjectRequest {
   string project = 1;
 }
 
-// GetProjectResponse provides non-atomic snapshot of a project state.
+// GetProjectResponse provides non-atomic snapshot of a LUCI project.
 //
-// The config hash and status come from different DS entity than PState,
-// and each event comes from its own entity and depends on yet another tombstone
-// entity.
+// The project state and outstanding events come from different entities,
+// read in parallel.
 message GetProjectResponse {
   cv.prjmanager.prjpb.PState state = 2;
   repeated cv.prjmanager.prjpb.Event events = 3;
+}
+
+message GetRunRequest {
+  string id = 1;
+}
+
+// GetRunResponse provides non-atomic snapshot of a Run.
+//
+// The Run state and outstanding events come from different entities
+// read in parallel.
+message GetRunResponse {
+  // State. Next tag: 13.
+  string id = 1;
+  int64 eversion = 2;
+  string mode = 3;
+  cv.run.Status status = 4;
+  google.protobuf.Timestamp create_time = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp update_time = 7;
+  google.protobuf.Timestamp end_time = 8;
+  string owner = 9;
+  string config_group_id = 10;
+  repeated int64 cls = 11;
+  cv.run.Submission submission = 12;
+
+  // Events.
+  repeated cv.run.eventpb.Event events = 61;
 }
 
 message GetCLRequest{
