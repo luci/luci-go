@@ -96,6 +96,7 @@ func Dispatch(ctx context.Context, runID string, eta time.Time) error {
 	}
 	eta = eta.Truncate(taskInterval).Add(taskInterval)
 	return tq.AddTask(ctx, &tq.Task{
+		Title:            runID,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", runID, eta.UnixNano()),
 		ETA:              eta,
 		Payload:          &ManageRunTask{RunId: runID},
