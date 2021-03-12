@@ -60,17 +60,7 @@ type luciTSTokenProvider struct {
 }
 
 func init() {
-	NewLUCITSTokenProvider = func(ctx context.Context, useIDTokens bool, host, actAs, realm string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
-		// When using ID tokens, put the audience as a fake scope in the cache key.
-		// See the comment for Scopes in CacheKey.
-		if useIDTokens {
-			if audience == "" {
-				return nil, ErrAudienceRequired
-			}
-			scopes = []string{"audience:" + audience}
-		} else {
-			audience = ""
-		}
+	NewLUCITSTokenProvider = func(ctx context.Context, host, actAs, realm string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
 		return &luciTSTokenProvider{
 			host:      host,
 			actAs:     actAs,
