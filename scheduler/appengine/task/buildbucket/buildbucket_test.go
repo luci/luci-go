@@ -27,10 +27,11 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/api/pubsub/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -228,7 +229,9 @@ func TestFullFlow(t *testing.T) {
 
 	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
 		scheduleRequest := make(chan *bbpb.ScheduleBuildRequest, 1)
-		mockRunning := int64(1)
+
+		buildStatus := atomic.Value{}
+		buildStatus.Store(bbpb.Status_STARTED)
 
 		srv := BuildbucketFake{
 			ScheduleBuild: func(req *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
@@ -238,24 +241,13 @@ func TestFullFlow(t *testing.T) {
 					Status: bbpb.Status_STARTED,
 				}, nil
 			},
-			GetBuildV1: func(bid int64) (*bbv1.LegacyApiBuildResponseMessage, error) {
-				if bid != 9025781602559305888 {
-					return nil, fmt.Errorf("wrong build ID")
+			GetBuild: func(req *bbpb.GetBuildRequest) (*bbpb.Build, error) {
+				if req.Id != 9025781602559305888 {
+					return nil, status.Errorf(codes.NotFound, "wrong build ID")
 				}
-				if atomic.LoadInt64(&mockRunning) == 1 {
-					return &bbv1.LegacyApiBuildResponseMessage{
-						Build: &bbv1.LegacyApiCommonBuildMessage{
-							Id:     bid,
-							Status: "STARTED",
-						},
-					}, nil
-				}
-				return &bbv1.LegacyApiBuildResponseMessage{
-					Build: &bbv1.LegacyApiCommonBuildMessage{
-						Id:     bid,
-						Status: "COMPLETED",
-						Result: "SUCCESS",
-					},
+				return &bbpb.Build{
+					Id:     req.Id,
+					Status: buildStatus.Load().(bbpb.Status),
 				}, nil
 			},
 		}
@@ -336,7 +328,7 @@ func TestFullFlow(t *testing.T) {
 		})
 
 		// Process finish notification.
-		atomic.StoreInt64(&mockRunning, 0)
+		buildStatus.Store(bbpb.Status_SUCCESS)
 		So(mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), ShouldBeNil)
 		So(ctl.TaskState.Status, ShouldEqual, task.StatusSucceeded)
 	})
@@ -353,15 +345,13 @@ func TestAbort(t *testing.T) {
 					Status: bbpb.Status_STARTED,
 				}, nil
 			},
-			CancelBuildV1: func(bid int64) (*bbv1.LegacyApiBuildResponseMessage, error) {
-				if bid != 9025781602559305888 {
-					return nil, fmt.Errorf("wrong build ID")
+			CancelBuild: func(req *bbpb.CancelBuildRequest) (*bbpb.Build, error) {
+				if req.Id != 9025781602559305888 {
+					return nil, status.Errorf(codes.NotFound, "wrong build ID")
 				}
-				return &bbv1.LegacyApiBuildResponseMessage{
-					Build: &bbv1.LegacyApiCommonBuildMessage{
-						Id:     bid,
-						Status: "CANCELED",
-					},
+				return &bbpb.Build{
+					Id:     req.Id,
+					Status: bbpb.Status_CANCELED,
 				}, nil
 			},
 		}
@@ -392,16 +382,13 @@ func TestTriggeredFlow(t *testing.T) {
 					Status: bbpb.Status_STARTED,
 				}, nil
 			},
-			GetBuildV1: func(bid int64) (*bbv1.LegacyApiBuildResponseMessage, error) {
-				if bid != 9025781602559305888 {
-					return nil, fmt.Errorf("wrong build ID")
+			GetBuild: func(req *bbpb.GetBuildRequest) (*bbpb.Build, error) {
+				if req.Id != 9025781602559305888 {
+					return nil, status.Errorf(codes.NotFound, "wrong build ID")
 				}
-				return &bbv1.LegacyApiBuildResponseMessage{
-					Build: &bbv1.LegacyApiCommonBuildMessage{
-						Id:     bid,
-						Status: "COMPLETED",
-						Result: "SUCCESS",
-					},
+				return &bbpb.Build{
+					Id:     req.Id,
+					Status: bbpb.Status_SUCCESS,
 				}, nil
 			},
 		}

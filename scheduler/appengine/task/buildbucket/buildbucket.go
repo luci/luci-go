@@ -317,19 +317,9 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.State().ViewURL = fmt.Sprintf("%s/build/%d", serverURL, build.Id)
 	ctl.DebugLog("Task URL: %s", ctl.State().ViewURL)
 
-	// Maybe finished already? It can happen if we are retrying the call with the
-	// same RequestId as a finished one.
-	switch build.Status {
-	case bbpb.Status_SCHEDULED, bbpb.Status_STARTED:
-		// do nothing, the invocation is still active
-	case bbpb.Status_SUCCESS:
-		ctl.State().Status = task.StatusSucceeded
-	case bbpb.Status_FAILURE, bbpb.Status_INFRA_FAILURE, bbpb.Status_CANCELED:
-		ctl.State().Status = task.StatusFailed
-	default:
-		ctl.DebugLog("Unexpected Build status %v, marking the invocation as failed", build.Status)
-		ctl.State().Status = task.StatusFailed
-	}
+	// Check if maybe finished already? It can happen if we are retrying the call
+	// with the same RequestId as a finished one.
+	handleBuildStatus(ctl, build)
 
 	// This will schedule status check if the task is actually running.
 	m.checkBuildStatusLater(c, ctl)
@@ -362,9 +352,12 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 		return err
 	}
 
-	// Ask Buildbucket to kill this build.
-	return utils.WrapAPIError(m.withBuildbucketV1(c, ctl, func(c context.Context, bb *bbv1.Service) error {
-		_, err := bb.Cancel(taskData.BuildID, &bbv1.LegacyApiCancelRequestBodyMessage{}).Context(c).Do()
+	// Ask Buildbucket to cancel this build.
+	return grpcutil.WrapIfTransient(m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbpb.BuildsClient) error {
+		_, err := bb.CancelBuild(ctx, &bbpb.CancelBuildRequest{
+			Id:              taskData.BuildID,
+			SummaryMarkdown: "Canceled via LUCI Scheduler",
+		})
 		return err
 	}))
 }
@@ -427,29 +420,6 @@ func makeServerURL(s string) string {
 	return "https://" + s
 }
 
-// withBuildbucketV1 makes a Buildbucket v1 API client and calls the callback.
-//
-// The callback runs under a new context with 1 min deadline. Make sure to pass
-// it to call RPCs by using call.Context(c).
-func (m TaskManager) withBuildbucketV1(c context.Context, ctl task.Controller, cb func(context.Context, *bbv1.Service) error) error {
-	c, cancel := clock.WithTimeout(c, time.Minute)
-	defer cancel()
-
-	client, err := ctl.GetClient(c)
-	if err != nil {
-		return err
-	}
-	service, err := bbv1.New(client)
-	if err != nil {
-		return err
-	}
-
-	cfg := ctl.Task().(*messages.BuildbucketTask)
-	service.BasePath = makeServerURL(cfg.Server) + "/_ah/api/buildbucket/v1/"
-
-	return cb(c, service)
-}
-
 // withBuildbucket makes a Buildbucket Builds API client and calls the callback.
 //
 // The callback runs under a new context with 1 min deadline.
@@ -508,61 +478,48 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 		return err
 	}
 
-	// Fetch build result from buildbucket.
-	var resp *bbv1.LegacyApiBuildResponseMessage
-	err = m.withBuildbucketV1(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
-		resp, err = bb.Get(taskData.BuildID).Context(c).Do()
+	// Fetch the build from Buildbucket.
+	var build *bbpb.Build
+	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbpb.BuildsClient) (err error) {
+		build, err = bb.GetBuild(ctx, &bbpb.GetBuildRequest{Id: taskData.BuildID})
 		return
 	})
 	if err != nil {
-		ctl.DebugLog("Failed to fetch buildbucket build - %s", err)
-		err = utils.WrapAPIError(err)
+		ctl.DebugLog("Failed to fetch build - %s", err)
+		err = grpcutil.WrapIfTransient(err)
 		if !transient.Tag.In(err) {
 			ctl.State().Status = task.StatusFailed
 		}
 		return err
 	}
 
-	// Dump response in full to the debug log. It doesn't contain any secrets.
-	blob, err := json.MarshalIndent(resp, "", "  ")
-	if err != nil {
-		return err
-	}
+	// Switch the invocation status according to the Build status.
+	handleBuildStatus(ctl, build)
 
-	// Give up (fail invocation) on unexpected fatal errors.
-	if resp.Error != nil {
-		ctl.DebugLog("Buildbucket returned error %q: %s", resp.Error.Reason, resp.Error.Message)
-		ctl.DebugLog("Buildbucket response:\n%s", blob)
-		ctl.State().Status = task.StatusFailed
-		return fmt.Errorf("buildbucket error %q - %s", resp.Error.Reason, resp.Error.Message)
-	}
-	if resp.Build == nil {
-		ctl.DebugLog("Buildbucket response is not valid, missing 'build'")
-		ctl.DebugLog("Buildbucket response:\n%s", blob)
-		ctl.State().Status = task.StatusFailed
-		return fmt.Errorf("bad buildbucket response, no 'build' field")
-	}
-
-	m.handleBuildResultV1(c, ctl, resp.Build)
+	// Log the final state of the build or just its status if still running (to be
+	// less spammy).
 	if ctl.State().Status.Final() {
-		ctl.DebugLog("Buildbucket build:\n%s", blob)
+		ctl.DebugLog("Build:\n%s", protoToJSON(build))
+	} else {
+		ctl.DebugLog("Build status: %v", build.Status)
 	}
 
 	return nil
 }
 
-// handleBuildResultV1 processes buildbucket results message updating the state
-// of the invocation.
-func (m TaskManager) handleBuildResultV1(c context.Context, ctl task.Controller, r *bbv1.LegacyApiCommonBuildMessage) {
-	ctl.DebugLog(
-		"Build %d: status %q, result %q, failure_reason %q, cancelation_reason %q",
-		r.Id, r.Status, r.Result, r.FailureReason, r.CancelationReason)
-	switch {
-	case r.Status == "SCHEDULED" || r.Status == "STARTED":
-		return // do nothing
-	case r.Status == "COMPLETED" && r.Result == "SUCCESS":
+// handleBuildStatus adjusts the invocation state based on the build's status.
+func handleBuildStatus(ctl task.Controller, build *bbpb.Build) {
+	switch build.Status {
+	case bbpb.Status_SCHEDULED, bbpb.Status_STARTED:
+		// do nothing, the invocation is still active
+	case bbpb.Status_SUCCESS:
 		ctl.State().Status = task.StatusSucceeded
+	case bbpb.Status_FAILURE, bbpb.Status_INFRA_FAILURE:
+		ctl.State().Status = task.StatusFailed
+	case bbpb.Status_CANCELED:
+		ctl.State().Status = task.StatusAborted
 	default:
+		ctl.DebugLog("Unexpected Build status %v, marking the invocation as failed", build.Status)
 		ctl.State().Status = task.StatusFailed
 	}
 }
