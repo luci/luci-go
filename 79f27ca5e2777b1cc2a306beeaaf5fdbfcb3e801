@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ef68410_e0663075",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-12T22:32:22Z",
+      "side": 1,
+      "message": "true, but I want public DisableCVRunManagement API (imo, it\u0027s better than reset).\nSo, I\u0027ve left a comment here as a compromise.",
+      "parentUuid": "01db040a_0ae5ce1e",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 176,
+        "endChar": 2
+      },
+      "revId": "79f27ca5e2777b1cc2a306beeaaf5fdbfcb3e801",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "315e83d9_a31da62d",
