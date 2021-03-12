@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75060469_667d1222",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-12T06:26:29Z",
+      "side": 1,
+      "message": "better to check using d.lru rather than disk access?",
+      "revId": "971c82acb936c2dce7c953af286894b07162be06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed96f64c_ba42d293",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-12T06:26:29Z",
+      "side": 1,
+      "message": "I think info or debug is fine here.",
+      "range": {
+        "startLine": 355,
+        "startChar": 10,
+        "endLine": 355,
+        "endChar": 18
+      },
+      "revId": "971c82acb936c2dce7c953af286894b07162be06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
