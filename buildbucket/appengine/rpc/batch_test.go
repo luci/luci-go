@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -26,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/testing/mock"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -48,6 +50,7 @@ func TestBatch(t *testing.T) {
 		mockPyBBClient := pb.NewMockBuildsClient(gomock.NewController(t))
 		srv := &Builds{testPyBuildsClient: mockPyBBClient}
 		ctx, _ := tq.TestingContext(txndefer.FilterRDS(memory.Use(context.Background())), nil)
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -250,7 +253,8 @@ func TestBatch(t *testing.T) {
 			So(res, ShouldResembleProto, expectedRes)
 		})
 
-		Convey("schedule req", func() {
+		Convey("schedule req py", func() {
+			ctx = WithTrafficSplit(ctx, 0)
 			req := &pb.BatchRequest{}
 			err := jsonpb.UnmarshalString(`{
 				"requests": [
@@ -269,6 +273,30 @@ func TestBatch(t *testing.T) {
 			actualRes, err := srv.Batch(ctx, req)
 			So(err, ShouldBeNil)
 			So(actualRes, ShouldResembleProto, mockRes)
+		})
+
+		Convey("schedule req", func() {
+			ctx = WithTrafficSplit(ctx, 100)
+			req := &pb.BatchRequest{
+				Requests: []*pb.BatchRequest_Request{
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{},
+					}},
+				},
+			}
+			res, err := srv.Batch(ctx, req)
+			expectedRes := &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    3,
+							Message: "bad request: builder or template_build_id is required",
+						},
+					}},
+				},
+			}
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, expectedRes)
 		})
 
 		Convey("cancel req", func() {
@@ -386,7 +414,7 @@ func TestBatch(t *testing.T) {
 			So(err, ShouldErrLike, "rpc error: code = Unavailable desc = unavailable")
 		})
 
-		Convey("py timout error", func() {
+		Convey("py timeout error", func() {
 			req := &pb.BatchRequest{}
 			err := jsonpb.UnmarshalString(`{
 				"requests": [

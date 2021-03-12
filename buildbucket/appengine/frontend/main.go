@@ -106,6 +106,7 @@ func main() {
 					pct = 100
 					logging.Debugf(ctx.Context, "request demanded not to be proxied")
 				}
+				ctx.Context = rpc.WithTrafficSplit(ctx.Context, pct)
 				if mathrand.Intn(ctx.Context, 100) < pct {
 					return false
 				}
