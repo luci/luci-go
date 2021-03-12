@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2495704e_47b3862e",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-12T04:58:30Z",
+      "side": 1,
+      "message": "nit: Not installed into context by default.",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 43
+      },
+      "revId": "0fc7f9f9c0c438f56ad4b9979b9803d52af447a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
