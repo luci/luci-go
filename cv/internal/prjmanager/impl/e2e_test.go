@@ -19,10 +19,14 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	pollertask "go.chromium.org/luci/cv/internal/gerrit/poller/task"
@@ -30,6 +34,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -157,5 +162,61 @@ func TestE2ECLPurgingWithUnwatchedDeps(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(p.State.GetPcls(), ShouldBeEmpty)
 		So(p.State.GetComponents(), ShouldBeEmpty)
+	})
+}
+
+func TestE2ECVCreatesSingularRun(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV creates 1 CL Run", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := cvtesting.Test{AppID: "cv"}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "g-review"
+		const gRepo = "re/po"
+		const gChange = 33
+
+		// TODO(tandrii): remove this once Run creation is not conditional on CV
+		// managing Runs for a project.
+		ct.EnableCVRunManagement(ctx, lProject)
+
+		tStart := ct.Clock.Now()
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref("refs/heads/main"),
+			gf.Owner("user-1"),
+			gf.Updated(tStart), gf.CQ(+2, tStart, gf.U("user-2")),
+		)))
+
+		cfg := singleRepoConfig(gHost, gRepo)
+		ct.Cfg.Create(ctx, lProject, cfg)
+
+		/////////////////////////    Run CV   ////////////////////////////////
+		// Let CV do its work, but don't wait forever. Use ever recurring pollers
+		// for indication of progress.
+		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
+		var rid common.RunID
+		for i := 0; i < 20; i++ {
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(pollertask.ClassID))
+
+			p, err := prjmanager.Load(ctx, lProject)
+			So(err, ShouldBeNil)
+			logging.Debugf(ctx, "PRJ: %s", protojson.Format(p.State))
+			if len(p.State.GetComponents()) == 1 {
+				c := p.State.GetComponents()[0]
+				if len(c.GetPruns()) == 1 {
+					rid = common.RunID(c.GetPruns()[0].GetId())
+					break
+				}
+			}
+		}
+
+		So(rid.LUCIProject(), ShouldResemble, lProject)
+		r := run.Run{ID: rid}
+		So(datastore.Get(ctx, &r), ShouldBeNil)
 	})
 }

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -214,7 +215,12 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 			}), ShouldBeNil) // this notifies PM once.
 		}
 
-		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+		cfg := singleRepoConfig(gHost, gRepo)
+		cfg.ConfigGroups[0].CombineCls = &cfgpb.CombineCLs{
+			// Postpone creation of Runs, which isn't important in this test.
+			StabilizationDelay: durationpb.New(time.Hour),
+		}
+		ct.Cfg.Create(ctx, lProject, cfg)
 		So(gobmap.Update(ctx, lProject), ShouldBeNil)
 
 		// Put #43 CL directly w/o notifying the PM.
