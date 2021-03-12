@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4681247_06b802fc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-12T08:21:42Z",
+      "side": 1,
+      "message": "Error happens on windows\n\nhttps://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8852985399005446080/+/u/go_build/stdout\n\n\u003e # github.com/DataDog/zstd\n\u003e cgo: exec gcc: exec: \"gcc\": executable file not found in %PATH%\n\nIt\u0027s failed to install badger?\n",
+      "revId": "d6df11edb80679851ceb68509a15e7bd7fcf98f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f48e6f2d_507f5e01",
