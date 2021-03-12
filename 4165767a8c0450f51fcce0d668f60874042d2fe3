@@ -16,6 +16,24 @@
       "message": "better to use touch?",
       "revId": "4165767a8c0450f51fcce0d668f60874042d2fe3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6911e506_306407c6",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-12T14:13:55Z",
+      "side": 1,
+      "message": "I though pop() and pushFront() in touch() are redundant for race condition.\nBut maybe it\u0027s not that costly.",
+      "parentUuid": "105ca27d_997ac6ff",
+      "revId": "4165767a8c0450f51fcce0d668f60874042d2fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
