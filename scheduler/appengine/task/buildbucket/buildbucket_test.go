@@ -18,11 +18,13 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"sort"
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -42,6 +44,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -255,6 +258,7 @@ func TestFullFlow(t *testing.T) {
 		defer srv.Stop()
 
 		c := memory.Use(context.Background())
+		c = mathrand.Set(c, rand.New(rand.NewSource(1000)))
 		mgr := TaskManager{}
 		ctl := fakeController(srv.URL())
 
@@ -312,7 +316,7 @@ func TestFullFlow(t *testing.T) {
 		// Added the timer.
 		So(ctl.Timers, ShouldResemble, []tasktest.TimerSpec{
 			{
-				Delay: statusCheckTimerInterval,
+				Delay: 224 * time.Second, // random
 				Name:  statusCheckTimerName,
 			},
 		})
@@ -322,7 +326,7 @@ func TestFullFlow(t *testing.T) {
 		So(mgr.HandleTimer(c, ctl, statusCheckTimerName, nil), ShouldBeNil)
 		So(ctl.Timers, ShouldResemble, []tasktest.TimerSpec{
 			{
-				Delay: statusCheckTimerInterval,
+				Delay: 157 * time.Second, // random
 				Name:  statusCheckTimerName,
 			},
 		})
