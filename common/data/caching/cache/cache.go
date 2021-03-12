@@ -350,6 +350,12 @@ func (d *Cache) add(ctx context.Context, digest isolated.HexDigest, src io.Reade
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
+	// It looks another job has already added the same cache. abort renaming it.
+	if _, err := os.Stat(d.itemPath(digest)); !os.IsNotExist(err) {
+		logging.Warningf(ctx, "cache already exists. path: %s, digest %s\n", d.path, digest)
+		return nil
+	}
+
 	if err := os.Rename(fname, d.itemPath(digest)); err != nil {
 		_ = os.Remove(fname)
 		return errors.Annotate(err, "failed to rename %s -> %s", fname, d.itemPath(digest)).Err()
