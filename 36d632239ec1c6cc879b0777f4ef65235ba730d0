@@ -22,6 +22,30 @@
       },
       "revId": "36d632239ec1c6cc879b0777f4ef65235ba730d0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "489860c1_bf71ea85",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-12T08:28:46Z",
+      "side": 1,
+      "message": "I\u0027d like to let caller know that from which keys don\u0027t call fn.",
+      "parentUuid": "26c71713_94417be3",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 5
+      },
+      "revId": "36d632239ec1c6cc879b0777f4ef65235ba730d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
