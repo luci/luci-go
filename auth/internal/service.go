@@ -29,32 +29,22 @@ import (
 )
 
 type serviceAccountTokenProvider struct {
-	ctx         context.Context // only for logging
-	jsonKey     []byte
-	path        string
-	useIDTokens bool
-	scopes      []string
-	audience    string
+	ctx      context.Context // only for logging
+	jsonKey  []byte
+	path     string
+	scopes   []string
+	audience string // not empty iff using ID tokens
 }
 
 // NewServiceAccountTokenProvider returns TokenProvider that uses service
 // account private key (on disk or in memory) to make access tokens.
-func NewServiceAccountTokenProvider(ctx context.Context, useIDTokens bool, jsonKey []byte, path string, scopes []string, audience string) (TokenProvider, error) {
-	if useIDTokens {
-		if audience == "" {
-			return nil, ErrAudienceRequired
-		}
-		scopes = nil
-	} else {
-		audience = ""
-	}
+func NewServiceAccountTokenProvider(ctx context.Context, jsonKey []byte, path string, scopes []string, audience string) (TokenProvider, error) {
 	return &serviceAccountTokenProvider{
-		ctx:         ctx,
-		jsonKey:     jsonKey,
-		path:        path,
-		useIDTokens: useIDTokens,
-		scopes:      scopes,
-		audience:    audience,
+		ctx:      ctx,
+		jsonKey:  jsonKey,
+		path:     path,
+		scopes:   scopes,
+		audience: audience,
 	}, nil
 }
 
@@ -68,11 +58,15 @@ func (p *serviceAccountTokenProvider) jwtConfig(ctx context.Context) (*jwt.Confi
 			return nil, err
 		}
 	}
-	cfg, err := google.JWTConfigFromJSON(jsonKey, p.scopes...)
+	scopes := p.scopes
+	if p.audience != "" {
+		scopes = nil // can't specify both scopes and target audience
+	}
+	cfg, err := google.JWTConfigFromJSON(jsonKey, scopes...)
 	if err != nil {
 		return nil, err
 	}
-	if p.useIDTokens {
+	if p.audience != "" {
 		cfg.UseIDToken = true
 		cfg.PrivateClaims = map[string]interface{}{"target_audience": p.audience}
 	}
@@ -123,16 +117,9 @@ func (p *serviceAccountTokenProvider) CacheKey(ctx context.Context) (*CacheKey, 
 		pkeyID = "custom:" + hex.EncodeToString(h.Sum(nil))
 	}
 
-	// When using ID tokens, put the audience as a fake scope in the cache key.
-	// See the comment for Scopes in CacheKey.
-	scopes := p.scopes
-	if p.useIDTokens {
-		scopes = []string{"audience:" + p.audience}
-	}
-
 	return &CacheKey{
 		Key:    fmt.Sprintf("service_account/%s/%s", cfg.Email, pkeyID),
-		Scopes: scopes,
+		Scopes: p.scopes,
 	}, nil
 }
 

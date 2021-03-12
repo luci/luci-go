@@ -38,17 +38,7 @@ type iamTokenProvider struct {
 
 // NewIAMTokenProvider returns TokenProvider that uses generateAccessToken IAM
 // API to grab tokens belonging to some service account.
-func NewIAMTokenProvider(ctx context.Context, useIDTokens bool, actAs string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
-	// When using ID tokens, put the audience as a fake scope in the cache key.
-	// See the comment for Scopes in CacheKey.
-	if useIDTokens {
-		if audience == "" {
-			return nil, ErrAudienceRequired
-		}
-		scopes = []string{"audience:" + audience}
-	} else {
-		audience = ""
-	}
+func NewIAMTokenProvider(ctx context.Context, actAs string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
 	return &iamTokenProvider{
 		actAs:     actAs,
 		scopes:    scopes,

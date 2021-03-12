@@ -51,7 +51,7 @@ type luciContextTokenProvider struct {
 // description of how to locate and contact the local auth server.
 //
 // See auth/integration/localauth package for the implementation of the server.
-func NewLUCIContextTokenProvider(ctx context.Context, useIDTokens bool, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
+func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error) {
 	localAuth := lucictx.GetLocalAuth(ctx)
 	switch {
 	case localAuth == nil:
@@ -89,17 +89,6 @@ func NewLUCIContextTokenProvider(ctx context.Context, useIDTokens bool, scopes [
 		return nil, err
 	}
 	digest := sha256.Sum256(blob)
-
-	// When using ID tokens, put the audience as a fake scope in the cache key.
-	// See the comment for Scopes in CacheKey.
-	if useIDTokens {
-		if audience == "" {
-			return nil, ErrAudienceRequired
-		}
-		scopes = []string{"audience:" + audience}
-	} else {
-		audience = ""
-	}
 
 	return &luciContextTokenProvider{
 		localAuth: localAuth,

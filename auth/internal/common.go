@@ -71,10 +71,6 @@ var (
 	// ErrBadCredentials is returned by MintToken or RefreshToken if provided
 	// offline credentials (like service account key) are invalid.
 	ErrBadCredentials = errors.New("invalid or unavailable service account credentials")
-
-	// ErrAudienceRequired is returned when UseIDTokens is set without specifying
-	// the target audience for ID tokens.
-	ErrAudienceRequired = errors.New("using ID tokens requires specifying an audience string")
 )
 
 // Token is an oauth2.Token with an email and ID token that correspond to it.

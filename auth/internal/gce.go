@@ -62,7 +62,7 @@ type gceTokenProvider struct {
 
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata
 // server.
-func NewGCETokenProvider(ctx context.Context, useIDTokens bool, account string, scopes []string, audience string) (TokenProvider, error) {
+func NewGCETokenProvider(ctx context.Context, account string, scopes []string, audience string) (TokenProvider, error) {
 	// When running on GKE using Workload Identities, the metadata is served by
 	// gke-metadata-server pod, which may be very slow, especially when the node
 	// has just started. We'll wait for it to become responsive by retrying
@@ -70,7 +70,7 @@ func NewGCETokenProvider(ctx context.Context, useIDTokens bool, account string, 
 	var p TokenProvider
 	err := retry.Retry(ctx, transient.Only(retryParams), func() error {
 		var err error
-		p, err = attemptInit(ctx, useIDTokens, account, scopes, audience)
+		p, err = attemptInit(ctx, account, scopes, audience)
 		return err
 	}, retry.LogCallback(ctx, "initializing GCE token provider"))
 	return p, err
@@ -90,18 +90,7 @@ func retryParams() retry.Iterator {
 }
 
 // attemptInit attempts to initialize GCE token provider.
-func attemptInit(ctx context.Context, useIDTokens bool, account string, scopes []string, audience string) (TokenProvider, error) {
-	// When using ID tokens, put the audience as a fake scope in the cache key.
-	// See the comment for Scopes in CacheKey.
-	if useIDTokens {
-		if audience == "" {
-			return nil, ErrAudienceRequired
-		}
-		scopes = []string{"audience:" + audience}
-	} else {
-		audience = ""
-	}
-
+func attemptInit(ctx context.Context, account string, scopes []string, audience string) (TokenProvider, error) {
 	// This mutex is used to avoid hitting GKE metadata server concurrently if
 	// we have a stampede of goroutines. It doesn't actually protect any shared
 	// state in the current process.
@@ -141,7 +130,7 @@ func attemptInit(ctx context.Context, useIDTokens bool, account string, scopes [
 	// The exception is non-cloud scopes (like gerritcodereview or G Suite). To
 	// use such scopes, one will have to use impersonation through Cloud IAM APIs,
 	// which *are* covered by cloud-platform (see ActAsServiceAccount in auth.go).
-	if !useIDTokens {
+	if audience == "" {
 		availableScopes, err := metadataClient.Scopes(account)
 		if err != nil {
 			return nil, transient.Tag.Apply(err)
