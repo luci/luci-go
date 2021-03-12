@@ -177,6 +177,11 @@ func (l *lruDict) keys() isolated.HexDigests {
 	return l.items.keys()
 }
 
+func (l *lruDict) has(key isolated.HexDigest) bool {
+	_, ok := l.items.entries[key]
+	return ok
+}
+
 func (l *lruDict) length() int {
 	return l.items.length()
 }
