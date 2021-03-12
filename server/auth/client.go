@@ -680,12 +680,30 @@ func asSelfIDTokenHeaders(ctx context.Context, opts *rpcOptions, req *http.Reque
 		return nil, nil, ErrNotConfigured
 	}
 
-	// TODO(crbug.com/1081932): Pick environment-specific methods when available.
-	//
+	// Derive the audience string. It may have "${host}" var that is replaced
+	// based on the hostname in the `req`.
+	var aud string
+	if opts.idTokenAudGen != nil {
+		var err error
+		if aud, err = opts.idTokenAudGen(req); err != nil {
+			return nil, nil, errors.Annotate(err, "can't derive audience for ID token").Err()
+		}
+	} else {
+		// Using a static audience, not a pattern.
+		aud = opts.idTokenAud
+	}
+
+	// First try the environment-specific method of getting an ID token (e.g.
+	// querying it from the GCE metadata server). It may not be available (e.g.
+	// on GAE v1). We'll fall back to a more expensive generic method below.
+	if cfg.IDTokenProvider != nil {
+		tok, err := cfg.IDTokenProvider(ctx, aud)
+		return tok, nil, err
+	}
+
 	// The method below works almost everywhere, but it requires the service
 	// account to have iam.serviceAccountTokenCreator role on itself, which is
-	// a bit weird and not default. On GAE/Flex/Cloud Run/GKE we should use GCE
-	// metadata server instead.
+	// a bit weird and not default.
 
 	// Discover our own service account name to use it as a target.
 	info, err := cfg.Signer.ServiceInfo(ctx)
@@ -694,18 +712,6 @@ func asSelfIDTokenHeaders(ctx context.Context, opts *rpcOptions, req *http.Reque
 		return nil, nil, errors.Annotate(err, "failed to get our own service info").Err()
 	case info.ServiceAccountName == "":
 		return nil, nil, errors.Reason("no service account name in our own service info").Err()
-	}
-
-	// Derive the audience string. It may have "${host}" var that is replaced
-	// based on the hostname in the `req`.
-	var aud string
-	if opts.idTokenAudGen != nil {
-		if aud, err = opts.idTokenAudGen(req); err != nil {
-			return nil, nil, errors.Annotate(err, "can't derive audience for ID token").Err()
-		}
-	} else {
-		// Using a static audience, not a pattern.
-		aud = opts.idTokenAud
 	}
 
 	// Grab ID token for our own account. This uses our own IAM-scoped access

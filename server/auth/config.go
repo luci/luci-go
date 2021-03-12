@@ -32,9 +32,13 @@ var cfgContextKey = "auth.Config context key"
 // DB represents a snapshot of user groups used for authorization checks.
 type DBProvider func(c context.Context) (authdb.DB, error)
 
-// AccessTokenProvider knows how to generate OAuth2 access token for the
+// AccessTokenProvider knows how to generate OAuth2 access tokens for the
 // service account belonging to the server itself.
 type AccessTokenProvider func(c context.Context, scopes []string) (*oauth2.Token, error)
+
+// IDTokenProvider knows how to generate ID tokens for the service account
+// belonging to the server itself.
+type IDTokenProvider func(c context.Context, audience string) (*oauth2.Token, error)
 
 // AnonymousTransportProvider returns http.RoundTriper that can make
 // unauthenticated HTTP requests.
@@ -63,9 +67,18 @@ type Config struct {
 	// Used to implement '/auth/api/v1/server/(certificates|info)' routes.
 	Signer signing.Signer
 
-	// AccessTokenProvider knows how to generate OAuth2 access token for the
+	// AccessTokenProvider knows how to generate OAuth2 access tokens for the
 	// service account belonging to the server itself.
 	AccessTokenProvider AccessTokenProvider
+
+	// IDTokenProvider knows how to generate ID tokens for the service account
+	// belonging to the server itself.
+	//
+	// Optional. If not set the server will fall back to using the generateIdToken
+	// IAM RPC targeting its own account. This fallback requires the service
+	// account to have iam.serviceAccountTokenCreator role on *itself*, which is
+	// a bit weird and not default.
+	IDTokenProvider IDTokenProvider
 
 	// AnonymousTransport returns http.RoundTriper that can make unauthenticated
 	// HTTP requests.
