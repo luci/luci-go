@@ -16,6 +16,115 @@
       "message": "PTAL",
       "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "215785ac_9324c52f",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-12T17:27:17Z",
+      "side": 1,
+      "message": "what\u0027s PRECONDITION? like no more slot in Submission QUeue?\nand PERMANENT? like no permission to call Submit?",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 23
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08745203_b456a619",
+        "filename": "cv/internal/run/impl/handler/handler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-12T17:27:17Z",
+      "side": 1,
+      "message": "makes",
+      "range": {
+        "startLine": 54,
+        "startChar": 61,
+        "endLine": 54,
+        "endChar": 65
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfe8f659_191dbce1",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-12T17:27:17Z",
+      "side": 1,
+      "message": "IMO-warning: these comments will quickly get out of sync from the interface definition. I general, I personally prefer to document well interface and leave func doc just:\n  // XYZ implements ABC interface.",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 42
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "118d0891_aa74c5de",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-12T17:27:17Z",
+      "side": 1,
+      "message": "do you actually expect \u003e1 event *for the same* attempt?\nafaiu, \u003e1 event must never happen: if sending event (ie datastore.Put) fails, entire RM task aborts, and on RM task retry or another task which happens to run next, we\u0027ll have attempt++ *first*.\nRight?",
+      "range": {
+        "startLine": 194,
+        "startChar": 2,
+        "endLine": 195,
+        "endChar": 163
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35cb99c2_60873acc",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-12T17:27:17Z",
+      "side": 1,
+      "message": "agree with the order of processing the events.",
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
