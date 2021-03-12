@@ -21,7 +21,9 @@ import (
 	"mime"
 
 	"cloud.google.com/go/spanner"
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -38,6 +40,8 @@ import (
 
 // TODO(crbug.com/1177213) - make this configurable.
 const MaxBatchCreateArtifactSize = 10 * 1024 * 1024
+
+var maxReqSizeOpt = &grpc.MaxSendMsgSizeCallOption{MaxBatchCreateArtifactSize}
 
 type artifactCreationRequest struct {
 	testID      string
@@ -171,15 +175,17 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different size: %d != %d`, a.name(invID), a.size, st.size)
 		}
 
-		h := sha256.Sum256(a.data)
-		newHash := artifacts.AddHashPrefix(hex.EncodeToString(h[:]))
+		// Save the hash, so that it can be reused in the post-verification
+		// after rbecase.UpdateBlob().
+		if a.hash == "" {
+			h := sha256.Sum256(a.data)
+			a.hash = artifacts.AddHashPrefix(hex.EncodeToString(h[:]))
+		}
+
 		switch {
 		case !ok:
-			// New artifact; save the hash, as it will be checked in the post-verification
-			// after rbecase.UpdateBlob().
-			a.hash = newHash
 			newArts = append(newArts, a)
-		case newHash != st.hash:
+		case a.hash != st.hash:
 			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different hash`, a.name(invID))
 		default:
 			// artifact exists
@@ -188,13 +194,18 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 	return newArts, nil
 }
 
-// checkArtStates checks if the states of the associated invocation and artifacts are valid.
+// checkArtStates checks if the states of the associated invocation and artifacts are
+// compatible with creation of the artifacts. If ctx does not hold a transaction, this
+// function creates and uses a ready-only transaction to fetch the current states.
 // On success, it returns a list of the artifactCreationRequests of which artifact don't
 // have states in Spanner yet.
 func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) ([]*artifactCreationRequest, error) {
 	eg, ctx := errgroup.WithContext(ctx)
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
+	if span.Txn(ctx) == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = span.ReadOnlyTransaction(ctx)
+		defer cancel()
+	}
 	eg.Go(func() error {
 		invState, err := invocations.ReadState(ctx, invID)
 		if invState != pb.Invocation_ACTIVE {
@@ -240,6 +251,85 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		return nil, nil
 	}
 
-	// TODO(ddoman): upload the artifacts to RBE-CAS.
-	return nil, nil
+	if err := uploadArtifactBlobs(ctx, s.Options, invID, artsToCreate); err != nil {
+		return nil, err
+	}
+	artsCreated, err := createArtifactStates(ctx, invID, artsToCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	// return the artifacts that were created.
+	if artsCreated == nil {
+		// The client was calling this API with the same input multiple times in parallel?
+		logging.Infof(ctx, "The states of all the artifacts were found after upload")
+		return nil, nil
+	}
+	ret := &pb.BatchCreateArtifactsResponse{Artifacts: make([]*pb.Artifact, len(artsCreated))}
+	for i, a := range artsToCreate {
+		ret.Artifacts[i] = &pb.Artifact{Name: a.name(invID)}
+	}
+	return ret, nil
+}
+
+// createArtifactStates creates the states of given artifacts in Spanner.
+func createArtifactStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) ([]*artifactCreationRequest, error) {
+	var noStateArts []*artifactCreationRequest
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) (err error) {
+		// Verify all the states again.
+		noStateArts, err = checkArtStates(ctx, invID, arts)
+		if err != nil {
+			return err
+		}
+		for _, a := range noStateArts {
+			span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]interface{}{
+				"InvocationId": invID,
+				"ParentId":     a.parentID(),
+				"ArtifactId":   a.artifactID,
+				"ContentType":  a.contentType,
+				"Size":         a.size,
+				"RBECASHash":   a.hash,
+			}))
+		}
+		return nil
+	})
+
+	if err == nil {
+		return noStateArts, nil
+	}
+	if _, ok := appstatus.Get(err); ok {
+		return nil, err
+	}
+	// If the error is not appstatus-annotated, it should be a commit error
+	// from the transaciton.
+	logging.Errorf(ctx, "Failed to write artifact states: %s", err)
+	return nil, appstatus.Errorf(codes.Internal, "failed to write artifact states")
+}
+
+func uploadArtifactBlobs(ctx context.Context, sOpts *Options, invID invocations.ID, arts []*artifactCreationRequest) error {
+	casReq := &repb.BatchUpdateBlobsRequest{InstanceName: sOpts.ArtifactRBEInstance}
+	for _, a := range arts {
+		casReq.Requests = append(casReq.Requests, &repb.BatchUpdateBlobsRequest_Request{
+			Digest: &repb.Digest{Hash: a.hash, SizeBytes: a.size},
+			Data:   a.data,
+		})
+	}
+	resp, err := sOpts.casClient.BatchUpdateBlobs(ctx, casReq, maxReqSizeOpt)
+	if err != nil {
+		// The only possible error here is INVALID_ARGUMENT, which indicates that
+		// the client attempted to upload more than the server supported limit.
+		logging.Errorf(ctx, "RBE-CAS.BatchUpdateBlobs() failed w/ %s", err)
+		return appstatus.Errorf(codes.Internal, "exceeded the maximum size limit")
+	}
+	for i, r := range resp.GetResponses() {
+		cd := codes.Code(r.Status.Code)
+		if cd != codes.OK {
+			logging.Errorf(ctx, "artifact %q: RBE-CAS.BatchUploadBlobs() responded %s", arts[i].name(invID), cd)
+			// Each individual error can be due to resource_exhausted or unmatched digest.
+			// There is nothing that ResultDB Client can do for those errors, and
+			// this function just returns an error to indicate that content-upload failed.
+			return appstatus.Errorf(codes.Internal, "artifact %q: failed to upload content to the storage backend", arts[i].name(invID))
+		}
+	}
+	return nil
 }

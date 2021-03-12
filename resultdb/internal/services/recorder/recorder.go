@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"google.golang.org/genproto/googleapis/bytestream"
 
 	"go.chromium.org/luci/common/errors"
@@ -46,6 +47,10 @@ type Options struct {
 	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
 	// storage. Example: "projects/luci-resultdb/instances/artifacts".
 	ArtifactRBEInstance string
+
+	// casClient is an instance of ContentAddressableStorageClient which is used for
+	// artifact batch operations.
+	casClient repb.ContentAddressableStorageClient
 }
 
 // InitServer initializes a recorder server.
@@ -69,6 +74,7 @@ func installArtifactCreationHandler(srv *server.Server, opt *Options) error {
 		return err
 	}
 
+	opt.casClient = repb.NewContentAddressableStorageClient(conn)
 	bs := bytestream.NewByteStreamClient(conn)
 	ach := &artifactCreationHandler{
 		RBEInstance: opt.ArtifactRBEInstance,
