@@ -36,7 +36,7 @@ type CLIDs []CLID
 
 // Dedupe removes duplicates in place.
 //
-// Note: Does not perserve original order.
+// Note: Does not preserve original order.
 func (p *CLIDs) Dedupe() {
 	clids := *p
 	if len(clids) <= 1 {
