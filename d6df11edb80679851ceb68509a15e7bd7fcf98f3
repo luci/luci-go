@@ -16,6 +16,24 @@
       "message": "annotate?",
       "revId": "d6df11edb80679851ceb68509a15e7bd7fcf98f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa5dae70_8cd253c7",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-12T08:21:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f48e6f2d_507f5e01",
+      "revId": "d6df11edb80679851ceb68509a15e7bd7fcf98f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
