@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26c71713_94417be3",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-12T08:24:10Z",
+      "side": 1,
+      "message": "Should we let callers to decide if it ignores or not?",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 5
+      },
+      "revId": "36d632239ec1c6cc879b0777f4ef65235ba730d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
