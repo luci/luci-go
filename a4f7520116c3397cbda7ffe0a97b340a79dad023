@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2f77b31_00f98105",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-12T09:00:18Z",
+      "side": 1,
+      "message": "The current implementation guarantees the order http://shortn/_5xaXRwH86c, but it\u0027s not super explicitly documented in the proto.",
+      "range": {
+        "startLine": 327,
+        "startChar": 83,
+        "endLine": 327,
+        "endChar": 86
+      },
+      "revId": "a4f7520116c3397cbda7ffe0a97b340a79dad023",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "33dcbb7f_59babe58",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-12T09:00:18Z",
+      "side": 1,
+      "message": "Instead of returning the error here, this loop could continue and return MultiError. However, I found that the added info would be useless, because\n1) MultiError would show the artifact paths of the first error only.\ne.g., \"artifact a/b/c: failed ... (and 3 other errors)\"\n2) The response of BatchCreateArtifacts() does not include the artifact that were failed to upload.\n\nTherefore, MultiError won\u0027t add any valuable info to the returned response.",
+      "range": {
+        "startLine": 331,
+        "startChar": 3,
+        "endLine": 331,
+        "endChar": 127
+      },
+      "revId": "a4f7520116c3397cbda7ffe0a97b340a79dad023",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
