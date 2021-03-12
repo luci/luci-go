@@ -30,7 +30,7 @@ type KVS struct {
 
 // New instantiates KVS.
 func New(ctx context.Context, path string) (*KVS, error) {
-	db, err := badger.Open(badger.DefaultOptions(path).WithCompression(options.None).WithLoggingLevel(badger.WARNING))
+	db, err := badger.Open(badger.DefaultOptions(path).WithCompression(options.None).WithLoggingLevel(badger.WARNING).WithCompression(options.None))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to open database: %s", path).Err()
 	}
