@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5293603a_19bd10ab",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-12T22:47:09Z",
+      "side": 1,
+      "message": "Sorry, I forgot to add a comment. This is just to force the test code path since both percentages are set to 0 right now. But with your pct suggestion I can remove this.",
+      "parentUuid": "23353700_cf40731e",
+      "range": {
+        "startLine": 66,
+        "startChar": 9,
+        "endLine": 66,
+        "endChar": 13
+      },
+      "revId": "0805b7954e969fad5d0034ff696906836adb08ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ff1fea78_c098eaed",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-03-12T00:13:17Z",
       "side": 1,
       "message": "This doesn\u0027t achieve to release the same pace as non-batched req. The pct of single ScheduleBuild req is controlled by the params of  `makeOverride()`. I think we can add another value in Context to pass the pct - ctx.Context \u003d context.WithValue(ctx.Context, \"pct\", pct) at this line http://shortn/_lDAEr4xmOe",
+      "revId": "0805b7954e969fad5d0034ff696906836adb08ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da9b460c_2dcda0ab",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-12T22:47:09Z",
+      "side": 1,
+      "message": "Done. Note that if the context key is a string it can collide with context values set by other packages.",
+      "parentUuid": "ff1fea78_c098eaed",
       "revId": "0805b7954e969fad5d0034ff696906836adb08ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
