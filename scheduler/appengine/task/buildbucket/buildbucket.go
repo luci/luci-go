@@ -37,6 +37,7 @@ import (
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -55,8 +56,11 @@ import (
 )
 
 const (
-	statusCheckTimerName     = "check-buildbucket-build-status"
-	statusCheckTimerInterval = time.Minute
+	// Parameters of a periodic build status check timer.
+	statusCheckTimerName        = "check-buildbucket-build-status"
+	statusCheckTimerIntervalMin = time.Minute
+	statusCheckTimerIntervalMax = 10 * time.Minute
+
 	// Maximum number of triggers to be emitted into $recipe_engine/scheduler
 	// property. See also https://crbug.com/1006914.
 	maxTriggersAsSchedulerProperty = 100
@@ -394,7 +398,6 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 // HandleTimer is part of Manager interface.
 func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
 	if name == statusCheckTimerName {
-		ctl.DebugLog("Timer tick, asking Buildbucket for the build status")
 		if err := m.checkBuildStatus(c, ctl); err != nil {
 			// This is either a fatal or transient error. If it is fatal, no need to
 			// schedule the timer anymore. If it is transient, HandleTimer call itself
@@ -453,10 +456,18 @@ func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb 
 // This is a fallback mechanism in case PubSub notifications are delayed or
 // lost for some reason.
 func (m TaskManager) checkBuildStatusLater(c context.Context, ctl task.Controller) {
-	// TODO(vadimsh): Make the check interval configurable?
 	if !ctl.State().Status.Final() {
-		ctl.AddTimer(c, statusCheckTimerInterval, statusCheckTimerName, nil)
+		ctl.AddTimer(c,
+			randomDuration(c, statusCheckTimerIntervalMin, statusCheckTimerIntervalMax),
+			statusCheckTimerName,
+			nil)
 	}
+}
+
+// randomDuration returns a random seconds duration within the given bounds.
+func randomDuration(c context.Context, min, max time.Duration) time.Duration {
+	d := min + time.Duration(mathrand.Int63n(c, int64(max-min)))
+	return d.Truncate(time.Second)
 }
 
 func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) error {
