@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c40e7f32_47cc7346",
+        "filename": "milo/frontend/resultui/src/components/tooltip.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-12T05:31:14Z",
+      "side": 1,
+      "message": "Updated.",
+      "parentUuid": "6409ce6d_b5a93700",
+      "revId": "6178b662f6582c1845c58035a52cef706ba96f0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "54646db6_49399b73",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-03-12T04:27:01Z",
       "side": 1,
       "message": "show",
+      "range": {
+        "startLine": 31,
+        "startChar": 6,
+        "endLine": 31,
+        "endChar": 11
+      },
+      "revId": "6178b662f6582c1845c58035a52cef706ba96f0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3167ab2b_0103b9a2",
+        "filename": "milo/frontend/resultui/src/components/tooltip.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-12T05:31:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54646db6_49399b73",
       "range": {
         "startLine": 31,
         "startChar": 6,

@@ -34,6 +34,24 @@
       "parentUuid": "088e9abc_4de898f5",
       "revId": "0a72ad48e8e39f013f747a16d590ed6c202e8ef6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "02316d4a_f5e7e28a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-12T05:31:14Z",
+      "side": 1,
+      "message": "Updated the implementation to resolve this issue.",
+      "parentUuid": "3ac4a305_c79c9bd2",
+      "revId": "0a72ad48e8e39f013f747a16d590ed6c202e8ef6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
