@@ -25,27 +25,28 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
 // OnCLUpdated decides whether to cancel a Run based on changes to the CLs.
-func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (eventbox.SideEffectFn, *state.RunState, error) {
+func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: Received CLUpdated events but Run is in unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
-	case status == run.Status_SUBMITTING || run.IsEnded(status):
-		// TODO(yiwzhang): This function should tell RM not to consume the Cancel
-		// event so that when RM finishes submitting, it will be able to process
-		// the Cancel Event and see if any action needs to be taken.
-		return nil, rs, nil
+	case status == run.Status_SUBMITTING:
+		// Don't consume the events so that the RM executing the submission will
+		// be able to read the CLUpdated events and take necessary actions after
+		// submission completes. For example, a new PS is uploaded for one of
+		// the unsubmitted CLs and cause the run submission to fail. RM should
+		// cancel this Run instead of retrying.
+		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
 		// Run is ended, update on CL shouldn't change the Run state.
-		return nil, rs, nil
+		return &Result{State: rs}, nil
 	}
 	clids.Dedupe()
 
@@ -58,7 +59,7 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 	}
 
 	if err := loadCLsAndRunCLs(ctx, cls, runCLs); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	for i := range clids {
@@ -74,7 +75,7 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 			return impl.Cancel(ctx, rs)
 		}
 	}
-	return nil, rs, nil
+	return &Result{State: rs}, nil
 }
 
 func loadCLsAndRunCLs(ctx context.Context, cls []*changelist.CL, runCLs []*run.RunCL) error {

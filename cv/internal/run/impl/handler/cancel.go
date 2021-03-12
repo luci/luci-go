@@ -22,14 +22,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
 // Cancel cancels a Run.
-func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
@@ -37,26 +36,27 @@ func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (eventbox.SideEffec
 		panic(err)
 	case status == run.Status_SUBMITTING:
 		logging.Debugf(ctx, "Run cancellation can't be fulfilled at this time as Run is currently submitting.")
-		// TODO(yiwzhang): This function should tell RM not to consume the Cancel
-		// event so that when RM finishes submitting, it will be able to process
-		// the Cancel Event and see if any action needs to be taken.
-		return nil, rs, nil
+		// Don't consume the events so that the RM executing the submission will
+		// be able to read the Cancel events and attempt to cancel if the Run
+		// failed to submit.
+		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "skip cancellation because Run has already ended.")
-		return nil, rs, nil
+		return &Result{State: rs}, nil
 	}
 
-	ret := rs.ShallowCopy()
-	ret.Run.Status = run.Status_CANCELLED
+	res := &Result{
+		State: rs.ShallowCopy(),
+		SideEffectFn: func(ctx context.Context) error {
+			return prjmanager.NotifyRunFinished(ctx, rs.Run.ID)
+		},
+	}
+	res.State.Run.Status = run.Status_CANCELLED
 	now := clock.Now(ctx).UTC()
-	ret.Run.EndTime = now
-	if ret.Run.StartTime.IsZero() {
+	res.State.Run.EndTime = now
+	if res.State.Run.StartTime.IsZero() {
 		// This run has never started but already gets a cancelled event.
-		ret.Run.StartTime = now
+		res.State.Run.StartTime = now
 	}
-
-	se := func(ctx context.Context) error {
-		return prjmanager.NotifyRunFinished(ctx, rs.Run.ID)
-	}
-	return se, ret, nil
+	return res, nil
 }

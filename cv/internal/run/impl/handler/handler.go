@@ -22,20 +22,32 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
+// Result is the result of handling the events.
+type Result struct {
+	// State is the new RunState after handling the events.
+	State *state.RunState
+	// SideEffectFn is called in a transaction to atomically transition the
+	// RunState to the new state and perform side effect.
+	SideEffectFn eventbox.SideEffectFn
+	// PreserveEvents, if true, instructs RunManager not to consume the events
+	// during state transition.
+	PreserveEvents bool
+}
+
 // Handler is an interface that handles events that RunManager receives.
 type Handler interface {
 	// Start starts a Run.
-	Start(context.Context, *state.RunState) (eventbox.SideEffectFn, *state.RunState, error)
+	Start(context.Context, *state.RunState) (*Result, error)
 
 	// Cancel cancels a Run.
-	Cancel(context.Context, *state.RunState) (eventbox.SideEffectFn, *state.RunState, error)
+	Cancel(context.Context, *state.RunState) (*Result, error)
 
 	// OnCLUpdated decides whether to cancel a Run based on changes to the CLs.
-	OnCLUpdated(context.Context, *state.RunState, common.CLIDs) (eventbox.SideEffectFn, *state.RunState, error)
+	OnCLUpdated(context.Context, *state.RunState, common.CLIDs) (*Result, error)
 
 	// OnCQDVerificationCompleted finalizes the Run according to the verified
 	// Run reported by CQDaemon.
-	OnCQDVerificationCompleted(context.Context, *state.RunState) (eventbox.SideEffectFn, *state.RunState, error)
+	OnCQDVerificationCompleted(context.Context, *state.RunState) (*Result, error)
 }
 
 // Impl is a prod implementation of Handler interface.

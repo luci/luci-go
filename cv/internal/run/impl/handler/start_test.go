@@ -46,11 +46,12 @@ func TestStart(t *testing.T) {
 
 		Convey("Starts when Run is PENDING", func() {
 			rs.Run.Status = run.Status_PENDING
-			se, newrs, err := h.Start(ctx, rs)
+			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
-			So(newrs.Run.Status, ShouldEqual, run.Status_RUNNING)
-			So(newrs.Run.StartTime, ShouldResemble, clock.Now(ctx).UTC())
-			So(se, ShouldBeNil)
+			So(res.State.Run.Status, ShouldEqual, run.Status_RUNNING)
+			So(res.State.Run.StartTime, ShouldResemble, clock.Now(ctx).UTC())
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
 		})
 
 		statuses := []run.Status{
@@ -64,10 +65,11 @@ func TestStart(t *testing.T) {
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
 				rs.Run.Status = status
-				se, newrs, err := h.Start(ctx, rs)
+				res, err := h.Start(ctx, rs)
 				So(err, ShouldBeNil)
-				So(newrs, ShouldEqual, rs)
-				So(se, ShouldBeNil)
+				So(res.State, ShouldEqual, rs)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
 			})
 		}
 	})

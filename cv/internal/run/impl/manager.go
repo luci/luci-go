@@ -177,62 +177,68 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	}
 }
 
-func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) (ret []eventbox.Transition, err error) {
+func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) ([]eventbox.Transition, error) {
+	var transitions []eventbox.Transition
 	if tr.cqdVerificationCompletedEvents != nil {
-		t := eventbox.Transition{Events: tr.cqdVerificationCompletedEvents}
-		t.SideEffectFn, rs, err = rm.handler.OnCQDVerificationCompleted(ctx, rs)
+		res, err := rm.handler.OnCQDVerificationCompleted(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
-		t.TransitionTo = rs
-		ret = append(ret, t)
+		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
 	}
 	switch {
 	case len(tr.cancelEvents) > 0:
-		t := eventbox.Transition{Events: tr.cancelEvents}
+		res, err := rm.handler.Cancel(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
 		// Consume all the start events here as well because it is possible
 		// that Run Manager receives start and cancel events at the same time.
 		// For example, user requests to start a Run and immediately cancels
 		// it. But the duration is long enough for Project Manager to create
 		// this Run in CV. In that case, Run Manager should just move this Run
 		// to cancelled state directly.
-		t.Events = append(t.Events, tr.startEvents...)
-		t.SideEffectFn, rs, err = rm.handler.Cancel(ctx, rs)
-		if err != nil {
-			return nil, err
-		}
-		t.TransitionTo = rs
-		ret = append(ret, t)
+		events := append(tr.cancelEvents, tr.startEvents...)
+		rs, transitions = applyResult(res, events, transitions)
 	case len(tr.startEvents) > 0:
-		t := eventbox.Transition{Events: tr.startEvents}
-		t.SideEffectFn, rs, err = rm.handler.Start(ctx, rs)
+		res, err := rm.handler.Start(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
-		t.TransitionTo = rs
-		ret = append(ret, t)
+		rs, transitions = applyResult(res, tr.startEvents, transitions)
 	}
 	if len(tr.clUpdatedEvents.events) > 0 {
-		t := eventbox.Transition{Events: tr.clUpdatedEvents.events}
-		t.SideEffectFn, rs, err = rm.handler.OnCLUpdated(ctx, rs, tr.clUpdatedEvents.cls)
+		res, err := rm.handler.OnCLUpdated(ctx, rs, tr.clUpdatedEvents.cls)
 		if err != nil {
 			return nil, err
 		}
-		t.TransitionTo = rs
-		ret = append(ret, t)
+		rs, transitions = applyResult(res, tr.clUpdatedEvents.events, transitions)
 	}
 	if len(tr.newConfigEvents) > 0 {
 		// TODO(tandrii,yiwzhang): update config.
-		ret = append(ret, eventbox.Transition{Events: tr.newConfigEvents, TransitionTo: rs})
+		transitions = append(transitions, eventbox.Transition{Events: tr.newConfigEvents, TransitionTo: rs})
 	}
 	if len(tr.pokeEvents) > 0 {
 		// TODO(tandrii,yiwzhang): implement poke.
 		// TODO(crbug/1178658): trigger CL updater to refetch Run's CLs.
-		ret = append(ret, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: rs})
+		transitions = append(transitions, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: rs})
 	}
 
-	err = enqueueNextPoke(ctx, rm.runID, tr.nextReadyEventTime)
-	return
+	if err := enqueueNextPoke(ctx, rm.runID, tr.nextReadyEventTime); err != nil {
+		return nil, err
+	}
+	return transitions, nil
+}
+
+func applyResult(res *handler.Result, events eventbox.Events, transitions []eventbox.Transition) (*state.RunState, []eventbox.Transition) {
+	t := eventbox.Transition{
+		TransitionTo: res.State,
+		SideEffectFn: res.SideEffectFn,
+	}
+	if !res.PreserveEvents {
+		t.Events = events
+	}
+	return res.State, append(transitions, t)
 }
 
 func enqueueNextPoke(ctx context.Context, runID common.RunID, nextReadyEventTime time.Time) error {

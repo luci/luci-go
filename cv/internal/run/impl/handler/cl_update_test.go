@@ -83,11 +83,11 @@ func TestOnCLUpdated(t *testing.T) {
 
 		Convey("Noop", func() {
 			ensureNoop := func() {
-				se, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+				res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 				So(err, ShouldBeNil)
-				So(newrs, ShouldEqual, rs)
-				So(se, ShouldBeNil)
-
+				So(res.State, ShouldEqual, rs)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
 			}
 			statuses := []run.Status{
 				run.Status_SUCCEEDED,
@@ -124,27 +124,37 @@ func TestOnCLUpdated(t *testing.T) {
 				})
 			})
 		})
+		Convey("Preserve events for SUBMITTING Run", func() {
+			rs.Run.Status = run.Status_SUBMITTING
+			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			So(err, ShouldBeNil)
+			So(res.State, ShouldEqual, rs)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeTrue)
+		})
 
 		Convey("Cancels Run on new Patchset", func() {
 			newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
 			gf.PS(6)(newCI)
 			UpdateCL(newCI)
-			se, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(newrs.Run.Status, ShouldEqual, run.Status_CANCELLED)
-			So(se, ShouldNotBeNil)
-			So(se(ctx), ShouldBeNil)
+			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.SideEffectFn(ctx), ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
 			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 		Convey("Cancels Run on removed trigger", func() {
 			newCI := gf.CI(2, gf.PS(5), gf.CQ(0))
 			UpdateCL(newCI)
 
-			se, newrs, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
+			res, err := h.OnCLUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(newrs.Run.Status, ShouldEqual, run.Status_CANCELLED)
-			So(se, ShouldNotBeNil)
-			So(se(ctx), ShouldBeNil)
+			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(res.SideEffectFn(ctx), ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
 			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 	})

@@ -22,13 +22,12 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
 // Start starts a Run.
-func (*Impl) Start(ctx context.Context, rs *state.RunState) (eventbox.SideEffectFn, *state.RunState, error) {
+func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
 		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", rs.Run.ID).Err()
@@ -36,11 +35,11 @@ func (*Impl) Start(ctx context.Context, rs *state.RunState) (eventbox.SideEffect
 		panic(err)
 	case status != run.Status_PENDING:
 		logging.Debugf(ctx, "Skip starting Run because this Run is %s", status)
-		return nil, rs, nil
+		return &Result{State: rs}, nil
 	}
 
-	ret := rs.ShallowCopy()
-	ret.Run.Status = run.Status_RUNNING
-	ret.Run.StartTime = clock.Now(ctx).UTC()
-	return nil, ret, nil
+	res := &Result{State: rs.ShallowCopy()}
+	res.State.Run.Status = run.Status_RUNNING
+	res.State.Run.StartTime = clock.Now(ctx).UTC()
+	return res, nil
 }
