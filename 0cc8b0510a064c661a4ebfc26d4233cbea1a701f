@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "632ba7a8_2835d7a6",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-12T21:35:44Z",
+      "side": 1,
+      "message": "I see. Left nits on new PS, but one note here: you aren\u0027t actually eliminating race condition -- it\u0027s still possible that tree is closed while CL is being submitted, you\u0027ve just reduced the window.",
+      "parentUuid": "c363f61b_2f166ec2",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 23
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "08745203_b456a619",
@@ -196,6 +220,30 @@
       "side": 1,
       "message": "Correct. \n\nI only expect at most 1 attempt running and at most 1 event for the same attempt in the eventbox at the any time. I mean I could be more restrictive here but I also want to make sure CV can make progress unless something is fundamentally wrong. WDYT?",
       "parentUuid": "118d0891_aa74c5de",
+      "range": {
+        "startLine": 194,
+        "startChar": 2,
+        "endLine": 195,
+        "endChar": 163
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05bb84d8_c735b3fe",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-12T21:35:44Z",
+      "side": 1,
+      "message": "I think it is reasonable % leave a comment in code to avoid deceiving less familiar reader.",
+      "parentUuid": "91b5deed_72fc9d92",
       "range": {
         "startLine": 194,
         "startChar": 2,
