@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc4311d7_62e23060",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-12T17:43:32Z",
+      "side": 1,
+      "message": "still cannot copy text from the tooltip.",
+      "revId": "83c9724dfd67cd1896e523a689fc9bed7eabb027",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "358f48b6_7bc2e139",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-12T17:43:32Z",
+      "side": 1,
+      "message": "does this mean we render all tooltips in advance for each step? it seems a bit wasteful? is it possible to render it only on demand, e..g inside mouseover?",
+      "revId": "83c9724dfd67cd1896e523a689fc9bed7eabb027",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "91d7971b_04555ddc",
+        "filename": "milo/frontend/resultui/src/components/tooltip.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-12T17:43:32Z",
+      "side": 1,
+      "message": "+1",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 56
+      },
+      "revId": "83c9724dfd67cd1896e523a689fc9bed7eabb027",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
