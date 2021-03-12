@@ -18,21 +18,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
 // Start tells RunManager to start the given run.
 func Start(ctx context.Context, runID common.RunID) error {
-	return sendNow(ctx, runID, &eventpb.Event{
+	return eventpb.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Start{
 			Start: &eventpb.Start{},
 		},
@@ -54,15 +50,15 @@ func Poke(ctx context.Context, runID common.RunID, after time.Duration) error {
 	if after > 0 {
 		t := clock.Now(ctx).Add(after)
 		evt.ProcessAfter = timestamppb.New(t)
-		return send(ctx, runID, evt, t)
+		return eventpb.Send(ctx, runID, evt, t)
 
 	}
-	return sendNow(ctx, runID, evt)
+	return eventpb.SendNow(ctx, runID, evt)
 }
 
 // UpdateConfig tells RunManager to update the given Run to new config.
 func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
-	return sendNow(ctx, runID, &eventpb.Event{
+	return eventpb.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_NewConfig{
 			NewConfig: &eventpb.NewConfig{
 				Hash:     hash,
@@ -76,7 +72,7 @@ func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion
 //
 // TODO(yiwzhang,tandrii): support reason.
 func Cancel(ctx context.Context, runID common.RunID) error {
-	return sendNow(ctx, runID, &eventpb.Event{
+	return eventpb.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Cancel{
 			Cancel: &eventpb.Cancel{},
 		},
@@ -85,7 +81,7 @@ func Cancel(ctx context.Context, runID common.RunID) error {
 
 // NotifyCLUpdated informs RunManager that given CL has a new version available.
 func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
-	return sendNow(ctx, runID, &eventpb.Event{
+	return eventpb.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_ClUpdated{
 			ClUpdated: &eventpb.CLUpdated{
 				Clid:     int64(clid),
@@ -100,26 +96,9 @@ func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, 
 //
 // TODO(crbug/1141880): Remove this event after migration.
 func NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
-	return sendNow(ctx, runID, &eventpb.Event{
+	return eventpb.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_CqdVerificationCompleted{
 			CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
 		},
 	})
-}
-
-func sendNow(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
-	return send(ctx, runID, evt, time.Time{})
-}
-
-func send(ctx context.Context, runID common.RunID, evt *eventpb.Event, eta time.Time) error {
-	value, err := proto.Marshal(evt)
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
-	}
-	rid := string(runID)
-	to := datastore.MakeKey(ctx, RunKind, rid)
-	if err := eventbox.Emit(ctx, value, to); err != nil {
-		return err
-	}
-	return eventpb.Dispatch(ctx, rid, eta)
 }
