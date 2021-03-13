@@ -44,6 +44,8 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
@@ -98,6 +100,71 @@ func (d *DiagnosticServer) GetProject(ctx context.Context, req *diagnosticpb.Get
 		resp.State.LuciProject = req.GetProject()
 		return resp, nil
 	}
+}
+
+func (d *DiagnosticServer) GetRun(ctx context.Context, req *diagnosticpb.GetRunRequest) (resp *diagnosticpb.GetRunResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = checkAllowed(ctx, "GetRun"); err != nil {
+		return
+	}
+	if req.GetId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	r := &run.Run{ID: common.RunID(req.GetId())}
+	eg.Go(func() error {
+		switch err := datastore.Get(ctx, r); {
+		case err == datastore.ErrNoSuchEntity:
+			return status.Errorf(codes.NotFound, "run not found")
+		default:
+			return err
+		}
+	})
+
+	var events []*eventpb.Event
+	eg.Go(func() error {
+		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, run.RunKind, req.GetId()))
+		if err != nil {
+			return err
+		}
+		events = make([]*eventpb.Event, len(list))
+		for i, item := range list {
+			events[i] = &eventpb.Event{}
+			if err = proto.Unmarshal(item.Value, events[i]); err != nil {
+				return errors.Annotate(err, "failed to unmarshal Event %q", item.ID).Err()
+			}
+		}
+		return nil
+	})
+
+	if err = eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	cls := make([]int64, len(r.CLs))
+	for i, id := range r.CLs {
+		cls[i] = int64(id)
+	}
+
+	resp = &diagnosticpb.GetRunResponse{
+		Id:            req.GetId(),
+		Eversion:      int64(r.EVersion),
+		Mode:          string(r.Mode),
+		Status:        r.Status,
+		CreateTime:    timestamppb.New(r.CreateTime),
+		StartTime:     timestamppb.New(r.StartTime),
+		UpdateTime:    timestamppb.New(r.UpdateTime),
+		EndTime:       timestamppb.New(r.EndTime),
+		Owner:         string(r.Owner),
+		ConfigGroupId: string(r.ConfigGroupID),
+		Cls:           cls,
+		Submission:    r.Submission,
+
+		Events: events,
+	}
+	return resp, nil
 }
 
 func (d *DiagnosticServer) GetCL(ctx context.Context, req *diagnosticpb.GetCLRequest) (resp *diagnosticpb.GetCLResponse, err error) {
