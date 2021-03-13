@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eventpb
+package prjpb
 
 import (
 	"context"
@@ -23,25 +23,25 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 )
 
-// SendNow sends the event to Run's eventbox and invokes RunManager immediately.
-func SendNow(ctx context.Context, runID common.RunID, evt *Event) error {
-	return Send(ctx, runID, evt, time.Time{})
+// SendNow sends the event to Project's eventbox and invokes PM immediately.
+func SendNow(ctx context.Context, luciProject string, e *Event) error {
+	if err := SendWithoutDispatch(ctx, luciProject, e); err != nil {
+		return err
+	}
+	return Dispatch(ctx, luciProject, time.Time{} /*asap*/)
 }
 
-// Send sends the event to Run's eventbox and invokes RunManager at `eta`.
-func Send(ctx context.Context, runID common.RunID, evt *Event, eta time.Time) error {
-	value, err := proto.Marshal(evt)
+// Send sends the event to Project's eventbox without invoking a PM.
+func SendWithoutDispatch(ctx context.Context, luciProject string, e *Event) error {
+	value, err := proto.Marshal(e)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	rid := string(runID)
-	to := datastore.MakeKey(ctx, "Run", rid)
-	if err := eventbox.Emit(ctx, value, to); err != nil {
-		return err
-	}
-	return Dispatch(ctx, rid, eta)
+	// Must be same as prjmanager.ProjectKind, but can't import due to circular
+	// imports.
+	to := datastore.MakeKey(ctx, "Project", luciProject)
+	return eventbox.Emit(ctx, value, to)
 }
