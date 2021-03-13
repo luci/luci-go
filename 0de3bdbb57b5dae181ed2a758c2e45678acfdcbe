@@ -16,6 +16,24 @@
       "message": "PTAL\n\nI\u0027ll enable it by default after rolling it to Chrome, Fuchsia and ChromeOS. Other projects don\u0027t care that much about \"unexpected\" diffs.",
       "revId": "0de3bdbb57b5dae181ed2a758c2e45678acfdcbe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8694113f_a5b87929",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-13T00:16:04Z",
+      "side": 1,
+      "message": "sg",
+      "parentUuid": "5f0676a8_b232191f",
+      "revId": "0de3bdbb57b5dae181ed2a758c2e45678acfdcbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
