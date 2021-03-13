@@ -16,13 +16,13 @@ package impl
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -35,6 +35,8 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
+	_ "go.chromium.org/luci/cv/internal/run/impl"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -166,9 +168,10 @@ func TestE2ECLPurgingWithUnwatchedDeps(t *testing.T) {
 }
 
 func TestE2ECVCreatesSingularRun(t *testing.T) {
+	// TODO(tandrii): move this test out of PM as it covers non-PM work, too.
 	t.Parallel()
 
-	Convey("CV creates 1 CL Run", t, func() {
+	Convey("CV creates 1 CL Run, which gets canceled by the user", t, func() {
 		/////////////////////////    Setup   ////////////////////////////////
 		ct := cvtesting.Test{AppID: "cv"}
 		ctx, cancel := ct.SetUp()
@@ -205,7 +208,6 @@ func TestE2ECVCreatesSingularRun(t *testing.T) {
 
 			p, err := prjmanager.Load(ctx, lProject)
 			So(err, ShouldBeNil)
-			logging.Debugf(ctx, "PRJ: %s", protojson.Format(p.State))
 			if len(p.State.GetComponents()) == 1 {
 				c := p.State.GetComponents()[0]
 				if len(c.GetPruns()) == 1 {
@@ -218,5 +220,37 @@ func TestE2ECVCreatesSingularRun(t *testing.T) {
 		So(rid.LUCIProject(), ShouldResemble, lProject)
 		r := run.Run{ID: rid}
 		So(datastore.Get(ctx, &r), ShouldBeNil)
+
+		// Let RunManager run at least once.
+		ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClassID))
+
+		r = run.Run{ID: rid}
+		So(datastore.Get(ctx, &r), ShouldBeNil)
+		So(r.Status.String(), ShouldResemble, run.Status_RUNNING.String())
+
+		// User cancels the run.
+		logging.Debugf(ctx, "\n%s\n  User cancels the Run\n%s", strings.Repeat("=", 80), strings.Repeat("=", 80))
+		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
+			gf.CQ(0, ct.Clock.Now(), "user-2")(c.Info)
+			gf.Updated(ct.Clock.Now())(c.Info)
+		})
+		// Let CV do its work.
+		for i := 0; i < 20; i++ {
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(pollertask.ClassID))
+			p, err := prjmanager.Load(ctx, lProject)
+			So(err, ShouldBeNil)
+			if len(p.State.GetComponents()) == 0 {
+				break
+			}
+		}
+
+		// Run should be finalized, and PM should not track CL or Run any more.
+		r = run.Run{ID: rid}
+		So(datastore.Get(ctx, &r), ShouldBeNil)
+		So(r.Status.String(), ShouldResemble, run.Status_CANCELLED.String())
+		p, err := prjmanager.Load(ctx, lProject)
+		So(err, ShouldBeNil)
+		So(p.State.GetPcls(), ShouldBeEmpty) // fails!
+		So(p.State.GetComponents(), ShouldBeEmpty)
 	})
 }
