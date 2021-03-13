@@ -35,6 +35,8 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
+	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -303,6 +305,13 @@ func TestRunBuilder(t *testing.T) {
 					So(saved.EVersion, ShouldEqual, rb.InputCLs[i].ExpectedEVersion+1)
 				})
 			}
+
+			// TODO(tandrii): PM is notified.
+			// This currently creates a package cycle.
+			// pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
+			// 	RunId: string(r.ID),
+			// }}})
+			runtest.AssertInEventbox(ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
 		})
 	})
 }

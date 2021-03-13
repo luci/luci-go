@@ -291,16 +291,18 @@ func (rb *RunBuilder) save(ctx context.Context) error {
 	}
 
 	// NOTE: within the Datastore transaction,
-	//  * savePMNotification Puts a Reminder entity in Datastore (see
+	//  * NotifyRunCreated && run.Start put a Reminder entity in Datastore (see
 	//    server/tq/txn).
 	//  * Cloud Datastore client buffers all Puts in RAM, and sends all at once to
 	//    Datastore server at transaction's Commit().
-	// Therefore, there is no advantage in parallelizing dsBatcher.Put() and
-	// savePMNotification().
+	// Therefore, there is no advantage in parallelizing 3 calls below.
 	if err := rb.dsBatcher.put(ctx); err != nil {
 		return err
 	}
-	return rb.savePMNotification(ctx)
+	if err := NotifyRunCreated(ctx, rb.runID); err != nil {
+		return err
+	}
+	return run.Start(ctx, rb.runID)
 }
 
 func (rb *RunBuilder) registerSaveRun(ctx context.Context, now time.Time) {
@@ -348,10 +350,6 @@ func (rb *RunBuilder) registerSaveCL(ctx context.Context, index int, now time.Ti
 	rb.dsBatcher.register(cl, func(err error) error {
 		return errors.Annotate(err, "failed to save CL %d", cl.ID).Tag(transient.Tag).Err()
 	})
-}
-
-func (rb *RunBuilder) savePMNotification(ctx context.Context) error {
-	return NotifyRunCreated(ctx, rb.runID)
 }
 
 // computeCLsDigest populates `.runIDBuilder` for use by computeRunID.
