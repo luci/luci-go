@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "119ad8a2_5da9167e",
+        "filename": "cv/internal/diagnostic/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-13T01:33:50Z",
+      "side": 1,
+      "message": "ha! glad I\u0027ve moved this out!",
+      "range": {
+        "startLine": 391,
+        "startChar": 10,
+        "endLine": 391,
+        "endChar": 26
+      },
+      "revId": "c34f852358f58a7c9672b2a5e05f0be4c70558fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
