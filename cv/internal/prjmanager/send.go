@@ -18,14 +18,8 @@ import (
 	"context"
 	"time"
 
-	"google.golang.org/protobuf/proto"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -34,7 +28,7 @@ import (
 //
 // Results in stopping ProjectManager if ProjectConfig got disabled or deleted.
 func UpdateConfig(ctx context.Context, luciProject string) error {
-	return send(ctx, luciProject, &prjpb.Event{
+	return prjpb.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_NewConfig{
 			NewConfig: &prjpb.NewConfig{},
 		},
@@ -44,7 +38,7 @@ func UpdateConfig(ctx context.Context, luciProject string) error {
 // Poke tells ProjectManager to poke all downstream actors and check its own
 // state.
 func Poke(ctx context.Context, luciProject string) error {
-	return send(ctx, luciProject, &prjpb.Event{
+	return prjpb.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_Poke{
 			Poke: &prjpb.Poke{},
 		},
@@ -53,7 +47,7 @@ func Poke(ctx context.Context, luciProject string) error {
 
 // NotifyCLUpdated tells ProjectManager to check latest version of a given CL.
 func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
-	return send(ctx, luciProject, &prjpb.Event{
+	return prjpb.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClUpdated{
 			ClUpdated: &prjpb.CLUpdated{
 				Clid:     int64(clid),
@@ -67,7 +61,7 @@ func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, 
 //
 // In each given CL, .ID and .EVersion must be set.
 func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
-	return send(ctx, luciProject, &prjpb.Event{
+	return prjpb.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClsUpdated{
 			ClsUpdated: prjpb.MakeCLsUpdated(cls),
 		},
@@ -81,7 +75,7 @@ func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist
 //
 // TODO(tandrii): remove eta parameter once CV does all the purging.
 func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string, eta time.Time) error {
-	err := sendWithoutDispatch(ctx, luciProject, &prjpb.Event{
+	err := prjpb.SendWithoutDispatch(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_PurgeCompleted{
 			PurgeCompleted: &prjpb.PurgeCompleted{
 				OperationId: operationID,
@@ -111,7 +105,7 @@ func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID s
 //     RunCreation, then the existing TQ task running ProjectManager will be
 //     retried. So once again there is no need to create a TQ task.
 func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
-	return sendWithoutDispatch(ctx, runID.LUCIProject(), &prjpb.Event{
+	return prjpb.SendWithoutDispatch(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunCreated{
 			RunCreated: &prjpb.RunCreated{
 				RunId: string(runID),
@@ -122,27 +116,11 @@ func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
 
 // NotifyRunFinished tells ProjectManager that a run has finalized its state.
 func NotifyRunFinished(ctx context.Context, runID common.RunID) error {
-	return send(ctx, runID.LUCIProject(), &prjpb.Event{
+	return prjpb.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunFinished{
 			RunFinished: &prjpb.RunFinished{
 				RunId: string(runID),
 			},
 		},
 	})
-}
-
-func send(ctx context.Context, luciProject string, e *prjpb.Event) error {
-	if err := sendWithoutDispatch(ctx, luciProject, e); err != nil {
-		return err
-	}
-	return prjpb.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
-}
-
-func sendWithoutDispatch(ctx context.Context, luciProject string, e *prjpb.Event) error {
-	value, err := proto.Marshal(e)
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
-	}
-	to := datastore.MakeKey(ctx, ProjectKind, luciProject)
-	return eventbox.Emit(ctx, value, to)
 }

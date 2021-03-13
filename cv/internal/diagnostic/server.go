@@ -365,7 +365,9 @@ func (d *DiagnosticServer) SendProjectEvent(ctx context.Context, req *diagnostic
 		return nil, status.Errorf(codes.NotFound, "project not found")
 	}
 
-	// TODO(tandrii): implement once generic send is available in prjpb.
+	if err := prjpb.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
+	}
 	return &emptypb.Empty{}, nil
 }
 
