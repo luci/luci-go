@@ -18,9 +18,12 @@ import (
 	"bytes"
 	"context"
 	"sort"
+	"sync"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 )
+
+var testWg *sync.WaitGroup // will be set only in tests to assert if all goroutines exits.
 
 // queryIterator is an iterator for datastore query results.
 type queryIterator struct {
@@ -37,8 +40,14 @@ func startQueryIterator(ctx context.Context, fq *FinalizedQuery) *queryIterator 
 		itemCh: make(chan *rawQueryResult),
 	}
 
-	go func() {
+	if testWg != nil {
+		testWg.Add(1)
+	}
+	go func(testWg *sync.WaitGroup) {
 		defer close(qi.itemCh)
+		if testWg != nil {
+			defer testWg.Done()
+		}
 		err := Raw(ctx).Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
 			select {
 			case <-ctx.Done():
@@ -58,7 +67,7 @@ func startQueryIterator(ctx context.Context, fq *FinalizedQuery) *queryIterator 
 				err: err,
 			}
 		}
-	}()
+	}(testWg)
 
 	return qi
 }
