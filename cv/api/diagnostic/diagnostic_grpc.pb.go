@@ -4,6 +4,7 @@ package diagnosticpb
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -32,6 +33,10 @@ type DiagnosticClient interface {
 	DeleteProjectEvents(ctx context.Context, in *DeleteProjectEventsRequest, opts ...grpc.CallOption) (*DeleteProjectEventsResponse, error)
 	// RefreshProjectCLs refreshes all CLs currently tracked by PM.
 	RefreshProjectCLs(ctx context.Context, in *RefreshProjectCLsRequest, opts ...grpc.CallOption) (*RefreshProjectCLsResponse, error)
+	// SendProjectEvent sends event to a PM.
+	SendProjectEvent(ctx context.Context, in *SendProjectEventRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// SendRunEvent sends event to a RM.
+	SendRunEvent(ctx context.Context, in *SendRunEventRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type diagnosticClient struct {
@@ -96,6 +101,24 @@ func (c *diagnosticClient) RefreshProjectCLs(ctx context.Context, in *RefreshPro
 	return out, nil
 }
 
+func (c *diagnosticClient) SendProjectEvent(ctx context.Context, in *SendProjectEventRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/SendProjectEvent", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *diagnosticClient) SendRunEvent(ctx context.Context, in *SendRunEventRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/diagnostic.Diagnostic/SendRunEvent", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DiagnosticServer is the server API for Diagnostic service.
 // All implementations must embed UnimplementedDiagnosticServer
 // for forward compatibility
@@ -114,6 +137,10 @@ type DiagnosticServer interface {
 	DeleteProjectEvents(context.Context, *DeleteProjectEventsRequest) (*DeleteProjectEventsResponse, error)
 	// RefreshProjectCLs refreshes all CLs currently tracked by PM.
 	RefreshProjectCLs(context.Context, *RefreshProjectCLsRequest) (*RefreshProjectCLsResponse, error)
+	// SendProjectEvent sends event to a PM.
+	SendProjectEvent(context.Context, *SendProjectEventRequest) (*empty.Empty, error)
+	// SendRunEvent sends event to a RM.
+	SendRunEvent(context.Context, *SendRunEventRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedDiagnosticServer()
 }
 
@@ -138,6 +165,12 @@ func (UnimplementedDiagnosticServer) DeleteProjectEvents(context.Context, *Delet
 }
 func (UnimplementedDiagnosticServer) RefreshProjectCLs(context.Context, *RefreshProjectCLsRequest) (*RefreshProjectCLsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshProjectCLs not implemented")
+}
+func (UnimplementedDiagnosticServer) SendProjectEvent(context.Context, *SendProjectEventRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendProjectEvent not implemented")
+}
+func (UnimplementedDiagnosticServer) SendRunEvent(context.Context, *SendRunEventRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendRunEvent not implemented")
 }
 func (UnimplementedDiagnosticServer) mustEmbedUnimplementedDiagnosticServer() {}
 
@@ -260,6 +293,42 @@ func _Diagnostic_RefreshProjectCLs_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Diagnostic_SendProjectEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendProjectEventRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DiagnosticServer).SendProjectEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/diagnostic.Diagnostic/SendProjectEvent",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiagnosticServer).SendProjectEvent(ctx, req.(*SendProjectEventRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Diagnostic_SendRunEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendRunEventRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DiagnosticServer).SendRunEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/diagnostic.Diagnostic/SendRunEvent",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiagnosticServer).SendRunEvent(ctx, req.(*SendRunEventRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Diagnostic_ServiceDesc is the grpc.ServiceDesc for Diagnostic service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -290,6 +359,14 @@ var Diagnostic_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshProjectCLs",
 			Handler:    _Diagnostic_RefreshProjectCLs_Handler,
+		},
+		{
+			MethodName: "SendProjectEvent",
+			Handler:    _Diagnostic_SendProjectEvent_Handler,
+		},
+		{
+			MethodName: "SendRunEvent",
+			Handler:    _Diagnostic_SendRunEvent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

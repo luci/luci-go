@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -107,25 +108,27 @@ func (d *DiagnosticServer) GetRun(ctx context.Context, req *diagnosticpb.GetRunR
 	if err = checkAllowed(ctx, "GetRun"); err != nil {
 		return
 	}
-	if req.GetId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
+	if req.GetRun() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "run ID is required")
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
-	r := &run.Run{ID: common.RunID(req.GetId())}
+	r := &run.Run{ID: common.RunID(req.GetRun())}
 	eg.Go(func() error {
 		switch err := datastore.Get(ctx, r); {
 		case err == datastore.ErrNoSuchEntity:
 			return status.Errorf(codes.NotFound, "run not found")
+		case err != nil:
+			return status.Errorf(codes.Internal, "failed to fetch Run")
 		default:
-			return err
+			return nil
 		}
 	})
 
 	var events []*eventpb.Event
 	eg.Go(func() error {
-		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, run.RunKind, req.GetId()))
+		list, err := eventbox.List(ctx, datastore.MakeKey(ctx, run.RunKind, req.GetRun()))
 		if err != nil {
 			return err
 		}
@@ -149,7 +152,7 @@ func (d *DiagnosticServer) GetRun(ctx context.Context, req *diagnosticpb.GetRunR
 	}
 
 	resp = &diagnosticpb.GetRunResponse{
-		Id:            req.GetId(),
+		Id:            req.GetRun(),
 		Eversion:      int64(r.EVersion),
 		Mode:          string(r.Mode),
 		Status:        r.Status,
@@ -341,6 +344,54 @@ func (d *DiagnosticServer) RefreshProjectCLs(ctx context.Context, req *diagnosti
 		clvs[int64(cl.ID)] = int64(cl.EVersion)
 	}
 	return &diagnosticpb.RefreshProjectCLsResponse{ClVersions: clvs}, nil
+}
+
+func (d *DiagnosticServer) SendProjectEvent(ctx context.Context, req *diagnosticpb.SendProjectEventRequest) (_ *emptypb.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = checkAllowed(ctx, "SendProjectEvent"); err != nil {
+		return
+	}
+	switch {
+	case req.GetProject() == "":
+		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+	case req.GetEvent().GetEvent() == nil:
+		return nil, status.Errorf(codes.InvalidArgument, "event with a specific inner event is required")
+	}
+
+	switch p, err := prjmanager.Load(ctx, req.GetProject()); {
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to fetch Project")
+	case p == nil:
+		return nil, status.Errorf(codes.NotFound, "project not found")
+	}
+
+	// TODO(tandrii): implement once generic send is available in prjpb.
+	return &emptypb.Empty{}, nil
+}
+
+func (d *DiagnosticServer) SendRunEvent(ctx context.Context, req *diagnosticpb.SendRunEventRequest) (_ *emptypb.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+	if err = checkAllowed(ctx, "SendRunEvent"); err != nil {
+		return
+	}
+	switch {
+	case req.GetRun() == "":
+		return nil, status.Errorf(codes.InvalidArgument, "Run is required")
+	case req.GetEvent().GetEvent() == nil:
+		return nil, status.Errorf(codes.InvalidArgument, "event with a specific inner event is required")
+	}
+
+	switch err := datastore.Get(ctx, &run.Run{ID: common.RunID(req.GetRun())}); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.NotFound, "Run not found")
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to fetch Run")
+	}
+
+	if err := eventpb.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func checkAllowed(ctx context.Context, name string) error {

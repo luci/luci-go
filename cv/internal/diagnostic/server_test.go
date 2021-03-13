@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -118,7 +119,7 @@ func TestGetRun(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
-			_, err := d.GetRun(ctx, &diagnosticpb.GetRunRequest{Id: rid})
+			_, err := d.GetRun(ctx, &diagnosticpb.GetRunRequest{Run: rid})
 			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
@@ -128,7 +129,7 @@ func TestGetRun(t *testing.T) {
 				IdentityGroups: []string{allowGroup},
 			})
 			Convey("not exists", func() {
-				_, err := d.GetRun(ctx, &diagnosticpb.GetRunRequest{Id: rid})
+				_, err := d.GetRun(ctx, &diagnosticpb.GetRunRequest{Run: rid})
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			})
 		})
@@ -294,6 +295,76 @@ func TestRefreshProjectCLs(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp.GetClVersions(), ShouldResemble, map[int64]int64{1: 4})
 			So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{55})
+		})
+	})
+}
+
+func TestSendProjectEvent(t *testing.T) {
+	t.Parallel()
+
+	Convey("SendProjectEvent works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "luci"
+		d := DiagnosticServer{}
+
+		Convey("without access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+			})
+			_, err := d.SendProjectEvent(ctx, &diagnosticpb.SendProjectEventRequest{Project: lProject})
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("with access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+			Convey("not exists", func() {
+				_, err := d.SendProjectEvent(ctx, &diagnosticpb.SendProjectEventRequest{
+					Project: lProject,
+					Event:   &prjpb.Event{Event: &prjpb.Event_Poke{Poke: &prjpb.Poke{}}},
+				})
+				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			})
+		})
+	})
+}
+
+func TestSendRunEvent(t *testing.T) {
+	t.Parallel()
+
+	Convey("SendRunEvent works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const rid = "proj/123-deadbeef"
+		d := DiagnosticServer{}
+
+		Convey("without access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "anonymous:anonymous",
+			})
+			_, err := d.SendRunEvent(ctx, &diagnosticpb.SendRunEventRequest{Run: rid})
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("with access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+			Convey("not exists", func() {
+				_, err := d.SendRunEvent(ctx, &diagnosticpb.SendRunEventRequest{
+					Run:   rid,
+					Event: &eventpb.Event{Event: &eventpb.Event_Poke{Poke: &eventpb.Poke{}}},
+				})
+				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			})
 		})
 	})
 }

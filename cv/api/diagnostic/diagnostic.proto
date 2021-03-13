@@ -19,6 +19,7 @@ package diagnostic;
 
 option go_package = "go.chromium.org/luci/cv/api/diagnostic;diagnosticpb";
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
@@ -53,6 +54,11 @@ service Diagnostic {
 
   // RefreshProjectCLs refreshes all CLs currently tracked by PM.
   rpc RefreshProjectCLs(RefreshProjectCLsRequest) returns (RefreshProjectCLsResponse);
+
+  // SendProjectEvent sends event to a PM.
+  rpc SendProjectEvent(SendProjectEventRequest) returns (google.protobuf.Empty);
+  // SendRunEvent sends event to a RM.
+  rpc SendRunEvent(SendRunEventRequest) returns (google.protobuf.Empty);
 }
 
 message GetProjectRequest {
@@ -69,7 +75,7 @@ message GetProjectResponse {
 }
 
 message GetRunRequest {
-  string id = 1;
+  string run = 1;
 }
 
 // GetRunResponse provides non-atomic snapshot of a Run.
@@ -148,4 +154,14 @@ message RefreshProjectCLsRequest {
 message RefreshProjectCLsResponse{
   // Map from CL ID to the EVersion in Datastore before the refresh.
   map<int64, int64> cl_versions = 1;
+}
+
+message SendProjectEventRequest {
+  string project = 1;
+  cv.prjmanager.prjpb.Event event = 2;
+}
+
+message SendRunEventRequest {
+  string run = 1;
+  cv.run.eventpb.Event event = 2;
 }
