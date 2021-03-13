@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"strconv"
+	"sync"
 	"testing"
 
 	"go.chromium.org/luci/common/data/cmpbin"
@@ -138,6 +139,7 @@ func TestStartQueryIterator(t *testing.T) {
 		fds := fakeDatastore{}
 		ctx = SetRawFactory(ctx, fds.factory())
 		ctx, cancel := context.WithCancel(ctx)
+		testWg = &sync.WaitGroup{}
 
 		fds.entities = 2
 		dq := NewQuery("Kind").Order("Value")
@@ -173,27 +175,10 @@ func TestStartQueryIterator(t *testing.T) {
 		Convey("cancel", func() {
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
-			qi := startQueryIterator(ctx, fq)
-
+			startQueryIterator(ctx, fq)
 			cancel()
-			<-ctx.Done() // wait till the cancellation propagates
-
-			// When calling `cancel()`, one rawQueryResult may already be put into the itemCh.
-			// So it asserts the two possible scenarios: 1) one rawQueryResult with a followed Stop signal.
-			// 2) qi.Next() directly returns a Stop signal.
-			err = qi.Next()
-			if err == nil {
-				So(qi.currentQueryResult, ShouldResemble, &rawQueryResult{
-					key: MakeKey(ctx, "Kind", 1),
-					data: PropertyMap{
-						"Value": MkProperty(0),
-					},
-				})
-				err = qi.Next()
-				So(err, ShouldResemble, Stop)
-			} else {
-				So(err, ShouldResemble, Stop)
-			}
+			// wait all goroutine exits. If cancellation fails, it will be blocked forever.
+			testWg.Wait()
 		})
 
 		Convey("not found", func() {
