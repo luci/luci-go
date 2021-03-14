@@ -31,6 +31,7 @@ import { consumeConfigsStore, UserConfigsStore } from '../../context/user_config
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getBotLink, getBuildbucketLink, getURLForBuild, getURLForGerritChange, getURLForGitilesCommit, getURLForSwarmingTask } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { StepExt } from '../../models/step_ext';
@@ -72,7 +73,7 @@ export class OverviewTabElement extends MobxLitElement {
       return html``;
     }
     return html`
-      <div id="canary-warning">
+      <div id="canary-warning" class="wide">
         WARNING: This build ran on a canary version of LUCI. If you suspect it
         failed due to infra, retry the build. Next time it may use the
         non-canary version.
@@ -99,16 +100,27 @@ export class OverviewTabElement extends MobxLitElement {
     const build = this.buildState.build!;
     if (!build.summaryMarkdown) {
       return html`
-        <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}">
+        <div id="summary-html" class="wide ${BUILD_STATUS_CLASS_MAP[build.status]}">
           <div id="status">Build ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'status unknown'}</div>
         </div>
       `;
     }
 
     return html`
-      <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}">
+      <div id="summary-html" class="wide ${BUILD_STATUS_CLASS_MAP[build.status]}">
         ${renderMarkdown(build.summaryMarkdown)}
       </div>
+    `;
+  }
+
+  private renderBuilderDescription() {
+    const descriptionHtml = this.buildState.builder?.config.descriptionHtml;
+    if (!descriptionHtml) {
+      return html``;
+    }
+    return html`
+      <h3 class="wide">Builder Info</h3>
+      <div id="builder-description" class="wide">${sanitizeHTML(descriptionHtml)}</div>
     `;
   }
 
@@ -186,7 +198,7 @@ export class OverviewTabElement extends MobxLitElement {
       <div>
         <h3>Steps & Logs
           (<a href=${router.urlForName('build-steps', {
-            ...this.buildState.builder,
+            ...this.buildState.builderId,
             build_num_or_id: this.buildState.buildNumOrId!,
           })}>View All</a>)
         </h3>
@@ -313,6 +325,7 @@ export class OverviewTabElement extends MobxLitElement {
       <div id="main">
         ${this.renderCanaryWarning()}
         ${this.renderSummary()}
+        ${this.renderBuilderDescription()}
         <div class="first-column">
           <!-- TODO(crbug/1116824): render failed tests -->
           ${this.renderSteps()}
@@ -348,20 +361,25 @@ export class OverviewTabElement extends MobxLitElement {
     @media screen and (min-width: 1300px) {
       #main {
         display: grid;
-        grid-template-columns: auto 1fr;
-        grid-gap: 20px;
+        grid-template-columns: auto 20px 1fr;
       }
     }
     .first-column {
       overflow: hidden;
       min-width: 50vw;
+      grid-column: 1;
     }
     .second-column {
       overflow: hidden;
+      grid-column: 3;
     }
 
     h3 {
       margin-block: 20px 10px;
+    }
+
+    .wide {
+      grid-column-end: span 3;
     }
 
     #summary-html {
@@ -369,7 +387,6 @@ export class OverviewTabElement extends MobxLitElement {
       padding: 0 10px;
       clear: both;
       overflow-wrap: break-word;
-      grid-column-end: span 2;
     }
     #summary-html.scheduled {
       border: 1px solid var(--scheduled-color);
@@ -418,7 +435,6 @@ export class OverviewTabElement extends MobxLitElement {
       background-color: var(--warning-color);
       font-weight: 500;
       padding: 5px;
-      grid-column-end: span 2;
     }
 
     .key-value-list {
