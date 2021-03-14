@@ -15,7 +15,7 @@
 import { computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../libs/context';
-import { BuildsService } from '../services/buildbucket';
+import { AccessService, BuildsService } from '../services/buildbucket';
 import { MiloInternal } from '../services/milo_internal';
 import { ResultDb, UISpecificService } from '../services/resultdb';
 
@@ -75,6 +75,14 @@ export class AppState {
       return null;
     }
     return new BuildsService(CONFIGS.BUILDBUCKET.HOST, this.accessToken);
+  }
+
+  @computed
+  get accessService(): AccessService | null {
+    if (this.accessToken === null) {
+      return null;
+    }
+    return new AccessService(CONFIGS.BUILDBUCKET.HOST, this.accessToken);
   }
 }
 

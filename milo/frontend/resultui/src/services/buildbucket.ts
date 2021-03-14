@@ -15,6 +15,7 @@
 import { PrpcClient } from '@chopsui/prpc-client';
 
 import { cached, CacheOption } from '../libs/cached_fn';
+import { timeout } from '../libs/utils';
 
 /**
  * Manually coded type definition and classes for buildbucket services.
@@ -223,8 +224,13 @@ export interface PermittedActionsRequest {
 }
 
 export interface PermittedActionsResponse {
-  readonly permitted: ResourcePermissions;
-  readonly validityDuration: string;
+  permitted: {[key: string]: ResourcePermissions};
+  validityDuration: Duration;
+}
+
+export interface Duration {
+  seconds?: number;
+  nanos?: number;
 }
 
 export interface ResourcePermissions {
@@ -257,15 +263,15 @@ export interface ScheduleBuildRequest {
   };
 }
 
-const BUILDS_SERVICE = 'buildbucket.v2.Builds';
-
 export class BuildsService {
+  private static SERVICE = 'buildbucket.v2.Builds';
+
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(readonly host: string, accessToken: string) {
     const client = new PrpcClient({host, accessToken});
     this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(BUILDS_SERVICE, method, message),
+      (method: string, message: object) => client.call(BuildsService.SERVICE, method, message),
       {key: (method, message) => `${method}-${JSON.stringify(message)}`},
     );
   }
@@ -300,5 +306,42 @@ export class BuildsService {
       'ScheduleBuild',
       req,
     ) as Build;
+  }
+}
+
+export class AccessService {
+  private static SERVICE = 'access.Access';
+
+  private readonly cachedPermittedActionsFn: (cacheOpt: CacheOption, req: PermittedActionsRequest) => Promise<PermittedActionsResponse>;
+
+  constructor(readonly host: string, accessToken: string) {
+    const client = new PrpcClient({host, accessToken});
+
+    this.cachedPermittedActionsFn = cached(
+      async (req: PermittedActionsRequest) => {
+        return await client.call(
+          AccessService.SERVICE,
+          'PermittedActions',
+          req,
+        ) as PermittedActionsResponse;
+      },
+      {
+        key: (req) => JSON.stringify(req),
+        expire: async (_req, resPromise) => {
+          const res = await resPromise;
+          const durationMs = (res.validityDuration.seconds || 0) * 1000
+            + (res.validityDuration.nanos || 0) / 1000;
+          await timeout(durationMs);
+          return;
+        },
+      },
+    );
+  }
+
+  async permittedActions(req: PermittedActionsRequest, cacheOpt = CacheOption.Cached) {
+    return this.cachedPermittedActionsFn(
+      cacheOpt,
+      req,
+    );
   }
 }
