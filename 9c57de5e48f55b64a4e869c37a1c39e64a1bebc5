@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "00d5881f_4422faf0",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-14T07:32:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ccce61df_0e77f066",
+      "range": {
+        "startLine": 121,
+        "startChar": 14,
+        "endLine": 121,
+        "endChar": 15
+      },
+      "revId": "9c57de5e48f55b64a4e869c37a1c39e64a1bebc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d0e207ad_f2f0c804",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9eaf973_092674c5",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-14T07:32:09Z",
+      "side": 1,
+      "message": "Yes, Done",
+      "parentUuid": "d0e207ad_f2f0c804",
+      "range": {
+        "startLine": 125,
+        "startChar": 35,
+        "endLine": 125,
+        "endChar": 36
+      },
+      "revId": "9c57de5e48f55b64a4e869c37a1c39e64a1bebc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "92ac786f_3096eedb",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-03-12T21:35:44Z",
       "side": 1,
       "message": "I think we should spell out that rebase conflicts during submits also belong to this category.\n\nAlso, how do you think you\u0027ll communicate these?\nI\u0027m also OK with deciding at a later time.",
+      "range": {
+        "startLine": 127,
+        "startChar": 39,
+        "endLine": 127,
+        "endChar": 64
+      },
+      "revId": "9c57de5e48f55b64a4e869c37a1c39e64a1bebc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a445b90_e3a26b19",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-14T07:32:09Z",
+      "side": 1,
+      "message": "\u003e I think we should spell out that rebase conflicts during submits also belong to this category.\n\nDone.\n\n\u003e Also, how do you think you\u0027ll communicate these?\n\nMaybe we should also report the error message back if error is permanent so that we can post it to the CL in the message. I\u0027m not sure if that would incur any security concern. How does CQDaemon handle such error?",
+      "parentUuid": "92ac786f_3096eedb",
       "range": {
         "startLine": 127,
         "startChar": 39,

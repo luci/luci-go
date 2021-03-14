@@ -89,6 +89,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ccb5237_01b990f6",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-14T07:32:09Z",
+      "side": 1,
+      "message": "\u003e You aren\u0027t actually eliminating race condition -- it\u0027s still possible that tree is closed while CL is being submitted, you\u0027ve just reduced the window.\n\nYes, exactly right. I think it is also achievable if we want to make the window even more tighter in the future.",
+      "parentUuid": "632ba7a8_2835d7a6",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 23
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "08745203_b456a619",
@@ -244,6 +268,30 @@
       "side": 1,
       "message": "I think it is reasonable % leave a comment in code to avoid deceiving less familiar reader.",
       "parentUuid": "91b5deed_72fc9d92",
+      "range": {
+        "startLine": 194,
+        "startChar": 2,
+        "endLine": 195,
+        "endChar": 163
+      },
+      "revId": "0cc8b0510a064c661a4ebfc26d4233cbea1a701f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "56e119a3_1ed5b38d",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-14T07:32:09Z",
+      "side": 1,
+      "message": "Done. I actually changed my mind to panic on more than 1 events for same attempt so that we can debug what has gone wrong.",
+      "parentUuid": "05bb84d8_c735b3fe",
       "range": {
         "startLine": 194,
         "startChar": 2,
