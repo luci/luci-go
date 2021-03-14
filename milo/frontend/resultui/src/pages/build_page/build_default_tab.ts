@@ -29,7 +29,7 @@ export class BuildDefaultTabElement extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     const newUrl = router.urlForName(this.configsStore.userConfigs.defaultBuildPageTabName, {
-      ...this.buildState.builder!,
+      ...this.buildState.builderId!,
       build_num_or_id: this.buildState.buildNumOrId!,
     });
 
