@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6ba05e1_93f4d5b3",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-14T15:29:41Z",
+      "side": 1,
+      "message": "nit: ed",
+      "range": {
+        "startLine": 131,
+        "startChar": 56,
+        "endLine": 131,
+        "endChar": 57
+      },
+      "revId": "16b6186ef4b49548d4b9fb38488b7c3328fef88c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

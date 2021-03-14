@@ -140,6 +140,30 @@
       },
       "revId": "9c57de5e48f55b64a4e869c37a1c39e64a1bebc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "01a4f731_e98419b7",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-14T15:29:41Z",
+      "side": 1,
+      "message": "Yes, we should. Security-wise, it\u0027s totally fine to post the message on the CL which was being submitted.\nAs for the other CLs, we probably shouldn\u0027t post actual message not so much for security, but to avoid confusing the users.\n\nIn CQD, my approach was:\n  post per-CL custom error for which it applies\n  post generic error to all CLs linking to CLs which had actual error.\nI don\u0027t remember if I did it for submit though.",
+      "parentUuid": "7a445b90_e3a26b19",
+      "range": {
+        "startLine": 127,
+        "startChar": 39,
+        "endLine": 127,
+        "endChar": 64
+      },
+      "revId": "9c57de5e48f55b64a4e869c37a1c39e64a1bebc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
