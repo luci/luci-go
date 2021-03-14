@@ -84,11 +84,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   private urlSuffix = '';
 
   // builderParam is only set when the page visited via a full link.
-  private builderParam?: BuilderID;
+  private builderIdParam?: BuilderID;
   private buildNumOrIdParam = '';
 
   private get legacyUrl() {
-    return getLegacyURLForBuild(this.builderParam!, this.buildNumOrIdParam);
+    return getLegacyURLForBuild(this.builderIdParam!, this.buildNumOrIdParam);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -110,7 +110,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       return cmd.redirect(NOT_FOUND_URL);
     }
 
-    this.builderParam = {
+    this.builderIdParam = {
       project: project as string,
       bucket: bucket as string,
       builder: builder as string,
@@ -131,7 +131,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   @computed private get documentTitle() {
     const status = this.buildState.build?.status;
     const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
-    return `${statusDisplay} - ${this.builderParam?.builder || ''} ${this.buildNumOrIdParam}`;
+    return `${statusDisplay} - ${this.builderIdParam?.builder || ''} ${this.buildNumOrIdParam}`;
   }
 
   private errorHandler = (e: ErrorEvent) => {
@@ -163,7 +163,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       () => {
         this.buildState?.dispose();
         this.buildState = new BuildState(this.appState);
-        this.buildState.builder = this.builderParam;
+        this.buildState.builderId = this.builderIdParam;
         this.buildState.buildNumOrId = this.buildNumOrIdParam;
 
         // Emulate @property() update.
@@ -326,9 +326,9 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
   @computed get tabDefs(): TabDef[] {
     const params = {
-      'project': this.builderParam!.project,
-      'bucket': this.builderParam!.bucket,
-      'builder': this.builderParam!.builder,
+      'project': this.builderIdParam!.project,
+      'bucket': this.builderIdParam!.bucket,
+      'builder': this.builderIdParam!.builder,
       'build_num_or_id': this.buildNumOrIdParam,
     };
     return [
@@ -466,11 +466,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build </span>
-          <a href=${getURLForProject(this.builderParam!.project)}>${this.builderParam!.project}</a>
+          <a href=${getURLForProject(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
           <span>/</span>
-          <span>${this.builderParam!.bucket}</span>
+          <span>${this.builderIdParam!.bucket}</span>
           <span>/</span>
-          <a href=${getURLForBuilder(this.builderParam!)}>${this.builderParam!.builder}</a>
+          <a href=${getURLForBuilder(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
           <span>/</span>
           <span>${this.buildNumOrIdParam}</span>
         </div>
