@@ -176,7 +176,19 @@ func (a RunIDs) DifferenceSorted(b RunIDs) RunIDs {
 	}
 }
 
-// Equal checks if two assumed-to-be-sorted slices are equal.
+// Index returns the index of the first instance of the provided id.
+//
+// Returns -1 if the provided id isn't present.
+func (ids RunIDs) Index(target RunID) int {
+	for i, id := range ids {
+		if id == target {
+			return i
+		}
+	}
+	return -1
+}
+
+// Equal checks if two ids are equal.
 func (ids RunIDs) Equal(other RunIDs) bool {
 	if len(ids) != len(other) {
 		return false
