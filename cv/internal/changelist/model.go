@@ -123,7 +123,7 @@ type CL struct {
 	// DependentMeta stores metadata per LUCI project about this CL being a
 	// dependency of another CL in the context of the specific LUCI project.
 	//
-	// It's set only in exception circumstances; if a Snapshot is fetched in a
+	// It's set only in exceptional circumstances; if a Snapshot is fetched in a
 	// context of a specific LUCI project, then this project doesn't have
 	// DependentMeta entry.
 	//
