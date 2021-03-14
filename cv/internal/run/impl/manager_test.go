@@ -68,6 +68,61 @@ func TestRunManager(t *testing.T) {
 		}{
 			{
 				&eventpb.Event{
+					Event: &eventpb.Event_ClSubmitted{
+						ClSubmitted: &eventpb.CLSubmitted{
+							Clid: 1,
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return eventpb.SendNow(ctx, runID, &eventpb.Event{
+						Event: &eventpb.Event_ClSubmitted{
+							ClSubmitted: &eventpb.CLSubmitted{
+								Clid: 1,
+							},
+						},
+					})
+				},
+				"OnCLSubmitted",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_SubmissionCompleted{
+						SubmissionCompleted: &eventpb.SubmissionCompleted{
+							Result:  eventpb.SubmissionResult_SUCCEEDED,
+							Attempt: 2,
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return eventpb.SendNow(ctx, runID, &eventpb.Event{
+						Event: &eventpb.Event_SubmissionCompleted{
+							SubmissionCompleted: &eventpb.SubmissionCompleted{
+								Result:  eventpb.SubmissionResult_SUCCEEDED,
+								Attempt: 2,
+							},
+						},
+					})
+				},
+				"OnSubmissionCompleted",
+			},
+			{
+				&eventpb.Event{
+					Event: &eventpb.Event_ReadyForSubmission{
+						ReadyForSubmission: &eventpb.ReadyForSubmission{},
+					},
+				},
+				func(ctx context.Context) error {
+					return eventpb.SendNow(ctx, runID, &eventpb.Event{
+						Event: &eventpb.Event_ReadyForSubmission{
+							ReadyForSubmission: &eventpb.ReadyForSubmission{},
+						},
+					})
+				},
+				"OnReadyForSubmission",
+			},
+			{
+				&eventpb.Event{
 					Event: &eventpb.Event_CqdVerificationCompleted{
 						CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
 					},
@@ -290,6 +345,31 @@ func (fh *fakeHandler) Cancel(ctx context.Context, rs *state.RunState) (*handler
 
 func (fh *fakeHandler) OnCLUpdated(ctx context.Context, rs *state.RunState, _ common.CLIDs) (*handler.Result, error) {
 	fh.addInvocation("OnCLUpdated")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+	}, nil
+}
+
+func (fh *fakeHandler) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
+	fh.addInvocation("OnReadyForSubmission")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+	}, nil
+}
+
+// OnCLSubmitted records provided CLs have been submitted.
+func (fh *fakeHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*handler.Result, error) {
+	fh.addInvocation("OnCLSubmitted")
+	return &handler.Result{
+		State:          rs.ShallowCopy(),
+		PreserveEvents: fh.preserveEvents,
+	}, nil
+}
+
+func (fh *fakeHandler) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sr eventpb.SubmissionResult, attempt int32) (*handler.Result, error) {
+	fh.addInvocation("OnSubmissionCompleted")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

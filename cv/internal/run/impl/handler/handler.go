@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
@@ -32,6 +33,7 @@ type Result struct {
 	// PreserveEvents, if true, instructs RunManager not to consume the events
 	// during state transition.
 	PreserveEvents bool
+	// TODO(yiwzhang): introduce PostProcessFn
 }
 
 // Handler is an interface that handles events that RunManager receives.
@@ -48,6 +50,21 @@ type Handler interface {
 	// OnCQDVerificationCompleted finalizes the Run according to the verified
 	// Run reported by CQDaemon.
 	OnCQDVerificationCompleted(context.Context, *state.RunState) (*Result, error)
+
+	// OnReadyForSubmission acquires a slot in Submit Queue and makes sure this
+	// Run is not currently being submitted by another RM task. If all succeeded,
+	// returns a PostProcessFn for submission.
+	OnReadyForSubmission(context.Context, *state.RunState) (*Result, error)
+
+	// OnCLSubmitted records provided CLs have been submitted.
+	OnCLSubmitted(context.Context, *state.RunState, common.CLIDs) (*Result, error)
+
+	// OnSubmissionCompleted acts on the submission result.
+	//
+	// If submission succeeds, mark run as `SUCCEEDED`. Otherwise, decides whether
+	// to retry submission or fail the run depending on the submission result and
+	// the attempt count.
+	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sr eventpb.SubmissionResult, attempt int32) (*Result, error)
 }
 
 // Impl is a prod implementation of Handler interface.
