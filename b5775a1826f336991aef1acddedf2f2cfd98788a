@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64fc0913_628f2246",
+        "filename": "cv/internal/run/impl/submit/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-14T02:06:30Z",
+      "side": 1,
+      "message": "Will move the code to compute submission order here to.",
+      "range": {
+        "startLine": 15,
+        "startChar": 18,
+        "endLine": 15,
+        "endChar": 55
+      },
+      "revId": "b5775a1826f336991aef1acddedf2f2cfd98788a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "87696bb1_62a12c1b",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-14T02:06:30Z",
+      "side": 1,
+      "message": "After giving some thought, I think it\u0027s better to allow the case that current is empty while waitlist is non-empty. The reason is due to the rate limiting which we will add later. Releasing the current slot doesn\u0027t mean we can promote the next run right away because it has to obey the rate limit. Also, it\u0027s not reasonable to fail the release operation till promoting the next satisfy the rate limit. So there has to be a time window where current is not occupied by any Run.",
+      "range": {
+        "startLine": 201,
+        "startChar": 0,
+        "endLine": 202,
+        "endChar": 16
+      },
+      "revId": "b5775a1826f336991aef1acddedf2f2cfd98788a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
