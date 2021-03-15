@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd1251e4_8c55883a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-15T05:44:28Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-4-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/8851/steps?succeeded\u003dtrue\u0026debug\u003dfalse\n",
+      "revId": "992407e3f34d3e09466d2c252ec0f025d67a5c4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
