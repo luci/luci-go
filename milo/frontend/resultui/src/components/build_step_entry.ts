@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement } from 'lit-element';
-import { html } from 'lit-html';
+import { html, render } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
@@ -29,6 +29,7 @@ import { renderMarkdown } from '../libs/utils';
 import { StepExt } from '../models/step_ext';
 import './expandable_entry';
 import { OnEnterList } from './lazy_list';
+import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
 /**
  * Renders a step.
@@ -102,15 +103,52 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
         <span id="duration" title="No duration">N/A</span>
       `;
     }
-    const title = `\
-Started:  ${this.step.startTime!.toFormat(NUMERIC_TIME_FORMAT)}
-Ended:    ${this.step.endTime ? this.step.endTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'}
-Duration: ${displayDuration(this.step.duration)}\
-`;
+
     return html`
-      <span id="duration" title=${title}>
+      <div
+        id="duration"
+        @mouseover=${(e: MouseEvent) => {
+          const tooltip = document.createElement('div');
+          render(this.renderDurationTooltip(), tooltip);
+
+          window.dispatchEvent(new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+            detail: {
+              tooltip,
+              targetRect: (e.target as HTMLElement).getBoundingClientRect(),
+            },
+          }));
+        }}
+        @mouseout=${() => {
+          window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>(
+            'hide-tooltip',
+            { detail: { delay: 50 } },
+          ));
+        }}
+      >
         ${displayCompactDuration(this.step.duration)}
-      </span>
+      </div>
+    `;
+  }
+
+  private renderDurationTooltip() {
+    if (!this.step.duration) {
+      return html``;
+    }
+    return html`
+      <table>
+        <tr>
+          <td>Started:</td>
+          <td>${this.step.startTime!.toFormat(NUMERIC_TIME_FORMAT)}</td>
+        </tr>
+        <tr>
+          <td>Ended:</td>
+          <td>${this.step.endTime ? this.step.endTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'}</td>
+        </tr>
+        <tr>
+          <td>Duration:</td>
+          <td>${displayDuration(this.step.duration)}</td>
+        </tr>
+      </div>
     `;
   }
 
