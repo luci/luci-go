@@ -15,50 +15,55 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 
-import { QueryTestVariantsRequest, QueryTestVariantsResponse, TestVariant, TestVariantStatus, UISpecificService } from '../services/resultdb';
+import {
+  QueryTestVariantsRequest,
+  QueryTestVariantsResponse,
+  TestVariant,
+  TestVariantStatus,
+  UISpecificService,
+} from '../services/resultdb';
 import { AppState } from './app_state';
 import { InvocationState } from './invocation_state';
 
 const variant1: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-1',
-  variant: {'def': {'key1': 'val1'}},
+  variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   status: TestVariantStatus.UNEXPECTED,
 };
 
 const variant2: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-2',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.UNEXPECTED,
 };
 
 const variant3: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-3',
-  variant: {def: {'key1': 'val3'}},
+  variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
   status: TestVariantStatus.FLAKY,
 };
 
 const variant4: TestVariant = {
   testId: 'invocation-a/test-suite-B/test-4',
-  variant: {'def': {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXONERATED,
 };
 
 const variant5: TestVariant = {
   testId: 'invocation-a/test-suite-B/test-5',
-  variant: {def: {'key1': 'val2', 'key2': 'val1'}},
+  variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
   status: TestVariantStatus.EXPECTED,
 };
 
-
 describe('InvocationState', () => {
   describe('filterVariant', async () => {
     const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
-    queryTestVariantsStub.onCall(0).resolves({testVariants: [variant1, variant2, variant3, variant4, variant5]});
+    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3, variant4, variant5] });
 
     const appState = {
       selectedTabId: '',
@@ -80,7 +85,7 @@ describe('InvocationState', () => {
       assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
 
-    it('should filter out variants whose test ID doesn\'t match the search text', () => {
+    it("should filter out variants whose test ID doesn't match the search text", () => {
       invocationState.searchText = 'test-suite-a';
       assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, [variant1, variant2]);
       assert.deepEqual(invocationState.testLoader!.flakyTestVariants, []);

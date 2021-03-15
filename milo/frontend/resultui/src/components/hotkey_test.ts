@@ -21,8 +21,20 @@ import './hotkey';
 import { HotkeyElement } from './hotkey';
 
 function simulateKeyStroke(target: EventTarget, key: string) {
-  target.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, composed: true, keyCode: key.toUpperCase().charCodeAt(0)} as KeyboardEventInit));
-  target.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, composed: true, keyCode: key.toUpperCase().charCodeAt(0)} as KeyboardEventInit));
+  target.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      bubbles: true,
+      composed: true,
+      keyCode: key.toUpperCase().charCodeAt(0),
+    } as KeyboardEventInit)
+  );
+  target.dispatchEvent(
+    new KeyboardEvent('keyup', {
+      bubbles: true,
+      composed: true,
+      keyCode: key.toUpperCase().charCodeAt(0),
+    } as KeyboardEventInit)
+  );
 }
 
 @customElement('milo-hotkey-test-wrapper')
@@ -48,17 +60,13 @@ describe('hotkey_test', () => {
   const handlerSpy = sinon.spy();
   const handlerSpy2 = sinon.spy();
 
-  before(async() => {
+  before(async () => {
     const parentEle = await fixture<HotkeyElement>(html`
       <div>
-        <milo-hotkey
-          id="hotkey"
-          key="a"
-          .handler=${handlerSpy}
-        >
+        <milo-hotkey id="hotkey" key="a" .handler=${handlerSpy}>
           <div id="child"></div>
         </milo-hotkey>
-        <input id="input">
+        <input id="input" />
         <select id="select"></select>
         <textarea id="textarea"></textarea>
         <milo-hotkey-test-wrapper id="wrapped"></milo-hotkey-test-wrapper>

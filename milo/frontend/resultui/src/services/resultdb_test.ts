@@ -18,7 +18,7 @@ import { getInvIdFromBuildId, getInvIdFromBuildNum } from './resultdb';
 
 describe('resultdb', () => {
   it('should compute invocation ID from build number correctly', async () => {
-    const invId = await getInvIdFromBuildNum({project: 'chromium', bucket: 'ci', builder: 'ios-device'}, 179945);
+    const invId = await getInvIdFromBuildNum({ project: 'chromium', bucket: 'ci', builder: 'ios-device' }, 179945);
     assert.strictEqual(invId, 'build-135d246ed1a40cc3e77d8b1daacc7198fe344b1ac7b95c08cb12f1cc383867d7-179945');
   });
 
