@@ -58,6 +58,10 @@ func TestGitConfig(t *testing.T) {
 [pack]
   packSizeLimit = 2g
 
+; Reduce noise.
+[advice]
+  detachedHead = false
+
 [http]
   version = HTTP/1.1
   # Request the GFE return debug headers as an encrypted blob in
@@ -95,6 +99,10 @@ func TestGitConfig(t *testing.T) {
 
 [pack]
   packSizeLimit = 2g
+
+; Reduce noise.
+[advice]
+  detachedHead = false
 
 [http]
   version = HTTP/1.1
