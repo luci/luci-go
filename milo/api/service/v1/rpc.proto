@@ -65,7 +65,9 @@ message QueryBlamelistRequest {
   // The Gitiles commit of the build.
   //
   // This defines the end_commit of the blamelist.
-  // It should be set to the input Gitiles commit of the build.
+  // It should be set to the output Gitiles commit of the build.
+  // Input Gitiles commit should be used when output gitiles commit is not
+  // available.
   buildbucket.v2.GitilesCommit gitiles_commit = 1;
 
   // The context builder of the blamelist.

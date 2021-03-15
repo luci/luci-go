@@ -93,8 +93,9 @@ export class BuildExt {
 
   @computed get blamelistPins(): GitilesCommit[] {
     const blamelistPins = this.output.properties['$recipe_engine/milo/blamelist_pins'] as GitilesCommit[] || [];
-    if (blamelistPins.length === 0 && this.input.gitilesCommit) {
-      blamelistPins.push(this.input.gitilesCommit);
+    const associatedGitilesCommit = this.output.gitilesCommit || this.input.gitilesCommit;
+    if (blamelistPins.length === 0 && associatedGitilesCommit) {
+      blamelistPins.push(associatedGitilesCommit);
     }
     return blamelistPins;
   }
