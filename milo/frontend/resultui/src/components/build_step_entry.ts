@@ -19,16 +19,17 @@ import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
-import '../components/copy_to_clipboard';
-import '../components/log';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { renderMarkdown } from '../libs/utils';
 import { StepExt } from '../models/step_ext';
+import './copy_to_clipboard';
 import './expandable_entry';
 import { OnEnterList } from './lazy_list';
+import './log';
+import './pin_toggle';
 
 /**
  * Renders a step.
@@ -56,6 +57,10 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
   }
 
   @observable.ref private shouldRenderContent = false;
+
+  @computed get isPinned() {
+    return this.configsStore.stepIsPinned(this.step.name);
+  }
 
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
@@ -88,7 +93,6 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       ${this.step.children?.map((child, i) => html`
       <milo-build-step-entry
         class="list-entry"
-        .expanded=${!child.succeededRecursively}
         .number=${i + 1}
         .step=${child}
       ></milo-build-step-entry>
@@ -137,6 +141,18 @@ Duration: ${displayDuration(this.step.duration)}\
     this.removeEventListener('click', this.onMouseClick);
   }
 
+  firstUpdated() {
+    if (!this.step.succeededRecursively){
+      this.expanded = true;
+    }
+    if (this.isPinned) {
+      this.expanded = true;
+
+      // Keep the pin fresh.
+      this.configsStore.setStepPin(this.step.name, this.isPinned);
+    }
+  }
+
   protected render() {
     if (this.prerender) {
       return html`<div id="place-holder"></div>`;
@@ -147,7 +163,7 @@ Duration: ${displayDuration(this.step.duration)}\
         .expanded=${this.expanded}
         .onToggle=${(expanded: boolean) => this.expanded = expanded}
       >
-        <span slot="header">
+        <span id="header" slot="header">
           <mwc-icon
             id="status-indicator"
             class=${BUILD_STATUS_CLASS_MAP[this.step.status]}
@@ -155,8 +171,20 @@ Duration: ${displayDuration(this.step.duration)}\
           >${BUILD_STATUS_ICON_MAP[this.step.status]}</mwc-icon>
           ${this.renderDuration()}
           <b>${this.number}. ${this.step.selfName}</b>
+          <milo-pin-toggle
+            .pinned=${this.isPinned}
+            title="Pin/unpin the step."
+            class="hidden-icon"
+            style=${styleMap({'visibility': this.isPinned ? 'visible' : ''})}
+            @click=${(e: Event) => {
+              this.configsStore.setStepPin(this.step.name, !this.isPinned);
+              e.stopPropagation();
+            }}
+          >
+          </milo-pin-toggle>
           <milo-copy-to-clipboard
             .textToCopy=${this.step.name}
+            class="hidden-icon"
             title="Copy the step name."
             @click=${(e: Event) => e.stopPropagation()}
           ></milo-copy-to-clipboard>
@@ -174,6 +202,19 @@ Duration: ${displayDuration(this.step.duration)}\
 
     #place-holder {
       height: 24px;
+    }
+
+    #header {
+      display: inline-block;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hidden-icon {
+      visibility: hidden;
+    }
+    #header:hover .hidden-icon {
+      visibility: visible;
     }
 
     #status-indicator {
