@@ -153,8 +153,9 @@ export class StepsTabElement extends MobxLitElement {
       <milo-lazy-list id="main" .growth=${300} tabindex="-1">
         ${this.buildState.build?.rootSteps.map((step, i) => html`
         <milo-build-step-entry
-          style=${styleMap({'display': !step.succeededRecursively || this.stepsConfig.showSucceededSteps ? '' : 'none'})}
-          .expanded=${!step.succeededRecursively}
+          style=${styleMap({
+            'display': !step.succeededRecursively || this.stepsConfig.showSucceededSteps || this.configsStore.stepIsPinned(step.name) ? '' : 'none',
+          })}
           .number=${i + 1}
           .step=${step}
           .prerender=${true}
