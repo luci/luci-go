@@ -70,6 +70,9 @@ var gitConfigTempl = template.Must(template.New(".gitconfig").Parse(`# Autogener
   insteadOf = https://{{.}}/a/
   insteadOf = https://{{.}}/
 {{end -}}
+; Reduce noise.
+[advice]
+  detachedHead = false
 `))
 
 // gitConfig is used to setup .gitconfig used by subprocesses.
