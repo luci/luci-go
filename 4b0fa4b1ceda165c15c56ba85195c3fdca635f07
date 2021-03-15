@@ -33,6 +33,24 @@
       "message": "I am not sure for how long the Access service will live. It was designed before Realms, and Realm libs supported all of its usage, so there was a medium term to remove it, perhaps as a part of Go rewrite.\n\nHowever, needing the access info in the browser was not anticipated. We don\u0027t have the replicated Realms db here.\n+Vadim WDYT?\nShould we maybe expose some central API in CIA, now that CIA is aware of all realms and permissions?",
       "revId": "4b0fa4b1ceda165c15c56ba85195c3fdca635f07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b054f60_53be53ac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-15T18:26:03Z",
+      "side": 1,
+      "message": "\u003e I am not sure for how long the Access service will live. It was designed before Realms, and Realm libs supported all of its usage, so there was a medium term to remove it, perhaps as a part of Go rewrite.\n\u003e \n\u003e However, needing the access info in the browser was not anticipated. We don\u0027t have the replicated Realms db here.\n\u003e +Vadim WDYT?\n\u003e Should we maybe expose some central API in CIA, now that CIA is aware of all realms and permissions?\n\nCIA is a control plane service, it should not serve end-user requests or be on a hot path (especially considering it is a Python service).\n\nIt should be relatively easy to write a generalized realms-based access.Access gRPC service implementation that any service can host for its own frontend needs. The problem with doing it now, is that not all projects are using realms yet, so it won\u0027t replace Buildbucket\u0027s access.Access.",
+      "parentUuid": "22158457_f13328ab",
+      "revId": "4b0fa4b1ceda165c15c56ba85195c3fdca635f07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
