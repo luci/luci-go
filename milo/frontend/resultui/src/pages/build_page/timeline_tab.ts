@@ -15,6 +15,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
+import { render } from 'lit-html';
 import escape from 'lodash-es/escape';
 import { autorun, observable } from 'mobx';
 import { DataSet } from 'vis-data/peer';
@@ -81,15 +82,18 @@ export class TimelineTabElement extends MobxLitElement {
         end: (step.endTime || step.renderTime.get()).toMillis(),
         type: 'range',
       }))),
-      new DataSet(this.buildState.build.steps.map((step, i) => ({
-        id: i.toString(),
-        content: `
-          <div class="group-title status ${BUILD_STATUS_CLASS_MAP[step.status]}">
+      new DataSet(this.buildState.build.steps.map((step, id) => {
+        const content = document.createElement('div');
+        content.classList.add('group-title', 'status', BUILD_STATUS_CLASS_MAP[step.status]);
+        render(
+          html`
             <span class="title">${escape(step.name)}</span>
             <span class="duration">( ${displayDuration(step.duration)} )</span>
-          </div>
-        `,
-      }))),
+          `,
+          content,
+        );
+        return {id, content};
+      })),
       options,
     );
 
