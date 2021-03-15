@@ -762,6 +762,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						Dirty: true,
 					},
 				},
+				DirtyComponents: true,
 				CreatedPruns: []*prjpb.PRun{
 					{Id: string(runX.ID), Clids: []int64{101, 202, 203, 204, 404}},
 					{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}}, // unchanged
@@ -792,7 +793,8 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						},
 						s1.PB.GetComponents()[1], // unchanged
 					},
-					CreatedPruns: s1.PB.GetCreatedPruns(), // unchanged
+					CreatedPruns:    s1.PB.GetCreatedPruns(), // unchanged
+					DirtyComponents: true,
 				})
 			})
 
@@ -829,7 +831,8 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 						{Clids: []int64{101}, Dirty: true},
 						s1.PB.GetComponents()[1], // unchanged.
 					},
-					CreatedPruns: nil, // removed
+					CreatedPruns:    nil, // removed
+					DirtyComponents: true,
 				})
 			})
 		})

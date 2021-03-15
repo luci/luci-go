@@ -68,7 +68,8 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 	}
 
 	// Add Runs of type (1) to existing components.
-	s.PB.Components, _ = s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
+	var modified bool
+	s.PB.Components, modified = s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
 		// Count CLs in this component which match a Run's index in `runs`.
 		matchedRunIdx := make(map[int]int, len(c.GetClids()))
 		for _, clid := range c.GetClids() {
@@ -97,6 +98,9 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 		}
 		return c
 	}, nil)
+	if modified {
+		s.PB.DirtyComponents = true
+	}
 
 	// Add remaining Runs are of type (2) to CreatedPruns for later processing.
 	var toAdd []*prjpb.PRun
@@ -138,11 +142,16 @@ func (s *State) removeFinishedRuns(ids map[common.RunID]struct{}) int {
 
 	s.PB.CreatedPruns, _ = s.PB.COWCreatedRuns(delIfFinished, nil)
 	stillTrackedRuns := len(s.PB.GetCreatedPruns())
-	s.PB.Components, _ = s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
+	var modified bool
+	s.PB.Components, modified = s.PB.COWComponents(func(c *prjpb.Component) *prjpb.Component {
 		c = removeFromComponent(c)
 		stillTrackedRuns += len(c.GetPruns())
 		return c
 	}, nil)
+	if modified {
+		// Removing usually changes components and/or pruning of PCLs.
+		s.PB.DirtyComponents = true
+	}
 	return stillTrackedRuns
 }
 
