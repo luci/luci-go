@@ -16,6 +16,63 @@
       "message": "PTAL",
       "revId": "728802ef2fa2d96c930ec57d545205610ca0d9fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6187931a_f553d38a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-15T21:35:28Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "728802ef2fa2d96c930ec57d545205610ca0d9fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47b51651_bf06a60b",
+        "filename": "resultdb/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-15T21:35:28Z",
+      "side": 1,
+      "message": "can you mention exactly what issues in a parenthetical? i.e. \"The Flamboozle crashes when you run the Thirpwhatzit\". Then some future code explorer could answer \"why do we require docker 3.1.0?\" and \"can we upgrade this?\" (i.e. if the changelog says that that error was fixed)",
+      "range": {
+        "startLine": 23,
+        "startChar": 82,
+        "endLine": 23,
+        "endChar": 88
+      },
+      "revId": "728802ef2fa2d96c930ec57d545205610ca0d9fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "607559a2_11474191",
+        "filename": "resultdb/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-15T21:35:28Z",
+      "side": 1,
+      "message": "curious where this requirement comes from? Can you mention why in a parenthetical?",
+      "revId": "728802ef2fa2d96c930ec57d545205610ca0d9fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
