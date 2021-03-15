@@ -77,6 +77,9 @@ func TestGitConfig(t *testing.T) {
 [url "https://host-b/a/"]
   insteadOf = https://host-b/a/
   insteadOf = https://host-b/
+; Reduce noise.
+[advice]
+  detachedHead = false
 `)
 
 		cfg.IsWindows = true
@@ -121,6 +124,9 @@ func TestGitConfig(t *testing.T) {
 [url "https://host-b/a/"]
   insteadOf = https://host-b/a/
   insteadOf = https://host-b/
+; Reduce noise.
+[advice]
+  detachedHead = false
 `)
 	})
 }
