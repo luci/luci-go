@@ -15,3 +15,5 @@ queue:
   rate: 1000/m
 - name: refresh-gerrit-cl
   rate: 50/s
+- name: tq-sweep
+  rate: 500/s
