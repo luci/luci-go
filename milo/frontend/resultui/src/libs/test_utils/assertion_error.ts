@@ -19,13 +19,12 @@
  * rendering of the stack trace when debugging in a browser.
  */
 
-// tslint:disable-next-line: no-default-export
 module.exports = class AssertionError extends Error {
   actual: string;
   expected: string;
   showDiff: boolean;
 
-  constructor(message: string, props: {actual: string, expected: string, showDiff: boolean}) {
+  constructor(message: string, props: { actual: string; expected: string; showDiff: boolean }) {
     super(message);
     this.actual = props.actual;
     this.expected = props.expected;
@@ -39,7 +38,7 @@ module.exports = class AssertionError extends Error {
   toJSON(stack: boolean) {
     return {
       name: this.name,
-      ...stack ? {stack: this.stack} : {},
+      ...(stack ? { stack: this.stack } : {}),
     };
   }
 };

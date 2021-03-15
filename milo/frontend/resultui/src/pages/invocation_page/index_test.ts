@@ -23,20 +23,17 @@ import { InvocationPageElement } from '.';
 import { AppState } from '../../context/app_state';
 import { NOT_FOUND_URL } from '../../routes';
 
-
 describe('Invocation Page', () => {
   it('should get invocation ID from URL', async () => {
     const appState = new AppState();
 
     after(fixtureCleanup);
     const page = await fixture<InvocationPageElement>(html`
-      <milo-invocation-page
-        .appState=${appState}
-      ></milo-invocation-page>
+      <milo-invocation-page .appState=${appState}></milo-invocation-page>
     `);
 
-    const location = {params: {'invocation_id': 'invocation_id'}} as Partial<RouterLocation> as RouterLocation;
-    const cmd = {} as Partial<Commands> as Commands;
+    const location = ({ params: { invocation_id: 'invocation_id' } } as Partial<RouterLocation>) as RouterLocation;
+    const cmd = ({} as Partial<Commands>) as Commands;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id'] as string);
@@ -48,14 +45,12 @@ describe('Invocation Page', () => {
 
     after(fixtureCleanup);
     const page = await fixture<InvocationPageElement>(html`
-      <milo-invocation-page
-        .appState=${appState}
-      ></milo-invocation-page>
+      <milo-invocation-page .appState=${appState}></milo-invocation-page>
     `);
 
-    const location = {params: {}} as Partial<RouterLocation> as RouterLocation;
+    const location = ({ params: {} } as Partial<RouterLocation>) as RouterLocation;
     const redirect = sinon.spy();
-    const cmd = {redirect} as Partial<Commands> as Commands;
+    const cmd = ({ redirect } as Partial<Commands>) as Commands;
     await page.onBeforeEnter(location, cmd);
     assert.isTrue(redirect.calledOnceWith(NOT_FOUND_URL));
   });

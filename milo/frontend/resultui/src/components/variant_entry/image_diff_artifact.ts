@@ -35,7 +35,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
     const search = new URLSearchParams();
     search.set('actual_artifact_id', this.actual.artifactId);
     search.set('expected_artifact_id', this.expected.artifactId);
-    return `${router.urlForName('image-diff-artifact', {'artifact_name': this.diff.name})}?${search}`;
+    return `${router.urlForName('image-diff-artifact', { artifact_name: this.diff.name })}?${search}`;
   }
 
   protected render() {
@@ -45,12 +45,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
           Unexpected image output from
           <a href=${this.artifactPageUrl} target="_blank">${this.diff.artifactId}</a>
         </span>
-        <milo-image-diff-viewer
-          slot="content"
-          .expected=${this.expected}
-          .actual=${this.actual}
-          .diff=${this.diff}
-        >
+        <milo-image-diff-viewer slot="content" .expected=${this.expected} .actual=${this.actual} .diff=${this.diff}>
         </milo-image-diff-viewer>
       </milo-expandable-entry>
     `;
