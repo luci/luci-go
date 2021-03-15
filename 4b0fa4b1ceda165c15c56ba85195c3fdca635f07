@@ -16,6 +16,23 @@
       "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6835/overview\n",
       "revId": "4b0fa4b1ceda165c15c56ba85195c3fdca635f07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22158457_f13328ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-15T17:45:18Z",
+      "side": 1,
+      "message": "I am not sure for how long the Access service will live. It was designed before Realms, and Realm libs supported all of its usage, so there was a medium term to remove it, perhaps as a part of Go rewrite.\n\nHowever, needing the access info in the browser was not anticipated. We don\u0027t have the replicated Realms db here.\n+Vadim WDYT?\nShould we maybe expose some central API in CIA, now that CIA is aware of all realms and permissions?",
+      "revId": "4b0fa4b1ceda165c15c56ba85195c3fdca635f07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
