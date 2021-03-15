@@ -41,11 +41,20 @@ func SubmitRefreshTasks(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Consider only some projects, regardless of which projects are registered.
+	// TODO(crbug/1158505): switch to -dev configs.
 	if common.IsDev(ctx) {
-		// Consider only some projects, regardless of which projects are registered.
-		// TODO(crbug/1158505): switch to -dev configs.
 		projects = []string{"infra", "cq-test"}
+	} else {
+		for i, p := range projects {
+			if p == "cq-test" {
+				projects = append(projects[:i], projects[i+1:]...)
+				break
+			}
+		}
 	}
+
 	tasks := make([]*tq.Task, len(projects))
 	for i, p := range projects {
 		tasks[i] = &tq.Task{
