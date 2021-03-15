@@ -29,18 +29,22 @@ import { parseArtifactName } from '../../services/resultdb';
  * Renders a text diff artifact.
  */
 // TODO(weiweilin): improve error handling.
+@customElement('milo-text-diff-artifact-page')
+@consumeAppState
 export class TextDiffArtifactPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref private artifactName!: string;
 
-  @computed private get artifactIdent() { return parseArtifactName(this.artifactName); }
+  @computed private get artifactIdent() {
+    return parseArtifactName(this.artifactName);
+  }
 
   @computed
   private get artifact$() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({name: this.artifactName}));
+    return fromPromise(this.appState.resultDb.getArtifact({ name: this.artifactName }));
   }
   @computed private get artifact() {
     return this.artifact$.state === FULFILLED ? this.artifact$.value : null;
@@ -73,21 +77,27 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
         <table>
           <tr>
             <td class="id-component-label">Invocation</td>
-            <td><a href=${router.urlForName('invocation', {'invocation_id': this.artifactIdent.invocationId})}>${this.artifactIdent.invocationId}</a></td>
+            <td>
+              <a href=${router.urlForName('invocation', { invocation_id: this.artifactIdent.invocationId })}
+                >${this.artifactIdent.invocationId}</a
+              >
+            </td>
           </tr>
-          ${this.artifactIdent.testId && html`
-          <!-- TODO(weiweilin): add view test link -->
-          <tr>
-            <td class="id-component-label">Test</td>
-            <td>${this.artifactIdent.testId}</td>
-          </tr>
+          ${this.artifactIdent.testId &&
+          html`
+            <!-- TODO(weiweilin): add view test link -->
+            <tr>
+              <td class="id-component-label">Test</td>
+              <td>${this.artifactIdent.testId}</td>
+            </tr>
           `}
-          ${this.artifactIdent.resultId && html`
-          <!-- TODO(weiweilin): add view result link -->
-          <tr>
-            <td class="id-component-label">Result</td>
-            <td>${this.artifactIdent.resultId}</td>
-          </tr>
+          ${this.artifactIdent.resultId &&
+          html`
+            <!-- TODO(weiweilin): add view result link -->
+            <tr>
+              <td class="id-component-label">Result</td>
+              <td>${this.artifactIdent.resultId}</td>
+            </tr>
           `}
           <tr>
             <td class="id-component-label">Artifact</td>
@@ -96,15 +106,19 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
         </table>
       </div>
       <milo-status-bar
-        .components=${[{color: 'var(--active-color)', weight: 1}]}
+        .components=${[{ color: 'var(--active-color)', weight: 1 }]}
         .loading=${this.artifact$.state === 'pending'}
       ></milo-status-bar>
       <div id="details">
         ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
       </div>
       <div id="content">
-        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
-        ${sanitizeHTML(Diff2Html.html(this.content || '', {drawFileList: false, outputFormat: 'side-by-side'}))}
+        <link
+          rel="stylesheet"
+          type="text/css"
+          href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
+        />
+        ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
       </div>
     `;
   }
@@ -113,7 +127,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     #artifact-header {
       background-color: var(--block-background-color);
       padding: 6px 16px;
-      font-family: "Google Sans", "Helvetica Neue", sans-serif;
+      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
       font-size: 14px;
     }
     .id-component-label {
@@ -136,9 +150,3 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     }
   `;
 }
-
-customElement('milo-text-diff-artifact-page')(
-  consumeAppState(
-    TextDiffArtifactPageElement,
-  ),
-);
