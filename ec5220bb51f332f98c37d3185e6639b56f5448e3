@@ -16,6 +16,40 @@
       "message": "Demo: https://weiweilin-3-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/9123/overview\n",
       "revId": "ec5220bb51f332f98c37d3185e6639b56f5448e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "699e0dae_eb85d2c9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-15T17:32:28Z",
+      "side": 1,
+      "message": "a large portion of this CL is caused by renames. In future, I recommend splitting the CL into two:\n1) large diff, but low risk because it is a pure refactoring (no functional changes)\n2) smaller diff, but higher risk because it actually changes the functionality\n\n\u003d\u003e higher quality review of the part that matters (2)",
+      "revId": "ec5220bb51f332f98c37d3185e6639b56f5448e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ab14d7a4_bd824756",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-15T17:32:28Z",
+      "side": 1,
+      "message": "should we suggest to add description? or do you plan send a PSA? \n\ni.e. how will various non-chromium infra teams learn about this?",
+      "revId": "ec5220bb51f332f98c37d3185e6639b56f5448e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
