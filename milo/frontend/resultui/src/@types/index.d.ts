@@ -22,13 +22,13 @@ type Constructor<T, P extends unknown[] = []> = new (...params: P) => T;
 declare const CONFIGS: {
   readonly RESULT_DB: {
     readonly HOST: string;
-  },
+  };
   readonly BUILDBUCKET: {
     readonly HOST: string;
-  },
+  };
   readonly OAUTH2: {
     readonly CLIENT_ID: string;
-  }
+  };
 };
 
 /**

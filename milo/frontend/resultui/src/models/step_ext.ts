@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// tslint:disable: variable-name
-
 import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
@@ -70,11 +68,10 @@ export class StepExt {
    * true iff the step or one of its descendants failed (status Failure or InfraFailure).
    */
   @computed get failed(): boolean {
-      if (this.status === BuildStatus.Failure ||
-          this.status === BuildStatus.InfraFailure) {
-          return true;
-      }
-      return this.children.some((child) => child.failed);
+    if (this.status === BuildStatus.Failure || this.status === BuildStatus.InfraFailure) {
+      return true;
+    }
+    return this.children.some((child) => child.failed);
   }
 
   @computed get duration() {
@@ -135,7 +132,7 @@ export class StepExt {
       return ['', this.summaryMarkdown || ''];
     }
 
-    const parts = this.summaryMarkdown?.split(/\<br\/?\>/i) || [''];
+    const parts = this.summaryMarkdown?.split(/<br\/?>/i) || [''];
     const header = parts[0] || '';
     if (!this.isHeaderValid(header)) {
       return ['', this.summaryMarkdown || ''];

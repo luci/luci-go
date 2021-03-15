@@ -61,39 +61,39 @@ export function parseSearchQuery(searchQuery: string): TestVariantFilter {
 
 // Queries with predefined value.
 const QUERY_SUGGESTIONS = [
-  {value: 'Status:UNEXPECTED', explanation: 'Include only tests with unexpected status'},
-  {value: '-Status:UNEXPECTED', explanation: 'Exclude tests with unexpected status'},
-  {value: 'Status:UNEXPECTEDLY_SKIPPED', explanation: 'Include only tests with unexpectedly skipped status'},
-  {value: '-Status:UNEXPECTEDLY_SKIPPED', explanation: 'Exclude tests with unexpectedly skipped status'},
-  {value: 'Status:FLAKY', explanation: 'Include only tests with flaky status'},
-  {value: '-Status:FLAKY', explanation: 'Exclude tests with flaky status'},
-  {value: 'Status:EXONERATED', explanation: 'Include only tests with exonerated status'},
-  {value: '-Status:EXONERATED', explanation: 'Exclude tests with exonerated status'},
-  {value: 'Status:EXPECTED', explanation: 'Include only tests with expected status'},
-  {value: '-Status:EXPECTED', explanation: 'Exclude tests with expected status'},
+  { value: 'Status:UNEXPECTED', explanation: 'Include only tests with unexpected status' },
+  { value: '-Status:UNEXPECTED', explanation: 'Exclude tests with unexpected status' },
+  { value: 'Status:UNEXPECTEDLY_SKIPPED', explanation: 'Include only tests with unexpectedly skipped status' },
+  { value: '-Status:UNEXPECTEDLY_SKIPPED', explanation: 'Exclude tests with unexpectedly skipped status' },
+  { value: 'Status:FLAKY', explanation: 'Include only tests with flaky status' },
+  { value: '-Status:FLAKY', explanation: 'Exclude tests with flaky status' },
+  { value: 'Status:EXONERATED', explanation: 'Include only tests with exonerated status' },
+  { value: '-Status:EXONERATED', explanation: 'Exclude tests with exonerated status' },
+  { value: 'Status:EXPECTED', explanation: 'Include only tests with expected status' },
+  { value: '-Status:EXPECTED', explanation: 'Exclude tests with expected status' },
 
-  {value: 'RStatus:Pass', explanation: 'Include only tests with at least one passed run'},
-  {value: '-RStatus:Pass', explanation: 'Exclude tests with at least one passed run'},
-  {value: 'RStatus:Fail', explanation: 'Include only tests with at least one failed run'},
-  {value: '-RStatus:Fail', explanation: 'Exclude tests with at least one failed run'},
-  {value: 'RStatus:Crash', explanation: 'Include only tests with at least one crashed run'},
-  {value: '-RStatus:Crash', explanation: 'Exclude tests with at least one crashed run'},
-  {value: 'RStatus:Abort', explanation: 'Include only tests with at least one aborted run'},
-  {value: '-RStatus:Abort', explanation: 'Exclude tests with at least one aborted run'},
-  {value: 'RStatus:Skip', explanation: 'Include only tests with at least one skipped run'},
-  {value: '-RStatus:Skip', explanation: 'Exclude tests with at least one skipped run'},
+  { value: 'RStatus:Pass', explanation: 'Include only tests with at least one passed run' },
+  { value: '-RStatus:Pass', explanation: 'Exclude tests with at least one passed run' },
+  { value: 'RStatus:Fail', explanation: 'Include only tests with at least one failed run' },
+  { value: '-RStatus:Fail', explanation: 'Exclude tests with at least one failed run' },
+  { value: 'RStatus:Crash', explanation: 'Include only tests with at least one crashed run' },
+  { value: '-RStatus:Crash', explanation: 'Exclude tests with at least one crashed run' },
+  { value: 'RStatus:Abort', explanation: 'Include only tests with at least one aborted run' },
+  { value: '-RStatus:Abort', explanation: 'Exclude tests with at least one aborted run' },
+  { value: 'RStatus:Skip', explanation: 'Include only tests with at least one skipped run' },
+  { value: '-RStatus:Skip', explanation: 'Exclude tests with at least one skipped run' },
 ];
 
 // Queries with arbitrary value.
 const QUERY_TYPE_SUGGESTIONS = [
-  {type: 'ID:', explanation: 'Include only tests with the specified substring in their ID (case insensitive)'},
-  {type: '-ID:', explanation: 'Exclude tests with the specified substring in their ID (case insensitive)'},
+  { type: 'ID:', explanation: 'Include only tests with the specified substring in their ID (case insensitive)' },
+  { type: '-ID:', explanation: 'Exclude tests with the specified substring in their ID (case insensitive)' },
 
-  {type: 'ExactID:', explanation: 'Include only tests with the specified ID (case sensitive)'},
-  {type: '-ExactID:', explanation: 'Exclude tests with the specified ID (case sensitive)'},
+  { type: 'ExactID:', explanation: 'Include only tests with the specified ID (case sensitive)' },
+  { type: '-ExactID:', explanation: 'Exclude tests with the specified ID (case sensitive)' },
 
-  {type: 'VHash:', explanation: 'Include only tests with the specified variant hash'},
-  {type: '-VHash:', explanation: 'Exclude tests with the specified variant hash'},
+  { type: 'VHash:', explanation: 'Include only tests with the specified variant hash' },
+  { type: '-VHash:', explanation: 'Exclude tests with the specified variant hash' },
 ];
 
 /**
@@ -112,19 +112,49 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
   if (query === '') {
     // Return some example queries when the query is empty.
     return [
-      {isHeader: true, display: html`<strong>Advanced Syntax</strong>`},
-      {value: '-Status:EXPECTED', explanation: 'Use \'-\' prefix to negate the filter'},
-      {value: 'Status:UNEXPECTED -RStatus:Skipped', explanation: 'Use space to separate filters. Filters are logically joined with AND'},
+      {
+        isHeader: true,
+        display: html`<strong>Advanced Syntax</strong>`,
+      },
+      {
+        value: '-Status:EXPECTED',
+        explanation: "Use '-' prefix to negate the filter",
+      },
+      {
+        value: 'Status:UNEXPECTED -RStatus:Skipped',
+        explanation: 'Use space to separate filters. Filters are logically joined with AND',
+      },
 
       // Put this section behind `Advanced Syntax` so `Advanced Syntax` won't
       // be hidden after the size of supported filter types grows.
-      {isHeader: true, display: html`<strong>Supported Filter Types</strong>`},
-      {value: 'ID:test-id-substr', explanation: 'Include only tests with the specified substring in their ID (case insensitive)'},
-      {value: 'test-id-substr', explanation: 'Filters with no type are treated as ID filters'},
-      {value: 'Status:UNEXPECTED,UNEXPECTEDLY_SKIPPED,FLAKY,EXONERATED,EXPECTED', explanation: 'Include only tests with the specified status'},
-      {value: 'RStatus:Pass,Fail,Crash,Abort,Skip', explanation: 'Include only tests with at least one run of the specified status'},
-      {value: 'ExactID:test-id', explanation: 'Include only tests with the specified test ID (case sensitive)'},
-      {value: 'VHash:2660cde9da304c42', explanation: 'Include only tests with the specified variant hash'},
+      {
+        isHeader: true,
+        display: html`<strong>Supported Filter Types</strong>`,
+      },
+      {
+        value: 'ID:test-id-substr',
+        explanation: 'Include only tests with the specified substring in their ID (case insensitive)',
+      },
+      {
+        value: 'test-id-substr',
+        explanation: 'Filters with no type are treated as ID filters',
+      },
+      {
+        value: 'Status:UNEXPECTED,UNEXPECTEDLY_SKIPPED,FLAKY,EXONERATED,EXPECTED',
+        explanation: 'Include only tests with the specified status',
+      },
+      {
+        value: 'RStatus:Pass,Fail,Crash,Abort,Skip',
+        explanation: 'Include only tests with at least one run of the specified status',
+      },
+      {
+        value: 'ExactID:test-id',
+        explanation: 'Include only tests with the specified test ID (case sensitive)',
+      },
+      {
+        value: 'VHash:2660cde9da304c42',
+        explanation: 'Include only tests with the specified variant hash',
+      },
     ];
   }
 
@@ -137,27 +167,27 @@ export function suggestSearchQuery(query: string): readonly Suggestion[] {
 
   // Suggest queries with predefined value.
   const subQueryUpper = subQuery.toUpperCase();
-  suggestions.push(...QUERY_SUGGESTIONS.filter(({value}) => value.toUpperCase().includes(subQueryUpper)));
+  suggestions.push(...QUERY_SUGGESTIONS.filter(({ value }) => value.toUpperCase().includes(subQueryUpper)));
 
   // Suggest queries with arbitrary value.
   const match = subQuery.match(/^([^:]*:?)(.*)$/);
   if (match) {
-    const [, subQueryType, subQueryValue] = match;
+    const [, subQueryType, subQueryValue] = match as [string, string, string];
     const typeUpper = subQueryType.toUpperCase();
     suggestions.push(
-      ...QUERY_TYPE_SUGGESTIONS.flatMap(({type, explanation}) => {
+      ...QUERY_TYPE_SUGGESTIONS.flatMap(({ type, explanation }) => {
         if (type.toUpperCase().includes(typeUpper)) {
-          return [{value: type + subQueryValue, explanation}];
+          return [{ value: type + subQueryValue, explanation }];
         }
 
         if (subQueryValue === '') {
-          return [{value: type + subQueryType, explanation}];
+          return [{ value: type + subQueryType, explanation }];
         }
 
         return [];
-      }),
+      })
     );
   }
 
-  return suggestions.map((s) => ({...s, display: s.display || highlight(s.value!, subQuery)}));
+  return suggestions.map((s) => ({ ...s, display: s.display || highlight(s.value!, subQuery) }));
 }

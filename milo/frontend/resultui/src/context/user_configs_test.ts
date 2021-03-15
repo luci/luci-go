@@ -16,24 +16,24 @@ import { assert } from 'chai';
 
 import { UserConfigs, UserConfigsStore } from './user_configs';
 
-
 describe('UserConfigs', () => {
   it('should delete stale propLineFoldTime records', () => {
     let savedConfigs!: UserConfigs;
     const fourWeeksAgo = Date.now() - 2419200000;
-    const store = new UserConfigsStore({
-      getItem: () => JSON.stringify({
-        inputPropLineFoldTime: {
-          'old-line': fourWeeksAgo - 360000,
-          'new-line': fourWeeksAgo + 360000,
-        },
-        outputPropLineFoldTime: {
-          'old-line': fourWeeksAgo - 360000,
-          'new-line': fourWeeksAgo + 360000,
-        },
-      }),
-      setItem: (_key, value) => savedConfigs = JSON.parse(value),
-    } as Partial<Storage> as Storage);
+    const store = new UserConfigsStore(({
+      getItem: () =>
+        JSON.stringify({
+          inputPropLineFoldTime: {
+            'old-line': fourWeeksAgo - 360000,
+            'new-line': fourWeeksAgo + 360000,
+          },
+          outputPropLineFoldTime: {
+            'old-line': fourWeeksAgo - 360000,
+            'new-line': fourWeeksAgo + 360000,
+          },
+        }),
+      setItem: (_key, value) => (savedConfigs = JSON.parse(value)),
+    } as Partial<Storage>) as Storage);
     store.save();
 
     assert.notInclude(Object.keys(store.userConfigs.inputPropLineFoldTime), 'old-line');

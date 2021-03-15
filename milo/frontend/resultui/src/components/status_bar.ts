@@ -34,7 +34,7 @@ export class StatusBarElement extends MobxLitElement {
   private renderComponent(component: Component) {
     return html`
       <span
-        class=${classMap({'loading': this.loading})}
+        class=${classMap({ loading: this.loading })}
         style=${styleMap({
           'flex-grow': component.weight.toString(),
           'background-color': component.color,
@@ -45,11 +45,7 @@ export class StatusBarElement extends MobxLitElement {
   }
 
   protected render() {
-    return html`
-      <div id="container">
-        ${this.components.map((c) => this.renderComponent(c))}
-      </div>
-    `;
+    return html` <div id="container">${this.components.map((c) => this.renderComponent(c))}</div> `;
   }
 
   static styles = css`
@@ -59,7 +55,16 @@ export class StatusBarElement extends MobxLitElement {
     }
 
     .loading {
-      background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+      background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent
+      );
       background-size: 1rem 1rem;
       animation: progress-bar-stripes 1s linear infinite;
     }
