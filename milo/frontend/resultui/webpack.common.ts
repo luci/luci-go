@@ -60,10 +60,10 @@ const config: webpack.Configuration = {
       maxInitialRequests: Infinity,
       minSize: 0,
       cacheGroups: {
-        vendor: {
+        defaultVendors: {
           test: /[\\/]node_modules[\\/]/,
-          name(module) {
-            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+          name(module: {context: string}) {
+            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)![1];
             return `npm.${packageName}`;
           },
         },
