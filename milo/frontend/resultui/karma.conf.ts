@@ -16,7 +16,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { Config } from 'karma';
-import { DefinePlugin } from 'webpack';
+import { DefinePlugin, ProvidePlugin } from 'webpack';
 
 import webpackConfig from './webpack.common';
 
@@ -28,10 +28,10 @@ module.exports = (config: Config) => {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'chai'],
+    frameworks: ['webpack', 'mocha', 'chai'],
 
     // list of files / patterns to load in the browser
-    files: ['index_test.ts'],
+    files: [{ pattern: 'index_test.ts', watched: false }],
 
     // list of files / patterns to exclude
     exclude: [],
@@ -69,10 +69,18 @@ module.exports = (config: Config) => {
         // location in the terminal.
         devtoolModuleFilenameTemplate: '[resource-path]',
       },
+      optimization: {
+        // Disable splitChunks. Otherwise sourcemap won't work in the terminal.
+        // https://github.com/ryanclark/karma-webpack/issues/493
+        splitChunks: false,
+      },
       plugins: [
         new DefinePlugin({
           'CONFIGS': fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
           'ENABLE_GA': JSON.stringify(false),
+        }),
+        new ProvidePlugin({
+          process: 'process/browser',
         }),
       ],
     },
