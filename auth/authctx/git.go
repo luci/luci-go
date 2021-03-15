@@ -47,6 +47,10 @@ var gitConfigTempl = template.Must(template.New(".gitconfig").Parse(`# Autogener
 [pack]
   packSizeLimit = 2g
 
+; Reduce noise.
+[advice]
+  detachedHead = false
+
 [http]
   version = HTTP/1.1
   # Request the GFE return debug headers as an encrypted blob in
