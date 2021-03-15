@@ -42,10 +42,12 @@ func init() {
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.ManageProjectTask)
 			err := manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
-			return common.TQifyError(ctx, err)
+			return common.TQIfy{KnownFatal: []error{errTaskArrivedTooLate}}.Error(ctx, err)
 		},
 	)
 }
+
+var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
 
 func manageProject(ctx context.Context, luciProject string, taskETA time.Time) error {
 	ctx = logging.SetField(ctx, "project", luciProject)
@@ -57,7 +59,7 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 			return err
 		}
 		// Hard-fail this task to avoid retries and get correct monitoring stats.
-		return errors.New("task arrived too late", tq.Fatal)
+		return errTaskArrivedTooLate
 	}
 
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
