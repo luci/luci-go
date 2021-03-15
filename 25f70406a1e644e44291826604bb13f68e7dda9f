@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ffcef0f_e69b3536",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-15T17:38:54Z",
+      "side": 1,
+      "message": "also \n1) blamelistPins in build_ext.ts\n2) and comment of QueryBlamelistRequest.gitiles_commit says it should be input commit",
+      "revId": "25f70406a1e644e44291826604bb13f68e7dda9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
