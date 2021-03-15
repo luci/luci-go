@@ -43,6 +43,8 @@ type Cache struct {
 	path     string
 	h        crypto.Hash
 
+	freeSpaceWarningOnce sync.Once
+
 	// Lock protected.
 	mu  sync.Mutex // This protects modification of cached entries under |path| too.
 	lru lruDict    // Implements LRU based eviction.
@@ -440,7 +442,11 @@ func (d *Cache) respectPolicies(ctx context.Context) error {
 			break
 		}
 		if d.lru.length() == 0 {
-			logging.Warningf(ctx, "no more space to free in %s: current free space=%d policies.MinFreeSpace=%d", d.path, freeSpace, minFreeSpaceWanted)
+			d.freeSpaceWarningOnce.Do(func() {
+				// TODO(crbug.com/chrome-operations/49): make this error again.
+				logging.Warningf(ctx, "no more space to free in %s: current free space=%d policies.MinFreeSpace=%d", d.path, freeSpace, minFreeSpaceWanted)
+			})
+
 			break
 		}
 		k, _ := d.lru.popOldest()
