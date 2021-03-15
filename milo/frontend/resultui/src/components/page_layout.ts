@@ -23,6 +23,7 @@ import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { genFeedbackUrl } from '../libs/utils';
 import './signin';
 import { UserUpdateEvent } from './signin';
+import './tooltip';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
   window.gapi?.load('auth2', () => {
@@ -69,6 +70,7 @@ export class PageLayoutElement extends MobxLitElement {
 
   protected render() {
     return html`
+      <milo-tooltip></milo-tooltip>
       <div id="container">
         <div id="title-container">
           <a href="/" id="title-link">
