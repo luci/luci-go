@@ -352,6 +352,17 @@ func (d *Cache) add(ctx context.Context, digest isolated.HexDigest, src io.Reade
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
+	// If the cache already exists, do not try os.Rename().
+	if d.lru.touch(digest) {
+		logging.Debugf(ctx, "cache already exists. path: %s, digest %s\n", d.path, digest)
+		if cb != nil {
+			if err := cb(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
 	if err := os.Rename(fname, d.itemPath(digest)); err != nil {
 		_ = os.Remove(fname)
 		return errors.Annotate(err, "failed to rename %s -> %s", fname, d.itemPath(digest)).Err()
