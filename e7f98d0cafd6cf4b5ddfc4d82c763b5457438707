@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a766be12_909f2909",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:42:33Z",
+      "side": 1,
+      "message": "oh, now I get it. I misread the comment. Sorry.",
+      "parentUuid": "ab4cd0a4_fe787abd",
+      "revId": "e7f98d0cafd6cf4b5ddfc4d82c763b5457438707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8f2736e4_a63a89fd",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -90,6 +108,30 @@
       "side": 1,
       "message": "You are right. In reality, there\u0027s no need and `changedCLs` should always equal to `cls` unless something goes wrong. But I didn\u0027t hold this assumption when I implement this function and I didn\u0027t want to do redundant work (i.e. re-save the CLs that is loaded without the Run). So it\u0027s implemented this way.",
       "parentUuid": "0219fd2e_97d7299c",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 127,
+        "endChar": 23
+      },
+      "revId": "e7f98d0cafd6cf4b5ddfc4d82c763b5457438707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22ae04dc_f8df7c03",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:42:33Z",
+      "side": 1,
+      "message": "OK, so will you fix this in this or next CL?",
+      "parentUuid": "c6c75386_5d50a302",
       "range": {
         "startLine": 118,
         "startChar": 1,
