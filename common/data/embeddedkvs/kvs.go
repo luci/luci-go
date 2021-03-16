@@ -88,6 +88,26 @@ func (k *KVS) GetMulti(keys []string, fn func(key string, value []byte) error) e
 	return nil
 }
 
+// SetMulti receives callback that takes function which is used to set a key/value pair.
+func (k *KVS) SetMulti(fn func(set func(key string, value []byte) error) error) error {
+	wb := k.db.NewWriteBatch()
+	defer wb.Cancel()
+
+	if err := fn(func(key string, value []byte) error {
+		if err := wb.Set([]byte(key), value); err != nil {
+			return errors.Annotate(err, "failed to set key: %s", key).Err()
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if err := wb.Flush(); err != nil {
+		return errors.Annotate(err, "failed to call Flush").Err()
+	}
+	return nil
+}
+
 // ForEach executes a function for each key/value pair in KVS.
 func (k *KVS) ForEach(fn func(key string, value []byte) error) error {
 	err := k.db.View(func(txn *badger.Txn) error {
