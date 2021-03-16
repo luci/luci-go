@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "5b42b3a4_0ec0f7ef",
+        "filename": "cv/internal/cvtesting/e2e/.gitignore",
+        "patchSetId": 3
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff2be79f_12a64c35",
+      "revId": "d66f618c3a6550ef7f5f9c777a4576e5390190b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "192b11b1_346e651f",
         "filename": "cv/internal/cvtesting/e2e/README.md",
         "patchSetId": 3
@@ -31,6 +49,30 @@
       "writtenOn": "2021-03-16T00:48:00Z",
       "side": 1,
       "message": "What is the consideration for this guidance? Smaller scope for each Test.",
+      "range": {
+        "startLine": 44,
+        "startChar": 4,
+        "endLine": 44,
+        "endChar": 61
+      },
+      "revId": "d66f618c3a6550ef7f5f9c777a4576e5390190b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbf54ffa_c1e95496",
+        "filename": "cv/internal/cvtesting/e2e/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:37:48Z",
+      "side": 1,
+      "message": "Yes, due to excessive logs (same as below).\n\nThough certainly this is living Readme, we can definitely revisit this.",
+      "parentUuid": "192b11b1_346e651f",
       "range": {
         "startLine": 44,
         "startChar": 4,
@@ -54,6 +96,30 @@
       "writtenOn": "2021-03-16T00:48:00Z",
       "side": 1,
       "message": "Could use ct.RunUntil like the next test did.",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 3
+      },
+      "revId": "d66f618c3a6550ef7f5f9c777a4576e5390190b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2190ea46_96697c3f",
+        "filename": "cv/internal/cvtesting/e2e/purges_cl_without_starting_runs_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:37:48Z",
+      "side": 1,
+      "message": "Yes!",
+      "parentUuid": "5ace6d1b_d6ca3441",
       "range": {
         "startLine": 69,
         "startChar": 0,
