@@ -1,0 +1,5 @@
+*.log
+*log
+*.out
+*out
+*.txt
