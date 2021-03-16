@@ -51,13 +51,13 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-const TaskClassID = "refresh-gerrit-cl"
+const TaskClass = "refresh-gerrit-cl"
 
 var errStaleData = errors.New("Fetched stale Gerrit data", transient.Tag)
 
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        TaskClassID,
+		ID:        TaskClass,
 		Prototype: &RefreshGerritCL{},
 		Queue:     "refresh-gerrit-cl",
 		Quiet:     true,
