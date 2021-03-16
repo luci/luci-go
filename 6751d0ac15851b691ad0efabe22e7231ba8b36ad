@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "511009d3_edf75509",
+        "filename": "milo/frontend/resultui/src/context/user_configs.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-16T23:41:16Z",
+      "side": 1,
+      "message": "nit: maybe add a TODO to use a trie, just to ack that this is not the best data structure, but not actually implement this because it is fast enough :)",
+      "revId": "6751d0ac15851b691ad0efabe22e7231ba8b36ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
