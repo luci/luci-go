@@ -125,6 +125,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	}
 
 	ctx = context.Background()
+	// TODO(tandrii): make this logger emit testclock-based timestamps.
 	if testing.Verbose() {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 	}
