@@ -29,25 +29,35 @@ import { constructArtifactName, parseArtifactName } from '../../services/resultd
  * and image diff.
  */
 // TODO(weiweilin): improve error handling.
+@customElement('milo-image-diff-artifact-page')
+@consumeAppState
 export class ImageDiffArtifactPage extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref diffArtifactName!: string;
 
-  @computed private get expectedArtifactName() { return constructArtifactName({...this.parsedDiffArtifactName, artifactId: this.expectedArtifactId}); }
-  @computed private get actualArtifactName() { return constructArtifactName({...this.parsedDiffArtifactName, artifactId: this.actualArtifactId}); }
+  @computed private get expectedArtifactName() {
+    return constructArtifactName({ ...this.parsedDiffArtifactName, artifactId: this.expectedArtifactId });
+  }
+  @computed private get actualArtifactName() {
+    return constructArtifactName({ ...this.parsedDiffArtifactName, artifactId: this.actualArtifactId });
+  }
 
-  @computed private get diffArtifactId() { return this.parsedDiffArtifactName.artifactId; }
+  @computed private get diffArtifactId() {
+    return this.parsedDiffArtifactName.artifactId;
+  }
   @observable.ref private expectedArtifactId!: string;
   @observable.ref private actualArtifactId!: string;
 
-  @computed private get parsedDiffArtifactName() { return parseArtifactName(this.diffArtifactName); }
+  @computed private get parsedDiffArtifactName() {
+    return parseArtifactName(this.diffArtifactName);
+  }
 
   @computed
   private get diffArtifact$() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({name: this.diffArtifactName}));
+    return fromPromise(this.appState.resultDb.getArtifact({ name: this.diffArtifactName }));
   }
   @computed private get diffArtifact() {
     return this.diffArtifact$.state === FULFILLED ? this.diffArtifact$.value : null;
@@ -58,7 +68,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({name: this.expectedArtifactName}));
+    return fromPromise(this.appState.resultDb.getArtifact({ name: this.expectedArtifactName }));
   }
   @computed private get expectedArtifact() {
     return this.expectedArtifact$.state === FULFILLED ? this.expectedArtifact$.value : null;
@@ -69,7 +79,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({name: this.actualArtifactName}));
+    return fromPromise(this.appState.resultDb.getArtifact({ name: this.actualArtifactName }));
   }
   @computed private get actualArtifact() {
     return this.actualArtifact$.state === FULFILLED ? this.actualArtifact$.value : null;
@@ -94,29 +104,36 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     return;
   }
 
-
   protected render() {
     return html`
       <div id="artifact-header">
         <table>
           <tr>
             <td class="id-component-label">Invocation</td>
-            <td><a href=${router.urlForName('invocation', {'invocation_id': this.parsedDiffArtifactName.invocationId})}>${this.parsedDiffArtifactName.invocationId}</a></td>
+            <td><a href=${router.urlForName('invocation', {
+              invocation_id: this.parsedDiffArtifactName.invocationId,
+            })}>${this.parsedDiffArtifactName.invocationId}</a></td>
           </tr>
-          ${this.parsedDiffArtifactName.testId && html`
-          <!-- TODO(weiweilin): add view test link -->
-          <tr>
-            <td class="id-component-label">Test</td>
-            <td>${this.parsedDiffArtifactName.testId}</td>
-          </tr>
-          `}
-          ${this.parsedDiffArtifactName.resultId && html`
-          <!-- TODO(weiweilin): add view result link -->
-          <tr>
-            <td class="id-component-label">Result</td>
-            <td>${this.parsedDiffArtifactName.resultId}</td>
-          </tr>
-          `}
+          ${
+            this.parsedDiffArtifactName.testId &&
+            html`
+              <!-- TODO(weiweilin): add view test link -->
+              <tr>
+                <td class="id-component-label">Test</td>
+                <td>${this.parsedDiffArtifactName.testId}</td>
+              </tr>
+            `
+          }
+          ${
+            this.parsedDiffArtifactName.resultId &&
+            html`
+              <!-- TODO(weiweilin): add view result link -->
+              <tr>
+                <td class="id-component-label">Result</td>
+                <td>${this.parsedDiffArtifactName.resultId}</td>
+              </tr>
+            `
+          }
           <tr>
             <td class="id-component-label">Artifacts</td>
             <td>${this.expectedArtifactId}, ${this.actualArtifactId}, ${this.diffArtifactId}</td>
@@ -124,16 +141,21 @@ export class ImageDiffArtifactPage extends MobxLitElement {
         </table>
       </div>
       <milo-status-bar
-        .components=${[{color: 'var(--active-color)', weight: 1}]}
+        .components=${[{ color: 'var(--active-color)', weight: 1 }]}
         .loading=${this.isLoading}
       ></milo-status-bar>
-      ${this.isLoading ? '' : html`
-        <milo-image-diff-viewer
-          .expected=${this.expectedArtifact}
-          .actual=${this.actualArtifact}
-          .diff=${this.diffArtifact}
-        >
-      `}
+      ${
+        this.isLoading
+          ? ''
+          : html`
+              <milo-image-diff-viewer
+                .expected=${this.expectedArtifact}
+                .actual=${this.actualArtifact}
+                .diff=${this.diffArtifact}
+              >
+              </milo-image-diff-viewer>
+            `
+      }
       </milo-image-diff-viewer>
     `;
   }
@@ -146,7 +168,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     #artifact-header {
       background-color: var(--block-background-color);
       padding: 6px 16px;
-      font-family: "Google Sans", "Helvetica Neue", sans-serif;
+      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
       font-size: 14px;
     }
     .id-component-label {
@@ -154,9 +176,3 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     }
   `;
 }
-
-customElement('milo-image-diff-artifact-page')(
-  consumeAppState(
-    ImageDiffArtifactPage,
-  ),
-);

@@ -64,6 +64,11 @@ const TAB_NAME_LABEL_TUPLES = Object.freeze([
  * If any of the parameters are not provided, redirects to '/not-found'.
  * If build is not a number, shows an error.
  */
+@customElement('milo-build-page')
+@provideInvocationState
+@provideBuildState
+@consumeConfigsStore
+@consumeAppState
 export class BuildPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
@@ -96,7 +101,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     const path = location.params['path'];
     if (typeof buildId === 'string' && path instanceof Array) {
       this.isShortLink = true;
-      this.buildNumOrIdParam = 'b' + buildId as string;
+      this.buildNumOrIdParam = ('b' + buildId) as string;
       this.urlSuffix = '/' + path.join('/') + location.search + location.hash;
       return;
     }
@@ -125,7 +130,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     if (this.buildState.build) {
       return `/static/common/favicon/${STATUS_FAVICON_MAP[this.buildState.build.status]}-32.png`;
     }
-    return `/static/common/favicon/milo-32.png`;
+    return '/static/common/favicon/milo-32.png';
   }
 
   @computed private get documentTitle() {
@@ -150,7 +155,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         return;
       }
     }
-  }
+  };
 
   connectedCallback() {
     super.connectedCallback();
@@ -158,23 +163,25 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
     this.addEventListener('error', this.errorHandler);
 
-    this.disposers.push(reaction(
-      () => [this.appState],
-      () => {
-        this.buildState?.dispose();
-        this.buildState = new BuildState(this.appState);
-        this.buildState.builderId = this.builderIdParam;
-        this.buildState.buildNumOrId = this.buildNumOrIdParam;
+    this.disposers.push(
+      reaction(
+        () => [this.appState],
+        () => {
+          this.buildState?.dispose();
+          this.buildState = new BuildState(this.appState);
+          this.buildState.builderId = this.builderIdParam;
+          this.buildState.buildNumOrId = this.buildNumOrIdParam;
 
-        // Emulate @property() update.
-        this.updated(new Map([['buildState', this.buildState]]));
-      },
-      {fireImmediately: true},
-    ));
+          // Emulate @property() update.
+          this.updated(new Map([['buildState', this.buildState]]));
+        },
+        { fireImmediately: true }
+      )
+    );
     this.disposers.push(() => this.buildState.dispose());
 
-    this.disposers.push(autorun(
-      () => {
+    this.disposers.push(
+      autorun(() => {
         if (this.buildState.build$.state !== REJECTED) {
           return;
         }
@@ -185,125 +192,142 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
           return;
         }
-        this.dispatchEvent(new ErrorEvent('error', {
-          message: this.buildState.build$.value.toString(),
-          composed: true,
-          bubbles: true,
-        }));
-      },
-    ));
+        this.dispatchEvent(
+          new ErrorEvent('error', {
+            message: this.buildState.build$.value.toString(),
+            composed: true,
+            bubbles: true,
+          })
+        );
+      })
+    );
 
-    this.disposers.push(reaction(
-      () => this.appState,
-      (appState) => {
-        this.invocationState?.dispose();
-        this.invocationState = new InvocationState(appState);
-        this.invocationState.invocationId = this.buildState.invocationId;
+    this.disposers.push(
+      reaction(
+        () => this.appState,
+        (appState) => {
+          this.invocationState?.dispose();
+          this.invocationState = new InvocationState(appState);
+          this.invocationState.invocationId = this.buildState.invocationId;
 
-        // Emulate @property() update.
-        this.updated(new Map([['invocationState', this.invocationState]]));
-      },
-      {fireImmediately: true},
-    ));
+          // Emulate @property() update.
+          this.updated(new Map([['invocationState', this.invocationState]]));
+        },
+        { fireImmediately: true }
+      )
+    );
     this.disposers.push(() => this.invocationState.dispose());
 
-    this.disposers.push(reaction(
-      () => this.buildState.invocationId,
-      (invId) => this.invocationState.invocationId = invId,
-      {fireImmediately: true},
-    ));
+    this.disposers.push(
+      reaction(
+        () => this.buildState.invocationId,
+        (invId) => (this.invocationState.invocationId = invId),
+        { fireImmediately: true }
+      )
+    );
 
-    this.disposers.push(reaction(
-      () => this.invocationState.invocation$.state,
-      () => {
-        if (this.invocationState.invocation$.state !== REJECTED) {
-          return;
+    this.disposers.push(
+      reaction(
+        () => this.invocationState.invocation$.state,
+        () => {
+          if (this.invocationState.invocation$.state !== REJECTED) {
+            return;
+          }
+          const err = this.invocationState.invocation$.value as QueryInvocationError;
+          // Ignore request using the old invocation ID.
+          if (err.invId !== this.buildState.invocationId) {
+            return;
+          }
+          // Old builds don't support computed invocation ID.
+          // Disable it and try again.
+          if (this.buildState.useComputedInvId) {
+            this.buildState.useComputedInvId = false;
+            return;
+          }
+          this.dispatchEvent(
+            new ErrorEvent('error', {
+              message: this.invocationState.invocation$.value.toString(),
+              composed: true,
+              bubbles: true,
+            })
+          );
         }
-        const err = this.invocationState.invocation$.value as QueryInvocationError;
-        // Ignore request using the old invocation ID.
-        if (err.invId !== this.buildState.invocationId) {
-          return;
-        }
-        // Old builds don't support computed invocation ID.
-        // Disable it and try again.
-        if (this.buildState.useComputedInvId) {
-          this.buildState.useComputedInvId = false;
-          return;
-        }
-        this.dispatchEvent(new ErrorEvent('error', {
-          message: this.invocationState.invocation$.value.toString(),
-          composed: true,
-          bubbles: true,
-        }));
-      },
-    ));
+      )
+    );
 
     if (this.isShortLink) {
       // Redirect to the long link after the build is fetched.
-      this.disposers.push(when(
-        () => this.buildState.build$.state === FULFILLED,
-        () => {
-          const builder = this.buildState.build!.builder;
-          const buildUrl = router.urlForName(
-            'build',
-            {
+      this.disposers.push(
+        when(
+          () => this.buildState.build$.state === FULFILLED,
+          () => {
+            const builder = this.buildState.build!.builder;
+            const buildUrl = router.urlForName('build', {
               project: builder.project,
               bucket: builder.bucket,
               builder: builder.builder,
               build_num_or_id: this.buildNumOrIdParam,
-            },
-          );
-          Router.go(buildUrl + this.urlSuffix);
-        },
-      ));
+            });
+            Router.go(buildUrl + this.urlSuffix);
+          }
+        )
+      );
 
       // Skip rendering-related reactions.
       return;
     }
 
-    this.disposers.push(autorun(() => {
-      const build = this.buildState.build;
-      if (!build) {
-        return;
-      }
+    this.disposers.push(
+      autorun(() => {
+        const build = this.buildState.build;
+        if (!build) {
+          return;
+        }
 
-      // If the build has only succeeded steps, show all steps in the steps tab by
-      // default (even if the user's preference is to hide succeeded steps).
-      if (build.rootSteps.every((s) => s.status === BuildStatus.Success)) {
-        this.configsStore.userConfigs.steps.showSucceededSteps = true;
-      }
+        // If the build has only succeeded steps, show all steps in the steps tab by
+        // default (even if the user's preference is to hide succeeded steps).
+        if (build.rootSteps.every((s) => s.status === BuildStatus.Success)) {
+          this.configsStore.userConfigs.steps.showSucceededSteps = true;
+        }
 
-      // If the associated gitiles commit is in the blamelist pins, select it.
-      // Otherwise, select the first blamelist pin.
-      const buildInputCommitRepo = build.associatedGitilesCommit
-        ? getGitilesRepoURL(build.associatedGitilesCommit)
-        : null;
-      let selectedBlamelistPinIndex = build.blamelistPins
-        .findIndex((pin) => getGitilesRepoURL(pin) === buildInputCommitRepo) || 0;
-      if (selectedBlamelistPinIndex === -1) {
-        selectedBlamelistPinIndex = 0;
-      }
-      this.appState.selectedBlamelistPinIndex = selectedBlamelistPinIndex;
-    }));
+        // If the associated gitiles commit is in the blamelist pins, select it.
+        // Otherwise, select the first blamelist pin.
+        const buildInputCommitRepo = build.associatedGitilesCommit
+          ? getGitilesRepoURL(build.associatedGitilesCommit)
+          : null;
+        let selectedBlamelistPinIndex =
+          build.blamelistPins.findIndex((pin) => getGitilesRepoURL(pin) === buildInputCommitRepo) || 0;
+        if (selectedBlamelistPinIndex === -1) {
+          selectedBlamelistPinIndex = 0;
+        }
+        this.appState.selectedBlamelistPinIndex = selectedBlamelistPinIndex;
+      })
+    );
 
-    this.disposers.push((reaction(
-      () => this.faviconUrl,
-      (faviconUrl) => document.getElementById('favicon')?.setAttribute('href', faviconUrl),
-      {fireImmediately: true},
-    )));
+    this.disposers.push(
+      reaction(
+        () => this.faviconUrl,
+        (faviconUrl) => document.getElementById('favicon')?.setAttribute('href', faviconUrl),
+        { fireImmediately: true }
+      )
+    );
 
-    this.disposers.push((reaction(
-      () => this.documentTitle,
-      (title) => document.title = title,
-      {fireImmediately: true},
-    )));
+    this.disposers.push(
+      reaction(
+        () => this.documentTitle,
+        (title) => (document.title = title),
+        { fireImmediately: true }
+      )
+    );
 
     // Sync uncommitted configs with committed configs.
-    this.disposers.push(reaction(
-      () => merge({}, this.configsStore.userConfigs),
-      (committedConfig) => merge(this.uncommittedConfigs, committedConfig),
-      {fireImmediately: true},
-    ));
+    this.disposers.push(
+      reaction(
+        () => merge({}, this.configsStore.userConfigs),
+        (committedConfig) => merge(this.uncommittedConfigs, committedConfig),
+        { fireImmediately: true }
+      )
+    );
   }
 
   disconnectedCallback() {
@@ -326,10 +350,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
   @computed get tabDefs(): TabDef[] {
     const params = {
-      'project': this.builderIdParam!.project,
-      'bucket': this.builderIdParam!.bucket,
-      'builder': this.builderIdParam!.builder,
-      'build_num_or_id': this.buildNumOrIdParam,
+      project: this.builderIdParam!.project,
+      bucket: this.builderIdParam!.bucket,
+      builder: this.builderIdParam!.builder,
+      build_num_or_id: this.buildNumOrIdParam,
     };
     return [
       {
@@ -340,11 +364,15 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       // TODO(crbug/1128097): display test-results tab unconditionally once
       // Foundation team is ready for ResultDB integration with other LUCI
       // projects.
-      ...!this.hasInvocation ? [] : [{
-        id: 'test-results',
-        label: 'Test Results',
-        href: router.urlForName('build-test-results', params),
-      }],
+      ...(!this.hasInvocation
+        ? []
+        : [
+            {
+              id: 'test-results',
+              label: 'Test Results',
+              href: router.urlForName('build-test-results', params),
+            },
+          ]),
       {
         id: 'steps',
         label: 'Steps & Logs',
@@ -382,20 +410,22 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       <i class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">
         ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown status'}
       </i>
-      ${(() => { switch (build.status) {
-      case BuildStatus.Scheduled:
-        return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
-      case BuildStatus.Started:
-        return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
-      case BuildStatus.Canceled:
-        return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${build.canceledBy}`;
-      case BuildStatus.Failure:
-      case BuildStatus.InfraFailure:
-      case BuildStatus.Success:
-        return `after ${displayDuration(build.endTime!.diff(build.startTime || build.createTime))}`;
-      default:
-        return '';
-      }})()}
+      ${(() => {
+        switch (build.status) {
+          case BuildStatus.Scheduled:
+            return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
+          case BuildStatus.Started:
+            return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
+          case BuildStatus.Canceled:
+            return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${build.canceledBy}`;
+          case BuildStatus.Failure:
+          case BuildStatus.InfraFailure:
+          case BuildStatus.Success:
+            return `after ${displayDuration(build.endTime!.diff(build.startTime || build.createTime))}`;
+          default:
+            return '';
+        }
+      })()}
     `;
   }
 
@@ -409,7 +439,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         id="settings-dialog"
         heading="Settings"
         ?open=${this.appState.showSettingsDialog}
-        @closed=${(event: CustomEvent<{action: string}>) => {
+        @closed=${(event: CustomEvent<{ action: string }>) => {
           if (event.detail.action === 'save') {
             merge(this.configsStore.userConfigs, this.uncommittedConfigs);
             this.configsStore.save();
@@ -422,14 +452,16 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         <label for="default-tab-selector">Default tab:</label>
         <select
           id="default-tab-selector"
-          @change=${(e: InputEvent) => this.uncommittedConfigs.defaultBuildPageTabName = (e.target as HTMLOptionElement).value}
+          @change=${(e: InputEvent) =>
+            (this.uncommittedConfigs.defaultBuildPageTabName = (e.target as HTMLOptionElement).value)}
         >
-          ${TAB_NAME_LABEL_TUPLES.map(([tabName, label]) => html`
-          <option
-            value=${tabName}
-            ?selected=${tabName === this.uncommittedConfigs.defaultBuildPageTabName}
-          >${label}</option>
-          `)}
+          ${TAB_NAME_LABEL_TUPLES.map(
+            ([tabName, label]) => html`
+              <option value=${tabName} ?selected=${tabName === this.uncommittedConfigs.defaultBuildPageTabName}>
+                ${label}
+              </option>
+            `
+          )}
         </select>
         <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
@@ -449,18 +481,15 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         }}
       >
         <div>
-          We'd love to make the new build page work better for everyone.<br>
+          We'd love to make the new build page work better for everyone.<br />
           Please take a moment to give us feedback before switching back to the old build page.
         </div>
-        <br>
-        <input type="checkbox" id="no-feedback-prompt">
+        <br />
+        <input type="checkbox" id="no-feedback-prompt" />
         <label for="no-feedback-prompt">Don't show again</label>
-        <mwc-button
-          slot="primaryAction"
-          dense
-          unelevated
-          @click=${() => window.open(genFeedbackUrl())}
-        >Open Feedback Page</mwc-button>
+        <mwc-button slot="primaryAction" dense unelevated @click=${() => window.open(genFeedbackUrl())}>
+          Open Feedback Page
+        </mwc-button>
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Proceed to legacy page</mwc-button>
       </mwc-dialog>
       <div id="build-summary">
@@ -485,17 +514,15 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
             }
           }}
           href=${this.legacyUrl}
-        >Switch to the legacy build page</a>
+          >Switch to the legacy build page</a
+        >
         <div id="build-status">${this.renderBuildStatus()}</div>
       </div>
       <milo-status-bar
-        .components=${[{color: this.statusBarColor, weight: 1}]}
+        .components=${[{ color: this.statusBarColor, weight: 1 }]}
         .loading=${this.buildState.build$.state === PENDING}
       ></milo-status-bar>
-      <milo-tab-bar
-        .tabs=${this.tabDefs}
-        .selectedTabId=${this.appState.selectedTabId}
-      ></milo-tab-bar>
+      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
       <slot></slot>
     `;
   }
@@ -510,7 +537,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     #build-summary {
       background-color: var(--block-background-color);
       padding: 6px 16px;
-      font-family: "Google Sans", "Helvetica Neue", sans-serif;
+      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
       font-size: 14px;
       display: flex;
     }
@@ -572,25 +599,13 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     #default-tab-selector {
       display: inline-block;
       margin-left: 10px;
-      padding: .375rem .75rem;
+      padding: 0.375rem 0.75rem;
       font-size: 1rem;
       line-height: 1.5;
       background-clip: padding-box;
       border: 1px solid var(--divider-color);
-      border-radius: .25rem;
-      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+      border-radius: 0.25rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
   `;
 }
-
-customElement('milo-build-page')(
-  provideInvocationState(
-    provideBuildState(
-      consumeConfigsStore(
-        consumeAppState(
-          BuildPageElement,
-        ),
-      ),
-    ),
-  ),
-);

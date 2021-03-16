@@ -28,9 +28,7 @@ class LazyListTestEntryElement extends LitElement implements OnEnterList {
   }
 
   protected render() {
-    return html`
-      <div id="placeholder">A</div>
-    `;
+    return html` <div id="placeholder">A</div> `;
   }
 
   static styles = css`
@@ -47,10 +45,7 @@ describe('lazy_list_test', () => {
     before(async () => {
       lazyList = await fixture<LazyListElement>(html`
         <milo-lazy-list style="height: 100px;">
-          ${new Array(100).fill(0).map(() => html`
-            <milo-lazy-list-test-entry>
-            </milo-lazy-list-test-entry>
-          `)}
+          ${new Array(100).fill(0).map(() => html` <milo-lazy-list-test-entry> </milo-lazy-list-test-entry> `)}
         </milo-lazy-list>
       `);
       entries = lazyList.querySelectorAll<LazyListTestEntryElement>('milo-lazy-list-test-entry');
@@ -90,10 +85,7 @@ describe('lazy_list_test', () => {
       after(fixtureCleanup);
       const list = await fixture<LazyListElement>(html`
         <milo-lazy-list .growth=${100} style="height: 100px;">
-          ${new Array(100).fill(0).map(() => html`
-            <milo-lazy-list-test-entry>
-            </milo-lazy-list-test-entry>
-          `)}
+          ${new Array(100).fill(0).map(() => html` <milo-lazy-list-test-entry> </milo-lazy-list-test-entry> `)}
         </milo-lazy-list>
       `);
 

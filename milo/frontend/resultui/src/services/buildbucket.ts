@@ -16,11 +16,13 @@ import { PrpcClient } from '@chopsui/prpc-client';
 
 import { cached, CacheOption } from '../libs/cached_fn';
 
+/* eslint-disable max-len */
 /**
  * Manually coded type definition and classes for buildbucket services.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
  * source: https://chromium.googlesource.com/infra/luci/luci-go/+/ea9b54c38d87a4813576454fac9ac868bab8d9bc/buildbucket/proto/builds_service.proto
  */
+/* eslint-enable max-len */
 
 export const enum Trinary {
   Unset = 'UNSET',
@@ -104,7 +106,7 @@ export enum BuildStatus {
 }
 
 export interface BuildInput {
-  readonly properties: {[key: string]: unknown};
+  readonly properties: { [key: string]: unknown };
   readonly gitilesCommit?: GitilesCommit;
   readonly gerritChanges?: GerritChange[];
   readonly experiments?: string[];
@@ -126,7 +128,7 @@ export interface GerritChange {
 }
 
 export interface BuildOutput {
-  readonly properties: {[key: string]: unknown};
+  readonly properties: { [key: string]: unknown };
   readonly gitilesCommit?: GitilesCommit;
   readonly logs: Log[];
 }
@@ -156,7 +158,7 @@ export interface BuildInfra {
 
 export interface BuildInfraBuildbucket {
   readonly serviceConfigRevision: string;
-  readonly requestedProperties: {[key: string]: unknown};
+  readonly requestedProperties: { [key: string]: unknown };
   readonly requestedDimensions: RequestedDimension[];
   readonly hostname: string;
 }
@@ -176,7 +178,6 @@ export interface BuildInfraSwarming {
   readonly taskDimensions: readonly RequestedDimension[];
   readonly botDimensions?: StringPair[];
   readonly caches: readonly BuildInfraSwarmingCacheEntry[];
-  readonly containment: Containment;
 }
 
 export interface StringPair {
@@ -189,10 +190,6 @@ export interface BuildInfraSwarmingCacheEntry {
   readonly path: string;
   readonly waitForWarmCache: string;
   readonly envVar: string;
-}
-
-export interface Containment {
-  //TODO(weiweilin): implement
 }
 
 export interface BuildInfraLogDog {
@@ -241,7 +238,7 @@ export interface ScheduleBuildRequest {
   requestId?: string;
   templateBuildId?: string;
   builder?: BuilderID;
-  experiments?: {[key: string]: boolean};
+  experiments?: { [key: string]: boolean };
   properties?: {};
   gitilesCommit?: GitilesCommit;
   gerritChanges?: GerritChange[];
@@ -263,43 +260,26 @@ export class BuildsService {
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({host, accessToken});
-    this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(BUILDS_SERVICE, method, message),
-      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
-    );
+    const client = new PrpcClient({ host, accessToken });
+    this.cachedCallFn = cached((method: string, message: object) => client.call(BUILDS_SERVICE, method, message), {
+      key: (method, message) => `${method}-${JSON.stringify(message)}`,
+    });
   }
 
   async getBuild(req: GetBuildRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'GetBuild',
-      req,
-    ) as Build;
+    return (await this.cachedCallFn(cacheOpt, 'GetBuild', req)) as Build;
   }
 
   async searchBuilds(req: SearchBuildsRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'SearchBuilds',
-      req,
-    ) as SearchBuildsResponse;
+    return (await this.cachedCallFn(cacheOpt, 'SearchBuilds', req)) as SearchBuildsResponse;
   }
 
   async cancelBuild(req: CancelBuildRequest) {
-    return await this.cachedCallFn(
-      CacheOption.NoCache,
-      'CancelBuild',
-      req,
-    ) as Build;
+    return (await this.cachedCallFn(CacheOption.NoCache, 'CancelBuild', req)) as Build;
   }
 
   async scheduleBuild(req: ScheduleBuildRequest) {
-    return await this.cachedCallFn(
-      CacheOption.NoCache,
-      'ScheduleBuild',
-      req,
-    ) as Build;
+    return (await this.cachedCallFn(CacheOption.NoCache, 'ScheduleBuild', req)) as Build;
   }
 }
 
@@ -320,18 +300,14 @@ export class BuildersService {
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({host, accessToken});
+    const client = new PrpcClient({ host, accessToken });
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call('buildbucket.v2.builders', method, message),
-      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
+      { key: (method, message) => `${method}-${JSON.stringify(message)}` }
     );
   }
 
   async getBuilder(req: GetBuilderRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'GetBuilder',
-      req,
-    ) as BuilderItem;
+    return (await this.cachedCallFn(cacheOpt, 'GetBuilder', req)) as BuilderItem;
   }
 }

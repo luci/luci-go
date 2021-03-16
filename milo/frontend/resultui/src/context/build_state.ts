@@ -88,10 +88,8 @@ export class BuildState {
 
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
-    // tslint:disable: no-unused-expression
     this.relatedBuilds;
     this.queryBlamelistResIterFns;
-    // tslint:enable: no-unused-expression
   }
 
   private buildQueryTime = 0;
@@ -113,14 +111,12 @@ export class BuildState {
     //
     // If we record the query time instead, no other code will need to read
     // or update the query time.
-    const cacheOpt = this.buildQueryTime < this.timestamp
-      ? CacheOption.ForceRefresh
-      : CacheOption.Cached;
+    const cacheOpt = this.buildQueryTime < this.timestamp ? CacheOption.ForceRefresh : CacheOption.Cached;
     this.buildQueryTime = this.timestamp;
 
     const req: GetBuildRequest = this.buildId
-      ? {id: this.buildId, fields: '*'}
-      : {builder: this.builderId, buildNumber: this.buildNum!, fields: '*'};
+      ? { id: this.buildId, fields: '*' }
+      : { builder: this.builderId, buildNumber: this.buildNum!, fields: '*' };
 
     return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt));
   }
@@ -144,31 +140,36 @@ export class BuildState {
       // the commit/gitiles/ buildsets, and we don't need to ask Buildbucket
       // twice.
       .filter((b) => !b.startsWith('commit/git/'))
-      .map((b) => this.appState.buildsService!.searchBuilds({
-        predicate: {tags: [{key: 'buildset', value: b}]},
-        fields: '*',
-        pageSize: 1000,
-      }).then((res) => res.builds));
+      .map((b) =>
+        this.appState
+          .buildsService!.searchBuilds({
+            predicate: { tags: [{ key: 'buildset', value: b }] },
+            fields: '*',
+            pageSize: 1000,
+          })
+          .then((res) => res.builds)
+      );
 
-    return fromPromise(Promise.all(buildsPromises).then((buildArrays) => {
-      const buildMap = new Map<string, Build>();
-      for (const builds of buildArrays) {
-        for (const build of builds){
-          // Filter out duplicate builds by overwriting them.
-          buildMap.set(build.id, build);
+    return fromPromise(
+      Promise.all(buildsPromises).then((buildArrays) => {
+        const buildMap = new Map<string, Build>();
+        for (const builds of buildArrays) {
+          for (const build of builds) {
+            // Filter out duplicate builds by overwriting them.
+            buildMap.set(build.id, build);
+          }
         }
-      }
-      return [...buildMap.values()]
-        .sort((b1, b2) => {
+        return [...buildMap.values()].sort((b1, b2) => {
           if (b1.id.length === b2.id.length) {
             return b1.id.localeCompare(b2.id);
           }
           return b1.id.length - b2.id.length;
         });
-    }));
+      })
+    );
   }
 
-  @computed({keepAlive: true})
+  @computed({ keepAlive: true })
   get relatedBuilds(): readonly BuildExt[] | null {
     if (this.isDisposed || this.relatedBuildReq.state !== FULFILLED) {
       return null;
@@ -176,9 +177,12 @@ export class BuildState {
     return this.relatedBuildReq.value.map((build) => new BuildExt(build));
   }
 
-  private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport=false) {
+  private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
     if (!this.appState.milo || !this.build) {
-      return async function*() { await Promise.race([]); };
+      // eslint-disable-next-line require-yield
+      return async function* () {
+        await Promise.race([]);
+      };
     }
     let req: QueryBlamelistRequest = {
       gitilesCommit,
@@ -190,7 +194,7 @@ export class BuildState {
       let res: QueryBlamelistResponse;
       do {
         res = await milo.queryBlamelist(req);
-        req = {...req, pageToken: res.nextPageToken};
+        req = { ...req, pageToken: res.nextPageToken };
         yield res;
       } while (res.nextPageToken);
     }
@@ -205,7 +209,7 @@ export class BuildState {
     return getGitilesRepoURL(this.build.associatedGitilesCommit);
   }
 
-  @computed({keepAlive: true})
+  @computed({ keepAlive: true })
   get queryBlamelistResIterFns() {
     if (this.isDisposed || !this.build) {
       return [];
@@ -217,7 +221,7 @@ export class BuildState {
     });
   }
 
-  @computed({keepAlive: true})
+  @computed({ keepAlive: true })
   private get builder$() {
     // We should not merge this with the if statement below because no other
     // observables should be accessed when this.isDisposed is set to true.
@@ -229,7 +233,7 @@ export class BuildState {
     if (!this.appState.buildersService || !builderId) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.buildersService.getBuilder({id: builderId}));
+    return fromPromise(this.appState.buildersService.getBuilder({ id: builderId }));
   }
 
   @computed
