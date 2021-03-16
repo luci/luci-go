@@ -101,7 +101,7 @@ func TestFetchActiveRuns(t *testing.T) {
 					ID:     rid,
 					Status: run.Status_RUNNING,
 					Mode:   run.DryRun,
-					CLs:    []common.CLID{1, 2},
+					CLs:    common.CLIDs{1, 2},
 				},
 				&run.RunCL{
 					ID:  1,

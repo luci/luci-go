@@ -267,7 +267,7 @@ func TestRunBuilder(t *testing.T) {
 				EVersion:   1,
 				CreateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				UpdateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
-				CLs:        []common.CLID{cl1.ID, cl2.ID},
+				CLs:        common.CLIDs{cl1.ID, cl2.ID},
 				Status:     run.Status_PENDING,
 
 				CreationOperationID: rb.run.CreationOperationID,

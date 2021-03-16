@@ -146,11 +146,6 @@ func (d *DiagnosticServer) GetRun(ctx context.Context, req *diagnosticpb.GetRunR
 		return nil, err
 	}
 
-	cls := make([]int64, len(r.CLs))
-	for i, id := range r.CLs {
-		cls[i] = int64(id)
-	}
-
 	resp = &diagnosticpb.GetRunResponse{
 		Id:            req.GetRun(),
 		Eversion:      int64(r.EVersion),
@@ -162,7 +157,7 @@ func (d *DiagnosticServer) GetRun(ctx context.Context, req *diagnosticpb.GetRunR
 		EndTime:       timestamppb.New(r.EndTime),
 		Owner:         string(r.Owner),
 		ConfigGroupId: string(r.ConfigGroupID),
-		Cls:           cls,
+		Cls:           common.CLIDsAsInt64s(r.CLs),
 		Submission:    r.Submission,
 
 		Events: events,
