@@ -164,6 +164,30 @@
       },
       "revId": "9c57de5e48f55b64a4e869c37a1c39e64a1bebc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11ef6a39_0ac09a57",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T03:52:12Z",
+      "side": 1,
+      "message": "sgtm. I\u0027ll have a follow-up CL to model this.",
+      "parentUuid": "01a4f731_e98419b7",
+      "range": {
+        "startLine": 127,
+        "startChar": 39,
+        "endLine": 127,
+        "endChar": 64
+      },
+      "revId": "9c57de5e48f55b64a4e869c37a1c39e64a1bebc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
