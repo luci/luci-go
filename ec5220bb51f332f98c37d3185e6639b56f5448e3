@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8c70824_82a30fce",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T02:01:42Z",
+      "side": 1,
+      "message": "Thanks for the tip. I\u0027ll follow that in the future CLs.",
+      "parentUuid": "699e0dae_eb85d2c9",
+      "revId": "ec5220bb51f332f98c37d3185e6639b56f5448e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ab14d7a4_bd824756",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-03-15T17:32:28Z",
       "side": 1,
       "message": "should we suggest to add description? or do you plan send a PSA? \n\ni.e. how will various non-chromium infra teams learn about this?",
+      "revId": "ec5220bb51f332f98c37d3185e6639b56f5448e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "137b4d26_a9bd1f2e",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T02:01:42Z",
+      "side": 1,
+      "message": "I\u0027ll highlight this in the release note.\nSeparate to that, I also plan to write a documentation to explain the non-obvious features of the new build page (e.g. builder description, short keys, default tab configuration, etc) and highlight some improvements over the old build page.\n\nIdeally I\u0027d like to get that done by the end of this quarter.",
+      "parentUuid": "ab14d7a4_bd824756",
       "revId": "ec5220bb51f332f98c37d3185e6639b56f5448e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
