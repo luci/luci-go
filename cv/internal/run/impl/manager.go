@@ -140,6 +140,16 @@ type triageResult struct {
 		events eventbox.Events
 		cls    common.CLIDs
 	}
+	readyForSubmissionEvents eventbox.Events
+	clSubmittedEvents        struct {
+		events eventbox.Events
+		cls    common.CLIDs
+	}
+	submissionCompletedEvents struct {
+		events  eventbox.Events
+		result  eventpb.SubmissionResult
+		attempt int32
+	}
 	cqdVerificationCompletedEvents eventbox.Events
 	nextReadyEventTime             time.Time
 }
@@ -170,6 +180,20 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	case *eventpb.Event_ClUpdated:
 		tr.clUpdatedEvents.events = append(tr.clUpdatedEvents.events, item)
 		tr.clUpdatedEvents.cls = append(tr.clUpdatedEvents.cls, common.CLID(e.GetClUpdated().GetClid()))
+	case *eventpb.Event_ReadyForSubmission:
+		tr.readyForSubmissionEvents = append(tr.readyForSubmissionEvents, item)
+	case *eventpb.Event_ClSubmitted:
+		tr.clSubmittedEvents.events = append(tr.clSubmittedEvents.events, item)
+		tr.clSubmittedEvents.cls = append(tr.clSubmittedEvents.cls, common.CLID(e.GetClSubmitted().GetClid()))
+	case *eventpb.Event_SubmissionCompleted:
+		tr.submissionCompletedEvents.events = append(tr.submissionCompletedEvents.events, item)
+		switch sc := e.GetSubmissionCompleted(); {
+		case sc.GetAttempt() > tr.submissionCompletedEvents.attempt:
+			tr.submissionCompletedEvents.attempt = sc.GetAttempt()
+			tr.submissionCompletedEvents.result = sc.GetResult()
+		case sc.GetAttempt() == tr.submissionCompletedEvents.attempt:
+			panic(fmt.Errorf("received more than 1 SubmissionCompleted result for same submission attempt %d ", sc.GetAttempt()))
+		}
 	case *eventpb.Event_CqdVerificationCompleted:
 		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
 	default:
@@ -179,7 +203,28 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 
 func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) ([]eventbox.Transition, error) {
 	var transitions []eventbox.Transition
-	if tr.cqdVerificationCompletedEvents != nil {
+	if len(tr.clSubmittedEvents.events) > 0 {
+		res, err := rm.handler.OnCLSubmitted(ctx, rs, tr.clSubmittedEvents.cls)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.clSubmittedEvents.events, transitions)
+	}
+	if sc := tr.submissionCompletedEvents; len(sc.events) > 0 {
+		res, err := rm.handler.OnSubmissionCompleted(ctx, rs, sc.result, sc.attempt)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, sc.events, transitions)
+	}
+	if len(tr.readyForSubmissionEvents) > 0 {
+		res, err := rm.handler.OnReadyForSubmission(ctx, rs)
+		if err != nil {
+			return nil, err
+		}
+		rs, transitions = applyResult(res, tr.readyForSubmissionEvents, transitions)
+	}
+	if len(tr.cqdVerificationCompletedEvents) > 0 {
 		res, err := rm.handler.OnCQDVerificationCompleted(ctx, rs)
 		if err != nil {
 			return nil, err

@@ -17,10 +17,22 @@ package handler
 import (
 	"context"
 
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-// OnCQDVerificationCompleted implements Handler interface.
-func (*Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*Result, error) {
+// OnReadyForSubmission implements Handler interface.
+func (*Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
+	panic("implement")
+}
+
+// OnCLSubmitted implements Handler interface.
+func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
+	panic("implement")
+}
+
+// OnSubmissionCompleted implements Handler interface.
+func (*Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sr eventpb.SubmissionResult, attempt int32) (*Result, error) {
 	panic("implement")
 }

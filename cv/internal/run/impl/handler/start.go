@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-// Start starts a Run.
+// Start implements Handler interface.
 func (*Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
