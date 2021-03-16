@@ -74,16 +74,18 @@ export interface QueryBlamelistResponse {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface GetCurrentUserRequest {}
 
-const SERVICE = 'luci.milo.v1.MiloInternal';
-
 export class MiloInternal {
+  private static SERVICE = 'luci.milo.v1.MiloInternal';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(accessToken: string) {
     const client = new PrpcClient({ host: '', accessToken });
-    this.cachedCallFn = cached((method: string, message: object) => client.call(SERVICE, method, message), {
-      key: (method, message) => `${method}-${JSON.stringify(message)}`,
-    });
+    this.cachedCallFn = cached(
+      (method: string, message: object) => client.call(MiloInternal.SERVICE, method, message),
+      {
+        key: (method, message) => `${method}-${JSON.stringify(message)}`,
+      }
+    );
   }
 
   async queryBlamelist(req: QueryBlamelistRequest, cacheOpt = CacheOption.Cached) {
