@@ -16,6 +16,24 @@
       "message": "lgtm but it is probably racy AF (but you documented it, so it\u0027s all good)",
       "revId": "8fc8fef63eee99836eefc742cae06e518c70c8e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "462e0dd7_ffa91e2f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:14:33Z",
+      "side": 1,
+      "message": "yep, that\u0027s why i didn\u0027t add it earlier, but I have a use case now.",
+      "parentUuid": "bff74d9c_5fb094b5",
+      "revId": "8fc8fef63eee99836eefc742cae06e518c70c8e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
