@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bff74d9c_5fb094b5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-16T01:11:05Z",
+      "side": 1,
+      "message": "lgtm but it is probably racy AF (but you documented it, so it\u0027s all good)",
+      "revId": "8fc8fef63eee99836eefc742cae06e518c70c8e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
