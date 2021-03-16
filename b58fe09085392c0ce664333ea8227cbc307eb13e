@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07e9e7d0_c78752a0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T03:24:42Z",
+      "side": 1,
+      "message": "Sorry I know this CL contains a lot of changes.\nBut I really want to get this CL in first so I don\u0027t have to rebase it constantly.\n",
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "973d6492_bb77a4f1",
+        "filename": "milo/frontend/resultui/.eslintrc.json",
+        "patchSetId": 8
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T03:24:42Z",
+      "side": 1,
+      "message": "80 is definitely too short for HTML templates.\n100 could be enough but I find it very limiting.",
+      "range": {
+        "startLine": 4,
+        "startChar": 59,
+        "endLine": 4,
+        "endChar": 76
+      },
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "066a618e_0169289a",
+        "filename": "milo/frontend/resultui/.eslintrc.json",
+        "patchSetId": 8
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T03:24:42Z",
+      "side": 1,
+      "message": "this is technically not allowed in go/tsstyle.\nBut it is really useful for documenting functions when\n1. there\u0027s a default dummy function.\ne.g.\nclass A {\n  onClicked \u003d (_e: MouseEvent) \u003d\u003e {};\n  // or\n  onClicked: (e: MouseEvent) \u003d\u003e void \u003d () \u003d\u003e {};\n}\n\n2. we don\u0027t need to use some of the params\nlet callback: (param1: string, param2: string) \u003d\u003e string;\ncallback \u003d (_param1, param2) \u003d\u003e param2;",
+      "range": {
+        "startLine": 5,
+        "startChar": 96,
+        "endLine": 5,
+        "endChar": 100
+      },
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
