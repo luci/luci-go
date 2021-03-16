@@ -303,8 +303,11 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 						case err != nil:
 							return errors.Annotate(err, "failed to deduplicate request ID: %d", b.ID).Err()
 						default:
-							// TODO(crbug/1042991): Fetch existing build and deduplicate instead of erring.
-							return errors.Reason("request ID reuse: %s", reqID).Err()
+							b.ID = r.BuildID
+							if err := datastore.Get(ctx, b); err != nil {
+								return errors.Annotate(err, "failed to fetch deduplicated build: %d", b.ID).Err()
+							}
+							return nil
 						}
 					}
 
