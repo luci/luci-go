@@ -27,6 +27,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/diagnostic"
@@ -179,6 +180,31 @@ func (t *Test) EarliestCreatedRunOf(ctx context.Context, lProject string) *run.R
 		}
 	}
 	return earliest
+}
+
+// LoadCL returns CL entity or nil if not exists.
+func (t *Test) LoadCL(ctx context.Context, id common.CLID) *changelist.CL {
+	cl := &changelist.CL{ID: id}
+	switch err := datastore.Get(ctx, cl); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil
+	case err != nil:
+		panic(err)
+	default:
+		return cl
+	}
+}
+
+// LoadGerritCL returns CL entity or nil if not exists.
+func (t *Test) LoadGerritCL(ctx context.Context, gHost string, gChange int64) *changelist.CL {
+	switch cl, err := changelist.MustGobID(gHost, gChange).Get(ctx); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil
+	case err != nil:
+		panic(err)
+	default:
+		return cl
+	}
 }
 
 // LogPhase emits easy to recognize log like
