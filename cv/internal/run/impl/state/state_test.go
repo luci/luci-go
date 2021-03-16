@@ -68,30 +68,5 @@ func TestRemoveRunFromCLs(t *testing.T) {
 				UpdateTime:     now,
 			})
 		})
-		Convey("Skips updating CL if Run doesn't exist", func() {
-			t := clock.Now(ctx).UTC()
-			err := datastore.Put(ctx, &changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.MakeRunIDs("infra/999-2-cafecafe"),
-				EVersion:       9,
-				UpdateTime:     t,
-			})
-			So(err, ShouldBeNil)
-
-			ct.Clock.Add(1 * time.Hour)
-			err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return s.RemoveRunFromCLs(ctx)
-			}, nil)
-			So(err, ShouldBeNil)
-
-			cl := changelist.CL{ID: 1}
-			So(datastore.Get(ctx, &cl), ShouldBeNil)
-			So(cl, ShouldResemble, changelist.CL{
-				ID:             1,
-				IncompleteRuns: common.MakeRunIDs("infra/999-2-cafecafe"),
-				EVersion:       9,
-				UpdateTime:     t,
-			})
-		})
 	})
 }

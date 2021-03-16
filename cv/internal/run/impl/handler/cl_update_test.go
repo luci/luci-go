@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
@@ -141,9 +140,7 @@ func TestOnCLUpdated(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
 			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.SideEffectFn(ctx), ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
-			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 		Convey("Cancels Run on removed trigger", func() {
 			newCI := gf.CI(2, gf.PS(5), gf.CQ(0))
@@ -153,9 +150,7 @@ func TestOnCLUpdated(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.State.Run.Status, ShouldEqual, run.Status_CANCELLED)
 			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.SideEffectFn(ctx), ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
-			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
 		})
 	})
 }
