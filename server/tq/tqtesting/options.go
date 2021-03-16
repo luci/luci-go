@@ -36,17 +36,31 @@ func (stopWhenDrained) isOption() {}
 // StopAfterTask will stop the scheduler after it finishes executing a task of
 // the given task class ID.
 func StopAfterTask(taskClassID string) RunOption {
-	return stopAfterTask{taskClassID}
+	return StopAfter(func(t *Task) bool { return t.Class == taskClassID })
 }
 
-type stopAfterTask struct {
-	taskClassID string
+// StopAfter will stop the scheduler if the given function returns true,
+// given the just finished task.
+func StopAfter(f func(t *Task) bool) RunOption {
+	return stopAfter{f}
 }
 
-func (stopAfterTask) isOption() {}
+type stopAfter struct {
+	examine func(t *Task) bool
+}
+
+func (stopAfter) isOption() {}
 
 // StopBeforeTask will stop the scheduler if the next task to be executed has
 // the given task class ID.
+//
+// The same caveats of StopBefore also apply for StopBeforeTask.
+func StopBeforeTask(taskClassID string) RunOption {
+	return StopBefore(func(t *Task) bool { return t.Class == taskClassID })
+}
+
+// StopBefore will stop the scheduler if the given function returns true,
+// given the next task to be executed.
 //
 // If such next task has specified ETA, StopBeforeTask does NOT provide any
 // guarantee about what `clock.Now` returns by the time Run stops.
@@ -54,15 +68,15 @@ func (stopAfterTask) isOption() {}
 // It is naturally racy if there are other goroutines that submit tasks
 // concurrently. In this situation there may be a different next task (by ETA)
 // when Run stops.
-func StopBeforeTask(taskClassID string) RunOption {
-	return stopBeforeTask{taskClassID}
+func StopBefore(f func(t *Task) bool) RunOption {
+	return stopBefore{f}
 }
 
-type stopBeforeTask struct {
-	taskClassID string
+type stopBefore struct {
+	examine func(t *Task) bool
 }
 
-func (stopBeforeTask) isOption() {}
+func (stopBefore) isOption() {}
 
 // ParallelExecute instructs the scheduler to call executor's Execute method
 // in a separate goroutine instead of serially in Run.
