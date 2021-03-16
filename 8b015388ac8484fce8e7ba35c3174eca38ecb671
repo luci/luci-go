@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "66c5b9c6_33c4eb61",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T22:35:02Z",
+      "side": 1,
+      "message": "Good point. Actually, that wasn\u0027t a conscious decision.\n\nThat being said, I still want to ship the current implementation. Because\n1. If an user is interested in a step in one builder, it\u0027s likely they will also be interested in the step with the same name in another builder.\nFor instance, in the bugs linked in the CL. Users want to pin \"lookup GN args\" and \"gs_util repo_state\". If those steps are in other builders as well, they are likely to be interested in them too.\n\n2. The implementation is simpler than supporting builder/project scoped configuration. We can always change it to a builder/project scoped configuration later if there are user requests for it.",
+      "parentUuid": "5c008015_61334139",
+      "range": {
+        "startLine": 63,
+        "startChar": 29,
+        "endLine": 63,
+        "endChar": 57
+      },
+      "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "51f15a1d_fba534a8",
         "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
         "patchSetId": 6
@@ -54,6 +78,30 @@
       "writtenOn": "2021-03-16T04:26:04Z",
       "side": 1,
       "message": "Maybe explicitly set it to true?\n\nWhat happens if you don\u0027t have this statement? I guess line 216 already write the settings?",
+      "range": {
+        "startLine": 190,
+        "startChar": 51,
+        "endLine": 190,
+        "endChar": 64
+      },
+      "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc26b255_bb4a306d",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T22:35:02Z",
+      "side": 1,
+      "message": "The point is keep the pin setting fresh.\nSo I think it\u0027s more correct to set the value to the same step again.\n\nL213 is triggered on click.\nWithout this statement, the pin setting will be deleted after 4 weeks.\nWith this statement, if user visit the same build page within 4 weeks, the pin won\u0027t be reset.",
+      "parentUuid": "51f15a1d_fba534a8",
       "range": {
         "startLine": 190,
         "startChar": 51,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "73f28b74_8383a97b",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T22:35:02Z",
+      "side": 1,
+      "message": "single quote can\u0027t be used in html template.",
+      "parentUuid": "672ddbf2_ec582d66",
+      "range": {
+        "startLine": 204,
+        "startChar": 17,
+        "endLine": 204,
+        "endChar": 18
+      },
+      "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "efb690ff_ce588053",
@@ -100,6 +172,30 @@
       "writtenOn": "2021-03-16T04:26:04Z",
       "side": 1,
       "message": "As I comment above, we can make this comment clearer.",
+      "range": {
+        "startLine": 214,
+        "startChar": 19,
+        "endLine": 214,
+        "endChar": 38
+      },
+      "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2bc89cbd_6223a25b",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T22:35:02Z",
+      "side": 1,
+      "message": "added a bit more explanation.",
+      "parentUuid": "efb690ff_ce588053",
       "range": {
         "startLine": 214,
         "startChar": 19,
