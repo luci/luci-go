@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9d23236_74570e16",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "No. Moved.",
+      "parentUuid": "b23da015_17b34261",
+      "range": {
+        "startLine": 44,
+        "startChar": 4,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ab886035_d78f4834",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-16T06:21:50Z",
       "side": 1,
       "message": "Nit: createArtifact or createArtifactMetadata?",
+      "range": {
+        "startLine": 276,
+        "startChar": 4,
+        "endLine": 276,
+        "endChar": 25
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e9d0ccf_d20662be",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "State is the term used in create_artifact.go.",
+      "parentUuid": "ab886035_d78f4834",
       "range": {
         "startLine": 276,
         "startChar": 4,
@@ -72,6 +120,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "28426771_85b9790b",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "It\u0027s shorter and arguably cheaper? BufferWrite() just calls append(), and futex is just a single atomic read in userspace, when there is no contention.\nhttps://github.com/googleapis/google-cloud-go/blob/spanner/v1.15.0/spanner/transaction.go#L793",
+      "parentUuid": "cd1c77ff_ee776a0f",
+      "range": {
+        "startLine": 284,
+        "startChar": 2,
+        "endLine": 293,
+        "endChar": 3
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8cfbb3e8_c64b821f",
         "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
         "patchSetId": 3
@@ -83,6 +155,30 @@
       "writtenOn": "2021-03-16T06:21:50Z",
       "side": 1,
       "message": "nit: transaction",
+      "range": {
+        "startLine": 304,
+        "startChar": 13,
+        "endLine": 304,
+        "endChar": 24
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd2abbe7_61cb7d3b",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cfbb3e8_c64b821f",
       "range": {
         "startLine": 304,
         "startChar": 13,
@@ -106,6 +202,30 @@
       "writtenOn": "2021-03-16T06:21:50Z",
       "side": 1,
       "message": "Failed to write artifact to Spanner?",
+      "range": {
+        "startLine": 305,
+        "startChar": 22,
+        "endLine": 305,
+        "endChar": 53
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b1aa031_cccddd01",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "233d3b6d_903ab50a",
       "range": {
         "startLine": 305,
         "startChar": 22,
@@ -141,6 +261,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b80d3ed5_3e9f5596",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "I don\u0027t think switch is better in this case?",
+      "parentUuid": "b1e8127b_69bb37c5",
+      "range": {
+        "startLine": 297,
+        "startChar": 0,
+        "endLine": 306,
+        "endChar": 80
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "265b37c0_f2f0bb8f",
         "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
         "patchSetId": 3
@@ -152,6 +296,30 @@
       "writtenOn": "2021-03-16T06:21:50Z",
       "side": 1,
       "message": "Why not use the original err?",
+      "range": {
+        "startLine": 322,
+        "startChar": 42,
+        "endLine": 322,
+        "endChar": 75
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1c26c47_32d45adc",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "There is nothing RDB clients can do w/o the detailed error info from RBE CAS. The max size limit on CAS is an internal information that is never exposed to ResultSink. If this happens, we need to fix our binary, change our proto, or ask RBE-CAS team to change their limit.",
+      "parentUuid": "265b37c0_f2f0bb8f",
       "range": {
         "startLine": 322,
         "startChar": 42,
@@ -185,6 +353,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d46bea6_c9d67956",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41a8271b_a8534381",
+      "range": {
+        "startLine": 275,
+        "startChar": 0,
+        "endLine": 335,
+        "endChar": 1
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f5d97f83_159af5a3",
@@ -198,6 +390,30 @@
       "writtenOn": "2021-03-16T06:21:50Z",
       "side": 1,
       "message": "I feel weird about this: it doesn\u0027t seem to be a configuration to me. \n\nHow about adding casClient to recorderServer instead?",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 10
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e14bf3c9_08e0c7c6",
+        "filename": "resultdb/internal/services/recorder/recorder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T15:53:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5d97f83_159af5a3",
       "range": {
         "startLine": 53,
         "startChar": 1,
