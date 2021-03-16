@@ -26,6 +26,167 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b33429bc_cbdb28eb",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-16T05:37:34Z",
+      "side": 1,
+      "message": "no need this to be after \u0027-S ...\u0027 flag?",
+      "range": {
+        "startLine": 26,
+        "startChar": 24,
+        "endLine": 26,
+        "endChar": 33
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4069adc_2cd1851e",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-16T05:37:34Z",
+      "side": 1,
+      "message": "could you use crbug.com/1188473 instead?",
+      "range": {
+        "startLine": 46,
+        "startChar": 19,
+        "endLine": 46,
+        "endChar": 26
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b397179_6ac36b6f",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-16T05:37:34Z",
+      "side": 1,
+      "message": "this can be private function?",
+      "range": {
+        "startLine": 49,
+        "startChar": 23,
+        "endLine": 49,
+        "endChar": 28
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1c8adef_7b4e7d52",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-16T05:37:34Z",
+      "side": 1,
+      "message": "\u0027!\u003d 1\u0027?",
+      "range": {
+        "startLine": 53,
+        "startChar": 14,
+        "endLine": 53,
+        "endChar": 18
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b62eec9_efaf0ee5",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-16T05:37:34Z",
+      "side": 1,
+      "message": "crbug.com/1188473 ?",
+      "range": {
+        "startLine": 72,
+        "startChar": 19,
+        "endLine": 72,
+        "endChar": 26
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f702dc39_7463d715",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-16T05:37:34Z",
+      "side": 1,
+      "message": "I think you can use ShouldBeEqual for string",
+      "range": {
+        "startLine": 62,
+        "startChar": 13,
+        "endLine": 62,
+        "endChar": 27
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db103bf8_18cc894f",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-16T05:37:34Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 75,
+        "startChar": 13,
+        "endLine": 75,
+        "endChar": 27
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "940ca6a4_87a2ddd3",
         "filename": "client/cmd/swarming/lib/reproduce_test.go",
         "patchSetId": 2
