@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ab4cd0a4_fe787abd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T01:29:04Z",
+      "side": 1,
+      "message": "The  `if len(changedCLs) \u003e 0` check. Otherwise, it\u0027s possible we run `datastore.Put(ctx, changedCLs)` where `changedCLs` is an empty slice.",
+      "parentUuid": "e791eaee_40048db5",
+      "revId": "e7f98d0cafd6cf4b5ddfc4d82c763b5457438707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8f2736e4_a63a89fd",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -48,6 +66,30 @@
       "writtenOn": "2021-03-16T01:13:05Z",
       "side": 1,
       "message": "IIUC: this is transaction -\u003e so there will be exactly one time when *all* CLs have incomplete Run. Thus, no need for changedCLs at all.\n\nRight?",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 127,
+        "endChar": 23
+      },
+      "revId": "e7f98d0cafd6cf4b5ddfc4d82c763b5457438707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6c75386_5d50a302",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T01:29:04Z",
+      "side": 1,
+      "message": "You are right. In reality, there\u0027s no need and `changedCLs` should always equal to `cls` unless something goes wrong. But I didn\u0027t hold this assumption when I implement this function and I didn\u0027t want to do redundant work (i.e. re-save the CLs that is loaded without the Run). So it\u0027s implemented this way.",
+      "parentUuid": "0219fd2e_97d7299c",
       "range": {
         "startLine": 118,
         "startChar": 1,
