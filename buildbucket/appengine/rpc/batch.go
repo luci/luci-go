@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -40,8 +41,26 @@ type pyBatchResponse struct {
 	err error
 }
 
+// pctKey is the key to a traffic split percentage in [0, 100] in the context.
+var pctKey = "pct"
+
+// WithTrafficSplit returns a new context with the given traffic split.
+func WithTrafficSplit(c context.Context, pct int) context.Context {
+	return context.WithValue(c, &pctKey, pct)
+}
+
+// getTrafficSplit returns the traffic split percentage in the given context.
+func getTrafficSplit(c context.Context) int {
+	pct := c.Value(&pctKey)
+	if pct == nil {
+		return 0
+	}
+	return pct.(int)
+}
+
 // Batch handles a batch request. Implements pb.BuildsServer.
 func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
+	pct := getTrafficSplit(ctx)
 	res := &pb.BatchResponse{}
 	if len(req.GetRequests()) == 0 {
 		return res, nil
@@ -58,8 +77,14 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	for i, r := range req.Requests {
 		switch r.Request.(type) {
 		case *pb.BatchRequest_Request_ScheduleBuild:
-			pyIndices = append(pyIndices, i)
-			pyBatchReq.Requests = append(pyBatchReq.Requests, r)
+			if mathrand.Intn(ctx, 100) < pct {
+				logDetails(ctx, "Batch (ScheduleBuild)", r)
+				goIndices = append(goIndices, i)
+				goBatchReq = append(goBatchReq, r)
+			} else {
+				pyIndices = append(pyIndices, i)
+				pyBatchReq.Requests = append(pyBatchReq.Requests, r)
+			}
 		case *pb.BatchRequest_Request_GetBuild, *pb.BatchRequest_Request_SearchBuilds, *pb.BatchRequest_Request_CancelBuild:
 			goIndices = append(goIndices, i)
 			goBatchReq = append(goBatchReq, r)
@@ -111,6 +136,10 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 				case *pb.BatchRequest_Request_CancelBuild:
 					ret, e := b.CancelBuild(ctx, r.GetCancelBuild())
 					response.Response = &pb.BatchResponse_Response_CancelBuild{CancelBuild: ret}
+					err = e
+				case *pb.BatchRequest_Request_ScheduleBuild:
+					ret, e := b.ScheduleBuild(ctx, r.GetScheduleBuild())
+					response.Response = &pb.BatchResponse_Response_ScheduleBuild{ScheduleBuild: ret}
 					err = e
 				default:
 					panic(fmt.Sprintf("attempted to handle unexpected request type %T", r.Request))
