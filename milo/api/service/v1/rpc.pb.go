@@ -158,7 +158,9 @@ type QueryBlamelistRequest struct {
 	// The Gitiles commit of the build.
 	//
 	// This defines the end_commit of the blamelist.
-	// It should be set to the input Gitiles commit of the build.
+	// It should be set to the output Gitiles commit of the build.
+	// Input Gitiles commit should be used when output gitiles commit is not
+	// available.
 	GitilesCommit *proto.GitilesCommit `protobuf:"bytes,1,opt,name=gitiles_commit,json=gitilesCommit,proto3" json:"gitiles_commit,omitempty"`
 	// The context builder of the blamelist.
 	//
