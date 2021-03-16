@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e791eaee_40048db5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:13:05Z",
+      "side": 1,
+      "message": "Hm, I can\u0027t find where 😞",
+      "revId": "e7f98d0cafd6cf4b5ddfc4d82c763b5457438707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f2736e4_a63a89fd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:13:05Z",
+      "side": 1,
+      "message": "lgtm % 2 things not clear to me.",
+      "revId": "e7f98d0cafd6cf4b5ddfc4d82c763b5457438707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0219fd2e_97d7299c",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T01:13:05Z",
+      "side": 1,
+      "message": "IIUC: this is transaction -\u003e so there will be exactly one time when *all* CLs have incomplete Run. Thus, no need for changedCLs at all.\n\nRight?",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 127,
+        "endChar": 23
+      },
+      "revId": "e7f98d0cafd6cf4b5ddfc4d82c763b5457438707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
