@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-// OnCLUpdated decides whether to cancel a Run based on changes to the CLs.
+// OnCLUpdated implements Handler interface.
 func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
