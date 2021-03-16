@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2aa8a21_6b29f82c",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-16T18:30:58Z",
+      "side": 1,
+      "message": "If partially fail, I assume rdb will retry creating all the artifacts, right? And in retry, what will rbe response to those have been uploaded successfully before?\n\nI mean should we create Artifacts for those have been successfully uploaded, so when rdb retries, L305 will filter them out?",
+      "range": {
+        "startLine": 314,
+        "startChar": 11,
+        "endLine": 314,
+        "endChar": 30
+      },
+      "revId": "b64780c755538494013ecb5ff32642bf2e00ea85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ddeddbae_df5bf106",
+        "filename": "resultdb/internal/services/recorder/recorder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-16T18:30:58Z",
+      "side": 1,
+      "message": "Naming nit: rbeConn?",
+      "range": {
+        "startLine": 74,
+        "startChar": 70,
+        "endLine": 74,
+        "endChar": 77
+      },
+      "revId": "b64780c755538494013ecb5ff32642bf2e00ea85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
