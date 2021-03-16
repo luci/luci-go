@@ -86,6 +86,24 @@
       "parentUuid": "ab14d7a4_bd824756",
       "revId": "ec5220bb51f332f98c37d3185e6639b56f5448e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4364d8d_33ac53fa",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-16T02:05:39Z",
+      "side": 1,
+      "message": "if you send this to luci-announce, then sgtm",
+      "parentUuid": "137b4d26_a9bd1f2e",
+      "revId": "ec5220bb51f332f98c37d3185e6639b56f5448e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
