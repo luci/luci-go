@@ -48,7 +48,7 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
     showSucceededSteps: true,
     showDebugLogs: false,
   }),
-  inputPropLineFoldTime:  Object.freeze({}),
+  inputPropLineFoldTime: Object.freeze({}),
   outputPropLineFoldTime: Object.freeze({}),
   askForFeedback: true,
   defaultBuildPageTabName: 'build-overview',
@@ -68,7 +68,7 @@ export class UserConfigsStore {
     this.deleteStaleKeys(this.userConfigs.outputPropLineFoldTime, fourWeeksAgo);
   }
 
-  private deleteStaleKeys(records: {[key: string]: number}, beforeTimestamp: number) {
+  private deleteStaleKeys(records: { [key: string]: number }, beforeTimestamp: number) {
     Object.entries(records)
       .filter(([, timestamp]) => timestamp < beforeTimestamp)
       .forEach(([key]) => delete records[key]);

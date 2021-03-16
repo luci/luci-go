@@ -37,7 +37,12 @@ class SafeHrefAttributeCommitter extends AttributeCommitter {
  * Otherwise identical to DefaultTemplateProcessor.
  */
 class SafeHrefTemplateProcessor extends DefaultTemplateProcessor {
-  handleAttributeExpressions(element: Element, name: string, strings: string[], options: RenderOptions): ReadonlyArray<Part> {
+  handleAttributeExpressions(
+    element: Element,
+    name: string,
+    strings: string[],
+    options: RenderOptions
+  ): ReadonlyArray<Part> {
     if (name === 'href') {
       const committer = new SafeHrefAttributeCommitter(element, name, strings);
       return committer.parts;

@@ -17,7 +17,6 @@ import { html } from 'lit-html';
 
 import { Link } from '../models/link';
 
-
 /**
  * Renders a Link object.
  */
@@ -28,10 +27,7 @@ export class LinkElement extends LitElement {
 
   protected render() {
     return html`
-      <a href=${this.link.url}
-        aria-label=${this.link.ariaLabel}
-        target=${this.target || ''}
-      >${this.link.label}</a>
+      <a href=${this.link.url} aria-label=${this.link.ariaLabel} target=${this.target || ''}>${this.link.label}</a>
     `;
   }
 }

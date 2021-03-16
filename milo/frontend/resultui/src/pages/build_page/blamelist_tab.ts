@@ -28,6 +28,9 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import { getGitilesRepoURL } from '../../libs/build_utils';
 import { GitCommit } from '../../services/milo_internal';
 
+@customElement('milo-blamelist-tab')
+@consumeBuildState
+@consumeAppState
 export class BlamelistTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref buildState!: BuildState;
@@ -39,8 +42,11 @@ export class BlamelistTabElement extends MobxLitElement {
 
   @computed
   private get queryBlamelistResIter() {
-    const iterFn = this.buildState.queryBlamelistResIterFns[this.appState.selectedBlamelistPinIndex]
-      || async function*() { yield Promise.race([]); };
+    const iterFn =
+      this.buildState.queryBlamelistResIterFns[this.appState.selectedBlamelistPinIndex] ||
+      async function* () {
+        yield Promise.race([]);
+      };
 
     return iterFn();
   }
@@ -72,12 +78,14 @@ export class BlamelistTabElement extends MobxLitElement {
   @computed
   private get blamelistSummary() {
     if (this.revisionRange) {
-        return `This build included ${this.commits.length} new revisions from ${this.revisionRange}`;
+      return `This build included ${this.commits.length} new revisions from ${this.revisionRange}`;
     }
     if (this.commits.length > 0) {
-        return `This build included over ${this.commits.length} new revisions up to ${this.selectedBlamelistPin!.id.substring(0, 12)}`;
+      return `This build included over ${
+        this.commits.length
+      } new revisions up to ${this.selectedBlamelistPin!.id.substring(0, 12)}`;
     }
-    return ``;
+    return '';
   }
 
   @computed
@@ -99,7 +107,7 @@ export class BlamelistTabElement extends MobxLitElement {
         this.commits = [];
         this.loadNextPage();
       },
-      {fireImmediately: true},
+      { fireImmediately: true }
     );
   }
   disconnectedCallback() {
@@ -119,13 +127,12 @@ export class BlamelistTabElement extends MobxLitElement {
       this.endOfPage = !iter.value.nextPageToken;
     }
     this.isLoading = false;
-  }
+  };
 
   private allEntriesWereExpanded = false;
   private toggleAllEntries(expand: boolean) {
     this.allEntriesWereExpanded = expand;
-    this.shadowRoot!.querySelectorAll<CommitEntryElement>('milo-commit-entry')
-      .forEach((e) => e.expanded = expand);
+    this.shadowRoot!.querySelectorAll<CommitEntryElement>('milo-commit-entry').forEach((e) => (e.expanded = expand));
   }
   private readonly toggleAllEntriesByHotkey = () => this.toggleAllEntries(!this.allEntriesWereExpanded);
 
@@ -133,7 +140,7 @@ export class BlamelistTabElement extends MobxLitElement {
     if (this.buildState.build && !this.selectedBlamelistPin) {
       return html`
         <div id="no-blamelist">
-          Blamelist is not available because the build has no associated gitiles commit.<br>
+          Blamelist is not available because the build has no associated gitiles commit.<br />
         </div>
       `;
     }
@@ -144,72 +151,82 @@ export class BlamelistTabElement extends MobxLitElement {
           <label for="repo-select">Repo:</label>
           <select
             id="repo-select"
-            @input=${(e: InputEvent) => this.appState.selectedBlamelistPinIndex = Number((e.target as HTMLOptionElement).value)}
+            @input=${(e: InputEvent) =>
+              (this.appState.selectedBlamelistPinIndex = Number((e.target as HTMLOptionElement).value))}
           >
-            ${this.buildState.build?.blamelistPins.map((pin, i) => html`
-            <option value=${i} ?selected=${this.appState.selectedBlamelistPinIndex === i}>${getGitilesRepoURL(pin)}</option>
-            `)}
+            ${this.buildState.build?.blamelistPins.map(
+              (pin, i) => html`
+                <option value=${i} ?selected=${this.appState.selectedBlamelistPinIndex === i}>
+                  ${getGitilesRepoURL(pin)}
+                </option>
+              `
+            )}
           </select>
         </div>
         <milo-hotkey key="x" .handler=${this.toggleAllEntriesByHotkey} title="press x to expand/collapse all entries">
-          <mwc-button
-            class="action-button"
-            dense unelevated
-            @click=${() => this.toggleAllEntries(true)}
-          >Expand All</mwc-button>
-          <mwc-button
-            class="action-button"
-            dense unelevated
-            @click=${() => this.toggleAllEntries(false)}
-          >Collapse All</mwc-button>
+          <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllEntries(true)}>
+            Expand All
+          </mwc-button>
+          <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllEntries(false)}>
+            Collapse All
+          </mwc-button>
         </milo-hotkey>
       </div>
       <div id="main">
-        <div id="blamelist-summary" class="list-entry" style=${styleMap({'display': this.blamelistSummary ? '' : 'none'})}>
+        <div
+          id="blamelist-summary"
+          class="list-entry"
+          style=${styleMap({ display: this.blamelistSummary ? '' : 'none' })}
+        >
           <span>${this.blamelistSummary}</span>
-          <a href="${this.gitilesLink}" target="_blank" style=${styleMap({'display': this.gitilesLink ? '' : 'none'})}>
+          <a href="${this.gitilesLink}" target="_blank" style=${styleMap({ display: this.gitilesLink ? '' : 'none' })}>
             [view in Gitiles]
           </a>
-          <span id="load" style=${styleMap({'display': this.blamelistSummary && !this.endOfPage ? '' : 'none'})}>
+          <span id="load" style=${styleMap({ display: this.blamelistSummary && !this.endOfPage ? '' : 'none' })}>
             <span
               id="load-more"
-              style=${styleMap({'display': this.isLoading ? 'none' : ''})}
+              style=${styleMap({ display: this.isLoading ? 'none' : '' })}
               @click=${this.loadNextPage}
             >
               Load More
             </span>
-            <span style=${styleMap({'display': this.isLoading ? '' : 'none'})}>
+            <span style=${styleMap({ display: this.isLoading ? '' : 'none' })}>
               Loading <milo-dot-spinner></milo-dot-spinner>
             </span>
           </span>
         </div>
-        <hr class="divider" style=${styleMap({'display': this.blamelistSummary ? '' : 'none'})}>
-        ${this.commits.map((commit, i) => html`
-        <milo-commit-entry
-          .number=${i + 1}
-          .repoUrl=${this.selectedRepoURL}
-          .commit=${commit}
-          .expanded=${this.commits.length === 1}
-        ></milo-commit-entry>
-        `)}
+        <hr class="divider" style=${styleMap({ display: this.blamelistSummary ? '' : 'none' })} />
+        ${this.commits.map(
+          (commit, i) => html`
+            <milo-commit-entry
+              .number=${i + 1}
+              .repoUrl=${this.selectedRepoURL}
+              .commit=${commit}
+              .expanded=${this.commits.length === 1}
+            ></milo-commit-entry>
+          `
+        )}
         <div
           class="list-entry"
-          style=${styleMap({'display': this.endOfPage && this.commits.length === 0 ? '' : 'none'})}
+          style=${styleMap({ display: this.endOfPage && this.commits.length === 0 ? '' : 'none' })}
         >
           No blamelist.
         </div>
-        <hr class="divider" style=${styleMap({'display': !this.endOfPage && this.commits.length === 0 ? 'none' : ''})}>
+        <hr
+          class="divider"
+          style=${styleMap({ display: !this.endOfPage && this.commits.length === 0 ? 'none' : '' })}
+        />
         <div class="list-entry">
           <span>Showing ${this.commits.length} commits.</span>
-          <span id="load" style=${styleMap({'display': this.endOfPage ? 'none' : ''})}>
+          <span id="load" style=${styleMap({ display: this.endOfPage ? 'none' : '' })}>
             <span
               id="load-more"
-              style=${styleMap({'display': this.isLoading ? 'none' : ''})}
+              style=${styleMap({ display: this.isLoading ? 'none' : '' })}
               @click=${this.loadNextPage}
             >
               Load More
             </span>
-            <span style=${styleMap({'display': this.isLoading ? '' : 'none'})}>
+            <span style=${styleMap({ display: this.isLoading ? '' : 'none' })}>
               Loading <milo-dot-spinner></milo-dot-spinner>
             </span>
           </span>
@@ -242,13 +259,13 @@ export class BlamelistTabElement extends MobxLitElement {
     #repo-select {
       display: inline-block;
       width: 450px;
-      padding: .27rem .5rem;
+      padding: 0.27rem 0.5rem;
       font-size: 1rem;
       color: var(--light-text-color);
       background-clip: padding-box;
       border: 1px solid var(--divider-color);
-      border-radius: .25rem;
-      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+      border-radius: 0.25rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
       text-overflow: ellipsis;
     }
 
@@ -281,9 +298,3 @@ export class BlamelistTabElement extends MobxLitElement {
     }
   `;
 }
-
-customElement('milo-blamelist-tab')(
-  consumeBuildState(
-    consumeAppState(BlamelistTabElement),
-  ),
-);

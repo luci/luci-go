@@ -25,8 +25,8 @@ const LEFT_RIGHT_ARROW = '\u2194';
 
 @customElement('milo-property-viewer')
 export class PropertyViewerElement extends MobxLitElement {
-  @observable.ref properties!: {[key: string]: unknown};
-  @observable.ref propLineFoldTime!: {[key: string]: number};
+  @observable.ref properties!: { [key: string]: unknown };
+  @observable.ref propLineFoldTime!: { [key: string]: number };
   saveFoldTime = () => {};
 
   @computed private get formattedValue() {
@@ -38,7 +38,7 @@ export class PropertyViewerElement extends MobxLitElement {
   }
 
   private editorOptions: EditorConfiguration = {
-    mode: {name: 'javascript', json: true},
+    mode: { name: 'javascript', json: true },
     readOnly: true,
     scrollbarStyle: 'null',
     matchBrackets: true,
@@ -59,7 +59,9 @@ export class PropertyViewerElement extends MobxLitElement {
         // code mirror clones the element and all event handlers are dropped.
         // We can't use the 'gutterClick' event because clicking on the widget
         // unfolds the region but doesn't trigger the 'gutterClick' event.
-        const connectionObserver = document.createElement('milo-connection-observer') as ConnectionObserverElement<string>;
+        const connectionObserver = document.createElement(
+          'milo-connection-observer'
+        ) as ConnectionObserverElement<string>;
         connectionObserver.setAttribute('event-type', 'folded-root-lvl-prop');
         connectionObserver.setAttribute('data', JSON.stringify(line));
         connectionObserver.innerHTML = `<span class="CodeMirror-foldmarker">${LEFT_RIGHT_ARROW}<span>`;

@@ -22,32 +22,22 @@ describe('utils', () => {
       const url = new ChainableURL('https://www.google.com/path?key1=val1');
 
       it('should set search params correctly', async () => {
-        const newUrlStr = url
-          .withSearchParam('key2', 'val2')
-          .withSearchParam('key3', 'val3')
-          .toString();
+        const newUrlStr = url.withSearchParam('key2', 'val2').withSearchParam('key3', 'val3').toString();
         assert.equal(newUrlStr, 'https://www.google.com/path?key1=val1&key2=val2&key3=val3');
       });
 
       it('should append search params correctly', async () => {
-        const newUrlStr = url
-          .withSearchParam('key2', 'val2')
-          .withSearchParam('key3', 'val3')
-          .toString();
+        const newUrlStr = url.withSearchParam('key2', 'val2').withSearchParam('key3', 'val3').toString();
         assert.equal(newUrlStr, 'https://www.google.com/path?key1=val1&key2=val2&key3=val3&key2=val2&key3=val3');
       });
 
       it('should override search params correctly', async () => {
-        const newUrlStr = url
-          .withSearchParam('key1', 'newVal1', true)
-          .toString();
+        const newUrlStr = url.withSearchParam('key1', 'newVal1', true).toString();
         assert.equal(newUrlStr, 'https://www.google.com/path?key1=newVal1&key2=val2&key3=val3&key2=val2&key3=val3');
       });
 
       it('should override search params with multiple values correctly', async () => {
-        const newUrlStr = url
-          .withSearchParam('key2', 'newVal2', true)
-          .toString();
+        const newUrlStr = url.withSearchParam('key2', 'newVal2', true).toString();
         assert.equal(newUrlStr, 'https://www.google.com/path?key1=newVal1&key2=newVal2&key3=val3&key3=val3');
       });
     });
