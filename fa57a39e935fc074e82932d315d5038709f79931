@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f722736e_7332a944",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-16T23:22:54Z",
+      "side": 1,
+      "message": "I\u0027ve tested via `go test -run TestStartQueryIterator -race -count 100000 -failfast` and it shouldn\u0027t be flaky any more.",
+      "revId": "fa57a39e935fc074e82932d315d5038709f79931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

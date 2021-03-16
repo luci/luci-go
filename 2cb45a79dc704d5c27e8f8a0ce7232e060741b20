@@ -39,6 +39,30 @@
       },
       "revId": "2cb45a79dc704d5c27e8f8a0ce7232e060741b20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6036408c_c0d88d1f",
+        "filename": "gae/service/datastore/queryiterator.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-16T23:22:54Z",
+      "side": 1,
+      "message": "Chatted offline and a fixed has been done.",
+      "parentUuid": "b5c03381_ab333725",
+      "range": {
+        "startLine": 37,
+        "startChar": 66,
+        "endLine": 37,
+        "endChar": 79
+      },
+      "revId": "2cb45a79dc704d5c27e8f8a0ce7232e060741b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
