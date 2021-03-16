@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ff8dc92_df827a12",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:27:44Z",
+      "side": 1,
+      "message": "sorry for delay, Vadim.",
+      "revId": "a73cc69f724c676ce8ac600baffbb68751ce0bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2acb94c6_37925d2d",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 615,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:27:44Z",
+      "side": 1,
+      "message": "thanks for comment. Weird though.",
+      "range": {
+        "startLine": 615,
+        "startChar": 3,
+        "endLine": 615,
+        "endChar": 53
+      },
+      "revId": "a73cc69f724c676ce8ac600baffbb68751ce0bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e91c703f_e3a6d04b",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 690,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:27:44Z",
+      "side": 1,
+      "message": "surprised we don\u0027t have this yet in code.",
+      "range": {
+        "startLine": 690,
+        "startChar": 0,
+        "endLine": 690,
+        "endChar": 91
+      },
+      "revId": "a73cc69f724c676ce8ac600baffbb68751ce0bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc17a879_b9ababbb",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 547,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:27:44Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 546,
+        "startChar": 0,
+        "endLine": 547,
+        "endChar": 57
+      },
+      "revId": "a73cc69f724c676ce8ac600baffbb68751ce0bb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
