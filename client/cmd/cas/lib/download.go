@@ -15,11 +15,9 @@
 package lib
 
 import (
-	"bytes"
 	"context"
 	"crypto"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -63,7 +61,7 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
 			c.Flags.StringVar(&c.dir, "dir", "", "Directory to download tree.")
 			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump download stats to json file.")
-			c.Flags.StringVar(&c.kvs, "kvs-file", "", "Cache file for small files.")
+			c.Flags.StringVar(&c.kvs, "kvs-dir", "", "Cache dir for small files.")
 			return &c
 		},
 	}
@@ -225,47 +223,29 @@ func copySmallFilesFromCache(kvs *embeddedkvs.KVS, smallFiles map[string][]*clie
 func cacheSmallFiles(kvs *embeddedkvs.KVS, outputs []*client.TreeOutput) error {
 	var eg errgroup.Group
 
-	bufferPool := sync.Pool{
-		New: func() interface{} {
-			return &bytes.Buffer{}
-		},
-	}
 	// limit the number of concurrent I/O operations.
 	ch := make(chan struct{}, runtime.NumCPU())
 
-	for _, output := range outputs {
-		output := output
+	return kvs.SetMulti(func(set func(key string, value []byte) error) error {
+		for _, output := range outputs {
+			output := output
 
-		eg.Go(func() error {
-			buf := bufferPool.Get().(*bytes.Buffer)
-			buf.Reset()
-			defer bufferPool.Put(buf)
+			eg.Go(func() error {
+				b, err := func() ([]byte, error) {
+					ch <- struct{}{}
+					defer func() { <-ch }()
+					return ioutil.ReadFile(output.Path)
+				}()
 
-			b, err := func() ([]byte, error) {
-				ch <- struct{}{}
-				defer func() { <-ch }()
-
-				f, err := os.Open(output.Path)
 				if err != nil {
-					return nil, errors.Annotate(err, "failed to open file").Err()
+					return errors.Annotate(err, "failed to read file: %s", output.Path).Err()
 				}
-				defer f.Close()
+				return set(output.Digest.Hash, b)
+			})
+		}
 
-				if _, err := io.Copy(buf, f); err != nil {
-					return nil, errors.Annotate(err, "failed to read file").Err()
-				}
-
-				return buf.Bytes(), nil
-			}()
-
-			if err != nil {
-				return err
-			}
-			return kvs.Set(output.Digest.Hash, b)
-		})
-	}
-
-	return eg.Wait()
+		return eg.Wait()
+	})
 }
 
 func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs *embeddedkvs.KVS, outputs map[digest.Digest]*client.TreeOutput) error {
