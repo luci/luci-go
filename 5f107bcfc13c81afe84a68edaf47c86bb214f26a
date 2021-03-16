@@ -84,6 +84,23 @@
       "message": "(I couldn\u0027t add a test for this within this package, due to circular imports)",
       "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06ffa1d2_e90e1529",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-16T21:11:15Z",
+      "side": 1,
+      "message": "Also, I don\u0027t really understand this line; what does it do and is there another way of doing the same thing? :-/",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
