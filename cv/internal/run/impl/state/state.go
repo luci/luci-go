@@ -115,16 +115,12 @@ func (rs *RunState) RemoveRunFromCLs(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	changedCLs := cls[:0]
 	for _, cl := range cls {
-		changed := cl.Mutate(ctx, func(cl *changelist.CL) bool {
+		cl.Mutate(ctx, func(cl *changelist.CL) bool {
 			return cl.IncompleteRuns.DelSorted(rs.Run.ID)
 		})
-		if changed {
-			changedCLs = append(changedCLs, cl)
-		}
 	}
-	if err := datastore.Put(ctx, changedCLs); err != nil {
+	if err := datastore.Put(ctx, cls); err != nil {
 		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
 	}
 	return nil

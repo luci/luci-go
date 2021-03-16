@@ -48,6 +48,9 @@ func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
 	res := &Result{
 		State: rs.ShallowCopy(),
 		SideEffectFn: func(ctx context.Context) error {
+			if err := rs.RemoveRunFromCLs(ctx); err != nil {
+				return err
+			}
 			return prjmanager.NotifyRunFinished(ctx, rs.Run.ID)
 		},
 	}
