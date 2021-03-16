@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c58303a5_03f58925",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-16T05:42:30Z",
+      "side": 1,
+      "message": "I think the first feature can support only this.",
+      "range": {
+        "startLine": 72,
+        "startChar": 52,
+        "endLine": 72,
+        "endChar": 68
+      },
+      "revId": "4c72c6adeb8ecfba0951142065111c079fc4a059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
