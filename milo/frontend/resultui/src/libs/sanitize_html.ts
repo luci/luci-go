@@ -39,5 +39,7 @@ domPurify.addHook('afterSanitizeAttributes', (node) => {
  * Sanitizes the input HTML string and renders it.
  */
 export function sanitizeHTML(html: string) {
-  return unsafeHTML(domPurify.sanitize(html, {ADD_ATTR: ['target', 'artifact-id', 'inv-level'], ADD_TAGS: ['text-artifact']}));
+  return unsafeHTML(
+    domPurify.sanitize(html, { ADD_ATTR: ['target', 'artifact-id', 'inv-level'], ADD_TAGS: ['text-artifact'] })
+  );
 }

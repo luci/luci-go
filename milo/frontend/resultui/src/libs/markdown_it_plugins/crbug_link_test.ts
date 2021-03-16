@@ -23,9 +23,7 @@ crbug/123 crbug.com/234 not a link CRBUG.COM/345
 crbug/proj/456 crbug/proj/657not_a_link
 `;
 
-const md = MarkdownIt('zero', {linkify: true})
-  .enable('linkify')
-  .use(crbugLink);
+const md = MarkdownIt('zero', { linkify: true }).enable('linkify').use(crbugLink);
 
 describe('crbug_link', () => {
   it('can render links correctly', async () => {
@@ -35,19 +33,19 @@ describe('crbug_link', () => {
     const anchors = ele.querySelectorAll('a');
     assert.equal(anchors.length, 4);
 
-    const anchor1 =  anchors.item(0);
+    const anchor1 = anchors.item(0);
     assert.equal(anchor1.href, 'https://crbug.com/123');
     assert.equal(anchor1.text, 'crbug/123');
 
-    const anchor2 =  anchors.item(1);
+    const anchor2 = anchors.item(1);
     assert.equal(anchor2.href, 'https://crbug.com/234');
     assert.equal(anchor2.text, 'crbug.com/234');
 
-    const anchor3 =  anchors.item(2);
+    const anchor3 = anchors.item(2);
     assert.equal(anchor3.href, 'https://crbug.com/345');
     assert.equal(anchor3.text, 'CRBUG.COM/345');
 
-    const anchor4 =  anchors.item(3);
+    const anchor4 = anchors.item(3);
     assert.equal(anchor4.href, 'https://crbug.com/proj/456');
     assert.equal(anchor4.text, 'crbug/proj/456');
   });

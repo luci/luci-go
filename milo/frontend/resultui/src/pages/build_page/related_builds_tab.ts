@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { css,customElement, html } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { observable } from 'mobx';
 
@@ -27,6 +27,9 @@ import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { BuildExt } from '../../models/build_ext';
 
+@customElement('milo-related-builds-tab')
+@consumeBuildState
+@consumeAppState
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref buildState!: BuildState;
@@ -44,26 +47,15 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     if (this.buildState.relatedBuilds.length === 0) {
       return this.renderNoRelatedBuilds();
     }
-    return html`
-      ${this.renderBuildsetInfo()}
-      ${this.renderRelatedBuildsTable()}
-    `;
+    return html` ${this.renderBuildsetInfo()} ${this.renderRelatedBuildsTable()} `;
   }
 
   private renderLoadingBar() {
-    return html`
-      <div id="load">
-        Loading <milo-dot-spinner></milo-dot-spinner>
-      </div>
-    `;
+    return html` <div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div> `;
   }
 
   private renderNoRelatedBuilds() {
-    return html`
-      <div id="no-related-builds">
-        No other builds found with the same buildset.
-      </div>
-    `;
+    return html` <div id="no-related-builds">No other builds found with the same buildset.</div> `;
   }
 
   private renderBuildsetInfo() {
@@ -73,10 +65,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`
       <h3>Other builds with the same buildset</h3>
       <ul>
-      ${repeat(
-        this.buildState.build.buildSets,
-        (item, _) => html`<li>${item}</li>`,
-      )}
+        ${repeat(this.buildState.build.buildSets, (item, _) => html`<li>${item}</li>`)}
       </ul>
     `;
   }
@@ -98,25 +87,24 @@ export class RelatedBuildsTabElement extends MobxLitElement {
           <th>Duration</th>
           <th>Summary</th>
         </tr>
-        ${repeat(
-          this.buildState.relatedBuilds,
-          (relatedBuild, _) => this.renderRelatedBuildRow(relatedBuild),
-        )}
+        ${repeat(this.buildState.relatedBuilds, (relatedBuild, _) => this.renderRelatedBuildRow(relatedBuild))}
       </table>
     `;
   }
 
   private renderRelatedBuildRow(build: BuildExt) {
-    return html `
+    return html`
       <tr>
         <td>${build.builder.project}</td>
         <td>${build.builder.bucket}</td>
         <td><a href=${getURLForBuilder(build.builder)}>${build.builder.builder}</a></td>
         <td>${this.renderBuildLink(build)}</td>
-        <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown'}</td>
+        <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">
+          ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown'}
+        </td>
         <td>${build.createTime.toFormat(NUMERIC_TIME_FORMAT)}</td>
         <td>${displayDuration(build.pendingDuration) || 'N/A'}</td>
-        <td>${build.executionDuration && displayDuration(build.executionDuration) || 'N/A'}</td>
+        <td>${(build.executionDuration && displayDuration(build.executionDuration)) || 'N/A'}</td>
         <td>${renderMarkdown(build.summaryMarkdown || '')}</td>
       </tr>
     `;
@@ -172,9 +160,3 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     }
   `;
 }
-
-customElement('milo-related-builds-tab')(
-  consumeBuildState(
-    consumeAppState(RelatedBuildsTabElement),
-  ),
-);

@@ -15,12 +15,14 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 
-
 @customElement('milo-not-found-page')
 export class NotFoundPageElement extends MobxLitElement {
   protected render() {
     return html`
-      <div id="not-found-message">We couldn't find the page you were looking for.<div>
+      <div id="not-found-message">
+        We couldn't find the page you were looking for.
+        <div></div>
+      </div>
     `;
   }
 

@@ -43,22 +43,30 @@ export class TestNode {
 
   // The properties belongs to the elided node
   // (descendants with no siblings are elided into this node).
-  @computed get path() { return this.elidedNode.node.unelidedPath; }
-  @computed get name() { return this.elidedNode.name; }
-  @computed get children(): readonly TestNode[] { return this.elidedNode.node.unelidedChildren; }
+  @computed get path() {
+    return this.elidedNode.node.unelidedPath;
+  }
+  @computed get name() {
+    return this.elidedNode.name;
+  }
+  @computed get children(): readonly TestNode[] {
+    return this.elidedNode.node.unelidedChildren;
+  }
   @computed private get elidedNode() {
     let name = this.unelidedName;
 
     // If the node has a single child, elide it into its parent.
-    let node: TestNode = this;
+    let node = this; // eslint-disable-line @typescript-eslint/no-this-alias
     while (node.unelidedChildrenMap.size === 1) {
       node = node.unelidedChildrenMap.values().next().value;
       name += node.unelidedName;
     }
-    return {name, node};
+    return { name, node };
   }
 
-  static newRoot() { return new TestNode('', ''); }
+  static newRoot() {
+    return new TestNode('', '');
+  }
   private constructor(prefix: string, private readonly unelidedName: string) {
     this.unelidedPath = prefix + unelidedName;
   }

@@ -29,7 +29,7 @@ export class LogElement extends LitElement {
   protected render() {
     return html`
       <a href=${this.log.viewUrl} target="_blank">${this.log.name}</a>
-      <span style=${styleMap({'display': ['stdout', 'stderr'].indexOf(this.log.name) !== -1 ? '' : 'none'})}>
+      <span style=${styleMap({ display: ['stdout', 'stderr'].indexOf(this.log.name) !== -1 ? '' : 'none' })}>
         [<a href=${getLogdogRawUrl(this.log.url)} target="_blank">raw</a>]
       </span>
     `;

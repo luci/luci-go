@@ -41,7 +41,7 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
     super.connectedCallback();
     when(
       () => !!this.appState.accessToken,
-      () => Router.go(this.redirectUri),
+      () => Router.go(this.redirectUri)
     );
   }
 
@@ -49,9 +49,10 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
     if (!this.appState.gAuth) {
       return html`
         <div id="sign-in-message">
-          You must sign in to see anything useful, but Google signin failed to initialize.<br>
+          You must sign in to see anything useful, but Google signin failed to initialize.<br />
           Please ensure that cookies from <i>[*.]accounts.google.com</i> are not blocked.
-        <div>
+          <div></div>
+        </div>
       `;
     }
     return html`
@@ -59,7 +60,8 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
         You must
         <span id="sign-in-link" @click=${() => this.appState.gAuth?.signIn()}>sign in</span>
         to see anything useful.
-      <div>
+        <div></div>
+      </div>
     `;
   }
 
@@ -71,6 +73,6 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
     #sign-in-link {
       cursor: pointer;
       text-decoration: underline;
-    };
+    }
   `;
 }
