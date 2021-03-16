@@ -61,6 +61,9 @@ func TestCreatesSingularRun(t *testing.T) {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
+		So(ct.LoadProject(ctx, lProject).State.GetComponents(), ShouldHaveLength, 1)
+		So(ct.LoadProject(ctx, lProject).State.GetComponents()[0].GetPruns(), ShouldHaveLength, 1)
+		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeTrue)
 
 		ct.LogPhase(ctx, "User cancels the Run")
 		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
@@ -76,7 +79,8 @@ func TestCreatesSingularRun(t *testing.T) {
 		})
 
 		/////////////////////////    Verify    ////////////////////////////////
-		p := ct.LoadProject(ctx, lProject)
-		So(p.State.GetPcls(), ShouldBeEmpty)
+		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
+		So(ct.LoadProject(ctx, lProject).State.GetPcls(), ShouldBeEmpty)
+		So(ct.LoadProject(ctx, lProject).State.GetComponents(), ShouldBeEmpty)
 	})
 }
