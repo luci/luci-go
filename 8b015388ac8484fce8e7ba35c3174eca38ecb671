@@ -16,6 +16,98 @@
       "message": "Demo: https://weiweilin-4-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6835/steps?succeeded\u003dtrue\u0026debug\u003dfalse",
       "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c008015_61334139",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-16T04:26:04Z",
+      "side": 1,
+      "message": "I think it is not super obvious that we pin the step base on the step name only (there may be many ways to implement the pinning: step name or (builder/step name) or (build-step name). So I think we want to make it clear in the tooltip that it will also apply to a step with the same name in different builder).\n\nIs there a specific reason you want to apply the settings to a global step name, rather than only to the step of the current builder?",
+      "range": {
+        "startLine": 63,
+        "startChar": 29,
+        "endLine": 63,
+        "endChar": 57
+      },
+      "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51f15a1d_fba534a8",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-16T04:26:04Z",
+      "side": 1,
+      "message": "Maybe explicitly set it to true?\n\nWhat happens if you don\u0027t have this statement? I guess line 216 already write the settings?",
+      "range": {
+        "startLine": 190,
+        "startChar": 51,
+        "endLine": 190,
+        "endChar": 64
+      },
+      "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "672ddbf2_ec582d66",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-16T04:26:04Z",
+      "side": 1,
+      "message": "Single quote?",
+      "range": {
+        "startLine": 204,
+        "startChar": 17,
+        "endLine": 204,
+        "endChar": 18
+      },
+      "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "efb690ff_ce588053",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-16T04:26:04Z",
+      "side": 1,
+      "message": "As I comment above, we can make this comment clearer.",
+      "range": {
+        "startLine": 214,
+        "startChar": 19,
+        "endLine": 214,
+        "endChar": 38
+      },
+      "revId": "8b015388ac8484fce8e7ba35c3174eca38ecb671",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
