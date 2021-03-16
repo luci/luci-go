@@ -20,6 +20,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "223ba501_134661b6",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "1. obsolete.\n2. Inserter doesn\u0027t have to be public, and I wouldn\u0027t even add a doc beyond \"implements Client for production\"",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 74
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "6fbebf4e_f19d7cfb",
         "filename": "cv/internal/bq/bq.go",
         "patchSetId": 10
@@ -55,6 +78,133 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "76880692_16b40e8a",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "I recomment to install whatever implements the `Client` interface which you defined above, so that\u0027d be \u0026Inserter{} in prod and some fake in test.\nThe upside of this is that it\u0027d allow to define the fake inside a subpackage (e.g. cv/internal/bq/bqfake), though I don\u0027t see any reason to do this right, since fake will be really simple -- just buffer rows into a slice protected by an RWMutex.",
+      "parentUuid": "6fbebf4e_f19d7cfb",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f4faf30_e82adac7",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "nit: i\u0027d name it cloudProject (to avoid any confusion with luciProject or gerritProject)",
+      "range": {
+        "startLine": 50,
+        "startChar": 38,
+        "endLine": 50,
+        "endChar": 47
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "33cac294_6cd36045",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "is this what Token server uses? TBH, I had expected BQ scope here.",
+      "range": {
+        "startLine": 51,
+        "startChar": 71,
+        "endLine": 51,
+        "endChar": 87
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07d0f266_a9a47c9e",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "move doc to the interface. Leave here just \"implements Client interface\" or nothing at all.",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48ee7a40_ca5ef044",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "nit: to me, this is exactly what \"synchronously\" means. I\u0027d not keep it, but if it helps you, I don\u0027t mind.",
+      "range": {
+        "startLine": 80,
+        "startChar": 3,
+        "endLine": 80,
+        "endChar": 72
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4bc2dff5_2b1c4c82",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "definitely redundant",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 51
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1dfd9515_bd99e3db",
         "filename": "cv/internal/bq/bq.go",
         "patchSetId": 10
@@ -83,6 +233,24 @@
       "writtenOn": "2021-03-16T23:51:37Z",
       "side": 1,
       "message": "Yeah, I think that would be useful though depends on how we implement the bq export workflow in RM. From the API point of view, I think the API should expose it as an input so that the caller can specify it if it is needed.",
+      "parentUuid": "1dfd9515_bd99e3db",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df97e053_4529e42a",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "Definitely need it. Let\u0027s add a separate operationID as a parameter to the SendRow. If not \"\", then it should be used as InsertID.",
       "parentUuid": "1dfd9515_bd99e3db",
       "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
@@ -125,6 +293,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2f3c1b27_6d181e40",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "Well, we\u0027ll need it eventually, might as well be now if it\u0027s an easy copy-pasta.",
+      "parentUuid": "8a0849e7_135715a5",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "70ba19ae_a37dbc43",
         "filename": "cv/internal/bq/mock.go",
         "patchSetId": 10
@@ -154,6 +340,70 @@
       "side": 1,
       "message": "I don\u0027t think you\u0027ll need cvtesting to test this package as it doesn\u0027t involve any other components in CV (like gerrit, config). You can just initialize context as `context.Background()`.\n\nSee: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/tree/tree_test.go;l\u003d33-35;drc\u003d79933c7e9964b364cc2490b31b5525a2ac3d0bc4",
       "parentUuid": "70ba19ae_a37dbc43",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e288fcd7_37890ca1",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "that\u0027s expected. However, this example should be removed as misleading and redundant.",
+      "parentUuid": "70ba19ae_a37dbc43",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "84b04a55_ad81d6cc",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "not necessary.",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 31,
+        "endChar": 69
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd4ae9ef_716593dd",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "make it private. Protect my mutex. Expose via \"func (f* Fake) Rows()\"\nand yes, now it\u0027s a full featured Fake, not Mock \u003d\u003d please rename.",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 21
+      },
       "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -189,6 +439,70 @@
       "side": 1,
       "message": "This is ensuring `*MockClient` has implemented Client interface since it is the Client implementation used in test.",
       "parentUuid": "06ffa1d2_e90e1529",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "910061ac_fd6cdffd",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "it tests that `MockClient` implements `Client` interface.\nComment is wrong though; `Client` must be a subset of what `MockClient` provides.\n\nAlso, remove `bq.`",
+      "parentUuid": "06ffa1d2_e90e1529",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ebdd247_05eb9e97",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "always append + see L31 + L33 comments.",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 11
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88d82415_85a03ec5",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-16T23:59:59Z",
+      "side": 1,
+      "message": "bq.Fake\n\nTreeClient is a bad example, it should be fixed, too (can you please do it?). It should be a specific fake impl, not a client (sorry!). Good example is GFake \u0026 Clock, which both expose mutation/getting of state beyond what Production API would allow.",
+      "range": {
+        "startLine": 78,
+        "startChar": 10,
+        "endLine": 78,
+        "endChar": 19
+      },
       "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
