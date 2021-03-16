@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b7d41b7_4ae30a2d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26572072_4a2ab5b0",
+      "range": {
+        "startLine": 7,
+        "startChar": 22,
+        "endLine": 7,
+        "endChar": 31
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b33429bc_cbdb28eb",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-16T05:37:34Z",
       "side": 1,
       "message": "no need this to be after \u0027-S ...\u0027 flag?",
+      "range": {
+        "startLine": 26,
+        "startChar": 24,
+        "endLine": 26,
+        "endChar": 33
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "51b27576_6e51f863",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b33429bc_cbdb28eb",
       "range": {
         "startLine": 26,
         "startChar": 24,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3101fae3_3b8575f0",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e095c309_dd1223a8",
+      "range": {
+        "startLine": 45,
+        "startChar": 57,
+        "endLine": 45,
+        "endChar": 88
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4069adc_2cd1851e",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-03-16T05:37:34Z",
       "side": 1,
       "message": "could you use crbug.com/1188473 instead?",
+      "range": {
+        "startLine": 46,
+        "startChar": 19,
+        "endLine": 46,
+        "endChar": 26
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d3bc10bd_15c9908b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4069adc_2cd1851e",
       "range": {
         "startLine": 46,
         "startChar": 19,
@@ -116,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ef4c029_5902732b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b397179_6ac36b6f",
+      "range": {
+        "startLine": 49,
+        "startChar": 23,
+        "endLine": 49,
+        "endChar": 28
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e1c8adef_7b4e7d52",
@@ -129,6 +249,30 @@
       "writtenOn": "2021-03-16T05:37:34Z",
       "side": 1,
       "message": "\u0027!\u003d 1\u0027?",
+      "range": {
+        "startLine": 53,
+        "startChar": 14,
+        "endLine": 53,
+        "endChar": 18
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05e87133_186d2c52",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1c8adef_7b4e7d52",
       "range": {
         "startLine": 53,
         "startChar": 14,
@@ -162,6 +306,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7de50d0e_a79fc3a3",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b62eec9_efaf0ee5",
+      "range": {
+        "startLine": 72,
+        "startChar": 19,
+        "endLine": 72,
+        "endChar": 26
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f702dc39_7463d715",
@@ -175,6 +343,30 @@
       "writtenOn": "2021-03-16T05:37:34Z",
       "side": 1,
       "message": "I think you can use ShouldBeEqual for string",
+      "range": {
+        "startLine": 62,
+        "startChar": 13,
+        "endLine": 62,
+        "endChar": 27
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "87c59348_e5b57095",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f702dc39_7463d715",
       "range": {
         "startLine": 62,
         "startChar": 13,
@@ -208,6 +400,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ab7d328_0ae0124c",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db103bf8_18cc894f",
+      "range": {
+        "startLine": 75,
+        "startChar": 13,
+        "endLine": 75,
+        "endChar": 27
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "940ca6a4_87a2ddd3",
@@ -221,6 +437,30 @@
       "writtenOn": "2021-03-16T05:35:36Z",
       "side": 1,
       "message": "IMO, it\u0027s too much to test flags because it\u0027s not swarming/reproduce command specific feature.",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 3
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fbf1e94_eff77d08",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-03-16T06:02:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "940ca6a4_87a2ddd3",
       "range": {
         "startLine": 53,
         "startChar": 0,
