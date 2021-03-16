@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/cmpbin"
+
 	"go.chromium.org/luci/gae/service/info"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -178,9 +179,9 @@ func TestStartQueryIterator(t *testing.T) {
 			cancel()
 			<-ctx.Done() // wait till the cancellation propagates
 
-			// When calling `cancel()`, one rawQueryResult may already be put into the itemCh.
-			// So it asserts the two possible scenarios: 1) one rawQueryResult with a followed Stop signal.
-			// 2) qi.Next() directly returns a Stop signal.
+			// This is to test the goroutine in startQueryIterator() is cancelled after the `cancel()`.
+			// So it asserts two possible scenarios: 1) qi.Next() directly returns a Stop signal.
+			// 2) qi.Next() retrieves at most one rawQueryResult and then returns a Stop signal.
 			err = qi.Next()
 			if err == nil {
 				So(qi.currentQueryResult, ShouldResemble, &rawQueryResult{
