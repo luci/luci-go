@@ -233,6 +233,8 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
           <milo-pin-toggle
             .pinned=${this.isPinned}
             title="Pin/unpin the step."
+            class="hidden-icon"
+            style=${styleMap({'visibility': this.isPinned ? 'visible' : ''})}
             @click=${(e: Event) => {
               this.configsStore.setStepPin(this.step.name, !this.isPinned);
               e.stopPropagation();
@@ -242,6 +244,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
           <milo-copy-to-clipboard
             .textToCopy=${this.step.name}
             title="Copy the step name."
+            class="hidden-icon"
             @click=${(e: Event) => e.stopPropagation()}
           ></milo-copy-to-clipboard>
           <span id="header-markdown">${renderMarkdown(this.step.header)}</span>
@@ -258,6 +261,19 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
 
     #place-holder {
       height: 24px;
+    }
+
+    #header {
+      display: inline-block;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hidden-icon {
+      visibility: hidden;
+    }
+    #header:hover .hidden-icon {
+      visibility: visible;
     }
 
     #status-indicator {
