@@ -22,6 +22,4 @@ const config: webpack.Configuration = merge(common, {
   mode: 'production',
 });
 
-// Default export is required by webpack.
-// tslint:disable-next-line: no-default-export
 export default config;

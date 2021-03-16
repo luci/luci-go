@@ -25,9 +25,11 @@ import '../dot_spinner';
 /**
  * Renders a text artifact.
  */
+@customElement('text-artifact')
+@consumeContext<'artifacts', Map<string, Artifact>>('artifacts')
 export class TextArtifactElement extends MobxLitElement {
-  @property({attribute: 'artifact-id'}) artifactID!: string;
-  @property({attribute: 'inv-level', type: Boolean}) isInvLevelArtifact = false;
+  @property({ attribute: 'artifact-id' }) artifactID!: string;
+  @property({ attribute: 'inv-level', type: Boolean }) isInvLevelArtifact = false;
   @observable.ref artifacts!: Map<string, Artifact>;
 
   @computed
@@ -51,25 +53,15 @@ export class TextArtifactElement extends MobxLitElement {
 
   protected render() {
     if (this.content === null) {
-      return html`
-      <div id="load">
-        Loading <milo-dot-spinner></milo-dot-spinner>
-      </div>
-      `;
+      return html` <div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div> `;
     }
 
     if (this.content === '') {
       const label = this.isInvLevelArtifact ? 'Inv-level artifact' : 'Artifact';
-      return html`
-        <div>
-          ${label}: <i>${this.artifactID}</i> is empty.
-        </div>
-      `;
+      return html` <div>${label}: <i>${this.artifactID}</i> is empty.</div> `;
     }
 
-    return html`
-      <pre>${this.content}</pre>
-    `;
+    return html` <pre>${this.content}</pre> `;
   }
 
   static styles = css`
@@ -81,7 +73,3 @@ export class TextArtifactElement extends MobxLitElement {
     }
   `;
 }
-
-customElement('text-artifact') (
-  consumeContext<'artifacts', Map<string, Artifact>>('artifacts')(TextArtifactElement),
-);

@@ -59,7 +59,6 @@ export const VARIANT_STATUS_ICON_MAP = Object.freeze({
   [TestVariantStatus.EXPECTED]: 'check_circle',
 });
 
-
 export const TEST_STATUS_DISPLAY_MAP = Object.freeze({
   [TestStatus.Unspecified]: 'unspecified',
   [TestStatus.Pass]: 'passed',
@@ -68,7 +67,6 @@ export const TEST_STATUS_DISPLAY_MAP = Object.freeze({
   [TestStatus.Crash]: 'crashed',
   [TestStatus.Abort]: 'aborted',
 });
-
 
 export const BUILD_STATUS_DISPLAY_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'scheduled',

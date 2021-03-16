@@ -18,7 +18,11 @@ import { customElement, html, LitElement, property } from 'lit-element';
 
 import { consumeContext, provideContext } from './context';
 
+@customElement('milo-outer-context-provider-test')
 @provideContext('outerProviderInactiveKey')
+@provideContext('outerProviderKey')
+@provideContext('providerKey')
+@provideContext('outerUnobservedKey')
 class OuterContextProvider extends LitElement {
   outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val0';
 
@@ -34,30 +38,18 @@ class OuterContextProvider extends LitElement {
   @property()
   unprovidedKey = 'outer_provider-unprovided-val0';
 }
-customElement('milo-outer-context-provider-test')(
-  provideContext('outerProviderInactiveKey')(
-    provideContext('outerProviderKey')(
-      provideContext('providerKey')(
-        provideContext('outerUnobservedKey')(
-          OuterContextProvider,
-        ),
-      ),
-    ),
-  ),
-);
 
-
+@customElement('milo-inner-context-provider-test')
+@provideContext('providerKey')
 class InnerContextProvider extends LitElement {
   @property()
   providerKey = 'inner_provider-provider-val0';
 }
-customElement('milo-inner-context-provider-test')(
-  provideContext('providerKey')(
-    InnerContextProvider,
-  ),
-);
 
-
+@customElement('milo-context-consumer-test')
+@consumeContext('outerProviderInactiveKey')
+@consumeContext('outerProviderKey')
+@consumeContext('providerKey')
 class ContextConsumer extends LitElement {
   @property()
   outerProviderInactiveKey = 'local-outer_provider_inactive';
@@ -74,25 +66,13 @@ class ContextConsumer extends LitElement {
   @property()
   outerUnobservedKey = 'local-unobserved';
 }
-customElement('milo-context-consumer-test')(
-  consumeContext('outerProviderInactiveKey')(
-    consumeContext('outerProviderKey')(
-      consumeContext('providerKey')(
-        ContextConsumer,
-      ),
-    ),
-  ),
-);
 
 @customElement('milo-context-consumer-wrapper-test')
 export class ContextConsumerWrapper extends LitElement {
   protected render() {
-    return html`
-      <milo-context-consumer-test></milo-context-consumer-test>
-    `;
+    return html` <milo-context-consumer-test></milo-context-consumer-test> `;
   }
 }
-
 
 // TODO(weiweilin): test what happens when ContextProvider is disconnected from
 // DOM then reconnected to DOM.
@@ -103,15 +83,15 @@ describe('context', () => {
       const outerProvider = await fixture<OuterContextProvider>(html`
         <milo-outer-context-provider-test>
           <milo-inner-context-provider-test>
-            <milo-context-consumer-test id="inner-consumer">
-            </milo-context-consumer-test>
+            <milo-context-consumer-test id="inner-consumer"> </milo-context-consumer-test>
           </milo-inner-context-provider-test>
-          <milo-context-consumer-test id="outer-consumer">
-          </milo-context-consumer-test>
-        <milo-outer-context-provider>
+          <milo-context-consumer-test id="outer-consumer"> </milo-context-consumer-test>
+          <milo-outer-context-provider> </milo-outer-context-provider
+        ></milo-outer-context-provider-test>
       `);
 
-      const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!.host as InnerContextProvider;
+      const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!
+        .host as InnerContextProvider;
       const outerConsumer = outerProvider.querySelector('#outer-consumer')!.shadowRoot!.host as ContextConsumer;
       const innerConsumer = outerProvider.querySelector('#inner-consumer')!.shadowRoot!.host as ContextConsumer;
 
@@ -173,14 +153,15 @@ describe('context', () => {
       const outerProvider = await fixture<OuterContextProvider>(html`
         <milo-outer-context-provider-test>
           <milo-inner-context-provider-test>
-            <milo-context-consumer-wrapper-test>
-            </milo-context-consumer-wrapper-test>
+            <milo-context-consumer-wrapper-test></milo-context-consumer-wrapper-test>
           </milo-inner-context-provider-test>
         </milo-outer-context-provider-test>
       `);
-      const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!.host as InnerContextProvider;
-      const consumer = innerProvider.querySelector('milo-context-consumer-wrapper-test')!.shadowRoot!
-        .querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
+      const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!
+        .host as InnerContextProvider;
+      const consumer = innerProvider
+        .querySelector('milo-context-consumer-wrapper-test')!
+        .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
 
       assert.strictEqual(consumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
       assert.strictEqual(consumer.outerProviderKey, 'outer_provider-outer_provider-val0');

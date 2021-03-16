@@ -22,7 +22,6 @@ export interface TabDef {
   href?: string;
 }
 
-
 /**
  * A tab bar element. When a new tab is clicked, it can notify the parent
  * element via a callback, or navigate to the link provided in the tab config.
@@ -38,18 +37,21 @@ export class TabBarElement extends LitElement {
 
   protected render() {
     return html`
-      ${this.tabs.map((tab) => html`
-        <a
-          class=${classMap({'tab': true, 'selected': this.selectedTabId === tab.id})}
-          @click=${() => {
-            if (this.selectedTabId === tab.id) {
-              return;
-            }
-            this.onTabClicked(this.selectedTabId);
-          }}
-          href=${tab.href}
-        >${tab.label}</a>
-      `)}
+      ${this.tabs.map(
+        (tab) => html`
+          <a
+            class=${classMap({ tab: true, selected: this.selectedTabId === tab.id })}
+            @click=${() => {
+              if (this.selectedTabId === tab.id) {
+                return;
+              }
+              this.onTabClicked(this.selectedTabId);
+            }}
+            href=${tab.href}
+            >${tab.label}</a
+          >
+        `
+      )}
     `;
   }
 

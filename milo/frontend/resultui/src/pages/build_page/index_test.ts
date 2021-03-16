@@ -42,13 +42,13 @@ describe('Invocation Page', () => {
       ></milo-build-page>
     `);
 
-    const location = {
+    const location = ({
       params: {
         ...builder,
-        'build_num_or_id': '1234',
+        build_num_or_id: '1234',
       },
-    } as Partial<RouterLocation> as RouterLocation;
-    const cmd = {} as Partial<Commands> as Commands;
+    } as Partial<RouterLocation>) as RouterLocation;
+    const cmd = ({} as Partial<Commands>) as Commands;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
@@ -66,13 +66,13 @@ describe('Invocation Page', () => {
       ></milo-build-page>
     `);
 
-    const location = {
+    const location = ({
       params: {
         ...builder,
-        'build_num_or_id': 'b1234',
+        build_num_or_id: 'b1234',
       },
-    } as Partial<RouterLocation> as RouterLocation;
-    const cmd = {} as Partial<Commands> as Commands;
+    } as Partial<RouterLocation>) as RouterLocation;
+    const cmd = ({} as Partial<Commands>) as Commands;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
@@ -111,13 +111,13 @@ describe('Invocation Page', () => {
       ></milo-build-page>
     `);
 
-    const location = {
+    const location = ({
       params: {
         ...builder,
-        'build_num_or_id': 'b1234',
+        build_num_or_id: 'b1234',
       },
-    } as Partial<RouterLocation> as RouterLocation;
-    const cmd = {} as Partial<Commands> as Commands;
+    } as Partial<RouterLocation>) as RouterLocation;
+    const cmd = ({} as Partial<Commands>) as Commands;
 
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
@@ -136,7 +136,7 @@ describe('Invocation Page', () => {
       number: 123,
       id: '1234',
       input: {},
-      output: {properties: {}},
+      output: { properties: {} },
     } as Build);
 
     after(fixtureCleanup);
@@ -154,20 +154,22 @@ describe('Invocation Page', () => {
       ></milo-build-page>
     `);
 
-    const location = {
+    const location = ({
       params: {
-        'build_id': '1234',
-        'path': ['test-results'],
+        build_id: '1234',
+        path: ['test-results'],
       },
       search: '?q=a',
       hash: '#an-element',
-    } as Partial<RouterLocation> as RouterLocation;
-    const cmd = {} as Partial<Commands> as Commands;
+    } as Partial<RouterLocation>) as RouterLocation;
+    const cmd = ({} as Partial<Commands>) as Commands;
 
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
-    assert.isTrue(window.location.href.endsWith('/ui/p/project/builders/bucket/builder/b1234/test-results?q=a#an-element'));
+    assert.isTrue(
+      window.location.href.endsWith('/ui/p/project/builders/bucket/builder/b1234/test-results?q=a#an-element')
+    );
     page.disconnectedCallback();
   });
 });

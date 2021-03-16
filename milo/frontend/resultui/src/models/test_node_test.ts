@@ -16,7 +16,6 @@ import { assert } from 'chai';
 
 import { TestNode } from './test_node';
 
-
 describe('TestNode', () => {
   it('should elide test id segments with no branches', async () => {
     const node = TestNode.newRoot();

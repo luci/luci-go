@@ -18,20 +18,15 @@ import { customElement, html, property } from 'lit-element';
 import { provideContext } from '../libs/context';
 import { Artifact } from '../services/resultdb';
 
-
 /**
  * Provides artifacts information.
  */
+@customElement('milo-artifact-provider')
+@provideContext<'artifacts', Map<string, Artifact>>('artifacts')
 export class ArtifactProvider extends MobxLitElement {
   @property() artifacts!: Map<string, Artifact>;
 
   protected render() {
-    return html`
-      <slot></slot>
-    `;
+    return html` <slot></slot> `;
   }
 }
-
-customElement('milo-artifact-provider')(
-  provideContext<'artifacts', Map<string, Artifact>>('artifacts')(ArtifactProvider),
-);

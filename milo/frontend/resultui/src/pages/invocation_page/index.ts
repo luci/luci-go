@@ -35,6 +35,9 @@ import './invocation_details_tab';
  * If invocation_id not provided, redirects to '/not-found'.
  * Otherwise, shows results for the invocation.
  */
+@customElement('milo-invocation-page')
+@provideInvocationState
+@consumeAppState
 export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref invocationState!: InvocationState;
@@ -54,32 +57,36 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   connectedCallback() {
     super.connectedCallback();
 
-    this.disposers.push(reaction(
-      () => [this.appState],
-      ([appState]) => {
-        this.invocationState?.dispose();
-        this.invocationState = new InvocationState(appState);
-        this.invocationState.invocationId = this.invocationId;
+    this.disposers.push(
+      reaction(
+        () => [this.appState],
+        ([appState]) => {
+          this.invocationState?.dispose();
+          this.invocationState = new InvocationState(appState);
+          this.invocationState.invocationId = this.invocationId;
 
-        // Emulate @property() update.
-        this.updated(new Map([['invocationState', this.invocationState]]));
-      },
-      {fireImmediately: true},
-    ));
+          // Emulate @property() update.
+          this.updated(new Map([['invocationState', this.invocationState]]));
+        },
+        { fireImmediately: true }
+      )
+    );
     this.disposers.push(() => this.invocationState.dispose());
 
-    this.disposers.push(autorun(
-      () => {
+    this.disposers.push(
+      autorun(() => {
         if (this.invocationState.invocation$.state !== REJECTED) {
           return;
         }
-        this.dispatchEvent(new ErrorEvent('error', {
-          message: this.invocationState.invocation$.value.toString(),
-          composed: true,
-          bubbles: true,
-        }));
-      },
-    ));
+        this.dispatchEvent(
+          new ErrorEvent('error', {
+            message: this.invocationState.invocation$.value.toString(),
+            composed: true,
+            bubbles: true,
+          })
+        );
+      })
+    );
     document.title = `inv: ${this.invocationId}`;
   }
 
@@ -96,10 +103,10 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       return null;
     }
     if (invocation.finalizeTime) {
-        return html`
-          <i>${INVOCATION_STATE_DISPLAY_MAP[invocation.state]}</i>
-          at ${new Date(invocation.finalizeTime).toLocaleString()}
-        `;
+      return html`
+        <i>${INVOCATION_STATE_DISPLAY_MAP[invocation.state]}</i>
+        at ${new Date(invocation.finalizeTime).toLocaleString()}
+      `;
     }
 
     return html`
@@ -113,18 +120,12 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       {
         id: 'test-results',
         label: 'Test Results',
-        href: router.urlForName(
-          'invocation-test-results',
-          {'invocation_id': this.invocationState.invocationId!},
-        ),
+        href: router.urlForName('invocation-test-results', { invocation_id: this.invocationState.invocationId! }),
       },
       {
         id: 'invocation-details',
         label: 'Invocation Details',
-        href: router.urlForName(
-          'invocation-details',
-          {'invocation_id': this.invocationState.invocationId!},
-        ),
+        href: router.urlForName('invocation-details', { invocation_id: this.invocationState.invocationId! }),
       },
     ];
   }
@@ -143,13 +144,10 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
       <milo-status-bar
-        .components=${[{color: 'var(--active-color)', weight: 1}]}
+        .components=${[{ color: 'var(--active-color)', weight: 1 }]}
         .loading=${this.invocationState.invocation$.state === 'pending'}
       ></milo-status-bar>
-      <milo-tab-bar
-        .tabs=${this.tabDefs}
-        .selectedTabId=${this.appState.selectedTabId}
-      ></milo-tab-bar>
+      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
       <slot></slot>
     `;
   }
@@ -188,11 +186,3 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     }
   `;
 }
-
-customElement('milo-invocation-page')(
-  provideInvocationState(
-    consumeAppState(
-      InvocationPageElement,
-    ),
-  ),
-);

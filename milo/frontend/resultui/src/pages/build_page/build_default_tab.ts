@@ -22,6 +22,9 @@ import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { router } from '../../routes';
 
+@customElement('milo-build-default-tab')
+@consumeConfigsStore
+@consumeBuildState
 export class BuildDefaultTabElement extends LitElement {
   configsStore!: UserConfigsStore;
   buildState!: BuildState;
@@ -34,7 +37,7 @@ export class BuildDefaultTabElement extends LitElement {
     });
 
     // Prevent the router from pushing the history state.
-    window.history.replaceState({path: newUrl}, '', newUrl);
+    window.history.replaceState({ path: newUrl }, '', newUrl);
     Router.go(newUrl);
   }
 
@@ -42,11 +45,3 @@ export class BuildDefaultTabElement extends LitElement {
     return html``;
   }
 }
-
-customElement('milo-build-default-tab')(
-  consumeConfigsStore(
-    consumeBuildState(
-      BuildDefaultTabElement,
-    ),
-  ),
-);

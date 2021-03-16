@@ -35,14 +35,15 @@ export class CodeMirrorEditorElement extends LitElement {
   onInit = (_editor: CodeMirror.Editor) => {};
 
   protected firstUpdated() {
-    const editor = CodeMirror.fromTextArea(this.shadowRoot!.getElementById('editor') as HTMLTextAreaElement, this.options);
+    const editor = CodeMirror.fromTextArea(
+      this.shadowRoot!.getElementById('editor') as HTMLTextAreaElement,
+      this.options
+    );
     this.onInit(editor);
   }
 
   protected render() {
-    return html`
-      <textarea id="editor">${this.value}</textarea>
-    `;
+    return html` <textarea id="editor">${this.value}</textarea> `;
   }
 
   static styles = [
@@ -59,13 +60,13 @@ export class CodeMirrorEditorElement extends LitElement {
         max-height: 1000px;
         font-size: 12px;
       }
-      .CodeMirror-scroll{
+      .CodeMirror-scroll {
         max-height: 1000px;
       }
       .cm-property.cm-string {
         color: #318495;
       }
-      .cm-string:not(.cm-property){
+      .cm-string:not(.cm-property) {
         color: #036a06;
       }
     `,

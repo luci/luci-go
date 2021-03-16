@@ -44,20 +44,21 @@ const config: webpack.Configuration = merge(common, {
         res.send(config);
       });
 
-      app.use(/^(?!\/(ui|static\/(dist|styles))\/).*/, createProxyMiddleware({
-        // This attribute is required. However the value will be overridden by
-        // the router option. So the value doesn't matter.
-        target: 'https://luci-milo-dev.appspot.com',
-        router: () => {
-          const localDevConfigs = JSON.parse(fs.readFileSync('./dev-configs/local-dev-configs.json', 'utf8'));
-          return localDevConfigs.milo.url;
-        },
-        changeOrigin: true,
-      }));
+      app.use(
+        /^(?!\/(ui|static\/(dist|styles))\/).*/,
+        createProxyMiddleware({
+          // This attribute is required. However the value will be overridden by
+          // the router option. So the value doesn't matter.
+          target: 'https://luci-milo-dev.appspot.com',
+          router: () => {
+            const localDevConfigs = JSON.parse(fs.readFileSync('./dev-configs/local-dev-configs.json', 'utf8'));
+            return localDevConfigs.milo.url;
+          },
+          changeOrigin: true,
+        })
+      );
     },
   },
 });
 
-// Default export is required by webpack.
-// tslint:disable-next-line: no-default-export
 export default config;

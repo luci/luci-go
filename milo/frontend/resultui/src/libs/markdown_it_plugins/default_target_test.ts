@@ -36,7 +36,7 @@ www.a.com
 </div>
 `;
 
-const md = MarkdownIt('zero', {linkify: true, html: true})
+const md = MarkdownIt('zero', { linkify: true, html: true })
   .enable(['linkify', 'autolink', 'link', 'html_inline', 'html_block'])
   .use(defaultTarget, '_blank');
 
@@ -49,33 +49,33 @@ describe('default_target', () => {
   after(fixtureCleanup);
 
   it('can set default target', () => {
-    const anchor1 =  anchors.item(0);
+    const anchor1 = anchors.item(0);
     assert.equal(anchor1.target, '_blank');
     assert.equal(anchor1.href, 'http://www.a.com/');
 
-    const anchor2 =  anchors.item(1);
+    const anchor2 = anchors.item(1);
     assert.equal(anchor2.target, '_blank');
     assert.equal(anchor2.href, 'http://www.b.com/');
 
-    const anchor3 =  anchors.item(2);
+    const anchor3 = anchors.item(2);
     assert.equal(anchor3.target, '_blank');
     assert.equal(anchor3.href, 'http://www.c.com/');
 
-    const anchor4 =  anchors.item(3);
+    const anchor4 = anchors.item(3);
     assert.equal(anchor4.target, '_blank');
     assert.equal(anchor4.href, 'http://www.d.com/');
 
-    const anchor5 =  anchors.item(5);
+    const anchor5 = anchors.item(5);
     assert.equal(anchor5.target, '_blank');
     assert.equal(anchor5.href, 'http://www.f.com/');
   });
 
   it('does not override target', () => {
-    const anchor4 =  anchors.item(4);
+    const anchor4 = anchors.item(4);
     assert.equal(anchor4.target, '_parent');
     assert.equal(anchor4.href, 'http://www.e.com/');
 
-    const anchor5 =  anchors.item(6);
+    const anchor5 = anchors.item(6);
     assert.equal(anchor5.target, '_self');
     assert.equal(anchor5.href, 'http://www.g.com/');
   });

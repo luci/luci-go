@@ -20,24 +20,26 @@ import { HideTooltipEventDetail, ShowTooltipEventDetail, TooltipElement } from '
 describe('instant tooltip', () => {
   it('should only display one tooltip at a time', async () => {
     after(fixtureCleanup);
-    const tooltipContainer = await fixture<TooltipElement>(html`
-      <milo-tooltip></milo-tooltip>
-    `);
+    const tooltipContainer = await fixture<TooltipElement>(html` <milo-tooltip></milo-tooltip> `);
 
     const tooltip1 = document.createElement('div');
     const tooltip2 = document.createElement('div');
 
-    window.dispatchEvent(new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-      detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect() },
-    }));
+    window.dispatchEvent(
+      new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+        detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect() },
+      })
+    );
 
     await aTimeout(0);
     assert.isTrue(tooltip1.isConnected);
     assert.isFalse(tooltip2.isConnected);
 
-    window.dispatchEvent(new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-      detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect() },
-    }));
+    window.dispatchEvent(
+      new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+        detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect() },
+      })
+    );
 
     await aTimeout(0);
     assert.isFalse(tooltip1.isConnected);
@@ -46,22 +48,24 @@ describe('instant tooltip', () => {
 
   it('should hide tooltip after specified delay', async () => {
     after(fixtureCleanup);
-    const tooltipContainer = await fixture<TooltipElement>(html`
-      <milo-tooltip></milo-tooltip>
-    `);
+    const tooltipContainer = await fixture<TooltipElement>(html` <milo-tooltip></milo-tooltip> `);
 
     const tooltip = document.createElement('div');
 
-    window.dispatchEvent(new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-      detail: { tooltip, targetRect: tooltipContainer.getBoundingClientRect() },
-    }));
+    window.dispatchEvent(
+      new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+        detail: { tooltip, targetRect: tooltipContainer.getBoundingClientRect() },
+      })
+    );
 
     await aTimeout(0);
     assert.isTrue(tooltip.isConnected);
 
-    window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
-      detail: { delay: 10 },
-    }));
+    window.dispatchEvent(
+      new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+        detail: { delay: 10 },
+      })
+    );
 
     await aTimeout(5);
     assert.isTrue(tooltip.isConnected);
@@ -72,31 +76,35 @@ describe('instant tooltip', () => {
 
   it('should handle race condition correctly', async () => {
     after(fixtureCleanup);
-    const tooltipContainer = await fixture<TooltipElement>(html`
-      <milo-tooltip></milo-tooltip>
-    `);
+    const tooltipContainer = await fixture<TooltipElement>(html` <milo-tooltip></milo-tooltip> `);
 
     const tooltip1 = document.createElement('div');
     const tooltip2 = document.createElement('div');
 
-    window.dispatchEvent(new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-      detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect() },
-    }));
+    window.dispatchEvent(
+      new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+        detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect() },
+      })
+    );
 
     await aTimeout(0);
     assert.isTrue(tooltip1.isConnected);
 
-    window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
-      detail: { delay: 10 },
-    }));
+    window.dispatchEvent(
+      new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+        detail: { delay: 10 },
+      })
+    );
 
     await aTimeout(0);
     assert.isTrue(tooltip1.isConnected);
 
     // Show another tooltip before the first one is dismissed.
-    window.dispatchEvent(new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-      detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect() },
-    }));
+    window.dispatchEvent(
+      new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+        detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect() },
+      })
+    );
 
     await aTimeout(10);
     assert.isFalse(tooltip1.isConnected);

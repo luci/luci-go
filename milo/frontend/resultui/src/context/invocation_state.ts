@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import { autorun, computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
@@ -50,20 +49,24 @@ export class InvocationState {
 
   private disposers: Array<() => void> = [];
   constructor(private appState: AppState) {
-    this.disposers.push(autorun(() => {
-      try {
-        this.searchFilter = parseSearchQuery(this.searchText);
-      } catch (e) {
-        //TODO(weiweilin): display the error to the user.
-        console.error(e);
-      }
-    }));
-    this.disposers.push(autorun(() => {
-      if (!this.testLoader) {
-        return;
-      }
-      this.testLoader.filter = this.searchFilter;
-    }));
+    this.disposers.push(
+      autorun(() => {
+        try {
+          this.searchFilter = parseSearchQuery(this.searchText);
+        } catch (e) {
+          //TODO(weiweilin): display the error to the user.
+          console.error(e);
+        }
+      })
+    );
+    this.disposers.push(
+      autorun(() => {
+        if (!this.testLoader) {
+          return;
+        }
+        this.testLoader.filter = this.searchFilter;
+      })
+    );
   }
 
   @observable.ref private isDisposed = false;
@@ -80,11 +83,8 @@ export class InvocationState {
 
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
-    // tslint:disable: no-unused-expression
     this.testLoader;
-    // tslint:enable: no-unused-expression
   }
-
 
   @computed
   get invocationName(): string | null {
@@ -102,11 +102,9 @@ export class InvocationState {
     }
     const invId = this.invocationId;
     return fromPromise(
-      this.appState.resultDb
-        .getInvocation({name: this.invocationName})
-        .catch((e) => {
-          throw new QueryInvocationError(invId!, e);
-        }),
+      this.appState.resultDb.getInvocation({ name: this.invocationName }).catch((e) => {
+        throw new QueryInvocationError(invId!, e);
+      })
     );
   }
 
@@ -118,14 +116,13 @@ export class InvocationState {
     return this.invocation$.value;
   }
 
-  @computed({keepAlive: true})
+  @computed({ keepAlive: true })
   get testLoader(): TestLoader | null {
     if (this.isDisposed || !this.invocationName || !this.appState.uiSpecificService) {
       return null;
     }
-    return new TestLoader({invocations: [this.invocationName]}, this.appState.uiSpecificService);
+    return new TestLoader({ invocations: [this.invocationName] }, this.appState.uiSpecificService);
   }
-
 }
 
 export const consumeInvocationState = consumeContext<'invocationState', InvocationState>('invocationState');

@@ -26,16 +26,16 @@ describe('BuildExt', () => {
     const time = '2020-11-01T21:43:03.351951Z';
     const build = new BuildExt({
       steps: [
-        {name: 'root1', startTime: time} as Step,
-        {name: 'root2', startTime: time},
-        {name: 'root2|parent1', startTime: time},
-        {name: 'root2|parent1|child1', startTime: time},
-        {name: 'root2|parent1|child2', startTime: time},
-        {name: 'root3', startTime: time},
-        {name: 'root3|parent1', startTime: time},
-        {name: 'root3|parent2', startTime: time},
-        {name: 'root3|parent2|child1', startTime: time},
-        {name: 'root3|parent2|child2', startTime: time},
+        { name: 'root1', startTime: time } as Step,
+        { name: 'root2', startTime: time },
+        { name: 'root2|parent1', startTime: time },
+        { name: 'root2|parent1|child1', startTime: time },
+        { name: 'root2|parent1|child2', startTime: time },
+        { name: 'root3', startTime: time },
+        { name: 'root3|parent1', startTime: time },
+        { name: 'root3|parent2', startTime: time },
+        { name: 'root3|parent2|child1', startTime: time },
+        { name: 'root3|parent2|child2', startTime: time },
       ] as readonly Step[],
     } as Build);
 

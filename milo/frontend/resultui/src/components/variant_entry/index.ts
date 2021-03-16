@@ -31,11 +31,7 @@ import './result_entry';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
-const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
-  'bucket',
-  'builder',
-  'test_suite',
-]);
+const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite']);
 
 /**
  * Renders an expandable entry of the given test variant.
@@ -76,10 +72,12 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     if (!testLocation) {
       return null;
     }
-    return testLocation.repo
-      + '/+/HEAD'
-      + testLocation.fileName.slice(1)
-      + (testLocation.line ? '#' + testLocation.line : '');
+    return (
+      testLocation.repo +
+      '/+/HEAD' +
+      testLocation.fileName.slice(1) +
+      (testLocation.line ? '#' + testLocation.line : '')
+    );
   }
 
   /**
@@ -94,7 +92,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
 
   @computed
   private get hasSingleChild() {
-    return ((this.variant.results?.length ?? 0) + (this.variant.exonerations?.length ?? 0)) === 1;
+    return (this.variant.results?.length ?? 0) + (this.variant.exonerations?.length ?? 0) === 1;
   }
 
   @computed
@@ -103,7 +101,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     const res: Array<[string, string]> = [];
     const seen = new Set();
     for (const key of ORDERED_VARIANT_DEF_KEYS) {
-      if (def.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(def, key)) {
         res.push([key, def[key]]);
         seen.add(key);
       }
@@ -132,35 +130,50 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     }
     return html`
       <div id="content-ruler"></div>
-      <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
+      <div id="content" style=${styleMap({ display: this.expanded ? '' : 'none' })}>
         <span id="variant-def">
-          <span
-            class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}
-          >${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result</span>
+          <span class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
+            ${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result
+          </span>
           ${this.sourceUrl ? '|' : ''}
-          <a href=${this.sourceUrl} target="_blank" style=${styleMap({display: this.sourceUrl ? '' : 'none'})}>source</a>
+          <a href=${this.sourceUrl} target="_blank" style=${styleMap({ display: this.sourceUrl ? '' : 'none' })}
+            >source</a
+          >
           ${this.variantDef.length !== 0 ? '|' : ''}
           <span class="greyed-out">
-            ${this.variantDef.map(([k, v]) => html`
-            <span class="kv">
-              <span class="kv-key">${k}</span>
-              <span class="kv-value">${v}</span>
-            </span>
-            `)}
+            ${this.variantDef.map(
+              ([k, v]) => html`
+                <span class="kv">
+                  <span class="kv-key">${k}</span>
+                  <span class="kv-value">${v}</span>
+                </span>
+              `
+            )}
           </span>
         </span>
-        ${repeat(this.variant.exonerations || [], (e) => e.exonerationId, (e) => html`
-        <div class="explanation-html">
-          ${sanitizeHTML(e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).')}
-        </div>
-        `)}
-        ${repeat(this.variant.results || [], (r) => r.result.resultId, (r, i) => html`
-        <milo-result-entry
-          .id=${i + 1}
-          .testResult=${r.result}
-          .expanded=${i === this.expandedResultIndex}
-        ></milo-result-entry>
-        `)}
+        ${repeat(
+          this.variant.exonerations || [],
+          (e) => e.exonerationId,
+          (e) => html`
+            <div class="explanation-html">
+              ${sanitizeHTML(
+                e.explanationHtml ||
+                  'This test variant had unexpected results, but was exonerated (reason not provided).'
+              )}
+            </div>
+          `
+        )}
+        ${repeat(
+          this.variant.results || [],
+          (r) => r.result.resultId,
+          (r, i) => html`
+            <milo-result-entry
+              .id=${i + 1}
+              .testResult=${r.result}
+              .expanded=${i === this.expandedResultIndex}
+            ></milo-result-entry>
+          `
+        )}
       </div>
     `;
   }
@@ -179,19 +192,26 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     return html`
       <div>
         <div
-          class=${classMap({'expanded': this.expanded, 'display-variant-id': this.displayVariantId, 'expandable-header': true})}
-          @click=${() => this.expanded = !this.expanded}
+          class=${classMap({
+            expanded: this.expanded,
+            'display-variant-id': this.displayVariantId,
+            'expandable-header': true,
+          })}
+          @click=${() => (this.expanded = !this.expanded)}
         >
           <mwc-icon id="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
           <div id="header" class="one-line-content">
             <mwc-icon
               id="status-indicator"
-              class=${classMap({[VARIANT_STATUS_CLASS_MAP[this.variant.status]]: true})}
-            >${VARIANT_STATUS_ICON_MAP[this.variant.status]}</mwc-icon>
+              class=${classMap({ [VARIANT_STATUS_CLASS_MAP[this.variant.status]]: true })}
+            >
+              ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
+            </mwc-icon>
             <div id="identifier">
               <div id="test-identifier">
                 <span>
-                  <span class="greyed-out">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(this.commonTestIdPrefix.length)}
+                  <span class="greyed-out">${this.commonTestIdPrefix}</span>
+                  ${this.variant.testId.slice(this.commonTestIdPrefix.length)}
                 </span>
                 <milo-copy-to-clipboard
                   .textToCopy=${this.variant.testId}
@@ -201,12 +221,19 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
               </div>
               <div id="variant-identifier">
                 <span>
-                  ${this.variantDef.map(([k, v]) => html`
-                  <span class=${classMap({'greyed-out': !this.prevVariant || v === this.prevVariant.variant?.def?.[k], 'kv': true})}>
-                    <span class="kv-key">${k}</span>
-                    <span class="kv-value">${v}</span>
-                  </span>
-                  `)}
+                  ${this.variantDef.map(
+                    ([k, v]) => html`
+                      <span
+                        class=${classMap({
+                          'greyed-out': !this.prevVariant || v === this.prevVariant.variant?.def?.[k],
+                          kv: true,
+                        })}
+                      >
+                        <span class="kv-key">${k}</span>
+                        <span class="kv-value">${v}</span>
+                      </span>
+                    `
+                  )}
                 </span>
               </div>
             </div>
@@ -290,7 +317,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
       font-size: 16px;
       line-height: 24px;
     }
-    #test-identifier>span {
+    #test-identifier > span {
       overflow: hidden;
       text-overflow: ellipsis;
     }
@@ -331,7 +358,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     .kv-value::after {
       content: ',';
     }
-    .kv:last-child>.kv-value::after {
+    .kv:last-child > .kv-value::after {
       content: '';
     }
     #def-table {

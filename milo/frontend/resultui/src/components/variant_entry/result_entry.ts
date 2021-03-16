@@ -32,13 +32,17 @@ import './text_diff_artifact';
 /**
  * Renders an expandable entry of the given test result.
  */
+@customElement('milo-result-entry')
+@consumeAppState
 export class ResultEntryElement extends MobxLitElement {
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
   @observable.ref appState!: AppState;
 
   @observable.ref private _expanded = false;
-  @computed get expanded() { return this._expanded; }
+  @computed get expanded() {
+    return this._expanded;
+  }
   set expanded(newVal: boolean) {
     this._expanded = newVal;
     // Always render the content once it was expanded so the descendants' states
@@ -71,13 +75,11 @@ export class ResultEntryElement extends MobxLitElement {
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle pagination.
-    return fromPromise(this.appState.resultDb.listArtifacts({parent: this.testResult.name}));
+    return fromPromise(this.appState.resultDb.listArtifacts({ parent: this.testResult.name }));
   }
 
   @computed private get resultArtifacts() {
-    return this.resultArtifacts$.state === FULFILLED
-      ? this.resultArtifacts$.value.artifacts || []
-      : [];
+    return this.resultArtifacts$.state === FULFILLED ? this.resultArtifacts$.value.artifacts || [] : [];
   }
 
   @computed private get invArtifacts$() {
@@ -86,19 +88,17 @@ export class ResultEntryElement extends MobxLitElement {
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle pagination.
-    return fromPromise(this.appState.resultDb.listArtifacts({parent: 'invocations/' + this.parentInvId}));
+    return fromPromise(this.appState.resultDb.listArtifacts({ parent: 'invocations/' + this.parentInvId }));
   }
 
   @computed private get invArtifacts() {
-    return this.invArtifacts$.state === FULFILLED
-      ? this.invArtifacts$.value.artifacts || []
-      : [];
+    return this.invArtifacts$.state === FULFILLED ? this.invArtifacts$.value.artifacts || [] : [];
   }
 
   @computed private get artifactsMapping() {
     return new Map([
-      ...this.resultArtifacts.map(obj => [obj.artifactId, obj] as [string, Artifact]),
-      ...this.invArtifacts.map(obj => ['inv-level/' + obj.artifactId, obj] as [string, Artifact]),
+      ...this.resultArtifacts.map((obj) => [obj.artifactId, obj] as [string, Artifact]),
+      ...this.invArtifacts.map((obj) => ['inv-level/' + obj.artifactId, obj] as [string, Artifact]),
     ]);
   }
 
@@ -107,9 +107,9 @@ export class ResultEntryElement extends MobxLitElement {
   }
   @computed private get imageDiffArtifactGroup() {
     return {
-      'expected': this.resultArtifacts.find((a) => a.artifactId === 'expected_image'),
-      'actual': this.resultArtifacts.find((a) => a.artifactId === 'actual_image'),
-      'diff': this.resultArtifacts.find((a) => a.artifactId === 'image_diff'),
+      expected: this.resultArtifacts.find((a) => a.artifactId === 'expected_image'),
+      actual: this.resultArtifacts.find((a) => a.artifactId === 'actual_image'),
+      diff: this.resultArtifacts.find((a) => a.artifactId === 'image_diff'),
     };
   }
 
@@ -129,11 +129,11 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-    <div id="summary-html">
-      <milo-artifact-provider .artifacts=${this.artifactsMapping}>
-        ${sanitizeHTML(this.testResult.summaryHtml)}
-      </milo-artifact-provider>
-    </div>
+      <div id="summary-html">
+        <milo-artifact-provider .artifacts=${this.artifactsMapping}>
+          ${sanitizeHTML(this.testResult.summaryHtml)}
+        </milo-artifact-provider>
+      </div>
     `;
   }
 
@@ -143,27 +143,32 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <milo-expandable-entry .hideContentRuler=${true}
+      <milo-expandable-entry
+        .hideContentRuler=${true}
         .onToggle=${(expanded: boolean) => {
           this.tagExpanded = expanded;
         }}
       >
         <span slot="header" class="one-line-content">
           Tags:
-          <span class="greyed-out" style=${styleMap({display: this.tagExpanded ? 'none': ''})}>
-            ${this.testResult.tags?.map((tag) => html`
-            <span class="kv-key">${tag.key}</span>
-            <span class="kv-value">${tag.value}</span>
-            `)}
+          <span class="greyed-out" style=${styleMap({ display: this.tagExpanded ? 'none' : '' })}>
+            ${this.testResult.tags?.map(
+              (tag) => html`
+                <span class="kv-key">${tag.key}</span>
+                <span class="kv-value">${tag.value}</span>
+              `
+            )}
           </span>
         </span>
         <table id="tag-table" slot="content" border="0">
-          ${this.testResult.tags?.map((tag) => html`
-          <tr>
-            <td>${tag.key}:</td>
-            <td>${tag.value}</td>
-          </tr>
-          `)}
+          ${this.testResult.tags?.map(
+            (tag) => html`
+              <tr>
+                <td>${tag.key}:</td>
+                <td>${tag.value}</td>
+              </tr>
+            `
+          )}
         </table>
       </milo-expandable-entry>
     `;
@@ -175,16 +180,16 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <div id="inv-artifacts-header">
-        From the parent ${this.renderParentInvType()}:
-      </div>
+      <div id="inv-artifacts-header">From the parent ${this.renderParentInvType()}:</div>
       <ul>
-        ${this.invArtifacts.map((artifact) => html`
-        <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-        <li>
-          <a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a>
-        </li>
-        `)}
+        ${this.invArtifacts.map(
+          (artifact) => html`
+            <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
+            <li>
+              <a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a>
+            </li>
+          `
+        )}
       </ul>
     `;
   }
@@ -197,15 +202,15 @@ export class ResultEntryElement extends MobxLitElement {
 
     return html`
       <milo-expandable-entry .hideContentRuler=${true}>
-        <span slot="header">
-          Artifacts: <span class="greyed-out">${artifactCount}</span>
-        </span>
+        <span slot="header"> Artifacts: <span class="greyed-out">${artifactCount}</span> </span>
         <div slot="content">
           <ul>
-            ${this.resultArtifacts.map((artifact) => html`
-            <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-            <li><a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a></li>
-            `)}
+            ${this.resultArtifacts.map(
+              (artifact) => html`
+                <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
+                <li><a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a></li>
+              `
+            )}
           </ul>
           ${this.renderInvocationLevelArtifacts()}
         </div>
@@ -219,39 +224,29 @@ export class ResultEntryElement extends MobxLitElement {
     }
     return html`
       ${this.renderSummaryHtml()}
-      ${!this.swarmingTaskLink ? '' : html`
-      <div id="swarming-task">
-        ${this.renderParentInvType()}
-      </div>
+      ${!this.swarmingTaskLink ? '' : html` <div id="swarming-task">${this.renderParentInvType()}</div> `}
+      ${this.textDiffArtifact &&
+      html` <milo-text-diff-artifact .artifact=${this.textDiffArtifact}> </milo-text-diff-artifact> `}
+      ${this.imageDiffArtifactGroup.diff &&
+      html`
+        <milo-image-diff-artifact
+          .expected=${this.imageDiffArtifactGroup.expected}
+          .actual=${this.imageDiffArtifactGroup.actual}
+          .diff=${this.imageDiffArtifactGroup.diff}
+        >
+        </milo-image-diff-artifact>
       `}
-      ${this.textDiffArtifact && html`
-      <milo-text-diff-artifact .artifact=${this.textDiffArtifact}>
-      </milo-text-diff-artifact>
-      `}
-      ${this.imageDiffArtifactGroup.diff && html`
-      <milo-image-diff-artifact
-        .expected=${this.imageDiffArtifactGroup.expected}
-        .actual=${this.imageDiffArtifactGroup.actual}
-        .diff=${this.imageDiffArtifactGroup.diff}
-      >
-      </milo-image-diff-artifact>
-      `}
-      ${this.renderArtifacts()}
-      ${this.renderTags()}
+      ${this.renderArtifacts()} ${this.renderTags()}
     `;
   }
 
   protected render() {
     return html`
-      <milo-expandable-entry
-        .expanded=${this.expanded}
-        .onToggle=${(expanded: boolean) => this.expanded = expanded}
-      >
+      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <span id="header" slot="header">
           run #${this.id}
           <span class="${this.testResult.expected ? 'expected' : 'unexpected'}-result">
-            ${this.testResult.expected ? '' : html`unexpectedly`}
-            ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
+            ${this.testResult.expected ? '' : html`unexpectedly`} ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
           </span>
           ${this.testResult.duration ? `after ${this.testResult.duration}` : ''}
         </span>
@@ -313,11 +308,5 @@ export class ResultEntryElement extends MobxLitElement {
     #inv-artifacts-header {
       margin-top: 12px;
     }
-    `;
+  `;
 }
-
-customElement('milo-result-entry')(
-  consumeAppState(
-    ResultEntryElement,
-  ),
-);

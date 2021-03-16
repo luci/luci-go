@@ -74,7 +74,7 @@ export class AutoCompleteElement extends MobxLitElement {
   }
 
   protected updated() {
-    this.shadowRoot!.querySelector('.dropdown-item.selected')?.scrollIntoView({'block': 'nearest'});
+    this.shadowRoot!.querySelector('.dropdown-item.selected')?.scrollIntoView({ block: 'nearest' });
   }
 
   private disposer = () => {};
@@ -89,7 +89,7 @@ export class AutoCompleteElement extends MobxLitElement {
         if (this.value !== '') {
           this.showSuggestions = true;
         }
-      },
+      }
     );
 
     document.addEventListener('click', this.externalClickHandler);
@@ -111,7 +111,7 @@ export class AutoCompleteElement extends MobxLitElement {
     if (!e.composedPath().some((t) => t === this.searchBox || t === this.dropdownContainer)) {
       this.clearSuggestion();
     }
-  }
+  };
 
   private renderSuggestion(suggestion: Suggestion, suggestionIndex: number) {
     if (suggestion.isHeader) {
@@ -123,8 +123,8 @@ export class AutoCompleteElement extends MobxLitElement {
     }
     return html`
       <tr
-        class=${classMap({'dropdown-item': true, 'selected': suggestionIndex === this.selectedIndex})}
-        @mouseover=${() => this.selectedIndex = suggestionIndex}
+        class=${classMap({ 'dropdown-item': true, selected: suggestionIndex === this.selectedIndex })}
+        @mouseover=${() => (this.selectedIndex = suggestionIndex)}
         @click=${() => {
           this.onSuggestionSelected(this.suggestions[this.selectedIndex] as SuggestionEntry);
           this.focus();
@@ -143,8 +143,8 @@ export class AutoCompleteElement extends MobxLitElement {
         placeholder=${this.hint}
         .value=${this.value}
         @input=${(e: InputEvent) => this.onValueUpdate((e.target as HTMLInputElement).value)}
-        @focus=${() => this.focused = true}
-        @blur=${() => this.focused = false}
+        @focus=${() => (this.focused = true)}
+        @blur=${() => (this.focused = false)}
         @keydown=${(e: KeyboardEvent) => {
           switch (e.code) {
             case 'ArrowDown':
@@ -185,8 +185,11 @@ export class AutoCompleteElement extends MobxLitElement {
           }
           e.preventDefault();
         }}
+      />
+      <div
+        id="dropdown-container"
+        style=${styleMap({ display: this.showSuggestions && this.suggestions.length > 0 ? '' : 'none' })}
       >
-      <div id="dropdown-container" style=${styleMap({display: this.showSuggestions && this.suggestions.length > 0 ? '' : 'none'})}>
         <table id="dropdown">
           ${this.suggestions.map((suggestion, i) => this.renderSuggestion(suggestion, i))}
         </table>
@@ -206,13 +209,13 @@ export class AutoCompleteElement extends MobxLitElement {
       display: inline-block;
       width: 100%;
       box-sizing: border-box;
-      padding: .3rem .5rem;
+      padding: 0.3rem 0.5rem;
       font-size: 1rem;
       color: var(--light-text-color);
       background-clip: padding-box;
       border: 1px solid var(--divider-color);
-      border-radius: .25rem;
-      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+      border-radius: 0.25rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
       text-overflow: ellipsis;
     }
 
@@ -233,11 +236,11 @@ export class AutoCompleteElement extends MobxLitElement {
     .dropdown-item.header {
       color: var(--default-text-color);
     }
-    .dropdown-item>td {
+    .dropdown-item > td {
       white-space: nowrap;
       overflow: hidden;
     }
-    .dropdown-item>td:first-child {
+    .dropdown-item > td:first-child {
       padding-right: 50px;
     }
     .dropdown-item.selected {

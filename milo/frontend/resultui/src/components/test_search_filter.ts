@@ -61,7 +61,7 @@ export class TestSearchFilterElement extends MobxLitElement {
           .value=${this.invocationState.searchText}
           .placeHolder=${'Press / to search test results...'}
           .suggestions=${this.suggestions}
-          .onValueUpdate=${(newVal: string) => this.invocationState.searchText = newVal}
+          .onValueUpdate=${(newVal: string) => (this.invocationState.searchText = newVal)}
           .onSuggestionSelected=${(suggestion: SuggestionEntry) => {
             this.invocationState.searchText = this.queryPrefix + suggestion.value! + ' ';
           }}

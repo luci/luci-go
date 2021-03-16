@@ -54,55 +54,55 @@ export class ImageDiffViewerElement extends MobxLitElement {
           type="radio"
           name="view-option"
           id="expected"
-          @change=${() => this.viewOption = ViewOption.Expected}
+          @change=${() => (this.viewOption = ViewOption.Expected)}
           ?checked=${this.viewOption === ViewOption.Expected}
-        >
+        />
         <label for="expected">Expected</label>
         <input
           type="radio"
           name="view-option"
           id="actual"
-          @change=${() => this.viewOption = ViewOption.Actual}
+          @change=${() => (this.viewOption = ViewOption.Actual)}
           ?checked=${this.viewOption === ViewOption.Actual}
-        >
+        />
         <label for="actual">Actual</label>
         <input
           type="radio"
           name="view-option"
           id="diff"
-          @change=${() => this.viewOption = ViewOption.Diff}
+          @change=${() => (this.viewOption = ViewOption.Diff)}
           ?checked=${this.viewOption === ViewOption.Diff}
-        >
+        />
         <label for="diff">Diff</label>
         <input
           type="radio"
           name="view-option"
           id="animated"
-          @change=${() => this.viewOption = ViewOption.Animated}
+          @change=${() => (this.viewOption = ViewOption.Animated)}
           ?checked=${this.viewOption === ViewOption.Animated}
-        >
+        />
         <label for="animated">Animated</label>
         <input
           type="radio"
           name="view-option"
           id="side-by-side"
-          @change=${() => this.viewOption = ViewOption.SideBySide}
+          @change=${() => (this.viewOption = ViewOption.SideBySide)}
           ?checked=${this.viewOption === ViewOption.SideBySide}
-        >
+        />
         <label for="side-by-side">Side by side</label>
       </div>
       <div id="content" class=${VIEW_OPTION_CLASS_MAP[this.viewOption]}>
         <div id="expected-image" class="image">
           <div>Expected (<a href=${this.expected.fetchUrl} target="_blank">view raw</a>)</div>
-          <img src=${this.expected.fetchUrl}>
+          <img src=${this.expected.fetchUrl} />
         </div>
         <div id="actual-image" class="image">
           <div>Actual (<a href=${this.actual.fetchUrl} target="_blank">view raw</a>)</div>
-          <img src=${this.actual.fetchUrl}>
+          <img src=${this.actual.fetchUrl} />
         </div>
         <div id="diff-image" class="image">
           <div>Diff (<a href=${this.diff.fetchUrl} target="_blank">view raw</a>)</div>
-          <img src=${this.diff.fetchUrl}>
+          <img src=${this.diff.fetchUrl} />
         </div>
       </div>
     `;
@@ -120,7 +120,7 @@ export class ImageDiffViewerElement extends MobxLitElement {
       margin-right: 5px;
     }
     .raw-link:not(:last-child):after {
-      content: ','
+      content: ',';
     }
 
     #content {
@@ -162,8 +162,12 @@ export class ImageDiffViewerElement extends MobxLitElement {
       animation-direction: normal;
     }
     @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0; }
+      0% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0;
+      }
     }
 
     .side-by-side .image {

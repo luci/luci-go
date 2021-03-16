@@ -23,9 +23,7 @@ b:123 b/234 ab/345 b:proj/456 not a link
 crbug/567
 `;
 
-const md = MarkdownIt('zero', {linkify: true})
-  .enable('linkify')
-  .use(bugnizerLink);
+const md = MarkdownIt('zero', { linkify: true }).enable('linkify').use(bugnizerLink);
 
 describe('bugnizer_link', () => {
   it('can render links correctly', async () => {
@@ -35,11 +33,11 @@ describe('bugnizer_link', () => {
     const anchors = ele.querySelectorAll('a');
     assert.equal(anchors.length, 2);
 
-    const anchor1 =  anchors.item(0);
+    const anchor1 = anchors.item(0);
     assert.equal(anchor1.href, 'http://b/123');
     assert.equal(anchor1.text, 'b:123');
 
-    const anchor2 =  anchors.item(1);
+    const anchor2 = anchors.item(1);
     assert.equal(anchor2.href, 'http://b/234');
     assert.equal(anchor2.text, 'b/234');
   });

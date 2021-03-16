@@ -23,11 +23,13 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { router } from '../../routes';
 
-
 function stripInvocationPrefix(invocationName: string): string {
   return invocationName.slice('invocations/'.length);
 }
 
+@customElement('milo-invocation-details-tab')
+@consumeInvocationState
+@consumeAppState
 export class InvocationDetailsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref invocationState!: InvocationState;
@@ -55,30 +57,31 @@ export class InvocationDetailsTabElement extends MobxLitElement {
       <div>Create Time: ${new Date(invocation.createTime).toLocaleString()}</div>
       <div>Finalize Time: ${new Date(invocation.finalizeTime).toLocaleDateString()}</div>
       <div>Deadline: ${new Date(invocation.deadline).toLocaleDateString()}</div>
-      <div
-        id="included-invocations"
-        style=${styleMap({'display': this.hasIncludedInvocations ? '' : 'none'})}
-      >Included Invocations:
+      <div id="included-invocations" style=${styleMap({ display: this.hasIncludedInvocations ? '' : 'none' })}>
+        Included Invocations:
         <ul>
-        ${invocation.includedInvocations?.map((invName) => stripInvocationPrefix(invName)).map((invId) => html`
-          <li><a
-            href=${router.urlForName(
-              'invocation',
-              {'invocation_id': invId},
+          ${invocation.includedInvocations
+            ?.map((invName) => stripInvocationPrefix(invName))
+            .map(
+              (invId) => html`
+                <li>
+                  <a href=${router.urlForName('invocation', { invocation_id: invId })} target="_blank">${invId}</a>
+                </li>
+              `
             )}
-            target="_blank"
-          >${invId}</a></li>
-        `)}
         </ul>
       </div>
-      <div style=${styleMap({'display': this.hasTags ? '' : 'none'})}>Tags:
+      <div style=${styleMap({ display: this.hasTags ? '' : 'none' })}>
+        Tags:
         <table id="tag-table" border="0">
-        ${invocation.tags?.map((tag) => html`
-          <tr>
-            <td>${tag.key}:</td>
-            <td>${tag.value}</td>
-          </tr>
-        `)}
+          ${invocation.tags?.map(
+            (tag) => html`
+              <tr>
+                <td>${tag.key}:</td>
+                <td>${tag.value}</td>
+              </tr>
+            `
+          )}
         </table>
       </div>
     `;
@@ -101,9 +104,3 @@ export class InvocationDetailsTabElement extends MobxLitElement {
     }
   `;
 }
-
-customElement('milo-invocation-details-tab')(
-  consumeInvocationState(
-    consumeAppState(InvocationDetailsTabElement),
-  ),
-);

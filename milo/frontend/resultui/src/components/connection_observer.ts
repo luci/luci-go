@@ -29,16 +29,15 @@ export type ConnectionEvent<T> = CustomEvent<ConnectionEventDetail<T>>;
  */
 @customElement('milo-connection-observer')
 export class ConnectionObserverElement<T> extends LitElement {
-  @property({type: String, attribute: 'event-type'}) eventType = 'connected';
-  @property({type: Object}) data!: T;
+  @property({ type: String, attribute: 'event-type' }) eventType = 'connected';
+  @property({ type: Object }) data!: T;
 
   disconnectedListeners: Array<(data: T) => void> = [];
 
   connectedCallback() {
     super.connectedCallback();
-    this.dispatchEvent(new CustomEvent<ConnectionEventDetail<T>>(
-      this.eventType,
-      {
+    this.dispatchEvent(
+      new CustomEvent<ConnectionEventDetail<T>>(this.eventType, {
         bubbles: true,
         composed: true,
         detail: {
@@ -47,8 +46,8 @@ export class ConnectionObserverElement<T> extends LitElement {
             this.disconnectedListeners.push(cb);
           },
         },
-      },
-    ));
+      })
+    );
   }
 
   disconnectedCallback() {

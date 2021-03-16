@@ -4,6 +4,15 @@
   "description": "LUCI Test Results",
   "author": "weiweilin@google.com",
   "license": "Apache-2.0",
+  "engines": {
+    "node": "^12.13.0"
+  },
+  "scripts": {
+    "build": "webpack --config webpack.prod.ts",
+    "dev": "webpack-dev-server --config webpack.dev.ts",
+    "test": "karma start --single-run",
+    "test:watch": "karma start"
+  },
   "dependencies": {
     "@adobe/lit-mobx": "^1.0.1",
     "@chopsui/prpc-client": "^1.1.0",
@@ -52,7 +61,7 @@
     "babel-jest": "^26.6.3",
     "chai": "^4.3.4",
     "clean-webpack-plugin": "^3.0.0",
-    "gts": "^1.1.2",
+    "gts": "^3.1.0",
     "html-webpack-harddisk-plugin": "^2.0.0",
     "html-webpack-plugin": "^5.3.1",
     "http-proxy-middleware": "^1.0.6",
@@ -69,18 +78,11 @@
     "sinon": "^9.2.4",
     "ts-loader": "^8.0.18",
     "ts-node": "^9.1.1",
-    "tslint": "^6.1.3",
     "typescript": "^4.2.3",
     "util": "^0.12.3",
     "webpack": "^5.25.0",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.2",
     "webpack-merge": "^5.7.3"
-  },
-  "scripts": {
-    "build": "webpack --config webpack.prod.ts",
-    "dev": "webpack-dev-server --config webpack.dev.ts",
-    "test": "karma start --single-run",
-    "test:watch": "karma start"
   }
 }

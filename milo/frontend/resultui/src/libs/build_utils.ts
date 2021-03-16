@@ -17,15 +17,12 @@ import { router } from '../routes';
 import { Build, BuilderID, BuildInfraSwarming, GerritChange, GitilesCommit } from '../services/buildbucket';
 
 export function getURLForBuild(build: Pick<Build, 'builder' | 'number' | 'id'>): string {
-  return router.urlForName(
-      'build',
-      {
-        project: build.builder.project,
-        bucket: build.builder.bucket,
-        builder: build.builder.builder,
-        build_num_or_id: build.number ? build.number.toString() : `b${build.id}`,
-      },
-  );
+  return router.urlForName('build', {
+    project: build.builder.project,
+    bucket: build.builder.bucket,
+    builder: build.builder.builder,
+    build_num_or_id: build.number ? build.number.toString() : `b${build.id}`,
+  });
 }
 
 export function getURLForBuilder(builder: BuilderID): string {
@@ -36,7 +33,7 @@ export function getURLForProject(proj: string): string {
   return `/p/${proj}`;
 }
 
-export function getLegacyURLForBuild(builder: BuilderID , buildNumOrId: string) {
+export function getLegacyURLForBuild(builder: BuilderID, buildNumOrId: string) {
   return `${getURLForBuilder(builder)}/${buildNumOrId}`;
 }
 
@@ -75,19 +72,21 @@ export function getBotLink(swarming: BuildInfraSwarming): Link | null {
 export function getBuildbucketLink(buildbucketHost: string, buildId: string): Link {
   return {
     label: buildId,
-    url: `https://${buildbucketHost}/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?${new URLSearchParams([[
-      'request',
-      JSON.stringify({
-        id: buildId,
-      }),
-    ]]).toString()}`,
+    url: `https://${buildbucketHost}/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?${new URLSearchParams([
+      [
+        'request',
+        JSON.stringify({
+          id: buildId,
+        }),
+      ],
+    ]).toString()}`,
     ariaLabel: 'Buildbucket RPC explorer for build',
   };
 }
 
 // getLogdogRawUrl generates raw link from a logdog:// url
 export function getLogdogRawUrl(logdogURL: string): string | null {
-  const match = /^(logdog:\/\/)([^\/]*)\/(.+)$/.exec(logdogURL);
+  const match = /^(logdog:\/\/)([^/]*)\/(.+)$/.exec(logdogURL);
   if (!match) {
     return null;
   }

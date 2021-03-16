@@ -86,7 +86,9 @@ export interface OnEnterList extends HTMLElement {
 export class LazyListElement extends LitElement {
   static readonly MIN_INTERVAL = 100;
 
-  get growth() { return this._growth; }
+  get growth() {
+    return this._growth;
+  }
   set growth(newVal: number) {
     this._growth = newVal;
     if (this.limiter.empty()) {
@@ -152,9 +154,7 @@ export class LazyListElement extends LitElement {
   onscroll = () => this.renderTo(this.clientHeight + this.scrollTop);
 
   protected render() {
-    return html`
-      <slot id="slot"></slot>
-    `;
+    return html` <slot id="slot"></slot> `;
   }
 
   static styles = css`

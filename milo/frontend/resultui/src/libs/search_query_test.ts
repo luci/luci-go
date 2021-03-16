@@ -17,10 +17,9 @@ import { assert } from 'chai';
 import { TestResult, TestStatus, TestVariant, TestVariantStatus } from '../services/resultdb';
 import { parseSearchQuery, suggestSearchQuery } from './search_query';
 
-
 const variant1: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-1',
-  variant: {'def': {'key1': 'val1'}},
+  variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   status: TestVariantStatus.UNEXPECTED,
   results: [
@@ -44,7 +43,7 @@ const variant1: TestVariant = {
 
 const variant2: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-2',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.UNEXPECTED,
   results: [
@@ -63,7 +62,7 @@ const variant2: TestVariant = {
 
 const variant3: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-3',
-  variant: {def: {'key1': 'val3'}},
+  variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
   status: TestVariantStatus.FLAKY,
   results: [
@@ -82,14 +81,14 @@ const variant3: TestVariant = {
 
 const variant4: TestVariant = {
   testId: 'invocation-a/test-suite-B/test-4',
-  variant: {'def': {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXONERATED,
 };
 
 const variant5: TestVariant = {
   testId: 'invocation-a/test-suite-B/test-5',
-  variant: {def: {'key1': 'val2', 'key2': 'val1'}},
+  variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
   status: TestVariantStatus.EXPECTED,
   results: [
@@ -103,7 +102,7 @@ const variant5: TestVariant = {
 
 const variant6: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-5',
-  variant: {def: {'key1': 'val2', 'key2': 'val3'}},
+  variant: { def: { key1: 'val2', key2: 'val3' } },
   variantHash: 'key1:val2|key2:val3',
   status: TestVariantStatus.EXPECTED,
   results: [
@@ -117,7 +116,7 @@ const variant6: TestVariant = {
 
 const variant7: TestVariant = {
   testId: 'invocation-a/test-suite-b/test-5/sub',
-  variant: {def: {'key1': 'val2', 'key2': 'val3'}},
+  variant: { def: { key1: 'val2', key2: 'val3' } },
   variantHash: 'key1:val2|key2:val3',
   status: TestVariantStatus.EXPECTED,
   results: [
@@ -129,21 +128,11 @@ const variant7: TestVariant = {
   ],
 };
 
-
-const variants = [
-  variant1,
-  variant2,
-  variant3,
-  variant4,
-  variant5,
-  variant6,
-  variant7,
-];
-
+const variants = [variant1, variant2, variant3, variant4, variant5, variant6, variant7];
 
 describe('parseSearchQuery', () => {
   describe('ID query', () => {
-    it('should filter out variants whose test ID doesn\'t match the search text', () => {
+    it("should filter out variants whose test ID doesn't match the search text", () => {
       const filter = parseSearchQuery('ID:test-suite-a');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [variant1, variant2]);
@@ -215,7 +204,6 @@ describe('parseSearchQuery', () => {
       assert.deepEqual(filtered, [variant1]);
     });
 
-
     it('should work with negation', () => {
       const filter = parseSearchQuery('-vhash:key1:val1');
       const filtered = variants.filter(filter);
@@ -251,158 +239,368 @@ describe('suggestSearchQuery', () => {
 
   it('should give user suggestions based on the last sub-query', () => {
     const suggestions1 = suggestSearchQuery('unexpected Pass');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'RStatus:Pass'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-RStatus:Pass'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === 'Status:UNEXPECTED'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === '-Status:UNEXPECTED'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'RStatus:Pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-RStatus:Pass'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === 'Status:UNEXPECTED'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === '-Status:UNEXPECTED'),
+      undefined
+    );
   });
 
   it('should suggest run status query with matching status', () => {
     const suggestions1 = suggestSearchQuery('Pass');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'RStatus:Pass'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-RStatus:Pass'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'RStatus:Pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-RStatus:Pass'),
+      undefined
+    );
 
     const suggestions2 = suggestSearchQuery('Fail');
-    assert.notStrictEqual(suggestions2.find((s) => s.value === 'RStatus:Fail'), undefined);
-    assert.notStrictEqual(suggestions2.find((s) => s.value === '-RStatus:Fail'), undefined);
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === 'RStatus:Fail'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-RStatus:Fail'),
+      undefined
+    );
 
     const suggestions3 = suggestSearchQuery('Crash');
-    assert.notStrictEqual(suggestions3.find((s) => s.value === 'RStatus:Crash'), undefined);
-    assert.notStrictEqual(suggestions3.find((s) => s.value === '-RStatus:Crash'), undefined);
+    assert.notStrictEqual(
+      suggestions3.find((s) => s.value === 'RStatus:Crash'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions3.find((s) => s.value === '-RStatus:Crash'),
+      undefined
+    );
 
     const suggestions4 = suggestSearchQuery('Abort');
-    assert.notStrictEqual(suggestions4.find((s) => s.value === 'RStatus:Abort'), undefined);
-    assert.notStrictEqual(suggestions4.find((s) => s.value === '-RStatus:Abort'), undefined);
+    assert.notStrictEqual(
+      suggestions4.find((s) => s.value === 'RStatus:Abort'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions4.find((s) => s.value === '-RStatus:Abort'),
+      undefined
+    );
 
     const suggestions5 = suggestSearchQuery('Skip');
-    assert.notStrictEqual(suggestions5.find((s) => s.value === 'RStatus:Skip'), undefined);
-    assert.notStrictEqual(suggestions5.find((s) => s.value === '-RStatus:Skip'), undefined);
+    assert.notStrictEqual(
+      suggestions5.find((s) => s.value === 'RStatus:Skip'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions5.find((s) => s.value === '-RStatus:Skip'),
+      undefined
+    );
   });
 
   it('should not suggest run status query with a different status', () => {
     const suggestions1 = suggestSearchQuery('Pass');
-    assert.strictEqual(suggestions1.find((s) => s.value === 'RStatus:Fail'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === '-RStatus:Fail'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === 'RStatus:Crash'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === '-RStatus:Crash'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === 'RStatus:Abort'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === '-RStatus:Abort'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === 'RStatus:Skip'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === '-RStatus:Skip'), undefined);
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === 'RStatus:Fail'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === '-RStatus:Fail'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === 'RStatus:Crash'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === '-RStatus:Crash'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === 'RStatus:Abort'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === '-RStatus:Abort'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === 'RStatus:Skip'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === '-RStatus:Skip'),
+      undefined
+    );
   });
 
   it('should suggest variant status query with matching status', () => {
     const suggestions1 = suggestSearchQuery('unexpected');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'Status:UNEXPECTED'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-Status:UNEXPECTED'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'Status:UNEXPECTED'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-Status:UNEXPECTED'),
+      undefined
+    );
 
     const suggestions2 = suggestSearchQuery('flaky');
-    assert.notStrictEqual(suggestions2.find((s) => s.value === 'Status:FLAKY'), undefined);
-    assert.notStrictEqual(suggestions2.find((s) => s.value === '-Status:FLAKY'), undefined);
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === 'Status:FLAKY'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-Status:FLAKY'),
+      undefined
+    );
 
     const suggestions3 = suggestSearchQuery('exonerated');
-    assert.notStrictEqual(suggestions3.find((s) => s.value === 'Status:EXONERATED'), undefined);
-    assert.notStrictEqual(suggestions3.find((s) => s.value === '-Status:EXONERATED'), undefined);
+    assert.notStrictEqual(
+      suggestions3.find((s) => s.value === 'Status:EXONERATED'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions3.find((s) => s.value === '-Status:EXONERATED'),
+      undefined
+    );
 
     const suggestions4 = suggestSearchQuery('expected');
-    assert.notStrictEqual(suggestions4.find((s) => s.value === 'Status:EXPECTED'), undefined);
-    assert.notStrictEqual(suggestions4.find((s) => s.value === '-Status:EXPECTED'), undefined);
+    assert.notStrictEqual(
+      suggestions4.find((s) => s.value === 'Status:EXPECTED'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions4.find((s) => s.value === '-Status:EXPECTED'),
+      undefined
+    );
   });
 
   it('should not suggest variant status query with a different status', () => {
     const suggestions1 = suggestSearchQuery('UNEXPECTED');
-    assert.strictEqual(suggestions1.find((s) => s.value === 'Status:FLAKY'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === '-Status:FLAKY'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === 'Status:EXONERATED'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === '-Status:EXONERATED'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === 'Status:EXPECTED'), undefined);
-    assert.strictEqual(suggestions1.find((s) => s.value === '-Status:EXPECTED'), undefined);
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === 'Status:FLAKY'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === '-Status:FLAKY'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === 'Status:EXONERATED'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === '-Status:EXONERATED'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === 'Status:EXPECTED'),
+      undefined
+    );
+    assert.strictEqual(
+      suggestions1.find((s) => s.value === '-Status:EXPECTED'),
+      undefined
+    );
   });
 
   it('suggestion should be case insensitive', () => {
     const suggestions1 = suggestSearchQuery('PASS');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'RStatus:Pass'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-RStatus:Pass'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'RStatus:Pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-RStatus:Pass'),
+      undefined
+    );
 
     const suggestions2 = suggestSearchQuery('fail');
-    assert.notStrictEqual(suggestions2.find((s) => s.value === 'RStatus:Fail'), undefined);
-    assert.notStrictEqual(suggestions2.find((s) => s.value === '-RStatus:Fail'), undefined);
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === 'RStatus:Fail'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-RStatus:Fail'),
+      undefined
+    );
 
     const suggestions3 = suggestSearchQuery('CrAsH');
-    assert.notStrictEqual(suggestions3.find((s) => s.value === 'RStatus:Crash'), undefined);
-    assert.notStrictEqual(suggestions3.find((s) => s.value === '-RStatus:Crash'), undefined);
+    assert.notStrictEqual(
+      suggestions3.find((s) => s.value === 'RStatus:Crash'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions3.find((s) => s.value === '-RStatus:Crash'),
+      undefined
+    );
 
     const suggestions4 = suggestSearchQuery('Abort');
-    assert.notStrictEqual(suggestions4.find((s) => s.value === 'RStatus:Abort'), undefined);
-    assert.notStrictEqual(suggestions4.find((s) => s.value === '-RStatus:Abort'), undefined);
+    assert.notStrictEqual(
+      suggestions4.find((s) => s.value === 'RStatus:Abort'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions4.find((s) => s.value === '-RStatus:Abort'),
+      undefined
+    );
 
     const suggestions5 = suggestSearchQuery('sKIP');
-    assert.notStrictEqual(suggestions5.find((s) => s.value === 'RStatus:Skip'), undefined);
-    assert.notStrictEqual(suggestions5.find((s) => s.value === '-RStatus:Skip'), undefined);
+    assert.notStrictEqual(
+      suggestions5.find((s) => s.value === 'RStatus:Skip'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions5.find((s) => s.value === '-RStatus:Skip'),
+      undefined
+    );
   });
 
   it('should suggest ID query', () => {
     const suggestions1 = suggestSearchQuery('ranDom');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:ranDom'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:ranDom'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'ID:ranDom'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-ID:ranDom'),
+      undefined
+    );
   });
 
   it('should suggest ID query when the query prefix is ID:', () => {
     const suggestions1 = suggestSearchQuery('ID:pass');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:pass'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:pass'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'ID:pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-ID:pass'),
+      undefined
+    );
 
     const suggestions2 = suggestSearchQuery('-ID:pass');
     // When user explicitly typed negative query, don't suggest positive query.
-    assert.strictEqual(suggestions2.find((s) => s.value === 'ID:pass'), undefined);
-    assert.notStrictEqual(suggestions2.find((s) => s.value === '-ID:pass'), undefined);
+    assert.strictEqual(
+      suggestions2.find((s) => s.value === 'ID:pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-ID:pass'),
+      undefined
+    );
   });
 
   it('should suggest ID query when the query type is a substring of ID:', () => {
     const suggestions1 = suggestSearchQuery('i');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'ID:'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-ID:'),
+      undefined
+    );
   });
 
   it('should suggest ID query even when there are other matching queries', () => {
     const suggestions1 = suggestSearchQuery('fail');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'RStatus:Fail'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-RStatus:Fail'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'ID:fail'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-ID:fail'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'RStatus:Fail'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-RStatus:Fail'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'ID:fail'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-ID:fail'),
+      undefined
+    );
   });
 
   it('should suggest ExactID query when the query prefix is ExactID:', () => {
     const suggestions1 = suggestSearchQuery('ExactID:pass');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'ExactID:pass'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-ExactID:pass'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'ExactID:pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-ExactID:pass'),
+      undefined
+    );
 
     const suggestions2 = suggestSearchQuery('-ExactID:pass');
     // When user explicitly typed negative query, don't suggest positive query.
-    assert.strictEqual(suggestions2.find((s) => s.value === 'ExactID:pass'), undefined);
-    assert.notStrictEqual(suggestions2.find((s) => s.value === '-ExactID:pass'), undefined);
+    assert.strictEqual(
+      suggestions2.find((s) => s.value === 'ExactID:pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-ExactID:pass'),
+      undefined
+    );
   });
 
   it('should suggest ExactID query when the query type is a substring of ExactID:', () => {
     const suggestions1 = suggestSearchQuery('xact');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'ExactID:'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-ExactID:'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'ExactID:'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-ExactID:'),
+      undefined
+    );
   });
 
   it('should suggest VHash query when the query prefix is VHash:', () => {
     const suggestions1 = suggestSearchQuery('VHash:pass');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'VHash:pass'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-VHash:pass'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'VHash:pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-VHash:pass'),
+      undefined
+    );
 
     const suggestions2 = suggestSearchQuery('-VHash:pass');
     // When user explicitly typed negative query, don't suggest positive query.
-    assert.strictEqual(suggestions2.find((s) => s.value === 'VHash:pass'), undefined);
-    assert.notStrictEqual(suggestions2.find((s) => s.value === '-VHash:pass'), undefined);
+    assert.strictEqual(
+      suggestions2.find((s) => s.value === 'VHash:pass'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions2.find((s) => s.value === '-VHash:pass'),
+      undefined
+    );
   });
 
   it('should suggest VHash query when the query type is a substring of VHash:', () => {
     const suggestions1 = suggestSearchQuery('hash');
-    assert.notStrictEqual(suggestions1.find((s) => s.value === 'VHash:'), undefined);
-    assert.notStrictEqual(suggestions1.find((s) => s.value === '-VHash:'), undefined);
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === 'VHash:'),
+      undefined
+    );
+    assert.notStrictEqual(
+      suggestions1.find((s) => s.value === '-VHash:'),
+      undefined
+    );
   });
 });

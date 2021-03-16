@@ -222,7 +222,7 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
     class Provider extends (cls as Constructor<LitElement>) {
       constructor() {
         super();
-        providerPropsWeakMap.set(this, {consumers: new Set()});
+        providerPropsWeakMap.set(this, { consumers: new Set() });
       }
 
       protected updated(changedProperties: Map<K, Ctx>) {
@@ -232,7 +232,7 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
         }
 
         const consumers = providerPropsWeakMap.get(this)!.consumers;
-        const newValue = (this as LitElement as T)[contextKey];
+        const newValue = ((this as LitElement) as T)[contextKey];
         for (const consumer of consumers) {
           updateConsumer(consumer, newValue);
         }
@@ -250,7 +250,7 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
           const consumer = event.detail.element;
           consumers.add(consumer);
           event.detail.addDisconnectedEventCB(() => consumers.delete(consumer));
-          const newValue = (this as LitElement as T)[contextKey];
+          const newValue = ((this as LitElement) as T)[contextKey];
           consumers.add(consumer);
           updateConsumer(consumer, newValue);
           event.stopImmediatePropagation();
@@ -268,7 +268,7 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
     }
 
     // Recover the type information that was lost in the down-casting above.
-    return Provider as Constructor<LitElement> as C;
+    return (Provider as Constructor<LitElement>) as C;
   };
 }
 
@@ -299,19 +299,21 @@ export function consumeContext<K extends string, Ctx>(contextKey: K) {
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
     class Consumer extends (cls as Constructor<LitElement>) {
       connectedCallback() {
-        this.dispatchEvent(new CustomEvent(`milo-subscribe-context-${contextKey}`, {
-          detail: {
-            element: this as LitElement as T,
-            // We need to register callback via subscribe event because
-            // dispatching events in disconnectedCallback is no-op.
-            addDisconnectedEventCB(cb: () => void) {
-              disconnectedEventCBs.push(cb);
+        this.dispatchEvent(
+          new CustomEvent(`milo-subscribe-context-${contextKey}`, {
+            detail: {
+              element: (this as LitElement) as T,
+              // We need to register callback via subscribe event because
+              // dispatching events in disconnectedCallback is no-op.
+              addDisconnectedEventCB(cb: () => void) {
+                disconnectedEventCBs.push(cb);
+              },
             },
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true,
-        }) as ContextEvent<Record<K, Ctx>, T>);
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+          }) as ContextEvent<Record<K, Ctx>, T>
+        );
         super.connectedCallback();
       }
 
@@ -323,6 +325,6 @@ export function consumeContext<K extends string, Ctx>(contextKey: K) {
       }
     }
     // Recover the type information that lost in the down-casting above.
-    return Consumer as Constructor<LitElement> as C;
+    return (Consumer as Constructor<LitElement>) as C;
   };
 }

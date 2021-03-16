@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { render } from 'lit-html';
@@ -29,10 +28,13 @@ import { displayDuration } from '../../libs/time_utils';
 
 const timelineStyle = require('vis-timeline/styles/vis-timeline-graph2d.min.css').default;
 
+@customElement('milo-timeline-tab')
+@consumeBuildState
+@consumeAppState
 export class TimelineTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref buildState!: BuildState;
-  @observable.ref rendered  = false;
+  @observable.ref rendered = false;
   private disposers: Array<() => void> = [];
 
   connectedCallback() {
@@ -40,11 +42,7 @@ export class TimelineTabElement extends MobxLitElement {
     this.appState.selectedTabId = 'timeline';
     trackEvent(GA_CATEGORIES.TIMELINE_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
     this.rendered = false;
-    this.disposers.push(
-      autorun(
-        () => this.renderTimeline(),
-      ),
-    );
+    this.disposers.push(autorun(() => this.renderTimeline()));
   }
 
   disconnectedCallback() {
@@ -73,28 +71,32 @@ export class TimelineTabElement extends MobxLitElement {
     // Create a Timeline
     const timeline = new Timeline(
       container,
-      new DataSet(this.buildState.build.steps.map((step, i) => ({
-        className: `status ${BUILD_STATUS_CLASS_MAP[step.status]}`,
-        content: '',
-        id: i.toString(),
-        group: i.toString(),
-        start: (step.startTime || step.renderTime.get()).toMillis(),
-        end: (step.endTime || step.renderTime.get()).toMillis(),
-        type: 'range',
-      }))),
-      new DataSet(this.buildState.build.steps.map((step, id) => {
-        const content = document.createElement('div');
-        content.classList.add('group-title', 'status', BUILD_STATUS_CLASS_MAP[step.status]);
-        render(
-          html`
-            <span class="title">${escape(step.name)}</span>
-            <span class="duration">( ${displayDuration(step.duration)} )</span>
-          `,
-          content,
-        );
-        return {id, content};
-      })),
-      options,
+      new DataSet(
+        this.buildState.build.steps.map((step, i) => ({
+          className: `status ${BUILD_STATUS_CLASS_MAP[step.status]}`,
+          content: '',
+          id: i.toString(),
+          group: i.toString(),
+          start: (step.startTime || step.renderTime.get()).toMillis(),
+          end: (step.endTime || step.renderTime.get()).toMillis(),
+          type: 'range',
+        }))
+      ),
+      new DataSet(
+        this.buildState.build.steps.map((step, id) => {
+          const content = document.createElement('div');
+          content.classList.add('group-title', 'status', BUILD_STATUS_CLASS_MAP[step.status]);
+          render(
+            html`
+              <span class="title">${escape(step.name)}</span>
+              <span class="duration">( ${displayDuration(step.duration)} )</span>
+            `,
+            content
+          );
+          return { id, content };
+        })
+      ),
+      options
     );
 
     timeline.on('select', (props) => {
@@ -111,9 +113,7 @@ export class TimelineTabElement extends MobxLitElement {
   }
 
   protected render() {
-    return html`
-      <div id="timeline"></div>
-    `;
+    return html` <div id="timeline"></div> `;
   }
 
   protected firstUpdated() {
@@ -128,19 +128,19 @@ export class TimelineTabElement extends MobxLitElement {
       }
 
       .status.infra-failure {
-        color: #FFFFFF;
+        color: #ffffff;
         background-color: #c6c;
-        border-color: #ACA0B3;
+        border-color: #aca0b3;
       }
       .status.started {
         color: #000;
         background-color: #fd3;
-        border-color: #C5C56D;
+        border-color: #c5c56d;
       }
       .status.failure {
         color: #000;
         background-color: #e88;
-        border-color: #A77272;
+        border-color: #a77272;
         border-style: solid;
       }
       .status.canceled {
@@ -152,10 +152,10 @@ export class TimelineTabElement extends MobxLitElement {
       .status.success {
         color: #000;
         background-color: #8d4;
-        border-color: #4F8530;
+        border-color: #4f8530;
       }
 
-      .group-title > .title{
+      .group-title > .title {
         display: inline-block;
         white-space: nowrap;
         max-width: 50em;
@@ -163,7 +163,7 @@ export class TimelineTabElement extends MobxLitElement {
         text-overflow: ellipsis;
       }
 
-      .group-title > .duration{
+      .group-title > .duration {
         display: inline-block;
         text-align: right;
         float: right;
@@ -180,9 +180,3 @@ export class TimelineTabElement extends MobxLitElement {
     `,
   ];
 }
-
-customElement('milo-timeline-tab')(
-  consumeBuildState(
-    consumeAppState(TimelineTabElement),
-  ),
-);

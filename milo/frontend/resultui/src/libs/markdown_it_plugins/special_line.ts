@@ -49,7 +49,7 @@ class SpecialLineRulesProcessor {
     const hardBreakOnly = !s.md.options.breaks;
     const lastTokenType = s.tokens[s.tokens.length - 1]?.type;
     // Check if it's a new line.
-    if (s.pos === 0 || lastTokenType === 'hardbreak' || !hardBreakOnly && lastTokenType === 'softbreak') {
+    if (s.pos === 0 || lastTokenType === 'hardbreak' || (!hardBreakOnly && lastTokenType === 'softbreak')) {
       const content = s.src.slice(s.pos);
 
       for (let activeRuleIndex = 0; activeRuleIndex < this.rules.length; ++activeRuleIndex) {
@@ -70,7 +70,7 @@ class SpecialLineRulesProcessor {
     }
 
     return false;
-  }
+  };
 
   /**
    * Apply the transform rules.
@@ -111,7 +111,7 @@ class SpecialLineRulesProcessor {
         newChildren.push(srcToken);
 
         // Reset activeRule and ruleLevel when starting a new line.
-        if (srcToken.type === 'hardbreak' || !hardBreakOnly && srcToken.type === 'softbreak') {
+        if (srcToken.type === 'hardbreak' || (!hardBreakOnly && srcToken.type === 'softbreak')) {
           activeRule = null;
           ruleLevel = 0;
           continue;
@@ -122,7 +122,7 @@ class SpecialLineRulesProcessor {
     }
 
     return true;
-  }
+  };
 }
 
 // Track the processor of each MarkdownIt instance.
@@ -144,5 +144,5 @@ export function specialLine(md: MarkdownIt, rePrefix: RegExp, transformFn: Trans
     md.inline.ruler.before('text', 'special_line', processor.tokenize);
     md.core.ruler.push('special_line', processor.postProcess);
   }
-  processor.addRule({rePrefix, transformFn});
+  processor.addRule({ rePrefix, transformFn });
 }

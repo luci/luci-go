@@ -42,18 +42,20 @@ export class SignInElement extends LitElement {
 
   private onUserUpdate = (user: gapi.auth2.GoogleUser) => {
     this.profile = user.isSignedIn() ? user.getBasicProfile() : null;
-    this.dispatchEvent(new CustomEvent<gapi.auth2.GoogleUser>('user-update', {
-      detail: user,
-      composed: true,
-    }));
-  }
+    this.dispatchEvent(
+      new CustomEvent<gapi.auth2.GoogleUser>('user-update', {
+        detail: user,
+        composed: true,
+      })
+    );
+  };
 
   protected render() {
     if (this.profile === null) {
       return html`<div class="link" @click=${() => this.gAuth.signIn()}>Login</div>`;
     }
     return html`
-      <img src=${this.profile.getImageUrl()}>
+      <img src=${this.profile.getImageUrl()} />
       <div>${this.profile.getEmail()}</div>
       <div>|</div>
       <div class="link" @click=${() => this.gAuth.signOut()}>Logout</div>

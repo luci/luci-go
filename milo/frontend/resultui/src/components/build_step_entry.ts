@@ -48,7 +48,9 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
   @observable.ref prerender = false;
 
   @observable.ref private _expanded = false;
-  get expanded() { return this._expanded; }
+  get expanded() {
+    return this._expanded;
+  }
   set expanded(newVal) {
     this._expanded = newVal;
     // Always render the content once it was expanded so the descendants' states
@@ -60,8 +62,9 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
 
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
-    this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry')
-      .forEach((e) => e.toggleAllSteps(expand));
+    this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry').forEach((e) =>
+      e.toggleAllSteps(expand)
+    );
   }
 
   onEnterList() {
@@ -70,9 +73,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
 
   @computed private get logs() {
     const logs = this.step.logs || [];
-    return this.configsStore.userConfigs.steps.showDebugLogs
-      ? logs
-      : logs.filter((log) => !log.name.startsWith('$'));
+    return this.configsStore.userConfigs.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
   }
 
   private renderContent() {
@@ -80,28 +81,28 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       return html``;
     }
     return html`
-      <div id="summary" style=${styleMap({display: this.step.summary ? '' : 'none'})}>
+      <div id="summary" style=${styleMap({ display: this.step.summary ? '' : 'none' })}>
         ${renderMarkdown(this.step.summary)}
       </div>
-      <ul id="log-links" style=${styleMap({display: this.step.logs?.length ? '' : 'none'})}>
+      <ul id="log-links" style=${styleMap({ display: this.step.logs?.length ? '' : 'none' })}>
         ${this.logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
-      ${this.step.children?.map((child, i) => html`
-      <milo-build-step-entry
-        class="list-entry"
-        .expanded=${!child.succeededRecursively}
-        .number=${i + 1}
-        .step=${child}
-      ></milo-build-step-entry>
-      `) || ''}
+      ${this.step.children?.map(
+        (child, i) => html`
+          <milo-build-step-entry
+            class="list-entry"
+            .expanded=${!child.succeededRecursively}
+            .number=${i + 1}
+            .step=${child}
+          ></milo-build-step-entry>
+        `
+      ) || ''}
     `;
   }
 
   private renderDuration() {
     if (!this.step.duration) {
-      return html`
-        <span id="duration" title="No duration">N/A</span>
-      `;
+      return html` <span id="duration" title="No duration">N/A</span> `;
     }
 
     return html`
@@ -111,18 +112,19 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
           const tooltip = document.createElement('div');
           render(this.renderDurationTooltip(), tooltip);
 
-          window.dispatchEvent(new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-            detail: {
-              tooltip,
-              targetRect: (e.target as HTMLElement).getBoundingClientRect(),
-            },
-          }));
+          window.dispatchEvent(
+            new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+              detail: {
+                tooltip,
+                targetRect: (e.target as HTMLElement).getBoundingClientRect(),
+              },
+            })
+          );
         }}
         @mouseout=${() => {
-          window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>(
-            'hide-tooltip',
-            { detail: { delay: 50 } },
-          ));
+          window.dispatchEvent(
+            new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } })
+          );
         }}
       >
         ${displayCompactDuration(this.step.duration)}
@@ -181,16 +183,15 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     }
 
     return html`
-      <milo-expandable-entry
-        .expanded=${this.expanded}
-        .onToggle=${(expanded: boolean) => this.expanded = expanded}
-      >
+      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <span slot="header">
           <mwc-icon
             id="status-indicator"
             class=${BUILD_STATUS_CLASS_MAP[this.step.status]}
             title=${BUILD_STATUS_DISPLAY_MAP[this.step.status]}
-          >${BUILD_STATUS_ICON_MAP[this.step.status]}</mwc-icon>
+          >
+            ${BUILD_STATUS_ICON_MAP[this.step.status]}
+          </mwc-icon>
           ${this.renderDuration()}
           <b>${this.number}. ${this.step.selfName}</b>
           <milo-copy-to-clipboard
@@ -241,14 +242,14 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       color: white;
       background-color: var(--active-color);
       display: inline-block;
-      padding: .25em .4em;
+      padding: 0.25em 0.4em;
       font-size: 75%;
       font-weight: 700;
       line-height: 13px;
       text-align: center;
       white-space: nowrap;
       vertical-align: bottom;
-      border-radius: .25rem;
+      border-radius: 0.25rem;
       margin-bottom: 3px;
       width: 35px;
     }
@@ -279,7 +280,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       overflow-wrap: break-word;
     }
 
-    #log-links>li {
+    #log-links > li {
       list-style-type: circle;
     }
 

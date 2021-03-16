@@ -26,7 +26,7 @@ describe('cached_fn', () => {
     let callCount = 0;
     const fn = (param1: number, param2: string) => `${param1}-${param2}-${callCount++}`;
     fnSpy = sinon.spy(fn);
-    cachedFn = cached(fnSpy, {key: (...params) => JSON.stringify(params)});
+    cachedFn = cached(fnSpy, { key: (...params) => JSON.stringify(params) });
   });
 
   it('should return cached response when params are identical', async () => {
@@ -81,13 +81,10 @@ describe('cached_fn', () => {
 
   describe('when config.expire(...) returns a promise that resolves', () => {
     beforeEach(() => {
-      cachedFn = cached(
-        fnSpy,
-        {
-          key: (...params) => JSON.stringify(params),
-          expire: () => aTimeout(20),
-        },
-      );
+      cachedFn = cached(fnSpy, {
+        key: (...params) => JSON.stringify(params),
+        expire: () => aTimeout(20),
+      });
     });
 
     it('should return cached response when cache has not expired', async () => {
@@ -122,16 +119,13 @@ describe('cached_fn', () => {
 
   describe('when config.expire() returns a promise that rejects', () => {
     beforeEach(() => {
-      cachedFn = cached(
-        fnSpy,
-        {
-          key: (...params) => JSON.stringify(params),
-          expire: async () => {
-            await aTimeout(20);
-            throw new Error();
-          },
+      cachedFn = cached(fnSpy, {
+        key: (...params) => JSON.stringify(params),
+        expire: async () => {
+          await aTimeout(20);
+          throw new Error();
         },
-      );
+      });
     });
 
     it('should return cached response when cache has not expired', async () => {
@@ -166,13 +160,10 @@ describe('cached_fn', () => {
 
   describe('when config.expire() resolves immediately', () => {
     beforeEach(() => {
-      cachedFn = cached(
-        fnSpy,
-        {
-          key: (...params) => JSON.stringify(params),
-          expire: () => Promise.resolve(),
-        },
-      );
+      cachedFn = cached(fnSpy, {
+        key: (...params) => JSON.stringify(params),
+        expire: () => Promise.resolve(),
+      });
     });
 
     it('should not delete the cache before the function returns', async () => {
@@ -194,25 +185,22 @@ describe('cached_fn', () => {
   describe('when config.expire() throws immediately', () => {
     beforeEach(() => {
       let firstCall = true;
-      cachedFn = cached(
-        fnSpy,
-        {
-          key: (...params) => JSON.stringify(params),
-          expire: () => {
-            if (firstCall) {
-              firstCall = false;
-              throw new Error();
-            }
-            return Promise.resolve();
-          },
+      cachedFn = cached(fnSpy, {
+        key: (...params) => JSON.stringify(params),
+        expire: () => {
+          if (firstCall) {
+            firstCall = false;
+            throw new Error();
+          }
+          return Promise.resolve();
         },
-      );
+      });
     });
 
     it('should not cache the response', async () => {
       try {
         cachedFn(CacheOption.Cached, 1, 'a');
-      } catch {}
+      } catch {} // eslint-disable-line no-empty
       const res2 = cachedFn(CacheOption.Cached, 1, 'a');
       assert.strictEqual(res2, '1-a-1');
       assert.strictEqual(fnSpy.callCount, 2);

@@ -20,45 +20,49 @@ import sinon, { SinonStub } from 'sinon';
 import { AppState, provideAppState } from '../context/app_state';
 import { InvocationState, provideInvocationState } from '../context/invocation_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
-import { QueryTestVariantsRequest, QueryTestVariantsResponse, TestVariantStatus, UISpecificService } from '../services/resultdb';
+import {
+  QueryTestVariantsRequest,
+  QueryTestVariantsResponse,
+  TestVariantStatus,
+  UISpecificService,
+} from '../services/resultdb';
 import './test_results_tab';
 import { TestResultsTabElement } from './test_results_tab';
 
 const variant1 = {
   testId: 'a',
-  variant: {'def': {'key1': 'val1'}},
+  variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   status: TestVariantStatus.UNEXPECTED,
 };
 
 const variant2 = {
   testId: 'a',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.UNEXPECTED,
 };
 
 const variant3 = {
   testId: 'a',
-  variant: {def: {'key1': 'val3'}},
+  variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
   status: TestVariantStatus.UNEXPECTED,
 };
 
 const variant4 = {
   testId: 'b',
-  variant: {'def': {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.FLAKY,
 };
 
 const variant5 = {
   testId: 'c',
-  variant: {def: {'key1': 'val2', 'key2': 'val1'}},
+  variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
   status: TestVariantStatus.FLAKY,
 };
-
 
 @customElement('milo-test-context-provider')
 @provideConfigsStore
@@ -73,8 +77,8 @@ class ContextProvider extends LitElement {
 describe('Test Results Tab', () => {
   it('should get invocation ID from URL', async () => {
     const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
-    queryTestVariantsStub.onCall(0).resolves({testVariants: [variant1, variant2, variant3], nextPageToken: 'next'});
-    queryTestVariantsStub.onCall(1).resolves({testVariants: [variant4, variant5]});
+    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
+    queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
 
     const appState = {
       selectedTabId: '',
@@ -119,11 +123,11 @@ describe('Test Results Tab', () => {
 
     beforeEach(async () => {
       queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
-      queryTestVariantsStub.onCall(0).resolves({testVariants: [variant1], nextPageToken: 'next0'});
-      queryTestVariantsStub.onCall(1).resolves({testVariants: [variant2], nextPageToken: 'next1'});
-      queryTestVariantsStub.onCall(2).resolves({testVariants: [variant3], nextPageToken: 'next2'});
-      queryTestVariantsStub.onCall(3).resolves({testVariants: [variant4], nextPageToken: 'next3'});
-      queryTestVariantsStub.onCall(4).resolves({testVariants: [variant5]});
+      queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1], nextPageToken: 'next0' });
+      queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant2], nextPageToken: 'next1' });
+      queryTestVariantsStub.onCall(2).resolves({ testVariants: [variant3], nextPageToken: 'next2' });
+      queryTestVariantsStub.onCall(3).resolves({ testVariants: [variant4], nextPageToken: 'next3' });
+      queryTestVariantsStub.onCall(4).resolves({ testVariants: [variant5] });
       appState = {
         selectedTabId: '',
         uiSpecificService: {
@@ -150,7 +154,7 @@ describe('Test Results Tab', () => {
     afterEach(() => {
       invocationState.dispose();
       const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
-      window.history.replaceState({path: url}, '', url);
+      window.history.replaceState({ path: url }, '', url);
       fixtureCleanup();
     });
 

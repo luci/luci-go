@@ -17,10 +17,10 @@ test: node_deps
 	npm run test
 
 lint: node_deps
-	npx tslint -p .
+	npx gts lint
 
 format: node_deps
-	npx tslint -p . --fix
+	npx gts fix
 
 gen_cert:
 	openssl req -x509 -nodes -days 730 -newkey rsa:2048 -keyout dev-configs/cert.key -out dev-configs/cert.pem -config req.cnf -sha256

@@ -24,24 +24,20 @@ const multipleReviewerLinesWithHardBreak = 'R=user@google.com  \nR=user2@google.
 
 describe('reviewer_line', () => {
   it('does not treat "R=" prefix as part of the email address', async () => {
-    const md = MarkdownIt('zero', {breaks: true, linkify: true})
-      .enable(['newline', 'linkify'])
-      .use(reviewerLine);
+    const md = MarkdownIt('zero', { breaks: true, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
 
     after(fixtureCleanup);
     const ele = await fixture(md.render(singleReviewerLine));
 
     const anchors = ele.querySelectorAll('a');
     assert.equal(anchors.length, 1);
-    const anchor1 =  anchors.item(0);
+    const anchor1 = anchors.item(0);
     assert.equal(anchor1.href, 'mailto:user@google.com');
     assert.equal(anchor1.text, 'user@google.com');
   });
 
   describe('When breaks is set to true', () => {
-    const md = MarkdownIt('zero', {breaks: true, linkify: true})
-      .enable(['newline', 'linkify'])
-      .use(reviewerLine);
+    const md = MarkdownIt('zero', { breaks: true, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
 
     it('can renders multiple reviewer lines with soft break correctly', async () => {
       after(fixtureCleanup);
@@ -50,11 +46,11 @@ describe('reviewer_line', () => {
       const anchors = ele.querySelectorAll('a');
       assert.equal(anchors.length, 2);
 
-      const anchor1 =  anchors.item(0);
+      const anchor1 = anchors.item(0);
       assert.equal(anchor1.href, 'mailto:user@google.com');
       assert.equal(anchor1.text, 'user@google.com');
 
-      const anchor2 =  anchors.item(1);
+      const anchor2 = anchors.item(1);
       assert.equal(anchor2.href, 'mailto:user2@google.com');
       assert.equal(anchor2.text, 'user2@google.com');
     });
@@ -66,20 +62,18 @@ describe('reviewer_line', () => {
       const anchors = ele.querySelectorAll('a');
       assert.equal(anchors.length, 2);
 
-      const anchor1 =  anchors.item(0);
+      const anchor1 = anchors.item(0);
       assert.equal(anchor1.href, 'mailto:user@google.com');
       assert.equal(anchor1.text, 'user@google.com');
 
-      const anchor2 =  anchors.item(1);
+      const anchor2 = anchors.item(1);
       assert.equal(anchor2.href, 'mailto:user2@google.com');
       assert.equal(anchor2.text, 'user2@google.com');
     });
   });
 
   describe('When breaks is set to false', () => {
-    const md = MarkdownIt('zero', {breaks: false, linkify: true})
-      .enable(['newline', 'linkify'])
-      .use(reviewerLine);
+    const md = MarkdownIt('zero', { breaks: false, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
 
     it('can renders multiple reviewer lines with soft break correctly', async () => {
       after(fixtureCleanup);
@@ -88,11 +82,11 @@ describe('reviewer_line', () => {
       const anchors = ele.querySelectorAll('a');
       assert.equal(anchors.length, 2);
 
-      const anchor1 =  anchors.item(0);
+      const anchor1 = anchors.item(0);
       assert.equal(anchor1.href, 'mailto:user@google.com');
       assert.equal(anchor1.text, 'user@google.com');
 
-      const anchor2 =  anchors.item(1);
+      const anchor2 = anchors.item(1);
       assert.equal(anchor2.href, 'mailto:R=user2@google.com');
       assert.equal(anchor2.text, 'R=user2@google.com');
     });
@@ -104,11 +98,11 @@ describe('reviewer_line', () => {
       const anchors = ele.querySelectorAll('a');
       assert.equal(anchors.length, 2);
 
-      const anchor1 =  anchors.item(0);
+      const anchor1 = anchors.item(0);
       assert.equal(anchor1.href, 'mailto:user@google.com');
       assert.equal(anchor1.text, 'user@google.com');
 
-      const anchor2 =  anchors.item(1);
+      const anchor2 = anchors.item(1);
       assert.equal(anchor2.href, 'mailto:user2@google.com');
       assert.equal(anchor2.text, 'user2@google.com');
     });

@@ -60,7 +60,7 @@ module.exports = (config: Config) => {
       resolve: {
         ...webpackConfig.resolve,
         alias: {
-          'assertion-error': path.resolve(__dirname, './src/libs/test_utils/assertion-error'),
+          'assertion-error': path.resolve(__dirname, './src/libs/test_utils/assertion_error'),
         },
       },
       externals: webpackConfig.externals,
@@ -76,8 +76,8 @@ module.exports = (config: Config) => {
       },
       plugins: [
         new DefinePlugin({
-          'CONFIGS': fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
-          'ENABLE_GA': JSON.stringify(false),
+          CONFIGS: fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
+          ENABLE_GA: JSON.stringify(false),
         }),
         new ProvidePlugin({
           process: 'process/browser',

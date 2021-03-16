@@ -63,7 +63,7 @@ export async function* mapAsync<V, T>(iter: AsyncIterable<V>, mapFn: (v: V) => T
  */
 export function* flatten<T>(iter: Iterable<readonly T[]>): IterableIterator<T> {
   for (const item of iter) {
-    yield *item;
+    yield* item;
   }
 }
 
@@ -80,7 +80,7 @@ export function teeAsync<T>(iter: AsyncIterator<T>): () => AsyncIterableIterator
       if (i === cache.length) {
         const next = iter.next();
         cache[i] = next;
-        cache[i] = next.then((v) => cache[i] = v);
+        cache[i] = next.then((v) => (cache[i] = v));
       }
       const item = await cache[i];
       if (item.done) {

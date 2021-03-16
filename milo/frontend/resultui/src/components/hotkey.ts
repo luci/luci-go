@@ -33,7 +33,7 @@ export class HotkeyElement extends LitElement {
   filter = (keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {
     const tagName = (keyboardEvent.composedPath()[0] as Partial<HTMLElement>).tagName || '';
     return !['INPUT', 'SELECT', 'TEXTAREA'].includes(tagName);
-  }
+  };
 
   // Use _ prefix to prevent typo when assigning property in lit-html template.
   private readonly _handle = (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => {
@@ -41,7 +41,7 @@ export class HotkeyElement extends LitElement {
       return;
     }
     this.handler(keyboardEvent, hotkeysEvent);
-  }
+  };
 
   shouldUpdate(changedProperties: PropertyValues) {
     if (!this.isConnected) {

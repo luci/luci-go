@@ -51,7 +51,7 @@ const config: webpack.Configuration = {
     extensions: ['.js', '.ts', '.css'],
   },
   externals: {
-    'configs': 'CONFIGS',
+    configs: 'CONFIGS',
   },
   optimization: {
     runtimeChunk: 'single',
@@ -62,7 +62,7 @@ const config: webpack.Configuration = {
       cacheGroups: {
         defaultVendors: {
           test: /[\\/]node_modules[\\/]/,
-          name(module: {context: string}) {
+          name(module: { context: string }) {
             const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)![1];
             return `npm.${packageName}`;
           },
@@ -78,10 +78,8 @@ const config: webpack.Configuration = {
       filename: path.resolve(__dirname, './out/index.html'),
     }),
     new HtmlWebpackHarddiskPlugin(),
-    new DefinePlugin({ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true')}),
+    new DefinePlugin({ ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true') }),
   ],
 };
 
-// Default export is required by webpack.
-// tslint:disable-next-line: no-default-export
 export default config;

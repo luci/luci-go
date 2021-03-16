@@ -29,7 +29,7 @@ import { NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import './expandable_entry';
 
-const md = MarkdownIt('zero', {breaks: true, linkify: true})
+const md = MarkdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])
   .use(bugLine)
   .use(reviewerLine)
@@ -40,6 +40,7 @@ const md = MarkdownIt('zero', {breaks: true, linkify: true})
 /**
  * Renders an expandable entry of the given commit.
  */
+@customElement('milo-commit-entry')
 export class CommitEntryElement extends MobxLitElement {
   @observable.ref number = 0;
   @observable.ref repoUrl = '';
@@ -47,7 +48,9 @@ export class CommitEntryElement extends MobxLitElement {
   onToggle = (_isExpanded: boolean) => {};
 
   @observable.ref private _expanded = false;
-  get expanded() { return this._expanded; }
+  get expanded() {
+    return this._expanded;
+  }
   set expanded(isExpanded) {
     if (isExpanded === this._expanded) {
       return;
@@ -56,8 +59,12 @@ export class CommitEntryElement extends MobxLitElement {
     this.onToggle(this._expanded);
   }
 
-  @computed private get commitTime() { return DateTime.fromISO(this.commit.committer.time); }
-  @computed private get commitTitle() { return this.commit.message.split('\n', 1)[0]; }
+  @computed private get commitTime() {
+    return DateTime.fromISO(this.commit.committer.time);
+  }
+  @computed private get commitTitle() {
+    return this.commit.message.split('\n', 1)[0];
+  }
 
   @computed private get descriptionHTML() {
     return sanitizeHTML(md.render(this.commit.message));
@@ -87,10 +94,7 @@ export class CommitEntryElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <milo-expandable-entry
-        .expanded=${this.expanded}
-        .onToggle=${(expanded: boolean) => this.expanded = expanded}
-      >
+      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <div slot="header" id="entry-header">
           <div id="header-number">${this.number}.</div>
           <div id="header-revision">
@@ -174,5 +178,3 @@ export class CommitEntryElement extends MobxLitElement {
     }
   `;
 }
-
-customElement('milo-commit-entry')(CommitEntryElement);
