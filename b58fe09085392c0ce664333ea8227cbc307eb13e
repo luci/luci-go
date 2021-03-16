@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1470ded_a1b8bb12",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-16T03:55:19Z",
+      "side": 1,
+      "message": "Do you mean when you run `make format` it will format badly? And after you change it would it revert to the bad format if you run `make format` again?",
+      "range": {
+        "startLine": 11,
+        "startChar": 27,
+        "endLine": 11,
+        "endChar": 65
+      },
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "07e9e7d0_c78752a0",
@@ -14,6 +37,24 @@
       "writtenOn": "2021-03-16T03:24:42Z",
       "side": 1,
       "message": "Sorry I know this CL contains a lot of changes.\nBut I really want to get this CL in first so I don\u0027t have to rebase it constantly.\n",
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbce8698_ee8fc6ac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-16T03:55:19Z",
+      "side": 1,
+      "message": "I\u0027m fine with it, but perhaps it would make it easier to review if you break it to 3 CLs:\n\n- Upgrade gts to v0.3 and migrate from tslint to eslint\n- CLs to format the code\n- CL to rename the file.\n\nBut let\u0027s leave it as it is for now.",
+      "parentUuid": "07e9e7d0_c78752a0",
       "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -43,6 +84,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8b3fd242_80166bff",
+        "filename": "milo/frontend/resultui/.eslintrc.json",
+        "patchSetId": 8
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-16T03:55:19Z",
+      "side": 1,
+      "message": "I agreed on this.",
+      "parentUuid": "973d6492_bb77a4f1",
+      "range": {
+        "startLine": 4,
+        "startChar": 59,
+        "endLine": 4,
+        "endChar": 76
+      },
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "066a618e_0169289a",
         "filename": "milo/frontend/resultui/.eslintrc.json",
         "patchSetId": 8
@@ -60,6 +125,23 @@
         "endLine": 5,
         "endChar": 100
       },
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5245b14_c90822f9",
+        "filename": "milo/frontend/resultui/src/components/dot_spinner.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-16T03:55:19Z",
+      "side": 1,
+      "message": "I think this is intentionally to be in oneline: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2543704",
       "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
