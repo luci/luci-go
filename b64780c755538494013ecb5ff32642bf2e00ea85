@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0bafb23c_6f700f58",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T20:55:11Z",
+      "side": 1,
+      "message": "\u003e\u003e what will rbe response to those have been uploaded successfully before?\nRBECAS returns success for dup contents. That\u0027s the point of CAS. If it returned an error for duplicated content, tests would receive an error whenever an artifact contains the same content with any other tests universally.\n\n\u003e\u003e I mean should we create Artifacts for those have been successfully uploaded, so when rdb retries, L305 will filter them out?\nIt\u0027s still incomplete failure. The artifacts will be returned if the client calls GetArtifacts() or similar. https://google.aip.dev/234 asks batch update calls to be atomic.\n\nIMHO, we should support partial failures and success for this RPC - http://shortn/_gkcWNxjW4V\n\nIf this RPC supports partial failures, then the API should\n1) keep both failed and succeeded artifacts in Spanner, and\n2) include the failed and succeeded artifacts in the API response.\n\n(1) is important because Milo can list all the artifacts, and display errors, like \"failed to upload artifacts\", for ones that were failed. It will help users clarify the possible reasons of an artifact absent under a test.\n(2) is important, if we want RDB clients, like ResultSink, to optimize retries.\n\nIf this SG, we can plan support for partial failures in this API.",
+      "parentUuid": "e2aa8a21_6b29f82c",
+      "range": {
+        "startLine": 314,
+        "startChar": 11,
+        "endLine": 314,
+        "endChar": 30
+      },
+      "revId": "b64780c755538494013ecb5ff32642bf2e00ea85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ddeddbae_df5bf106",
         "filename": "resultdb/internal/services/recorder/recorder.go",
         "patchSetId": 5
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-16T18:30:58Z",
       "side": 1,
       "message": "Naming nit: rbeConn?",
+      "range": {
+        "startLine": 74,
+        "startChar": 70,
+        "endLine": 74,
+        "endChar": 77
+      },
+      "revId": "b64780c755538494013ecb5ff32642bf2e00ea85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec1e8494_28ea20b7",
+        "filename": "resultdb/internal/services/recorder/recorder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T20:55:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ddeddbae_df5bf106",
       "range": {
         "startLine": 74,
         "startChar": 70,

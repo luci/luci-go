@@ -142,6 +142,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3cb1cb1_beb7ce24",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T20:55:11Z",
+      "side": 1,
+      "message": "resolving",
+      "parentUuid": "28426771_85b9790b",
+      "range": {
+        "startLine": 284,
+        "startChar": 2,
+        "endLine": 293,
+        "endChar": 3
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8cfbb3e8_c64b821f",
@@ -283,6 +307,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "44cba189_493afba5",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T20:55:11Z",
+      "side": 1,
+      "message": "resolving",
+      "parentUuid": "b80d3ed5_3e9f5596",
+      "range": {
+        "startLine": 297,
+        "startChar": 0,
+        "endLine": 306,
+        "endChar": 80
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "265b37c0_f2f0bb8f",
@@ -372,6 +420,54 @@
         "startChar": 56,
         "endLine": 322,
         "endChar": 74
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed0f4f06_f301418d",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T20:55:11Z",
+      "side": 1,
+      "message": "It\u0027s option #2 in crbug.com/1177213.",
+      "parentUuid": "4a40fd38_7ee74c06",
+      "range": {
+        "startLine": 322,
+        "startChar": 56,
+        "endLine": 322,
+        "endChar": 74
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "792b51c6_61e79b9f",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-16T20:55:11Z",
+      "side": 1,
+      "message": "I was meaning that the error returned from L317 does not contain any useful information to ResultSink, or any other ResultDB clients.",
+      "parentUuid": "7ae1545b_3740df25",
+      "range": {
+        "startLine": 322,
+        "startChar": 42,
+        "endLine": 322,
+        "endChar": 75
       },
       "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
