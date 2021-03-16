@@ -42,6 +42,7 @@ var (
 type fakeDatastore struct {
 	RawInterface
 
+	userCtx      context.Context
 	kctx         KeyContext
 	keyForResult func(int32, KeyContext) *Key
 	onDelete     func(*Key)
@@ -54,6 +55,7 @@ func (f *fakeDatastore) factory() RawFactory {
 	return func(ic context.Context) RawInterface {
 		fds := *f
 		fds.kctx = GetKeyContext(ic)
+		fds.userCtx = ic
 		return &fds
 	}
 }
@@ -102,6 +104,11 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	}
 
 	for i := int32(0); i < lim; i++ {
+		select {
+		case <-f.userCtx.Done():
+			return f.userCtx.Err()
+		default:
+		}
 		if v, ok := fq.eqFilts["$err_single"]; ok {
 			idx := fq.eqFilts["$err_single_idx"][0].Value().(int64)
 			if idx == int64(i) {
