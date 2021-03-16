@@ -344,6 +344,23 @@ func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequ
 	return resp.ToProto()
 }
 
+func (c *client) ListChangeComments(ctx context.Context, req *gerritpb.ListChangeCommentsRequest, opts ...grpc.CallOption) (*gerritpb.ListChangeCommentsResponse, error) {
+	var resp map[string][]gerritpb.Comment
+	path := fmt.Sprintf("a/changes/%s/comments", req.Number)
+	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
+		return nil, errors.Annotate(err, "list change comments").Err()
+	}
+
+	lccr := &gerritpb.ListChangeCommentsResponse{}
+	for k, v := range resp {
+		lccr.Comments[k] = &gerritpb.CommentList{}
+		for i, comment := range v {
+			lccr.Comments[k].comments = append(lccr.Comments[k].comments, &comment)
+		}
+	}
+	return lccr, nil
+}
+
 func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error) {
 	var resp map[string]fileInfo
 	params := url.Values{}
