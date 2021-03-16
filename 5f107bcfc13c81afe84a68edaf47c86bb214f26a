@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "09b80f76_65b58d1e",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T23:51:37Z",
+      "side": 1,
+      "message": "I\u0027m not sure if I understand this question correctly.\n\nIn your current implementation, similar to tree client, I think the clientCtxKey should map to an implementation of (interface) bq.Client. A struct with a bigquery.Client (i.e. the `Inserter` in your code) is a bq.Client implementation which is ideal to use in Prod. `MockClient` is the implementation that is used in test.",
+      "parentUuid": "6fbebf4e_f19d7cfb",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1dfd9515_bd99e3db",
         "filename": "cv/internal/bq/bq.go",
         "patchSetId": 10
@@ -48,6 +66,24 @@
       "writtenOn": "2021-03-16T21:07:06Z",
       "side": 1,
       "message": "I assume this is used for deduping and we probably want it?",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f4117964_ef90db07",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T23:51:37Z",
+      "side": 1,
+      "message": "Yeah, I think that would be useful though depends on how we implement the bq export workflow in RM. From the API point of view, I think the API should expose it as an input so that the caller can specify it if it is needed.",
+      "parentUuid": "1dfd9515_bd99e3db",
       "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -71,6 +107,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "51446220_53340475",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T23:51:37Z",
+      "side": 1,
+      "message": "monitoring/alerting is my KR for this Q and very likely next Q, so I think we can park this for now. You can also add a todo if you want to record this metric here.",
+      "parentUuid": "8a0849e7_135715a5",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "70ba19ae_a37dbc43",
         "filename": "cv/internal/bq/mock.go",
         "patchSetId": 10
@@ -88,6 +142,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "67f1def4_7a900283",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T23:51:37Z",
+      "side": 1,
+      "message": "I don\u0027t think you\u0027ll need cvtesting to test this package as it doesn\u0027t involve any other components in CV (like gerrit, config). You can just initialize context as `context.Background()`.\n\nSee: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/tree/tree_test.go;l\u003d33-35;drc\u003d79933c7e9964b364cc2490b31b5525a2ac3d0bc4",
+      "parentUuid": "70ba19ae_a37dbc43",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "06ffa1d2_e90e1529",
         "filename": "cv/internal/bq/mock.go",
         "patchSetId": 10
@@ -99,6 +171,24 @@
       "writtenOn": "2021-03-16T21:11:15Z",
       "side": 1,
       "message": "Also, I don\u0027t really understand this line; what does it do and is there another way of doing the same thing? :-/",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7976efc_58ce1a85",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T23:51:37Z",
+      "side": 1,
+      "message": "This is ensuring `*MockClient` has implemented Client interface since it is the Client implementation used in test.",
+      "parentUuid": "06ffa1d2_e90e1529",
       "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
