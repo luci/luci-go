@@ -33,6 +33,24 @@
       "message": "LGTM modulo Nodir\u0027s comments",
       "revId": "25f70406a1e644e44291826604bb13f68e7dda9f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23398fda_30e74b48",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T01:53:26Z",
+      "side": 1,
+      "message": "Fixed.",
+      "parentUuid": "6ffcef0f_e69b3536",
+      "revId": "25f70406a1e644e44291826604bb13f68e7dda9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
