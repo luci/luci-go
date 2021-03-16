@@ -269,6 +269,11 @@ func (d *rdsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	}
 	tf := typeFilter{}
 	for {
+		select {
+		case <-d.userCtx.Done():
+			return d.userCtx.Err()
+		default:
+		}
 		k, err := t.Next(&tf)
 		if err == datastore.Done {
 			return nil
