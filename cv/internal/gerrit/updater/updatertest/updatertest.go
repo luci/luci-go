@@ -28,7 +28,7 @@ import (
 // PFilter returns payloads of Gerrit Updater tasks.
 func PFilter(in tqtesting.TaskList) (out RefreshGerritCLPayloads) {
 	for _, t := range in.SortByETA() {
-		if t.Class == updater.TaskClassID {
+		if t.Class == updater.TaskClass {
 			out = append(out, t.Payload.(*updater.RefreshGerritCL))
 		}
 	}
