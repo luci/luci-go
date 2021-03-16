@@ -127,7 +127,7 @@ export interface GerritChange {
 
 export interface BuildOutput {
   readonly properties: {[key: string]: unknown};
-  readonly gitilesCommit: GitilesCommit;
+  readonly gitilesCommit?: GitilesCommit;
   readonly logs: Log[];
 }
 

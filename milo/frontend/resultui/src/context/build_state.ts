@@ -198,11 +198,11 @@ export class BuildState {
   }
 
   @computed
-  private get inputCommitRepo() {
-    if (!this.build?.input.gitilesCommit) {
+  private get gitilesCommitRepo() {
+    if (!this.build?.associatedGitilesCommit) {
       return null;
     }
-    return getGitilesRepoURL(this.build.input.gitilesCommit);
+    return getGitilesRepoURL(this.build.associatedGitilesCommit);
   }
 
   @computed({keepAlive: true})
@@ -213,7 +213,7 @@ export class BuildState {
 
     return this.build.blamelistPins.map((pin) => {
       const pinRepo = getGitilesRepoURL(pin);
-      return this.getQueryBlamelistResIterFn(pin, pinRepo !== this.inputCommitRepo);
+      return this.getQueryBlamelistResIterFn(pin, pinRepo !== this.gitilesCommitRepo);
     });
   }
 

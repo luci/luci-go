@@ -22,7 +22,7 @@ import '.';
 import { BuildPageElement } from '.';
 import { AppState } from '../../context/app_state';
 import { UserConfigsStore } from '../../context/user_configs';
-import { Build, BuildInput, BuildsService, GetBuildRequest } from '../../services/buildbucket';
+import { Build, BuildsService, GetBuildRequest } from '../../services/buildbucket';
 import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../../services/resultdb';
 
 const builder = {
@@ -92,9 +92,7 @@ describe('Invocation Page', () => {
           invocation: 'invocations/invocation-id',
         },
       },
-      input: {
-        gitilesCommit: {},
-      } as BuildInput,
+      input: {},
       output: {
         properties: {},
       },

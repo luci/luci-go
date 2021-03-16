@@ -273,10 +273,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         this.configsStore.userConfigs.steps.showSucceededSteps = true;
       }
 
-      // If the input gitiles commit is in the blamelist pins, select it.
+      // If the associated gitiles commit is in the blamelist pins, select it.
       // Otherwise, select the first blamelist pin.
-      const buildInputCommitRepo = build.input.gitilesCommit
-        ? getGitilesRepoURL(build.input.gitilesCommit)
+      const buildInputCommitRepo = build.associatedGitilesCommit
+        ? getGitilesRepoURL(build.associatedGitilesCommit)
         : null;
       let selectedBlamelistPinIndex = build.blamelistPins
         .findIndex((pin) => getGitilesRepoURL(pin) === buildInputCommitRepo) || 0;

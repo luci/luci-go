@@ -91,10 +91,14 @@ export class BuildExt {
       .map((tag) => tag.value);
   }
 
+  @computed get associatedGitilesCommit() {
+    return this.output.gitilesCommit || this.input.gitilesCommit;
+  }
+
   @computed get blamelistPins(): GitilesCommit[] {
     const blamelistPins = this.output.properties['$recipe_engine/milo/blamelist_pins'] as GitilesCommit[] || [];
-    if (blamelistPins.length === 0 && this.input.gitilesCommit) {
-      blamelistPins.push(this.input.gitilesCommit);
+    if (blamelistPins.length === 0 && this.associatedGitilesCommit) {
+      blamelistPins.push(this.associatedGitilesCommit);
     }
     return blamelistPins;
   }
