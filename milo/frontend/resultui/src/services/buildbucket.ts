@@ -302,3 +302,36 @@ export class BuildsService {
     ) as Build;
   }
 }
+
+export interface GetBuilderRequest {
+  readonly id: BuilderID;
+}
+
+export interface Builder {
+  descriptionHtml?: string;
+}
+
+export interface BuilderItem {
+  readonly id: BuilderID;
+  readonly config: Builder;
+}
+
+export class BuildersService {
+  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+
+  constructor(readonly host: string, accessToken: string) {
+    const client = new PrpcClient({host, accessToken});
+    this.cachedCallFn = cached(
+      (method: string, message: object) => client.call('buildbucket.v2.builders', method, message),
+      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
+    );
+  }
+
+  async getBuilder(req: GetBuilderRequest, cacheOpt = CacheOption.Cached) {
+    return await this.cachedCallFn(
+      cacheOpt,
+      'GetBuilder',
+      req,
+    ) as BuilderItem;
+  }
+}

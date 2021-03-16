@@ -20,7 +20,7 @@ import { CacheOption } from '../libs/cached_fn';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { BuildExt } from '../models/build_ext';
-import { Build, BuilderID, GetBuildRequest, GitilesCommit } from '../services/buildbucket';
+import { Build, BuilderID, BuilderItem, GetBuildRequest, GitilesCommit } from '../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
 import { AppState } from './app_state';
@@ -29,7 +29,7 @@ import { AppState } from './app_state';
  * Records state of a build.
  */
 export class BuildState {
-  @observable.ref builder?: BuilderID;
+  @observable.ref builderId?: BuilderID;
   @observable.ref buildNumOrId?: string;
 
   /**
@@ -60,8 +60,8 @@ export class BuildState {
       }
       const invIdFromBuild = this.build.infra?.resultdb?.invocation?.slice('invocations/'.length) || '';
       return fromPromise(Promise.resolve(invIdFromBuild));
-    } else if (this.builder && this.buildNum) {
-      return fromPromise(getInvIdFromBuildNum(this.builder, this.buildNum));
+    } else if (this.builderId && this.buildNum) {
+      return fromPromise(getInvIdFromBuildNum(this.builderId, this.buildNum));
     } else if (this.buildId) {
       return fromPromise(Promise.resolve(getInvIdFromBuildId(this.buildId)));
     } else {
@@ -97,7 +97,7 @@ export class BuildState {
   private buildQueryTime = 0;
   @computed
   get build$(): IPromiseBasedObservable<Build> {
-    if (!this.appState.buildsService || (!this.buildId && (!this.builder || !this.buildNum))) {
+    if (!this.appState.buildsService || (!this.buildId && (!this.builderId || !this.buildNum))) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -120,7 +120,7 @@ export class BuildState {
 
     const req: GetBuildRequest = this.buildId
       ? {id: this.buildId, fields: '*'}
-      : {builder: this.builder, buildNumber: this.buildNum!, fields: '*'};
+      : {builder: this.builderId, buildNumber: this.buildNum!, fields: '*'};
 
     return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt));
   }
@@ -215,6 +215,26 @@ export class BuildState {
       const pinRepo = getGitilesRepoURL(pin);
       return this.getQueryBlamelistResIterFn(pin, pinRepo !== this.inputCommitRepo);
     });
+  }
+
+  @computed({keepAlive: true})
+  private get builder$() {
+    // We should not merge this with the if statement below because no other
+    // observables should be accessed when this.isDisposed is set to true.
+    if (this.isDisposed) {
+      return fromPromise(Promise.race([]));
+    }
+
+    const builderId = this.builderId || this.build?.builder;
+    if (!this.appState.buildersService || !builderId) {
+      return fromPromise(Promise.race([]));
+    }
+    return fromPromise(this.appState.buildersService.getBuilder({id: builderId}));
+  }
+
+  @computed
+  get builder(): BuilderItem | null {
+    return this.builder$.state === FULFILLED ? this.builder$.value : null;
   }
 
   // Refresh all data that depends on the timestamp.
