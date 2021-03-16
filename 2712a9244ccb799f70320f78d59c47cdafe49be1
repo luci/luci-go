@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26572072_4a2ab5b0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-16T05:35:36Z",
+      "side": 1,
+      "message": "`swarming reproduce` to be more specific. \n(luci-go repo has many projects other than Swarming.)",
+      "range": {
+        "startLine": 7,
+        "startChar": 22,
+        "endLine": 7,
+        "endChar": 31
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "940ca6a4_87a2ddd3",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-16T05:35:36Z",
+      "side": 1,
+      "message": "IMO, it\u0027s too much to test flags because it\u0027s not swarming/reproduce command specific feature.",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 3
+      },
+      "revId": "2712a9244ccb799f70320f78d59c47cdafe49be1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
