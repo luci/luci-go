@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff2be79f_12a64c35",
+        "filename": "cv/internal/cvtesting/e2e/.gitignore",
+        "patchSetId": 3
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T00:48:00Z",
+      "side": 1,
+      "message": "Nit: I think \n\n    *out\n    *log\n\nare sufficient?",
+      "revId": "d66f618c3a6550ef7f5f9c777a4576e5390190b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "192b11b1_346e651f",
+        "filename": "cv/internal/cvtesting/e2e/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T00:48:00Z",
+      "side": 1,
+      "message": "What is the consideration for this guidance? Smaller scope for each Test.",
+      "range": {
+        "startLine": 44,
+        "startChar": 4,
+        "endLine": 44,
+        "endChar": 61
+      },
+      "revId": "d66f618c3a6550ef7f5f9c777a4576e5390190b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ace6d1b_d6ca3441",
+        "filename": "cv/internal/cvtesting/e2e/purges_cl_without_starting_runs_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T00:48:00Z",
+      "side": 1,
+      "message": "Could use ct.RunUntil like the next test did.",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 3
+      },
+      "revId": "d66f618c3a6550ef7f5f9c777a4576e5390190b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
