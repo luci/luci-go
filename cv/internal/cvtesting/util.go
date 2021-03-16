@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/config"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/servicecfg"
@@ -71,6 +72,10 @@ type Test struct {
 	//
 	// If nil, defaults to an always-open tree.
 	TreeClient tree.Client
+	// BQClient is a mock client for sending BigQuery rows.
+	//
+	// If nil, defaults to sending with no errors and storing sent rows.
+	BQClient bq.Client
 	// TQ allows to run TQ tasks.
 	TQ *tqtesting.Scheduler
 	// Clock allows to move time forward.
@@ -123,6 +128,9 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 			},
 		}
 	}
+	if t.BQClient == nil {
+		t.BQClient = &bq.MockClient{}
+	}
 
 	ctx = context.Background()
 	// TODO(tandrii): make this logger emit testclock-based timestamps.
@@ -153,6 +161,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 
 	ctx = t.GFake.Install(ctx)
 	ctx = tree.Install(ctx, t.TreeClient)
+	ctx = bq.Install(ctx, t.BQClient)
 	ctx, t.TQ = tq.TestingContext(ctx, nil)
 	return ctx, t.cleanup
 }
