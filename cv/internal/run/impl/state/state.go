@@ -124,8 +124,10 @@ func (rs *RunState) RemoveRunFromCLs(ctx context.Context) error {
 			changedCLs = append(changedCLs, cl)
 		}
 	}
-	if err := datastore.Put(ctx, changedCLs); err != nil {
-		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
+	if len(changedCLs) > 0 {
+		if err := datastore.Put(ctx, changedCLs); err != nil {
+			return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
+		}
 	}
 	return nil
 }

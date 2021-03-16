@@ -20,7 +20,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
@@ -36,13 +39,26 @@ func TestCancel(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, close := ct.SetUp()
 		defer close()
+		var runID common.RunID = "chromium/111-1-deadbeef"
+		var clid common.CLID = 11
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:         "chromium/1111111111111-deadbeef",
+				ID:         runID,
 				CreateTime: clock.Now(ctx).UTC().Add(-2 * time.Minute),
+				CLs:        []common.CLID{clid},
 			},
 		}
+		So(datastore.Put(ctx, &changelist.CL{
+			ID:             clid,
+			IncompleteRuns: common.RunIDs{runID, "chromium/222-1-cafecafe"},
+		}), ShouldBeNil)
 		h := &Impl{}
+
+		latestCL := func() *changelist.CL {
+			cl := &changelist.CL{ID: clid}
+			So(datastore.Get(ctx, cl), ShouldBeNil)
+			return cl
+		}
 
 		Convey("Cancels PENDING Run", func() {
 			rs.Run.Status = run.Status_PENDING
@@ -53,9 +69,10 @@ func TestCancel(t *testing.T) {
 			So(res.State.Run.StartTime, ShouldResemble, now)
 			So(res.State.Run.EndTime, ShouldResemble, now)
 			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.SideEffectFn(ctx), ShouldBeNil)
+			So(datastore.RunInTransaction(ctx, res.SideEffectFn, nil), ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
+			So(latestCL().IncompleteRuns.ContainsSorted(runID), ShouldBeFalse)
 		})
 
 		Convey("Cancels RUNNING Run", func() {
@@ -68,9 +85,10 @@ func TestCancel(t *testing.T) {
 			So(res.State.Run.StartTime, ShouldResemble, now.Add(-1*time.Minute))
 			So(res.State.Run.EndTime, ShouldResemble, now)
 			So(res.SideEffectFn, ShouldNotBeNil)
-			So(res.SideEffectFn(ctx), ShouldBeNil)
+			So(datastore.RunInTransaction(ctx, res.SideEffectFn, nil), ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 			pmtest.AssertReceivedRunFinished(ctx, rs.Run.ID)
+			So(latestCL().IncompleteRuns.ContainsSorted(runID), ShouldBeFalse)
 		})
 
 		Convey("Cancels SUBMITTING Run", func() {
