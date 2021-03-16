@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c03fb67a_320e1246",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "I assume this question is \n\n\u003e this doesn\u0027t have expiration deadline, intentional?\n\nYes, it is intentional. I think we should just rely on the deadline inside the run entity[1] instead of having another deadline defined here. Otherwise, I\u0027m afraid more race condition could occur. RM should always make sure it release the queue at the end no matter what the submission result is.\n\n[1]: https://crrev.com/38b2ca24ce18eaf380e88afb76eb11f75f7afbd5/cv/internal/run/storage.proto#94",
+      "parentUuid": "edf801e7_e6cfed5e",
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "08f6a6a7_23f26087",
         "filename": "cv/internal/run/impl/submit/queue.go",
         "patchSetId": 4
@@ -48,6 +66,30 @@
       "writtenOn": "2021-03-14T19:49:51Z",
       "side": 1,
       "message": "ing",
+      "range": {
+        "startLine": 38,
+        "startChar": 36,
+        "endLine": 38,
+        "endChar": 37
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "85efce7f_f1012488",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08f6a6a7_23f26087",
       "range": {
         "startLine": 38,
         "startChar": 36,
@@ -83,6 +125,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3b306f9d_b09cff91",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "My idea is exactly the #1 and agree that it should be UpdateQueue.\n\nI agree that #2 will benefit us more in the future. However, one downside of #2 is that it will require RM load the config everytime before acquiring to fetch the SubmitOptions even though it is cheap. I think we can either cache SubmitOptions inside Run entity or store some kind of version in both SubmitOptions and Run entity to perform fast comparison. WDYT?",
+      "parentUuid": "54004926_134687ab",
+      "range": {
+        "startLine": 52,
+        "startChar": 5,
+        "endLine": 52,
+        "endChar": 16
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ea077cbb_36743268",
         "filename": "cv/internal/run/impl/submit/queue.go",
         "patchSetId": 4
@@ -94,6 +160,24 @@
       "writtenOn": "2021-03-14T19:49:51Z",
       "side": 1,
       "message": "nit consider:\nRe-uses transaction if already in context, otherwise runs independent transaction.",
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9c53a20_3e88d185",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "ea077cbb_36743268",
       "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -121,6 +205,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca5671a1_0cb8eae6",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "Good point!",
+      "parentUuid": "96356c97_8fc23f37",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 26
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d7a6452b_4736e574",
@@ -134,6 +242,30 @@
       "writtenOn": "2021-03-14T19:49:51Z",
       "side": 1,
       "message": "shouldn\u0027t this be `false` ?",
+      "range": {
+        "startLine": 120,
+        "startChar": 9,
+        "endLine": 120,
+        "endChar": 19
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "140c9ff6_41dd4e91",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "ah. yes!",
+      "parentUuid": "d7a6452b_4736e574",
       "range": {
         "startLine": 120,
         "startChar": 9,
@@ -169,6 +301,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0586f27c_90f45ec1",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "no.. I think it\u0027s also possible \"q.Current \u003d\u003d \"\" \u0026\u0026 waitlistIdx \u003d\u003d -1\" when this acquire come right after current slot gets released and the waitlist isn\u0027t empty at that time.",
+      "parentUuid": "5894b027_0e93c60a",
+      "range": {
+        "startLine": 136,
+        "startChar": 22,
+        "endLine": 136,
+        "endChar": 41
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "873154aa_6388017b",
         "filename": "cv/internal/run/impl/submit/queue.go",
         "patchSetId": 4
@@ -180,6 +336,30 @@
       "writtenOn": "2021-03-14T19:49:51Z",
       "side": 1,
       "message": "(minor) why keep this abstract and not bind *public* Release to actual run.NotifySmth ? It\u0027s not like this package has multiple purposes.\n\nYou can still keep test internal `release` with with custom notifyFn,\nthough I\u0027d bind it too and use runtest package to assert behavior.",
+      "range": {
+        "startLine": 171,
+        "startChar": 52,
+        "endLine": 171,
+        "endChar": 71
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fb51476_20e2fd65",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "Make sense. It will only have one implementation.",
+      "parentUuid": "873154aa_6388017b",
       "range": {
         "startLine": 171,
         "startChar": 52,
@@ -213,6 +393,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4936c503_db0dee3e",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "ha!",
+      "parentUuid": "dca82194_6699b8d8",
+      "range": {
+        "startLine": 200,
+        "startChar": 15,
+        "endLine": 200,
+        "endChar": 22
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5dd699fe_886f8b2a",
@@ -226,6 +430,24 @@
       "writtenOn": "2021-03-14T19:49:51Z",
       "side": 1,
       "message": "nit: move to next block",
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "28b44ad1_5fcf1512",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-16T17:32:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5dd699fe_886f8b2a",
       "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
