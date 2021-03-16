@@ -32,6 +32,8 @@ import (
 	"go.chromium.org/luci/cv/internal/diagnostic"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	pollertask "go.chromium.org/luci/cv/internal/gerrit/poller/task"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
@@ -101,7 +103,7 @@ func (t *Test) RunAtLeastOncePM(ctx context.Context) {
 
 // RunAtLeastOnceRun runs at least 1 Run task, possibly more or other tasks.
 func (t *Test) RunAtLeastOnceRun(ctx context.Context) {
-	t.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClassID))
+	t.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 }
 
 // RunAtLeastOncePoller runs at least 1 Poller task, possibly more or other
@@ -125,6 +127,8 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 			t.RunAtLeastOncePM(ctx)
 		case len(runtest.Runs(ts)) > 0:
 			t.RunAtLeastOnceRun(ctx)
+		case len(updatertest.PFilter(ts)) > 0:
+			t.TQ.Run(ctx, tqtesting.StopAfterTask(updater.TaskClass))
 		}
 	}
 	panic("RunUntil ran for too long!")

@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	// ManageRunTaskClassID is the ID of ManageRunTask Class.
-	ManageRunTaskClassID = "manage-run"
+	// ManageRunTaskClass is the ID of ManageRunTask Class.
+	ManageRunTaskClass = "manage-run"
 	// taskInterval is target frequency of executions of ManageRunTask.
 	//
 	// See Dispatch() for details.
@@ -42,13 +42,13 @@ var ManageRunTaskRef tq.TaskClassRef
 
 func init() {
 	ManageRunTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        ManageRunTaskClassID,
+		ID:        ManageRunTaskClass,
 		Prototype: &ManageRunTask{},
 		Queue:     "manage-run",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        fmt.Sprintf("kick-%s", ManageRunTaskClassID),
+		ID:        fmt.Sprintf("kick-%s", ManageRunTaskClass),
 		Prototype: &KickManageRunTask{},
 		Queue:     "kick-manage-run",
 		Quiet:     true,
