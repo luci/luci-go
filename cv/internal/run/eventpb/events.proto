@@ -46,6 +46,15 @@ message Event {
     // Sent by Gerrit Updater if Run is inside the `IncompleteRuns` list of
     // a CL.
     CLUpdated cl_updated = 5;
+    // On ReadyForSubmission event, Run Manager will try to submit CLs in
+    // this Run.
+    ReadyForSubmission ready_for_submission = 6;
+    // On CLSubmitted event, Run Manager will mark this CL as submitted.
+    CLSubmitted cl_submitted = 7;
+    // On SubmissionCompleted event, Run Manager will look at the submission
+    // result and decide whether to retry this submission or succeed or fail
+    // the Run.
+    SubmissionCompleted submission_completed = 8;
 
     // TODO(yiwzhang): Define following events that Run Manager may receive:
     //  * TryjobUpdated
@@ -88,6 +97,39 @@ message CLUpdated {
   int64 clid = 1;
   // EVersion of the updated CL entity.
   int64 eVersion = 2;
+}
+
+message ReadyForSubmission {
+}
+
+message CLSubmitted {
+  // Internal ID of a CL that was submitted successfully.
+  int64 clid = 1;
+}
+
+message SubmissionCompleted {
+  // Result of this attempt to submit.
+  SubmissionResult result = 1;
+  // Attempt count.
+  int32 attempt = 2;
+}
+
+enum SubmissionResult {
+  SUBMISSION_RESULT_UNSPECIFIED = 0;
+  // All CLs have been submitted successfully.
+  SUCCEEDED = 1;
+  // Encountered transient failure.
+  //
+  // RM should retry if quota allows.
+  FAILED_TRANSIENT = 2;
+  // Encountered precondition failure which is transient in nature.
+  //
+  // For example, tree closure and submit queue is throttling.
+  FAILED_PRECONDITION = 3;
+  // Encountered permanent failure.
+  //
+  // For example, lack of submit permission or experienced merge conflict.
+  FAILED_PERMANENT = 4;
 }
 
 message CQDVerificationCompleted {

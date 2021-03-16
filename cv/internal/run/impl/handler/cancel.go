@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-// Cancel cancels a Run.
+// Cancel implements Handler interface.
 func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Run.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
