@@ -19,9 +19,6 @@ type RunOption interface {
 	isOption()
 }
 
-// TODO(vadimsh): Add more stop conditions when needed:
-//  StopBeforeTask(taskKind)
-
 // StopWhenDrained will stop the scheduler after it finishes executing the
 // last task and there are no more tasks scheduled.
 //
@@ -36,8 +33,8 @@ type stopWhenDrained struct{}
 
 func (stopWhenDrained) isOption() {}
 
-// StopAfterTask will stop the scheduler after it finishes executing the task of
-// matching task class ID.
+// StopAfterTask will stop the scheduler after it finishes executing a task of
+// the given task class ID.
 func StopAfterTask(taskClassID string) RunOption {
 	return stopAfterTask{taskClassID}
 }
@@ -47,6 +44,25 @@ type stopAfterTask struct {
 }
 
 func (stopAfterTask) isOption() {}
+
+// StopBeforeTask will stop the scheduler if the next task to be executed has
+// the given task class ID.
+//
+// If such next task has specified ETA, StopBeforeTask does NOT provide any
+// guarantee about what `clock.Now` returns by the time Run stops.
+//
+// It is naturally racy if there are other goroutines that submit tasks
+// concurrently. In this situation there may be a different next task (by ETA)
+// when Run stops.
+func StopBeforeTask(taskClassID string) RunOption {
+	return stopBeforeTask{taskClassID}
+}
+
+type stopBeforeTask struct {
+	taskClassID string
+}
+
+func (stopBeforeTask) isOption() {}
 
 // ParallelExecute instructs the scheduler to call executor's Execute method
 // in a separate goroutine instead of serially in Run.

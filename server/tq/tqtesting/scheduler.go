@@ -490,8 +490,6 @@ func (s *Scheduler) evalRetryLocked(t *Task) (retry bool, delay time.Duration) {
 }
 
 // shouldStop returns true if the scheduler should stop now.
-//
-// TODO(vadimsh): Support more complicated stop conditions.
 func (s *Scheduler) shouldStop(opts []RunOption) bool {
 	s.m.Lock()
 	defer s.m.Unlock()
@@ -510,6 +508,10 @@ func (s *Scheduler) shouldStop(opts []RunOption) bool {
 				if v.taskClassID == t.Class {
 					return true
 				}
+			}
+		case stopBeforeTask:
+			if len(s.tasks) > 0 && s.tasks[0].Class == v.taskClassID {
+				return true
 			}
 		}
 	}

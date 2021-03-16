@@ -287,6 +287,50 @@ func TestScheduler(t *testing.T) {
 				So(found, ShouldBeTrue)
 			})
 		})
+
+		Convey("Run(StopBeforeTask)", func() {
+			Convey("Stops after the prior task if ran serially", func() {
+				enqueue("1", "", epoch.Add(2*time.Second), "classA")
+				enqueue("2", "", epoch.Add(4*time.Second), "classB")
+				enqueue("3", "", epoch.Add(6*time.Second), "classA")
+				enqueue("4", "", epoch.Add(8*time.Second), "classB")
+				sched.Run(ctx, StopBeforeTask("classB"))
+				So(payloads(exec.tasks), ShouldResemble, []string{"1"})
+
+				Convey("Even if it doesn't run anything", func() {
+					sched.Run(ctx, StopBeforeTask("classB"))
+					// The payloasd must be exactly same.
+					So(payloads(exec.tasks), ShouldResemble, []string{"1"})
+				})
+			})
+
+			Convey("Takes into account newly scheduled tasks", func() {
+				exec.execute = func(payload string, _ *Task) bool {
+					switch payload {
+					case "1":
+						enqueue("2->a", "", clock.Now(ctx).Add(2*time.Second), "classA")
+						enqueue("2->b", "", clock.Now(ctx).Add(2*time.Second), "classA")
+					case "2->a":
+						enqueue("3a", "", clock.Now(ctx).Add(8*time.Second), "classA") // eta after 3b
+					case "2->b":
+						enqueue("3b", "", clock.Now(ctx).Add(6*time.Second), "classB") // eta before 3a
+					}
+					return true
+				}
+				enqueue("1", "", time.Time{}, "classA")
+
+				Convey("Stops before 3a and 3b if run serially", func() {
+					sched.Run(ctx, StopBeforeTask("classB"))
+					So(payloads(exec.tasks), ShouldResemble, []string{"1", "2->a", "2->b"})
+				})
+				Convey("Stops before 3b, but 3a may be executed, if run in parallel", func() {
+					sched.Run(ctx, StopBeforeTask("classB"), ParallelExecute())
+					ps := orderByPayload(exec.tasks)
+					So(ps[:3], ShouldResemble, []string{"1", "2->a", "2->b"})
+					So(ps[3:], ShouldNotContain, "3b")
+				})
+			})
+		})
 	})
 }
 
