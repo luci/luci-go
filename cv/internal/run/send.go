@@ -91,6 +91,21 @@ func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, 
 	})
 }
 
+// NotifyReadyForSubmission informs RunManager that the provided Run will be
+// ready for submission at `eta`.
+func NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error {
+	evt := &eventpb.Event{
+		Event: &eventpb.Event_ReadyForSubmission{
+			ReadyForSubmission: &eventpb.ReadyForSubmission{},
+		},
+	}
+	if eta.IsZero() {
+		return eventpb.SendNow(ctx, runID, evt)
+	}
+	evt.ProcessAfter = timestamppb.New(eta)
+	return eventpb.Send(ctx, runID, evt, eta)
+}
+
 // NotifyCQDVerificationCompleted tells RunManager that CQDaemon has completed
 // verifying the provided Run.
 //
