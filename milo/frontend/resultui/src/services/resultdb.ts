@@ -18,11 +18,13 @@ import { cached, CacheOption } from '../libs/cached_fn';
 import { sha256 } from '../libs/utils';
 import { BuilderID } from './buildbucket';
 
+/* eslint-disable max-len */
 /**
  * Manually coded type definition and classes for resultdb service.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
  * source: https://chromium.googlesource.com/infra/luci/luci-go/+/4525018bc0953bfa8597bd056f814dcf5e765142/resultdb/proto/rpc/v1/resultdb.proto
  */
+/* eslint-enable max-len */
 
 /**
  * Regex for extracting segments from a test ID.
@@ -104,7 +106,7 @@ export interface Artifact {
 }
 
 export interface Variant {
-  readonly def: {[key: string]: string};
+  readonly def: { [key: string]: string };
 }
 
 export interface Tag {
@@ -166,7 +168,7 @@ export interface TestExonerationPredicate {
   readonly variant?: VariantPredicate;
 }
 
-export type VariantPredicate = { readonly equals: Variant; } | { readonly contains: Variant; };
+export type VariantPredicate = { readonly equals: Variant } | { readonly contains: Variant };
 
 export const enum Expectancy {
   All = 'ALL',
@@ -238,59 +240,34 @@ export class ResultDb {
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({host, accessToken});
-    this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(ResultDb.SERVICE, method, message),
-      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
-    );
+    const client = new PrpcClient({ host, accessToken });
+    this.cachedCallFn = cached((method: string, message: object) => client.call(ResultDb.SERVICE, method, message), {
+      key: (method, message) => `${method}-${JSON.stringify(message)}`,
+    });
   }
 
   async getInvocation(req: GetInvocationRequest, cacheOpt = CacheOption.Cached): Promise<Invocation> {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'GetInvocation',
-      req,
-    ) as Invocation;
+    return (await this.cachedCallFn(cacheOpt, 'GetInvocation', req)) as Invocation;
   }
 
   async queryTestResults(req: QueryTestResultsRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'QueryTestResults',
-      req,
-    ) as QueryTestResultsResponse;
+    return (await this.cachedCallFn(cacheOpt, 'QueryTestResults', req)) as QueryTestResultsResponse;
   }
 
   async queryTestExonerations(req: QueryTestExonerationsRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'QueryTestExonerations',
-      req,
-    ) as QueryTestExonerationsResponse;
+    return (await this.cachedCallFn(cacheOpt, 'QueryTestExonerations', req)) as QueryTestExonerationsResponse;
   }
 
   async listArtifacts(req: ListArtifactsRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'ListArtifacts',
-      req,
-    ) as ListArtifactsResponse;
+    return (await this.cachedCallFn(cacheOpt, 'ListArtifacts', req)) as ListArtifactsResponse;
   }
 
   async queryArtifacts(req: QueryArtifactsRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'QueryArtifacts',
-      req,
-    ) as QueryArtifactsResponse;
+    return (await this.cachedCallFn(cacheOpt, 'QueryArtifacts', req)) as QueryArtifactsResponse;
   }
 
   async getArtifact(req: GetArtifactRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'GetArtifact',
-      req,
-    ) as Artifact;
+    return (await this.cachedCallFn(cacheOpt, 'GetArtifact', req)) as Artifact;
   }
 }
 
@@ -300,19 +277,15 @@ export class UISpecificService {
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({host, accessToken});
+    const client = new PrpcClient({ host, accessToken });
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(UISpecificService.SERVICE, method, message),
-      {key: (method, message) => `${method}-${JSON.stringify(message)}`},
+      { key: (method, message) => `${method}-${JSON.stringify(message)}` }
     );
   }
 
   async queryTestVariants(req: QueryTestVariantsRequest, cacheOpt = CacheOption.Cached) {
-    return await this.cachedCallFn(
-      cacheOpt,
-      'QueryTestVariants',
-      req,
-    ) as QueryTestVariantsResponse;
+    return (await this.cachedCallFn(cacheOpt, 'QueryTestVariants', req)) as QueryTestVariantsResponse;
   }
 }
 
@@ -320,10 +293,9 @@ export class UISpecificService {
  * Parses the artifact name and get the individual components.
  */
 export function parseArtifactName(artifactName: string): ArtifactIdentifier {
-  const match = artifactName
-    .match(/invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)/)!;
+  const match = artifactName.match(/invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)/)!;
 
-  const [, invocationId, testId, resultId, artifactId] = match;
+  const [, invocationId, testId, resultId, artifactId] = match as string[];
 
   return {
     invocationId,
@@ -354,7 +326,9 @@ export interface TestResultArtifactIdentifier {
  */
 export function constructArtifactName(identifier: ArtifactIdentifier) {
   if (identifier.testId && identifier.resultId) {
-    return `invocations/${identifier.invocationId}/tests/${encodeURIComponent(identifier.testId)}/results/${identifier.resultId}/artifacts/${identifier.artifactId}`;
+    return `invocations/${identifier.invocationId}/tests/${encodeURIComponent(identifier.testId)}/results/${
+      identifier.resultId
+    }/artifacts/${identifier.artifactId}`;
   } else {
     return `invocations/${identifier.invocationId}/artifacts/${identifier.artifactId}`;
   }

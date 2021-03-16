@@ -13,6 +13,7 @@
 // limitations under the License.
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Chai {
     interface Assert {
       /**
@@ -27,8 +28,12 @@ declare global {
        */
       // any has to be used here to express that we don't want T to be WeakSet
       // or Array of any type.
-      // tslint:disable-next-line: no-any
-      recursiveDeepInclude<T>(haystack: T, needle: T extends WeakSet<any> | any[] ? never : Partial<T>, message?: string): void;
+      recursiveDeepInclude<T>(
+        haystack: T,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        needle: T extends WeakSet<any> | any[] ? never : Partial<T>,
+        message?: string
+      ): void;
     }
   }
 }
@@ -67,12 +72,12 @@ function deepStripNotIn(source: unknown, propertyTree: unknown) {
     return ret;
   }
 
-  const ret: {[key: string]: unknown} = {};
+  const ret: { [key: string]: unknown } = {};
   for (const key of Object.keys(propertyTree)) {
     if (key in source) {
       ret[key] = deepStripNotIn(
-        (source as {[key: string]: unknown})[key],
-        (propertyTree as {[key: string]: unknown})[key],
+        (source as { [key: string]: unknown })[key],
+        (propertyTree as { [key: string]: unknown })[key]
       );
     }
   }

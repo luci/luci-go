@@ -17,8 +17,7 @@ import MarkdownIt from 'markdown-it';
 import { defaultTarget } from './markdown_it_plugins/default_target';
 import { sanitizeHTML } from './sanitize_html';
 
-const md = MarkdownIt({html: true, linkify: true})
-  .use(defaultTarget, '_blank');
+const md = MarkdownIt({ html: true, linkify: true }).use(defaultTarget, '_blank');
 
 export function renderMarkdown(markdown: string) {
   return sanitizeHTML(renderMarkdownUnsanitized(markdown));
@@ -44,11 +43,17 @@ export class ChainableURL extends URL {
 
 // Generates URL for collecting feedback.
 export function genFeedbackUrl() {
-  const feedbackComment = encodeURIComponent(
-`From Link: ${document.location.href}
-Please enter a description of the problem, with repro steps if applicable.
-`);
-  return `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2,Type-Bug&comment=${feedbackComment}`;
+  const feedbackComment =
+    `From Link: ${document.location.href}\n` +
+    'Please enter a description of the problem, with repro steps if applicable.';
+
+  const searchParams = new URLSearchParams({
+    template: 'Build Infrastructure',
+    components: 'Infra>Platform>Milo>ResultUI',
+    labels: 'Pri-2,Type-Bug',
+    comment: feedbackComment,
+  });
+  return `https://bugs.chromium.org/p/chromium/issues/entry?${searchParams}`;
 }
 
 /**
@@ -59,6 +64,6 @@ export async function sha256(message: string) {
   const msgBuffer = new TextEncoder().encode(message);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   return hashHex;
 }

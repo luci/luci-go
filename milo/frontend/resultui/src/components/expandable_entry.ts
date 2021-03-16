@@ -39,18 +39,15 @@ export class ExpandableEntry extends LitElement {
   protected render() {
     return html`
       <div>
-        <div
-          id="expandable-header"
-          @click=${() => this.expanded = !this.expanded}
-        >
+        <div id="expandable-header" @click=${() => (this.expanded = !this.expanded)}>
           <mwc-icon id="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
           <span id="one-line-content">
             <slot name="header"></slot>
           </span>
         </div>
         <div id="body">
-          <div id="content-ruler" style=${styleMap({'display': this.hideContentRuler ? 'none' : ''})}></div>
-          <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
+          <div id="content-ruler" style=${styleMap({ display: this.hideContentRuler ? 'none' : '' })}></div>
+          <div id="content" style=${styleMap({ display: this.expanded ? '' : 'none' })}>
             <slot name="content"></slot>
           </div>
         </div>
@@ -100,5 +97,5 @@ export class ExpandableEntry extends LitElement {
       grid-column: 2;
       overflow: hidden;
     }
-    `;
+  `;
 }

@@ -19,18 +19,18 @@ import sinon, { SinonSpy } from 'sinon';
 import { AutoCompleteElement, Suggestion, SuggestionEntry } from './auto_complete';
 
 function simulateKeyStroke(target: EventTarget, code: string) {
-  target.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, composed: true, code} as KeyboardEventInit));
-  target.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, composed: true, code} as KeyboardEventInit));
+  target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, composed: true, code } as KeyboardEventInit));
+  target.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, composed: true, code } as KeyboardEventInit));
 }
 
 const suggestions: Suggestion[] = [
-  {value: 'suggestion 1', explanation: 'explanation 1'},
-  {value: 'suggestion 2', explanation: 'explanation 2'},
-  {value: 'suggestion 3', explanation: 'explanation 3'},
-  {isHeader: true, display: 'header'},
-  {value: 'suggestion 4', explanation: 'explanation 4'},
-  {value: 'suggestion 5', explanation: 'explanation 5'},
-  {isHeader: true, display: 'header'},
+  { value: 'suggestion 1', explanation: 'explanation 1' },
+  { value: 'suggestion 2', explanation: 'explanation 2' },
+  { value: 'suggestion 3', explanation: 'explanation 3' },
+  { isHeader: true, display: 'header' },
+  { value: 'suggestion 4', explanation: 'explanation 4' },
+  { value: 'suggestion 5', explanation: 'explanation 5' },
+  { isHeader: true, display: 'header' },
 ];
 
 describe('auto_complete_test', () => {
@@ -40,9 +40,9 @@ describe('auto_complete_test', () => {
   before(async () => {
     autoSuggestionEle = await fixture<AutoCompleteElement>(html`
       <milo-auto-complete
-          .value=${'search text'}
-          .placeHolder=${'Press / to search test results...'}
-          .suggestions=${suggestions}
+        .value=${'search text'}
+        .placeHolder=${'Press / to search test results...'}
+        .suggestions=${suggestions}
       >
       </milo-auto-complete>
     `);
@@ -95,7 +95,10 @@ describe('auto_complete_test', () => {
       simulateKeyStroke(inputEle, 'ArrowDown');
     }
     simulateKeyStroke(inputEle, 'Enter');
-    const lastSelectableSuggestion = suggestions.slice().reverse().find((s) => !s.isHeader);
+    const lastSelectableSuggestion = suggestions
+      .slice()
+      .reverse()
+      .find((s) => !s.isHeader);
     assert.strictEqual(suggestionSpy.getCall(5).args[0], lastSelectableSuggestion);
 
     const firstSelectableSuggestion = suggestions.find((s) => !s.isHeader);
