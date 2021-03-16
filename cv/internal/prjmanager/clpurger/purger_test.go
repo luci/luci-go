@@ -120,7 +120,7 @@ func TestPurgeCL(t *testing.T) {
 
 		Convey("Happy path: cancel trigger, refresh CL, and notify PM", func() {
 			So(Schedule(ctx, task), ShouldBeNil)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			clAfter := loadCL()
 			So(clAfter.EVersion, ShouldBeGreaterThan, clBefore.EVersion)
@@ -134,7 +134,7 @@ func TestPurgeCL(t *testing.T) {
 				// the 2nd time.
 				task.PurgingCl.OperationId = "op-2"
 				So(Schedule(ctx, task), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clAfter.EVersion)
 				assertPMNotified("op-2")
 				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
@@ -145,7 +145,7 @@ func TestPurgeCL(t *testing.T) {
 			Convey("Task arrives after the deadline", func() {
 				task.PurgingCl.Deadline = timestamppb.New(ct.Clock.Now().Add(-time.Minute))
 				So(Schedule(ctx, task), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")
 				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
@@ -157,7 +157,7 @@ func TestPurgeCL(t *testing.T) {
 				task.Trigger = trigger.Find(ci)
 
 				So(Schedule(ctx, task), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")
 				// The PM task should be ASAP.
@@ -169,7 +169,7 @@ func TestPurgeCL(t *testing.T) {
 				So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
 				So(Schedule(ctx, task), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeCLTaskClass))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")
 				// Should create PM task with ETA ~1 minute later.

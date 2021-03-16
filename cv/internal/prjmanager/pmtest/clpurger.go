@@ -26,7 +26,7 @@ import (
 func PurgingCLs(in tqtesting.TaskList, luciProject string) []int64 {
 	var out []int64
 	for _, t := range in.SortByETA() {
-		if t.Class == prjpb.PurgeCLTaskClass {
+		if t.Class == prjpb.PurgeProjectCLTaskClass {
 			v := t.Payload.(*prjpb.PurgeCLTask)
 			if v.GetLuciProject() == luciProject {
 				out = append(out, v.GetPurgingCl().GetClid())

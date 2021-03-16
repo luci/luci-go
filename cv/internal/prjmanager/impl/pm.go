@@ -45,6 +45,18 @@ func init() {
 			return common.TQIfy{KnownFatal: []error{errTaskArrivedTooLate}}.Error(ctx, err)
 		},
 	)
+
+	prjpb.KickManageProjectTaskRef.AttachHandler(
+		func(ctx context.Context, payload proto.Message) error {
+			task := payload.(*prjpb.KickManageProjectTask)
+			var eta time.Time
+			if t := task.GetEta(); t != nil {
+				eta = t.AsTime()
+			}
+			err := prjpb.Dispatch(ctx, task.GetLuciProject(), eta)
+			return common.TQifyError(ctx, err)
+		},
+	)
 }
 
 var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
