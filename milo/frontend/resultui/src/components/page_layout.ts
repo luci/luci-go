@@ -27,9 +27,7 @@ import './tooltip';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
   window.gapi?.load('auth2', () => {
-    gapi.auth2
-      .init({client_id: CONFIGS.OAUTH2.CLIENT_ID, scope: 'email'})
-      .then(resolve, reject);
+    gapi.auth2.init({ client_id: CONFIGS.OAUTH2.CLIENT_ID, scope: 'email' }).then(resolve, reject);
   });
 });
 
@@ -49,14 +47,12 @@ export class PageLayoutElement extends MobxLitElement {
 
   constructor() {
     super();
-    gAuthPromise
-      .then((gAuth) => this.appState.gAuth = gAuth)
-      .catch(() => this.appState.accessToken = '');
+    gAuthPromise.then((gAuth) => (this.appState.gAuth = gAuth)).catch(() => (this.appState.accessToken = ''));
   }
 
   errorHandler = (event: ErrorEvent) => {
     this.errorMsg = event.message;
-  }
+  };
 
   connectedCallback() {
     super.connectedCallback();
@@ -74,7 +70,7 @@ export class PageLayoutElement extends MobxLitElement {
       <div id="container">
         <div id="title-container">
           <a href="/" id="title-link">
-            <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
+            <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png" />
             <span id="headline">LUCI</span>
           </a>
         </div>
@@ -83,32 +79,32 @@ export class PageLayoutElement extends MobxLitElement {
           title="Send Feedback"
           class="interactive-icon"
           @click=${() => window.open(genFeedbackUrl())}
-        >feedback</mwc-icon>
+          >feedback</mwc-icon
+        >
         <mwc-icon
           class="interactive-icon"
           title="Settings"
-          @click=${() => this.appState.showSettingsDialog = true}
-          style=${styleMap({display: this.appState.hasSettingsDialog > 0 ? '' : 'none'})}
-        >settings</mwc-icon>
+          @click=${() => (this.appState.showSettingsDialog = true)}
+          style=${styleMap({ display: this.appState.hasSettingsDialog > 0 ? '' : 'none' })}
+          >settings</mwc-icon
+        >
         <div id="signin">
-          ${this.appState.gAuth ? html`
-          <milo-signin
-            .gAuth=${this.appState.gAuth}
-            @user-update=${(e: UserUpdateEvent) => {
-              this.appState.accessToken = e.detail.getAuthResponse().access_token || '';
-            }}
-          ></milo-signin>` : ''}
+          ${this.appState.gAuth
+            ? html` <milo-signin
+                .gAuth=${this.appState.gAuth}
+                @user-update=${(e: UserUpdateEvent) => {
+                  this.appState.accessToken = e.detail.getAuthResponse().access_token || '';
+                }}
+              ></milo-signin>`
+            : ''}
         </div>
       </div>
-      ${this.errorMsg === null ?
-      html`<slot></slot>` :
-      html`
-      <div id="error-label">An error occurred:</div>
-      <div id="error-message">
-        ${this.errorMsg.split('\n').map((line) => html`<p>${line}</p>`)}
-      </div>
-      `
-      }
+      ${this.errorMsg === null
+        ? html`<slot></slot>`
+        : html`
+            <div id="error-label">An error occurred:</div>
+            <div id="error-message">${this.errorMsg.split('\n').map((line) => html`<p>${line}</p>`)}</div>
+          `}
     `;
   }
 
@@ -142,7 +138,7 @@ export class PageLayoutElement extends MobxLitElement {
     }
     #headline {
       color: var(--light-text-color);
-      font-family: "Google Sans", "Helvetica Neue", sans-serif;
+      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
       font-size: 18px;
       font-weight: 300;
       letter-spacing: 0.25px;

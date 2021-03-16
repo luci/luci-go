@@ -66,23 +66,20 @@ export class TooltipElement extends LitElement {
     // Reset the position so it's easier to calculate the new position.
     this.style.left = '0';
     this.style.top = '0';
-  }
+  };
 
   private onHideTooltip = (event: Event) => {
     window.clearTimeout(this.hideTooltipTimeout);
 
     const e = event as CustomEvent<HideTooltipEventDetail>;
-    this.hideTooltipTimeout = window.setTimeout(
-      this.hideTooltip,
-      e.detail.delay || 0,
-    );
-  }
+    this.hideTooltipTimeout = window.setTimeout(this.hideTooltip, e.detail.delay || 0);
+  };
 
   private hideTooltip = () => {
     this.style.display = 'none';
     this.tooltip = undefined;
     this.targetRect = undefined;
-  }
+  };
 
   onmouseover = () => window.clearTimeout(this.hideTooltipTimeout);
   onmouseout = this.hideTooltip;
@@ -155,9 +152,7 @@ export class TooltipElement extends LitElement {
       background: white;
       border-radius: 4px;
       padding: 5px;
-      box-shadow:
-        rgb(0 0 0 / 20%) 0px 5px 5px -3px,
-        rgb(0 0 0 / 14%) 0px 8px 10px 1px,
+      box-shadow: rgb(0 0 0 / 20%) 0px 5px 5px -3px, rgb(0 0 0 / 14%) 0px 8px 10px 1px,
         rgb(0 0 0 / 12%) 0px 3px 14px 2px;
       z-index: 2;
     }

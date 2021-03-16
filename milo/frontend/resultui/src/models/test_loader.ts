@@ -19,7 +19,13 @@
 
 import { action, computed, observable } from 'mobx';
 
-import { QueryTestVariantsRequest, QueryTestVariantsResponse, TestVariant, TestVariantStatus, UISpecificService } from '../services/resultdb';
+import {
+  QueryTestVariantsRequest,
+  QueryTestVariantsResponse,
+  TestVariant,
+  TestVariantStatus,
+  UISpecificService,
+} from '../services/resultdb';
 
 /**
  * The stage of the next test variant. The stage can be
@@ -59,10 +65,14 @@ export class LoadTestVariantsError {
 export class TestLoader {
   @observable.ref filter = (_v: TestVariant) => true;
 
-  @computed get isLoading() { return !this.loadedAllVariants && this.loadingReqCount !== 0; }
+  @computed get isLoading() {
+    return !this.loadedAllVariants && this.loadingReqCount !== 0;
+  }
   @observable.ref private loadingReqCount = 0;
 
-  @computed get firstRequestSent() { return this._firstRequestSent; }
+  @computed get firstRequestSent() {
+    return this._firstRequestSent;
+  }
   @observable.ref private _firstRequestSent = false;
 
   /**
@@ -70,34 +80,38 @@ export class TestLoader {
    * tell the possible status of the next test variants and therefore avoid
    * unnecessary loading.
    */
-  @computed get stage() { return this._stage; }
+  @computed get stage() {
+    return this._stage;
+  }
   @observable.ref private _stage = LoadingStage.LoadingUnexpected;
 
   @observable.ref unfilteredTestVariantCount = 0;
 
   @computed
   get testVariantCount() {
-    return this.unexpectedTestVariants.length
-      + this.unexpectedlySkippedTestVariants.length
-      + this.flakyTestVariants.length
-      + this.exoneratedTestVariants.length
-      + this.expectedTestVariants.length;
+    return (
+      this.unexpectedTestVariants.length +
+      this.unexpectedlySkippedTestVariants.length +
+      this.flakyTestVariants.length +
+      this.exoneratedTestVariants.length +
+      this.expectedTestVariants.length
+    );
   }
 
   @computed get unexpectedTestVariants() {
-    return this.unfilteredUnexpectedVariants.filter((this.filter));
+    return this.unfilteredUnexpectedVariants.filter(this.filter);
   }
   @computed get unexpectedlySkippedTestVariants() {
-    return this.unfilteredUnexpectedlySkippedVariants.filter((this.filter));
+    return this.unfilteredUnexpectedlySkippedVariants.filter(this.filter);
   }
   @computed get flakyTestVariants() {
-    return this.unfilteredFlakyVariants.filter((this.filter));
+    return this.unfilteredFlakyVariants.filter(this.filter);
   }
   @computed get exoneratedTestVariants() {
-    return this.unfilteredExoneratedVariants.filter((this.filter));
+    return this.unfilteredExoneratedVariants.filter(this.filter);
   }
   @computed get expectedTestVariants() {
-    return this.unfilteredExpectedVariants.filter((this.filter));
+    return this.unfilteredExpectedVariants.filter(this.filter);
   }
 
   @observable.shallow private unfilteredUnexpectedVariants: TestVariant[] = [];
@@ -106,31 +120,42 @@ export class TestLoader {
   @observable.shallow private unfilteredExoneratedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredExpectedVariants: TestVariant[] = [];
 
-  @computed get loadedAllVariants() { return this.stage === LoadingStage.Done; }
-  @computed get loadedAllUnexpectedVariants() { return this.stage > LoadingStage.LoadingUnexpected; }
-  @computed get loadedAllUnexpectedlySkippedVariants() { return this.stage > LoadingStage.LoadingUnexpectedlySkipped; }
-  @computed get loadedAllFlakyVariants() { return this.stage > LoadingStage.LoadingFlaky; }
-  @computed get loadedAllExoneratedVariants() { return this.stage > LoadingStage.LoadingExonerated; }
-  @computed get loadedAllExpectedVariants() { return this.stage > LoadingStage.LoadingExpected; }
+  @computed get loadedAllVariants() {
+    return this.stage === LoadingStage.Done;
+  }
+  @computed get loadedAllUnexpectedVariants() {
+    return this.stage > LoadingStage.LoadingUnexpected;
+  }
+  @computed get loadedAllUnexpectedlySkippedVariants() {
+    return this.stage > LoadingStage.LoadingUnexpectedlySkipped;
+  }
+  @computed get loadedAllFlakyVariants() {
+    return this.stage > LoadingStage.LoadingFlaky;
+  }
+  @computed get loadedAllExoneratedVariants() {
+    return this.stage > LoadingStage.LoadingExonerated;
+  }
+  @computed get loadedAllExpectedVariants() {
+    return this.stage > LoadingStage.LoadingExpected;
+  }
   @computed get firstPageLoaded() {
     return this.unfilteredUnexpectedVariants.length > 0 || this.loadedAllUnexpectedVariants;
   }
   @computed get firstPageIsEmpty() {
-    return this.loadedAllUnexpectedVariants &&
+    return (
+      this.loadedAllUnexpectedVariants &&
       this.unfilteredUnexpectedVariants.length === 0 &&
       this.unfilteredUnexpectedlySkippedVariants.length === 0 &&
       this.unfilteredFlakyVariants.length === 0 &&
-      this.unfilteredExoneratedVariants.length === 0;
+      this.unfilteredExoneratedVariants.length === 0
+    );
   }
 
   // undefined means the end has been reached.
   // empty string is the token for the first page.
   private nextPageToken: string | undefined = '';
 
-  constructor(
-    private readonly req: QueryTestVariantsRequest,
-    private readonly uiSpecificService: UISpecificService,
-  ) {}
+  constructor(private readonly req: QueryTestVariantsRequest, private readonly uiSpecificService: UISpecificService) {}
 
   private loadPromise = Promise.resolve();
 
@@ -165,8 +190,8 @@ export class TestLoader {
     do {
       await this.loadNextPage();
       shouldLoadNextPage =
-        !this.loadedAllVariants && this.testVariantCount === beforeCount ||
-        untilStatus !== undefined && this.stage < VARIANT_STATUS_LOADING_STAGE_MAP[untilStatus];
+        (!this.loadedAllVariants && this.testVariantCount === beforeCount) ||
+        (untilStatus !== undefined && this.stage < VARIANT_STATUS_LOADING_STAGE_MAP[untilStatus]);
     } while (shouldLoadNextPage);
 
     // If we wanted to load up to Expected, and none have arrived yet
@@ -190,7 +215,7 @@ export class TestLoader {
       return;
     }
 
-    const req = {...this.req, pageToken: this.nextPageToken};
+    const req = { ...this.req, pageToken: this.nextPageToken };
     let res: QueryTestVariantsResponse;
     try {
       res = await this.uiSpecificService.queryTestVariants(req);

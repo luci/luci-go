@@ -24,84 +24,84 @@ chai.use(chaiRecursiveDeepInclude);
 
 const variant1 = {
   testId: 'a',
-  variant: {'def': {'key1': 'val1'}},
+  variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   status: TestVariantStatus.UNEXPECTED,
 };
 
 const variant2 = {
   testId: 'a',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.UNEXPECTED,
 };
 
 const variant3 = {
   testId: 'a',
-  variant: {def: {'key1': 'val3'}},
+  variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
   status: TestVariantStatus.UNEXPECTED,
 };
 
 const variant4 = {
   testId: 'b',
-  variant: {'def': {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.FLAKY,
 };
 
 const variant5 = {
   testId: 'matched-id',
-  variant: {def: {'key1': 'val2', 'key2': 'val1'}},
+  variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
   status: TestVariantStatus.FLAKY,
 };
 
 const variant6 = {
   testId: 'c',
-  variant: {def: {'key1': 'val2', 'key2': 'val2'}},
+  variant: { def: { key1: 'val2', key2: 'val2' } },
   variantHash: 'key1:val2|key2:val2',
   status: TestVariantStatus.EXONERATED,
 };
 
 const variant7 = {
   testId: 'd',
-  variant: {def: {'key1': 'val1'}},
+  variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
   status: TestVariantStatus.EXONERATED,
 };
 
 const variant8 = {
   testId: 'd',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
 };
 
 const variant9 = {
   testId: 'e',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
 };
 
 const variant10 = {
   testId: 'f',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
 };
 
 const variant11 = {
   testId: 'g',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
 };
 
 const variant12 = {
   testId: 'matched-id',
-  variant: {def: {'key1': 'val2'}},
+  variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
   status: TestVariantStatus.EXPECTED,
 };
@@ -109,18 +109,17 @@ const variant12 = {
 describe('TestLoader', () => {
   let testLoader: TestLoader;
   let stub = sinon.stub();
-  const req = {invocations: ['invocation'], pageSize: 4};
+  const req = { invocations: ['invocation'], pageSize: 4 };
   describe('when first page contains variants', () => {
     beforeEach(() => {
       stub = sinon.stub();
-      stub.onCall(0).resolves({testVariants: [variant1, variant2, variant3, variant4], nextPageToken: 'page2'});
-      stub.onCall(1).resolves({testVariants: [variant5, variant6, variant7], nextPageToken: 'page3'});
-      stub.onCall(2).resolves({testVariants: [variant8, variant9, variant10, variant11], nextPageToken: 'page4'});
-      stub.onCall(3).resolves({testVariants: [variant12], nextPageToken: undefined});
-      testLoader = new TestLoader(
-        req,
-        {queryTestVariants: stub} as Partial<UISpecificService> as UISpecificService,
-      );
+      stub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3, variant4], nextPageToken: 'page2' });
+      stub.onCall(1).resolves({ testVariants: [variant5, variant6, variant7], nextPageToken: 'page3' });
+      stub.onCall(2).resolves({ testVariants: [variant8, variant9, variant10, variant11], nextPageToken: 'page4' });
+      stub.onCall(3).resolves({ testVariants: [variant12], nextPageToken: undefined });
+      testLoader = new TestLoader(req, ({
+        queryTestVariants: stub,
+      } as Partial<UISpecificService>) as UISpecificService);
     });
 
     it('should preserve loading progress', async () => {
@@ -134,7 +133,7 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.expectedTestVariants, []);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingFlaky);
       assert.strictEqual(stub.callCount, 1);
-      assert.deepEqual(stub.getCall(0).args[0], {...req, pageToken: ''});
+      assert.deepEqual(stub.getCall(0).args[0], { ...req, pageToken: '' });
 
       await testLoader.loadNextTestVariants();
       assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
@@ -143,7 +142,7 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.expectedTestVariants, []);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
       assert.strictEqual(stub.callCount, 2);
-      assert.deepEqual(stub.getCall(1).args[0], {...req, pageToken: 'page2'});
+      assert.deepEqual(stub.getCall(1).args[0], { ...req, pageToken: 'page2' });
 
       await testLoader.loadNextTestVariants();
       assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
@@ -152,7 +151,7 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.expectedTestVariants, [variant8, variant9, variant10, variant11]);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
       assert.strictEqual(stub.callCount, 3);
-      assert.deepEqual(stub.getCall(2).args[0], {...req, pageToken: 'page3'});
+      assert.deepEqual(stub.getCall(2).args[0], { ...req, pageToken: 'page3' });
 
       await testLoader.loadNextTestVariants();
       assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2, variant3]);
@@ -161,7 +160,7 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.expectedTestVariants, [variant8, variant9, variant10, variant11, variant12]);
       assert.strictEqual(testLoader.stage, LoadingStage.Done);
       assert.strictEqual(stub.callCount, 4);
-      assert.deepEqual(stub.getCall(3).args[0], {...req, pageToken: 'page4'});
+      assert.deepEqual(stub.getCall(3).args[0], { ...req, pageToken: 'page4' });
 
       // Should not load when the iterator is exhausted.
       await testLoader.loadNextTestVariants();
@@ -229,10 +228,10 @@ describe('TestLoader', () => {
       assert.strictEqual(testLoader.stage, LoadingStage.Done);
 
       assert.strictEqual(stub.callCount, 4);
-      assert.deepEqual(stub.getCall(0).args[0], {...req, pageToken: ''});
-      assert.deepEqual(stub.getCall(1).args[0], {...req, pageToken: 'page2'});
-      assert.deepEqual(stub.getCall(2).args[0], {...req, pageToken: 'page3'});
-      assert.deepEqual(stub.getCall(3).args[0], {...req, pageToken: 'page4'});
+      assert.deepEqual(stub.getCall(0).args[0], { ...req, pageToken: '' });
+      assert.deepEqual(stub.getCall(1).args[0], { ...req, pageToken: 'page2' });
+      assert.deepEqual(stub.getCall(2).args[0], { ...req, pageToken: 'page3' });
+      assert.deepEqual(stub.getCall(3).args[0], { ...req, pageToken: 'page4' });
     });
 
     it('should correctly set firstRequestSent', async () => {
@@ -381,13 +380,12 @@ describe('TestLoader', () => {
   describe('when first page contains no variants', () => {
     beforeEach(() => {
       stub = sinon.stub();
-      stub.onCall(0).resolves({nextPageToken: 'page2'});
-      stub.onCall(1).resolves({testVariants: [variant8], nextPageToken: 'page3'});
-      stub.onCall(2).resolves({testVariants: [variant9], nextPageToken: undefined});
-      testLoader = new TestLoader(
-        req,
-        {queryTestVariants: stub} as Partial<UISpecificService> as UISpecificService,
-      );
+      stub.onCall(0).resolves({ nextPageToken: 'page2' });
+      stub.onCall(1).resolves({ testVariants: [variant8], nextPageToken: 'page3' });
+      stub.onCall(2).resolves({ testVariants: [variant9], nextPageToken: undefined });
+      testLoader = new TestLoader(req, ({
+        queryTestVariants: stub,
+      } as Partial<UISpecificService>) as UISpecificService);
     });
 
     it('should correctly handle a response with 0 variants', async () => {

@@ -18,7 +18,6 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
-
 /**
  * An expandable panel.
  * With a clickable and draggable handle.
@@ -43,7 +42,7 @@ export class LeftPanelElement extends MobxLitElement {
       return;
     }
     this.panelEle.style.width = `${this.startWidth + dx}px`;
-  }
+  };
 
   updated() {
     this.panelEle = this.shadowRoot!.getElementById('panel')!;
@@ -52,16 +51,13 @@ export class LeftPanelElement extends MobxLitElement {
   protected render() {
     return html`
       <div id="container">
-        <div
-          id="panel"
-          style=${styleMap({display: this.expanded ? '' : 'none'})}
-        >
+        <div id="panel" style=${styleMap({ display: this.expanded ? '' : 'none' })}>
           <slot></slot>
         </div>
         <div id="expand-column">
           <div
             id="handle"
-            style=${styleMap({'cursor': this.expanded ? 'col-resize' : 'pointer'})}
+            style=${styleMap({ cursor: this.expanded ? 'col-resize' : 'pointer' })}
             @click=${() => {
               if (this.isResizing) {
                 this.isResizing = false;
@@ -73,14 +69,19 @@ export class LeftPanelElement extends MobxLitElement {
               this.startPos = e.x;
               this.startWidth = this.panelEle.clientWidth;
               document.addEventListener('mousemove', this.onResize);
-              document.addEventListener('mouseup', () => {
-                document.removeEventListener('mousemove', this.onResize);
-              }, {once: true});
+              document.addEventListener(
+                'mouseup',
+                () => {
+                  document.removeEventListener('mousemove', this.onResize);
+                },
+                { once: true }
+              );
             }}
           >
             <mwc-icon>drag_handle</mwc-icon>
           </div>
         </div>
+      </div>
     `;
   }
 
@@ -113,7 +114,7 @@ export class LeftPanelElement extends MobxLitElement {
       width: 10px;
       position: relative;
     }
-    #handle>mwc-icon {
+    #handle > mwc-icon {
       position: absolute;
       top: 50%;
       color: grey;

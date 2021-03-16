@@ -14,14 +14,17 @@
 
 import { css, customElement, html, LitElement } from 'lit-element';
 
-
 /**
  * A simple 3-dots loading indicator.
  */
 @customElement('milo-dot-spinner')
 export class DotSpinnerElement extends LitElement {
   protected render() {
-    return html`<div></div><div></div><div></div>`;
+    return html`
+      <div></div>
+      <div></div>
+      <div></div>
+    `;
   }
 
   static styles = css`
@@ -48,8 +51,14 @@ export class DotSpinnerElement extends LitElement {
     }
 
     @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1.0); }
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+      }
+      40% {
+        transform: scale(1);
+      }
     }
   `;
 }

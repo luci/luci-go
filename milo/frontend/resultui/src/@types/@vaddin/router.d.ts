@@ -16,13 +16,12 @@
  * This file adds additional type definition to @vaadin/router.
  */
 
-import {RouterLocation} from '@vaadin/router';
-
+import { RouterLocation } from '@vaadin/router';
 
 /**
  * @vaadin/router.Router sets location on the element, but the behavior is not
  * reflected in its type definition.
  */
 interface HTMLElement {
-  location?: RouterLocation
+  location?: RouterLocation;
 }
