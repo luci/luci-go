@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "882f466d_6920e9d5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T23:34:14Z",
+      "side": 1,
+      "message": "This CL makes the directory structure cleaner and makes it easier to add service worker later on.\n\nDemo: https://weiweilin-6-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/9119/overview\n",
+      "revId": "cfe66794850cf245f004a29dd3134c0d88adef40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
