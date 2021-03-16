@@ -120,8 +120,6 @@ func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 	r.Tags = append(
 		r.Tags,
 		strpair.Format(bbv1.TagBuildSet, protoutil.GitilesBuildSet(commit)),
-		// TODO(nodir): remove after switching to ScheduleBuild RPC v2.
-		strpair.Format(bbv1.TagBuildSet, "commit/git/"+commit.Id),
 		strpair.Format("gitiles_ref", t.Ref),
 	)
 	r.Tags = append(r.Tags, t.Tags...)
