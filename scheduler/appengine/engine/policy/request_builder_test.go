@@ -85,7 +85,6 @@ func TestRequestBuilder(t *testing.T) {
 		})
 		So(r.Request.Tags, ShouldResemble, []string{
 			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
-			"buildset:commit/git/aaaaaaaa",
 			"gitiles_ref:refs/heads/master",
 		})
 	})
@@ -104,8 +103,7 @@ func TestRequestBuilder(t *testing.T) {
 				Tags: []string{
 					"tag1:val1",
 					"gitiles_ref:not-overridden",
-					"tag1:val1",                    // dup
-					"buildset:commit/git/aaaaaaaa", // dup
+					"tag1:val1", // dup
 				},
 			}},
 		})
@@ -127,7 +125,6 @@ func TestRequestBuilder(t *testing.T) {
 		})
 		So(r.Request.Tags, ShouldResemble, []string{
 			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
-			"buildset:commit/git/aaaaaaaa",
 			"gitiles_ref:refs/heads/master",
 			"tag1:val1",
 			"gitiles_ref:not-overridden",
