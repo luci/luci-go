@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "055d2fb3_5f7bd810",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T04:09:03Z",
+      "side": 1,
+      "message": "No. It won\u0027t.\nThe new formats are accepted too.",
+      "parentUuid": "b1470ded_a1b8bb12",
+      "range": {
+        "startLine": 11,
+        "startChar": 27,
+        "endLine": 11,
+        "endChar": 65
+      },
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "07e9e7d0_c78752a0",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 8
@@ -55,6 +79,24 @@
       "side": 1,
       "message": "I\u0027m fine with it, but perhaps it would make it easier to review if you break it to 3 CLs:\n\n- Upgrade gts to v0.3 and migrate from tslint to eslint\n- CLs to format the code\n- CL to rename the file.\n\nBut let\u0027s leave it as it is for now.",
       "parentUuid": "07e9e7d0_c78752a0",
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed5973f5_3aebfbf5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T04:09:03Z",
+      "side": 1,
+      "message": "splitting them into 3 will make eslint complain before other CLs are landed though.",
+      "parentUuid": "dbce8698_ee8fc6ac",
       "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -142,6 +184,24 @@
       "writtenOn": "2021-03-16T03:55:19Z",
       "side": 1,
       "message": "I think this is intentionally to be in oneline: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2543704",
+      "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "20c53be2_12d919f3",
+        "filename": "milo/frontend/resultui/src/components/dot_spinner.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-16T04:09:03Z",
+      "side": 1,
+      "message": "Good point.\nDisabled eslint for this line.",
+      "parentUuid": "d5245b14_c90822f9",
       "revId": "b58fe09085392c0ce664333ea8227cbc307eb13e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
