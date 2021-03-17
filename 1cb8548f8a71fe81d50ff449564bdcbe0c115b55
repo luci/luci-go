@@ -118,6 +118,30 @@
       },
       "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4613b31c_34d762dd",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-17T23:36:13Z",
+      "side": 1,
+      "message": "Remove the truncation logic, as step data are encoded and stored as bytes[] in ds, as Robbie said. Now, this CL just fixes the err msg.",
+      "parentUuid": "d25ea672_62c4779c",
+      "range": {
+        "startLine": 207,
+        "startChar": 22,
+        "endLine": 207,
+        "endChar": 43
+      },
+      "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
