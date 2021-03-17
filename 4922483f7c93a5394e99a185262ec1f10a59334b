@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb76bd29_2fff5ed0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-17T01:09:56Z",
+      "side": 1,
+      "message": "This improves loading time and can enables us to redirect old build page links to the new build page\nin the frontend in a following CL.\n\nDemo: https://weiweilin-6-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/9119/overview\n",
+      "revId": "4922483f7c93a5394e99a185262ec1f10a59334b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
