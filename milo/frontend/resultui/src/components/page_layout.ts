@@ -14,6 +14,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { BeforeEnterObserver } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
@@ -39,7 +40,7 @@ const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
 @customElement('milo-page-layout')
 @provideConfigsStore
 @provideAppState
-export class PageLayoutElement extends MobxLitElement {
+export class PageLayoutElement extends MobxLitElement implements BeforeEnterObserver {
   readonly appState = new AppState();
   readonly configsStore = new UserConfigsStore();
 
@@ -53,6 +54,18 @@ export class PageLayoutElement extends MobxLitElement {
   errorHandler = (event: ErrorEvent) => {
     this.errorMsg = event.message;
   };
+
+  onBeforeEnter() {
+    if ('serviceWorker' in navigator) {
+      // onBeforeEnter can be async.
+      // But we don't want to block the rest of the page from rendering.
+      navigator.serviceWorker.getRegistration('/').then((redirectSw) => {
+        this.appState.redirectSw = redirectSw;
+      });
+    } else {
+      this.appState.redirectSw = undefined;
+    }
+  }
 
   connectedCallback() {
     super.connectedCallback();

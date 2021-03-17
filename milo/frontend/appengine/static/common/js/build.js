@@ -57,6 +57,15 @@ $(document).ready(function() {
 
   $('#new-build-page-link').on('click', () => {
     setCookie('showNewBuildPage', true);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/redirect-sw.js')
+        .then((registration) => {
+          console.log('SW registered: ', registration);
+          location.reload();
+        });
+      return false;
+    }
     return true;
   });
 

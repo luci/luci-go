@@ -15,8 +15,23 @@
 import './routes';
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    const registration = await navigator.serviceWorker.register('/ui/service-worker.js');
-    console.log('SW registered: ', registration);
-  });
+  window.addEventListener(
+    'load',
+    async () => {
+      const registration = await navigator.serviceWorker.register('/ui/service-worker.js');
+      console.log('SW registered: ', registration);
+    },
+    { once: true }
+  );
+
+  if (!document.cookie.includes('showNewBuildPage=false')) {
+    window.addEventListener(
+      'load',
+      async () => {
+        const registration = await navigator.serviceWorker.register('/redirect-sw.js');
+        console.log('SW registered: ', registration);
+      },
+      { once: true }
+    );
+  }
 }
