@@ -21,15 +21,23 @@ import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack, { DefinePlugin } from 'webpack';
 
+const STANDALONE_ENTRIES = ['redirect-sw'];
+
 const config: webpack.Configuration = {
   entry: {
     index: './src/index.ts',
+    'redirect-sw': './src/redirect_sw.ts',
   },
   output: {
     path: path.resolve(__dirname, './out/'),
     publicPath: '/ui/',
-    filename: 'immutable/[name].[contenthash].bundle.js',
-    chunkFilename: 'immutable/[name].[contenthash].bundle.js',
+    filename: (pathData) => {
+      if (STANDALONE_ENTRIES.includes(pathData.chunk?.name || '')) {
+        return '[name].js';
+      }
+      return 'immutable/[name].[contenthash].bundle.js';
+    },
+    chunkFilename: 'immutable/[name].[contenthash].js',
   },
   module: {
     rules: [
@@ -56,7 +64,9 @@ const config: webpack.Configuration = {
     configs: 'CONFIGS',
   },
   optimization: {
-    runtimeChunk: 'single',
+    // Disable separate runtime chunk so STANDALONE_ENTRIES can be executed
+    // without importing other scripts.
+    runtimeChunk: false,
     splitChunks: {
       chunks: 'all',
       maxInitialRequests: Infinity,
@@ -81,6 +91,10 @@ const config: webpack.Configuration = {
       alwaysWriteToDisk: true,
       template: path.resolve(__dirname, './assets/index.template.html'),
       filename: path.resolve(__dirname, './out/index.html'),
+      // We should only have a single entry point on the HTML page.
+      // Otherwise modules could be initialized multiple times when
+      // optimization.runtimeChunk is set to false.
+      chunks: ['index'],
     }),
     new HtmlWebpackHarddiskPlugin(),
     new DefinePlugin({ ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true') }),
