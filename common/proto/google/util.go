@@ -17,8 +17,8 @@ package google
 import (
 	"time"
 
-	durationpb "github.com/golang/protobuf/ptypes/duration"
-	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -58,7 +58,7 @@ func TimeFromProto(t *timestamppb.Timestamp) time.Time {
 		// This is year 0000 as opposed to time.Unix(0, 0).UTC(), which is 1970.
 		return time.Time{}
 	}
-	return time.Unix(t.Seconds, int64(t.Nanos)).UTC()
+	return t.AsTime()
 }
 
 // NewDuration creates a new Duration protobuf from a time.Duration.
@@ -90,8 +90,5 @@ func LoadDuration(d *durationpb.Duration, v time.Duration) *durationpb.Duration 
 // DurationFromProto returns the time.Duration associated with a Duration
 // protobuf.
 func DurationFromProto(d *durationpb.Duration) time.Duration {
-	if d == nil {
-		return 0
-	}
-	return (time.Duration(d.Seconds) * time.Second) + (time.Duration(d.Nanos) * time.Nanosecond)
+	return d.AsDuration()
 }
