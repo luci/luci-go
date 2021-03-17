@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06b15662_8ba9462f",
+        "filename": "milo/frontend/resultui/src/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-17T02:05:56Z",
+      "side": 1,
+      "message": "idk how service works work, but shouldn\u0027t there be service-worker.js in this CL or in https://source.chromium.org/search?q\u003dservice-worker.js%20f:milo\u0026sq\u003d",
+      "revId": "33e4f87e4c95a855dfd3602cf8fd7bc6ee4325e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
