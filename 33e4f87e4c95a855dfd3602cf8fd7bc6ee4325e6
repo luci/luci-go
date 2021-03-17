@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e760788_11936071",
+        "filename": "milo/frontend/resultui/src/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-17T02:16:32Z",
+      "side": 1,
+      "message": "thanks. This is reaching the limits of my JS knowledge and I don\u0027t have time to learn this :( I am going to stamp this, but when there is a chance, please ensure that someone else understands this besides yourself.",
+      "parentUuid": "8fbb8dda_5665be7a",
+      "revId": "33e4f87e4c95a855dfd3602cf8fd7bc6ee4325e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc26b57d_02c20fb3",
