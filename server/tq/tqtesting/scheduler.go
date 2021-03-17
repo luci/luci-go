@@ -503,14 +503,14 @@ func (s *Scheduler) shouldStop(opts []RunOption) bool {
 			if len(s.tasks) == 0 && len(s.executing) == 0 {
 				return true
 			}
-		case stopAfterTask:
+		case stopAfter:
 			for _, t := range recentlyFinished {
-				if v.taskClassID == t.Class {
+				if v.examine(t) {
 					return true
 				}
 			}
-		case stopBeforeTask:
-			if len(s.tasks) > 0 && s.tasks[0].Class == v.taskClassID {
+		case stopBefore:
+			if len(s.tasks) > 0 && v.examine(s.tasks[0]) {
 				return true
 			}
 		}
