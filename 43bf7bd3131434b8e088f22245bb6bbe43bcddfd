@@ -473,6 +473,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "08d0a2ec_359129bf",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-17T02:27:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "792b51c6_61e79b9f",
+      "range": {
+        "startLine": 322,
+        "startChar": 42,
+        "endLine": 322,
+        "endChar": 75
+      },
+      "revId": "43bf7bd3131434b8e088f22245bb6bbe43bcddfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "41a8271b_a8534381",

@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a4e18089_14cd4451",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-17T02:27:24Z",
+      "side": 1,
+      "message": "If https://google.aip.dev/234 asks batch update calls to be atomic, then we should follow that? Which means current implementation is fine.\n\n\u003e (1) is important because Milo can list all the artifacts, and display errors, like \"failed to upload artifacts\", for ones that were failed. It will help users clarify the possible reasons of an artifact absent under a test.\n\nI\u0027m not sure about this. I mean rdb clients should retry on failures, so if some artifacts are failed to upload, they should then be successfully uploaded later.\n\n\u003e (2) is important, if we want RDB clients, like ResultSink, to optimize retries.\n\nI agree. But I\u0027m not sure if the benefit validates the complexity. And also let\u0027s follow the guidelines.",
+      "parentUuid": "0bafb23c_6f700f58",
+      "range": {
+        "startLine": 314,
+        "startChar": 11,
+        "endLine": 314,
+        "endChar": 30
+      },
+      "revId": "b64780c755538494013ecb5ff32642bf2e00ea85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ddeddbae_df5bf106",
         "filename": "resultdb/internal/services/recorder/recorder.go",
         "patchSetId": 5

@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b534ef9_10318a11",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-17T02:27:24Z",
+      "side": 1,
+      "message": "artsCreated?",
+      "range": {
+        "startLine": 329,
+        "startChar": 19,
+        "endLine": 329,
+        "endChar": 31
+      },
+      "revId": "c2aa54325a483c053abf0799aa1ad195b195b61e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
