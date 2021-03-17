@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "de46e239_0dbc62ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T01:02:49Z",
+      "side": 1,
+      "message": "Vadim, PTAL as server/tq owner.",
+      "revId": "d159b0c5832cbdeab5140dc94e98c15dfb899edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
