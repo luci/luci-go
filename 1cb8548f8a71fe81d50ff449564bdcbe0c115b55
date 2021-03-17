@@ -46,6 +46,30 @@
       },
       "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c2526958_8a4d0862",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-17T02:04:22Z",
+      "side": 1,
+      "message": "Are you sure that time.Time is stored with seconds precision? Do you have any links to prove it? I remember it truncates precision, but I think it is up to milliseconds, not seconds.",
+      "parentUuid": "d64a209f_19e194c1",
+      "range": {
+        "startLine": 207,
+        "startChar": 22,
+        "endLine": 207,
+        "endChar": 43
+      },
+      "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
