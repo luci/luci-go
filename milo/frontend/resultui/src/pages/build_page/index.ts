@@ -508,6 +508,12 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           @click=${(e: Event) => {
             const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
             document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
+
+            // Strictly speaking, this.appState.redirectSw may not be initialized yet.
+            // But it's very unlikely that users will/can click on the link before
+            // redirectSw is initialized.
+            this.appState.redirectSw?.unregister();
+
             if (this.configsStore.userConfigs.askForFeedback) {
               this.showFeedbackDialog = true;
               e.preventDefault();

@@ -58,6 +58,12 @@ handlers:
     # Set stale-while-revalidate to 4 weeks.
     Cache-Control: stale-while-revalidate=2419200
 
+# Host redirect-sw.js at root so it can have root scope.
+- url: /(redirect-sw.js(.map)?)$
+  secure: always
+  static_files: resultui/\1
+  upload: resultui/redirect-sw.js(.map)?$
+
 # Other ResultUI static resources.
 - url: /ui
   secure: always

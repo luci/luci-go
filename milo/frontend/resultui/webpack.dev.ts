@@ -37,13 +37,18 @@ const config: webpack.Configuration = merge(common, {
     before: (app) => {
       app.get('/configs.js', async (_req, res) => {
         res.set('content-type', 'application/javascript');
-        const appConfigs = JSON.parse(fs.readFileSync('./dev-configs/configs.json', 'utf8'));
-        const configsTemplate = fs.readFileSync('./assets/configs.template.js', 'utf8');
+        const appConfigs = JSON.parse(fs.readFileSync(path.join(__dirname, 'dev-configs/configs.json'), 'utf8'));
+        const configsTemplate = fs.readFileSync(path.join(__dirname, 'assets/configs.template.js'), 'utf8');
         const config = configsTemplate
           .replace('{{.ResultDB.Host}}', appConfigs.RESULT_DB.HOST)
           .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST)
           .replace('{{.OAuth2.ClientID}}', appConfigs.OAUTH2.CLIENT_ID);
         res.send(config);
+      });
+
+      app.get('/redirect-sw.js', async (_req, res) => {
+        res.set('content-type', 'application/javascript');
+        res.send(fs.readFileSync(path.join(__dirname, 'assets/redirect-sw.js'), 'utf8'));
       });
 
       app.use(
@@ -53,7 +58,9 @@ const config: webpack.Configuration = merge(common, {
           // the router option. So the value doesn't matter.
           target: 'https://luci-milo-dev.appspot.com',
           router: () => {
-            const localDevConfigs = JSON.parse(fs.readFileSync('./dev-configs/local-dev-configs.json', 'utf8'));
+            const localDevConfigs = JSON.parse(
+              fs.readFileSync(path.join(__dirname, 'dev-configs/local-dev-configs.json'), 'utf8')
+            );
             return localDevConfigs.milo.url;
           },
           changeOrigin: true,
