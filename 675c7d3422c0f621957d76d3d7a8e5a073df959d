@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9ff22e66_dab94749",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "gae noindex",
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5599a501_07e06bb9",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "gae noindex.",
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "67acbf42_7f525d73",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "gae noindex",
+      "range": {
+        "startLine": 46,
+        "startChar": 18,
+        "endLine": 46,
+        "endChar": 20
+      },
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a412c0e_b801c3ee",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "as discussed in chat, if callee crashes, callee may never ever acquire the \"Current\" slot and nobody else can. So, I think this code should notify RM in the future to do so inside the transaction.",
+      "range": {
+        "startLine": 108,
+        "startChar": 48,
+        "endLine": 109,
+        "endChar": 37
+      },
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0af3fa5_b4e8cde5",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "gramma-nazi: i think English likes subject, otherwise it irks me while reading. How about:\n\n\"If the next submission can happen immediately, promote the Run to the Current.\"",
+      "range": {
+        "startLine": 144,
+        "startChar": 8,
+        "endLine": 144,
+        "endChar": 22
+      },
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f9a0e64_b0f18fe8",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "I think you can move this case right above the above case and reduce logic\n\ncase q.Current \u003d\u003d \"\" \u0026\u0026 len(q.Waitlist) \u003d\u003d 0:  // hence waitlistIdx \u003d\u003d -1\n  q.Waitlist \u003d common.RunIDs{runID}\n  fallthrough\ncase q.Current \u003d\u003d \"\" \u0026\u0026 waitlistIdx \u003d\u003d 0:\n  ...",
+      "range": {
+        "startLine": 152,
+        "startChar": 1,
+        "endLine": 152,
+        "endChar": 46
+      },
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

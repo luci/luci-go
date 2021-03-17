@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de8e5ebd_a1dfa87b",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "Ah, I forgot about the deadline in RM. Yeah, this should work and it\u0027s probably simpler. The only downside is that if a single RM is stuck, all RMs can\u0027t submit.\nWe can revisit this later.",
+      "parentUuid": "c03fb67a_320e1246",
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "08f6a6a7_23f26087",
@@ -137,6 +155,30 @@
       "side": 1,
       "message": "My idea is exactly the #1 and agree that it should be UpdateQueue.\n\nI agree that #2 will benefit us more in the future. However, one downside of #2 is that it will require RM load the config everytime before acquiring to fetch the SubmitOptions even though it is cheap. I think we can either cache SubmitOptions inside Run entity or store some kind of version in both SubmitOptions and Run entity to perform fast comparison. WDYT?",
       "parentUuid": "54004926_134687ab",
+      "range": {
+        "startLine": 52,
+        "startChar": 5,
+        "endLine": 52,
+        "endChar": 16
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "902dcd9c_0de930d1",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "#1 is fine by me, but the SQ package will probably need to be outside of Run (but don\u0027t move it just yet, TODO is fine).\n\n#2 loading config is cheap, even if from datastore, and in most cases, you\u0027ll get it from Redis. So, I wouldn\u0027t care to optimize that.\nSo, IMO, we should go this route.\n\n(i\u0027m ok leaving this CL as is, and modifying in the next CL)",
+      "parentUuid": "3b306f9d_b09cff91",
       "range": {
         "startLine": 52,
         "startChar": 5,
@@ -313,6 +355,30 @@
       "side": 1,
       "message": "no.. I think it\u0027s also possible \"q.Current \u003d\u003d \"\" \u0026\u0026 waitlistIdx \u003d\u003d -1\" when this acquire come right after current slot gets released and the waitlist isn\u0027t empty at that time.",
       "parentUuid": "5894b027_0e93c60a",
+      "range": {
+        "startLine": 136,
+        "startChar": 22,
+        "endLine": 136,
+        "endChar": 41
+      },
+      "revId": "8837ed02716c6ced84a2e5f2c9afebef3ae063ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b473f749_ce12e8d0",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T00:33:24Z",
+      "side": 1,
+      "message": "oh, i forgot about -1. you are right.",
+      "parentUuid": "0586f27c_90f45ec1",
       "range": {
         "startLine": 136,
         "startChar": 22,
