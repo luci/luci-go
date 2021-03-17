@@ -375,8 +375,12 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     }
 
     milo-copy-to-clipboard {
+      visibility: hidden;
       margin-left: 5px;
       margin-right: 5px;
+    }
+    #header:hover milo-copy-to-clipboard {
+      visibility: visible;
     }
   `;
 }
