@@ -31,17 +31,12 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/diagnostic"
-	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	pollertask "go.chromium.org/luci/cv/internal/gerrit/poller/task"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
-	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	// Import all modules with server/tq handler additions in init() calls, which
 	// are otherwise not imported directly or transitively via imports above.
@@ -115,24 +110,27 @@ func (t *Test) RunAtLeastOncePoller(ctx context.Context) {
 
 // RunUntil runs TQ tasks, while stopIf returns false.
 func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
-	for i := 0; i < 1000; i++ {
-		if stopIf() {
-			logging.Debugf(ctx, "RunUntil ran %d iterations", i)
-			return
+	// TODO(tandrii): adjust based on concurrent/serial execution and flakiness of
+	// Datastore.
+	const maxTasks = 1000
+	i := 0
+	// Use StopBefore such that first check is before running any task.
+	t.TQ.Run(ctx, tqtesting.StopBefore(func(t *tqtesting.Task) bool {
+		switch {
+		case stopIf():
+			return true
+		case i == maxTasks:
+			return true
+		default:
+			i++
+			return false
 		}
-		// TODO(tandrii): support running tasks in parallel.
-		switch ts := t.TQ.Tasks().Pending(); {
-		case len(pollertest.Projects(ts)) > 0:
-			t.RunAtLeastOncePoller(ctx)
-		case len(pmtest.Projects(ts)) > 0:
-			t.RunAtLeastOncePM(ctx)
-		case len(runtest.Runs(ts)) > 0:
-			t.RunAtLeastOnceRun(ctx)
-		case len(updatertest.PFilter(ts)) > 0:
-			t.TQ.Run(ctx, tqtesting.StopAfterTask(updater.TaskClass))
-		}
+	}))
+	// Log only here after all tasks-in-progress are completed.
+	logging.Debugf(ctx, "RunUntil ran %d iterations", i)
+	if i == maxTasks {
+		panic("RunUntil ran for too long!")
 	}
-	panic("RunUntil ran for too long!")
 }
 
 // LoadProject returns Project entity or nil if not exists.
