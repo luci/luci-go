@@ -83,6 +83,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "392f5075_988a8534",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-17T16:25:14Z",
+      "side": 1,
+      "message": "errors that are not annotated with appstatus is never exposed to the clients, an internal error is returned instead. This is an important part of appstatus package https://screenshot.googleplex.com/zJGa5FGvny7dcVv and most of this codebase heavily relies on this semantics (by not having to annotate every returned error). So to me annotating an internal error with appstatus seems unnecessary and inconsistent with this codebase",
+      "parentUuid": "d67f593a_79c07ef6",
+      "range": {
+        "startLine": 251,
+        "startChar": 0,
+        "endLine": 258,
+        "endChar": 1
+      },
+      "revId": "c2aa54325a483c053abf0799aa1ad195b195b61e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "b74ea153_9ba6791f",
