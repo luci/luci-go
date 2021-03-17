@@ -94,6 +94,30 @@
       },
       "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d25ea672_62c4779c",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-17T23:06:27Z",
+      "side": 1,
+      "message": "I was wrong. datastore stores ts with microsecond precision, as Vadim said.\nhttps://cloud.google.com/appengine/docs/standard/go111/datastore/reference#hdr-Basic_Operations\n\nPTAL again.",
+      "parentUuid": "9cfd70b8_5d26ab8a",
+      "range": {
+        "startLine": 207,
+        "startChar": 22,
+        "endLine": 207,
+        "endChar": 43
+      },
+      "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
