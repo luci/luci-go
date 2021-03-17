@@ -72,6 +72,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "71461e88_37810afd",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-17T06:47:10Z",
+      "side": 1,
+      "message": "Agreed. I think the current implementation is good now. If we ever need to optimize the retry pipeline, we may implement it later, but not now.",
+      "parentUuid": "a4e18089_14cd4451",
+      "range": {
+        "startLine": 314,
+        "startChar": 11,
+        "endLine": 314,
+        "endChar": 30
+      },
+      "revId": "b64780c755538494013ecb5ff32642bf2e00ea85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ddeddbae_df5bf106",
