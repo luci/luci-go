@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import webpack from 'webpack';
+import Workbox from 'workbox-webpack-plugin';
+import { DefinePlugin } from 'webpack';
 import merge from 'webpack-merge';
 
 import common from './webpack.common';
 
-const config: webpack.Configuration = merge(common, {
+export default merge(common, {
   devtool: 'source-map',
   mode: 'production',
+  plugins: [
+    new DefinePlugin({ PRODUCTION: JSON.stringify(true) }),
+    new Workbox.GenerateSW({ clientsClaim: true, navigateFallback: '/ui/index.html' }),
+  ],
 });
-
-export default config;
