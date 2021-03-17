@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -33,8 +34,6 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -241,27 +240,21 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// Process properties and tags that were used in Buildbucket v1 API, but now
 	// are forbidden in Buildbucket v2 API in favor of GitilesCommit. Some LUCI
-	// Scheduler users may still pass them via EmitTriggers.
-	commitFromProps, poppedTags, err := popCommitFromProps(props, &tags)
-	switch {
-	case err != nil:
-		return errors.Annotate(err, "bad properties").Err()
-	case commit == nil && commitFromProps != nil:
-		ctl.DebugLog("crbug.com/1182002: Reconstructed gitiles commit from properties")
-		commit = commitFromProps
-	case commit != nil && commitFromProps != nil:
-		if proto.Equal(commit, commitFromProps) {
+	// Scheduler users still pass them via EmitTriggers.
+	switch commitFromTags := popCommitFromTags(ctl, props, &tags); {
+	case commit == nil && commitFromTags != nil:
+		ctl.DebugLog("Reconstructed gitiles commit from tags")
+		commit = commitFromTags
+	case commit != nil && commitFromTags != nil:
+		if proto.Equal(commit, commitFromTags) {
 			ctl.DebugLog("Popped gitiles commit info from properties and tags")
 		} else {
-			ctl.DebugLog("crbug.com/1182002: Gitiles commit from triggers doesn't match the one from properties")
+			ctl.DebugLog("crbug.com/1182002: Gitiles commit from triggers doesn't match the one from tags")
 			ctl.DebugLog("From triggers:\n%s", protoToJSON(commit))
-			ctl.DebugLog("From properties:\n%s", protoToJSON(commitFromProps))
-			ctl.DebugLog("Using the one from properties")
-			commit = commitFromProps // to match pre-v2 logic
+			ctl.DebugLog("From properties:\n%s", protoToJSON(commitFromTags))
+			ctl.DebugLog("Using the one from tags")
+			commit = commitFromTags // to match pre-v2 logic
 		}
-	}
-	for _, t := range poppedTags {
-		ctl.DebugLog("Popped a tag as redundant: %s", t)
 	}
 
 	// Make sure Buildbucket can publish PubSub messages, grab the token that
@@ -594,61 +587,133 @@ func triggerToCommit(t *scheduler.GitilesTrigger) (*bbpb.GitilesCommit, error) {
 	}, nil
 }
 
-// popCommitFromProps tries to reconstruct GitilesCommit from properties.
+// popCommitFromTags tries to reconstruct GitilesCommit from tags.
 //
 // Removes gitiles commit information from properties and tags (modifying them
 // in-place), since Buildbucket v2 refuses to accept it there.
 //
-// Returns the extracted commit (or nil) and removed tags (if any).
-func popCommitFromProps(props *structpb.Struct, tags *[]string) (commit *bbpb.GitilesCommit, popped []string, err error) {
-	pop := func(key string) string {
+// See also https://chromium.googlesource.com/infra/infra/+/7a647a9d/appengine/cr-buildbucket/legacy/api.py#101
+//
+// Returns the extracted commit or nil.
+func popCommitFromTags(ctl task.Controller, props *structpb.Struct, tags *[]string) *bbpb.GitilesCommit {
+	var commit *bbpb.GitilesCommit
+	var ref string
+
+	// Pop all gitiles_ref and buildset tags (usually one of each). They will be
+	// reconstructed based on GitilesCommit by Buildbucket.
+	kept := (*tags)[:0]
+	for _, tag := range *tags {
+		switch k, v := strpair.Parse(tag); {
+		case k == "gitiles_ref":
+			// The last one wins (per BBv1's parse_v1_tags).
+			if ref != "" {
+				ctl.DebugLog("Ignoring extra gitiles_ref %q", ref)
+			}
+			ref = normalizeRef(v)
+
+		case k == "buildset":
+			// This first one wins (per BBv1's parse_v1_tags).
+			if commit != nil {
+				ctl.DebugLog("Ignoring extra buildset tag %q", tag)
+			} else {
+				if commit = parseGitilesBuildset(v); commit != nil {
+					ctl.DebugLog("Popped buildset tag %q", tag)
+				} else {
+					ctl.DebugLog("Ignoring unrecognized buildset tag %q", tag)
+				}
+			}
+
+		default:
+			kept = append(kept, tag)
+		}
+	}
+	*tags = kept
+
+	// Fill in `commit.Ref` based on gitiles_ref tag value.
+	if commit != nil {
+		commit.Ref = ref
+	} else {
+		ctl.DebugLog("Ignoring gitiles_ref tag without the buildset tag")
+	}
+
+	// Pop reserved properties. BBv2 will reject the request if they are present.
+	popProp := func(key string) string {
 		if field := props.Fields[key]; field != nil {
 			delete(props.Fields, key)
 			return field.GetStringValue()
 		}
 		return ""
 	}
+	repository := popProp("repository")
+	branch := normalizeRef(popProp("branch"))
+	revision := popProp("revision") // oddly enough, this property is actually allowed
 
-	ref := pop("branch")
+	// If we had no buildset tag, just discard the properties. They are not
+	// authoritative.
+	if commit == nil {
+		if repository != "" {
+			ctl.DebugLog("No buildset tag present, ignoring property %q: %q", "repository", repository)
+		}
+		if branch != "" {
+			ctl.DebugLog("No buildset tag present, ignoring property %q: %q", "branch", branch)
+		}
+		if revision != "" {
+			ctl.DebugLog("No buildset tag present, ignoring property %q: %q", "revision", revision)
+		}
+		return nil
+	}
+
+	// Log if properties disagree with information from tags.
+	if repository != "" {
+		repoURL, err := gitiles.NormalizeRepoURL(repository, false)
+		if err != nil {
+			ctl.DebugLog("Ignoring invalid property %q: %q", "repository", repository)
+		} else {
+			if repoURL.Host != commit.Host {
+				ctl.DebugLog("Git host in properties %q doesn't match the one in tags %q", repoURL.Host, commit.Host)
+			}
+			if proj := strings.TrimPrefix(repoURL.Path, "/"); proj != commit.Project {
+				ctl.DebugLog("Git project in properties %q doesn't match the one in tags %q", proj, commit.Project)
+			}
+		}
+	}
+	if branch != "" && branch != commit.Ref {
+		ctl.DebugLog("Git ref in properties %q doesn't match the one in tags %q", branch, commit.Ref)
+	}
+	if revision != "" && revision != commit.Id {
+		ctl.DebugLog("Git commit in properties %q doesn't match the one in tags %q", revision, commit.Id)
+	}
+
+	return commit
+}
+
+var gitilesBuildsetRe = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]+)$`)
+
+// parseGitilesBuildset parses Gitiles buildset tag into a proto.
+//
+// Example input:
+//   commit/gitiles/chromium.googlesource.com/chromium/src/+/
+//   4fa74ef7511f4167d15a5a6d464df06e41ffbd70
+//
+// Returns nil if `t` doesn't look like a gitiles buildset.
+func parseGitilesBuildset(t string) *bbpb.GitilesCommit {
+	m := gitilesBuildsetRe.FindStringSubmatch(t)
+	if len(m) == 0 {
+		return nil
+	}
+	return &bbpb.GitilesCommit{
+		Host:    m[1],
+		Project: m[2],
+		Id:      m[3],
+	}
+}
+
+// normalizeRef returns either "refs/..." or "" if `ref` is empty.
+func normalizeRef(ref string) string {
 	if ref != "" && !strings.HasPrefix(ref, "refs/") {
 		ref = "refs/heads/" + ref
 	}
-
-	commit = &bbpb.GitilesCommit{
-		Ref: ref,
-		Id:  pop("revision"),
-	}
-	if repo := pop("repository"); repo != "" {
-		repoURL, err := gitiles.NormalizeRepoURL(repo, false)
-		if err != nil {
-			return nil, nil, errors.Annotate(err, "bad 'repository'").Err()
-		}
-		commit.Host = repoURL.Host
-		commit.Project = strings.TrimPrefix(repoURL.Path, "/")
-	}
-
-	// Can survive without `ref`, require everything else.
-	if commit.Host == "" || commit.Project == "" || commit.Id == "" {
-		return nil, nil, nil
-	}
-
-	// Tags that match the reconstructed commit.
-	t1 := strpair.Format(bbv1.TagBuildSet, protoutil.GitilesBuildSet(commit))
-	t2 := strpair.Format(bbv1.TagBuildSet, "commit/git/"+commit.Id)
-	t3 := strpair.Format("gitiles_ref", commit.Ref)
-
-	// Pop them from the tag list, Buildbucket v2 API doesn't need them.
-	kept := (*tags)[:0]
-	for _, tag := range *tags {
-		if tag == t1 || tag == t2 || tag == t3 {
-			popped = append(popped, tag)
-		} else {
-			kept = append(kept, tag)
-		}
-	}
-	*tags = kept
-
-	return
+	return ref
 }
 
 // toBuildbucketPairs converts a list of "key:value" to a list of StringPair.

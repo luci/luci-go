@@ -487,7 +487,8 @@ func TestTriggeredFlow(t *testing.T) {
 							Tags: []string{
 								"buildset:commit/git/deadbeef",
 								"buildset:commit/gitiles/r.googlesource.com/repo/+/deadbeef",
-								"gitiles_ref:refs/heads/master",
+								"gitiles_ref:ignored",
+								"gitiles_ref:master",
 								"extra:tag",
 							},
 						},
@@ -530,6 +531,9 @@ func TestTriggeredFlow(t *testing.T) {
 								"repository": "https://r.googlesource.com/repo",
 								"revision": "deadbeef"
 							}`),
+							Tags: []string{
+								"buildset:commit/gitiles/r.googlesource.com/repo/+/deadbeef",
+							},
 						},
 					},
 				},
@@ -539,6 +543,66 @@ func TestTriggeredFlow(t *testing.T) {
 				Project: "repo",
 				Id:      "deadbeef",
 			})
+			So(countTags(req.Tags, "buildset"), ShouldEqual, 0)
+			So(countTags(req.Tags, "gitiles_ref"), ShouldEqual, 0)
+		})
+
+		Convey("Properties are ignored if buildset tag is missing", func() {
+			req := schedule([]*internal.Trigger{
+				{
+					Id: "1",
+					Payload: &internal.Trigger_Buildbucket{
+						Buildbucket: &api.BuildbucketTrigger{
+							Properties: structFromJSON(`{
+								"repository": "https://r.googlesource.com/repo",
+								"branch": "main",
+								"revision": "deadbeef"
+							}`),
+							Tags: []string{
+								"gitiles_ref:ignored",
+							},
+						},
+					},
+				},
+			})
+			So(req.GitilesCommit, ShouldBeNil)
+			So(structKeys(req.Properties), ShouldResemble, []string{
+				"$recipe_engine/scheduler",
+			})
+			So(countTags(req.Tags, "buildset"), ShouldEqual, 0)
+			So(countTags(req.Tags, "gitiles_ref"), ShouldEqual, 0)
+		})
+
+		Convey("Tags are authoritative over properties", func() {
+			req := schedule([]*internal.Trigger{
+				{
+					Id: "1",
+					Payload: &internal.Trigger_Buildbucket{
+						Buildbucket: &api.BuildbucketTrigger{
+							Properties: structFromJSON(`{
+								"repository": "https://prop.googlesource.com/repo-prop",
+								"branch": "main-prop",
+								"revision": "aaaa"
+							}`),
+							Tags: []string{
+								"buildset:commit/gitiles/tag.googlesource.com/repo-tag/+/bbbb",
+								"gitiles_ref:main-tag",
+							},
+						},
+					},
+				},
+			})
+			So(req.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+				Host:    "tag.googlesource.com",
+				Project: "repo-tag",
+				Id:      "bbbb",
+				Ref:     "refs/heads/main-tag",
+			})
+			So(structKeys(req.Properties), ShouldResemble, []string{
+				"$recipe_engine/scheduler",
+			})
+			So(countTags(req.Tags, "buildset"), ShouldEqual, 0)
+			So(countTags(req.Tags, "gitiles_ref"), ShouldEqual, 0)
 		})
 	})
 }
@@ -627,4 +691,13 @@ func structKeys(s *structpb.Struct) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func countTags(tags []*bbpb.StringPair, key string) (count int) {
+	for _, tag := range tags {
+		if tag.Key == key {
+			count++
+		}
+	}
+	return
 }
