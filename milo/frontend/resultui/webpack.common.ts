@@ -24,6 +24,7 @@ import webpack, { DefinePlugin } from 'webpack';
 const config: webpack.Configuration = {
   entry: {
     index: './src/index.ts',
+    'redirect-sw': './src/redirect_sw.ts',
   },
   output: {
     path: path.resolve(__dirname, './out/'),

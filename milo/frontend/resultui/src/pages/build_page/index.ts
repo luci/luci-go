@@ -508,6 +508,8 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           @click=${(e: Event) => {
             const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
             document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
+            this.appState.redirectSw?.unregister();
+
             if (this.configsStore.userConfigs.askForFeedback) {
               this.showFeedbackDialog = true;
               e.preventDefault();

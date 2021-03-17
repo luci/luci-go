@@ -44,6 +44,7 @@ export class AppState {
   @observable.ref showSettingsDialog = false;
 
   @observable.ref gAuth: gapi.auth2.GoogleAuth | null = null;
+  @observable.ref redirectSw?: ServiceWorkerRegistration;
 
   @computed
   get resultDb(): ResultDb | null {
