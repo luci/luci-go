@@ -16,6 +16,47 @@
       "message": "idk how service works work, but shouldn\u0027t there be service-worker.js in this CL or in https://source.chromium.org/search?q\u003dservice-worker.js%20f:milo\u0026sq\u003d",
       "revId": "33e4f87e4c95a855dfd3602cf8fd7bc6ee4325e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8fbb8dda_5665be7a",
+        "filename": "milo/frontend/resultui/src/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-17T02:07:31Z",
+      "side": 1,
+      "message": "Resolved in another comment.",
+      "parentUuid": "06b15662_8ba9462f",
+      "revId": "33e4f87e4c95a855dfd3602cf8fd7bc6ee4325e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc26b57d_02c20fb3",
+        "filename": "milo/frontend/resultui/webpack.common.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-17T02:07:31Z",
+      "side": 1,
+      "message": "@nodir\nThis line generates service-worker.js automatically.",
+      "range": {
+        "startLine": 87,
+        "startChar": 4,
+        "endLine": 87,
+        "endChar": 87
+      },
+      "revId": "33e4f87e4c95a855dfd3602cf8fd7bc6ee4325e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
