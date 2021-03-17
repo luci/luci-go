@@ -39,17 +39,13 @@ import (
 )
 
 func init() {
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        prjpb.PurgeCLTaskClass,
-		Prototype: &prjpb.PurgeCLTask{},
-		Queue:     "purge-project-cl",
-		Quiet:     false,
-		Handler: func(ctx context.Context, payload proto.Message) error {
+	prjpb.PurgeProjectCLTaskRef.AttachHandler(
+		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
 			err := PurgeCL(ctx, task)
 			return common.TQifyError(ctx, err)
 		},
-	})
+	)
 }
 
 func Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {

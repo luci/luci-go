@@ -20,34 +20,39 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// PMTaskInterval is target frequency of executions of ManageProjectTask.
-//
-// See Dispatch() for details.
-const PMTaskInterval = time.Second
-
-// MaxAcceptableDelay prevents TQ tasks which arrive too late from invoking PM.
-//
-// MaxAcceptableDelay / PMTaskInterval effectively limits # concurrent
-// invocations of PM on the same project that may happen due to task retries,
-// delays, and queue throttling.
-//
-// Do not set too low, as this may prevent actual PM invoking from happening at
-// all if the TQ is overloaded.
-const MaxAcceptableDelay = 60 * time.Second
-
-// ManageProjectTaskRef is used by PM implementation to add its handler.
-var ManageProjectTaskRef tq.TaskClassRef
-
 const (
-	ManageProjectTaskClass = "manage-project"
-	PurgeCLTaskClass       = "purge-project-cl"
+	// PMTaskInterval is target frequency of executions of ManageProjectTask.
+	//
+	// See Dispatch() for details.
+	PMTaskInterval = time.Second
+
+	// MaxAcceptableDelay prevents TQ tasks which arrive too late from invoking PM.
+	//
+	// MaxAcceptableDelay / PMTaskInterval effectively limits # concurrent
+	// invocations of PM on the same project that may happen due to task retries,
+	// delays, and queue throttling.
+	//
+	// Do not set too low, as this may prevent actual PM invoking from happening at
+	// all if the TQ is overloaded.
+	MaxAcceptableDelay = 60 * time.Second
+
+	ManageProjectTaskClass     = "manage-project"
+	KickManageProjectTaskClass = "kick-" + ManageProjectTaskClass
+	PurgeProjectCLTaskClass    = "purge-project-cl"
+)
+
+var (
+	// These are TQ task refs registered in init() s.t. produces can submit their
+	// tasks, but whose handlers will be added later.
+
+	ManageProjectTaskRef     tq.TaskClassRef
+	KickManageProjectTaskRef tq.TaskClassRef
+	PurgeProjectCLTaskRef    tq.TaskClassRef
 )
 
 func init() {
@@ -56,21 +61,16 @@ func init() {
 		Prototype: &ManageProjectTask{},
 		Queue:     "manage-project",
 	})
-
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "kick-" + ManageProjectTaskClass,
+	KickManageProjectTaskRef = tq.RegisterTaskClass(tq.TaskClass{
+		ID:        KickManageProjectTaskClass,
 		Prototype: &KickManageProjectTask{},
 		Queue:     "kick-manage-project",
-		Quiet:     true,
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*KickManageProjectTask)
-			var eta time.Time
-			if t := task.GetEta(); t != nil {
-				eta = t.AsTime()
-			}
-			err := Dispatch(ctx, task.GetLuciProject(), eta)
-			return common.TQifyError(ctx, err)
-		},
+	})
+	PurgeProjectCLTaskRef = tq.RegisterTaskClass(tq.TaskClass{
+		ID:        PurgeProjectCLTaskClass,
+		Prototype: &PurgeCLTask{},
+		Queue:     "purge-project-cl",
+		Quiet:     false, // these tasks are rare enought that verbosity only helps.
 	})
 }
 
