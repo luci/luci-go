@@ -70,6 +70,30 @@
       },
       "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9cfd70b8_5d26ab8a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-17T07:19:43Z",
+      "side": 1,
+      "message": "This isn\u0027t true; Datastore will truncate the precision of `time.Time` if it\u0027s a field in the datastore model itself, but even so I think it\u0027s something weird like microseconds. This value here is embedded within a proto which is encoded wholesale as a single datastore field. There\u0027s no truncation.",
+      "parentUuid": "c2526958_8a4d0862",
+      "range": {
+        "startLine": 207,
+        "startChar": 22,
+        "endLine": 207,
+        "endChar": 43
+      },
+      "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
