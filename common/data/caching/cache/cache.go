@@ -355,6 +355,9 @@ func (d *Cache) add(ctx context.Context, digest isolated.HexDigest, src io.Reade
 	// If the cache already exists, do not try os.Rename().
 	if d.lru.touch(digest) {
 		logging.Debugf(ctx, "cache already exists. path: %s, digest %s\n", d.path, digest)
+		if err := os.Remove(fname); err != nil {
+			return errors.Annotate(err, "failed to remove tmp file: %s", fname).Err()
+		}
 		if cb != nil {
 			if err := cb(); err != nil {
 				return err
