@@ -16,14 +16,15 @@ import fs from 'fs';
 import path from 'path';
 
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import webpack from 'webpack';
+import { DefinePlugin } from 'webpack';
 import merge from 'webpack-merge';
 
 import common from './webpack.common';
 
-const config: webpack.Configuration = merge(common, {
+export default merge(common, {
   mode: 'development',
   devtool: 'eval-source-map',
+  plugins: [new DefinePlugin({ PRODUCTION: JSON.stringify(false) })],
 
   devServer: {
     contentBase: path.join(__dirname, './out/'),
@@ -69,5 +70,3 @@ const config: webpack.Configuration = merge(common, {
     },
   },
 });
-
-export default config;
