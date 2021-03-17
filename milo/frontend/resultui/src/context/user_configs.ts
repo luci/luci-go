@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import merge from 'lodash-es/merge';
-import { observable } from 'mobx';
+import { computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../libs/context';
 
@@ -25,6 +25,11 @@ export interface UserConfigs {
   steps: {
     showSucceededSteps: boolean;
     showDebugLogs: boolean;
+    stepPinTime: {
+      // the key is the folded line.
+      // the value is the last accessed time.
+      [key: string]: number;
+    };
   };
   inputPropLineFoldTime: {
     // the key is the folded line.
@@ -47,6 +52,7 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   steps: Object.freeze({
     showSucceededSteps: true,
     showDebugLogs: false,
+    stepPinTime: Object.freeze({}),
   }),
   inputPropLineFoldTime: Object.freeze({}),
   outputPropLineFoldTime: Object.freeze({}),
@@ -64,6 +70,7 @@ export class UserConfigsStore {
     merge(this.userConfigs, JSON.parse(storedConfigsStr));
 
     const fourWeeksAgo = Date.now() - 2419200000;
+    this.deleteStaleKeys(this.userConfigs.steps.stepPinTime, fourWeeksAgo);
     this.deleteStaleKeys(this.userConfigs.inputPropLineFoldTime, fourWeeksAgo);
     this.deleteStaleKeys(this.userConfigs.outputPropLineFoldTime, fourWeeksAgo);
   }
@@ -74,7 +81,48 @@ export class UserConfigsStore {
       .forEach(([key]) => delete records[key]);
   }
 
+  /**
+   * Whether a step is pinned.
+   * The configuration is shared across all builds.
+   */
+  stepIsPinned(stepName: string) {
+    const isPinned = computed(() => !!this.userConfigs.steps.stepPinTime[stepName]).get();
+    return isPinned;
+  }
+
+  /**
+   * Pin/unpin a step.
+   * The configuration is shared across all builds.
+   *
+   * When pinning a step, pin all its ancestors as well.
+   * When unpinning a step, unpin all its descendants as well.
+   */
+  setStepPin(targetStepName: string, pinned: boolean) {
+    if (pinned) {
+      const now = Date.now();
+      let stepName = '';
+      for (const subStepName of targetStepName.split('|')) {
+        if (stepName) {
+          stepName += '|';
+        }
+        stepName += subStepName;
+        this.userConfigs.steps.stepPinTime[stepName] = now;
+      }
+    } else {
+      delete this.userConfigs.steps.stepPinTime[targetStepName];
+      const prefix = targetStepName + '|';
+      // TODO(weiweilin): use a trie instead of a dictionary if this is too slow.
+      Object.keys(this.userConfigs.steps.stepPinTime)
+        .filter((stepName) => stepName.startsWith(prefix))
+        .forEach((stepName) => {
+          delete this.userConfigs.steps.stepPinTime[stepName];
+        });
+    }
+    this.save();
+  }
+
   save() {
+    // TODO(weiweilin): add rate limit.
     this.storage.setItem(UserConfigsStore.KEY, JSON.stringify(this.userConfigs));
   }
 }

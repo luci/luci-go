@@ -13,37 +13,103 @@
 // limitations under the License.
 
 import { assert } from 'chai';
+import sinon from 'sinon';
 
 import { UserConfigs, UserConfigsStore } from './user_configs';
 
+const FOUR_WEEKS_AGO = Date.now() - 2419200000;
+const ONE_HOUR = 360000;
+
 describe('UserConfigs', () => {
-  it('should delete stale propLineFoldTime records', () => {
+  it('should delete stale records', () => {
     let savedConfigs!: UserConfigs;
-    const fourWeeksAgo = Date.now() - 2419200000;
     const store = new UserConfigsStore(({
       getItem: () =>
         JSON.stringify({
+          steps: {
+            stepPinTime: {
+              'old-step': FOUR_WEEKS_AGO - ONE_HOUR,
+              'new-step': FOUR_WEEKS_AGO + ONE_HOUR,
+            },
+          },
           inputPropLineFoldTime: {
-            'old-line': fourWeeksAgo - 360000,
-            'new-line': fourWeeksAgo + 360000,
+            'old-line': FOUR_WEEKS_AGO - ONE_HOUR,
+            'new-line': FOUR_WEEKS_AGO + ONE_HOUR,
           },
           outputPropLineFoldTime: {
-            'old-line': fourWeeksAgo - 360000,
-            'new-line': fourWeeksAgo + 360000,
+            'old-line': FOUR_WEEKS_AGO - ONE_HOUR,
+            'new-line': FOUR_WEEKS_AGO + ONE_HOUR,
           },
         }),
       setItem: (_key, value) => (savedConfigs = JSON.parse(value)),
     } as Partial<Storage>) as Storage);
     store.save();
 
+    assert.notInclude(Object.keys(store.userConfigs.steps.stepPinTime), 'old-step');
     assert.notInclude(Object.keys(store.userConfigs.inputPropLineFoldTime), 'old-line');
     assert.notInclude(Object.keys(store.userConfigs.outputPropLineFoldTime), 'old-line');
+    assert.include(Object.keys(store.userConfigs.steps.stepPinTime), 'new-step');
     assert.include(Object.keys(store.userConfigs.inputPropLineFoldTime), 'new-line');
     assert.include(Object.keys(store.userConfigs.outputPropLineFoldTime), 'new-line');
 
+    assert.notInclude(Object.keys(savedConfigs.steps.stepPinTime), 'old-step');
     assert.notInclude(Object.keys(savedConfigs.inputPropLineFoldTime), 'old-line');
     assert.notInclude(Object.keys(savedConfigs.outputPropLineFoldTime), 'old-line');
+    assert.include(Object.keys(savedConfigs.steps.stepPinTime), 'new-step');
     assert.include(Object.keys(savedConfigs.inputPropLineFoldTime), 'new-line');
     assert.include(Object.keys(savedConfigs.outputPropLineFoldTime), 'new-line');
+  });
+
+  describe('step pin', () => {
+    it('should return the correct step pin status', () => {
+      const store = new UserConfigsStore(({
+        getItem: () =>
+          JSON.stringify({
+            steps: {
+              stepPinTime: {
+                'new-step': FOUR_WEEKS_AGO + ONE_HOUR,
+                'old-step': FOUR_WEEKS_AGO - ONE_HOUR,
+              },
+            },
+          }),
+      } as Partial<Storage>) as Storage);
+
+      assert.isTrue(store.stepIsPinned('new-step'));
+      assert.isFalse(store.stepIsPinned('old-step'));
+    });
+
+    it('should set pins recursively', () => {
+      const saveConfigSpy = sinon.spy();
+      const store = new UserConfigsStore(({
+        getItem: () => JSON.stringify({}),
+        setItem: saveConfigSpy,
+      } as Partial<Storage>) as Storage);
+
+      // When pinned is true, set pins for all ancestors.
+      store.setStepPin('parent|step|child', true);
+      assert.isTrue(store.stepIsPinned('parent'));
+      assert.isTrue(store.stepIsPinned('parent|step'));
+      assert.isTrue(store.stepIsPinned('parent|step|child'));
+      assert.strictEqual(saveConfigSpy.callCount, 1);
+
+      store.setStepPin('parent|step|child2', true);
+      assert.isTrue(store.stepIsPinned('parent|step|child2'));
+      assert.strictEqual(saveConfigSpy.callCount, 2);
+
+      store.setStepPin('parent|step2|child1', true);
+      assert.isTrue(store.stepIsPinned('parent|step2'));
+      assert.isTrue(store.stepIsPinned('parent|step2|child1'));
+      assert.strictEqual(saveConfigSpy.callCount, 3);
+
+      // When pinned is false, remove pins for all descendants.
+      store.setStepPin('parent|step', false);
+      assert.isTrue(store.stepIsPinned('parent'));
+      assert.isFalse(store.stepIsPinned('parent|step'));
+      assert.isFalse(store.stepIsPinned('parent|step|child'));
+      assert.isFalse(store.stepIsPinned('parent|step|child2'));
+      assert.isTrue(store.stepIsPinned('parent|step2'));
+      assert.isTrue(store.stepIsPinned('parent|step2|child1'));
+      assert.strictEqual(saveConfigSpy.callCount, 4);
+    });
   });
 });

@@ -156,9 +156,13 @@ export class StepsTabElement extends MobxLitElement {
           (step, i) => html`
             <milo-build-step-entry
               style=${styleMap({
-                display: !step.succeededRecursively || this.stepsConfig.showSucceededSteps ? '' : 'none',
+                display:
+                  !step.succeededRecursively ||
+                  this.stepsConfig.showSucceededSteps ||
+                  this.configsStore.stepIsPinned(step.name)
+                    ? ''
+                    : 'none',
               })}
-              .expanded=${!step.succeededRecursively}
               .number=${i + 1}
               .step=${step}
               .prerender=${true}
