@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6fa1707b_d31689c2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-17T20:11:42Z",
+      "side": 1,
+      "message": "Hi, this CL looks good.\nHowever, in some weird way it broke LUCI CV *deployment* pipeline at its last phase -- linking:\nhttps://logs.chromium.org/logs/infradata-gae/buildbucket/cr-buildbucket.appspot.com/8852489348919729248/+/u/deploying_luci-change-verifier-dev/stdout\n\nI\u0027ll tentatively revert it as the easiest way to verify this guess. I\u0027ll then re-land it.",
+      "revId": "edd430fccb61eec487441470ce1f805ba958301e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
