@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01f172bf_802db835",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-17T17:38:09Z",
+      "side": 1,
+      "message": "lgtm; probably this library can mostly be removed now?",
+      "revId": "7fa9972db5e089e1f2f6d167d71ae9f1a8e908a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
