@@ -14,6 +14,7 @@
 
 import path from 'path';
 
+import Workbox from 'workbox-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
@@ -83,6 +84,7 @@ const config: webpack.Configuration = {
     }),
     new HtmlWebpackHarddiskPlugin(),
     new DefinePlugin({ ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true') }),
+    new Workbox.GenerateSW({ clientsClaim: true, navigateFallback: '/ui/index.html' }),
   ],
 };
 
