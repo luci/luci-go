@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.chromium.org/luci/common/clock/testclock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -50,7 +50,7 @@ func TestTimestamp(t *testing.T) {
 		// message field when round-tripping through the generated code in some
 		// languages. e.g., reading an unset field in python injects the zero
 		// value for the field in the source message.
-		So(TimeFromProto(&timestamp.Timestamp{}).IsZero(), ShouldBeTrue)
+		So(TimeFromProto(&timestamppb.Timestamp{}).IsZero(), ShouldBeTrue)
 	})
 }
 
