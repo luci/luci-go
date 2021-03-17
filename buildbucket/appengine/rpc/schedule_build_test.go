@@ -1265,13 +1265,43 @@ func TestScheduleBuild(t *testing.T) {
 
 					Convey("deduplication", func() {
 						So(datastore.Put(ctx, &model.RequestID{
-							ID: "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
+							ID:      "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
+							BuildID: 1,
 						}), ShouldBeNil)
 
-						rsp, err := srv.ScheduleBuild(ctx, req)
-						So(err, ShouldErrLike, "request ID reuse")
-						So(rsp, ShouldBeNil)
-						So(sch.Tasks(), ShouldBeEmpty)
+						Convey("not found", func() {
+							rsp, err := srv.ScheduleBuild(ctx, req)
+							So(err, ShouldErrLike, "no such entity")
+							So(rsp, ShouldBeNil)
+							So(sch.Tasks(), ShouldBeEmpty)
+						})
+
+						Convey("ok", func() {
+							So(datastore.Put(ctx, &model.Build{
+								ID: 1,
+								Proto: pb.Build{
+									Builder: &pb.BuilderID{
+										Project: "project",
+										Bucket:  "bucket",
+										Builder: "builder",
+									},
+									Id: 1,
+								},
+							}), ShouldBeNil)
+
+							rsp, err := srv.ScheduleBuild(ctx, req)
+							So(err, ShouldBeNil)
+							So(rsp, ShouldResembleProto, &pb.Build{
+								Builder: &pb.BuilderID{
+									Project: "project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+								Id:    1,
+								Input: &pb.Build_Input{},
+							})
+							So(sch.Tasks(), ShouldBeEmpty)
+						})
 					})
 
 					Convey("ok", func() {
