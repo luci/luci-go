@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ce52037_3c1bdf3e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-17T22:24:38Z",
+      "side": 1,
+      "message": "It\u0027s orthogonal to this. I am adding tests for multiple requests though, it\u0027s part of some forthcoming work.",
+      "parentUuid": "e46ce201_15160db9",
+      "revId": "709c80b06372e32186373480036a68d40d0b8895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9173fa57_9e7dab48",
@@ -67,6 +85,24 @@
       "side": 1,
       "message": "ok. this speedup is probably neglible, while code readability is more noticable",
       "parentUuid": "abc130db_abd3d6d5",
+      "revId": "709c80b06372e32186373480036a68d40d0b8895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "239b23f6_6bde329e",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-17T22:24:38Z",
+      "side": 1,
+      "message": "I had it your preferred way originally. Reviewer had a different opinion and I didn\u0027t care strongly about it. If you care more strongly than tandrii then I can move it back in a subsequent CL (submitting this now). Since there\u0027s more work to do in this area, moving it in a subsequent CL is not a problem.",
+      "parentUuid": "8b4246bf_0d257903",
       "revId": "709c80b06372e32186373480036a68d40d0b8895",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
