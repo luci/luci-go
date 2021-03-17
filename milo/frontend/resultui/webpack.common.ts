@@ -14,6 +14,7 @@
 
 import path from 'path';
 
+import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
@@ -24,10 +25,10 @@ const config: webpack.Configuration = {
     index: './src/index.ts',
   },
   output: {
-    path: path.resolve(__dirname, './out/static/dist/scripts/'),
-    publicPath: '/static/dist/scripts/',
-    filename: '[name].[contenthash].bundle.js',
-    chunkFilename: '[name].[contenthash].bundle.js',
+    path: path.resolve(__dirname, './out/'),
+    publicPath: '/ui/',
+    filename: 'immutable/[name].[contenthash].bundle.js',
+    chunkFilename: 'immutable/[name].[contenthash].bundle.js',
   },
   module: {
     rules: [
@@ -72,9 +73,12 @@ const config: webpack.Configuration = {
   },
   plugins: [
     new CleanWebpackPlugin(),
+    new CopyWebpackPlugin({
+      patterns: [{ from: 'assets', filter: (p) => !/\.template\./.test(p) }],
+    }),
     new HtmlWebpackPlugin({
       alwaysWriteToDisk: true,
-      template: path.resolve(__dirname, './index.html'),
+      template: path.resolve(__dirname, './assets/index.template.html'),
       filename: path.resolve(__dirname, './out/index.html'),
     }),
     new HtmlWebpackHarddiskPlugin(),

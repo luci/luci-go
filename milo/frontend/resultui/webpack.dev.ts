@@ -27,7 +27,9 @@ const config: webpack.Configuration = merge(common, {
 
   devServer: {
     contentBase: path.join(__dirname, './out/'),
-    historyApiFallback: true,
+    historyApiFallback: {
+      index: '/ui/index.html',
+    },
     https: {
       key: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.key')),
       cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
@@ -36,7 +38,7 @@ const config: webpack.Configuration = merge(common, {
       app.get('/configs.js', async (_req, res) => {
         res.set('content-type', 'application/javascript');
         const appConfigs = JSON.parse(fs.readFileSync('./dev-configs/configs.json', 'utf8'));
-        const configsTemplate = fs.readFileSync('./configs.template.js', 'utf8');
+        const configsTemplate = fs.readFileSync('./assets/configs.template.js', 'utf8');
         const config = configsTemplate
           .replace('{{.ResultDB.Host}}', appConfigs.RESULT_DB.HOST)
           .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST)
@@ -45,7 +47,7 @@ const config: webpack.Configuration = merge(common, {
       });
 
       app.use(
-        /^(?!\/(ui|static\/(dist|styles))\/).*/,
+        /^(?!\/ui\/).*/,
         createProxyMiddleware({
           // This attribute is required. However the value will be overridden by
           // the router option. So the value doesn't matter.
