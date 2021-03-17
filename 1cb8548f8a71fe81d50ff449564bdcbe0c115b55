@@ -22,6 +22,30 @@
       },
       "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d64a209f_19e194c1",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-17T01:41:53Z",
+      "side": 1,
+      "message": "When the proto is converted to the datastore model, this field is stored in time.Time, and truncated to 1 sec. Isn\u0027t it reasonable to keep the proto and ds level models to be compatible with each other as much as possible? We are validating an input field with a precision that cannot be represented in the data storage. WDYT?",
+      "parentUuid": "af1aa7b2_23302ff0",
+      "range": {
+        "startLine": 207,
+        "startChar": 22,
+        "endLine": 207,
+        "endChar": 43
+      },
+      "revId": "1cb8548f8a71fe81d50ff449564bdcbe0c115b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
