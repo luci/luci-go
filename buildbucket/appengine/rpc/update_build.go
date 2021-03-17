@@ -175,11 +175,15 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 		if st, err = ptypes.Timestamp(step.StartTime); err != nil {
 			return errors.Annotate(err, "start_time").Err()
 		}
+		// truncate the time to µs. Datastore stores time values with µs precision.
+		st = st.Truncate(time.Microsecond)
 	}
 	if step.EndTime != nil {
 		if et, err = ptypes.Timestamp(step.EndTime); err != nil {
 			return errors.Annotate(err, "end_time").Err()
 		}
+		// truncate the time to µs. Datastore stores time values with µs precision.
+		et = et.Truncate(time.Microsecond)
 	}
 
 	_, stRequired := statusesWithStartTime[step.Status]
@@ -205,7 +209,7 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 	case protoutil.IsEnded(step.Status) == et.IsZero():
 		return errors.Reason("end_time: must have both or neither end_time and a terminal status").Err()
 	case !et.IsZero() && et.Before(st):
-		return errors.Reason("start_time: is after the end_time (%d > %d)", st.Unix(), et.Unix()).Err()
+		return errors.Reason("end_time: is before the start_time: %q < %q", et, st).Err()
 	}
 
 	seen := stringset.New(len(step.Logs))
