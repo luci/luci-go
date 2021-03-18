@@ -116,8 +116,8 @@ func TestProjectLifeCycle(t *testing.T) {
 			Convey("update config with incomplete runs", func() {
 				err := datastore.Put(
 					ctx,
-					&run.Run{ID: common.RunID(lProject + "/111-beef"), CLs: []common.CLID{111}},
-					&run.Run{ID: common.RunID(lProject + "/222-cafe"), CLs: []common.CLID{222}},
+					&run.Run{ID: common.RunID(lProject + "/111-beef"), CLs: common.CLIDs{111}},
+					&run.Run{ID: common.RunID(lProject + "/222-cafe"), CLs: common.CLIDs{222}},
 				)
 				So(err, ShouldBeNil)
 				// This is what prjmanager.notifyRunCreated func does,

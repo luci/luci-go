@@ -671,8 +671,8 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		ct.Cfg.Create(ctx, ct.lProject, cfg1)
 		meta := ct.Cfg.MustExist(ctx, ct.lProject)
 
-		run1 := &run.Run{ID: common.RunID(ct.lProject + "/101-aaa"), CLs: []common.CLID{101}}
-		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: []common.CLID{709, 707, 708}}
+		run1 := &run.Run{ID: common.RunID(ct.lProject + "/101-aaa"), CLs: common.CLIDs{101}}
+		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: common.CLIDs{709, 707, 708}}
 		So(datastore.Put(ctx, run1, run789), ShouldBeNil)
 
 		s1 := NewExisting(&prjpb.PState{
@@ -727,12 +727,12 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			runX := &run.Run{ // Run involving all of CLs and more.
 				ID: common.RunID(ct.lProject + "/000-xxx"),
 				// The order doesn't have to and is intentionally not sorted here.
-				CLs: []common.CLID{404, 101, 202, 204, 203},
+				CLs: common.CLIDs{404, 101, 202, 204, 203},
 			}
-			run2 := &run.Run{ID: common.RunID(ct.lProject + "/202-bbb"), CLs: []common.CLID{202}}
-			run3 := &run.Run{ID: common.RunID(ct.lProject + "/203-ccc"), CLs: []common.CLID{203}}
-			run23 := &run.Run{ID: common.RunID(ct.lProject + "/232-bcb"), CLs: []common.CLID{203, 202}}
-			run234 := &run.Run{ID: common.RunID(ct.lProject + "/234-bcd"), CLs: []common.CLID{203, 204, 202}}
+			run2 := &run.Run{ID: common.RunID(ct.lProject + "/202-bbb"), CLs: common.CLIDs{202}}
+			run3 := &run.Run{ID: common.RunID(ct.lProject + "/203-ccc"), CLs: common.CLIDs{203}}
+			run23 := &run.Run{ID: common.RunID(ct.lProject + "/232-bcb"), CLs: common.CLIDs{203, 202}}
+			run234 := &run.Run{ID: common.RunID(ct.lProject + "/234-bcd"), CLs: common.CLIDs{203, 204, 202}}
 			So(datastore.Put(ctx, run2, run3, run23, run234, runX), ShouldBeNil)
 
 			s2, sideEffect, err := s1.OnRunsCreated(ctx, common.RunIDs{
@@ -1034,15 +1034,15 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 
 		run4 := &run.Run{
 			ID:  common.RunID(ct.lProject + "/1-a"),
-			CLs: []common.CLID{cls[4].ID},
+			CLs: common.CLIDs{cls[4].ID},
 		}
 		run56 := &run.Run{
 			ID:  common.RunID(ct.lProject + "/56-bb"),
-			CLs: []common.CLID{cls[5].ID, cls[6].ID},
+			CLs: common.CLIDs{cls[5].ID, cls[6].ID},
 		}
 		run789 := &run.Run{
 			ID:  common.RunID(ct.lProject + "/789-ccc"),
-			CLs: []common.CLID{cls[9].ID, cls[7].ID, cls[8].ID},
+			CLs: common.CLIDs{cls[9].ID, cls[7].ID, cls[8].ID},
 		}
 		So(datastore.Put(ctx, run4, run56, run789), ShouldBeNil)
 
@@ -1125,7 +1125,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			// longer watched by current project.
 			runStale := &run.Run{
 				ID:  common.RunID(ct.lProject + "/111-s"),
-				CLs: []common.CLID{cls[13].ID, cls[11].ID},
+				CLs: common.CLIDs{cls[13].ID, cls[11].ID},
 			}
 			So(datastore.Put(ctx, runStale), ShouldBeNil)
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
@@ -1165,7 +1165,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			// Run's CLs must have PCL entries.
 			runStale := &run.Run{
 				ID:  common.RunID(ct.lProject + "/404-s"),
-				CLs: []common.CLID{cls[4].ID, 404},
+				CLs: common.CLIDs{cls[4].ID, 404},
 			}
 			So(datastore.Put(ctx, runStale), ShouldBeNil)
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
