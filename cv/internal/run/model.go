@@ -31,13 +31,16 @@ import (
 const RunKind = "Run"
 
 // Mode dictates the behavior of this Run.
+//
+// Values for DRY_RUN and FULL_RUN are fixed based on how CQDaemon exported them
+// before to BigQuery.
 type Mode string
 
 const (
 	// DryRun triggers all defined Tryjobs, but doesn't submit.
-	DryRun Mode = "DryRun"
+	DryRun Mode = "DRY_RUN"
 	// FullRun is DryRun followed by submit.
-	FullRun Mode = "FullRun"
+	FullRun Mode = "FULL_RUN"
 )
 
 // Run is an entity that contains high-level information about a CV Run.
