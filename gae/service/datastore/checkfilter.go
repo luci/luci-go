@@ -24,7 +24,8 @@ import (
 type checkFilter struct {
 	RawInterface
 
-	kc KeyContext
+	kc      KeyContext
+	userCtx context.Context
 }
 
 func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error {
@@ -41,7 +42,14 @@ func (tcf *checkFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	if cb == nil {
 		return fmt.Errorf("datastore: Run callback is nil")
 	}
-	return tcf.RawInterface.Run(fq, cb)
+	return tcf.RawInterface.Run(fq, func(key *Key, val PropertyMap, getCursor CursorCB) error {
+		select {
+		case <-tcf.userCtx.Done():
+			return tcf.userCtx.Err()
+		default:
+			return cb(key, val, getCursor)
+		}
+	})
 }
 
 func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error {
@@ -136,5 +144,6 @@ func applyCheckFilter(c context.Context, i RawInterface) RawInterface {
 	return &checkFilter{
 		RawInterface: i,
 		kc:           GetKeyContext(c),
+		userCtx:      c,
 	}
 }

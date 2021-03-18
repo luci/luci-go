@@ -42,6 +42,7 @@ var (
 type fakeDatastore struct {
 	RawInterface
 
+	userCtx      context.Context
 	kctx         KeyContext
 	keyForResult func(int32, KeyContext) *Key
 	onDelete     func(*Key)
@@ -54,6 +55,7 @@ func (f *fakeDatastore) factory() RawFactory {
 	return func(ic context.Context) RawInterface {
 		fds := *f
 		fds.kctx = GetKeyContext(ic)
+		fds.userCtx = ic
 		return &fds
 	}
 }

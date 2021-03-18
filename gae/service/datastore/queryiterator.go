@@ -17,6 +17,7 @@ package datastore
 import (
 	"bytes"
 	"context"
+	"errors"
 	"sort"
 
 	"go.chromium.org/luci/common/data/cmpbin"
@@ -50,7 +51,7 @@ func startQueryIterator(ctx context.Context, fq *FinalizedQuery) *queryIterator 
 				return nil
 			}
 		})
-		if err == Stop {
+		if err == Stop || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return
 		}
 		if err != nil {
