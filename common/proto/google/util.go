@@ -21,10 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const (
-	nanosecondsInASecond = int64(time.Second / time.Nanosecond)
-)
-
 // NewTimestamp creates a new Timestamp protobuf from a time.Time type.
 func NewTimestamp(v time.Time) *timestamppb.Timestamp {
 	if v.IsZero() {
@@ -47,28 +43,10 @@ func TimeFromProto(t *timestamppb.Timestamp) time.Time {
 
 // NewDuration creates a new Duration protobuf from a time.Duration.
 func NewDuration(v time.Duration) *durationpb.Duration {
-	return LoadDuration(nil, v)
-}
-
-// LoadDuration replaces the value in the supplied Duration with the specified
-// value.
-//
-// If the supplied Duration is nil and the value is non-zero, a new Duration
-// will be generated. The populated Duration will be returned.
-func LoadDuration(d *durationpb.Duration, v time.Duration) *durationpb.Duration {
-	if d == nil {
-		if v == 0 {
-			return nil
-		}
-
-		d = &durationpb.Duration{}
+	if v == 0 {
+		return nil
 	}
-
-	nanos := v.Nanoseconds()
-
-	d.Seconds = nanos / nanosecondsInASecond
-	d.Nanos = int32(nanos % nanosecondsInASecond)
-	return d
+	return durationpb.New(v)
 }
 
 // DurationFromProto returns the time.Duration associated with a Duration
