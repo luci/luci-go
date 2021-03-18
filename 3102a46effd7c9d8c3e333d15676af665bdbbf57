@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0f3b645_1f3c73f0",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T21:11:34Z",
+      "side": 1,
+      "message": "why not `tqtesting.ClockTag`?",
+      "range": {
+        "startLine": 370,
+        "startChar": 2,
+        "endLine": 370,
+        "endChar": 22
+      },
+      "revId": "3102a46effd7c9d8c3e333d15676af665bdbbf57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5663fd9f_3c15b7c9",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T21:11:34Z",
+      "side": 1,
+      "message": "same here: `clock.ContextDeadlineTag`",
+      "range": {
+        "startLine": 374,
+        "startChar": 2,
+        "endLine": 374,
+        "endChar": 56
+      },
+      "revId": "3102a46effd7c9d8c3e333d15676af665bdbbf57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
