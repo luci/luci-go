@@ -20,6 +20,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2949d289_4201dea0",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-18T18:43:37Z",
+      "side": 1,
+      "message": "Should this be Debugf instead?",
+      "range": {
+        "startLine": 237,
+        "startChar": 11,
+        "endLine": 237,
+        "endChar": 19
+      },
+      "revId": "47fd583a8b4f9d1451554592b0ea529f436959f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c2e5f7de_7d0e558d",
         "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
         "patchSetId": 8
@@ -31,6 +54,30 @@
       "writtenOn": "2021-03-18T17:44:17Z",
       "side": 1,
       "message": "nit: this func seems to exist only because we need defer to work, otherwise that code would be somewhere here. Consider inlining:\n\n\n  var artsToCreate []*...\n  (func() {\n    artsToCreate, err \u003d \n  })()",
+      "range": {
+        "startLine": 300,
+        "startChar": 22,
+        "endLine": 300,
+        "endChar": 49
+      },
+      "revId": "47fd583a8b4f9d1451554592b0ea529f436959f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11d437b9_c24fdc4d",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-18T18:43:37Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "c2e5f7de_7d0e558d",
       "range": {
         "startLine": 300,
         "startChar": 22,
