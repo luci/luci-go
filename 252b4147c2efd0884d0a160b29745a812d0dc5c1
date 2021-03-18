@@ -18,6 +18,52 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "67636554_7520a0e9",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-18T22:12:34Z",
+      "side": 1,
+      "message": "Nit: values",
+      "range": {
+        "startLine": 48,
+        "startChar": 14,
+        "endLine": 48,
+        "endChar": 19
+      },
+      "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b125566_ca387f02",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-18T22:12:34Z",
+      "side": 1,
+      "message": "Or maybe QUICK_DRY_RUN if we might have quick full runs before long?",
+      "range": {
+        "startLine": 49,
+        "startChar": 8,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "33086e31_a37cbcb1",
@@ -31,6 +77,30 @@
       "writtenOn": "2021-03-18T21:59:32Z",
       "side": 1,
       "message": "I feel like using string here is better because\n  1. in the future, CV can just copy the mode value to here.\n  2. IIUC, this is internal as only cv/cq recipe module will parse this proto message and expose information via module api. We can convert it to enum if needed there.",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 22
+      },
+      "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3dd6f8fd_7529a913",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-18T22:12:34Z",
+      "side": 1,
+      "message": "I think I don\u0027t understand what you mean by (1), could you clarify?\n\nAlso, IMO (2) is a reason why it *could* be a string, but the real reason why we were considering string was because we think maybe sometime later modes will be specified by some tuple of options (e.g. (submit on success, use rts)), and name will be arbitrary and may be project-specific. (Is that what you were thinking Andrii?)\n\nI\u0027m still not fully convinced it should be a string rather than enum myself.",
+      "parentUuid": "33086e31_a37cbcb1",
       "range": {
         "startLine": 52,
         "startChar": 2,
