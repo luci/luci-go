@@ -24,7 +24,8 @@ import (
 
 // OnReadyForSubmission implements Handler interface.
 func (*Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
-	panic("implement")
+	// TODO(yiwzhang): implement
+	return &Result{State: rs}, nil
 }
 
 // OnCLSubmitted implements Handler interface.
