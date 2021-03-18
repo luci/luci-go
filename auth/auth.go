@@ -244,7 +244,8 @@ type Options struct {
 	// instead. This is useful, for example, when calling APIs that are hosted on
 	// Cloud Run or served via Cloud Endpoints.
 	//
-	// Currently only partially supported, see crbug.com/1184230.
+	// When setting to true, make sure to specify a correct Audience if the
+	// default one is not appropriate.
 	//
 	// Default: false.
 	UseIDTokens bool
