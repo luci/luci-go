@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -210,6 +211,57 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 	})
 }
 
+// setExperiments computes the experiments from the given request and builder
+// config, setting them in the model and proto. Mutates the given *model.Build.
+// model.Build.Proto.Input must not be nil.
+func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+	// Experiment -> enabled.
+	exps := make(map[string]bool, len(req.GetExperiments()))
+
+	// Experiment values in the experiments field of the request have highest precedence,
+	// followed by legacy fields in the request, followed by values in the builder config.
+	for exp, en := range req.GetExperiments() {
+		exps[exp] = en
+	}
+
+	// Legacy.
+	if _, ok := exps["luci.buildbucket.canary_software"]; !ok && req.GetCanary() != pb.Trinary_UNSET {
+		exps["luci.buildbucket.canary_software"] = req.Canary == pb.Trinary_YES
+	}
+	if _, ok := exps["luci.non_production"]; !ok && req.GetExperimental() != pb.Trinary_UNSET {
+		exps["luci.non_production"] = req.Experimental == pb.Trinary_YES
+	}
+
+	for exp, pct := range cfg.GetExperiments() {
+		if _, ok := exps[exp]; ok {
+			continue
+		}
+		exps[exp] = mathrand.Int31n(ctx, 100) < pct
+	}
+
+	// The model stores all experiment values, while the proto only contains enabled experiments.
+	for exp, en := range exps {
+		if en {
+			build.Experiments = append(build.Experiments, fmt.Sprintf("+%s", exp))
+			build.Proto.Input.Experiments = append(build.Proto.Input.Experiments, exp)
+		} else {
+			build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
+		}
+	}
+
+	// Set legacy field values.
+	if en := exps["luci.buildbucket.canary_software"]; en {
+		build.Canary = true
+		build.Proto.Canary = true
+	}
+	if en := exps["luci.non_production"]; en {
+		build.Experimental = true
+		build.Proto.Input.Experimental = true
+	}
+	sort.Strings(build.Proto.Input.Experiments)
+	sort.Strings(build.Experiments)
+}
+
 // scheduleBuilds handles requests to schedule builds. Requests must be
 // validated and authorized.
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
@@ -226,6 +278,9 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	nums := make([]*model.Build, 0, len(reqs))
 	ids := buildid.NewBuildIDs(ctx, now, len(reqs))
 	for i := range blds {
+		bucket := fmt.Sprintf("%s/%s", reqs[i].Builder.Project, reqs[i].Builder.Bucket)
+		cfg := cfgs[bucket][reqs[i].Builder.Builder]
+
 		// TODO(crbug/1042991): Fill in relevant proto fields from the builder config.
 		// TODO(crbug/1042991): Fill in relevant proto fields from the request.
 		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
@@ -236,8 +291,11 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 				Builder:    reqs[i].Builder,
 				CreateTime: timestamppb.New(now),
 				Id:         ids[i],
+				Input:      &pb.Build_Input{},
 			},
 		}
+
+		setExperiments(ctx, reqs[i], cfg, blds[i])
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
@@ -246,8 +304,8 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		if len(exp) > 6 {
 			return nil, appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", i).Err())
 		}
-		bucket := fmt.Sprintf("%s/%s", blds[i].Proto.Builder.Project, blds[i].Proto.Builder.Bucket)
-		if cfgs[bucket][blds[i].Proto.Builder.Builder].GetBuildNumbers() == pb.Toggle_YES {
+
+		if cfg.GetBuildNumbers() == pb.Toggle_YES {
 			nums = append(nums, blds[i])
 		}
 	}
@@ -283,7 +341,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 						},
 					})
 				}
-				if b.Proto.Input.GetProperties() != nil {
+				if b.Proto.Input.Properties != nil {
 					toPut = append(toPut, &model.BuildInputProperties{
 						Build: datastore.KeyForObj(ctx, b),
 						Proto: model.DSStruct{

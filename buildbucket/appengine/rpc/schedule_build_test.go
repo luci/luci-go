@@ -1124,6 +1124,260 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
+	Convey("setExperiments", t, func() {
+		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(0)))
+
+		Convey("nil", func() {
+			ent := &model.Build{
+				Proto: pb.Build{
+					Input: &pb.Build_Input{},
+				},
+			}
+
+			setExperiments(ctx, nil, nil, ent)
+			So(ent.Experiments, ShouldBeNil)
+			So(ent.Proto.Input.Experiments, ShouldBeNil)
+		})
+
+		Convey("request only", func() {
+			req := &pb.ScheduleBuildRequest{
+				Experiments: map[string]bool{
+					"experiment1": true,
+					"experiment2": false,
+				},
+			}
+			ent := &model.Build{
+				Proto: pb.Build{
+					Input: &pb.Build_Input{},
+				},
+			}
+
+			setExperiments(ctx, req, nil, ent)
+			So(ent, ShouldResemble, &model.Build{
+				Experiments: []string{
+					"+experiment1",
+					"-experiment2",
+				},
+				Proto: pb.Build{
+					Input: &pb.Build_Input{
+						Experiments: []string{
+							"experiment1",
+						},
+					},
+				},
+			})
+		})
+
+		Convey("legacy only", func() {
+			req := &pb.ScheduleBuildRequest{
+				Canary:       pb.Trinary_YES,
+				Experimental: pb.Trinary_NO,
+			}
+			ent := &model.Build{
+				Proto: pb.Build{
+					Input: &pb.Build_Input{},
+				},
+			}
+
+			setExperiments(ctx, req, nil, ent)
+			So(ent, ShouldResemble, &model.Build{
+				Canary: true,
+				Experiments: []string{
+					"+luci.buildbucket.canary_software",
+					"-luci.non_production",
+				},
+				Proto: pb.Build{
+					Canary: true,
+					Input: &pb.Build_Input{
+						Experiments: []string{
+							"luci.buildbucket.canary_software",
+						},
+					},
+				},
+			})
+		})
+
+		Convey("config only", func() {
+			ent := &model.Build{
+				Proto: pb.Build{
+					Input: &pb.Build_Input{},
+				},
+			}
+			cfg := &pb.Builder{
+				Experiments: map[string]int32{
+					"experiment1": 100,
+					"experiment2": 0,
+				},
+			}
+
+			setExperiments(ctx, nil, cfg, ent)
+			So(ent, ShouldResemble, &model.Build{
+				Experiments: []string{
+					"+experiment1",
+					"-experiment2",
+				},
+				Proto: pb.Build{
+					Input: &pb.Build_Input{
+						Experiments: []string{
+							"experiment1",
+						},
+					},
+				},
+			})
+		})
+
+		Convey("override", func() {
+			Convey("request > legacy", func() {
+				req := &pb.ScheduleBuildRequest{
+					Canary:       pb.Trinary_YES,
+					Experimental: pb.Trinary_NO,
+					Experiments: map[string]bool{
+						"luci.buildbucket.canary_software": false,
+						"luci.non_production":              true,
+					},
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, nil, ent)
+				So(ent, ShouldResemble, &model.Build{
+					Experimental: true,
+					Experiments: []string{
+						"+luci.non_production",
+						"-luci.buildbucket.canary_software",
+					},
+					Proto: pb.Build{
+						Input: &pb.Build_Input{
+							Experimental: true,
+							Experiments: []string{
+								"luci.non_production",
+							},
+						},
+					},
+				})
+			})
+
+			Convey("legacy > config", func() {
+				req := &pb.ScheduleBuildRequest{
+					Canary:       pb.Trinary_YES,
+					Experimental: pb.Trinary_NO,
+				}
+				cfg := &pb.Builder{
+					Experiments: map[string]int32{
+						"luci.buildbucket.canary_software": 0,
+						"luci.non_production":              100,
+					},
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, cfg, ent)
+				So(ent, ShouldResemble, &model.Build{
+					Canary: true,
+					Experiments: []string{
+						"+luci.buildbucket.canary_software",
+						"-luci.non_production",
+					},
+					Proto: pb.Build{
+						Canary: true,
+						Input: &pb.Build_Input{
+							Experiments: []string{
+								"luci.buildbucket.canary_software",
+							},
+						},
+					},
+				})
+			})
+
+			Convey("request > config", func() {
+				req := &pb.ScheduleBuildRequest{
+					Experiments: map[string]bool{
+						"experiment1": true,
+						"experiment2": false,
+					},
+				}
+				cfg := &pb.Builder{
+					Experiments: map[string]int32{
+						"experiment1": 0,
+						"experiment2": 100,
+					},
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, cfg, ent)
+				So(ent, ShouldResemble, &model.Build{
+					Experiments: []string{
+						"+experiment1",
+						"-experiment2",
+					},
+					Proto: pb.Build{
+						Input: &pb.Build_Input{
+							Experiments: []string{
+								"experiment1",
+							},
+						},
+					},
+				})
+			})
+
+			Convey("request > legacy > config", func() {
+				req := &pb.ScheduleBuildRequest{
+					Canary:       pb.Trinary_YES,
+					Experimental: pb.Trinary_NO,
+					Experiments: map[string]bool{
+						"luci.buildbucket.canary_software": false,
+						"luci.non_production":              true,
+						"experiment1":                      true,
+						"experiment2":                      false,
+					},
+				}
+				cfg := &pb.Builder{
+					Experiments: map[string]int32{
+						"luci.buildbucket.canary_software": 100,
+						"luci.non_production":              100,
+						"experiment1":                      0,
+						"experiment2":                      0,
+					},
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Input: &pb.Build_Input{},
+					},
+				}
+
+				setExperiments(ctx, req, cfg, ent)
+				So(ent, ShouldResemble, &model.Build{
+					Experimental: true,
+					Experiments: []string{
+						"+experiment1",
+						"+luci.non_production",
+						"-experiment2",
+						"-luci.buildbucket.canary_software",
+					},
+					Proto: pb.Build{
+						Input: &pb.Build_Input{
+							Experimental: true,
+							Experiments: []string{
+								"experiment1",
+								"luci.non_production",
+							},
+						},
+					},
+				})
+			})
+		})
+	})
+
 	Convey("ScheduleBuild", t, func() {
 		srv := &Builds{}
 		ctx, _ := testclock.UseTime(mathrand.Set(txndefer.FilterRDS(memory.Use(context.Background())), rand.New(rand.NewSource(0))), testclock.TestRecentTimeUTC)
