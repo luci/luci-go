@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a5228dc8_36525520",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T01:50:18Z",
+      "side": 1,
+      "message": "intentional? looks like dereferencing of Input",
+      "range": {
+        "startLine": 216,
+        "startChar": 3,
+        "endLine": 216,
+        "endChar": 4
+      },
+      "revId": "e0f0f206eeb7f128091da1319ea9fbda1fc5eed0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d90a83dc_c74e1f65",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T01:50:18Z",
+      "side": 1,
+      "message": "unnecessary? same below",
+      "range": {
+        "startLine": 253,
+        "startChar": 6,
+        "endLine": 253,
+        "endChar": 9
+      },
+      "revId": "e0f0f206eeb7f128091da1319ea9fbda1fc5eed0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
