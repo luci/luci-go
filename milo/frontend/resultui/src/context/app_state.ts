@@ -45,6 +45,10 @@ export class AppState {
 
   @observable.ref gAuth: gapi.auth2.GoogleAuth | null = null;
 
+  // null means it's not initialized yet.
+  // undefined means there's no such service worker.
+  @observable.ref redirectSw: ServiceWorkerRegistration | null | undefined = null;
+
   @computed
   get resultDb(): ResultDb | null {
     if (this.accessToken === null) {
