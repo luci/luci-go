@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	google_pb "go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	bf "go.chromium.org/luci/tumble/bitfield"
 )
@@ -156,8 +156,8 @@ func (a *Attempt) DataProto() (ret *dm.Attempt_Data) {
 	default:
 		panic(fmt.Errorf("unknown Attempt_State: %s", a.State))
 	}
-	ret.Created = google_pb.NewTimestamp(a.Created)
-	ret.Modified = google_pb.NewTimestamp(a.Modified)
+	ret.Created = google.NewTimestamp(a.Created)
+	ret.Modified = google.NewTimestamp(a.Modified)
 	ret.NumExecutions = a.CurExecution
 	return ret
 }

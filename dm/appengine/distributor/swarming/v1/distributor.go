@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	googlepb "go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	sv1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
 	dm "go.chromium.org/luci/dm/api/service/v1"
@@ -87,7 +87,7 @@ func toSwarmMap(m map[string]string) []*swarm.SwarmingRpcsStringPair {
 }
 
 func toIntSeconds(p *duration.Duration) int64 {
-	return int64(googlepb.DurationFromProto(p).Seconds())
+	return int64(google.DurationFromProto(p).Seconds())
 }
 
 func httpClients(c context.Context) (anonC, authC *http.Client) {
@@ -329,8 +329,8 @@ func (d *swarmingDist) GetStatus(q *dm.Quest_Desc, tok distributor.Token) (*dm.R
 		ret.Data = &dm.JsonResult{
 			Object: data,
 			Size:   uint32(len(data)),
-			Expiration: googlepb.NewTimestamp(
-				clock.Now(d).Add(googlepb.DurationFromProto(d.sCfg.Isolate.Expiration))),
+			Expiration: google.NewTimestamp(
+				clock.Now(d).Add(google.DurationFromProto(d.sCfg.Isolate.Expiration))),
 		}
 
 	default:

@@ -21,7 +21,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	google_pb "go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/proto/google"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -94,7 +94,7 @@ func TestQuest(t *testing.T) {
 			So(p, ShouldResemble, &dm.Quest{
 				Id: dm.NewQuestID("1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw"),
 				Data: &dm.Quest_Data{
-					Created: google_pb.NewTimestamp(testclock.TestTimeUTC),
+					Created: google.NewTimestamp(testclock.TestTimeUTC),
 					Desc:    &q.Desc,
 					BuiltBy: []*dm.Quest_TemplateSpec{},
 				},

@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	google_pb "go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor/fake"
 	"go.chromium.org/luci/dm/appengine/model"
@@ -472,7 +472,7 @@ func TestWalkGraph(t *testing.T) {
 				// BUG: crbug.com/621170
 				SkipConvey("early stop", func() {
 					req.Limit.MaxDepth = 100
-					req.Limit.MaxTime = google_pb.NewDuration(time.Nanosecond)
+					req.Limit.MaxTime = google.NewDuration(time.Nanosecond)
 					tc := clock.Get(c).(testclock.TestClock)
 					tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 						tc.Add(d + time.Second)

@@ -23,7 +23,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	google_pb "go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/proto/google"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/tumble/bitfield"
 
@@ -65,8 +65,8 @@ func TestAttempt(t *testing.T) {
 
 				atmpt := dm.NewAttemptScheduling()
 				atmpt.Id = dm.NewAttemptID("quest", 10)
-				atmpt.Data.Created = google_pb.NewTimestamp(testclock.TestTimeUTC)
-				atmpt.Data.Modified = google_pb.NewTimestamp(testclock.TestTimeUTC)
+				atmpt.Data.Created = google.NewTimestamp(testclock.TestTimeUTC)
+				atmpt.Data.Modified = google.NewTimestamp(testclock.TestTimeUTC)
 
 				So(a.ToProto(true), ShouldResemble, atmpt)
 			})
@@ -80,8 +80,8 @@ func TestAttempt(t *testing.T) {
 				So(a.ToProto(true), ShouldResemble, &dm.Attempt{
 					Id: &dm.Attempt_ID{Quest: "quest", Id: 10},
 					Data: &dm.Attempt_Data{
-						Created:       google_pb.NewTimestamp(testclock.TestTimeUTC),
-						Modified:      google_pb.NewTimestamp(clk.Now()),
+						Created:       google.NewTimestamp(testclock.TestTimeUTC),
+						Modified:      google.NewTimestamp(clk.Now()),
 						NumExecutions: 1,
 						AttemptType: &dm.Attempt_Data_Executing_{Executing: &dm.Attempt_Data_Executing{
 							CurExecutionId: 1}}},
@@ -100,8 +100,8 @@ func TestAttempt(t *testing.T) {
 
 				atmpt := dm.NewAttemptWaiting(3)
 				atmpt.Id = dm.NewAttemptID("quest", 10)
-				atmpt.Data.Created = google_pb.NewTimestamp(testclock.TestTimeUTC)
-				atmpt.Data.Modified = google_pb.NewTimestamp(clk.Now())
+				atmpt.Data.Created = google.NewTimestamp(testclock.TestTimeUTC)
+				atmpt.Data.Modified = google.NewTimestamp(clk.Now())
 				atmpt.Data.NumExecutions = 1
 
 				So(a.ToProto(true), ShouldResemble, atmpt)
@@ -121,12 +121,12 @@ func TestAttempt(t *testing.T) {
 				So(a.ToProto(true), ShouldResemble, &dm.Attempt{
 					Id: &dm.Attempt_ID{Quest: "quest", Id: 10},
 					Data: &dm.Attempt_Data{
-						Created:       google_pb.NewTimestamp(testclock.TestTimeUTC),
-						Modified:      google_pb.NewTimestamp(testclock.TestTimeUTC),
+						Created:       google.NewTimestamp(testclock.TestTimeUTC),
+						Modified:      google.NewTimestamp(testclock.TestTimeUTC),
 						NumExecutions: math.MaxUint32,
 						AttemptType: &dm.Attempt_Data_Finished_{Finished: &dm.Attempt_Data_Finished{
 							Data: &dm.JsonResult{
-								Expiration: google_pb.NewTimestamp(testclock.TestTimeUTC.Add(10 * time.Second))}}},
+								Expiration: google.NewTimestamp(testclock.TestTimeUTC.Add(10 * time.Second))}}},
 					},
 				})
 			})
