@@ -18,9 +18,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+	"sync/atomic"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/tq/tqtesting"
 )
 
@@ -36,16 +39,17 @@ func TestingContext(ctx context.Context, d *Dispatcher) (context.Context, *tqtes
 	if d == nil {
 		d = &Default
 	}
-	sched := &tqtesting.Scheduler{Executor: directExecutor{d}}
+	sched := &tqtesting.Scheduler{Executor: &directExecutor{d, 0}}
 	return UseSubmitter(ctx, sched), sched
 }
 
 // directExecutor implements tqtesting.Executor via handlePush.
 type directExecutor struct {
-	d *Dispatcher
+	d   *Dispatcher
+	cnt int64
 }
 
-func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
+func (e *directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
 	retry := false
 	defer done(retry)
 
@@ -75,6 +79,10 @@ func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fun
 	// The direct executor doesn't emulate X-CloudTasks-* headers.
 	info.ExecutionCount = t.Attempts - 1
 
+	ctx = logging.SetField(ctx, "TQ#", strconv.FormatInt(atomic.AddInt64(&e.cnt, 1), 10))
 	err := e.d.handlePush(ctx, body, info)
-	retry = err != nil && !Fatal.In(err)
+	if err != nil {
+		logging.Errorf(ctx, "server/tq task error: %s", err)
+		retry = !Fatal.In(err)
+	}
 }
