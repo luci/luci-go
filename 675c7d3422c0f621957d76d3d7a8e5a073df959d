@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d84f05a_798d49d2",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T03:44:16Z",
+      "side": 1,
+      "message": "oops, missed it.",
+      "parentUuid": "9ff22e66_dab94749",
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5599a501_07e06bb9",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "840fa408_4ae56e90",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T03:44:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5599a501_07e06bb9",
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "67acbf42_7f525d73",
@@ -48,6 +84,30 @@
       "writtenOn": "2021-03-17T00:33:24Z",
       "side": 1,
       "message": "gae noindex",
+      "range": {
+        "startLine": 46,
+        "startChar": 18,
+        "endLine": 46,
+        "endChar": 20
+      },
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ae0199b_e0107818",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T03:44:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67acbf42_7f525d73",
       "range": {
         "startLine": 46,
         "startChar": 18,
@@ -81,6 +141,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e913c28a_897778c2",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T03:44:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a412c0e_b801c3ee",
+      "range": {
+        "startLine": 108,
+        "startChar": 48,
+        "endLine": 109,
+        "endChar": 37
+      },
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b0af3fa5_b4e8cde5",
@@ -104,6 +188,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3154f64_fc58849d",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T03:44:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0af3fa5_b4e8cde5",
+      "range": {
+        "startLine": 144,
+        "startChar": 8,
+        "endLine": 144,
+        "endChar": 22
+      },
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9f9a0e64_b0f18fe8",
@@ -117,6 +225,30 @@
       "writtenOn": "2021-03-17T00:33:24Z",
       "side": 1,
       "message": "I think you can move this case right above the above case and reduce logic\n\ncase q.Current \u003d\u003d \"\" \u0026\u0026 len(q.Waitlist) \u003d\u003d 0:  // hence waitlistIdx \u003d\u003d -1\n  q.Waitlist \u003d common.RunIDs{runID}\n  fallthrough\ncase q.Current \u003d\u003d \"\" \u0026\u0026 waitlistIdx \u003d\u003d 0:\n  ...",
+      "range": {
+        "startLine": 152,
+        "startChar": 1,
+        "endLine": 152,
+        "endChar": 46
+      },
+      "revId": "675c7d3422c0f621957d76d3d7a8e5a073df959d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0b9fe4c_5324e141",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T03:44:16Z",
+      "side": 1,
+      "message": "Good point!",
+      "parentUuid": "9f9a0e64_b0f18fe8",
       "range": {
         "startLine": 152,
         "startChar": 1,
