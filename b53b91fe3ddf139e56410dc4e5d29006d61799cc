@@ -181,6 +181,24 @@
       "parentUuid": "2163ff42_e3799a19",
       "revId": "b53b91fe3ddf139e56410dc4e5d29006d61799cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e91f247_16d3ed70",
+        "filename": "milo/frontend/resultui/src/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-18T02:25:32Z",
+      "side": 1,
+      "message": "yes. it was due to asyncs.\nWe could put them in the same handler,\nbut then we either need to use Promise.allSettled or register them sequentially.\nNeither of them is ideal.",
+      "parentUuid": "f8caaa2f_49c22cf1",
+      "revId": "b53b91fe3ddf139e56410dc4e5d29006d61799cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
