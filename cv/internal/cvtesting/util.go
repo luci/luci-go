@@ -50,6 +50,7 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/cv/internal/tree"
+	"go.chromium.org/luci/cv/internal/tree/treetest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -67,10 +68,8 @@ type Test struct {
 	Cfg config.TestController
 	// GFake is a Gerrit fake. Defaults to an empty one.
 	GFake *gf.Fake
-	// TreeClient is a mock client for Tree Status App.
-	//
-	// If nil, defaults to an always-open tree.
-	TreeClient tree.Client
+	// TreeFake is a fake Tree. Defaults to an open Tree.
+	TreeFake *treetest.Fake
 	// TQ allows to run TQ tasks.
 	TQ *tqtesting.Scheduler
 	// Clock allows to move time forward.
@@ -110,19 +109,6 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		}
 		t.MaxDuration = time.Duration(v) * time.Second
 	}
-	if t.GFake == nil {
-		t.GFake = &gf.Fake{}
-	}
-
-	if t.TreeClient == nil {
-		t.TreeClient = &tree.MockClient{
-			FetchLatestFn: func(context.Context, string) (tree.Status, error) {
-				return tree.Status{
-					State: tree.Open,
-				}, nil
-			},
-		}
-	}
 
 	ctx = context.Background()
 	// TODO(tandrii): make this logger emit testclock-based timestamps.
@@ -148,11 +134,17 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		t.Clock.Add(dur)
 	})
 
+	if t.GFake == nil {
+		t.GFake = &gf.Fake{}
+	}
+	if t.TreeFake == nil {
+		t.TreeFake = treetest.NewFake(ctx, tree.Open)
+	}
+
 	ctx = t.installDS(ctx)
 	ctx = txndefer.FilterRDS(ctx)
-
 	ctx = t.GFake.Install(ctx)
-	ctx = tree.Install(ctx, t.TreeClient)
+	ctx = t.TreeFake.Install(ctx)
 	ctx, t.TQ = tq.TestingContext(ctx, nil)
 	return ctx, t.cleanup
 }
