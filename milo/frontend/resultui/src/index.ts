@@ -15,21 +15,25 @@
 import './routes';
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener(
-    'load',
-    async () => {
-      const registration = await navigator.serviceWorker.register('/ui/service-worker.js');
-      console.log('SW registered: ', registration);
-    },
-    { once: true }
-  );
+  // Don't cache resources in development mode. Otherwise we will need to
+  // refresh the page manually for changes to take effect.
+  if (PRODUCTION) {
+    window.addEventListener(
+      'load',
+      async () => {
+        const registration = await navigator.serviceWorker.register('/ui/service-worker.js');
+        console.log('UI SW registered: ', registration);
+      },
+      { once: true }
+    );
+  }
 
   if (!document.cookie.includes('showNewBuildPage=false')) {
     window.addEventListener(
       'load',
       async () => {
         const registration = await navigator.serviceWorker.register('/redirect-sw.js');
-        console.log('SW registered: ', registration);
+        console.log('Redirect SW registered: ', registration);
       },
       { once: true }
     );
