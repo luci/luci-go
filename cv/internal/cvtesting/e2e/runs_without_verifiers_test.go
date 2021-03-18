@@ -126,7 +126,7 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 			return r13 != nil && r13.Status == run.Status_RUNNING
 		})
 		So(r13.Mode, ShouldResemble, run.DryRun)
-		So(r13.CLs, ShouldResemble, []common.CLID{ct.LoadGerritCL(ctx, gHost, 13).ID})
+		So(r13.CLs, ShouldResemble, common.CLIDs{ct.LoadGerritCL(ctx, gHost, 13).ID})
 
 		ct.LogPhase(ctx, "User votes CQ+2 on 12, CV starts Run on just 12 and doesn't touch 13")
 		ct.Clock.Add(time.Minute)
