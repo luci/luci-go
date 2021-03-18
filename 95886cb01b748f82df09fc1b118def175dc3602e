@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0e67c6a_5d8ff016",
+        "filename": "cv/api/bigquery/v1/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-18T22:05:48Z",
+      "side": 1,
+      "message": "If we wanted to replace the enum with a string in the proto, we\u0027d add a string field here and deprecate the mode field.\n\nIF we did this, we might be do this by adding a new string field and deprecating this field. But I don\u0027t think there\u0027s a reason to do that right now.\n\nIf we wanted to have modes user-specified with arbitrary string names, then I imagine maybe we\u0027d actually report all specific mode options that were used in the run, and the name is less important:\n\n     ModeOptions mode_options \u003d 8;\n\n     ...\n\n     message ModeOptions {\n       bool submit_on_success \u003d 1;\n       bool use_rts \u003d 2;\n       bool run_on_upload \u003d 3;\n     }",
+      "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e24135b7_df4a0a01",
+        "filename": "cv/api/bigquery/v1/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-18T22:05:48Z",
+      "side": 1,
+      "message": "AFAIU this is probably all we want to do now.",
+      "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
