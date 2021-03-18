@@ -21,7 +21,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
-	google_pb "go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/proto/google"
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
@@ -78,7 +78,7 @@ func (q *Quest) DataProto() *dm.Quest_Data {
 	}
 
 	return &dm.Quest_Data{
-		Created: google_pb.NewTimestamp(q.Created),
+		Created: google.NewTimestamp(q.Created),
 		Desc:    &q.Desc,
 		BuiltBy: spec,
 	}

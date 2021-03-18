@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/logging"
-	google_pb "go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -354,8 +354,8 @@ func (e *Execution) DataProto() (ret *dm.Execution_Data) {
 	default:
 		panic(fmt.Errorf("unknown Execution_State: %s", e.State))
 	}
-	ret.Created = google_pb.NewTimestamp(e.Created)
-	ret.Modified = google_pb.NewTimestamp(e.Modified)
+	ret.Created = google.NewTimestamp(e.Created)
+	ret.Modified = google.NewTimestamp(e.Modified)
 	ret.DistributorInfo = &dm.Execution_Data_DistributorInfo{
 		ConfigName:    e.DistributorConfigName,
 		ConfigVersion: e.DistributorConfigVersion,
