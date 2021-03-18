@@ -20,7 +20,14 @@ import { CacheOption } from '../libs/cached_fn';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { BuildExt } from '../models/build_ext';
-import { Build, BuilderID, BuilderItem, GetBuildRequest, GitilesCommit } from '../services/buildbucket';
+import {
+  Build,
+  BuilderID,
+  BuilderItem,
+  GetBuildRequest,
+  GitilesCommit,
+  PermittedActionsResponse,
+} from '../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
 import { AppState } from './app_state';
@@ -130,7 +137,7 @@ export class BuildState {
   }
 
   @computed
-  private get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
+  private get relatedBuilds$(): IPromiseBasedObservable<readonly Build[]> {
     if (!this.build) {
       return fromPromise(Promise.race([]));
     }
@@ -171,10 +178,10 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   get relatedBuilds(): readonly BuildExt[] | null {
-    if (this.isDisposed || this.relatedBuildReq.state !== FULFILLED) {
+    if (this.isDisposed || this.relatedBuilds$.state !== FULFILLED) {
       return null;
     }
-    return this.relatedBuildReq.value.map((build) => new BuildExt(build));
+    return this.relatedBuilds$.value.map((build) => new BuildExt(build));
   }
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
@@ -239,6 +246,42 @@ export class BuildState {
   @computed
   get builder(): BuilderItem | null {
     return this.builder$.state === FULFILLED ? this.builder$.value : null;
+  }
+
+  @computed private get bucketResourceId() {
+    const builder = this.builderId || this.build?.builder;
+    if (!builder) {
+      return null;
+    }
+    return `luci.${builder.builder}.${builder.bucket}`;
+  }
+
+  @computed
+  private get permittedActions$() {
+    if (!this.appState.accessService || !this.bucketResourceId) {
+      // Returns a promise that never resolves when the dependencies aren't
+      // ready.
+      return fromPromise(Promise.race([]));
+    }
+
+    return fromPromise(
+      this.appState.accessService?.permittedActions({
+        resourceKind: 'bucket',
+        resourceIds: [this.bucketResourceId],
+      })
+    );
+  }
+
+  @computed({ keepAlive: true })
+  private get permittedActions(): PermittedActionsResponse | null {
+    if (this.isDisposed) {
+      return null;
+    }
+    return this.permittedActions$.state === FULFILLED ? this.permittedActions$.value : null;
+  }
+
+  canPerform(action: string) {
+    return this.permittedActions?.permitted[this.bucketResourceId!].actions.includes(action) || false;
   }
 
   // Refresh all data that depends on the timestamp.
