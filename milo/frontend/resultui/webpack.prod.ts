@@ -23,6 +23,13 @@ export default merge(common, {
   mode: 'production',
   plugins: [
     new DefinePlugin({ PRODUCTION: JSON.stringify(true) }),
-    new Workbox.GenerateSW({ clientsClaim: true, navigateFallback: '/ui/index.html' }),
+    new Workbox.GenerateSW({
+      clientsClaim: true,
+      navigateFallback: '/ui/index.html',
+      // Workbox source map changes every build.
+      // This causes noise in the auto-roller.
+      // https://github.com/GoogleChrome/workbox/issues/2784
+      sourcemap: true,
+    }),
   ],
 });
