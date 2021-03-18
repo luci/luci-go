@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -116,23 +117,15 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 	}
 
-	topCtx, cancel := context.WithTimeout(ctx, t.MaxDuration)
+	ctx, cancel := context.WithTimeout(ctx, t.MaxDuration)
+	topCtx := ctx
 	t.cleanups = append(t.cleanups, func() {
 		// Fail the test if the topCtx has timed out.
 		So(topCtx.Err(), ShouldBeNil)
 		cancel()
 	})
 
-	// Use a date-time that is easy to eyeball in logs.
-	utc := time.Date(2020, time.February, 2, 10, 30, 00, 0, time.UTC)
-	// But set it up in a clock as a local time to expose incorrect assumptions of UTC.
-	now := time.Date(2020, time.February, 2, 13, 30, 00, 0, time.FixedZone("Fake local", 3*60*60))
-	So(now.Equal(utc), ShouldBeTrue)
-	ctx, t.Clock = testclock.UseTime(topCtx, now)
-	t.Clock.SetTimerCallback(func(dur time.Duration, _ clock.Timer) {
-		// Move fake time forward whenever someone's waiting for it.
-		t.Clock.Add(dur)
-	})
+	ctx = t.setUpTestClock(ctx)
 
 	if t.GFake == nil {
 		t.GFake = &gf.Fake{}
@@ -356,4 +349,52 @@ func maybeCleanupOldDSNamespaces(ctx context.Context) {
 			logging.Errorf(ctx, "failed to clean old DS namespace %s: %s", ns, err)
 		}
 	}
+}
+
+// setUpTestClock simulates passage of time w/o idling CPU.
+//
+// Moving test time forward if something we recognize waits for it.
+func (t *Test) setUpTestClock(ctx context.Context) context.Context {
+	// Use a date-time that is easy to eyeball in logs.
+	utc := time.Date(2020, time.February, 2, 10, 30, 00, 0, time.UTC)
+	// But set it up in a clock as a local time to expose incorrect assumptions of UTC.
+	now := time.Date(2020, time.February, 2, 13, 30, 00, 0, time.FixedZone("Fake local", 3*60*60))
+	So(now.Equal(utc), ShouldBeTrue)
+	ctx, t.Clock = testclock.UseTime(ctx, now)
+
+	// Testclock calls this callback every time something is waiting.
+	// To avoid getting stuck tests, we need to move testclock forward by the
+	// requested duration in most cases but not all.
+	moveIf := stringset.NewFromSlice(
+		// Used by tqtesting to wait until ETA of the next task.
+		tqtesting.ClockTag,
+	)
+	ignoreIf := stringset.NewFromSlice(
+		// Used in clock.WithTimeout(ctx) | clock.WithDeadline(ctx).
+		clock.ContextDeadlineTag,
+	)
+	t.Clock.SetTimerCallback(func(dur time.Duration, timer clock.Timer) {
+		tags := testclock.GetTags(timer)
+		move, ignore := 0, 0
+		for _, tag := range tags {
+			switch {
+			case moveIf.Has(tag):
+				move++
+			case ignoreIf.Has(tag):
+				ignore++
+			default:
+				// Ignore by default, but log it to help fix the test if it gets stuck.
+				logging.Warningf(ctx, "ignoring unexpected timer tag: %q. If test is stuck, add tag to `moveIf` above this log line", tag)
+			}
+		}
+		// In ~all cases, there is exactly 1 tag, but be future proof.
+		switch {
+		case move > 0:
+			logging.Debugf(ctx, "moving test clock %s by %s forward for %s", t.Clock.Now(), dur, tags)
+			t.Clock.Add(dur)
+		case ignore == 0:
+			logging.Warningf(ctx, "ignoring timer without tags. If test is stuck, tag the waits via `clock` library")
+		}
+	})
+	return ctx
 }
