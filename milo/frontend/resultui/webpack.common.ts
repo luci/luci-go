@@ -14,14 +14,13 @@
 
 import path from 'path';
 
-import Workbox from 'workbox-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import webpack, { DefinePlugin } from 'webpack';
+import { Configuration, DefinePlugin } from 'webpack';
 
-const config: webpack.Configuration = {
+const config: Configuration = {
   entry: {
     index: './src/index.ts',
   },
@@ -84,7 +83,6 @@ const config: webpack.Configuration = {
     }),
     new HtmlWebpackHarddiskPlugin(),
     new DefinePlugin({ ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true') }),
-    new Workbox.GenerateSW({ clientsClaim: true, navigateFallback: '/ui/index.html' }),
   ],
 };
 

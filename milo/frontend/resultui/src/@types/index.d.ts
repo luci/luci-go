@@ -36,3 +36,8 @@ declare const CONFIGS: {
  * Injected by webpack.
  */
 declare const ENABLE_GA: boolean;
+
+/**
+ * Whether the app is in production mode.
+ */
+declare const PRODUCTION: boolean;
