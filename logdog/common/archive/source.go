@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/renderer"
@@ -79,7 +81,7 @@ func (s *safeLogEntrySource) normalizeLogEntry(le *logpb.LogEntry) error {
 		s.logger().Warningf("Adjusting out-of-order timestamp (%s < %s) for log stream entry %d.",
 			timeOffset, s.lastTimeOffset, le.StreamIndex)
 
-		le.TimeOffset = google.LoadDuration(le.TimeOffset, s.lastTimeOffset)
+		le.TimeOffset = durationpb.New(s.lastTimeOffset)
 	} else {
 		s.lastTimeOffset = timeOffset
 	}
