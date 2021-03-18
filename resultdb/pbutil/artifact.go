@@ -102,3 +102,10 @@ func InvocationArtifactName(invocationID, artifactID string) string {
 func TestResultArtifactName(invocationID, testID, resulID, artifactID string) string {
 	return fmt.Sprintf("invocations/%s/tests/%s/results/%s/artifacts/%s", invocationID, url.PathEscape(testID), resulID, url.PathEscape(artifactID))
 }
+
+// ArtifactName generates an artifact name with the given parent and artifactID.
+// Does not validate IDs, use validation functions, such as ValidateInvocationID.
+// parent must be either a valid invocation or test-result name.
+func ArtifactName(parent string, artifactID string) string {
+	return fmt.Sprintf("%s/artifacts/%s", parent, artifactID)
+}
