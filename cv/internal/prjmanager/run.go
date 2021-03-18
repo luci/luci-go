@@ -306,7 +306,7 @@ func (rb *RunBuilder) save(ctx context.Context) error {
 }
 
 func (rb *RunBuilder) registerSaveRun(ctx context.Context, now time.Time) {
-	ids := make([]common.CLID, len(rb.InputCLs))
+	ids := make(common.CLIDs, len(rb.InputCLs))
 	for i, cl := range rb.InputCLs {
 		ids[i] = cl.ID
 	}

@@ -40,7 +40,7 @@ func TestRemoveRunFromCLs(t *testing.T) {
 		s := &RunState{
 			Run: run.Run{
 				ID:  common.RunID("chromium/111-2-deadbeef"),
-				CLs: []common.CLID{1},
+				CLs: common.CLIDs{1},
 			},
 		}
 		Convey("Works", func() {

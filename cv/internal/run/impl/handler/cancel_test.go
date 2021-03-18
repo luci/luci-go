@@ -45,7 +45,7 @@ func TestCancel(t *testing.T) {
 			Run: run.Run{
 				ID:         runID,
 				CreateTime: clock.Now(ctx).UTC().Add(-2 * time.Minute),
-				CLs:        []common.CLID{clid},
+				CLs:        common.CLIDs{clid},
 			},
 		}
 		So(datastore.Put(ctx, &changelist.CL{
