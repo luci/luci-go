@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e84b5f9b_07ab5509",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-18T23:22:32Z",
+      "side": 1,
+      "message": "This function is called after cas.BatchUploadBlobs() to create artifacts in Spanner. This log can be emitted in the following scenarios.\n\n1) ResultSink retried a BatchCreateArtifacts(), after the previous call was interrupted due to network outage or timeout, but the server session for the previous call was still alive, and interestingly, the retry request was processed before the previous call reached this point.\n2) ResultSink called BatchCreateArtifacts() w/ the exactly same inputs multiple times in parallel.\n\n----------------------\n(1) is hard to happen. JFYI, ResultSink adds delays to retries in an exponential manner. If (1) happens, its likely that cas.BatchUpdateBlobs() is serving requests w/ long delays at a random rate. It\u0027s worth taking a look when weird symptoms were reported from our users.\n(2) should not happen, and is likely a bug in ResultSink. It\u0027s definitely worth looking to hunt the bug.\n\nIn short, this log indicates a possible outage in RBECAS, a bug in ResultSink. I think it\u0027s worth logging it as a warning.",
+      "parentUuid": "2949d289_4201dea0",
+      "range": {
+        "startLine": 237,
+        "startChar": 11,
+        "endLine": 237,
+        "endChar": 19
+      },
+      "revId": "47fd583a8b4f9d1451554592b0ea529f436959f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c2e5f7de_7d0e558d",
@@ -78,6 +102,30 @@
       "side": 1,
       "message": "+1",
       "parentUuid": "c2e5f7de_7d0e558d",
+      "range": {
+        "startLine": 300,
+        "startChar": 22,
+        "endLine": 300,
+        "endChar": 49
+      },
+      "revId": "47fd583a8b4f9d1451554592b0ea529f436959f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4404d0b5_53e4a0c8",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-18T23:22:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11d437b9_c24fdc4d",
       "range": {
         "startLine": 300,
         "startChar": 22,
