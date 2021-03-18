@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf30a844_c1b9cc12",
+        "filename": "milo/frontend/resultui/src/context/app_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T21:10:55Z",
+      "side": 1,
+      "message": "not related to this CL, but this smells. Why do we call this func if there is no access token (shouldn\u0027t we raise an error instead)? If the access token is available *yet\", then shouldn\u0027t this.accessToken be a promise?\n\nalso repetition. Maybe use a decorator?",
+      "range": {
+        "startLine": 94,
+        "startChar": 13,
+        "endLine": 94,
+        "endChar": 24
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed98d3ef_354938cd",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T21:10:55Z",
+      "side": 1,
+      "message": "could have been in a separate CL? and then this CL on top of that",
+      "range": {
+        "startLine": 140,
+        "startChar": 27,
+        "endLine": 140,
+        "endChar": 28
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41e43411_08e6578d",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T21:10:55Z",
+      "side": 1,
+      "message": "repeated in L239. consider a new computed prop",
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2083db3_0133dd0b",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T21:10:55Z",
+      "side": 1,
+      "message": "i see this pattern a lot. I wonder why not have a utility function that does this for arbitrary promise\u003cresponse\u003e? unless keepAlive makes a large difference, which i don\u0027t understand\n\ncomputation in L277-288 is very lightewight, so i assume caching it doesn\u0027t make a noticeable diff\n\nthis func would have more value if it e.g. converted a list of actions to a Set.",
+      "range": {
+        "startLine": 275,
+        "startChar": 0,
+        "endLine": 282,
+        "endChar": 0
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3e3d93f_79c35bf6",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T21:10:55Z",
+      "side": 1,
+      "message": "canCancel",
+      "range": {
+        "startLine": 85,
+        "startChar": 19,
+        "endLine": 85,
+        "endChar": 27
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ee30fcc_50e51c79",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T21:10:55Z",
+      "side": 1,
+      "message": "is this how it is reported? proto durations are reported as a string, e.g. \"123s\"",
+      "range": {
+        "startLine": 225,
+        "startChar": 20,
+        "endLine": 225,
+        "endChar": 28
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2873c72a_211b78a1",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T21:10:55Z",
+      "side": 1,
+      "message": "this is cached only in the AccessService object, right?\nthis value makes sense to cache in localStorage, especially if it Access service is sluggish",
+      "range": {
+        "startLine": 337,
+        "startChar": 36,
+        "endLine": 337,
+        "endChar": 42
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
