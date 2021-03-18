@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5108dfe8_5beab6fe",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-18T07:14:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48ff4209_86b346ba",
+      "revId": "c2aa54325a483c053abf0799aa1ad195b195b61e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3eba97b0_b7297cf2",
@@ -109,6 +127,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d7297b1b_e496ab2b",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-18T07:14:58Z",
+      "side": 1,
+      "message": "Thanks for the useful information. It makes sense. Done.",
+      "parentUuid": "392f5075_988a8534",
+      "range": {
+        "startLine": 251,
+        "startChar": 0,
+        "endLine": 258,
+        "endChar": 1
+      },
+      "revId": "c2aa54325a483c053abf0799aa1ad195b195b61e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b74ea153_9ba6791f",
         "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
         "patchSetId": 6
@@ -143,6 +185,30 @@
       "writtenOn": "2021-03-17T05:35:12Z",
       "side": 1,
       "message": "no other errors can happen? what about network failure, internal cas error, etc?\n\nwhy not check it with code rather than assume in comment? and ideally check https://pkg.go.dev/google.golang.org/grpc@v1.36.0/internal/status#Status.Details",
+      "range": {
+        "startLine": 270,
+        "startChar": 2,
+        "endLine": 270,
+        "endChar": 53
+      },
+      "revId": "c2aa54325a483c053abf0799aa1ad195b195b61e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e51d39f6_1ed53e6c",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-18T07:14:58Z",
+      "side": 1,
+      "message": "you are right. Fixed the comment. PTAL",
+      "parentUuid": "62472f24_891b160b",
       "range": {
         "startLine": 270,
         "startChar": 2,
@@ -190,6 +256,30 @@
       "side": 1,
       "message": "We validate the total size of a user request before reaching this point.\nAt this point, if rbecas.BatchUpdateBlobs() ever returns INVALID_ARGUMENT, it means that MaxBatchCreateArtifactSize at L42 is bigger than the actual limit enforced in RBE-CAS.\n\nAs we agreed on https://crbug.com/1177213#c4, we just choose a size limit that is certainly lower than the actual limit in RBE-CAS. Then, this error should never happen. If it happens ever, it means either of the following happened.\n\n1) Our assumption was wrong.\n2) The limit is hard-coded in the current RBECAS server implementation, and never be changed. For some reasons, RBECAS team decided to change the limit to a lower value.\n\nThe error shouldn\u0027t be invalid argument, as this is clearly a server-side error.",
       "parentUuid": "1fef71ad_c068656c",
+      "range": {
+        "startLine": 273,
+        "startChar": 32,
+        "endLine": 273,
+        "endChar": 40
+      },
+      "revId": "c2aa54325a483c053abf0799aa1ad195b195b61e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "00490e19_0d713903",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-18T07:14:58Z",
+      "side": 1,
+      "message": "marking as done.",
+      "parentUuid": "1fce541d_3db52983",
       "range": {
         "startLine": 273,
         "startChar": 32,
@@ -284,6 +374,30 @@
       "side": 1,
       "message": "as a user of this API, I think it would be simpler for me if len(BatchCreateArtifactsRequest.requests) \u003d\u003d len(BatchCreateArtifactsResponse.artifacts), so that requets[i] corresponds to artifacts[i] in my callsite. Otherwise, how do I know which artifact name corresponds to which request?\n\nso I wonder if we should use `arts` instead",
       "parentUuid": "2b534ef9_10318a11",
+      "range": {
+        "startLine": 329,
+        "startChar": 19,
+        "endLine": 329,
+        "endChar": 31
+      },
+      "revId": "c2aa54325a483c053abf0799aa1ad195b195b61e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db016b29_868de356",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-18T07:14:58Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "2d3866e8_0a32c196",
       "range": {
         "startLine": 329,
         "startChar": 19,
