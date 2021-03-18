@@ -163,6 +163,24 @@
       "parentUuid": "120ab84e_22821b48",
       "revId": "b53b91fe3ddf139e56410dc4e5d29006d61799cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8caaa2f_49c22cf1",
+        "filename": "milo/frontend/resultui/src/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-18T02:08:08Z",
+      "side": 1,
+      "message": "sorry, maybe I wasn\u0027t clear.\n\nit seems we are attaching two handlers to the same event, with two different functions. I was asking why this cannot be one function, with an if statement inside.\n\nbut maybe this is because of asyncs",
+      "parentUuid": "2163ff42_e3799a19",
+      "revId": "b53b91fe3ddf139e56410dc4e5d29006d61799cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
