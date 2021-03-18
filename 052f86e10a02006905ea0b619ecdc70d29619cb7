@@ -69,6 +69,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "977a7b47_4c4c38e4",
+        "filename": "cv/internal/tree/treetest/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T19:10:55Z",
+      "side": 1,
+      "message": "ah unfinished sentence. Done",
+      "parentUuid": "c15a09e9_57d9a93a",
+      "revId": "052f86e10a02006905ea0b619ecdc70d29619cb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "adc306a1_9898f139",
@@ -82,6 +100,24 @@
       "writtenOn": "2021-03-18T17:19:48Z",
       "side": 1,
       "message": "I still don\u0027t understand this line :-/",
+      "revId": "052f86e10a02006905ea0b619ecdc70d29619cb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dbe382e7_cd46ba11",
+        "filename": "cv/internal/tree/treetest/fake.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-18T19:10:55Z",
+      "side": 1,
+      "message": "Simply speaking, interface in golang is implemented implicitly (unlike C++/Java where you will see `Class MyClass: public MyInterface` or `class MyClass implements MyInterface`. So here, this is ensuring (*client) dose implement the `tree.Client` interface so that if anything changes in the `tree.Client` interface (e.g. new method added, method signature changed), the compiler will complain here.\n\nSince it serves for type checking purpose only, so this variable is useless. That\u0027s why it is `var _`. Also, we don\u0027t need to initialize it as `\u0026client{}` to create unnecessary memory footprint, (*client)(nil) is sufficient.",
+      "parentUuid": "adc306a1_9898f139",
       "revId": "052f86e10a02006905ea0b619ecdc70d29619cb7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
