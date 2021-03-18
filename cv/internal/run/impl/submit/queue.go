@@ -218,3 +218,12 @@ func release(ctx context.Context, runID common.RunID) error {
 	}
 	return nil
 }
+
+// LoadCurrentAndWaitlist loads the current submissions slot and the waitlist.
+func LoadCurrentAndWaitlist(ctx context.Context, runID common.RunID) (current common.RunID, waitlist common.RunIDs, err error) {
+	q, err := loadQueue(ctx, runID.LUCIProject())
+	if err != nil {
+		return "", nil, err
+	}
+	return q.Current, q.Waitlist, nil
+}

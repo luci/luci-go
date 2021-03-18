@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/config"
 	gobupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -35,6 +36,9 @@ import (
 // depending on the event received).
 type RunState struct {
 	Run run.Run
+
+	cachedConfigGroup   *config.ConfigGroup
+	cachedConfigGroupID config.ConfigGroupID
 	// TODO(yiwzhang): add RunOwner, []RunCL, []RunTryjob.
 }
 
@@ -124,4 +128,20 @@ func (rs *RunState) RemoveRunFromCLs(ctx context.Context) error {
 		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
 	}
 	return nil
+}
+
+// LoadConfigGroup the ConfigGroup used by this Run.
+//
+// Caches the result inside the RunState.
+func (rs *RunState) LoadConfigGroup(ctx context.Context) (*config.ConfigGroup, error) {
+	cgID := rs.Run.ConfigGroupID
+	if cgID == rs.cachedConfigGroupID {
+		return rs.cachedConfigGroup, nil
+	}
+	cg, err := config.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), cgID)
+	if err != nil {
+		return nil, err
+	}
+	rs.cachedConfigGroup, rs.cachedConfigGroupID = cg, cgID
+	return cg, nil
 }
