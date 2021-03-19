@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "749b2a2c_514301ee",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-19T21:48:12Z",
+      "side": 1,
+      "message": "\"errors.Is\" is not defined in go1.11, as such all our GAE go1.11 apps are failing deploys now: https://ci.chromium.org/ui/p/infradata-gae/builders/ci/gae-deploy/b8852295893391145280/overview",
+      "revId": "e999dcd2e970301f9c1daf72714b346768d7831c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
