@@ -75,6 +75,8 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 	inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 	stp := &model.BuildSteps{Build: inf.Build}
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Create new object because datastore.Get doesn't reset all fields.
+		bld = &model.Build{ID: bld.ID}
 		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
 			switch merr, ok := err.(errors.MultiError); {
 			case !ok:
