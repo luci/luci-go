@@ -87,7 +87,7 @@ func toSwarmMap(m map[string]string) []*swarm.SwarmingRpcsStringPair {
 }
 
 func toIntSeconds(p *duration.Duration) int64 {
-	return int64(google.DurationFromProto(p).Seconds())
+	return int64(p.AsDuration().Seconds())
 }
 
 func httpClients(c context.Context) (anonC, authC *http.Client) {
@@ -330,7 +330,7 @@ func (d *swarmingDist) GetStatus(q *dm.Quest_Desc, tok distributor.Token) (*dm.R
 			Object: data,
 			Size:   uint32(len(data)),
 			Expiration: google.NewTimestamp(
-				clock.Now(d).Add(google.DurationFromProto(d.sCfg.Isolate.Expiration))),
+				clock.Now(d).Add(d.sCfg.Isolate.Expiration.AsDuration())),
 		}
 
 	default:

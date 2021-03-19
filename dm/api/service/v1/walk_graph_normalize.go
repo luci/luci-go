@@ -20,7 +20,6 @@ import (
 
 	"github.com/xtgo/set"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 )
 
 const (
@@ -95,7 +94,7 @@ func (w *WalkGraphReq) Normalize() error {
 		if w.Limit.MaxDepth < -1 {
 			return errors.New("limit.max_depth must be >= -1")
 		}
-		if google.DurationFromProto(w.Limit.GetMaxTime()) < 0 {
+		if w.Limit.GetMaxTime().AsDuration() < 0 {
 			return errors.New("limit.max_time must be positive")
 		}
 	} else {

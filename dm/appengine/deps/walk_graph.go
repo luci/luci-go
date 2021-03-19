@@ -28,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor"
@@ -432,7 +431,7 @@ func (g *graphWalker) excludedAttempt(aid *dm.Attempt_ID) bool {
 
 func doGraphWalk(ctx context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
 	timeoutProto := req.Limit.MaxTime
-	timeout := google.DurationFromProto(timeoutProto)
+	timeout := timeoutProto.AsDuration()
 	if timeoutProto == nil || timeout > maxTimeout {
 		timeout = maxTimeout
 	}
