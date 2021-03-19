@@ -26,6 +26,7 @@ export enum GA_ACTIONS {
   TAB_VISITED = 'Tab Visited',
   CLICK = 'Click',
   LOADING_TIME = 'Loading Time',
+  EXPAND = 'Expand',
 }
 
 export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
