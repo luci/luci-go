@@ -17,10 +17,10 @@ package datastore
 import (
 	"bytes"
 	"context"
-	"errors"
 	"sort"
 
 	"go.chromium.org/luci/common/data/cmpbin"
+	"go.chromium.org/luci/common/errors"
 )
 
 // queryIterator is an iterator for datastore query results.
@@ -51,13 +51,11 @@ func startQueryIterator(ctx context.Context, fq *FinalizedQuery) *queryIterator 
 				return nil
 			}
 		})
-		if err == Stop || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		if err == nil || err == Stop || errors.Contains(err, context.Canceled) || errors.Contains(err, context.DeadlineExceeded) {
 			return
 		}
-		if err != nil {
-			qi.itemCh <- &rawQueryResult{
-				err: err,
-			}
+		qi.itemCh <- &rawQueryResult{
+			err: err,
 		}
 	}()
 
