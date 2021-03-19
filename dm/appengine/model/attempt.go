@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	bf "go.chromium.org/luci/tumble/bitfield"
 )
@@ -156,8 +157,8 @@ func (a *Attempt) DataProto() (ret *dm.Attempt_Data) {
 	default:
 		panic(fmt.Errorf("unknown Attempt_State: %s", a.State))
 	}
-	ret.Created = google.NewTimestamp(a.Created)
-	ret.Modified = google.NewTimestamp(a.Modified)
+	ret.Created = timestamppb.New(a.Created)
+	ret.Modified = timestamppb.New(a.Modified)
 	ret.NumExecutions = a.CurExecution
 	return ret
 }

@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -195,13 +196,13 @@ func TestSetPackageHidden(t *testing.T) {
 				Kind:    api.EventKind_PACKAGE_UNHIDDEN,
 				Package: "a",
 				Who:     string(testutil.TestUser),
-				When:    google.NewTimestamp(testutil.TestTime.Add(time.Second)),
+				When:    timestamppb.New(testutil.TestTime.Add(time.Second)),
 			},
 			{
 				Kind:    api.EventKind_PACKAGE_HIDDEN,
 				Package: "a",
 				Who:     string(testutil.TestUser),
-				When:    google.NewTimestamp(testutil.TestTime),
+				When:    timestamppb.New(testutil.TestTime),
 			},
 		})
 	})

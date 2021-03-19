@@ -20,12 +20,12 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -36,12 +36,13 @@ import (
 	"go.chromium.org/luci/appengine/mapper/splitter"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
 	testTime        = testclock.TestRecentTimeUTC.Round(time.Millisecond)
-	testTimeAsProto = google.NewTimestamp(testTime)
+	testTimeAsProto = timestamppb.New(testTime)
 )
 
 type intEnt struct {
@@ -281,7 +282,7 @@ func TestController(t *testing.T) {
 					State:   State_SUCCESS,
 					Created: testTimeAsProto,
 					// There's 2 sec delay before UpdateJobState task.
-					Updated:           google.NewTimestamp(testTime.Add(2 * time.Second)),
+					Updated:           timestamppb.New(testTime.Add(2 * time.Second)),
 					TotalEntities:     512,
 					ProcessedEntities: 512,
 					EntitiesPerSec:    256,

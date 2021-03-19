@@ -21,14 +21,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -52,7 +51,7 @@ func TestMintedGrantInfo(t *testing.T) {
 				ServiceAccount:   "service-account@robots.com",
 				Proxy:            "user:proxy@example.com",
 				EndUser:          "user:end-user@example.com",
-				IssuedAt:         google.NewTimestamp(time.Date(2015, time.February, 3, 4, 5, 6, 0, time.UTC)),
+				IssuedAt:         timestamppb.New(time.Date(2015, time.February, 3, 4, 5, 6, 0, time.UTC)),
 				ValidityDuration: 3600,
 			},
 			ConfigRev: "config-rev",

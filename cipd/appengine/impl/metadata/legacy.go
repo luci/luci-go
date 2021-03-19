@@ -23,11 +23,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -437,7 +437,7 @@ func mergeIntoPrefixMetadata(ctx context.Context, prefix string, ents []*package
 		if modTime.IsZero() || modTime.Before(pkgACL.ModifiedTS) {
 			modTime = pkgACL.ModifiedTS
 			md.UpdateUser = pkgACL.ModifiedBy
-			md.UpdateTime = google.NewTimestamp(modTime)
+			md.UpdateTime = timestamppb.New(modTime)
 		}
 
 		// Collect a list of principals defined in packageACL, skipping unrecognized
