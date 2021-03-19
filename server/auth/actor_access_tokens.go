@@ -122,7 +122,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		// Mint is called on cache miss, under the lock.
 		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
 			// Need an authenticating transport to talk to IAM.
-			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope))
+			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(CloudOAuthScopes...))
 			if err != nil {
 				return nil, err, "ERROR_NO_TRANSPORT"
 			}
