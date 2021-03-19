@@ -450,22 +450,39 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           this.appState.showSettingsDialog = false;
         }}
       >
-        <label for="default-tab-selector">Default tab:</label>
-        <select
-          id="default-tab-selector"
-          @change=${(e: InputEvent) =>
-            (this.uncommittedConfigs.defaultBuildPageTabName = (e.target as HTMLOptionElement).value)}
-        >
-          ${TAB_NAME_LABEL_TUPLES.map(
-            ([tabName, label]) => html`
-              <option value=${tabName} ?selected=${tabName === this.uncommittedConfigs.defaultBuildPageTabName}>
-                ${label}
-              </option>
-            `
-          )}
-        </select>
-        <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
-        <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
+        <table>
+          <tr>
+            <td>Default tab:</td>
+            <td>
+              <select
+                id="default-tab-selector"
+                @change=${(e: InputEvent) =>
+                  (this.uncommittedConfigs.defaultBuildPageTabName = (e.target as HTMLOptionElement).value)}
+              >
+                ${TAB_NAME_LABEL_TUPLES.map(
+                  ([tabName, label]) => html`
+                    <option value=${tabName} ?selected=${tabName === this.uncommittedConfigs.defaultBuildPageTabName}>
+                      ${label}
+                    </option>
+                  `
+                )}
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>New test results tab:</td>
+            <td style="padding-left: 5px;">
+              <input
+                type="checkbox"
+                ?checked=${this.uncommittedConfigs.newTestResultsTab}
+                @change=${() =>
+                  (this.uncommittedConfigs.newTestResultsTab = !this.uncommittedConfigs.newTestResultsTab)}
+              />
+            </td>
+          </tr>
+          <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
+          <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
+        </table>
       </mwc-dialog>
       <mwc-dialog
         id="feedback-dialog"
