@@ -90,6 +90,8 @@ export class BuildState {
     // is set to true so they no longer subscribes to any external observable.
     this.relatedBuilds;
     this.queryBlamelistResIterFns;
+    this.builder$;
+    this.permittedActions$;
   }
 
   private buildQueryTime = 0;
@@ -130,7 +132,7 @@ export class BuildState {
   }
 
   @computed
-  private get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
+  private get relatedBuildsReq(): IPromiseBasedObservable<readonly Build[]> {
     if (!this.build) {
       return fromPromise(Promise.race([]));
     }
@@ -171,10 +173,10 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   get relatedBuilds(): readonly BuildExt[] | null {
-    if (this.isDisposed || this.relatedBuildReq.state !== FULFILLED) {
+    if (this.isDisposed || this.relatedBuildsReq.state !== FULFILLED) {
       return null;
     }
-    return this.relatedBuildReq.value.map((build) => new BuildExt(build));
+    return this.relatedBuildsReq.value.map((build) => new BuildExt(build));
   }
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
@@ -239,6 +241,42 @@ export class BuildState {
   @computed
   get builder(): BuilderItem | null {
     return this.builder$.state === FULFILLED ? this.builder$.value : null;
+  }
+
+  @computed private get bucketResourceId() {
+    const builder = this.builderId || this.build?.builder;
+    if (!builder) {
+      return null;
+    }
+    return `luci.${builder.project}.${builder.bucket}`;
+  }
+
+  @computed
+  private get permittedActions$() {
+    if (!this.appState.accessService || !this.bucketResourceId) {
+      // Returns a promise that never resolves when the dependencies aren't
+      // ready.
+      return fromPromise(Promise.race([]));
+    }
+
+    // Establish a dependency on the timestamp.
+    this.timestamp;
+
+    return fromPromise(
+      this.appState.accessService?.permittedActions({
+        resourceKind: 'bucket',
+        resourceIds: [this.bucketResourceId],
+      })
+    );
+  }
+
+  @computed({ keepAlive: true })
+  get permittedActions(): Set<string> {
+    const actions =
+      !this.isDisposed && this.permittedActions$.state === FULFILLED
+        ? this.permittedActions$.value.permitted[this.bucketResourceId!].actions
+        : undefined;
+    return new Set(actions || []);
   }
 
   // Refresh all data that depends on the timestamp.

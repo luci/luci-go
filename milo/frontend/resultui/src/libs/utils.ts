@@ -67,3 +67,10 @@ export async function sha256(message: string) {
   const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   return hashHex;
 }
+
+/**
+ * Returns a promise that resolves after the specified duration.
+ */
+export function timeout(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
