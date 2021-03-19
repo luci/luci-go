@@ -22,6 +22,30 @@
       },
       "revId": "f91b494e5f4ecce806c776579db95c90b4ce57bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc0310ff_7cde073d",
+        "filename": "milo/frontend/resultui/karma.conf.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T07:14:24Z",
+      "side": 1,
+      "message": "It is \"0\" but the semantic here is that:\nwhatever JS value we want to assign to the variable, we need to convert it to JSON notation.\nSo I prefer leaving it as `JSON.stringify(0)`.",
+      "parentUuid": "cf5c0bb5_b6bec74d",
+      "range": {
+        "startLine": 81,
+        "startChar": 20,
+        "endLine": 81,
+        "endChar": 37
+      },
+      "revId": "f91b494e5f4ecce806c776579db95c90b4ce57bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
