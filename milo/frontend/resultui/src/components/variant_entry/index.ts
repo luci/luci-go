@@ -43,6 +43,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref prevVariant?: TestVariant;
   @observable.ref displayVariantId = true;
   @observable.ref renderCallback: Function | null = null;
+  @observable.ref expandedCallback: Function | null = null;
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -53,6 +54,10 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     // Always render the content once it was expanded so the descendants' states
     // don't get reset after the node is collapsed.
     this.shouldRenderContent = this.shouldRenderContent || newVal;
+
+    if (newVal) {
+      this.expandedCallback?.();
+    }
   }
 
   /**

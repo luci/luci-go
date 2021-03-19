@@ -20,7 +20,7 @@ import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable, reaction } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 import '../components/dot_spinner';
 import '../components/hotkey';
@@ -220,22 +220,29 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       : html``;
   }
 
+  @computed private get gaLabelPrefix() {
+    return 'testresults_' + this.invocationState.invocationId;
+  }
+
   private sendLoadingTimeToGA() {
     if (this.sentLoadingTimeToGA) {
       return;
     }
     this.sentLoadingTimeToGA = true;
-    const prefix = 'testresults_' + this.invocationState.invocationId;
     trackEvent(
       GA_CATEGORIES.TEST_RESULTS_TAB,
       GA_ACTIONS.LOADING_TIME,
-      generateRandomLabel(prefix),
+      generateRandomLabel(this.gaLabelPrefix),
       Date.now() - this.enterTimestamp
     );
   }
 
   private variantRenderedCallback = () => {
     this.sendLoadingTimeToGA();
+  };
+
+  private variantExpandedCallback = () => {
+    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.EXPAND_ENTRY, `${this.gaLabelPrefix}_${VISIT_ID}`, 1);
   };
 
   protected updated() {
@@ -292,6 +299,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
             .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
             .prerender=${true}
             .renderCallback=${this.variantRenderedCallback}
+            .expandedCallback=${this.variantExpandedCallback}
           ></milo-variant-entry>
         `
       )}
