@@ -72,6 +72,8 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return bld.ToProto(ctx, m)
 	}
 
+	// TODO(crbug.com/1189937): Remove reinitialization of bld.
+	bld = &model.Build{ID: req.Id}
 	inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 	stp := &model.BuildSteps{Build: inf.Build}
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
