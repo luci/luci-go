@@ -20,9 +20,11 @@ export enum GA_CATEGORIES {
   TIMELINE_TAB = 'Timeline Tab',
   BLAMELIST_TAB = 'Blamelist Tab',
   STEP_LINKS = 'Step Links',
+  LEGACY_BUILD_PAGE = 'Legacy Build Page',
 }
 
 export enum GA_ACTIONS {
+  SWITCH_VERSION = 'Switch Version',
   TAB_VISITED = 'Tab Visited',
   CLICK = 'Click',
   LOADING_TIME = 'Loading Time',
