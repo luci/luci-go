@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b5c123b_edffa577",
+        "filename": "gae/service/datastore/checkfilter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-19T20:58:33Z",
+      "side": 1,
+      "message": "No, I don\u0027t think so. According to the calling hierarchy, the entrance of all outside calls are from `write/read functions in interface.go`, where they always use `Raw(ctx)` to get the installed datastore. While in `Raw(ctx)`, it always use `applyCheckFilter()`.",
+      "parentUuid": "b32f9dcc_b45166b7",
+      "revId": "86d3f4dcb4b0122fb4b7d431a340f21a928ab558",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6599e088_00c1fdaa",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-03-19T17:36:55Z",
       "side": 1,
       "message": "I think wrapping cb in checkCtxDone is equivalent; it just means that `cb` might be called \u0027one more time\u0027, but I think that\u0027s fine.",
+      "revId": "86d3f4dcb4b0122fb4b7d431a340f21a928ab558",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bcbbb99_8b0366a0",
+        "filename": "gae/service/datastore/checkfilter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-19T20:58:33Z",
+      "side": 1,
+      "message": "Yeah, that\u0027s true. Refactor it to call `checkCtxDone()`.",
+      "parentUuid": "6599e088_00c1fdaa",
       "revId": "86d3f4dcb4b0122fb4b7d431a340f21a928ab558",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
