@@ -18,7 +18,9 @@ import (
 	"context"
 	"time"
 
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"google.golang.org/genproto/googleapis/bytestream"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
@@ -35,6 +37,10 @@ import (
 // internal.CommonPostlude.
 type recorderServer struct {
 	*Options
+
+	// casClient is an instance of ContentAddressableStorageClient which is used for
+	// artifact batch operations.
+	casClient repb.ContentAddressableStorageClient
 }
 
 // Options is recorder server configuration.
@@ -50,26 +56,27 @@ type Options struct {
 
 // InitServer initializes a recorder server.
 func InitServer(srv *server.Server, opt Options) error {
-	pb.RegisterRecorderServer(srv.PRPC, &pb.DecoratedRecorder{
-		Service:  &recorderServer{Options: &opt},
-		Postlude: internal.CommonPostlude,
-	})
-
-	return installArtifactCreationHandler(srv, &opt)
-}
-
-// installArtifactCreationHandler installs artifact creation handler.
-func installArtifactCreationHandler(srv *server.Server, opt *Options) error {
-	if opt.ArtifactRBEInstance == "" {
-		return errors.Reason("opt.ArtifactRBEInstance is required").Err()
-	}
-
 	conn, err := artifactcontent.RBEConn(srv.Context)
 	if err != nil {
 		return err
 	}
+	pb.RegisterRecorderServer(srv.PRPC, &pb.DecoratedRecorder{
+		Service: &recorderServer{
+			Options:   &opt,
+			casClient: repb.NewContentAddressableStorageClient(conn),
+		},
+		Postlude: internal.CommonPostlude,
+	})
+	return installArtifactCreationHandler(srv, &opt, conn)
+}
 
-	bs := bytestream.NewByteStreamClient(conn)
+// installArtifactCreationHandler installs artifact creation handler.
+func installArtifactCreationHandler(srv *server.Server, opt *Options, rbeConn *grpc.ClientConn) error {
+	if opt.ArtifactRBEInstance == "" {
+		return errors.Reason("opt.ArtifactRBEInstance is required").Err()
+	}
+
+	bs := bytestream.NewByteStreamClient(rbeConn)
 	ach := &artifactCreationHandler{
 		RBEInstance: opt.ArtifactRBEInstance,
 		NewCASWriter: func(ctx context.Context) (bytestream.ByteStream_WriteClient, error) {

@@ -15,10 +15,18 @@
 package recorder
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"testing"
+
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	spb "google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -26,12 +34,33 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+// fakeRBEClient mocks BatchUpdateBlobs.
+type fakeRBEClient struct {
+	repb.ContentAddressableStorageClient
+	req  *repb.BatchUpdateBlobsRequest
+	resp *repb.BatchUpdateBlobsResponse
+	err  error
+}
+
+func (c *fakeRBEClient) BatchUpdateBlobs(ctx context.Context, in *repb.BatchUpdateBlobsRequest, opts ...grpc.CallOption) (*repb.BatchUpdateBlobsResponse, error) {
+	c.req = in
+	return c.resp, c.err
+}
+
+func (c *fakeRBEClient) mockResp(err error, cds ...codes.Code) {
+	c.err = err
+	c.resp = &repb.BatchUpdateBlobsResponse{}
+	for _, cd := range cds {
+		c.resp.Responses = append(c.resp.Responses, &repb.BatchUpdateBlobsResponse_Response{
+			Status: &spb.Status{Code: int32(cd)},
+		})
+	}
+}
 
 func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 	newArtReq := func(parent, artID, contentType string) *pb.CreateArtifactRequest {
@@ -96,27 +125,117 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 func TestBatchCreateArtifacts(t *testing.T) {
 	Convey("TestBatchCreateArtifacts", t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		recorder := newTestRecorderServer()
-		bReq := &pb.BatchCreateArtifactsRequest{
-			Requests: []*pb.CreateArtifactRequest{
-				&pb.CreateArtifactRequest{
-					Parent:   "invocations/inv",
-					Artifact: &pb.Artifact{ArtifactId: "art1"},
-				},
-			},
-		}
-
 		token, err := generateInvocationToken(ctx, "inv")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
+		casClient := &fakeRBEClient{}
+		recorder := newTestRecorderServer()
+		recorder.casClient = casClient
+		bReq := &pb.BatchCreateArtifactsRequest{}
+
+		appendArtReq := func(aID, content, cType string) {
+			bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
+				Parent: "invocations/inv",
+				Artifact: &pb.Artifact{
+					ArtifactId: aID, Contents: []byte(content), ContentType: cType,
+				},
+			})
+		}
+		fetchState := func(aID string) (size int64, hash string, contentType string) {
+			testutil.MustReadRow(
+				ctx, "Artifacts", invocations.ID("inv").Key("", aID),
+				map[string]interface{}{
+					"Size":        &size,
+					"RBECASHash":  &hash,
+					"ContentType": &contentType,
+				},
+			)
+			return
+		}
+		compHash := func(content string) string {
+			h := sha256.Sum256([]byte(content))
+			return fmt.Sprintf("sha256:%s", hex.EncodeToString(h[:]))
+		}
+
 		Convey("works", func() {
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			_, err = recorder.BatchCreateArtifacts(ctx, bReq)
+			appendArtReq("art1", "c0ntent", "text/plain")
+			appendArtReq("art2", "c1ntent", "text/richtext")
+			casClient.mockResp(nil, codes.OK, codes.OK)
+
+			resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, &pb.BatchCreateArtifactsResponse{
+				Artifacts: []*pb.Artifact{
+					{
+						Name:        "invocations/inv/artifacts/art1",
+						ArtifactId:  "art1",
+						ContentType: "text/plain",
+						SizeBytes:   7,
+					},
+					{
+						Name:        "invocations/inv/artifacts/art2",
+						ArtifactId:  "art2",
+						ContentType: "text/richtext",
+						SizeBytes:   7,
+					},
+				},
+			})
+			// verify the RBECAS reqs
+			So(casClient.req, ShouldResemble, &repb.BatchUpdateBlobsRequest{
+				InstanceName: "",
+				Requests: []*repb.BatchUpdateBlobsRequest_Request{
+					{
+						Digest: &repb.Digest{
+							Hash:      compHash("c0ntent"),
+							SizeBytes: int64(len("c0ntent")),
+						},
+						Data: []byte("c0ntent"),
+					},
+					{
+						Digest: &repb.Digest{
+							Hash:      compHash("c1ntent"),
+							SizeBytes: int64(len("c1ntent")),
+						},
+						Data: []byte("c1ntent"),
+					},
+				},
+			})
+			// verify the Spanner states
+			size, hash, cType := fetchState("art1")
+			So(size, ShouldEqual, int64(len("c0ntent")))
+			So(hash, ShouldEqual, compHash("c0ntent"))
+			So(cType, ShouldEqual, "text/plain")
+
+			size, hash, cType = fetchState("art2")
+			So(size, ShouldEqual, int64(len("c1ntent")))
+			So(hash, ShouldEqual, compHash("c1ntent"))
+			So(cType, ShouldEqual, "text/richtext")
+		})
+
+		Convey("BatchUpdateBlobs fails", func() {
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			appendArtReq("art1", "c0ntent", "text/plain")
+			appendArtReq("art2", "c1ntent", "text/richtext")
+
+			Convey("Partly", func() {
+				casClient.mockResp(nil, codes.OK, codes.InvalidArgument)
+				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldErrLike, `artifact "invocations/inv/artifacts/art2": cas.BatchUpdateBlobs failed`)
+			})
+
+			Convey("Entirely", func() {
+				// exceeded the maximum size limit is the only possible error that
+				// can cause the entire request failed.
+				casClient.mockResp(errors.New("err"), codes.OK, codes.OK)
+				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldErrLike, "cas.BatchUpdateBlobs failed")
+			})
 		})
 
 		Convey("Token", func() {
+			appendArtReq("art1", "", "text/plain")
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 			Convey("Missing", func() {
@@ -132,42 +251,47 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		})
 
 		Convey("Verify state", func() {
+			appendArtReq("art1", "c0ntent", "text/plain")
+			casClient.mockResp(nil, codes.OK, codes.OK)
+
 			Convey("Finalized invocation", func() {
 				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
 
-			compHash := func(content string) string {
-				h := sha256.Sum256([]byte(content))
-				return fmt.Sprintf("sha256:%s", hex.EncodeToString(h[:]))
-			}
 			art := map[string]interface{}{
 				"InvocationId": invocations.ID("inv"),
 				"ParentId":     "",
 				"ArtifactId":   "art1",
-				"RBECASHash":   compHash("this is content"),
-				"Size":         len("this is content"),
+				"RBECASHash":   compHash("c0ntent"),
+				"Size":         len("c0ntent"),
+				"ContentType":  "text/plain",
 			}
 
 			Convey("Same artifact exists", func() {
-				bReq.Requests[0].Artifact.Contents = []byte("this is content")
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
-				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldBeNil)
+				So(resp, ShouldResemble, (*pb.BatchCreateArtifactsResponse)(nil))
 			})
 
 			Convey("Different artifact exists", func() {
-				bReq.Requests[0].Artifact.Contents = []byte("this is NOT content")
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
+
+				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different size")
+
+				bReq.Requests[0].Artifact.Contents = []byte("c1ntent")
+				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
+				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different hash")
 			})
 		})
 	})

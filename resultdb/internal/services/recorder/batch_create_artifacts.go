@@ -21,7 +21,9 @@ import (
 	"mime"
 
 	"cloud.google.com/go/spanner"
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -171,15 +173,17 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different size: %d != %d`, a.name(invID), a.size, st.size)
 		}
 
-		h := sha256.Sum256(a.data)
-		newHash := artifacts.AddHashPrefix(hex.EncodeToString(h[:]))
+		// Save the hash, so that it can be reused in the post-verification
+		// after rbecase.UpdateBlob().
+		if a.hash == "" {
+			h := sha256.Sum256(a.data)
+			a.hash = artifacts.AddHashPrefix(hex.EncodeToString(h[:]))
+		}
+
 		switch {
 		case !ok:
-			// New artifact; save the hash, as it will be checked in the post-verification
-			// after rbecase.UpdateBlob().
-			a.hash = newHash
 			newArts = append(newArts, a)
-		case newHash != st.hash:
+		case a.hash != st.hash:
 			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different hash`, a.name(invID))
 		default:
 			// artifact exists
@@ -188,13 +192,11 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 	return newArts, nil
 }
 
-// checkArtStates checks if the states of the associated invocation and artifacts are valid.
-// On success, it returns a list of the artifactCreationRequests of which artifact don't
-// have states in Spanner yet.
+// checkArtStates checks if the states of the associated invocation and artifacts are
+// compatible with creation of the artifacts. On success, it returns a list of
+// the artifactCreationRequests of which artifact don't have states in Spanner yet.
 func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) ([]*artifactCreationRequest, error) {
 	eg, ctx := errgroup.WithContext(ctx)
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 	eg.Go(func() error {
 		invState, err := invocations.ReadState(ctx, invID)
 		if invState != pb.Invocation_ACTIVE {
@@ -214,6 +216,62 @@ func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactC
 	return newArts, nil
 }
 
+// createArtifactStates creates the states of given artifacts in Spanner.
+func createArtifactStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) error {
+	var noStateArts []*artifactCreationRequest
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) (err error) {
+		// Verify all the states again.
+		noStateArts, err = checkArtStates(ctx, invID, arts)
+		if err != nil {
+			return err
+		}
+		if len(noStateArts) == 0 {
+			logging.Warningf(ctx, "The states of all the artifacts already exist.")
+		}
+		for _, a := range noStateArts {
+			span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]interface{}{
+				"InvocationId": invID,
+				"ParentId":     a.parentID(),
+				"ArtifactId":   a.artifactID,
+				"ContentType":  a.contentType,
+				"Size":         a.size,
+				"RBECASHash":   a.hash,
+			}))
+		}
+		return nil
+	})
+	return errors.Annotate(err, "failed to write artifact to Spanner").Err()
+}
+
+func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.ContentAddressableStorageClient, invID invocations.ID, arts []*artifactCreationRequest) error {
+	casReq := &repb.BatchUpdateBlobsRequest{InstanceName: rbeIns}
+	for _, a := range arts {
+		casReq.Requests = append(casReq.Requests, &repb.BatchUpdateBlobsRequest_Request{
+			Digest: &repb.Digest{Hash: a.hash, SizeBytes: a.size},
+			Data:   a.data,
+		})
+	}
+	resp, err := casClient.BatchUpdateBlobs(ctx, casReq, &grpc.MaxSendMsgSizeCallOption{MaxBatchCreateArtifactSize})
+	if err != nil {
+		// If BatchUpdateBlobs() returns INVALID_ARGUMENT, it means that
+		// the total size of the artifact contents was bigger than the max size that
+		// BatchUpdateBlobs() can accept.
+		return errors.Annotate(err, "cas.BatchUpdateBlobs failed").Err()
+	}
+	for i, r := range resp.GetResponses() {
+		cd := codes.Code(r.Status.Code)
+		if cd != codes.OK {
+			// Each individual error can be due to resource exhausted or unmatched digest.
+			// If unmatched digest, this RPC has a bug and needs to be fixed.
+			// If resource exhausted, the RBE server quota needs to be adjusted.
+			//
+			// Either case, it's a server-error, and an internal error will be returned.
+			return errors.Reason("artifact %q: cas.BatchUpdateBlobs failed", arts[i].name(invID)).Err()
+		}
+	}
+	return nil
+}
+
 // BatchCreateArtifacts implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
 	token, err := extractUpdateToken(ctx)
@@ -231,7 +289,13 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	if err := validateInvocationToken(ctx, token, invID); err != nil {
 		return nil, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
-	artsToCreate, err := checkArtStates(ctx, invID, arts)
+
+	var artsToCreate []*artifactCreationRequest
+	func() {
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
+		artsToCreate, err = checkArtStates(ctx, invID, arts)
+	}()
 	if err != nil {
 		return nil, err
 	}
@@ -240,6 +304,22 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		return nil, nil
 	}
 
-	// TODO(ddoman): upload the artifacts to RBE-CAS.
-	return nil, nil
+	if err := uploadArtifactBlobs(ctx, s.ArtifactRBEInstance, s.casClient, invID, artsToCreate); err != nil {
+		return nil, err
+	}
+	if err := createArtifactStates(ctx, invID, artsToCreate); err != nil {
+		return nil, err
+	}
+
+	// Return all the artifacts to indicate that they were created.
+	ret := &pb.BatchCreateArtifactsResponse{Artifacts: make([]*pb.Artifact, len(arts))}
+	for i, a := range arts {
+		ret.Artifacts[i] = &pb.Artifact{
+			Name:        a.name(invID),
+			ArtifactId:  a.artifactID,
+			ContentType: a.contentType,
+			SizeBytes:   a.size,
+		}
+	}
+	return ret, nil
 }
