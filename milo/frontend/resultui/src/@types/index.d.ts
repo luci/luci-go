@@ -41,3 +41,8 @@ declare const ENABLE_GA: boolean;
  * Whether the app is in production mode.
  */
 declare const PRODUCTION: boolean;
+
+/**
+ * A string that is unique per page load;
+ */
+declare const VISIT_ID: string;
