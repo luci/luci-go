@@ -34,6 +34,24 @@
       "parentUuid": "749b2a2c_514301ee",
       "revId": "e999dcd2e970301f9c1daf72714b346768d7831c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9c87438_b4e074b9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-19T22:37:16Z",
+      "side": 1,
+      "message": "Didn\u0027t realize some apps still use go1.11. Thanks for catching it. fix it in this CL - http://crrev.com/c/2774577",
+      "parentUuid": "6438988e_51540b12",
+      "revId": "e999dcd2e970301f9c1daf72714b346768d7831c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
