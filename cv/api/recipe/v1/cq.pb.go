@@ -212,6 +212,7 @@ type Output struct {
 	//
 	// If specified, the order matters: the first matching Reuse message wins.
 	// If specified and no Reuse match the run, reuse is *not allowed*.
+	// If any individual Reuse block is invalid, reuse is *not allowed*.
 	//
 	// Examples:
 	//
