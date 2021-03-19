@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/data/chunkstream"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -104,7 +106,7 @@ type baseParser struct {
 
 func (p *baseParser) baseLogEntry(ts time.Time) *logpb.LogEntry {
 	e := logpb.LogEntry{
-		TimeOffset:  google.NewDuration(ts.Sub(p.timeBase)),
+		TimeOffset:  durationpb.New(ts.Sub(p.timeBase)),
 		PrefixIndex: uint64(p.counter.next()),
 		StreamIndex: p.nextIndex,
 	}
