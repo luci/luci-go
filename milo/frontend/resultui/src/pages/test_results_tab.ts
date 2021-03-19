@@ -77,13 +77,17 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   private toggleAllVariants(expand: boolean) {
     this.allVariantsWereExpanded = expand;
     this.shadowRoot!.querySelectorAll<VariantEntryElement>('milo-variant-entry').forEach((e) => (e.expanded = expand));
+
+    if (expand) {
+      trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.EXPAND, `${VISIT_ID}_expand-all`, Date.now());
+    }
   }
   private readonly toggleAllVariantsByHotkey = () => this.toggleAllVariants(!this.allVariantsWereExpanded);
 
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'test-results';
-    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
+    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED, `${VISIT_ID}_${window.location.href}`);
 
     // If first page of test results has already been loaded when connected
     // (happens when users switch tabs), we don't want to track the loading

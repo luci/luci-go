@@ -28,6 +28,7 @@ import { ID_SEG_REGEX, TestVariant } from '../../services/resultdb';
 import '../copy_to_clipboard';
 import { OnEnterList } from '../lazy_list';
 import './result_entry';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -53,6 +54,14 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     // Always render the content once it was expanded so the descendants' states
     // don't get reset after the node is collapsed.
     this.shouldRenderContent = this.shouldRenderContent || newVal;
+
+    if (newVal) {
+      trackEvent(
+        GA_CATEGORIES.TEST_RESULTS_TAB,
+        GA_ACTIONS.EXPAND,
+        `${VISIT_ID}_${this.variant.testId}_${this.variant.variantHash}`
+      );
+    }
   }
 
   /**
