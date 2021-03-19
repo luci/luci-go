@@ -205,6 +205,30 @@
       },
       "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ffdfb53b_f85b4cdc",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-19T05:20:31Z",
+      "side": 1,
+      "message": "I think the latter one.\n\nhttps://crrev.com/c/2773637 is my initial idea, still WIP, let me know wdyt.",
+      "parentUuid": "d3a48560_2275abba",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 22
+      },
+      "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
