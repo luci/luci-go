@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6489fcf_6b88e92c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-19T23:15:59Z",
+      "side": 1,
+      "message": "PTAL, more gibberish.\n\nThis will primarily affect Token Server since it uses IAM API *a lot*. Manually verified both OAuth and ID tokens (and SignBytes) still work as expected.",
+      "revId": "07a9925602c70c14008a14b4cd00c80d3c3186ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef2df3e8_b98b44d9",
+        "filename": "server/auth/actor_tokens_provider.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-19T23:15:59Z",
+      "side": 1,
+      "message": "it is 100% functionally identical refactor of existing code that used REST API",
+      "range": {
+        "startLine": 35,
+        "startChar": 5,
+        "endLine": 35,
+        "endChar": 31
+      },
+      "revId": "07a9925602c70c14008a14b4cd00c80d3c3186ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
