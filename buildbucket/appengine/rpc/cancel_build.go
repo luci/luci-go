@@ -72,9 +72,12 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return bld.ToProto(ctx, m)
 	}
 
-	inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
-	stp := &model.BuildSteps{Build: inf.Build}
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// TODO(crbug.com/1189937): Move outside transaction, do not clear fields in bld.
+		bld = &model.Build{ID: req.Id}
+		inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
+		stp := &model.BuildSteps{Build: inf.Build}
+
 		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
 			switch merr, ok := err.(errors.MultiError); {
 			case !ok:
