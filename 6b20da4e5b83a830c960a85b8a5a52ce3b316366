@@ -16,6 +16,23 @@
       "message": "I\u0027ve done all the changes. PTAL, thx.",
       "revId": "6b20da4e5b83a830c960a85b8a5a52ce3b316366",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4a60b1e_29542620",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 16
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-19T17:37:29Z",
+      "side": 1,
+      "message": "lgtm (but see proposed refactor in next CL)",
+      "revId": "6b20da4e5b83a830c960a85b8a5a52ce3b316366",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
