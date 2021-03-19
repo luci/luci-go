@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83f7017b_9e834dfe",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-19T00:53:57Z",
+      "side": 1,
+      "message": "What about inf? What about stp? I originally thought the problem was that Build is fetched outside the transaction and again inside it. If this problem will arise any time the transaction is retried then I would say we need to fix the underlying problem with urgency.",
+      "revId": "05121d9d6588b51d7be96d524c21a4c626879b4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
