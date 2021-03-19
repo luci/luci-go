@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "58937afc_f8eda2aa",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-19T00:37:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67636554_7520a0e9",
+      "range": {
+        "startLine": 48,
+        "startChar": 14,
+        "endLine": 48,
+        "endChar": 19
+      },
+      "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6b125566_ca387f02",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-03-18T22:12:34Z",
       "side": 1,
       "message": "Or maybe QUICK_DRY_RUN if we might have quick full runs before long?",
+      "range": {
+        "startLine": 49,
+        "startChar": 8,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e55f565_52e40f20",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-19T00:37:32Z",
+      "side": 1,
+      "message": "QUICK_DRY_RUN sounds okay with me if we are gonna name the full run in rts mode as QUICK_FULL_RUN. Actually, I\u0027ll delete this enumeration because this may get stale over time.",
+      "parentUuid": "6b125566_ca387f02",
       "range": {
         "startLine": 49,
         "startChar": 8,
@@ -101,6 +149,30 @@
       "side": 1,
       "message": "I think I don\u0027t understand what you mean by (1), could you clarify?\n\nAlso, IMO (2) is a reason why it *could* be a string, but the real reason why we were considering string was because we think maybe sometime later modes will be specified by some tuple of options (e.g. (submit on success, use rts)), and name will be arbitrary and may be project-specific. (Is that what you were thinking Andrii?)\n\nI\u0027m still not fully convinced it should be a string rather than enum myself.",
       "parentUuid": "33086e31_a37cbcb1",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 22
+      },
+      "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a5642369_4ca4093d",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-19T00:37:32Z",
+      "side": 1,
+      "message": "\u003e I think I don\u0027t understand what you mean by (1), could you clarify?\n\nCV defines run mode as string. If we make it a enum here, it means we need to add a conversion logic in CV to convert the mode string to an enum. I don\u0027t think it will scale well because everytime a new run mode is introduced, we must update this proto and corresponding conversion logic.",
+      "parentUuid": "3dd6f8fd_7529a913",
       "range": {
         "startLine": 52,
         "startChar": 2,
