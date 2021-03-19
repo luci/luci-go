@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1bf30363_5b833818",
+        "filename": "milo/frontend/resultui/src/context/app_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T03:03:58Z",
+      "side": 1,
+      "message": "\u003e Why do we call this func if there is no access token (shouldn\u0027t we raise an error instead)?\n\nThis is because\n1. try/catch is ugly and doesn\u0027t work with @computed value.\n2. try/catch is not type checked by TSC but nullable values are.\n3. returning a null allows us to do optional chaining.\n4. the rest of the code no longer needs to know that the service depends on the accessToken.\n\n\u003e If the access token is available *yet\", then shouldn\u0027t this.accessToken be a promise?\n\nPromise is a lot harder to deal with because LitElement.render is not async.\nAt some point, we will need to convert promise to sync code. We may as well just work with sync code from the beginning. This is also why IPromiseBasedObservale and fromPromise are used in a lot of places to convert async value to sync value.\nWe are not using IPromiseBasedObservale here because we don\u0027t care whether it\u0027s pending, rejected, or resolved. We only care whether the dependency is established or not.\n\nAt a higher level, in this code base we prefer defining items\n```\n* accessService\n  * is null if accessToken is null.\n  * is AccessService otherwise.\n\n* permitted actions query\n  * never resolves if accessToken is null.\n  * is a query to accessToken otherwise.\n\n* permitted actions\n  * is null if permitted actions query isn\u0027t resolved.\n  * is the permitted action in the response otherwise.\n```\nthan defining procedures\n```\n* after accessToken is initialised, resolve the accessService\n* after accessService is resolved, query the permitted actions\n* after the permitted actions response is resolved, get the permitted action from the response.\n* if accessToken is updated, restart the procedure.\n* if procedure is restarting and the query is still in flight, abandon the query and its callbacks.\n```\n\nNotice how the former solution doesn\u0027t care about the past or future state of the app. You can update the access token (or any observables) while the query is still pending (or at any time) and the app would work just fine, despite not having any code dealing with updates and racing conditions.\nExceptions or promises do not work well with that paradigm.\n\n\u003e also repetition. Maybe use a decorator?\nI don\u0027t think this worth adding a decorator, because\n1. A computed property can depend on its dependencies in any way, it\u0027s hard to extract the pattern in a meaningful way.\n2. We can extract a common pattern, but the resulting decorator isn\u0027t that much simpler than an if statement. (e.g. `@dependsOn(\u0027a\u0027, \u0027b\u0027, \u0027c\u0027)` vs `if (!a || !b || !c) { return null }`. \n3. Getting TSC to type check the decorated function\u0027s body (i.e. tell TSC that \u0027a\u0027, \u0027b\u0027, \u0027c\u0027 must not be null) will be very hard or impossible.\n4. There\u0027s still a long way towards ES6 decorator stabilisation. I treated @contextCosnumer/Provider as an exception because it really simplifies things a lot.\n\nIn conclusion, I think the code is fine. We do have a bit of repetition, but the logic is simple and easy to understand.",
+      "parentUuid": "bf30a844_c1b9cc12",
+      "range": {
+        "startLine": 94,
+        "startChar": 13,
+        "endLine": 94,
+        "endChar": 24
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ed98d3ef_354938cd",
         "filename": "milo/frontend/resultui/src/context/build_state.ts",
         "patchSetId": 4
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-18T21:10:55Z",
       "side": 1,
       "message": "could have been in a separate CL? and then this CL on top of that",
+      "range": {
+        "startLine": 140,
+        "startChar": 27,
+        "endLine": 140,
+        "endChar": 28
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d0661a2_e2f878c4",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T03:03:58Z",
+      "side": 1,
+      "message": "reverted.",
+      "parentUuid": "ed98d3ef_354938cd",
       "range": {
         "startLine": 140,
         "startChar": 27,
@@ -66,6 +114,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0f6ad674_1314255b",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T03:03:58Z",
+      "side": 1,
+      "message": "fixed.",
+      "parentUuid": "41e43411_08e6578d",
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b2083db3_0133dd0b",
         "filename": "milo/frontend/resultui/src/context/build_state.ts",
         "patchSetId": 4
@@ -77,6 +143,30 @@
       "writtenOn": "2021-03-18T21:10:55Z",
       "side": 1,
       "message": "i see this pattern a lot. I wonder why not have a utility function that does this for arbitrary promise\u003cresponse\u003e? unless keepAlive makes a large difference, which i don\u0027t understand\n\ncomputation in L277-288 is very lightewight, so i assume caching it doesn\u0027t make a noticeable diff\n\nthis func would have more value if it e.g. converted a list of actions to a Set.",
+      "range": {
+        "startLine": 275,
+        "startChar": 0,
+        "endLine": 282,
+        "endChar": 0
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b961016_bb9fbc2d",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T03:03:58Z",
+      "side": 1,
+      "message": "\u003e computation in L277-288 is very lightewight, so i assume caching it doesn\u0027t make a noticeable diff\nIt was added to ensure that the RPC response will not be discarded when there are no observers. But this is not needed anymore since we are now caching this in services. I\u0027ll clean up other unnecessary keepAlive in a following CL.\n\n\u003e this func would have more value if it e.g. converted a list of actions to a Set.\nDone.",
+      "parentUuid": "b2083db3_0133dd0b",
       "range": {
         "startLine": 275,
         "startChar": 0,
@@ -110,6 +200,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1569826e_2bb911d0",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T03:03:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3e3d93f_79c35bf6",
+      "range": {
+        "startLine": 85,
+        "startChar": 19,
+        "endLine": 85,
+        "endChar": 27
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3ee30fcc_50e51c79",
@@ -133,6 +247,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f0a8e0e_daeb2b85",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T03:03:58Z",
+      "side": 1,
+      "message": "fixed.",
+      "parentUuid": "3ee30fcc_50e51c79",
+      "range": {
+        "startLine": 225,
+        "startChar": 20,
+        "endLine": 225,
+        "endChar": 28
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2873c72a_211b78a1",
@@ -146,6 +284,30 @@
       "writtenOn": "2021-03-18T21:10:55Z",
       "side": 1,
       "message": "this is cached only in the AccessService object, right?\nthis value makes sense to cache in localStorage, especially if it Access service is sluggish",
+      "range": {
+        "startLine": 337,
+        "startChar": 36,
+        "endLine": 337,
+        "endChar": 42
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ed221a4_3be4048d",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T03:03:58Z",
+      "side": 1,
+      "message": "I\u0027ll see if I can cache this in service worker in a later CL.",
+      "parentUuid": "2873c72a_211b78a1",
       "range": {
         "startLine": 337,
         "startChar": 36,
