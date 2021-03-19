@@ -16,6 +16,23 @@
       "message": "Demo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/9196/test-results?q\u003d",
       "revId": "6fd71851ea41f5b795b6ade32c9a2e3ca56b5fc9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8ac413a_814ab597",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-19T15:36:23Z",
+      "side": 1,
+      "message": "nice",
+      "revId": "6fd71851ea41f5b795b6ade32c9a2e3ca56b5fc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
