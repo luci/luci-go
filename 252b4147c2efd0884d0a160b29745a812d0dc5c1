@@ -253,6 +253,30 @@
       },
       "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a3da935b_cbbe3ded",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-19T18:59:39Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "fe45697f_1573b8dc",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 22
+      },
+      "revId": "252b4147c2efd0884d0a160b29745a812d0dc5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
