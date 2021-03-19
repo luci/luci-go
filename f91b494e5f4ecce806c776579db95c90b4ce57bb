@@ -46,6 +46,30 @@
       },
       "revId": "f91b494e5f4ecce806c776579db95c90b4ce57bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "855a7ea4_b63625fe",
+        "filename": "milo/frontend/resultui/karma.conf.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-19T07:25:33Z",
+      "side": 1,
+      "message": "your comment explains the intention, but it is not clear from the code and a future reader might ask the same question. When the code is weird on its own (code\u0027s intention is unclear), then it is better to add a comment in the code, to clarify the intention.\n\nalso note that the alternative is to solve the entire problem with the comment, e.g.\n\n  VISIT_ID: \"0\" // note that this must be valid JSON\n\nor something like that",
+      "parentUuid": "cc0310ff_7cde073d",
+      "range": {
+        "startLine": 81,
+        "startChar": 20,
+        "endLine": 81,
+        "endChar": 37
+      },
+      "revId": "f91b494e5f4ecce806c776579db95c90b4ce57bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
