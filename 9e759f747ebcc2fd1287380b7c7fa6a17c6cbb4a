@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f70df08_d82f65e4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-19T20:32:33Z",
+      "side": 1,
+      "message": "PTAL\n\nI\u0027ve also verified manually it still works.",
+      "revId": "9e759f747ebcc2fd1287380b7c7fa6a17c6cbb4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
