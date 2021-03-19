@@ -15,7 +15,6 @@
 // Package iam implements wrappers around some Google Cloud IAM APIs.
 //
 // See https://cloud.google.com/iam/docs/ for general info.
+//
+// DEPRECATED: Prefer to use cloud.google.com/go/iam instead.
 package iam
-
-// TODO(vadimsh): cloud.google.com/go has some Policy wrappers now, perhaps we
-// can switch to using it.
