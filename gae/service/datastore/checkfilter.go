@@ -32,7 +32,7 @@ func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *
 	if f == nil {
 		return fmt.Errorf("datastore: RunInTransaction function is nil")
 	}
-	return tcf.RawInterface.RunInTransaction(f, opts)
+	return tcf.checkCtxDone(tcf.RawInterface.RunInTransaction(f, opts))
 }
 
 func (tcf *checkFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
@@ -42,14 +42,13 @@ func (tcf *checkFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	if cb == nil {
 		return fmt.Errorf("datastore: Run callback is nil")
 	}
-	return tcf.RawInterface.Run(fq, func(key *Key, val PropertyMap, getCursor CursorCB) error {
-		select {
-		case <-tcf.userCtx.Done():
-			return tcf.userCtx.Err()
-		default:
+	return tcf.checkCtxDone(
+		tcf.RawInterface.Run(fq, func(key *Key, val PropertyMap, getCursor CursorCB) error {
+			if err := tcf.checkCtxDone(nil); err != nil {
+				return err
+			}
 			return cb(key, val, getCursor)
-		}
-	})
+		}))
 }
 
 func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error {
@@ -78,9 +77,10 @@ func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiC
 		return nil
 	}
 
-	return tcf.RawInterface.GetMulti(keys, meta, func(idx int, val PropertyMap, err error) {
-		cb(dal.OriginalIndex(idx), val, err)
-	})
+	return tcf.checkCtxDone(
+		tcf.RawInterface.GetMulti(keys, meta, func(idx int, val PropertyMap, err error) {
+			cb(dal.OriginalIndex(idx), val, err)
+		}))
 }
 
 func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
@@ -108,9 +108,10 @@ func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 	if len(keys) == 0 {
 		return nil
 	}
-	return tcf.RawInterface.PutMulti(keys, vals, func(idx int, key *Key, err error) {
-		cb(dal.OriginalIndex(idx), key, err)
-	})
+	return tcf.checkCtxDone(
+		tcf.RawInterface.PutMulti(keys, vals, func(idx int, key *Key, err error) {
+			cb(dal.OriginalIndex(idx), key, err)
+		}))
 }
 
 func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
@@ -135,9 +136,21 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	if len(keys) == 0 {
 		return nil
 	}
-	return tcf.RawInterface.DeleteMulti(keys, func(idx int, err error) {
-		cb(dal.OriginalIndex(idx), err)
-	})
+	return tcf.checkCtxDone(
+		tcf.RawInterface.DeleteMulti(keys, func(idx int, err error) {
+			cb(dal.OriginalIndex(idx), err)
+		}))
+}
+
+// checkCtxDone checks if the user context has done. If done, return ctx.Err().
+// Otherwise, return the original error.
+func (tcf *checkFilter) checkCtxDone(err error) error {
+	select {
+	case <-tcf.userCtx.Done():
+		return tcf.userCtx.Err()
+	default:
+		return err
+	}
 }
 
 func applyCheckFilter(c context.Context, i RawInterface) RawInterface {

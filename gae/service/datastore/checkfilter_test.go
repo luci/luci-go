@@ -143,4 +143,27 @@ func TestCheckFilter(t *testing.T) {
 		})
 
 	})
+
+	Convey("Test context done", t, func() {
+		ctx := info.Set(context.Background(), fakeInfo{})
+		fds := fakeDatastore{}
+		ctx = SetRawFactory(ctx, fds.factory())
+		ctx, cancel := context.WithCancel(ctx)
+		rds := Raw(ctx)
+		fq, err := NewQuery("any").Finalize()
+		keys := []*Key{mkKey("FailAll", 1)}
+		vals := []PropertyMap{{}}
+		cancel()
+
+		So(err, ShouldBeNil)
+		So(rds.DeleteMulti(keys, func(int, error) {}), ShouldEqual, context.Canceled)
+		So(rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
+			return nil
+		}), ShouldEqual, context.Canceled)
+		So(rds.RunInTransaction(func(context.Context) error {
+			return nil
+		}, nil), ShouldEqual, context.Canceled)
+		So(rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {}), ShouldEqual, context.Canceled)
+		So(rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {}), ShouldEqual, context.Canceled)
+	})
 }
