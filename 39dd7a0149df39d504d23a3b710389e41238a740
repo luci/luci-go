@@ -39,6 +39,30 @@
       },
       "revId": "39dd7a0149df39d504d23a3b710389e41238a740",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa86b072_81ee17ad",
+        "filename": "logdog/appengine/coordinator/endpoints/services/loadStream_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-19T18:03:53Z",
+      "side": 1,
+      "message": "Wasn\u0027t it just that we need to ensure that a test uses ShouldResembleProto if So() compares protos?",
+      "parentUuid": "ed4887ab_8343f9df",
+      "range": {
+        "startLine": 110,
+        "startChar": 13,
+        "endLine": 110,
+        "endChar": 27
+      },
+      "revId": "39dd7a0149df39d504d23a3b710389e41238a740",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
