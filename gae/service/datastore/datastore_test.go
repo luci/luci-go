@@ -197,6 +197,10 @@ func (f *fakeDatastore) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	return nil
 }
 
+func (f *fakeDatastore) RunInTransaction(fu func(c context.Context) error, opts *TransactionOptions) error {
+	return nil
+}
+
 func (f *fakeDatastore) Constraints() Constraints {
 	return f.constraints
 }
