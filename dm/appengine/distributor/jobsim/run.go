@@ -284,7 +284,7 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 }
 
 func (r *runner) doStall(stg *jobsim.StallStage) {
-	dur := google.DurationFromProto(stg.Delay)
+	dur := stg.Delay.AsDuration()
 	logging.Fields{"duration": dur}.Infof(r.c, "stalling")
 	clock.Sleep(r.c, dur)
 }

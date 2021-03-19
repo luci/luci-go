@@ -22,7 +22,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
@@ -73,7 +72,7 @@ func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 
 		for _, le := range e.Logs {
 			log.Fields{
-				"timeOffset":  google.DurationFromProto(le.TimeOffset),
+				"timeOffset":  le.TimeOffset.AsDuration(),
 				"prefixIndex": le.PrefixIndex,
 				"streamIndex": le.StreamIndex,
 				"sequence":    le.Sequence,

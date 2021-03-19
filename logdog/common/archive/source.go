@@ -23,7 +23,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/renderer"
 )
@@ -61,7 +60,7 @@ func (s *safeLogEntrySource) NextLogEntry() (*logpb.LogEntry, error) {
 
 func (s *safeLogEntrySource) normalizeLogEntry(le *logpb.LogEntry) error {
 	// Calculate the time offset Duration once.
-	timeOffset := google.DurationFromProto(le.TimeOffset)
+	timeOffset := le.TimeOffset.AsDuration()
 
 	// Are any of our order constraints violated?
 	switch {

@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
@@ -81,7 +80,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		"realm":      req.Realm,
 		"prefix":     req.Prefix,
 		"source":     req.SourceInfo,
-		"expiration": google.DurationFromProto(req.Expiration),
+		"expiration": req.Expiration.AsDuration(),
 	}.Debugf(c, "Registering log prefix.")
 
 	// Note: if the project has `enforce_realms_in` setting ON and req.Realm is

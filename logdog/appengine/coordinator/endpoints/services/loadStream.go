@@ -19,7 +19,7 @@ import (
 
 	ds "go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 
 	"go.chromium.org/luci/common/clock"
@@ -74,7 +74,7 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 		"terminalIndex":   resp.State.TerminalIndex,
 		"archived":        resp.State.Archived,
 		"purged":          resp.State.Purged,
-		"age":             google.DurationFromProto(resp.Age),
+		"age":             resp.Age.AsDuration(),
 		"archivalKeySize": len(resp.ArchivalKey),
 	}.Infof(c, "Successfully loaded log stream state.")
 	return &resp, nil
