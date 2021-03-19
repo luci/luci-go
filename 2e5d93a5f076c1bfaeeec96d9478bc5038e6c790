@@ -46,6 +46,30 @@
       },
       "revId": "2e5d93a5f076c1bfaeeec96d9478bc5038e6c790",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "afc32c1f_73890168",
+        "filename": "cv/api/recipe/v1/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-19T18:01:44Z",
+      "side": 1,
+      "message": "Yeah, mode is consistent. Switching in next CL.",
+      "parentUuid": "aedebc80_015e4457",
+      "range": {
+        "startLine": 93,
+        "startChar": 11,
+        "endLine": 93,
+        "endChar": 15
+      },
+      "revId": "2e5d93a5f076c1bfaeeec96d9478bc5038e6c790",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
