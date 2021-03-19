@@ -70,6 +70,30 @@
       },
       "revId": "f91b494e5f4ecce806c776579db95c90b4ce57bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9660c0f_b9783fcb",
+        "filename": "milo/frontend/resultui/karma.conf.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-19T07:32:31Z",
+      "side": 1,
+      "message": "I see. I\u0027ll add a comment in a later CL.",
+      "parentUuid": "855a7ea4_b63625fe",
+      "range": {
+        "startLine": 81,
+        "startChar": 20,
+        "endLine": 81,
+        "endChar": 37
+      },
+      "revId": "f91b494e5f4ecce806c776579db95c90b4ce57bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
