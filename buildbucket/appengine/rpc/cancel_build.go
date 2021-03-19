@@ -78,6 +78,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 		stp := &model.BuildSteps{Build: inf.Build}
 
+		cancelSteps := true
 		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
 			switch merr, ok := err.(errors.MultiError); {
 			case !ok:
@@ -93,7 +94,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 			case protoutil.IsEnded(bld.Proto.Status):
 				return nil
 			case merr[2] == datastore.ErrNoSuchEntity:
-				stp = nil
+				cancelSteps = false
 			}
 		}
 		if inf.Proto.Swarming.GetHostname() != "" && inf.Proto.Swarming.TaskId != "" {
@@ -133,7 +134,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 
 		toPut := []interface{}{bld}
 
-		if stp != nil {
+		if cancelSteps {
 			switch changed, err := stp.CancelIncomplete(ctx, bld.Proto.EndTime); {
 			case err != nil:
 				return errors.Annotate(err, "failed to fetch build steps: %d", bld.ID).Err()
