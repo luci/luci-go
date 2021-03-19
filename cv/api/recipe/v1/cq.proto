@@ -82,17 +82,17 @@ message Output {
   Retry retry = 2;
 
   message Reuse {
-    // Regular expression for kinds of Runs for which this Reuse block applies.
+    // Regular expression for modes of Runs for which this Reuse block applies.
     // Required.
     //
     // Implicitly wrapped with (?i)$...^  (= complete case-insensitive match).
     //
     // For example,
-    //   ".+" will match all kinds of Runs,
+    //   ".+" will match all modes of Runs,
     //   "dryrun" and "fullrun" will match only Dry and Full runs, respectively.
-    string kind_regexp = 1;
+    string mode_regexp = 1;
     // If deny is true, then reuse of this build in the future Runs of the
-    // matched kind is not allowed.
+    // matched mode is not allowed.
     //
     // If false, then reuse is allowed. It's useful to stop the matching in case
     // of several Reuse messages.
@@ -113,10 +113,10 @@ message Output {
   // Examples:
   //
   //  1. To prohibit reuse only for Full runs, do:
-  //     {kind_regexp: "fullrun" deny: true}
-  //     {kind_regexp: ".+"      deny: false}
+  //     {mode_regexp: "fullrun" deny: true}
+  //     {mode_regexp: ".+"      deny: false}
   //
   //  2. To prohibit reuse for everything except Dry Runs, do:
-  //     {kind_regexp: "dryrun"}
+  //     {mode_regexp: "dryrun"}
   repeated Reuse reuse = 3;
 }
