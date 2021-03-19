@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "152c0b61_c8d6ea8f",
+        "filename": "gae/impl/cloud/google.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-19T21:25:29Z",
+      "side": 1,
+      "message": "I confirmed it was indeed a bug. Here\u0027a signed URL returned by Logdog:\n\nhttps://storage.googleapis.com/chromium-luci-logdog/luci-logdog/infra/buildbucket/cr-buildbucket.appspot.com/8852298266439158192/+/u/bot_update/stdout/logstream.entries?Expires\u003d1616190711\u0026GoogleAccessId\u003dluci-logdog%40appspot.gserviceaccount.com\u0026Signature\u003daFdURFpkWExxQkh4Wmg4Qk5SQmdTNE1lSHVCS1RrK0NZNmQyVTVvblRiZkVtbkYzWkpDNkFzUU82UG5VM0lXYUg3enV4TGE0NmJ2MUZFdmpoMmxyR0JZYXBmRjRGQTRhbmNpMmpCeWFkaXMrRCswOG9uejJMNU5tSHo2dWhHNGd1eWZzTlhOS3IzNVVGLzZGY0pkWDJnUTFxTXdSMGpNWklPckN5LzNKeXA0bUszMkFGT3NwSGF2SlZkWW5RcTNLNVRuOW1xbHpRYXM3U0wrWGhWKzR0ckdYbnpCQi9wczMrN1R1WDZROVYxbUVyZEl3MGVaTDc0N0pFNTVtakFFNG1ENEFEd1hSY1RITGZQRXMyc1UxUnlOSDZ2RmZmUzcvcXpRVWNTb0VQbzlYWGRvTXVpejRHWGkxUU9lbXlLc0xiMVVmdHoxbWo5c2pDRm84dWJLR1F3PT0%3D\n\nIt doesn\u0027t work. It\u0027s `Signature` portion after base64 decoding still looks like base64.",
+      "range": {
+        "startLine": 190,
+        "startChar": 1,
+        "endLine": 194,
+        "endChar": 2
+      },
+      "revId": "9d739c48aa312364b4704182e16c5c5ddc66c739",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
