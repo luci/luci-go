@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "44fd3e95_8d7208ea",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-19T21:31:12Z",
+      "side": 1,
+      "message": "lgtm + please regen and submit!",
+      "revId": "6797f35dcbeb51118304bf4fbb80d1b087abaa43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05c8583f_f2c83836",
+        "filename": "cv/api/bigquery/v1/attempt.pb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-19T21:31:12Z",
+      "side": 1,
+      "message": "plz regen.",
+      "revId": "6797f35dcbeb51118304bf4fbb80d1b087abaa43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
