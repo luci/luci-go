@@ -68,7 +68,7 @@ func (p *iamTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 }
 
 func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
-	client := &iam.Client{
+	client := &iam.CredentialsClient{
 		Client: &http.Client{
 			Transport: &tokenInjectingTransport{
 				transport: p.transport,

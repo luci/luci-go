@@ -24,26 +24,14 @@ import (
 	"net/url"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/logging"
 )
 
-var (
-	// DefaultIamBaseURL is IAM's core API endpoint.
-	DefaultIamBaseURL = &url.URL{
-		Scheme: "https",
-		Host:   "iam.googleapis.com",
-	}
-
-	// DefaultAccountCredentialsBaseURL is IAM's account credentials API endpoint.
-	DefaultAccountCredentialsBaseURL = &url.URL{
-		Scheme: "https",
-		Host:   "iamcredentials.googleapis.com",
-	}
-)
+// IAM credentials service URL used in non-test code.
+const iamCredentialsBackend = "https://iamcredentials.googleapis.com"
 
 // ClaimSet contains information about the JWT signature including the
 // permissions being requested (scopes), the target of the token, the issuer,
@@ -62,10 +50,11 @@ type ClaimSet struct {
 	Sub string `json:"sub,omitempty"`
 }
 
-// Client knows how to perform IAM API v1 calls.
-type Client struct {
-	Client   *http.Client // client to use to make calls
-	BasePath string       // replaceable in tests, DefaultIamBaseURL / DefaultAccountCredentials by default.
+// CredentialsClient knows how to perform IAM Credentials API v1 calls.
+type CredentialsClient struct {
+	Client *http.Client // the HTTP client to use to make calls
+
+	backendURL string // replaceable in tests, defaults to iamCredentialsBackend
 }
 
 // SignBlob signs a blob using a service account's system-managed key.
@@ -79,19 +68,19 @@ type Client struct {
 // Returns ID of the signing key and the signature on success.
 //
 // On API-level errors (e.g. insufficient permissions) returns *googleapi.Error.
-func (cl *Client) SignBlob(ctx context.Context, serviceAccount string, blob []byte) (keyName string, signature []byte, err error) {
+func (cl *CredentialsClient) SignBlob(ctx context.Context, serviceAccount string, blob []byte) (keyName string, signature []byte, err error) {
 	var request struct {
-		BytesToSign []byte `json:"bytesToSign"`
+		Payload []byte `json:"payload"`
 	}
-	request.BytesToSign = blob
+	request.Payload = blob
 	var response struct {
-		KeyID     string `json:"keyId"`
-		Signature []byte `json:"signature"`
+		KeyID      string `json:"keyId"`
+		SignedBlob []byte `json:"signedBlob"`
 	}
-	if err = cl.iamAPIRequest(ctx, "projects/-/serviceAccounts/"+serviceAccount, "signBlob", &request, &response); err != nil {
+	if err = cl.request(ctx, serviceAccount, "signBlob", &request, &response); err != nil {
 		return "", nil, err
 	}
-	return response.KeyID, response.Signature, nil
+	return response.KeyID, response.SignedBlob, nil
 }
 
 // SignJWT signs a claim set using a service account's system-managed key.
@@ -101,7 +90,7 @@ func (cl *Client) SignBlob(ctx context.Context, serviceAccount string, blob []by
 // public key to use exactly and don't need to enumerate all active keys.
 //
 // It also checks the expiration time and refuses to sign claim sets with
-// 'exp' set to more than 1h from now. Otherwise it is similar to SignBlob.
+// 'exp' set to more than 12h from now. Otherwise it is similar to SignBlob.
 //
 // The caller must have "roles/iam.serviceAccountTokenCreator" role in the
 // service account's IAM policy and caller's OAuth token must have one of the
@@ -112,7 +101,7 @@ func (cl *Client) SignBlob(ctx context.Context, serviceAccount string, blob []by
 // Returns ID of the signing key and the signed JWT on success.
 //
 // On API-level errors (e.g. insufficient permissions) returns *googleapi.Error.
-func (cl *Client) SignJWT(ctx context.Context, serviceAccount string, cs *ClaimSet) (keyName, signedJwt string, err error) {
+func (cl *CredentialsClient) SignJWT(ctx context.Context, serviceAccount string, cs *ClaimSet) (keyName, signedJwt string, err error) {
 	blob, err := json.Marshal(cs)
 	if err != nil {
 		return "", "", err
@@ -125,7 +114,7 @@ func (cl *Client) SignJWT(ctx context.Context, serviceAccount string, cs *ClaimS
 		KeyID     string `json:"keyId"`
 		SignedJwt string `json:"signedJwt"`
 	}
-	if err = cl.iamAPIRequest(ctx, "projects/-/serviceAccounts/"+serviceAccount, "signJwt", &request, &response); err != nil {
+	if err = cl.request(ctx, serviceAccount, "signJwt", &request, &response); err != nil {
 		return "", "", err
 	}
 	return response.KeyID, response.SignedJwt, nil
@@ -135,7 +124,7 @@ func (cl *Client) SignJWT(ctx context.Context, serviceAccount string, cs *ClaimS
 // :generateAccessToken API.
 //
 // On non-success HTTP status codes returns googleapi.Error.
-func (cl *Client) GenerateAccessToken(ctx context.Context, serviceAccount string, scopes []string, delegates []string, lifetime time.Duration) (*oauth2.Token, error) {
+func (cl *CredentialsClient) GenerateAccessToken(ctx context.Context, serviceAccount string, scopes []string, delegates []string, lifetime time.Duration) (*oauth2.Token, error) {
 	var body struct {
 		Delegates []string `json:"delegates,omitempty"`
 		Scope     []string `json:"scope"`
@@ -155,7 +144,7 @@ func (cl *Client) GenerateAccessToken(ctx context.Context, serviceAccount string
 		AccessToken string `json:"accessToken"`
 		ExpireTime  string `json:"expireTime"`
 	}
-	if err := cl.credentialsAPIRequest(ctx, serviceAccount, "generateAccessToken", &body, &resp); err != nil {
+	if err := cl.request(ctx, serviceAccount, "generateAccessToken", &body, &resp); err != nil {
 		return nil, err
 	}
 
@@ -175,7 +164,7 @@ func (cl *Client) GenerateAccessToken(ctx context.Context, serviceAccount string
 // :generateIdToken API.
 //
 // On non-success HTTP status codes returns googleapi.Error.
-func (cl *Client) GenerateIDToken(ctx context.Context, serviceAccount string, audience string, includeEmail bool, delegates []string) (string, error) {
+func (cl *CredentialsClient) GenerateIDToken(ctx context.Context, serviceAccount string, audience string, includeEmail bool, delegates []string) (string, error) {
 	var body struct {
 		Delegates    []string `json:"delegates,omitempty"`
 		Audience     string   `json:"audience"`
@@ -188,46 +177,24 @@ func (cl *Client) GenerateIDToken(ctx context.Context, serviceAccount string, au
 	var resp struct {
 		Token string `json:"token"`
 	}
-	if err := cl.credentialsAPIRequest(ctx, serviceAccount, "generateIdToken", &body, &resp); err != nil {
+	if err := cl.request(ctx, serviceAccount, "generateIdToken", &body, &resp); err != nil {
 		return "", err
 	}
 	return resp.Token, nil
 }
 
-// iamAPIRequest performs HTTP POST to the core IAM API endpoint.
-func (cl *Client) iamAPIRequest(ctx context.Context, resource, action string, body, resp interface{}) error {
-	if cl.BasePath != "" {
-		// We are in "testing"
-		base, err := url.Parse(cl.BasePath)
-		if err != nil {
-			return err
-		}
-		return cl.genericAPIRequest(ctx, base, resource, action, body, resp)
+// request performs HTTP POST to the IAM credentials API endpoint.
+func (cl *CredentialsClient) request(ctx context.Context, serviceAccount, action string, body, resp interface{}) error {
+	// Construct the target POST URL.
+	backendURL := cl.backendURL
+	if backendURL == "" {
+		backendURL = iamCredentialsBackend
 	}
-	return cl.genericAPIRequest(ctx, DefaultIamBaseURL, resource, action, body, resp)
-}
-
-// credentialsAPIRequest performs HTTP POST to the IAM credentials API endpoint.
-func (cl *Client) credentialsAPIRequest(ctx context.Context, serviceAccount, action string, body, resp interface{}) error {
-	resource := fmt.Sprintf("projects/-/serviceAccounts/%s", url.QueryEscape(serviceAccount))
-	if cl.BasePath != "" {
-		// We are in "testing"
-		base, err := url.Parse(cl.BasePath)
-		if err != nil {
-			return err
-		}
-		return cl.genericAPIRequest(ctx, base, resource, action, body, resp)
-	}
-	return cl.genericAPIRequest(ctx, DefaultAccountCredentialsBaseURL, resource, action, body, resp)
-}
-
-// genericAPIRequest performs HTTP POST to an IAM API endpoint.
-func (cl *Client) genericAPIRequest(ctx context.Context, base *url.URL, resource, action string, body, resp interface{}) error {
-	query, err := url.Parse(fmt.Sprintf("v1/%s:%s?alt=json", resource, action))
-	if err != nil {
-		return err
-	}
-	endpoint := base.ResolveReference(query)
+	url := fmt.Sprintf("%s/v1/projects/-/serviceAccounts/%s:%s?alt=json",
+		backendURL,
+		url.QueryEscape(serviceAccount),
+		action,
+	)
 
 	// Serialize the body.
 	var reader io.Reader
@@ -240,7 +207,7 @@ func (cl *Client) genericAPIRequest(ctx context.Context, base *url.URL, resource
 	}
 
 	// Issue the request.
-	req, err := http.NewRequest("POST", endpoint.String(), reader)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, reader)
 	if err != nil {
 		return err
 	}
@@ -250,14 +217,14 @@ func (cl *Client) genericAPIRequest(ctx context.Context, base *url.URL, resource
 
 	// Send and handle errors. This is roughly how google-api-go-client calls
 	// methods. CheckResponse returns *googleapi.Error.
-	logging.Debugf(ctx, "POST %s", endpoint)
-	res, err := ctxhttp.Do(ctx, cl.Client, req)
+	logging.Debugf(ctx, "POST %s", url)
+	res, err := cl.Client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		logging.WithError(err).Errorf(ctx, "POST %s failed", endpoint)
+		logging.WithError(err).Errorf(ctx, "POST %s failed", url)
 		return err
 	}
 	return json.NewDecoder(res.Body).Decode(resp)

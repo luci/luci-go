@@ -126,7 +126,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 			if err != nil {
 				return nil, err, "ERROR_NO_TRANSPORT"
 			}
-			client := &iam.Client{Client: &http.Client{Transport: asSelf}}
+			client := &iam.CredentialsClient{Client: &http.Client{Transport: asSelf}}
 			tok, err := client.GenerateAccessToken(ctx, params.ServiceAccount, sortedScopes, nil, 0)
 
 			// iam.GenerateAccessToken returns googleapi.Error on HTTP-level
