@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84c60083_97c412dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-19T17:36:55Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "86d3f4dcb4b0122fb4b7d431a340f21a928ab558",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b32f9dcc_b45166b7",
+        "filename": "gae/service/datastore/checkfilter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-19T17:36:55Z",
+      "side": 1,
+      "message": "Note that RawInterface is an anonymous embed; can you verify that no other methods of this require the same treatment?",
+      "revId": "86d3f4dcb4b0122fb4b7d431a340f21a928ab558",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6599e088_00c1fdaa",
+        "filename": "gae/service/datastore/checkfilter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-19T17:36:55Z",
+      "side": 1,
+      "message": "I think wrapping cb in checkCtxDone is equivalent; it just means that `cb` might be called \u0027one more time\u0027, but I think that\u0027s fine.",
+      "revId": "86d3f4dcb4b0122fb4b7d431a340f21a928ab558",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
