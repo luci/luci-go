@@ -21,12 +21,13 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -47,12 +49,12 @@ func TestRegisterStream(t *testing.T) {
 		// Set our archival delays. The project delay is smaller than the service
 		// delay, so it should be used.
 		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
-			cfg.Coordinator.ArchiveSettleDelay = google.NewDuration(10 * time.Minute)
-			cfg.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+			cfg.Coordinator.ArchiveSettleDelay = durationpb.New(10 * time.Minute)
+			cfg.Coordinator.ArchiveDelayMax = durationpb.New(24 * time.Hour)
 		})
 
 		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-			pcfg.MaxStreamAge = google.NewDuration(time.Hour)
+			pcfg.MaxStreamAge = durationpb.New(time.Hour)
 		})
 
 		// By default, the testing user is a service.
@@ -300,11 +302,11 @@ func BenchmarkRegisterStream(b *testing.B) {
 	// Set our archival delays. The project delay is smaller than the service
 	// delay, so it should be used.
 	env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
-		cfg.Coordinator.ArchiveSettleDelay = google.NewDuration(10 * time.Minute)
-		cfg.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+		cfg.Coordinator.ArchiveSettleDelay = durationpb.New(10 * time.Minute)
+		cfg.Coordinator.ArchiveDelayMax = durationpb.New(24 * time.Hour)
 	})
 	env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-		pcfg.MaxStreamAge = google.NewDuration(time.Hour)
+		pcfg.MaxStreamAge = durationpb.New(time.Hour)
 	})
 
 	// By default, the testing user is a service.

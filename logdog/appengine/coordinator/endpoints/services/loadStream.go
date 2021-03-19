@@ -25,10 +25,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // LoadStream loads the log stream state.
@@ -67,7 +67,7 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 		resp.Desc = ls.Descriptor
 	}
 	resp.ArchivalKey = lst.ArchivalKey
-	resp.Age = google.NewDuration(ds.RoundTime(clock.Now(c)).Sub(lst.Updated))
+	resp.Age = durationpb.New(ds.RoundTime(clock.Now(c)).Sub(lst.Updated))
 
 	log.Fields{
 		"id":              lst.ID(),

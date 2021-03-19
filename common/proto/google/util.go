@@ -17,7 +17,6 @@ package google
 import (
 	"time"
 
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -39,12 +38,4 @@ func TimeFromProto(t *timestamppb.Timestamp) time.Time {
 		return time.Time{}
 	}
 	return t.AsTime()
-}
-
-// NewDuration creates a new Duration protobuf from a time.Duration.
-func NewDuration(v time.Duration) *durationpb.Duration {
-	if v == 0 {
-		return nil
-	}
-	return durationpb.New(v)
 }

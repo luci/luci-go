@@ -18,8 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -51,23 +52,5 @@ func TestTimestamp(t *testing.T) {
 		// languages. e.g., reading an unset field in python injects the zero
 		// value for the field in the source message.
 		So(TimeFromProto(&timestamppb.Timestamp{}).IsZero(), ShouldBeTrue)
-	})
-}
-
-func TestDuration(t *testing.T) {
-	t.Parallel()
-
-	Convey(`Can convert to/from time.Duration instances.`, t, func() {
-		for _, v := range []time.Duration{
-			-10 * time.Second,
-			0,
-			10 * time.Second,
-		} {
-			So(NewDuration(v).AsDuration(), ShouldEqual, v)
-		}
-	})
-
-	Convey(`A zero time.Duration produces a nil Duration.`, t, func() {
-		So(NewDuration(0), ShouldBeNil)
 	})
 }
