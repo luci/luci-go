@@ -26,6 +26,8 @@ message Input {
 
   // If false, CQ would try to submit CL(s) if all other checks pass.
   // If true, CQ won't try to submit.
+  //
+  // DEPRECATED: Use run_mode instead.
   bool dry_run = 2;
 
   // If true, CQ will not take this build into account while deciding whether
@@ -40,6 +42,9 @@ message Input {
   // One possible use is to distinguish which builds must be cancelled manually,
   // and which (top_level=True) CQ would cancel itself.
   bool top_level = 4;
+
+  // The mode of the CQ Run that triggers this Tryjob.
+  string run_mode = 5;
 }
 
 // Output provides build-specific instructions back to CQ.
