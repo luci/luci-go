@@ -1660,7 +1660,7 @@ func (s *Server) initTSMon() error {
 			ProdXAccount:       s.Options.TsMonAccount,
 			FlushIntervalSec:   60,
 			ReportRuntimeStats: true,
-		},
+		},luci/cv/internal/prjmanager/clpurger/purger_test.go
 		Target: func(c context.Context) target.Task {
 			// TODO(vadimsh): We pretend to be a GAE app for now to be able to
 			// reuse existing dashboards. Each pod pretends to be a separate GAE
