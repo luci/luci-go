@@ -70,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c83fd3a1_2f93b12a",
+        "filename": "cv/api/bigquery/v1/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-19T20:58:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f689a165_d0e41aeb",
+      "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "735ce582_000e98cb",
@@ -83,6 +101,30 @@
       "writtenOn": "2021-03-19T01:17:22Z",
       "side": 1,
       "message": "This comment shouldn\u0027t mention RTS.\nBut, you can mention crbug/ for which we\u0027ve added this field for future reference.",
+      "range": {
+        "startLine": 150,
+        "startChar": 26,
+        "endLine": 150,
+        "endChar": 29
+      },
+      "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e70870b3_acad7878",
+        "filename": "cv/api/bigquery/v1/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-03-19T20:58:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "735ce582_000e98cb",
       "range": {
         "startLine": 150,
         "startChar": 26,
