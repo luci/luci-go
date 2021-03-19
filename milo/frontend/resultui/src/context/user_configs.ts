@@ -43,6 +43,7 @@ export interface UserConfigs {
   };
   askForFeedback: boolean;
   defaultBuildPageTabName: string;
+  newTestResultsTab: boolean;
 }
 
 export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
@@ -58,6 +59,7 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   outputPropLineFoldTime: Object.freeze({}),
   askForFeedback: true,
   defaultBuildPageTabName: 'build-overview',
+  newTestResultsTab: false,
 });
 
 export class UserConfigsStore {
