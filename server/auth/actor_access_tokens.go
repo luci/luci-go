@@ -17,15 +17,11 @@ package auth
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
 
-	"google.golang.org/api/googleapi"
-
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
@@ -121,25 +117,14 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 
 		// Mint is called on cache miss, under the lock.
 		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
-			// Need an authenticating transport to talk to IAM.
-			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(CloudOAuthScopes...))
+			tok, err := cfg.actorTokensProvider().GenerateAccessToken(ctx, params.ServiceAccount, sortedScopes)
 			if err != nil {
-				return nil, err, "ERROR_NO_TRANSPORT"
-			}
-			client := &iam.CredentialsClient{Client: &http.Client{Transport: asSelf}}
-			tok, err := client.GenerateAccessToken(ctx, params.ServiceAccount, sortedScopes, nil, 0)
-
-			// iam.GenerateAccessToken returns googleapi.Error on HTTP-level
-			// responses. Recognize fatal HTTP errors. Everything else (stuff like
-			// connection timeouts, deadlines, etc) are transient errors.
-			if err != nil {
-				if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code < 500 {
-					return nil, err, fmt.Sprintf("ERROR_MINTING_HTTP_%d", apiErr.Code)
+				if transient.Tag.In(err) {
+					return nil, err, "ERROR_TRANSIENT_IN_MINTING"
 				}
-				return nil, transient.Tag.Apply(err), "ERROR_TRANSIENT_IN_MINTING"
+				return nil, err, "ERROR_FATAL_IN_MINTING"
 			}
 
-			// Log details about the new token.
 			now := clock.Now(ctx).UTC()
 			logging.Fields{
 				"fingerprint": tokenFingerprint(tok.AccessToken),

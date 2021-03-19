@@ -47,6 +47,18 @@ type IDTokenProvider func(c context.Context, audience string) (*oauth2.Token, er
 // outlive it.
 type AnonymousTransportProvider func(c context.Context) http.RoundTripper
 
+// ActorTokensProvider knows how to produce OAuth and ID tokens for service
+// accounts the server "act as".
+//
+// Errors returned by its method may be tagged with transient.Tag to indicate
+// they are transient. All other errors are assumed to be fatal.
+type ActorTokensProvider interface {
+	// GenerateAccessToken generates an access token for the given account.
+	GenerateAccessToken(c context.Context, serviceAccount string, scopes []string) (*oauth2.Token, error)
+	// GenerateIDToken generates an ID token for the given account.
+	GenerateIDToken(c context.Context, serviceAccount, audience string) (string, error)
+}
+
 // Config contains global configuration of the auth library.
 //
 // This configuration adjusts the library to the particular execution
@@ -79,6 +91,13 @@ type Config struct {
 	// account to have iam.serviceAccountTokenCreator role on *itself*, which is
 	// a bit weird and not default.
 	IDTokenProvider IDTokenProvider
+
+	// ActorTokensProvider knows how to produce OAuth and ID tokens for service
+	// accounts the server "act as".
+	//
+	// If nil, a default generic implementation based on HTTP POST request to
+	// Cloud IAM Credentials service will be used.
+	ActorTokensProvider ActorTokensProvider
 
 	// AnonymousTransport returns http.RoundTriper that can make unauthenticated
 	// HTTP requests.
@@ -151,6 +170,14 @@ func (cfg *Config) adjustedTimeout(t time.Duration) time.Duration {
 		return t
 	}
 	return time.Minute
+}
+
+// actorTokensProvider returns an actual ActorTokensProvider implementation.
+func (cfg *Config) actorTokensProvider() ActorTokensProvider {
+	if cfg.ActorTokensProvider != nil {
+		return cfg.ActorTokensProvider
+	}
+	return defaultActorTokensProviderImpl
 }
 
 // setConfig completely replaces the configuration in the context.

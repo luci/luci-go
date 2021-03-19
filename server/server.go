@@ -73,9 +73,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/errorreporting"
+	credentials "cloud.google.com/go/iam/credentials/apiv1"
 	"cloud.google.com/go/profiler"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
+	credentialspb "google.golang.org/genproto/googleapis/iam/credentials/v1"
 	"google.golang.org/grpc"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
@@ -86,7 +88,6 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
-	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -561,8 +562,10 @@ type Server struct {
 	tsmon   *tsmon.State    // manages flushing of tsmon metrics
 	sampler octrace.Sampler // trace sampler to use for top level spans
 
-	signer *signerImpl  // the signer used by the auth system
-	authDB atomic.Value // last known good authdb.DB instance
+	cloudTS     oauth2.TokenSource // source of cloud-scoped tokens for Cloud APIs
+	signer      *signerImpl        // the signer used by the auth system
+	actorTokens *actorTokensImpl   // for impersonating service accounts
+	authDB      atomic.Value       // last known good authdb.DB instance
 
 	runningAs string // email of an account the server runs as
 }
@@ -1446,10 +1449,11 @@ func (s *Server) initAuthStart() error {
 	ctx := logging.SetField(s.Context, "activity", "luci.auth")
 	tokens := clientauth.NewTokenGenerator(ctx, opts)
 
-	// Prepare partially initialized signer for the auth.Config. It will be fully
-	// initialized in initAuthFinish once we have a working auth context that can
-	// call IAM.
+	// Prepare partially initialized structs for the auth.Config. They will be
+	// fully initialized in initAuthFinish once we have a sufficiently working
+	// auth context that can call Cloud IAM.
 	s.signer = &signerImpl{srv: s}
+	s.actorTokens = &actorTokensImpl{}
 
 	// Initialize the state in the context.
 	s.Context = auth.Initialize(s.Context, &auth.Config{
@@ -1464,10 +1468,11 @@ func (s *Server) initAuthStart() error {
 		IDTokenProvider: func(ctx context.Context, audience string) (*oauth2.Token, error) {
 			return tokens.GenerateIDToken(ctx, audience, 0)
 		},
-		AnonymousTransport: func(context.Context) http.RoundTripper { return rootTransport },
-		FrontendClientID:   func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
-		EndUserIP:          getRemoteIP,
-		IsDevMode:          !s.Options.Prod,
+		ActorTokensProvider: s.actorTokens,
+		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
+		FrontendClientID:    func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
+		EndUserIP:           getRemoteIP,
+		IsDevMode:           !s.Options.Prod,
 	})
 
 	// Note: we initialize a token source for one arbitrary set of scopes here. In
@@ -1511,15 +1516,24 @@ func (s *Server) initAuthStart() error {
 //
 // It is called after tsmon is initialized.
 func (s *Server) initAuthFinish() error {
-	// We should be able to make authenticated requests now and can construct
-	// an IAM client used by SignBytes implementation.
-	asSelf, err := auth.GetRPCTransport(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	// We should be able to make basic authenticated requests now and can
+	// construct a token source used by server's own guts to call Cloud APIs,
+	// such us Cloud Trace and Cloud Error Reporting (and others).
+	var err error
+	s.cloudTS, err = auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return errors.Annotate(err, "failed to construct RPC transport").Err()
+		return errors.Annotate(err, "failed to initialize the cloud token source").Err()
 	}
-	s.signer.iamClient = &iam.CredentialsClient{
-		Client: &http.Client{Transport: asSelf},
+
+	// Finish constructing `signer` and `actorTokens` that were waiting for
+	// an IAM client.
+	iamClient, err := credentials.NewIamCredentialsClient(s.Context, option.WithTokenSource(s.cloudTS))
+	if err != nil {
+		return errors.Annotate(err, "failed to construct IAM client").Err()
 	}
+	s.RegisterCleanup(func(ctx context.Context) { iamClient.Close() })
+	s.signer.iamClient = iamClient
+	s.actorTokens.iamClient = iamClient
 
 	// Now initialize the AuthDB (a database with groups and auth config) and
 	// start a goroutine to periodically refresh it.
@@ -1727,12 +1741,8 @@ func (s *Server) initTracing() error {
 		}
 	}
 
-	// Grab the token source to call Stackdriver API.
-	ts, err := auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
-	if err != nil {
-		return errors.Annotate(err, "failed to initialize token source").Err()
-	}
-	opts := []option.ClientOption{option.WithTokenSource(ts)}
+	// Set the token source to call Stackdriver API.
+	opts := []option.ClientOption{option.WithTokenSource(s.cloudTS)}
 
 	// Register the trace uploader. It is also accidentally metrics uploader, but
 	// we shouldn't be using metrics (we have tsmon instead).
@@ -1795,16 +1805,10 @@ func (s *Server) initProfiling() error {
 		AllocForceGC:   true,
 	}
 
-	// Authentication for the profiling agent.
-	ts, err := auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
-	if err != nil {
-		return errors.Annotate(err, "failed to initialize token source").Err()
-	}
-
 	// Launch the agent that runs in the background and periodically collects and
 	// uploads profiles. It fails to launch if Service or ServiceVersion do not
 	// pass regexp validation. Make it non-fatal, but still log.
-	if err := profiler.Start(cfg, option.WithTokenSource(ts)); err != nil {
+	if err := profiler.Start(cfg, option.WithTokenSource(s.cloudTS)); err != nil {
 		logging.Errorf(s.Context, "Stackdriver profiler is disabled: failed do start - %s", err)
 		return nil
 	}
@@ -1925,21 +1929,17 @@ func (s *Server) initErrorReporting() error {
 	}
 
 	// Get token source to call Error Reporting API.
-	ts, err := auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
-	if err != nil {
-		return errors.Annotate(err, "failed to initialize token source").Err()
-	}
+	var err error
 	s.errRptClient, err = errorreporting.NewClient(s.Context, s.Options.CloudProject, errorreporting.Config{
 		ServiceName:    s.getServiceID(),
 		ServiceVersion: s.Options.imageVersion(),
 		OnError:        func(err error) { logging.Errorf(s.Context, "Error Reporting could not log error: %s", err) },
-	}, option.WithTokenSource(ts))
-
+	}, option.WithTokenSource(s.cloudTS))
 	if err != nil {
 		return err
 	}
-	s.RegisterCleanup(func(ctx context.Context) { s.errRptClient.Close() })
 
+	s.RegisterCleanup(func(ctx context.Context) { s.errRptClient.Close() })
 	return nil
 }
 
@@ -1983,12 +1983,19 @@ func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSamp
 // signerImpl implements signing.Signer on top of *Server.
 type signerImpl struct {
 	srv       *Server
-	iamClient *iam.CredentialsClient
+	iamClient *credentials.IamCredentialsClient
 }
 
 // SignBytes signs the blob with some active private key.
 func (s *signerImpl) SignBytes(ctx context.Context, blob []byte) (keyName string, signature []byte, err error) {
-	return s.iamClient.SignBlob(ctx, s.srv.runningAs, blob)
+	resp, err := s.iamClient.SignBlob(ctx, &credentialspb.SignBlobRequest{
+		Name:    "projects/-/serviceAccounts/" + s.srv.runningAs,
+		Payload: blob,
+	})
+	if err != nil {
+		return "", nil, grpcutil.WrapIfTransient(err)
+	}
+	return resp.KeyId, resp.SignedBlob, nil
 }
 
 // Certificates returns a bundle with public certificates for all active keys.
@@ -2005,6 +2012,40 @@ func (s *signerImpl) ServiceInfo(ctx context.Context) (*signing.ServiceInfo, err
 		AppVersion:         s.srv.Options.imageVersion(),
 		ServiceAccountName: s.srv.runningAs,
 	}, nil
+}
+
+// actorTokensImpl implements auth.ActorTokensProvider using IAM Credentials.
+type actorTokensImpl struct {
+	iamClient *credentials.IamCredentialsClient
+}
+
+// GenerateAccessToken generates an access token for the given account.
+func (a *actorTokensImpl) GenerateAccessToken(ctx context.Context, serviceAccount string, scopes []string) (*oauth2.Token, error) {
+	resp, err := a.iamClient.GenerateAccessToken(ctx, &credentialspb.GenerateAccessTokenRequest{
+		Name:  "projects/-/serviceAccounts/" + serviceAccount,
+		Scope: scopes,
+	})
+	if err != nil {
+		return nil, grpcutil.WrapIfTransient(err)
+	}
+	return &oauth2.Token{
+		AccessToken: resp.AccessToken,
+		TokenType:   "Bearer",
+		Expiry:      resp.ExpireTime.AsTime(),
+	}, nil
+}
+
+// GenerateIDToken generates an ID token for the given account.
+func (a *actorTokensImpl) GenerateIDToken(ctx context.Context, serviceAccount, audience string) (string, error) {
+	resp, err := a.iamClient.GenerateIdToken(ctx, &credentialspb.GenerateIdTokenRequest{
+		Name:         "projects/-/serviceAccounts/" + serviceAccount,
+		Audience:     audience,
+		IncludeEmail: true,
+	})
+	if err != nil {
+		return "", grpcutil.WrapIfTransient(err)
+	}
+	return resp.Token, nil
 }
 
 // networkAddrsForLog returns a string with IPv4 addresses of local network
