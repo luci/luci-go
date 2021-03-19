@@ -17,8 +17,6 @@ package cipd
 import (
 	"fmt"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
@@ -83,7 +81,7 @@ func prefixMetadataToACLs(m *api.InheritedPrefixMetadata) (out []PackageACL) {
 					Role:        role,
 					Principals:  acl.Principals,
 					ModifiedBy:  p.UpdateUser,
-					ModifiedTs:  UnixTime(google.TimeFromProto(p.UpdateTime)),
+					ModifiedTs:  UnixTime(p.UpdateTime.AsTime()),
 				})
 			}
 		}

@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
@@ -316,7 +315,7 @@ func makeTrigger(t *internal.Trigger, now time.Time) trigger {
 		out.Title = t.Id
 	}
 	if t.Created != nil {
-		out.RelTime = humanize.RelTime(google.TimeFromProto(t.Created), now, "ago", "from now")
+		out.RelTime = humanize.RelTime(t.Created.AsTime(), now, "ago", "from now")
 	}
 	return out
 }

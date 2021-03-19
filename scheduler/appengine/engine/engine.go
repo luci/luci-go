@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
@@ -1412,7 +1411,7 @@ func (e *engineImpl) invChanging(c context.Context, old, fresh *Invocation, time
 	switch {
 	case len(timers) == 1:
 		tasks = append(tasks, &tq.Task{
-			ETA: google.TimeFromProto(timers[0].Eta),
+			ETA: timers[0].Eta.AsTime(),
 			Payload: &internal.TimerTask{
 				JobId: fresh.JobID,
 				InvId: fresh.ID,
@@ -1696,7 +1695,7 @@ func (e *engineImpl) execScheduleTimersTask(c context.Context, tqTask proto.Mess
 	tasks := make([]*tq.Task, len(msg.Timers))
 	for i, timer := range msg.Timers {
 		tasks[i] = &tq.Task{
-			ETA: google.TimeFromProto(timer.Eta),
+			ETA: timer.Eta.AsTime(),
 			Payload: &internal.TimerTask{
 				JobId: msg.JobId,
 				InvId: msg.InvId,

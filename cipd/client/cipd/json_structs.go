@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -195,7 +193,7 @@ func apiInstanceToInfo(inst *api.Instance) InstanceInfo {
 			InstanceID:  common.ObjectRefToInstanceID(inst.Instance),
 		},
 		RegisteredBy: inst.RegisteredBy,
-		RegisteredTs: UnixTime(google.TimeFromProto(inst.RegisteredTs)),
+		RegisteredTs: UnixTime(inst.RegisteredTs.AsTime()),
 	}
 }
 
@@ -204,7 +202,7 @@ func apiRefToInfo(r *api.Ref) RefInfo {
 		Ref:        r.Name,
 		InstanceID: common.ObjectRefToInstanceID(r.Instance),
 		ModifiedBy: r.ModifiedBy,
-		ModifiedTs: UnixTime(google.TimeFromProto(r.ModifiedTs)),
+		ModifiedTs: UnixTime(r.ModifiedTs.AsTime()),
 	}
 }
 
@@ -212,7 +210,7 @@ func apiTagToInfo(t *api.Tag) TagInfo {
 	return TagInfo{
 		Tag:          common.JoinInstanceTag(t),
 		RegisteredBy: t.AttachedBy,
-		RegisteredTs: UnixTime(google.TimeFromProto(t.AttachedTs)),
+		RegisteredTs: UnixTime(t.AttachedTs.AsTime()),
 	}
 }
 
@@ -223,7 +221,7 @@ func apiMetadataToInfo(md *api.InstanceMetadata) MetadataInfo {
 		Value:       md.Value,
 		ContentType: md.ContentType,
 		AttachedBy:  md.AttachedBy,
-		AttachedTs:  UnixTime(google.TimeFromProto(md.AttachedTs)),
+		AttachedTs:  UnixTime(md.AttachedTs.AsTime()),
 	}
 }
 
