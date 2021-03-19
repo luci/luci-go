@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -32,7 +34,6 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/memlogger"
 	configPB "go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -284,7 +285,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		cfg.Coordinator = &svcconfig.Coordinator{
 			AdminAuthGroup:   "admin",
 			ServiceAuthGroup: "services",
-			PrefixExpiration: google.NewDuration(24 * time.Hour),
+			PrefixExpiration: durationpb.New(24 * time.Hour),
 		}
 	})
 
