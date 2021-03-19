@@ -50,7 +50,7 @@ func defaultSigner(ctx context.Context) (*signer, error) {
 
 // iamSigner uses SignBytes IAM API for signing.
 func iamSigner(ctx context.Context, actAs string) (*signer, error) {
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(iam.OAuthScope))
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to grab RPC transport").Err()
 	}

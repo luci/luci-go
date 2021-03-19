@@ -31,11 +31,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
-const (
-	// OAuthScope is an OAuth scope required by IAM API.
-	OAuthScope = "https://www.googleapis.com/auth/iam"
-)
-
 var (
 	// DefaultIamBaseURL is IAM's core API endpoint.
 	DefaultIamBaseURL = &url.URL{
@@ -197,56 +192,6 @@ func (cl *Client) GenerateIDToken(ctx context.Context, serviceAccount string, au
 		return "", err
 	}
 	return resp.Token, nil
-}
-
-// GetIAMPolicy fetches an IAM policy of a resource.
-//
-// On non-success HTTP status codes returns googleapi.Error.
-func (cl *Client) GetIAMPolicy(ctx context.Context, resource string) (*Policy, error) {
-	response := &Policy{}
-	if err := cl.iamAPIRequest(ctx, resource, "getIamPolicy", nil, response); err != nil {
-		return nil, err
-	}
-	return response, nil
-}
-
-// SetIAMPolicy replaces an IAM policy of a resource.
-//
-// Returns a new policy (with Etag field updated).
-func (cl *Client) SetIAMPolicy(ctx context.Context, resource string, p Policy) (*Policy, error) {
-	var request struct {
-		Policy *Policy `json:"policy"`
-	}
-	request.Policy = &p
-	response := &Policy{}
-	if err := cl.iamAPIRequest(ctx, resource, "setIamPolicy", &request, response); err != nil {
-		return nil, err
-	}
-	return response, nil
-}
-
-// ModifyIAMPolicy reads IAM policy, calls callback to modify it, and then
-// puts it back (if callback really changed it).
-//
-// Cast error to *googleapi.Error and compare http status to http.StatusConflict
-// to detect update race conditions. It is usually safe to retry in case of
-// a conflict.
-func (cl *Client) ModifyIAMPolicy(ctx context.Context, resource string, cb func(*Policy) error) error {
-	policy, err := cl.GetIAMPolicy(ctx, resource)
-	if err != nil {
-		return err
-	}
-	// Make a copy to be mutated in the callback. Need to keep the original to
-	// be able to detect changes.
-	clone := policy.Clone()
-	if err := cb(&clone); err != nil {
-		return err
-	}
-	if clone.Equals(*policy) {
-		return nil
-	}
-	_, err = cl.SetIAMPolicy(ctx, resource, clone)
-	return err
 }
 
 // iamAPIRequest performs HTTP POST to the core IAM API endpoint.
