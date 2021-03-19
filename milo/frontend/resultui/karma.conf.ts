@@ -78,6 +78,7 @@ module.exports = (config: Config) => {
         new DefinePlugin({
           CONFIGS: fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
           ENABLE_GA: JSON.stringify(false),
+          VISIT_ID: JSON.stringify(0),
         }),
         new ProvidePlugin({
           process: 'process/browser',
