@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "145beeab_43d1404b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-19T01:17:22Z",
+      "side": 1,
+      "message": "lgtm % comment nit + thank you for your thoughts",
+      "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b0e67c6a_5d8ff016",
@@ -20,6 +37,47 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f689a165_d0e41aeb",
+        "filename": "cv/api/bigquery/v1/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-19T01:17:22Z",
+      "side": 1,
+      "message": "ModeOptions sounds interesting.\n\"rts\" shouldn\u0027t be a part of CQ, but submit_on_success -- I like very fmuch.\nrun_on_upload -- maybe-ish. Strictly speaking it comes form project config, so it\u0027s not part of the Run mode itself. However, we do have to record how run is triggered in BQ data eventually, it\u0027s just probably separate from Run mode string.",
+      "parentUuid": "b0e67c6a_5d8ff016",
+      "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "735ce582_000e98cb",
+        "filename": "cv/api/bigquery/v1/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-19T01:17:22Z",
+      "side": 1,
+      "message": "This comment shouldn\u0027t mention RTS.\nBut, you can mention crbug/ for which we\u0027ve added this field for future reference.",
+      "range": {
+        "startLine": 150,
+        "startChar": 26,
+        "endLine": 150,
+        "endChar": 29
+      },
+      "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e24135b7_df4a0a01",
         "filename": "cv/api/bigquery/v1/attempt.proto",
         "patchSetId": 2
@@ -31,6 +89,24 @@
       "writtenOn": "2021-03-18T22:05:48Z",
       "side": 1,
       "message": "AFAIU this is probably all we want to do now.",
+      "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5503f567_2e486683",
+        "filename": "cv/api/bigquery/v1/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-19T01:17:22Z",
+      "side": 1,
+      "message": "yes.",
+      "parentUuid": "e24135b7_df4a0a01",
       "revId": "95886cb01b748f82df09fc1b118def175dc3602e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
