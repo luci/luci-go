@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5cfc5af_ff0fb8d6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-19T17:31:22Z",
+      "side": 1,
+      "message": "lgtm (+ddoman for fyi in logdog test code, if you\u0027re in that neighborhood)",
+      "revId": "39dd7a0149df39d504d23a3b710389e41238a740",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed4887ab_8343f9df",
+        "filename": "logdog/appengine/coordinator/endpoints/services/loadStream_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-19T17:31:22Z",
+      "side": 1,
+      "message": "oof; this is a timebomb. +ddoman if you\u0027re poking at logdog code in this area",
+      "range": {
+        "startLine": 110,
+        "startChar": 13,
+        "endLine": 110,
+        "endChar": 27
+      },
+      "revId": "39dd7a0149df39d504d23a3b710389e41238a740",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
