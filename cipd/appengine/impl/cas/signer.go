@@ -55,7 +55,7 @@ func iamSigner(ctx context.Context, actAs string) (*signer, error) {
 		return nil, errors.Annotate(err, "failed to grab RPC transport").Err()
 	}
 	s := &iam.Signer{
-		Client:         &iam.Client{Client: &http.Client{Transport: t}},
+		Client:         &iam.CredentialsClient{Client: &http.Client{Transport: t}},
 		ServiceAccount: actAs,
 	}
 	return &signer{

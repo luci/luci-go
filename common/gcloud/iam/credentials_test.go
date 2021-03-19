@@ -30,7 +30,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestClient(t *testing.T) {
+func TestCredentialsClient(t *testing.T) {
+	t.Parallel()
+
 	Convey("SignBlob works", t, func(c C) {
 		bodies := make(chan []byte, 1)
 
@@ -39,7 +41,7 @@ func TestClient(t *testing.T) {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
-			if r.RequestURI != "/v1/projects/-/serviceAccounts/abc@example.com:signBlob?alt=json" {
+			if r.URL.Path != "/v1/projects/-/serviceAccounts/abc@example.com:signBlob" {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
@@ -53,14 +55,14 @@ func TestClient(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(200)
 			w.Write([]byte(
-				fmt.Sprintf(`{"keyId":"key_id","signature":"%s"}`,
+				fmt.Sprintf(`{"keyId":"key_id","signedBlob":"%s"}`,
 					base64.StdEncoding.EncodeToString([]byte("signature")))))
 		}))
 		defer ts.Close()
 
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
+		cl := CredentialsClient{
+			Client:     http.DefaultClient,
+			backendURL: ts.URL,
 		}
 
 		keyID, sig, err := cl.SignBlob(context.Background(), "abc@example.com", []byte("blob"))
@@ -70,7 +72,7 @@ func TestClient(t *testing.T) {
 
 		// The request body looks sane too.
 		body := <-bodies
-		So(string(body), ShouldEqual, `{"bytesToSign":"YmxvYg=="}`)
+		So(string(body), ShouldEqual, `{"payload":"YmxvYg=="}`)
 	})
 
 	Convey("SignJWT works", t, func(c C) {
@@ -81,7 +83,7 @@ func TestClient(t *testing.T) {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
-			if r.RequestURI != "/v1/projects/-/serviceAccounts/abc@example.com:signJwt?alt=json" {
+			if r.URL.Path != "/v1/projects/-/serviceAccounts/abc@example.com:signJwt" {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
@@ -98,9 +100,9 @@ func TestClient(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
+		cl := CredentialsClient{
+			Client:     http.DefaultClient,
+			backendURL: ts.URL,
 		}
 
 		keyID, jwt, err := cl.SignJWT(context.Background(), "abc@example.com", &ClaimSet{Exp: 123})
@@ -111,50 +113,6 @@ func TestClient(t *testing.T) {
 		// The request body looks sane too.
 		body := <-bodies
 		So(string(body), ShouldEqual, `{"payload":"{\"iss\":\"\",\"aud\":\"\",\"exp\":123,\"iat\":0}"}`)
-	})
-
-	Convey("ModifyIAMPolicy works", t, func(c C) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != "POST" {
-				w.WriteHeader(http.StatusMethodNotAllowed)
-				return
-			}
-
-			body, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				panic(err)
-			}
-
-			switch r.URL.Path {
-			case "/v1/project/1/resource/2:getIamPolicy":
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(200)
-				w.Write([]byte(`{"etag":"blah"}`))
-
-			case "/v1/project/1/resource/2:setIamPolicy":
-				c.So(string(body), ShouldEqual,
-					`{"policy":{"bindings":[{"role":"role","members":["principal"]}],"etag":"blah"}}`)
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(200)
-				w.Write([]byte(`{"bindings":[{"role":"role","members":["principal"]}],"etag":"blah"}}`))
-
-			default:
-				c.Printf("Unknown URL: %q\n", r.URL.Path)
-				w.WriteHeader(404)
-			}
-		}))
-		defer ts.Close()
-
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
-		}
-
-		err := cl.ModifyIAMPolicy(context.Background(), "project/1/resource/2", func(p *Policy) error {
-			p.GrantRole("role", "principal")
-			return nil
-		})
-		So(err, ShouldBeNil)
 	})
 
 	Convey("GenerateAccessToken works", t, func(c C) {
@@ -187,9 +145,9 @@ func TestClient(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
+		cl := CredentialsClient{
+			Client:     http.DefaultClient,
+			backendURL: ts.URL,
 		}
 
 		token, err := cl.GenerateAccessToken(context.Background(),
@@ -232,9 +190,9 @@ func TestClient(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
+		cl := CredentialsClient{
+			Client:     http.DefaultClient,
+			backendURL: ts.URL,
 		}
 
 		token, err := cl.GenerateIDToken(context.Background(),
