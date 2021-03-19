@@ -76,3 +76,22 @@ func TestLogger(t *testing.T) {
 		So(e.Message, ShouldEqual, `boom :: {"error":"boom", "foo":"bar"}`)
 	})
 }
+
+func TestErrStackRe(t *testing.T) {
+	t.Parallel()
+
+	Convey("test errStackRe", t, func() {
+		errStr := "original error: rpc error: code = Internal desc = internal: attaching a status: rpc error: code = FailedPrecondition desc = internal"
+		stackStr := `
+goroutine 27693:
+#0 go.chromium.org/luci/grpc/appstatus/status.go:59 - appstatus.Attach()
+  reason: attaching a status
+  tag["application-specific response status"]: &status.Status{s:(*status.Status)(0xc002885e60)}
+`
+		msg := errStr + "\n\n" + stackStr
+		match := errStackRe.FindStringSubmatch(msg)
+		So(match, ShouldNotBeNil)
+		So(match[1], ShouldEqual, errStr)
+		So(match[2], ShouldEqual, stackStr)
+	})
+}

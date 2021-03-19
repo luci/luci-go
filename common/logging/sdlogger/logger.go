@@ -26,17 +26,21 @@ package sdlogger
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
 	"cloud.google.com/go/errorreporting"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
+
+var errStackRe = regexp.MustCompile(`(.*)[\r\n]+` + `(` + errors.RenderedStackDumpRe + `[\s\S]*)`)
 
 // Severity is a string denoting the logging level of the entry.
 //
@@ -183,9 +187,16 @@ type CloudErrorsSink struct {
 func (s *CloudErrorsSink) Write(l *LogEntry) {
 	if l.Severity == ErrorSeverity {
 		// Append the trace id to make it easier to search in Cloud Logs Explorer.
-		s.Client.Report(errorreporting.Entry{
-			Error: errors.New(l.Message + " (Log Trace ID: " + l.TraceID + ")"),
-		})
+		if errWithStack := errStackRe.FindStringSubmatch(l.Message); errWithStack != nil {
+			s.Client.Report(errorreporting.Entry{
+				Error: errors.New(strings.TrimSpace(errWithStack[1]) + " (Log Trace ID: " + l.TraceID + ")"),
+				Stack: []byte(errWithStack[2]),
+			})
+		} else {
+			s.Client.Report(errorreporting.Entry{
+				Error: errors.New(l.Message + " (Log Trace ID: " + l.TraceID + ")"),
+			})
+		}
 	}
 	s.Out.Write(l)
 }
