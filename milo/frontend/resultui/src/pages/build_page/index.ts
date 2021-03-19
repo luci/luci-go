@@ -30,6 +30,7 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
 import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getGitilesRepoURL, getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
@@ -509,6 +510,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
               <div class="delimiter"></div>
               <a
                 @click=${(e: Event) => {
+                  trackEvent(GA_CATEGORIES.LEGACY_BUILD_PAGE, GA_ACTIONS.SWITCH_VERSION, window.location.href);
                   const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
                   document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
                   this.appState.redirectSw?.unregister();
