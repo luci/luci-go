@@ -35,7 +35,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	iamAPI "google.golang.org/api/iam/v1"
+	iamAPI "google.golang.org/api/iamcredentials/v1"
 )
 
 // googleTokenSourceKey is a normalized string of service accounts, used as
@@ -159,9 +159,9 @@ func (gsp *GoogleServiceProvider) TokenSource(c context.Context, scopes ...strin
 // "SignBlob" endpoint.
 //
 // The SignBlob RPC request that the GAE/Flex service account account is granted
-// the "iam.serviceAccountActor" role, which is NOT default.
+// the "iam.serviceAccountTokenCreator" role, which is NOT default.
 //
-// https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/signBlob
+// https://cloud.google.com/iam/docs/reference/credentials/rest/v1/projects.serviceAccounts/signBlob
 func (gsp *GoogleServiceProvider) SignBytes(c context.Context, bytes []byte) (keyName string, signature []byte, err error) {
 	// Generate a client to use for the SignBytes API call.
 	var ts oauth2.TokenSource
@@ -170,27 +170,31 @@ func (gsp *GoogleServiceProvider) SignBytes(c context.Context, bytes []byte) (ke
 	}
 	client := oauth2.NewClient(c, ts)
 
-	// Construct an IAM service.
+	// Construct an IAM credentials service.
 	var svc *iamAPI.Service
 	if svc, err = iamAPI.New(client); err != nil {
 		err = errors.Annotate(err, "could not get IAM client").Err()
 		return
 	}
 
-	var resp *iamAPI.SignBlobResponse
 	req := svc.Projects.ServiceAccounts.SignBlob(
 		fmt.Sprintf("projects/-/serviceAccounts/%s", gsp.ServiceAccount),
 		&iamAPI.SignBlobRequest{
-			BytesToSign: base64.StdEncoding.EncodeToString(bytes),
+			Payload: base64.StdEncoding.EncodeToString(bytes),
 		})
-	resp, err = req.Context(c).Do()
+	resp, err := req.Context(c).Do()
 	if err != nil {
 		err = errors.Annotate(err, "SignBlob RPC failed").Err()
 		return
 	}
+	raw, err := base64.StdEncoding.DecodeString(resp.SignedBlob)
+	if err != nil {
+		err = errors.Annotate(err, "SignedBlob is not a base64 string").Err()
+		return
+	}
 
 	keyName = resp.KeyId
-	signature = []byte(resp.Signature)
+	signature = raw
 	return
 }
 
