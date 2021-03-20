@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "06b86f32_6b171c5c",
+        "filename": "server/auth/actor_id_tokens.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-20T03:01:44Z",
+      "side": 1,
+      "message": "Eh, they are labels for metric fields. Nothing reads them back in the code and their value doesn\u0027t really matter. If you insist, it can be changed in a separate CL.",
+      "parentUuid": "4baf726e_032a8774",
+      "range": {
+        "startLine": 111,
+        "startChar": 22,
+        "endLine": 111,
+        "endChar": 50
+      },
+      "revId": "f14d9e813ecbd67ce21a1825e01282f0b7b94496",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e253b9d2_a4690229",
         "filename": "server/auth/actor_tokens_provider.go",
         "patchSetId": 2
