@@ -30,7 +30,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestClient(t *testing.T) {
+func TestCredentialsClient(t *testing.T) {
+	t.Parallel()
+
 	Convey("SignBlob works", t, func(c C) {
 		bodies := make(chan []byte, 1)
 
@@ -39,7 +41,7 @@ func TestClient(t *testing.T) {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
-			if r.RequestURI != "/v1/projects/-/serviceAccounts/abc@example.com:signBlob?alt=json" {
+			if r.URL.Path != "/v1/projects/-/serviceAccounts/abc@example.com:signBlob" {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
@@ -53,14 +55,14 @@ func TestClient(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(200)
 			w.Write([]byte(
-				fmt.Sprintf(`{"keyId":"key_id","signature":"%s"}`,
+				fmt.Sprintf(`{"keyId":"key_id","signedBlob":"%s"}`,
 					base64.StdEncoding.EncodeToString([]byte("signature")))))
 		}))
 		defer ts.Close()
 
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
+		cl := CredentialsClient{
+			Client:     http.DefaultClient,
+			backendURL: ts.URL,
 		}
 
 		keyID, sig, err := cl.SignBlob(context.Background(), "abc@example.com", []byte("blob"))
@@ -70,7 +72,7 @@ func TestClient(t *testing.T) {
 
 		// The request body looks sane too.
 		body := <-bodies
-		So(string(body), ShouldEqual, `{"bytesToSign":"YmxvYg=="}`)
+		So(string(body), ShouldEqual, `{"payload":"YmxvYg=="}`)
 	})
 
 	Convey("SignJWT works", t, func(c C) {
@@ -81,7 +83,7 @@ func TestClient(t *testing.T) {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
-			if r.RequestURI != "/v1/projects/-/serviceAccounts/abc@example.com:signJwt?alt=json" {
+			if r.URL.Path != "/v1/projects/-/serviceAccounts/abc@example.com:signJwt" {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
@@ -98,9 +100,9 @@ func TestClient(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
+		cl := CredentialsClient{
+			Client:     http.DefaultClient,
+			backendURL: ts.URL,
 		}
 
 		keyID, jwt, err := cl.SignJWT(context.Background(), "abc@example.com", &ClaimSet{Exp: 123})
@@ -143,9 +145,9 @@ func TestClient(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
+		cl := CredentialsClient{
+			Client:     http.DefaultClient,
+			backendURL: ts.URL,
 		}
 
 		token, err := cl.GenerateAccessToken(context.Background(),
@@ -188,9 +190,9 @@ func TestClient(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cl := Client{
-			Client:   http.DefaultClient,
-			BasePath: ts.URL,
+		cl := CredentialsClient{
+			Client:     http.DefaultClient,
+			backendURL: ts.URL,
 		}
 
 		token, err := cl.GenerateIDToken(context.Background(),

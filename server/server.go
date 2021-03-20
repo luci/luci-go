@@ -1517,7 +1517,9 @@ func (s *Server) initAuthFinish() error {
 	if err != nil {
 		return errors.Annotate(err, "failed to construct RPC transport").Err()
 	}
-	s.signer.iamClient = &iam.Client{Client: &http.Client{Transport: asSelf}}
+	s.signer.iamClient = &iam.CredentialsClient{
+		Client: &http.Client{Transport: asSelf},
+	}
 
 	// Now initialize the AuthDB (a database with groups and auth config) and
 	// start a goroutine to periodically refresh it.
@@ -1981,7 +1983,7 @@ func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSamp
 // signerImpl implements signing.Signer on top of *Server.
 type signerImpl struct {
 	srv       *Server
-	iamClient *iam.Client
+	iamClient *iam.CredentialsClient
 }
 
 // SignBytes signs the blob with some active private key.

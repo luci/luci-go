@@ -114,7 +114,7 @@ func MintIDTokenForServiceAccount(ctx context.Context, params MintIDTokenParams)
 			if err != nil {
 				return nil, err, "ERROR_NO_TRANSPORT"
 			}
-			client := &iam.Client{Client: &http.Client{Transport: asSelf}}
+			client := &iam.CredentialsClient{Client: &http.Client{Transport: asSelf}}
 			idToken, err := client.GenerateIDToken(ctx, params.ServiceAccount, params.Audience, true, nil)
 
 			// iam.GenerateIDToken returns googleapi.Error on HTTP-level responses.

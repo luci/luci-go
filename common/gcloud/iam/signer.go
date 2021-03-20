@@ -16,12 +16,12 @@ package iam
 
 import "context"
 
-// Signer implements SignBytes interface on top of IAM client.
+// Signer implements SignBytes interface on top of IAM Credentials client.
 //
 // It signs blobs using some service account's private key via 'signBlob' IAM
 // call.
 type Signer struct {
-	Client         *Client
+	Client         *CredentialsClient
 	ServiceAccount string
 }
 
