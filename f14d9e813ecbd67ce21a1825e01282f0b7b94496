@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64f4f20e_758d18fa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-20T02:42:35Z",
+      "side": 1,
+      "message": "I enjoyed this CL",
+      "revId": "f14d9e813ecbd67ce21a1825e01282f0b7b94496",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4baf726e_032a8774",
+        "filename": "server/auth/actor_id_tokens.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-20T02:42:35Z",
+      "side": 1,
+      "message": "drive-by q: why are there error strings used instead of consts?",
+      "range": {
+        "startLine": 111,
+        "startChar": 22,
+        "endLine": 111,
+        "endChar": 50
+      },
+      "revId": "f14d9e813ecbd67ce21a1825e01282f0b7b94496",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e253b9d2_a4690229",
+        "filename": "server/auth/actor_tokens_provider.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-20T02:42:35Z",
+      "side": 1,
+      "message": "👍boilerplate reduction.",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 1
+      },
+      "revId": "f14d9e813ecbd67ce21a1825e01282f0b7b94496",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
