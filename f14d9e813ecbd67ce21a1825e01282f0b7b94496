@@ -67,6 +67,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "5100612e_f74fad48",
+        "filename": "server/auth/actor_id_tokens.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-20T03:19:04Z",
+      "side": 1,
+      "message": "I don\u0027t insist. I just know I suck at typing so *I* personally prefer compiler to check me.",
+      "parentUuid": "06b86f32_6b171c5c",
+      "range": {
+        "startLine": 111,
+        "startChar": 22,
+        "endLine": 111,
+        "endChar": 50
+      },
+      "revId": "f14d9e813ecbd67ce21a1825e01282f0b7b94496",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e253b9d2_a4690229",
         "filename": "server/auth/actor_tokens_provider.go",
         "patchSetId": 2
