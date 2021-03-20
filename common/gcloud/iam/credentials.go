@@ -51,6 +51,9 @@ type ClaimSet struct {
 }
 
 // CredentialsClient knows how to perform IAM Credentials API v1 calls.
+//
+// DEPRECATED: Prefer to use cloud.google.com/go/iam/credentials/apiv1 instead
+// if possible.
 type CredentialsClient struct {
 	Client *http.Client // the HTTP client to use to make calls
 
