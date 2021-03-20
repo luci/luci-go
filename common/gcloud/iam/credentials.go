@@ -207,7 +207,7 @@ func (cl *CredentialsClient) request(ctx context.Context, serviceAccount, action
 	}
 
 	// Issue the request.
-	req, err := http.NewRequestWithContext(ctx, "POST", url, reader)
+	req, err := http.NewRequest("POST", url, reader)
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func (cl *CredentialsClient) request(ctx context.Context, serviceAccount, action
 	// Send and handle errors. This is roughly how google-api-go-client calls
 	// methods. CheckResponse returns *googleapi.Error.
 	logging.Debugf(ctx, "POST %s", url)
-	res, err := cl.Client.Do(req)
+	res, err := cl.Client.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
