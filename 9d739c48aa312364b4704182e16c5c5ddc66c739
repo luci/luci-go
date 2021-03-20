@@ -22,6 +22,30 @@
       },
       "revId": "9d739c48aa312364b4704182e16c5c5ddc66c739",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b68d23f_23fd0a44",
+        "filename": "gae/impl/cloud/google.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-20T00:50:41Z",
+      "side": 1,
+      "message": "so does it mean we just never used the signature?",
+      "parentUuid": "152c0b61_c8d6ea8f",
+      "range": {
+        "startLine": 190,
+        "startChar": 1,
+        "endLine": 194,
+        "endChar": 2
+      },
+      "revId": "9d739c48aa312364b4704182e16c5c5ddc66c739",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
