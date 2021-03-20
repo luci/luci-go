@@ -39,6 +39,30 @@
       },
       "revId": "5dc20ea85802fd01fec093c139c96e52cf9cc3af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a839507f_de33d8d1",
+        "filename": "common/gcloud/iam/credentials.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-20T07:25:48Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "6fe1ff06_1e1ecc6c",
+      "range": {
+        "startLine": 93,
+        "startChar": 26,
+        "endLine": 93,
+        "endChar": 29
+      },
+      "revId": "5dc20ea85802fd01fec093c139c96e52cf9cc3af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
