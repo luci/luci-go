@@ -215,8 +215,9 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
             <div id="identifier">
               <div id="test-identifier">
                 <span>
-                  <span class="greyed-out">${this.commonTestIdPrefix}</span>
-                  ${this.variant.testId.slice(this.commonTestIdPrefix.length)}
+                  <span class="greyed-out">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(
+                    this.commonTestIdPrefix.length
+                  )}
                 </span>
                 <milo-copy-to-clipboard
                   .textToCopy=${this.variant.testId}
