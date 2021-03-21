@@ -220,8 +220,7 @@ export class OverviewTabElement extends MobxLitElement {
               build_num_or_id: this.buildState.buildNumOrId!,
             })}
             >View All</a
-          >
-          )
+          >)
         </h3>
         <div class="step-summary-line">
           ${this.renderStepSummary(
