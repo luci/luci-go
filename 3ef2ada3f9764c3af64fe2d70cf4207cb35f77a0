@@ -16,6 +16,52 @@
       "message": "PTAL\n\nTo fix https://ci.chromium.org/ui/p/infra/builders/try/infra-try-presubmit/b8852027121803055696/overview",
       "revId": "3ef2ada3f9764c3af64fe2d70cf4207cb35f77a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de0d2259_dd5e9c6f",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-22T22:04:20Z",
+      "side": 1,
+      "message": "nit: can",
+      "range": {
+        "startLine": 118,
+        "startChar": 10,
+        "endLine": 118,
+        "endChar": 36
+      },
+      "revId": "3ef2ada3f9764c3af64fe2d70cf4207cb35f77a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "41f04f66_c0069378",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-22T22:04:20Z",
+      "side": 1,
+      "message": "this will be a bit cryptic at first, but SGTM.",
+      "range": {
+        "startLine": 112,
+        "startChar": 62,
+        "endLine": 112,
+        "endChar": 94
+      },
+      "revId": "3ef2ada3f9764c3af64fe2d70cf4207cb35f77a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
