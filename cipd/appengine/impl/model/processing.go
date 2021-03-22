@@ -23,9 +23,9 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -125,7 +125,7 @@ func (p *ProcessingResult) Proto() (*api.Processor, error) {
 		out.State = api.Processor_PENDING // no result yet
 		return out, nil
 	}
-	out.FinishedTs = google.NewTimestamp(p.CreatedTs)
+	out.FinishedTs = timestamppb.New(p.CreatedTs)
 
 	if p.Success {
 		out.State = api.Processor_SUCCEEDED

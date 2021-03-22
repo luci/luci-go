@@ -20,8 +20,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -59,11 +60,15 @@ type Instance struct {
 
 // Proto returns cipd.Instance proto with information from this entity.
 func (e *Instance) Proto() *api.Instance {
+	var t *timestamppb.Timestamp
+	if !e.RegisteredTs.IsZero() {
+		t = timestamppb.New(e.RegisteredTs)
+	}
 	return &api.Instance{
 		Package:      e.Package.StringID(),
 		Instance:     common.InstanceIDToObjectRef(e.InstanceID),
 		RegisteredBy: e.RegisteredBy,
-		RegisteredTs: google.NewTimestamp(e.RegisteredTs),
+		RegisteredTs: t,
 	}
 }
 

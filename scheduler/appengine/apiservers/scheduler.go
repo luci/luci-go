@@ -25,10 +25,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -270,7 +270,7 @@ func internalTrigger(t *scheduler.Trigger, now time.Time, who identity.Identity,
 	}
 	out := &internal.Trigger{
 		Id:            t.Id,
-		Created:       google.NewTimestamp(now),
+		Created:       timestamppb.New(now),
 		OrderInBatch:  int64(index),
 		Title:         t.Title,
 		Url:           t.Url,

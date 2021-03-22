@@ -23,9 +23,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/srcman"
 	"go.chromium.org/luci/logdog/common/types"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
@@ -189,7 +189,7 @@ func (s *State) Append(annotation string) error {
 		if err != nil {
 			return fmt.Errorf("CURRENT_TIMESTAMP parameter %q is not a number: %s", params, err)
 		}
-		s.currentTimestamp = google.NewTimestamp(time.Unix(
+		s.currentTimestamp = timestamppb.New(time.Unix(
 			int64(timestamp),
 			int64(timestamp*1000000000)%1000000000))
 		if firstAnnotation {
@@ -551,7 +551,7 @@ func (s *State) now() *timestamp.Timestamp {
 	if c == nil {
 		c = clock.GetSystemClock()
 	}
-	return google.NewTimestamp(c.Now())
+	return timestamppb.New(c.Now())
 }
 
 // Step represents a single step.

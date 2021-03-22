@@ -25,8 +25,9 @@ import (
 	"strings"
 	"sync"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/storage"
@@ -161,7 +162,7 @@ type bundleBuilder struct {
 func (b *bundleBuilder) genBase() *logpb.ButlerLogBundle {
 	if b.base == nil {
 		b.base = &logpb.ButlerLogBundle{
-			Timestamp: google.NewTimestamp(clock.Now(b)),
+			Timestamp: timestamppb.New(clock.Now(b)),
 			Project:   "test-project",
 			Prefix:    "foo",
 			Secret:    testSecret,
@@ -183,7 +184,7 @@ func (b *bundleBuilder) genBundleEntry(name string, tidx int, idxs ...int) *logp
 			Name:        string(n),
 			ContentType: "application/test-message",
 			StreamType:  logpb.StreamType_TEXT,
-			Timestamp:   google.NewTimestamp(clock.Now(b)),
+			Timestamp:   timestamppb.New(clock.Now(b)),
 		},
 	}
 

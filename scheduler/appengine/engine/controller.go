@@ -22,13 +22,13 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -205,8 +205,8 @@ func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, ti
 	now := clock.Now(ctx)
 	ctl.timers = append(ctl.timers, &internal.Timer{
 		Id:      timerID,
-		Created: google.NewTimestamp(now),
-		Eta:     google.NewTimestamp(now.Add(delay)),
+		Created: timestamppb.New(now),
+		Eta:     timestamppb.New(now.Add(delay)),
 		Title:   title,
 		Payload: payload,
 	})
@@ -244,7 +244,7 @@ func (ctl *taskController) EmitTrigger(ctx context.Context, trigger *internal.Tr
 	// such case they also should provide order_in_batch. Otherwise we build the
 	// tuple for them based on the order of EmitTrigger calls.
 	if trigger.Created == nil {
-		trigger.Created = google.NewTimestamp(clock.Now(ctx))
+		trigger.Created = timestamppb.New(clock.Now(ctx))
 		trigger.OrderInBatch = ctl.triggerIndex
 	}
 

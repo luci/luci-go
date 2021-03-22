@@ -12,11 +12,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -237,7 +237,7 @@ func (r *MintOAuthTokenGrantRPC) mint(c context.Context, p *mintParams) (*minter
 		ServiceAccount:   p.serviceAccount,
 		Proxy:            string(p.proxyID),
 		EndUser:          string(p.endUserID),
-		IssuedAt:         google.NewTimestamp(now),
+		IssuedAt:         timestamppb.New(now),
 		ValidityDuration: p.validityDuration,
 	}
 	signed, err := SignGrant(c, r.Signer, body)
@@ -248,7 +248,7 @@ func (r *MintOAuthTokenGrantRPC) mint(c context.Context, p *mintParams) (*minter
 
 	return &minter.MintOAuthTokenGrantResponse{
 		GrantToken:     signed,
-		Expiry:         google.NewTimestamp(expiry),
+		Expiry:         timestamppb.New(expiry),
 		ServiceVersion: p.serviceVer,
 	}, body, nil
 }
