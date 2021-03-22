@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/dgraph-io/badger/v3"
+	"github.com/shirou/gopsutil/mem"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
@@ -29,7 +30,20 @@ type KVS struct {
 
 // New instantiates KVS.
 func New(ctx context.Context, path string) (*KVS, error) {
-	db, err := badger.Open(badger.DefaultOptions(path).WithLoggingLevel(badger.WARNING))
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get memory stats").Err()
+	}
+	opt := badger.DefaultOptions(path).WithLoggingLevel(badger.WARNING)
+
+	// Using /3 as ValueLogFileSize is used with 2x in
+	// https://github.com/dgraph-io/badger/blob/42d5e9510a4d0165f42a856e203562774aab6603/value.go#L519
+	valuelog := int64(v.Available / 3)
+	if valuelog < opt.ValueLogFileSize {
+		opt.ValueLogFileSize = valuelog
+	}
+
+	db, err := badger.Open(opt)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to open database: %s", path).Err()
 	}
