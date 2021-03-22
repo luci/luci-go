@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ce2d3f21_7e082b9d",
+        "filename": "milo/frontend/resultui/src/context/app_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-22T21:21:10Z",
+      "side": 1,
+      "message": "sorry, but why does permittedActions never resolves if access token is null? Access token may be null if you are anonymous, and anonymous users do have permissions. In fact, all of chromium is public, and you don\u0027t have to be logged in to see stuff.\n\nthe same applies to other RPCs, e.g. fetching build details or test results. Most of the stuff is public.\n\n--\n\nsorry, I didn\u0027t mean to suggest that the callsite must have a try..catch. I meant that the callsite must check if it makes sense to make the RPC before making it. Although the current approach removes the complexity from the callsite (because it doesn\u0027t have to check accessToken), it also adds complexity (because now callsite must check if RPC response is null - it is never null otherwise).\n\nbut again, in this and other cases, absence of access token doesn\u0027t mean we shouldn\u0027t make an RPC. It is OK to make an RPC without an access token, and most RPC would work just fine for all chromium builds",
+      "parentUuid": "1bf30363_5b833818",
+      "range": {
+        "startLine": 94,
+        "startChar": 13,
+        "endLine": 94,
+        "endChar": 24
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ed98d3ef_354938cd",
         "filename": "milo/frontend/resultui/src/context/build_state.ts",
         "patchSetId": 4

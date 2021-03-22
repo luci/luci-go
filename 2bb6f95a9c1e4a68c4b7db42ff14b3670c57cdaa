@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57831e1d_abddc3ee",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-22T21:21:10Z",
+      "side": 1,
+      "message": "don\u0027t you already have a parser for this? we need the same thing in test result duration (and other duration)",
+      "revId": "2bb6f95a9c1e4a68c4b7db42ff14b3670c57cdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
