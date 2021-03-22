@@ -22,6 +22,30 @@
       },
       "revId": "04f2665f9414deca15b054765b101211cf933e63",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9dfa146_239fedf1",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-22T09:10:12Z",
+      "side": 1,
+      "message": "Ah, maybe. Let me change ValueLog use 50% and MemTable use 25% of available memory.",
+      "parentUuid": "2ccc3f3a_dabc4aba",
+      "range": {
+        "startLine": 47,
+        "startChar": 20,
+        "endLine": 47,
+        "endChar": 60
+      },
+      "revId": "04f2665f9414deca15b054765b101211cf933e63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
