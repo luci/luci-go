@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd7123e1_c9daa768",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-22T00:13:41Z",
+      "side": 1,
+      "message": "Are we going to delete the old version after this? Actually I\u0027d prefer using the name \u003cmilo-test-result-tab\u003e for the new version, and change the old one to \u003cmilo-test-result-tab-deprecated\u003e or \u003cmilo-test-result-tab-old\u003e. That way, if we ever need to have a newer version, we don\u0027t have to think of a \"newer\" name for it (e.g.  \u003cmilo-test-result-tab-newer\u003e). It also make it clearer to people who reads the code that the old version is being deprecated.",
+      "revId": "fef9f6b23f318f9ec1aeadb09854390b3d422322",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
