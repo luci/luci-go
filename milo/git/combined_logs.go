@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
@@ -61,8 +60,8 @@ func (h commitHeap) Swap(i, j int) {
 }
 
 func (h commitHeap) Less(i, j int) bool {
-	iTime := google.TimeFromProto(h[i].commits[0].Committer.Time)
-	jTime := google.TimeFromProto(h[j].commits[0].Committer.Time)
+	iTime := h[i].commits[0].Committer.Time.AsTime()
+	jTime := h[j].commits[0].Committer.Time.AsTime()
 
 	// Ensure consistent ordering based on commit hash when times are identical.
 	if iTime == jTime {

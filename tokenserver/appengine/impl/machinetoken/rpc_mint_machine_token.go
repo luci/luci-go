@@ -81,7 +81,7 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 	}
 
 	// Timestamp is required.
-	issuedAt := google.TimeFromProto(tokenReq.IssuedAt)
+	issuedAt := tokenReq.IssuedAt.AsTime()
 	if issuedAt.IsZero() {
 		return r.mintingErrorResponse(c, minter.ErrorCode_BAD_TIMESTAMP, "issued_at is required")
 	}
