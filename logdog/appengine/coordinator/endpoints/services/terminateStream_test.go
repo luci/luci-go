@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
@@ -29,9 +31,8 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -46,11 +47,11 @@ func TestTerminateStream(t *testing.T) {
 		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
 			coord := cfg.Coordinator
 			coord.ArchiveTopic = "projects/test/topics/archive"
-			coord.ArchiveSettleDelay = google.NewDuration(10 * time.Second)
-			coord.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+			coord.ArchiveSettleDelay = durationpb.New(10 * time.Second)
+			coord.ArchiveDelayMax = durationpb.New(24 * time.Hour)
 		})
 		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-			pcfg.MaxStreamAge = google.NewDuration(time.Hour)
+			pcfg.MaxStreamAge = durationpb.New(time.Hour)
 		})
 
 		svr := New(ServerSettings{NumQueues: 2})
