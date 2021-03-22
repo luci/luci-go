@@ -22,6 +22,7 @@ import takeWhile from 'lodash-es/takeWhile';
 import { computed, observable } from 'mobx';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 
+import '../expandable_entry';
 import '../../components/lazy_list';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ID_SEG_REGEX, TestVariant } from '../../services/resultdb';
@@ -41,7 +42,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
   @observable.ref prevTestId = '';
   @observable.ref prevVariant?: TestVariant;
-  @observable.ref displayVariantId = true;
+  @observable.ref displayVariantId = false;
   @observable.ref renderCallback: Function | null = null;
   @observable.ref expandedCallback: Function | null = null;
 
@@ -134,52 +135,48 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
       return html``;
     }
     return html`
-      <div id="content-ruler"></div>
-      <div id="content" style=${styleMap({ display: this.expanded ? '' : 'none' })}>
-        <span id="variant-def">
-          <span class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
-            ${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result
-          </span>
-          ${this.sourceUrl ? '|' : ''}
-          <a href=${this.sourceUrl} target="_blank" style=${styleMap({ display: this.sourceUrl ? '' : 'none' })}
-            >source</a
-          >
-          ${this.variantDef.length !== 0 ? '|' : ''}
-          <span class="greyed-out">
-            ${this.variantDef.map(
-              ([k, v]) => html`
-                <span class="kv">
-                  <span class="kv-key">${k}</span>
-                  <span class="kv-value">${v}</span>
-                </span>
-              `
-            )}
-          </span>
+      <span id="variant-def">
+        <span class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
+          ${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result
         </span>
-        ${repeat(
-          this.variant.exonerations || [],
-          (e) => e.exonerationId,
-          (e) => html`
-            <div class="explanation-html">
-              ${sanitizeHTML(
-                e.explanationHtml ||
-                  'This test variant had unexpected results, but was exonerated (reason not provided).'
-              )}
-            </div>
-          `
-        )}
-        ${repeat(
-          this.variant.results || [],
-          (r) => r.result.resultId,
-          (r, i) => html`
-            <milo-result-entry
-              .id=${i + 1}
-              .testResult=${r.result}
-              .expanded=${i === this.expandedResultIndex}
-            ></milo-result-entry>
-          `
-        )}
-      </div>
+        ${this.sourceUrl ? '|' : ''}
+        <a href=${this.sourceUrl} target="_blank" style=${styleMap({ display: this.sourceUrl ? '' : 'none' })}
+          >source</a
+        >
+        ${this.variantDef.length !== 0 ? '|' : ''}
+        <span class="greyed-out">
+          ${this.variantDef.map(
+            ([k, v]) => html`
+              <span class="kv">
+                <span class="kv-key">${k}</span>
+                <span class="kv-value">${v}</span>
+              </span>
+            `
+          )}
+        </span>
+      </span>
+      ${repeat(
+        this.variant.exonerations || [],
+        (e) => e.exonerationId,
+        (e) => html`
+          <div class="explanation-html">
+            ${sanitizeHTML(
+              e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).'
+            )}
+          </div>
+        `
+      )}
+      ${repeat(
+        this.variant.results || [],
+        (r) => r.result.resultId,
+        (r, i) => html`
+          <milo-result-entry
+            .id=${i + 1}
+            .testResult=${r.result}
+            .expanded=${i === this.expandedResultIndex}
+          ></milo-result-entry>
+        `
+      )}
     `;
   }
 
@@ -195,58 +192,49 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     }
 
     return html`
-      <div>
-        <div
-          class=${classMap({
-            expanded: this.expanded,
-            'display-variant-id': this.displayVariantId,
-            'expandable-header': true,
-          })}
-          @click=${() => (this.expanded = !this.expanded)}
-        >
-          <mwc-icon id="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
-          <div id="header" class="one-line-content">
-            <mwc-icon
-              id="status-indicator"
-              class=${classMap({ [VARIANT_STATUS_CLASS_MAP[this.variant.status]]: true })}
-            >
-              ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
-            </mwc-icon>
-            <div id="identifier">
-              <div id="test-identifier">
-                <span>
-                  <span class="greyed-out">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(
-                    this.commonTestIdPrefix.length
-                  )}
-                </span>
-                <milo-copy-to-clipboard
-                  .textToCopy=${this.variant.testId}
-                  @click=${(e: Event) => e.stopPropagation()}
-                  title="copy test ID to clipboard"
-                ></milo-copy-to-clipboard>
-              </div>
-              <div id="variant-identifier">
-                <span>
-                  ${this.variantDef.map(
-                    ([k, v]) => html`
-                      <span
-                        class=${classMap({
-                          'greyed-out': !this.prevVariant || v === this.prevVariant.variant?.def?.[k],
-                          kv: true,
-                        })}
-                      >
-                        <span class="kv-key">${k}</span>
-                        <span class="kv-value">${v}</span>
-                      </span>
-                    `
-                  )}
-                </span>
-              </div>
+      <milo-expandable-entry
+        .expanded=${this.expanded}
+        .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
+        class=${classMap({ 'display-variant-id': this.displayVariantId && !this.expanded })}
+      >
+        <div id="header" slot="header">
+          <mwc-icon id="status-indicator" class=${classMap({ [VARIANT_STATUS_CLASS_MAP[this.variant.status]]: true })}>
+            ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
+          </mwc-icon>
+          <div id="identifier">
+            <div id="test-identifier">
+              <span>
+                <span class="greyed-out">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(
+                  this.commonTestIdPrefix.length
+                )}
+              </span>
+              <milo-copy-to-clipboard
+                .textToCopy=${this.variant.testId}
+                @click=${(e: Event) => e.stopPropagation()}
+                title="copy test ID to clipboard"
+              ></milo-copy-to-clipboard>
+            </div>
+            <div id="variant-identifier">
+              <span>
+                ${this.variantDef.map(
+                  ([k, v]) => html`
+                    <span
+                      class=${classMap({
+                        'greyed-out': !this.prevVariant || v === this.prevVariant.variant?.def?.[k],
+                        kv: true,
+                      })}
+                    >
+                      <span class="kv-key">${k}</span>
+                      <span class="kv-value">${v}</span>
+                    </span>
+                  `
+                )}
+              </span>
             </div>
           </div>
         </div>
-        <div id="body">${this.renderBody()}</div>
-      </div>
+        <div id="body" slot="content">${this.renderBody()}</div>
+      </milo-expandable-entry>
     `;
   }
 
@@ -259,33 +247,13 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
       height: 24px;
     }
 
-    .expandable-header {
-      display: grid;
-      grid-template-columns: 24px 1fr;
-      grid-template-rows: 24px;
-      letter-spacing: 0.15px;
-      grid-gap: 5px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .expandable-header.display-variant-id:not(.expanded) {
-      grid-template-rows: 32px;
-    }
-    .expandable-header .expand-toggle {
-      grid-row: 1;
-      grid-column: 1;
-    }
-    .expandable-header .one-line-content {
-      grid-row: 1;
-      grid-column: 2;
-      line-height: 24px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+    milo-expandable-entry.display-variant-id {
+      --header-height: 36px;
     }
 
     #header {
       display: grid;
+      user-select: none;
       grid-template-columns: 24px 1fr;
       grid-template-rows: 36px;
       grid-gap: 5px;
@@ -314,8 +282,6 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     }
     #identifier {
       overflow: hidden;
-      grid-row: 1;
-      grid-column: 2;
     }
     #test-identifier {
       display: flex;
@@ -327,30 +293,19 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .expandable-header.display-variant-id:not(.expanded) #test-identifier {
-      line-height: 16px;
+    milo-copy-to-clipboard {
+      flex: 0 0 16px;
     }
+
     #variant-identifier {
-      display: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
       font-size: 12px;
       line-height: 12px;
     }
-    .expandable-header.display-variant-id:not(.expanded) #variant-identifier {
-      display: block;
-    }
 
     #body {
-      display: grid;
-      grid-template-columns: 24px 1fr;
-      grid-gap: 5px;
-    }
-    #content {
       overflow: hidden;
-    }
-    #content-ruler {
-      border-left: 1px solid var(--divider-color);
-      width: 0px;
-      margin-left: 11.5px;
     }
 
     #variant-def {
