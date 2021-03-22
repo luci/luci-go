@@ -38,19 +38,13 @@ export class ExpandableEntry extends LitElement {
 
   protected render() {
     return html`
-      <div>
-        <div id="expandable-header" @click=${() => (this.expanded = !this.expanded)}>
-          <mwc-icon id="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
-          <div id="header-content">
-            <slot name="header"></slot>
-          </div>
-        </div>
-        <div id="body">
-          <div id="content-ruler" style=${styleMap({ display: this.hideContentRuler ? 'none' : '' })}></div>
-          <div id="content" style=${styleMap({ display: this.expanded ? '' : 'none' })}>
-            <slot name="content"></slot>
-          </div>
-        </div>
+      <div id="expandable-header" @click=${() => (this.expanded = !this.expanded)}>
+        <mwc-icon>${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
+        <slot name="header"></slot>
+      </div>
+      <div id="body">
+        <div id="content-ruler" style=${styleMap({ visibility: this.hideContentRuler ? 'hidden' : '' })}></div>
+        <slot name="content" style=${styleMap({ display: this.expanded ? '' : 'none' })}></slot>
       </div>
     `;
   }
@@ -67,18 +61,9 @@ export class ExpandableEntry extends LitElement {
       grid-template-rows: var(--header-height);
       grid-gap: 5px;
       cursor: pointer;
-    }
-    #expand-toggle {
-      grid-row: 1;
-      grid-column: 1;
-    }
-    #header-content {
-      grid-row: 1;
-      grid-column: 2;
       line-height: 24px;
       overflow: hidden;
       white-space: nowrap;
-      text-overflow: ellipsis;
     }
 
     #body {
@@ -87,16 +72,9 @@ export class ExpandableEntry extends LitElement {
       grid-gap: 5px;
     }
     #content-ruler {
-      grid-row: 1;
-      grid-column: 1;
       border-left: 1px solid var(--divider-color);
       width: 0px;
       margin-left: 11.5px;
-    }
-    #content {
-      grid-row: 1;
-      grid-column: 2;
-      overflow: hidden;
     }
   `;
 }
