@@ -20,10 +20,11 @@ import (
 	"io"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -52,7 +53,7 @@ func (f *Flags) Descriptor() *logpb.LogStreamDescriptor {
 		Name:        string(f.Name),
 		ContentType: string(contentType),
 		StreamType:  logpb.StreamType(f.Type),
-		Timestamp:   google.NewTimestamp(time.Time(f.Timestamp)),
+		Timestamp:   timestamppb.New(time.Time(f.Timestamp)),
 		Tags:        f.Tags,
 	}
 }
