@@ -258,7 +258,7 @@ func TestValidateStep(t *testing.T) {
 				step.EndTime = t
 				st, _ := ptypes.TimestampProto(testclock.TestRecentTimeUTC.AddDate(0, 0, 1))
 				step.StartTime = st
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "start_time: is after the end_time")
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "end_time: is before the start_time")
 			})
 		})
 
