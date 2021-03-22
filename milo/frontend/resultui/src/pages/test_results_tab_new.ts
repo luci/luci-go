@@ -268,6 +268,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     if (variants.length === 0 && !this.invocationState.showEmptyGroups) {
       return html``;
     }
+    const firstVariant = variants[0];
     return html`
       <div
         class=${classMap({
@@ -289,18 +290,12 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         </div>
       </div>
       ${repeat(
-        (display ? variants : []).map(
-          (v, i, variants) =>
-            [variants[i - 1], v, variants[i + 1]] as [TestVariant | undefined, TestVariant, TestVariant | undefined]
-        ),
-        ([_, v]) => `${v.testId} ${v.variantHash}`,
-        ([prev, v, next]) => html`
+        display ? variants : [],
+        (v) => `${v.testId} ${v.variantHash}`,
+        (v) => html`
           <milo-variant-entry-new
             .variant=${v}
-            .prevTestId=${prev?.testId ?? ''}
-            .prevVariant=${prev?.testId === v.testId ? prev : null}
-            .expanded=${this.invocationState.testLoader?.testVariantCount === 1 || (prev === undefined && expandFirst)}
-            .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
+            .expanded=${this.invocationState.testLoader?.testVariantCount === 1 || (v === firstVariant && expandFirst)}
             .prerender=${true}
             .renderCallback=${this.variantRenderedCallback}
             .expandedCallback=${this.variantExpandedCallback}
