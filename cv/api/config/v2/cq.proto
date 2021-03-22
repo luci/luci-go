@@ -97,6 +97,8 @@ enum CommentLevel {
 
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
+//
+// Next field number: 8
 message ConfigGroup {
   reserved 3; // allow_cq_depend.
 
@@ -183,7 +185,35 @@ message ConfigGroup {
   // and fallback one for refs/heads/* which will pick up all CLs on
   // non-master branches.
   Toggle fallback = 5;
+
+  // Additional run modes supported besides standard DRY_RUN and FULL_RUN.
+  //
+  // Order matters.
+  repeated Mode additonal_modes = 7;
 }
+
+message Mode {
+  // The name of this mode.
+  string name = 1;
+  // The conditions that triggers this mode.
+  //
+  // Connected by AND.
+  repeated TriggeringCondition triggering_conditions = 2;
+}
+
+//
+message TriggeringCondition {
+  // Vote status
+  message Vote {
+    string label = 1;
+    int32 value = 2;
+  }
+
+  oneof condition {
+    Vote vote = 1;
+  }
+}
+
 
 // CombineCLs defines how CQ works with >1 CL per attempt.
 //
@@ -349,7 +379,7 @@ message Verifiers {
     Toggle cancel_stale_tryjobs = 3 [deprecated = true];
 
     message Builder {
-      // Next field number: 12
+      // Next field number: 14
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
