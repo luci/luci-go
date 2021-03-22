@@ -46,6 +46,30 @@
       },
       "revId": "90aac763f05ba9967c6a7786e39842414e8afd7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a900fede_b39a7bae",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-22T05:37:45Z",
+      "side": 1,
+      "message": "added comment, 1GB cap is applied in comparison.",
+      "parentUuid": "0a8e59c0_edf95c00",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 35
+      },
+      "revId": "90aac763f05ba9967c6a7786e39842414e8afd7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
