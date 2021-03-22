@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ccc3f3a_dabc4aba",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-22T09:05:47Z",
+      "side": 1,
+      "message": "Would it happen to exceed the available memory if both value log file and memtable consumes the max sizes?",
+      "range": {
+        "startLine": 47,
+        "startChar": 20,
+        "endLine": 47,
+        "endChar": 60
+      },
+      "revId": "04f2665f9414deca15b054765b101211cf933e63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
