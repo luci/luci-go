@@ -19,7 +19,7 @@ import (
 	"net"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -63,7 +63,7 @@ func (i *MintedOAuthTokenInfo) toBigQueryMessage() *bqpb.OAuthToken {
 		// fetched from cache (and thus it was issued some time ago, not now). This
 		// timestamp is not preserved in the cache, since it can be calculated from
 		// 'expiration' if necessary.
-		RequestedAt: google.NewTimestamp(i.RequestedAt),
+		RequestedAt: timestamppb.New(i.RequestedAt),
 		Expiration:  i.Response.Expiry,
 
 		// Information supplied by the caller.

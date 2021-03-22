@@ -25,13 +25,13 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/appengine"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -181,7 +181,7 @@ func (t *Events) Flush(c context.Context) error {
 	rows := make([]bigquery.ValueSaver, len(t.ev))
 	for idx, e := range t.ev {
 		// Make events in a batch ordered by time by abusing nanoseconds precision.
-		e.When = google.NewTimestamp(when.Add(time.Duration(idx)))
+		e.When = timestamppb.New(when.Add(time.Duration(idx)))
 		e.Who = who
 		entities[idx] = (&Event{}).FromProto(c, e)
 		rows[idx] = &bq.Row{Message: e}

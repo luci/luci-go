@@ -20,12 +20,13 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/info"
 
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -121,7 +122,7 @@ func pokeCron(c context.Context, job *Job, disp *tq.Dispatcher, cb func(m *cron.
 func cronTrigger(a cron.StartInvocationAction, now time.Time) *internal.Trigger {
 	return &internal.Trigger{
 		Id:      fmt.Sprintf("cron:v1:%d", a.Generation),
-		Created: google.NewTimestamp(now),
+		Created: timestamppb.New(now),
 		Payload: &internal.Trigger_Cron{
 			Cron: &api.CronTrigger{
 				Generation: a.Generation,

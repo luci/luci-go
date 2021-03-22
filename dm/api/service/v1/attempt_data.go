@@ -17,7 +17,7 @@ package dm
 import (
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // NewJsonResult creates a new JsonResult object with optional expiration time.
@@ -32,7 +32,7 @@ func NewJsonResult(data string, exps ...time.Time) *JsonResult {
 	return &JsonResult{
 		Object:     data,
 		Size:       uint32(len(data)),
-		Expiration: google.NewTimestamp(exp),
+		Expiration: timestamppb.New(exp),
 	}
 }
 
@@ -46,7 +46,7 @@ func NewDatalessJsonResult(size uint32, exps ...time.Time) *JsonResult {
 	case l > 1:
 		panic("too many exps")
 	}
-	return &JsonResult{Size: size, Expiration: google.NewTimestamp(exp)}
+	return &JsonResult{Size: size, Expiration: timestamppb.New(exp)}
 }
 
 // NewAttemptScheduling creates an Attempt in the SCHEDULING state.
