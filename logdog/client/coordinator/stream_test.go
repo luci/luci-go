@@ -20,15 +20,16 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -208,7 +209,7 @@ func TestStreamGet(t *testing.T) {
 								genLog(1337, "kthxbye"),
 							},
 							State: &logdog.LogStreamState{
-								Created: google.NewTimestamp(now),
+								Created: timestamppb.New(now),
 								Archive: &logdog.LogStreamState_ArchiveInfo{
 									IndexUrl:  "index",
 									StreamUrl: "stream",
@@ -283,7 +284,7 @@ func TestStreamGet(t *testing.T) {
 								StreamType: logpb.StreamType_TEXT,
 							},
 							State: &logdog.LogStreamState{
-								Created: google.NewTimestamp(now),
+								Created: timestamppb.New(now),
 							},
 						}, nil
 					}
@@ -346,7 +347,7 @@ func TestStreamGet(t *testing.T) {
 						return &logdog.GetResponse{
 							Project: "myproj",
 							State: &logdog.LogStreamState{
-								Created: google.NewTimestamp(now),
+								Created: timestamppb.New(now),
 							},
 							Desc: &logpb.LogStreamDescriptor{
 								Prefix:     "test",
@@ -391,7 +392,7 @@ func TestStreamGet(t *testing.T) {
 						return &logdog.GetResponse{
 							Project: "myproj",
 							State: &logdog.LogStreamState{
-								Created: google.NewTimestamp(now),
+								Created: timestamppb.New(now),
 							},
 							Desc: &logpb.LogStreamDescriptor{
 								Prefix:     "test",
@@ -423,7 +424,7 @@ func TestStreamGet(t *testing.T) {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
 							State: &logdog.LogStreamState{
-								Created: google.NewTimestamp(now),
+								Created: timestamppb.New(now),
 							},
 							Logs: []*logpb.LogEntry{
 								genLog(1337, "ohai"),
@@ -474,7 +475,7 @@ func TestStreamGet(t *testing.T) {
 						return &logdog.GetResponse{
 							Logs: []*logpb.LogEntry{tailLog},
 							State: &logdog.LogStreamState{
-								Created: google.NewTimestamp(now),
+								Created: timestamppb.New(now),
 							},
 							Desc: &logpb.LogStreamDescriptor{
 								Prefix:     "test",

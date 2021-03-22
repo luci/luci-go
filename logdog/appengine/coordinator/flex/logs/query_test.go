@@ -22,10 +22,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -418,11 +419,11 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`When querying against timestamp constraints`, func() {
-			req.Older = google.NewTimestamp(env.Clock.Now())
+			req.Older = timestamppb.New(env.Clock.Now())
 
 			Convey(`Querying for entries created at or after 2 seconds ago (latest 2 entries).`, func() {
 				req.Path = "testing/+/**"
-				req.Newer = google.NewTimestamp(env.Clock.Now().Add(-2*time.Second - time.Millisecond))
+				req.Newer = timestamppb.New(env.Clock.Now().Add(-2*time.Second - time.Millisecond))
 
 				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)

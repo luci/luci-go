@@ -18,8 +18,9 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -139,8 +140,8 @@ func (c *Client) Query(ctx context.Context, project string, path string, o Query
 		Project:     project,
 		Path:        path,
 		ContentType: o.ContentType,
-		Older:       google.NewTimestamp(o.Before),
-		Newer:       google.NewTimestamp(o.After),
+		Older:       timestamppb.New(o.Before),
+		Newer:       timestamppb.New(o.After),
 		Purged:      o.Purged.queryValue(),
 		State:       o.State,
 	}

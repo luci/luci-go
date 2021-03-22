@@ -21,8 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -65,7 +67,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &minter.LuciMachineToken{
 						MachineToken: testingMachineToken(ctx, signer),
-						Expiry:       google.NewTimestamp(clock.Now(ctx).Add(time.Hour)),
+						Expiry:       timestamppb.New(clock.Now(ctx).Add(time.Hour)),
 					},
 				},
 			},

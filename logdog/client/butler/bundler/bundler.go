@@ -21,8 +21,9 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -212,7 +213,7 @@ func (b *Bundler) makeBundles() {
 		bb = &builder{
 			size: b.c.MaxBundleSize,
 			template: logpb.ButlerLogBundle{
-				Timestamp: google.NewTimestamp(b.getClock().Now()),
+				Timestamp: timestamppb.New(b.getClock().Now()),
 			},
 		}
 		var oldestContentTime time.Time

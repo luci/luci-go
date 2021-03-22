@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
@@ -93,7 +93,7 @@ func TestApiDescToInfo(t *testing.T) {
 			HexDigest: strings.Repeat("0", 64),
 		},
 		RegisteredBy: "user:a@example.com",
-		RegisteredTs: google.NewTimestamp(ts),
+		RegisteredTs: timestamppb.New(ts),
 	}
 
 	instInfo := InstanceInfo{
@@ -121,7 +121,7 @@ func TestApiDescToInfo(t *testing.T) {
 					Key:        "k",
 					Value:      "v",
 					AttachedBy: "user:t@example.com",
-					AttachedTs: google.NewTimestamp(ts.Add(time.Second)),
+					AttachedTs: timestamppb.New(ts.Add(time.Second)),
 				},
 			},
 			Refs: []*api.Ref{
@@ -129,7 +129,7 @@ func TestApiDescToInfo(t *testing.T) {
 					Name:       "ref",
 					Instance:   apiInst.Instance,
 					ModifiedBy: "user:r@example.com",
-					ModifiedTs: google.NewTimestamp(ts.Add(2 * time.Second)),
+					ModifiedTs: timestamppb.New(ts.Add(2 * time.Second)),
 				},
 			},
 		}
