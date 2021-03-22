@@ -106,6 +106,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e8769db_9baa70a3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-22T17:58:01Z",
+      "side": 1,
+      "message": "Your finding is correct. Sorry, for not making it clear. Thanks for that CL.",
+      "parentUuid": "47a18449_86078936",
+      "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0e61bcd4_55eace70",
@@ -225,6 +243,30 @@
       "side": 1,
       "message": "It\u0027s probably just inexperience with Go, but I\u0027m having trouble getting that to work.",
       "parentUuid": "5f2c7076_f41ce3c0",
+      "range": {
+        "startLine": 444,
+        "startChar": 75,
+        "endLine": 444,
+        "endChar": 96
+      },
+      "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e51f6c2c_46ba7243",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 444,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-22T17:58:01Z",
+      "side": 1,
+      "message": "There 2 distinct things:\n1. pointer to map \n2. lack of pointer to Comment.\n\n(1) is important. There is no reason at all to return a pointer to map.\nL444 should be just \"return resp, nil\".\n\n(2) is not important. I think we should prefer not to return list of pointers if possible, as this means more memory allocations. Consistency with the rest of the Client class is a fair point:\n\u003e I\u0027m having trouble getting that to work.\nCan you elaborate how exactly it fails?",
+      "parentUuid": "fd1d1bcd_9442afe0",
       "range": {
         "startLine": 444,
         "startChar": 75,
