@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -267,10 +268,10 @@ func TestTriggerBuild(t *testing.T) {
 			for i, t := range ctl.Triggers {
 				So(t.OrderInBatch, ShouldEqual, i)
 			}
-			So(google.TimeFromProto(ctl.Triggers[0].Created), ShouldEqual, epoch.Add(-1*time.Minute))
-			So(google.TimeFromProto(ctl.Triggers[1].Created), ShouldEqual, epoch.Add(-3*time.Minute)) // oldest on master
-			So(google.TimeFromProto(ctl.Triggers[2].Created), ShouldEqual, epoch.Add(-2*time.Minute))
-			So(google.TimeFromProto(ctl.Triggers[3].Created), ShouldEqual, epoch.Add(-1*time.Minute)) // newest on master
+			So(ctl.Triggers[0].Created.AsTime(), ShouldEqual, epoch.Add(-1*time.Minute))
+			So(ctl.Triggers[1].Created.AsTime(), ShouldEqual, epoch.Add(-3*time.Minute)) // oldest on master
+			So(ctl.Triggers[2].Created.AsTime(), ShouldEqual, epoch.Add(-2*time.Minute))
+			So(ctl.Triggers[3].Created.AsTime(), ShouldEqual, epoch.Add(-1*time.Minute)) // newest on master
 		})
 
 		Convey("Updated ref with pathfilters", func() {

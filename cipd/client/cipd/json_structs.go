@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -189,22 +187,30 @@ type ClientDescription struct {
 // Converters from proto API to JSON output structs.
 
 func apiInstanceToInfo(inst *api.Instance) InstanceInfo {
+	var t time.Time
+	if inst.RegisteredTs.IsValid() {
+		t = inst.RegisteredTs.AsTime()
+	}
 	return InstanceInfo{
 		Pin: common.Pin{
 			PackageName: inst.Package,
 			InstanceID:  common.ObjectRefToInstanceID(inst.Instance),
 		},
 		RegisteredBy: inst.RegisteredBy,
-		RegisteredTs: UnixTime(google.TimeFromProto(inst.RegisteredTs)),
+		RegisteredTs: UnixTime(t),
 	}
 }
 
 func apiRefToInfo(r *api.Ref) RefInfo {
+	var t time.Time
+	if r.ModifiedTs.IsValid() {
+		t = r.ModifiedTs.AsTime()
+	}
 	return RefInfo{
 		Ref:        r.Name,
 		InstanceID: common.ObjectRefToInstanceID(r.Instance),
 		ModifiedBy: r.ModifiedBy,
-		ModifiedTs: UnixTime(google.TimeFromProto(r.ModifiedTs)),
+		ModifiedTs: UnixTime(t),
 	}
 }
 
@@ -212,7 +218,7 @@ func apiTagToInfo(t *api.Tag) TagInfo {
 	return TagInfo{
 		Tag:          common.JoinInstanceTag(t),
 		RegisteredBy: t.AttachedBy,
-		RegisteredTs: UnixTime(google.TimeFromProto(t.AttachedTs)),
+		RegisteredTs: UnixTime(t.AttachedTs.AsTime()),
 	}
 }
 
@@ -223,7 +229,7 @@ func apiMetadataToInfo(md *api.InstanceMetadata) MetadataInfo {
 		Value:       md.Value,
 		ContentType: md.ContentType,
 		AttachedBy:  md.AttachedBy,
-		AttachedTs:  UnixTime(google.TimeFromProto(md.AttachedTs)),
+		AttachedTs:  UnixTime(md.AttachedTs.AsTime()),
 	}
 }
 

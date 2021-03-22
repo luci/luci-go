@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,27 +28,14 @@ func TestTimestamp(t *testing.T) {
 
 	Convey(`Can convert to/from time.Time instances.`, t, func() {
 		for _, v := range []time.Time{
-			{},
 			testclock.TestTimeLocal,
 			testclock.TestTimeUTC,
 		} {
-			So(TimeFromProto(NewTimestamp(v)).UTC(), ShouldResemble, v.UTC())
+			So(NewTimestamp(v).AsTime().UTC(), ShouldResemble, v.UTC())
 		}
 	})
 
 	Convey(`A zero time.Time produces a nil Timestamp.`, t, func() {
 		So(NewTimestamp(time.Time{}), ShouldBeNil)
-	})
-
-	Convey(`A nil Timestamp produces a zero time.Time.`, t, func() {
-		So(TimeFromProto(nil).IsZero(), ShouldBeTrue)
-	})
-
-	Convey(`A zero Timestamp produces a zero time.Time.`, t, func() {
-		// It is easy to (unintentionally) inject a zero value for an unset
-		// message field when round-tripping through the generated code in some
-		// languages. e.g., reading an unset field in python injects the zero
-		// value for the field in the source message.
-		So(TimeFromProto(&timestamppb.Timestamp{}).IsZero(), ShouldBeTrue)
 	})
 }
