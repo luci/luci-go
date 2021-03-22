@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ab32e498_c0cbf542",
+        "filename": "milo/frontend/resultui/karma.conf.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-22T00:14:47Z",
+      "side": 1,
+      "message": "nits: converted",
+      "range": {
+        "startLine": 80,
+        "startChar": 34,
+        "endLine": 80,
+        "endChar": 41
+      },
+      "revId": "887ba32693112609d9887dc230db19deda6844c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
