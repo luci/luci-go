@@ -52,6 +52,24 @@
       "parentUuid": "70ff5219_4351edbb",
       "revId": "fef9f6b23f318f9ec1aeadb09854390b3d422322",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "809c12e8_30bab964",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-22T00:34:59Z",
+      "side": 1,
+      "message": "I think \"new\" is probably OK, if we only expect it is only a short time before we replace the old one with the new one.\n\nPerhaps it\u0027s good to put a comment for the old elements as well, saying that they are being replaced by the new elements, so that it is clearer for other people reading the code.",
+      "parentUuid": "6dbc3b98_42e540b6",
+      "revId": "fef9f6b23f318f9ec1aeadb09854390b3d422322",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
