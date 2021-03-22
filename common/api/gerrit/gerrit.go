@@ -862,6 +862,63 @@ func (c *Client) RestoreChange(ctx context.Context, changeID string, ri *Restore
 	return &resp, nil
 }
 
+// AccountQueryParams contains the parameters necessary for querying accounts from Gerrit.
+type AccountQueryParams struct {
+	// Actual query string, see
+	// https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators
+	Query string `json:"q"`
+	// How many changes to include in the response.
+	N int `json:"n"`
+	// Skip this many from the list of results (unreliable for paging).
+	S int `json:"S"`
+	// Include these options in the queries. Certain options will make
+	// Gerrit fill in additional fields of the response. These require
+	// additional database searches and may delay the response.
+	//
+	// The supported strings for options are listed in Gerrit's api
+	// documentation at the link below:
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
+	Options []string `json:"o"`
+}
+
+// queryString renders the ChangeQueryParams as a url.Values.
+func (qr *AccountQueryParams) queryString() url.Values {
+	qs := make(url.Values, len(qr.Options)+3)
+	qs.Add("q", qr.Query)
+	if qr.N > 0 {
+		qs.Add("n", strconv.Itoa(qr.N))
+	}
+	if qr.S > 0 {
+		qs.Add("S", strconv.Itoa(qr.S))
+	}
+	for _, o := range qr.Options {
+		qs.Add("o", o)
+	}
+	return qs
+}
+
+// AccountQuery gets all matching accounts.
+//
+// Only the .Query property of the qr parameter is required.
+//
+// Returns a slice of AccountInfo, whether there are more accounts to fetch,
+// and an error.
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-groups.html
+func (c *Client) AccountQuery(ctx context.Context, qr AccountQueryParams) ([]*AccountInfo, bool, error) {
+	var resp struct{ Collection []*AccountInfo }
+	if _, err := c.get(ctx, "a/accounts/", qr.queryString(), &resp.Collection); err != nil {
+		return nil, false, err
+	}
+	result := resp.Collection
+	if len(result) == 0 {
+		return nil, false, nil
+	}
+	moreAccounts := result[len(result)-1].MoreAccounts
+	result[len(result)-1].MoreAccounts = false
+	return result, moreAccounts, nil
+}
+
 func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) (int, error) {
 	u := c.gerritURL
 	u.Opaque = "//" + u.Host + "/" + path
