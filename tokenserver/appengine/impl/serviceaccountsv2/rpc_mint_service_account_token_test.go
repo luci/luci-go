@@ -23,13 +23,13 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/trace/tracetest"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -128,7 +129,7 @@ func TestMintServiceAccountToken(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp, ShouldResembleProto, &minter.MintServiceAccountTokenResponse{
 				Token:          "access-token-for-" + testAccount.Email(),
-				Expiry:         google.NewTimestamp(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
+				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
 			})
 
@@ -164,7 +165,7 @@ func TestMintServiceAccountToken(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp, ShouldResembleProto, &minter.MintServiceAccountTokenResponse{
 				Token:          "id-token-for-" + testAccount.Email(),
-				Expiry:         google.NewTimestamp(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
+				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
 			})
 

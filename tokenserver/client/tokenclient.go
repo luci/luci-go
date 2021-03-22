@@ -22,9 +22,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -105,7 +105,7 @@ func (c *Client) MintMachineToken(ctx context.Context, req *minter.MachineTokenR
 	if req.Certificate, err = c.Signer.Certificate(ctx); err != nil {
 		return nil, err
 	}
-	req.IssuedAt = google.NewTimestamp(clock.Now(ctx))
+	req.IssuedAt = timestamppb.New(clock.Now(ctx))
 
 	// Serialize and sign.
 	tokenRequest, err := proto.Marshal(req)

@@ -29,11 +29,11 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -217,8 +218,8 @@ func TestMetadataUpdating(t *testing.T) {
 			// Create new metadata entry.
 			meta, err := callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
 				Prefix:     "a/b/",
-				UpdateTime: google.NewTimestamp(time.Unix(10000, 0)), // should be overwritten
-				UpdateUser: "user:zzz@example.com",                   // should be overwritten
+				UpdateTime: timestamppb.New(time.Unix(10000, 0)), // should be overwritten
+				UpdateUser: "user:zzz@example.com",               // should be overwritten
 				Acls: []*api.PrefixMetadata_ACL{
 					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
@@ -228,7 +229,7 @@ func TestMetadataUpdating(t *testing.T) {
 			expected := &api.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "WZllwc6m8f9C_rfwnspaPIiyPD0",
-				UpdateTime:  google.NewTimestamp(testutil.TestTime),
+				UpdateTime:  timestamppb.New(testutil.TestTime),
 				UpdateUser:  "user:top-owner@example.com",
 				Acls: []*api.PrefixMetadata_ACL{
 					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
@@ -245,7 +246,7 @@ func TestMetadataUpdating(t *testing.T) {
 			So(meta, ShouldResembleProto, &api.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
-				UpdateTime:  google.NewTimestamp(testutil.TestTime.Add(time.Hour)),
+				UpdateTime:  timestamppb.New(testutil.TestTime.Add(time.Hour)),
 				UpdateUser:  "user:top-owner@example.com",
 			})
 
@@ -258,7 +259,7 @@ func TestMetadataUpdating(t *testing.T) {
 					Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 					Package: "a/b",
 					Who:     "user:top-owner@example.com",
-					When:    google.NewTimestamp(testutil.TestTime.Add(time.Hour)),
+					When:    timestamppb.New(testutil.TestTime.Add(time.Hour)),
 					RevokedRole: []*api.PrefixMetadata_ACL{
 						{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 					},
@@ -267,7 +268,7 @@ func TestMetadataUpdating(t *testing.T) {
 					Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 					Package: "a/b",
 					Who:     "user:top-owner@example.com",
-					When:    google.NewTimestamp(testutil.TestTime),
+					When:    timestamppb.New(testutil.TestTime),
 					GrantedRole: []*api.PrefixMetadata_ACL{
 						{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 					},
@@ -864,7 +865,7 @@ func TestRegisterInstance(t *testing.T) {
 				Package:      inst.Package,
 				Instance:     inst.Instance,
 				RegisteredBy: "user:owner@example.com",
-				RegisteredTs: google.NewTimestamp(testutil.TestTime),
+				RegisteredTs: timestamppb.New(testutil.TestTime),
 			}
 			resp, err = impl.RegisterInstance(ctx, inst)
 			So(err, ShouldBeNil)
@@ -1217,7 +1218,7 @@ func TestListInstances(t *testing.T) {
 					HashAlgo:  api.HashAlgo_SHA1,
 					HexDigest: fmt.Sprintf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%d", i),
 				},
-				RegisteredTs: google.NewTimestamp(ts.Add(time.Duration(i) * time.Minute)),
+				RegisteredTs: timestamppb.New(ts.Add(time.Duration(i) * time.Minute)),
 			}
 		}
 
@@ -1526,7 +1527,7 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 					ModifiedBy: "user:writer@example.com",
-					ModifiedTs: google.NewTimestamp(testutil.TestTime),
+					ModifiedTs: timestamppb.New(testutil.TestTime),
 				},
 			})
 
@@ -2674,13 +2675,13 @@ func TestDescribeInstance(t *testing.T) {
 						Key:        "a",
 						Value:      "0",
 						AttachedBy: "user:tag@example.com",
-						AttachedTs: google.NewTimestamp(testutil.TestTime),
+						AttachedTs: timestamppb.New(testutil.TestTime),
 					},
 					{
 						Key:        "a",
 						Value:      "1",
 						AttachedBy: "user:tag@example.com",
-						AttachedTs: google.NewTimestamp(testutil.TestTime),
+						AttachedTs: timestamppb.New(testutil.TestTime),
 					},
 				},
 				Refs: []*api.Ref{
@@ -2689,21 +2690,21 @@ func TestDescribeInstance(t *testing.T) {
 						Package:    "a/pkg",
 						Instance:   inst.Proto().Instance,
 						ModifiedBy: "user:ref@example.com",
-						ModifiedTs: google.NewTimestamp(testutil.TestTime),
+						ModifiedTs: timestamppb.New(testutil.TestTime),
 					},
 					{
 						Name:       "ref_b",
 						Package:    "a/pkg",
 						Instance:   inst.Proto().Instance,
 						ModifiedBy: "user:ref@example.com",
-						ModifiedTs: google.NewTimestamp(testutil.TestTime),
+						ModifiedTs: timestamppb.New(testutil.TestTime),
 					},
 				},
 				Processors: []*api.Processor{
 					{
 						Id:         "proc",
 						State:      api.Processor_SUCCEEDED,
-						FinishedTs: google.NewTimestamp(testutil.TestTime),
+						FinishedTs: timestamppb.New(testutil.TestTime),
 					},
 				},
 			})

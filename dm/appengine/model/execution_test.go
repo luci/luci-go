@@ -19,17 +19,16 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
-	"go.chromium.org/luci/common/proto/google"
 	. "go.chromium.org/luci/common/testing/assertions"
-
-	"go.chromium.org/luci/dm/api/service/v1"
 )
 
 func TestExecutions(t *testing.T) {
@@ -246,8 +245,8 @@ func TestExecutionToProto(t *testing.T) {
 
 		Convey("no id", func() {
 			exp := dm.NewExecutionScheduling()
-			exp.Data.Created = google.NewTimestamp(testclock.TestTimeUTC)
-			exp.Data.Modified = google.NewTimestamp(testclock.TestTimeUTC)
+			exp.Data.Created = timestamppb.New(testclock.TestTimeUTC)
+			exp.Data.Modified = timestamppb.New(testclock.TestTimeUTC)
 			exp.Data.DistributorInfo = &dm.Execution_Data_DistributorInfo{Token: "id"}
 
 			So(e.ToProto(false), ShouldResemble, exp)
@@ -256,8 +255,8 @@ func TestExecutionToProto(t *testing.T) {
 		Convey("with id", func() {
 			exp := dm.NewExecutionScheduling()
 			exp.Id = dm.NewExecutionID("qst", 1, 1)
-			exp.Data.Created = google.NewTimestamp(testclock.TestTimeUTC)
-			exp.Data.Modified = google.NewTimestamp(testclock.TestTimeUTC)
+			exp.Data.Created = timestamppb.New(testclock.TestTimeUTC)
+			exp.Data.Modified = timestamppb.New(testclock.TestTimeUTC)
 			exp.Data.DistributorInfo = &dm.Execution_Data_DistributorInfo{Token: "id"}
 
 			So(e.ToProto(true), ShouldResemble, exp)

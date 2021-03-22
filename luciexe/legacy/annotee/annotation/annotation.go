@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
@@ -551,7 +552,7 @@ func (s *State) now() *timestamp.Timestamp {
 	if c == nil {
 		c = clock.GetSystemClock()
 	}
-	return google.NewTimestamp(c.Now())
+	return timestamppb.New(c.Now())
 }
 
 // Step represents a single step.

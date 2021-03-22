@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"google.golang.org/api/pubsub/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -37,7 +38,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -53,6 +53,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task/noop"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -1184,8 +1185,8 @@ func TestAbortJob(t *testing.T) {
 					InvId: expectedInvID,
 					Timer: &internal.Timer{
 						Id:      "project/job:9200093523825193008:1:0",
-						Created: google.NewTimestamp(epoch.Add(time.Second)),
-						Eta:     google.NewTimestamp(epoch.Add(time.Minute + time.Second)),
+						Created: timestamppb.New(epoch.Add(time.Second)),
+						Eta:     timestamppb.New(epoch.Add(time.Minute + time.Second)),
 						Title:   "1 min",
 					},
 				},
@@ -1370,13 +1371,13 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				Id:           "t1",
 				JobId:        triggeringJob,
 				InvocationId: triggeringInvID,
-				Created:      google.NewTimestamp(epoch.Add(1 * time.Second)),
+				Created:      timestamppb.New(epoch.Add(1 * time.Second)),
 			}
 			expectedTrigger2 := &internal.Trigger{
 				Id:           "t2",
 				JobId:        triggeringJob,
 				InvocationId: triggeringInvID,
-				Created:      google.NewTimestamp(epoch.Add(1 * time.Second)),
+				Created:      timestamppb.New(epoch.Add(1 * time.Second)),
 				OrderInBatch: 1, // second call to EmitTrigger done by the invocation
 			}
 
@@ -1537,8 +1538,8 @@ func TestInvocationTimers(t *testing.T) {
 			timerMsg := func(idSuffix string, created, eta time.Duration, title string, payload []byte) *internal.Timer {
 				return &internal.Timer{
 					Id:      fmt.Sprintf("%s:%d:%s", testJobID, testInvID, idSuffix),
-					Created: google.NewTimestamp(epoch.Add(created)),
-					Eta:     google.NewTimestamp(epoch.Add(eta)),
+					Created: timestamppb.New(epoch.Add(created)),
+					Eta:     timestamppb.New(epoch.Add(eta)),
 					Title:   title,
 					Payload: payload,
 				}
@@ -1910,7 +1911,7 @@ func (e *expectedTasks) cronTickSequence(nonce, gen int64, when time.Duration) {
 			Triggers: []*internal.Trigger{
 				{
 					Id:      fmt.Sprintf("cron:v1:%d", gen),
-					Created: google.NewTimestamp(e.Epoch.Add(when)),
+					Created: timestamppb.New(e.Epoch.Add(when)),
 					Payload: &internal.Trigger_Cron{
 						Cron: &api.CronTrigger{Generation: gen},
 					},
@@ -1948,8 +1949,8 @@ func (e *expectedTasks) invocationTimer(invID, seq int64, title string, created,
 		Timer: &internal.Timer{
 			Id:      fmt.Sprintf("%s:%d:%d:0", e.JobID, invID, seq),
 			Title:   title,
-			Created: google.NewTimestamp(e.Epoch.Add(created)),
-			Eta:     google.NewTimestamp(e.Epoch.Add(eta)),
+			Created: timestamppb.New(e.Epoch.Add(created)),
+			Eta:     timestamppb.New(e.Epoch.Add(eta)),
 		},
 	})
 }

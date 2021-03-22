@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
@@ -83,7 +83,7 @@ func MakeStream(c context.Context, project, realm string, path types.StreamPath)
 			Name:        string(name),
 			StreamType:  logpb.StreamType_TEXT,
 			ContentType: "application/text",
-			Timestamp:   google.NewTimestamp(now),
+			Timestamp:   timestamppb.New(now),
 		},
 		State: &coordinator.LogStreamState{
 			Parent:        nil, // Filled in by Reload.
