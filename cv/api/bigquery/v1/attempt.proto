@@ -147,6 +147,8 @@ enum Mode {
   DRY_RUN = 1;
   // Run all tests and potentially submit.
   FULL_RUN = 2;
+  // Run some tests but do not submit. See crbug/1189817.
+  QUICK_DRY_RUN = 3;
 }
 
 // Build represents one tryjob Buildbucket build.
