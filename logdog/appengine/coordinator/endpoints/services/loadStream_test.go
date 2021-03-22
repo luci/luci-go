@@ -61,7 +61,7 @@ func TestLoadStream(t *testing.T) {
 			Convey(`Will succeed.`, func() {
 				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
-				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
+				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
@@ -83,7 +83,7 @@ func TestLoadStream(t *testing.T) {
 				env.Clock.Add(1 * time.Hour)
 				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
-				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
+				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
@@ -104,7 +104,7 @@ func TestLoadStream(t *testing.T) {
 
 				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
-				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
+				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
