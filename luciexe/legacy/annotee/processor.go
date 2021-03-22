@@ -27,9 +27,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
@@ -429,7 +430,7 @@ func (p *Processor) Finish() *annotation.State {
 	var closeTime *timestamp.Timestamp
 	if !p.astate.Offline {
 		// Note: p.astate.Clock is never nil here, see astate setup in New().
-		closeTime = google.NewTimestamp(p.astate.Clock.Now())
+		closeTime = timestamppb.New(p.astate.Clock.Now())
 	}
 	for _, h := range p.stepHandlers {
 		p.finishStepHandler(h, p.o.CloseSteps, closeTime)

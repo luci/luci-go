@@ -24,11 +24,11 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -354,8 +354,8 @@ func (e *Execution) DataProto() (ret *dm.Execution_Data) {
 	default:
 		panic(fmt.Errorf("unknown Execution_State: %s", e.State))
 	}
-	ret.Created = google.NewTimestamp(e.Created)
-	ret.Modified = google.NewTimestamp(e.Modified)
+	ret.Created = timestamppb.New(e.Created)
+	ret.Modified = timestamppb.New(e.Modified)
 	ret.DistributorInfo = &dm.Execution_Data_DistributorInfo{
 		ConfigName:    e.DistributorConfigName,
 		ConfigVersion: e.DistributorConfigVersion,

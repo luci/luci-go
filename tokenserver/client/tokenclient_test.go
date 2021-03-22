@@ -22,15 +22,16 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -68,7 +69,7 @@ func TestTokenClient(t *testing.T) {
 		So(tokReq, ShouldResembleProto, &minter.MachineTokenRequest{
 			Certificate:        []byte("fake certificate"),
 			SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-			IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
+			IssuedAt:           timestamppb.New(clock.Now(ctx)),
 			TokenType:          tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 		})
 	})

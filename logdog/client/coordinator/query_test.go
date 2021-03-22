@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -111,7 +112,7 @@ func TestClientQuery(t *testing.T) {
 			}
 
 			st := logdog.LogStreamState{
-				Created: google.NewTimestamp(now),
+				Created: timestamppb.New(now),
 			}
 
 			var results []*LogStream
@@ -174,7 +175,7 @@ func TestClientQuery(t *testing.T) {
 					return &logdog.QueryResponse{
 						Streams: []*logdog.QueryResponse_Stream{
 							gen("a", &logdog.LogStreamState{
-								Created: google.NewTimestamp(now),
+								Created: timestamppb.New(now),
 							}),
 						},
 					}, nil

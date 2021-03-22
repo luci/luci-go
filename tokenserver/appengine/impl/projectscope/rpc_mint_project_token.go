@@ -20,10 +20,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -141,7 +141,7 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	resp := &minter.MintProjectTokenResponse{
 		ServiceAccountEmail: projectIdentity.Email,
 		AccessToken:         accessTok.Token,
-		Expiry:              google.NewTimestamp(accessTok.Expiry),
+		Expiry:              timestamppb.New(accessTok.Expiry),
 		ServiceVersion:      serviceVer,
 	}
 
@@ -151,7 +151,7 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 		tokInfo := MintedTokenInfo{
 			Request:      req,
 			Response:     resp,
-			RequestedAt:  google.NewTimestamp(clock.Now(c)),
+			RequestedAt:  timestamppb.New(clock.Now(c)),
 			Expiration:   resp.Expiry,
 			PeerIP:       state.PeerIP(),
 			PeerIdentity: state.PeerIdentity(),
