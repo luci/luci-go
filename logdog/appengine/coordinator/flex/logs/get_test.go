@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/iotools"
-	"go.chromium.org/luci/common/proto/google"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -513,7 +512,7 @@ func testGetImpl(t *testing.T, archived bool) {
 							So(resp.SignedUrls, ShouldNotBeNil)
 							So(resp.SignedUrls.Stream, ShouldEndWith, "&signed=true")
 							So(resp.SignedUrls.Index, ShouldEndWith, "&signed=true")
-							So(google.TimeFromProto(resp.SignedUrls.Expiration), ShouldResemble, clock.Now(c).Add(duration))
+							So(resp.SignedUrls.Expiration.AsTime(), ShouldResemble, clock.Now(c).Add(duration))
 						})
 					} else {
 						Convey(`Will succeed, but return no URL.`, func() {

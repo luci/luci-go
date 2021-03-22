@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -707,7 +706,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 					logging.WithError(perr).Debugf(c, "Got error while converting duration")
 					duration = prevDuration
 				}
-				tStamp := google.TimeFromProto(logResp.desc.Timestamp)
+				tStamp := logResp.desc.Timestamp.AsTime()
 				lt.DataTimestamp = tStamp.Add(duration).UnixNano() / 1e6
 				lt.DurationInfo = durationInfo(prevDuration, duration)
 				prevDuration = duration
