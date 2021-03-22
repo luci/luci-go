@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/dm/api/distributor/jobsim"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -151,7 +150,7 @@ func (r *runner) doReturnStage(stg *jobsim.ReturnStage) error {
 
 	_, err := r.dmc.FinishAttempt(r.c, &dm.FinishAttemptReq{
 		Auth: r.auth,
-		Data: executionResult(true, retval, google.TimeFromProto(stg.GetExpiration())),
+		Data: executionResult(true, retval, stg.GetExpiration().AsTime()),
 	})
 	if err != nil {
 		logging.WithError(err).Warningf(r.c, "got error on FinishAttempt")

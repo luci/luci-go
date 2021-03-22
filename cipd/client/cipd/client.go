@@ -61,7 +61,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/prpc"
@@ -1035,7 +1034,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 			logging.Infof(
 				ctx, "cipd: instance %s is already registered by %s on %s",
 				pin, resp.Instance.RegisteredBy,
-				google.TimeFromProto(resp.Instance.RegisteredTs).Local())
+				resp.Instance.RegisteredTs.AsTime().Local())
 			return nil, nil
 		case api.RegistrationStatus_NOT_UPLOADED:
 			return resp.UploadOp, nil

@@ -22,8 +22,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
@@ -49,7 +47,7 @@ func instanceMetadataListing(md []*api.InstanceMetadata, now time.Time) []instan
 			Fingerprint: m.Fingerprint,
 			Key:         m.Key,
 			User:        strings.TrimPrefix(m.AttachedBy, "user:"),
-			Age:         humanize.RelTime(google.TimeFromProto(m.AttachedTs), now, "", ""),
+			Age:         humanize.RelTime(m.AttachedTs.AsTime(), now, "", ""),
 			ContentType: m.ContentType,
 			Size:        humanize.Bytes(uint64(len(m.Value))),
 			IsEmpty:     len(m.Value) == 0,

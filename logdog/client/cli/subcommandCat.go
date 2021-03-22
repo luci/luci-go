@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/fetcher"
@@ -217,7 +216,7 @@ func (cmd *catCommandRun) catPath(c context.Context, coord *coordinator.Client, 
 func (cmd *catCommandRun) getTextPrefix(desc *logpb.LogStreamDescriptor, le *logpb.LogEntry) string {
 	var parts []string
 	if cmd.timestamps != timestampsOff {
-		ts := google.TimeFromProto(desc.Timestamp)
+		ts := desc.Timestamp.AsTime()
 		ts = ts.Add(le.TimeOffset.AsDuration())
 		switch cmd.timestamps {
 		case timestampsLocal:

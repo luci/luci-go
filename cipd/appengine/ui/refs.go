@@ -20,8 +20,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
@@ -39,7 +37,7 @@ func refsListing(refs []*api.Ref, pkg string, now time.Time) []refItem {
 			Title: r.Name,
 			Href:  instancePageURL(pkg, r.Name),
 			User:  strings.TrimPrefix(r.ModifiedBy, "user:"),
-			Age:   humanize.RelTime(google.TimeFromProto(r.ModifiedTs), now, "", ""),
+			Age:   humanize.RelTime(r.ModifiedTs.AsTime(), now, "", ""),
 		}
 	}
 	return l
