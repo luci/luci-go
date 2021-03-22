@@ -371,7 +371,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
             {
               id: 'test-results',
               label: 'Test Results',
-              href: router.urlForName('build-test-results', params),
+              href: router.urlForName(
+                this.configsStore.userConfigs.newTestResultsTab ? 'build-test-results-new' : 'build-test-results',
+                params
+              ),
             },
           ]),
       {

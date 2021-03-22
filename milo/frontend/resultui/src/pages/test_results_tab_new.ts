@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import { computed, observable, reaction } from 'mobx';
 import '../components/dot_spinner';
 import '../components/hotkey';
 import '../components/test_search_filter';
-import '../components/variant_entry';
-import { VariantEntryElement } from '../components/variant_entry';
+import '../components/variant_entry/index_new';
+import { VariantEntryElement } from '../components/variant_entry/index_new';
 import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
@@ -41,9 +41,9 @@ import { TestVariant, TestVariantStatus } from '../services/resultdb';
 /**
  * Display a list of test results.
  */
-// TODO(crbug/1178662): replace this with <milo-test-results-tab-new>.
-// This component should be in feature freeze.
-@customElement('milo-test-results-tab')
+// TODO(crbug/1178662): replace <milo-test-results-tab> and drop the -new
+// postfix.
+@customElement('milo-test-results-tab-new')
 @consumeInvocationState
 @consumeConfigsStore
 @consumeAppState
@@ -78,7 +78,9 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   @observable.ref private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
     this.allVariantsWereExpanded = expand;
-    this.shadowRoot!.querySelectorAll<VariantEntryElement>('milo-variant-entry').forEach((e) => (e.expanded = expand));
+    this.shadowRoot!.querySelectorAll<VariantEntryElement>('milo-variant-entry-new').forEach(
+      (e) => (e.expanded = expand)
+    );
   }
   private readonly toggleAllVariantsByHotkey = () => this.toggleAllVariants(!this.allVariantsWereExpanded);
 
@@ -293,7 +295,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         ),
         ([_, v]) => `${v.testId} ${v.variantHash}`,
         ([prev, v, next]) => html`
-          <milo-variant-entry
+          <milo-variant-entry-new
             .variant=${v}
             .prevTestId=${prev?.testId ?? ''}
             .prevVariant=${prev?.testId === v.testId ? prev : null}
@@ -302,7 +304,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
             .prerender=${true}
             .renderCallback=${this.variantRenderedCallback}
             .expandedCallback=${this.variantExpandedCallback}
-          ></milo-variant-entry>
+          ></milo-variant-entry-new>
         `
       )}
     `;
@@ -440,7 +442,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       overflow-y: auto;
       outline: none;
     }
-    milo-variant-entry {
+    milo-variant-entry-new {
       margin: 2px 0px;
     }
 

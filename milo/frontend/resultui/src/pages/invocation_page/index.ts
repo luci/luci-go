@@ -24,6 +24,7 @@ import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { NOT_FOUND_URL, router } from '../../routes';
 import './invocation_details_tab';
@@ -37,9 +38,11 @@ import './invocation_details_tab';
  */
 @customElement('milo-invocation-page')
 @provideInvocationState
+@consumeConfigsStore
 @consumeAppState
 export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
+  @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
 
   private invocationId = '';
@@ -120,7 +123,10 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       {
         id: 'test-results',
         label: 'Test Results',
-        href: router.urlForName('invocation-test-results', { invocation_id: this.invocationState.invocationId! }),
+        href: router.urlForName(
+          this.configsStore.userConfigs.newTestResultsTab ? 'invocation-test-results-new' : 'invocation-test-results',
+          { invocation_id: this.invocationState.invocationId! }
+        ),
       },
       {
         id: 'invocation-details',
