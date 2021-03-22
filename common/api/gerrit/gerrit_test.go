@@ -125,6 +125,7 @@ func TestQuery(t *testing.T) {
 	})
 
 }
+
 func TestChangeDetails(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -143,6 +144,30 @@ func TestChangeDetails(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cl.RevertOf, ShouldEqual, 629277)
 			So(cl.CurrentRevision, ShouldEqual, "1ee75012c0de")
+		})
+
+	})
+
+}
+
+func TestListChangeComments(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("ListComments", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n%s\n", fakeComments1Str)
+		})
+		defer srv.Close()
+
+		Convey("WithOptions", func() {
+			comments, err := c.ListChangeComments(ctx, "629279")
+			So(err, ShouldBeNil)
+			So(comments["foo"][0].Line, ShouldEqual, 3)
+			So(comments["foo"][0].Range.StartLine, ShouldEqual, 3)
+			So(comments["bar"][0].Line, ShouldEqual, 21)
 		})
 
 	})
@@ -892,6 +917,50 @@ var (
 			    {"_account_id": 1118132}
 		    ]
 	    }
+	}`
+	fakeComments1Str = `{
+	"foo": [
+	        {
+	            "id": "61d1fbfb_63e8c695",
+	            "author": {
+	                "_account_id": 1002228,
+	                "name": "John Doe",
+	                "email": "noreply+johndoe@google.com"
+	            },
+	            "change_message_id": "c24215a84fdc9cec42c2d5eec4f488d172d39d7e",
+	            "patch_set": 1,
+	            "line": 3,
+	            "range": {
+	                "start_line": 3,
+	                "start_character": 7,
+	                "end_line": 3,
+	                "end_character": 55
+	            },
+	            "updated": "2020-07-28 14:04:31.000000000",
+	            "message": "",
+	            "unresolved": true,
+	            "in_reply_to": "",
+	            "commit_id": "08a8326653eaa5f7aeea30348b63bf5e9595dc11"
+	        }
+	    ],
+	    "bar": [
+	        {
+	            "id": "63e8c695_61d1fbfb",
+	            "author": {
+	                "_account_id": 1002228,
+	                "name": "John Doe",
+	                "email": "noreply+johndoe@google.com"
+	            },
+	            "change_message_id": "c24215a84fdc9cec42c2d5eec4f488d172d39d7e",
+	            "patch_set": 1,
+	            "line": 21,
+	            "updated": "2020-07-28 14:04:31.000000000",
+	            "message": "",
+	            "unresolved": true,
+	            "in_reply_to": "",
+	            "commit_id": "08a8326653eaa5f7aeea30348b63bf5e9595dc11"
+	        }
+	    ]
 	}`
 )
 
