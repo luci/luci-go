@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import { computed, observable } from 'mobx';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 
 import '../expandable_entry';
-import '../../components/lazy_list';
+import '../lazy_list';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ID_SEG_REGEX, TestVariant } from '../../services/resultdb';
 import '../copy_to_clipboard';
@@ -37,9 +37,8 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 /**
  * Renders an expandable entry of the given test variant.
  */
-// TODO(crbug/1178662): replace this with <milo-variant-entry-new>.
-// This component should be in feature freeze.
-@customElement('milo-variant-entry')
+// TODO(crbug/1178662): replace <milo-variant-entry> and drop the -new postfix.
+@customElement('milo-variant-entry-new')
 export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
   @observable.ref prevTestId = '';
@@ -206,9 +205,8 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
           <div id="identifier">
             <div id="test-identifier">
               <span>
-                <span class="greyed-out">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(
-                  this.commonTestIdPrefix.length
-                )}
+                <span class="greyed-out">${this.commonTestIdPrefix}</span>
+                ${this.variant.testId.slice(this.commonTestIdPrefix.length)}
               </span>
               <milo-copy-to-clipboard
                 .textToCopy=${this.variant.testId}
