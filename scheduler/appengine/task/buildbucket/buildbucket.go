@@ -115,17 +115,12 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 		}
 	}
 
-	// Bucket and builder fields are required.
-	if cfg.Bucket == "" {
-		c.Errorf("'bucket' field is required")
+	// Check can derive the bucket name.
+	if _, err := builderID(cfg, realmID); err != nil {
+		c.Errorf("%s", err)
 	}
 	if cfg.Builder == "" {
 		c.Errorf("'builder' field is required")
-	}
-
-	// Validate readiness for v2 Buildbucket API.
-	if _, err := builderID(cfg, realmID); err != nil {
-		c.Errorf("%s", err)
 	}
 
 	// Validate 'properties' and 'tags'.

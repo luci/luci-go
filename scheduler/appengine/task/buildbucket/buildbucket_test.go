@@ -76,7 +76,6 @@ func TestValidateProtoMessage(t *testing.T) {
 		Convey("ValidateProtoMessage passes good minimal msg", func() {
 			So(validate(&messages.BuildbucketTask{
 				Server:  "blah.com",
-				Bucket:  "bucket",
 				Builder: "builder",
 			}), ShouldBeNil)
 		})
@@ -106,10 +105,11 @@ func TestValidateProtoMessage(t *testing.T) {
 		})
 
 		Convey("ValidateProtoMessage needs bucket", func() {
-			So(validate(&messages.BuildbucketTask{
+			tm.ValidateProtoMessage(ctx, &messages.BuildbucketTask{
 				Server:  "blah.com",
 				Builder: "builder",
-			}), ShouldErrLike, "'bucket' field is required")
+			}, "some-project:@legacy")
+			So(ctx.Finalize(), ShouldErrLike, `'bucket' field for jobs in "@legacy" realm is required`)
 		})
 
 		Convey("ValidateProtoMessage needs builder", func() {
