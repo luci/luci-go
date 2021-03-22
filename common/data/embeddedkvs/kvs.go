@@ -22,6 +22,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 type KVS struct {
@@ -36,11 +37,16 @@ func New(ctx context.Context, path string) (*KVS, error) {
 	}
 	opt := badger.DefaultOptions(path).WithLoggingLevel(badger.WARNING)
 
-	// Using /3 as ValueLogFileSize is used with 2x in
+	// Using /4 as ValueLogFileSize is used with 2x in
 	// https://github.com/dgraph-io/badger/blob/42d5e9510a4d0165f42a856e203562774aab6603/value.go#L519
-	valuelog := int64(v.Available / 3)
-	if valuelog < opt.ValueLogFileSize {
+	if valuelog := int64(v.Available / 4); valuelog < opt.ValueLogFileSize {
 		opt.ValueLogFileSize = valuelog
+		logging.Infof(ctx, "set ValueLogFileSize: %s", valuelog)
+	}
+
+	if memlog := int64(v.Available / uint64(opt.NumMemtables*4)); memlog < opt.MemTableSize {
+		opt.MemTableSize = memlog
+		logging.Infof(ctx, "set MemTableSize: %s", memlog)
 	}
 
 	db, err := badger.Open(opt)
