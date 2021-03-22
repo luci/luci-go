@@ -48,9 +48,3 @@ func NewDuration(v time.Duration) *durationpb.Duration {
 	}
 	return durationpb.New(v)
 }
-
-// DurationFromProto returns the time.Duration associated with a Duration
-// protobuf.
-func DurationFromProto(d *durationpb.Duration) time.Duration {
-	return d.AsDuration()
-}

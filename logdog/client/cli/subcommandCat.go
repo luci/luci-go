@@ -218,7 +218,7 @@ func (cmd *catCommandRun) getTextPrefix(desc *logpb.LogStreamDescriptor, le *log
 	var parts []string
 	if cmd.timestamps != timestampsOff {
 		ts := google.TimeFromProto(desc.Timestamp)
-		ts = ts.Add(google.DurationFromProto(le.TimeOffset))
+		ts = ts.Add(le.TimeOffset.AsDuration())
 		switch cmd.timestamps {
 		case timestampsLocal:
 			parts = append(parts, ts.Local().Format(time.StampMilli))

@@ -63,15 +63,11 @@ func TestDuration(t *testing.T) {
 			0,
 			10 * time.Second,
 		} {
-			So(DurationFromProto(NewDuration(v)), ShouldEqual, v)
+			So(NewDuration(v).AsDuration(), ShouldEqual, v)
 		}
 	})
 
 	Convey(`A zero time.Duration produces a nil Duration.`, t, func() {
 		So(NewDuration(0), ShouldBeNil)
-	})
-
-	Convey(`A nil Duration produces a zero time.Duration.`, t, func() {
-		So(DurationFromProto(nil), ShouldEqual, time.Duration(0))
 	})
 }

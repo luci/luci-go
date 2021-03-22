@@ -217,7 +217,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 		if cur.PrefixIndex != le.PrefixIndex {
 			return fmt.Sprintf("index entry %d has incorrect prefix index (%d != %d)", i, cur.StreamIndex, le.PrefixIndex)
 		}
-		if curOff, leOff := google.DurationFromProto(cur.TimeOffset), google.DurationFromProto(le.TimeOffset); curOff != leOff {
+		if curOff, leOff := cur.TimeOffset.AsDuration(), le.TimeOffset.AsDuration(); curOff != leOff {
 			return fmt.Sprintf("index entry %d has incorrect time offset (%v != %v)", i, curOff, leOff)
 		}
 		if cur.Sequence != le.Sequence {
