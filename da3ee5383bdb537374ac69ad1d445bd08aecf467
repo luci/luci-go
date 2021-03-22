@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fef655cc_2512c976",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-22T23:49:33Z",
+      "side": 1,
+      "message": "The largest recorded read request size is 286, where the latency is 470ms - https://screenshot.googleplex.com/9sWFx3TkmhA6EMS. I think 1000 limit is the reasonable number.",
+      "range": {
+        "startLine": 37,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 26
+      },
+      "revId": "da3ee5383bdb537374ac69ad1d445bd08aecf467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a75005d_53f1f911",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-22T23:49:33Z",
+      "side": 1,
+      "message": "In the past 21 days, the 3 largest write req amount are 389, 306 and 124 respectively.  Only the last req didn’t exceed the deadline, which took 6.757s with response side 4.34KB - https://screenshot.googleplex.com/BRNNgYWrXxBZyim. So I pick the 200 as the write reqs limit.",
+      "range": {
+        "startLine": 38,
+        "startChar": 22,
+        "endLine": 38,
+        "endChar": 25
+      },
+      "revId": "da3ee5383bdb537374ac69ad1d445bd08aecf467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "33447bd9_2698e1f9",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-22T23:49:33Z",
+      "side": 1,
+      "message": "Currently, `pyBatchReq` contains ScheduleBuild req and `goBatchReq` contains Get, Search and CancelBuild. I think it\u0027s okay to apply the Batch size limit in this way for now. After ScheduleBuild rewriting done, we can refactor the Batch code to calculate the write and read requests amount respectively.",
+      "revId": "da3ee5383bdb537374ac69ad1d445bd08aecf467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
