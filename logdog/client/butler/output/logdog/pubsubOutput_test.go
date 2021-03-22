@@ -24,6 +24,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 
@@ -31,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/recordio"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
 
@@ -39,6 +40,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -141,7 +143,7 @@ func TestOutput(t *testing.T) {
 		defer o.Close()
 
 		bundle := &logpb.ButlerLogBundle{
-			Timestamp: google.NewTimestamp(clock.Now(ctx)),
+			Timestamp: timestamppb.New(clock.Now(ctx)),
 			Entries: []*logpb.ButlerLogBundle_Entry{
 				{},
 			},

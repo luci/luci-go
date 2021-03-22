@@ -20,18 +20,20 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -104,9 +106,9 @@ func TestTriageOp(t *testing.T) {
 			finished, err := unmarshalFinishedInvs(finishedRaw)
 			So(err, ShouldBeNil)
 			So(finished, ShouldResemble, []*internal.FinishedInvocation{
-				{InvocationId: 1, Finished: google.NewTimestamp(expectedFinishedTS)},
-				{InvocationId: 2, Finished: google.NewTimestamp(expectedFinishedTS)},
-				{InvocationId: 4, Finished: google.NewTimestamp(expectedFinishedTS)},
+				{InvocationId: 1, Finished: timestamppb.New(expectedFinishedTS)},
+				{InvocationId: 2, Finished: timestamppb.New(expectedFinishedTS)},
+				{InvocationId: 4, Finished: timestamppb.New(expectedFinishedTS)},
 			})
 
 			// Some time later, they are still there.
@@ -126,19 +128,19 @@ func TestTriageOp(t *testing.T) {
 			triggers := []*internal.Trigger{
 				{
 					Id:      "t0",
-					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
 				},
 				{
 					Id:      "t1",
-					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
 				},
 				{
 					Id:      "t2",
-					Created: google.NewTimestamp(epoch.Add(10 * time.Second)),
+					Created: timestamppb.New(epoch.Add(10 * time.Second)),
 				},
 				{
 					Id:      "a_t3", // to make its ID be before t0 and t1
-					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
 				},
 			}
 
@@ -171,11 +173,11 @@ func TestTriageOp(t *testing.T) {
 			triggers := []*internal.Trigger{
 				{
 					Id:      "t0",
-					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
 				},
 				{
 					Id:      "t1",
-					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
 				},
 			}
 
@@ -203,15 +205,15 @@ func TestTriageOp(t *testing.T) {
 			triggers := []*internal.Trigger{
 				{
 					Id:      "most-recent",
-					Created: google.NewTimestamp(epoch.Add(3 * time.Second)),
+					Created: timestamppb.New(epoch.Add(3 * time.Second)),
 				},
 				{
 					Id:      "dropped-1",
-					Created: google.NewTimestamp(epoch.Add(2 * time.Second)),
+					Created: timestamppb.New(epoch.Add(2 * time.Second)),
 				},
 				{
 					Id:      "dropped-2",
-					Created: google.NewTimestamp(epoch.Add(1 * time.Second)),
+					Created: timestamppb.New(epoch.Add(1 * time.Second)),
 				},
 			}
 
@@ -238,11 +240,11 @@ func TestTriageOp(t *testing.T) {
 			triggers := []*internal.Trigger{
 				{
 					Id:      "t0",
-					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
 				},
 				{
 					Id:      "t1",
-					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+					Created: timestamppb.New(epoch.Add(20 * time.Second)),
 				},
 			}
 			pendingTriggersSet(c, "job").Add(c, triggers)
