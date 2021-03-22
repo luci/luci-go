@@ -72,6 +72,11 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
 
+  // Lists the comments that were made on a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
+  rpc ListChangeComments(ListChangeCommentsRequest) returns (ListChangeCommentsResponse);
+
   // Retrieves related changes of a revision.
   //
   // Related changes are changes that either depend on, or are dependencies of
@@ -1297,4 +1302,83 @@ message GetPureRevertRequest {
 message PureRevertInfo {
   // Outcome of the check as boolean.
   bool is_pure_revert = 1;
+}
+
+// Information for requesting the comments on a change.
+//
+// See https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
+message ListChangeCommentsRequest {
+  // Change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // Unique ID for the revision to query.
+  // See
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+  string revision_id = 3;
+}
+
+// Range is included within Comment. See Comment for more details.
+message CommentRange {
+  int64 start_line = 1;
+  int64 start_character = 2;
+  int64 end_line = 3;
+  int64 end_character = 4;
+}
+
+// Comment represents a comment on a Gerrit CL.
+// See:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
+message Comment {
+  // Comment id.
+  string id = 1;
+
+  // Author of the comment.
+  AccountInfo author = 2;
+
+  string change_message_id = 3;
+
+  // Patch set on which this comment was made.
+  int64 patch_set = 4;
+
+  // Line on which this comment was made.
+  int64 line = 5;
+
+  // Selection on which this comment was made.
+  CommentRange range = 6;
+
+  // Timestamp of comment.
+  string updated = 7;
+
+  // Text of the comment.
+  string message = 8;
+
+  // Is this comment still unresolved?
+  bool unresolved = 9;
+
+  // change_message_id of comment that this comment is in reply to.
+  string in_reply_to = 10;
+
+  // Hash of patch set on which this comment was made.
+  string commit_id = 11;
+}
+
+// Comment represents a comment on a Gerrit CL.
+// See:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
+message CommentList {
+  repeated Comment comments = 1;
+}
+
+// Information about the comments on a change.
+//
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
+message ListChangeCommentsResponse {
+  // A map of file paths to FileInfos.
+  map<string, CommentList> comments = 1;
 }

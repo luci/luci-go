@@ -738,6 +738,7 @@ func TestAddToAttentionSet(t *testing.T) {
 		})
 	})
 }
+
 func TestGetMergeable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -782,6 +783,64 @@ func TestGetMergeable(t *testing.T) {
 			Conflicts:     []string{"conflict1", "conflict2"},
 			MergeableInto: []string{"my_branch_1"},
 		})
+	})
+}
+
+func TestListChangeCommentsRest(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("GetMergeable basic", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+				{
+					"foo": [
+							{
+								"id": "61d1fbfb_63e8c695",
+								"change_message_id": "c24215a84fdc9cec42c2d5eec4f488d172d39d7e",
+								"patch_set": 1,
+								"line": 3,
+								"range": {
+									"start_line": 3,
+									"start_character": 7,
+									"end_line": 3,
+									"end_character": 55
+								},
+								"message": "",
+								"unresolved": true,
+								"in_reply_to": "",
+								"commit_id": "08a8326653eaa5f7aeea30348b63bf5e9595dc11"
+							}
+						],
+						"bar": [
+							{
+								"id": "63e8c695_61d1fbfb",
+								"change_message_id": "c24215a84fdc9cec42c2d5eec4f488d172d39d7e",
+								"patch_set": 1,
+								"line": 21,
+								"message": "",
+								"unresolved": true,
+								"in_reply_to": "",
+								"commit_id": "08a8326653eaa5f7aeea30348b63bf5e9595dc11"
+							}
+						]
+					}`)
+		})
+		defer srv.Close()
+
+		lccr, err := c.ListChangeComments(ctx, &gerritpb.ListChangeCommentsRequest{
+			Number:  42,
+			Project: "someproject",
+		})
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/comments")
+		So(lccr.Comments["foo"].Comments[0].Line, ShouldEqual, 3)
+		So(lccr.Comments["foo"].Comments[0].Range.StartLine, ShouldEqual, 3)
+		So(lccr.Comments["bar"].Comments[0].Line, ShouldEqual, 21)
 	})
 }
 
