@@ -395,6 +395,55 @@ func (c *Client) ChangeDetails(ctx context.Context, changeID string, options Cha
 	return &resp, nil
 }
 
+// CommentRange is included within Comment. See Comment for more details.
+type CommentRange struct {
+	StartLine      int `json:"start_line"`
+	StartCharacter int `json:"start_character"`
+	EndLine        int `json:"end_line"`
+	EndCharacter   int `json:"end_character"`
+}
+
+// Comment represents a comment on a Gerrit CL. Information about these fields
+// is in:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-change-comments
+//
+// Note that not all fields will be filled for all comments depending on the
+// way the comment was added to Gerrit, and not all fields exposed by Gerrit
+// are captured by this struct. Adding more fields to this struct should be
+// okay (but only Gerrit-supported keys will be populated).
+type Comment struct {
+	ID              string       `json:"id"`
+	Owner           AccountInfo  `json:"author"`
+	ChangeMessageId string       `json:"change_message_id"`
+	PatchSet        int          `json:"patch_set"`
+	Line            int          `json:"line"`
+	Range           CommentRange `json:"range"`
+	Updated         string       `json:"updated"`
+	Message         string       `json:"message"`
+	Unresolved      bool         `json:"unresolved"`
+	InReplyTo       string       `json:"in_reply_to"`
+	CommitId        string       `json:"commit_id"`
+}
+
+// ListChangeComments gets all comments on a single change.
+//
+// This method returns a list of comments for each file path (including
+// pseudo-files like '/PATCHSET_LEVEL' and '/COMMIT_MSG') and an error.
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+func (c *Client) ListChangeComments(ctx context.Context, changeID string) (map[string][]Comment, error) {
+	var resp map[string][]Comment
+	path := fmt.Sprintf("a/changes/%s/comments", url.PathEscape(changeID))
+	if _, err := c.get(ctx, path, url.Values{}, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 // ChangesSubmittedTogether returns a list of Gerrit changes which are submitted
 // when Submit is called for the given change, including the current change itself.
 // As a special case, the list is empty if this change would be submitted by itself
