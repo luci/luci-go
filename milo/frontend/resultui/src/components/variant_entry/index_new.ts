@@ -18,14 +18,13 @@ import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import takeWhile from 'lodash-es/takeWhile';
 import { computed, observable } from 'mobx';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 
 import '../expandable_entry';
 import '../lazy_list';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { ID_SEG_REGEX, TestVariant } from '../../services/resultdb';
+import { TestVariant } from '../../services/resultdb';
 import '../copy_to_clipboard';
 import { OnEnterList } from '../lazy_list';
 import './result_entry';
@@ -41,9 +40,6 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @customElement('milo-variant-entry-new')
 export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
-  @observable.ref prevTestId = '';
-  @observable.ref prevVariant?: TestVariant;
-  @observable.ref displayVariantId = false;
   @observable.ref renderCallback: Function | null = null;
   @observable.ref expandedCallback: Function | null = null;
 
@@ -85,16 +81,6 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
       testLocation.fileName.slice(1) +
       (testLocation.line ? '#' + testLocation.line : '')
     );
-  }
-
-  /**
-   * Common prefix between this.variant.testId and this.prevTestId.
-   */
-  @computed
-  private get commonTestIdPrefix() {
-    const prevSegs = this.prevTestId.match(ID_SEG_REGEX)!;
-    const currentSegs = this.variant.testId.match(ID_SEG_REGEX)!;
-    return takeWhile(prevSegs, (seg, i) => currentSegs[i] === seg).join('');
   }
 
   @computed
@@ -193,44 +179,18 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     }
 
     return html`
-      <milo-expandable-entry
-        .expanded=${this.expanded}
-        .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
-        class=${classMap({ 'display-variant-id': this.displayVariantId && !this.expanded })}
-      >
+      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <div id="header" slot="header">
           <mwc-icon id="status-indicator" class=${classMap({ [VARIANT_STATUS_CLASS_MAP[this.variant.status]]: true })}>
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
           </mwc-icon>
-          <div id="identifier">
-            <div id="test-identifier">
-              <span>
-                <span class="greyed-out">${this.commonTestIdPrefix}</span>
-                ${this.variant.testId.slice(this.commonTestIdPrefix.length)}
-              </span>
-              <milo-copy-to-clipboard
-                .textToCopy=${this.variant.testId}
-                @click=${(e: Event) => e.stopPropagation()}
-                title="copy test ID to clipboard"
-              ></milo-copy-to-clipboard>
-            </div>
-            <div id="variant-identifier">
-              <span>
-                ${this.variantDef.map(
-                  ([k, v]) => html`
-                    <span
-                      class=${classMap({
-                        'greyed-out': !this.prevVariant || v === this.prevVariant.variant?.def?.[k],
-                        kv: true,
-                      })}
-                    >
-                      <span class="kv-key">${k}</span>
-                      <span class="kv-value">${v}</span>
-                    </span>
-                  `
-                )}
-              </span>
-            </div>
+          <div id="test-identifier">
+            <span>${this.variant.testId}</span>
+            <milo-copy-to-clipboard
+              .textToCopy=${this.variant.testId}
+              @click=${(e: Event) => e.stopPropagation()}
+              title="copy test ID to clipboard"
+            ></milo-copy-to-clipboard>
           </div>
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>
@@ -247,15 +207,11 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
       height: 24px;
     }
 
-    milo-expandable-entry.display-variant-id {
-      --header-height: 36px;
-    }
-
     #header {
       display: grid;
       user-select: none;
       grid-template-columns: 24px 1fr;
-      grid-template-rows: 36px;
+      grid-template-rows: 24px;
       grid-gap: 5px;
     }
     #status-indicator {
@@ -280,9 +236,6 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     .expected {
       color: var(--success-color);
     }
-    #identifier {
-      overflow: hidden;
-    }
     #test-identifier {
       display: flex;
       overflow: hidden;
@@ -295,13 +248,6 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     }
     milo-copy-to-clipboard {
       flex: 0 0 16px;
-    }
-
-    #variant-identifier {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 12px;
-      line-height: 12px;
     }
 
     #body {
