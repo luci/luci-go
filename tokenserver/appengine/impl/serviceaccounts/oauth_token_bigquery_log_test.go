@@ -21,14 +21,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -47,7 +46,7 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 			},
 			Response: &minter.MintOAuthTokenViaGrantResponse{
 				AccessToken:    "access-token",
-				Expiry:         google.NewTimestamp(epoch.Add(time.Hour)),
+				Expiry:         timestamppb.New(epoch.Add(time.Hour)),
 				ServiceVersion: "unit-tests/mocked-ver",
 			},
 			GrantBody: &tokenserver.OAuthTokenGrantBody{
@@ -55,7 +54,7 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 				ServiceAccount:   "service-account@robots.com",
 				Proxy:            "user:proxy@example.com",
 				EndUser:          "user:end-user@example.com",
-				IssuedAt:         google.NewTimestamp(epoch),
+				IssuedAt:         timestamppb.New(epoch),
 				ValidityDuration: 3600,
 			},
 			ConfigRev: "config-rev",

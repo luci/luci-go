@@ -22,13 +22,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -43,7 +43,7 @@ func TestMintedTokenInfo(t *testing.T) {
 				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &minter.LuciMachineToken{
 						MachineToken: "zzzz",
-						Expiry:       google.NewTimestamp(clock.Now(ctx).Add(time.Hour)),
+						Expiry:       timestamppb.New(clock.Now(ctx).Add(time.Hour)),
 					},
 				},
 			},

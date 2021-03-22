@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -77,7 +78,7 @@ func TestRefs(t *testing.T) {
 					HexDigest: digestA,
 				},
 				ModifiedBy: string(testutil.TestUser),
-				ModifiedTs: google.NewTimestamp(testutil.TestTime),
+				ModifiedTs: timestamppb.New(testutil.TestTime),
 			})
 
 			// Move it to point to something else.
@@ -111,7 +112,7 @@ func TestRefs(t *testing.T) {
 					Ref:      "latest",
 					Instance: digestB,
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
+					When:     timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_REF_SET,
@@ -119,7 +120,7 @@ func TestRefs(t *testing.T) {
 					Ref:      "latest",
 					Instance: digestB,
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(time.Second + 1)),
+					When:     timestamppb.New(testutil.TestTime.Add(time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_REF_UNSET,
@@ -127,7 +128,7 @@ func TestRefs(t *testing.T) {
 					Ref:      "latest",
 					Instance: digestA,
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(time.Second)),
+					When:     timestamppb.New(testutil.TestTime.Add(time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_REF_SET,
@@ -135,7 +136,7 @@ func TestRefs(t *testing.T) {
 					Ref:      "latest",
 					Instance: digestA,
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime),
+					When:     timestamppb.New(testutil.TestTime),
 				},
 			})
 		})

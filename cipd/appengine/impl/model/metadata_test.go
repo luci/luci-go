@@ -19,17 +19,19 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"google.golang.org/grpc/codes"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -221,7 +223,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           "user:zzz@example.com",
-					When:          google.NewTimestamp(testutil.TestTime.Add(2*time.Second + 1)),
+					When:          timestamppb.New(testutil.TestTime.Add(2*time.Second + 1)),
 					MdKey:         "new-key",
 					MdValue:       "value 2",
 					MdContentType: "text/plain",
@@ -232,7 +234,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           "user:zzz@example.com",
-					When:          google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
+					When:          timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 					MdKey:         "new-key",
 					MdValue:       "value 1",
 					MdContentType: "text/plain",
@@ -243,7 +245,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
+					When:          timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 					MdKey:         "dup-key",
 					MdValue:       "dup-value",
 					MdContentType: "text/1",
@@ -254,7 +256,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(1*time.Second + 1)),
+					When:          timestamppb.New(testutil.TestTime.Add(1*time.Second + 1)),
 					MdKey:         "another",
 					MdContentType: "application/octet-stream",
 					MdFingerprint: fp("another", "some value 2"),
@@ -264,7 +266,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(1 * time.Second)),
+					When:          timestamppb.New(testutil.TestTime.Add(1 * time.Second)),
 					MdKey:         "key",
 					MdValue:       "some value 1",
 					MdContentType: "text/plain",
@@ -275,7 +277,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime),
+					When:          timestamppb.New(testutil.TestTime),
 					MdKey:         "key",
 					MdValue:       "some value",
 					MdContentType: "text/plain",
@@ -370,7 +372,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(4*time.Second + 1)),
+					When:          timestamppb.New(testutil.TestTime.Add(4*time.Second + 1)),
 					MdKey:         "a",
 					MdValue:       "5",
 					MdContentType: "text/5",
@@ -381,7 +383,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(4 * time.Second)),
+					When:          timestamppb.New(testutil.TestTime.Add(4 * time.Second)),
 					MdKey:         "a",
 					MdValue:       "4",
 					MdContentType: "text/4",
@@ -392,7 +394,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(3*time.Second + 1)),
+					When:          timestamppb.New(testutil.TestTime.Add(3*time.Second + 1)),
 					MdKey:         "a",
 					MdValue:       "3",
 					MdContentType: "text/3",
@@ -403,7 +405,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(3 * time.Second)),
+					When:          timestamppb.New(testutil.TestTime.Add(3 * time.Second)),
 					MdKey:         "a",
 					MdValue:       "2",
 					MdContentType: "text/2",
@@ -414,7 +416,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
+					When:          timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 					MdKey:         "a",
 					MdValue:       "1",
 					MdContentType: "text/1",
@@ -425,7 +427,7 @@ func TestMetadata(t *testing.T) {
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
-					When:          google.NewTimestamp(testutil.TestTime.Add(1 * time.Second)),
+					When:          timestamppb.New(testutil.TestTime.Add(1 * time.Second)),
 					MdKey:         "a",
 					MdValue:       "0",
 					MdContentType: "text/0",

@@ -27,11 +27,11 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/trace/tracetest"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/signing"
@@ -185,7 +185,7 @@ func testingRawRequest(ctx context.Context) *minter.MachineTokenRequest {
 	return &minter.MachineTokenRequest{
 		Certificate:        getTestCertDER(certWithCN),
 		SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-		IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
+		IssuedAt:           timestamppb.New(clock.Now(ctx)),
 		TokenType:          tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 	}
 }
