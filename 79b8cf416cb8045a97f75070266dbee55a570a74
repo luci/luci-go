@@ -275,6 +275,30 @@
       },
       "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b379286_0db89b5e",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 444,
+      "author": {
+        "id": 1356118
+      },
+      "writtenOn": "2021-03-22T18:14:38Z",
+      "side": 1,
+      "message": "I think the latest patch set addresses (1) but not (2). If I try to address (2) by changing \u0027map[string][]Comment\u0027 to \u0027map[string]*Comment\u0027 I get this when I run it: \u0027failed to decode Gerrit response into *map[string]*gerrit.Comment: json: cannot unmarshal array into Go value of type gerrit.Comment\u0027.",
+      "parentUuid": "e51f6c2c_46ba7243",
+      "range": {
+        "startLine": 444,
+        "startChar": 75,
+        "endLine": 444,
+        "endChar": 96
+      },
+      "revId": "79b8cf416cb8045a97f75070266dbee55a570a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
