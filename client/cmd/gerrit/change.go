@@ -479,3 +479,26 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#resto
 		},
 	}
 }
+
+func cmdAccountQuery(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		req := input.QueryInput.(*gerrit.AccountQueryParams)
+		changes, _, err := client.AccountQuery(ctx, *req)
+		return changes, err
+	}
+	return &subcommands.Command{
+		UsageLine: "account-query <options>",
+		ShortDesc: "queries Gerrit for accounts",
+		LongDesc: `Queries Gerrit for accounts.
+
+Input should contain query options, e.g. {"params": <query parameters as JSON>}
+
+For more information on valid query parameters, see
+https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				queryInput: &gerrit.AccountQueryParams{},
+			}, runner)
+		},
+	}
+}
