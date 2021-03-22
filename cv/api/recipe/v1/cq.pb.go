@@ -297,7 +297,7 @@ type Output_Reuse struct {
 	// Regular expression for modes of Runs for which this Reuse block applies.
 	// Required.
 	//
-	// Implicitly wrapped with (?i)$...^  (= complete case-insensitive match).
+	// Implicitly wrapped with (?i)^...$  (= complete case-insensitive match).
 	//
 	// For example,
 	//   ".+" will match all modes of Runs,
