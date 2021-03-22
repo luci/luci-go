@@ -109,7 +109,7 @@ func TestRegisterStream(t *testing.T) {
 
 					resp, err := svr.RegisterStream(c, &req)
 					So(err, ShouldBeRPCOK)
-					So(resp, ShouldResemble, expResp)
+					So(resp, ShouldResembleProto, expResp)
 					ds.GetTestable(c).CatchupIndexes()
 
 					So(tls.Get(c), ShouldBeNil)
@@ -135,7 +135,7 @@ func TestRegisterStream(t *testing.T) {
 
 						resp, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
-						So(resp, ShouldResemble, expResp)
+						So(resp, ShouldResembleProto, expResp)
 
 						tls.WithProjectNamespace(c, func(c context.Context) {
 							So(ds.Get(c, tls.Stream, tls.State), ShouldBeNil)
@@ -178,7 +178,7 @@ func TestRegisterStream(t *testing.T) {
 
 					resp, err := svr.RegisterStream(c, &req)
 					So(err, ShouldBeRPCOK)
-					So(resp, ShouldResemble, expResp)
+					So(resp, ShouldResembleProto, expResp)
 					ds.GetTestable(c).CatchupIndexes()
 
 					So(tls.Get(c), ShouldBeNil)
