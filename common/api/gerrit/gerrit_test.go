@@ -174,6 +174,28 @@ func TestListChangeComments(t *testing.T) {
 
 }
 
+func TestAccountQuery(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Account-Query", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n%s\n", fakeAccounts1Str)
+		})
+		defer srv.Close()
+
+		Convey("WithOptions", func() {
+			accounts, more, err := client.AccountQuery(ctx, AccountQueryParams{Query: "email:nobody@example.com"})
+			So(err, ShouldBeNil)
+			So(more, ShouldEqual, false)
+			So(accounts[0].Name, ShouldEqual, "John Doe")
+			So(accounts[1].Name, ShouldEqual, "Jane Doe")
+		})
+	})
+}
+
 func TestChangesSubmittedTogether(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -925,7 +947,7 @@ var (
 	            "author": {
 	                "_account_id": 1002228,
 	                "name": "John Doe",
-	                "email": "noreply+johndoe@google.com"
+	                "email": "johndoe@example.com"
 	            },
 	            "change_message_id": "c24215a84fdc9cec42c2d5eec4f488d172d39d7e",
 	            "patch_set": 1,
@@ -949,7 +971,7 @@ var (
 	            "author": {
 	                "_account_id": 1002228,
 	                "name": "John Doe",
-	                "email": "noreply+johndoe@google.com"
+	                "email": "johndoe@example.com"
 	            },
 	            "change_message_id": "c24215a84fdc9cec42c2d5eec4f488d172d39d7e",
 	            "patch_set": 1,
@@ -962,6 +984,18 @@ var (
 	        }
 	    ]
 	}`
+	fakeAccounts1Str = `[
+	    {
+	        "_account_id": 1002228,
+	        "name": "John Doe",
+	        "email": "johndoe@example.com"
+	    },
+	    {
+	        "_account_id": 1002228,
+	        "name": "Jane Doe",
+	        "email": "janedoe@example.com"
+	    }
+	]`
 )
 
 ////////////////////////////////////////////////////////////////////////////////
