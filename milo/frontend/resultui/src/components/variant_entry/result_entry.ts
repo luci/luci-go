@@ -266,6 +266,14 @@ export class ResultEntryElement extends MobxLitElement {
       font-weight: 500;
     }
 
+    [slot='header'] {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    [slot='content'] {
+      overflow: hidden;
+    }
+
     .expected-result {
       color: var(--success-color);
     }
