@@ -269,6 +269,34 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-
 	}
 }
 
+func cmdListChangeComments(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		result, err := client.ListChangeComments(ctx, input.ChangeID)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "list-change-comments <options>",
+		ShortDesc: "gets all comments on a single change",
+		LongDesc: `Gets all comments on a single change.
+
+Input should contain a change ID, e.g.
+{
+  "change_id": <change-id>,
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID: true,
+			}, runner)
+		},
+	}
+}
+
 func cmdChangesSubmittedTogether(authOpts auth.Options) *subcommands.Command {
 	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
 		opts := input.QueryInput.(*gerrit.ChangeDetailsParams)
