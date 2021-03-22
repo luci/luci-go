@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0c06cc13_184da20a",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-22T13:24:51Z",
+      "side": 1,
+      "message": "nit:\nopt.WithValueLogFileSize(valuelog)?",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 43,
+        "endChar": 33
+      },
+      "revId": "ca6171652c5b37b710f2a27fcff573fea8f8e6d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "efbad74a_7be536b5",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-03-22T13:24:51Z",
+      "side": 1,
+      "message": "nit:\nopt.WithMemTableSize(memlog)?",
+      "range": {
+        "startLine": 48,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 27
+      },
+      "revId": "ca6171652c5b37b710f2a27fcff573fea8f8e6d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
