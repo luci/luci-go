@@ -41,7 +41,7 @@ export class SignInElement extends LitElement {
   }
 
   private onUserUpdate = (user: gapi.auth2.GoogleUser) => {
-    this.profile = user.isSignedIn() ? user.getBasicProfile() : null;
+    this.profile = user.isSignedIn() ? user.getBasicProfile()! : null;
     this.dispatchEvent(
       new CustomEvent<gapi.auth2.GoogleUser>('user-update', {
         detail: user,

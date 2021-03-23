@@ -11,7 +11,8 @@
     "build": "webpack --config webpack.prod.ts",
     "dev": "webpack-dev-server --config webpack.dev.ts",
     "test": "karma start --single-run",
-    "test:watch": "karma start"
+    "test:watch": "karma start",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@adobe/lit-mobx": "^1.0.1",
@@ -77,6 +78,7 @@
     "karma-webpack": "^5.0.0",
     "lit-css-loader": "0.0.4",
     "mocha": "^8.3.2",
+    "patch-package": "^6.4.7",
     "process": "^0.11.10",
     "sinon": "^9.2.4",
     "ts-loader": "^8.0.18",
