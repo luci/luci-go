@@ -39,6 +39,30 @@
       },
       "revId": "3e47a257aa124652dffdccbf422a81d33bfb9995",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a6fba94d_8e4e8f75",
+        "filename": "appengine/mapper/controller_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-23T02:11:33Z",
+      "side": 1,
+      "message": "Not sure why, but this was added by goimports.\nSo I\u0027d like to avoid further manual modification.",
+      "parentUuid": "851f4321_4e90a4ac",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 65
+      },
+      "revId": "3e47a257aa124652dffdccbf422a81d33bfb9995",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
