@@ -29,7 +29,7 @@ import { AppState } from './app_state';
  * Records state of a build.
  */
 export class BuildState {
-  @observable.ref builderId?: BuilderID;
+  @observable.ref builderIdParam?: BuilderID;
   @observable.ref buildNumOrId?: string;
 
   /**
@@ -37,6 +37,10 @@ export class BuildState {
    * Computed invocation ID may not work on older builds.
    */
   @observable.ref useComputedInvId = true;
+
+  @computed get builderId() {
+    return this.builderIdParam || this.build?.builder;
+  }
 
   /**
    * buildNum is defined when this.buildNumOrId is defined and doesn't start
@@ -60,8 +64,8 @@ export class BuildState {
       }
       const invIdFromBuild = this.build.infra?.resultdb?.invocation?.slice('invocations/'.length) || '';
       return fromPromise(Promise.resolve(invIdFromBuild));
-    } else if (this.builderId && this.buildNum) {
-      return fromPromise(getInvIdFromBuildNum(this.builderId, this.buildNum));
+    } else if (this.builderIdParam && this.buildNum) {
+      return fromPromise(getInvIdFromBuildNum(this.builderIdParam, this.buildNum));
     } else if (this.buildId) {
       return fromPromise(Promise.resolve(getInvIdFromBuildId(this.buildId)));
     } else {
@@ -95,7 +99,7 @@ export class BuildState {
   private buildQueryTime = 0;
   @computed
   get build$(): IPromiseBasedObservable<Build> {
-    if (!this.appState.buildsService || (!this.buildId && (!this.builderId || !this.buildNum))) {
+    if (!this.appState.buildsService || (!this.buildId && (!this.builderIdParam || !this.buildNum))) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -116,7 +120,7 @@ export class BuildState {
 
     const req: GetBuildRequest = this.buildId
       ? { id: this.buildId, fields: '*' }
-      : { builder: this.builderId, buildNumber: this.buildNum!, fields: '*' };
+      : { builder: this.builderIdParam, buildNumber: this.buildNum!, fields: '*' };
 
     return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt));
   }
@@ -229,16 +233,50 @@ export class BuildState {
       return fromPromise(Promise.race([]));
     }
 
-    const builderId = this.builderId || this.build?.builder;
-    if (!this.appState.buildersService || !builderId) {
+    if (!this.appState.buildersService || !this.builderId) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.buildersService.getBuilder({ id: builderId }));
+    return fromPromise(this.appState.buildersService.getBuilder({ id: this.builderId }));
   }
 
   @computed
   get builder(): BuilderItem | null {
     return this.builder$.state === FULFILLED ? this.builder$.value : null;
+  }
+
+  @computed private get bucketResourceId() {
+    if (!this.builderId) {
+      return null;
+    }
+    return `luci.${this.builderId.project}.${this.builderId.bucket}`;
+  }
+
+  @computed
+  private get permittedActions$() {
+    if (!this.appState.accessService || !this.bucketResourceId) {
+      // Returns a promise that never resolves when the dependencies aren't
+      // ready.
+      return fromPromise(Promise.race([]));
+    }
+
+    // Establish a dependency on the timestamp.
+    this.timestamp;
+
+    return fromPromise(
+      this.appState.accessService?.permittedActions({
+        resourceKind: 'bucket',
+        resourceIds: [this.bucketResourceId],
+      })
+    );
+  }
+
+  @computed
+  get permittedActions(): Set<string> {
+    const actions =
+      this.permittedActions$.state === FULFILLED
+        ? this.permittedActions$.value.permitted[this.bucketResourceId!].actions
+        : undefined;
+    return new Set(actions || []);
   }
 
   // Refresh all data that depends on the timestamp.
