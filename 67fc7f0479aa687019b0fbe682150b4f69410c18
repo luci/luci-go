@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0bb11235_8364ad26",
+        "filename": "milo/frontend/resultui/webpack.prod.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-23T03:26:34Z",
+      "side": 1,
+      "message": "Can we put a comment here explaining why this is needed (a link to the documentation would be nice)",
+      "range": {
+        "startLine": 27,
+        "startChar": 6,
+        "endLine": 27,
+        "endChar": 17
+      },
+      "revId": "67fc7f0479aa687019b0fbe682150b4f69410c18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
