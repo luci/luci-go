@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60b887a9_03e72ac5",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-23T23:15:00Z",
+      "side": 1,
+      "message": "Perhaps we want to display more readable name here (e.g. \"Test suite\" instead of \"test_suite\"). But I\u0027m fine to do this in another CL.",
+      "range": {
+        "startLine": 363,
+        "startChar": 86,
+        "endLine": 363,
+        "endChar": 109
+      },
+      "revId": "1c9f4fad70ee7b6ca633fc3ac0ad3494585b3a41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -134,6 +134,24 @@
       "parentUuid": "b5daa5d0_f0ab78d6",
       "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3cf24c8_aba14437",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-23T23:15:00Z",
+      "side": 1,
+      "message": "It works for me now.\n\nLook at the demo, I can imagine users may get a bit confused because the header is not connected with the table (https://screenshot.googleplex.com/A4YD8LSQVqP7bsD), so the users may read (test_suite: Unexpected(0)). Not sure if there is any better way though (we can have each table having its own header, but it\u0027s kind of redundant).",
+      "parentUuid": "85e7117c_c5db0f6a",
+      "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
