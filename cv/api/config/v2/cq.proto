@@ -192,7 +192,7 @@ message ConfigGroup {
   // If specified, the order matters. CQ will create the Run with the first
   // mode for which triggering conditions are fulfilled. If there is no such
   // mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
-  repeated Mode additonal_modes = 7;
+  repeated Mode additional_modes = 7;
 }
 
 // Mode defines a CQ Run mode and how it can be triggered.
