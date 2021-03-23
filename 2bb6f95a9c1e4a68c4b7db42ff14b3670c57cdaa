@@ -16,6 +16,24 @@
       "message": "don\u0027t you already have a parser for this? we need the same thing in test result duration (and other duration)",
       "revId": "2bb6f95a9c1e4a68c4b7db42ff14b3670c57cdaa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f9c05587_54ea4051",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T01:12:32Z",
+      "side": 1,
+      "message": "no we don\u0027t have one.\nstep duration is calculated from timestamps.\nresult duration isn\u0027t parsed. It\u0027s rendered directly.\n\nI extracted this to a standalone function.",
+      "parentUuid": "57831e1d_abddc3ee",
+      "revId": "2bb6f95a9c1e4a68c4b7db42ff14b3670c57cdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

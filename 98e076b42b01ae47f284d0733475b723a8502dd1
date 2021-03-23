@@ -74,6 +74,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "6512fd04_4121383d",
+        "filename": "milo/frontend/resultui/src/context/app_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T01:12:32Z",
+      "side": 1,
+      "message": "I see.\nNull means the accessToken isn\u0027t initialised yet (we don\u0027t know whether the user is logged in or not, because the silent signin flow hasn\u0027t finished yet).\nEmpty string means the user is not logged in.\nThis is documented in L26-28.\nI could probably use 2 properties to represent the state though.",
+      "parentUuid": "ce2d3f21_7e082b9d",
+      "range": {
+        "startLine": 94,
+        "startChar": 13,
+        "endLine": 94,
+        "endChar": 24
+      },
+      "revId": "98e076b42b01ae47f284d0733475b723a8502dd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ed98d3ef_354938cd",
         "filename": "milo/frontend/resultui/src/context/build_state.ts",
         "patchSetId": 4
