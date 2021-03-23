@@ -152,6 +152,24 @@
       "parentUuid": "85e7117c_c5db0f6a",
       "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4fcbc6e6_dde933f4",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T23:21:12Z",
+      "side": 1,
+      "message": "This will be improved after the group header is updated.\nSee the design doc for details.",
+      "parentUuid": "c3cf24c8_aba14437",
+      "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

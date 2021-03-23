@@ -22,6 +22,30 @@
       },
       "revId": "1c9f4fad70ee7b6ca633fc3ac0ad3494585b3a41",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d97fe6d1_86b6b17d",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T23:21:12Z",
+      "side": 1,
+      "message": "I can have a map that defines the label of common columns in a later CL.\nFor other columns, the name will still be unreadable though.",
+      "parentUuid": "60b887a9_03e72ac5",
+      "range": {
+        "startLine": 363,
+        "startChar": 86,
+        "endLine": 363,
+        "endChar": 109
+      },
+      "revId": "1c9f4fad70ee7b6ca633fc3ac0ad3494585b3a41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
