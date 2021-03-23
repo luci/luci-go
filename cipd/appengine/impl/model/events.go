@@ -116,7 +116,7 @@ func (e *Event) FromProto(c context.Context, p *api.Event) *Event {
 	e.Event = blob
 	e.Kind = p.Kind
 	e.Who = p.Who
-	e.When = google.TimeFromProto(p.When).Sub(EventsEpoch).Nanoseconds()
+	e.When = p.When.AsTime().Sub(EventsEpoch).Nanoseconds()
 	if p.Instance != "" {
 		e.Instance = p.Instance
 	} else {

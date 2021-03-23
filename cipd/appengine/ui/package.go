@@ -22,7 +22,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -121,7 +120,7 @@ func packagePage(c *router.Context, pkg string) error {
 			ID:          iid,
 			TruncatedID: iid[:30],
 			Href:        instancePageURL(pkg, iid),
-			Age:         humanize.RelTime(google.TimeFromProto(inst.RegisteredTs), now, "", ""),
+			Age:         humanize.RelTime(inst.RegisteredTs.AsTime(), now, "", ""),
 			Refs:        refsListing(refMap[iid], pkg, now),
 		}
 	}

@@ -20,7 +20,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth/signing"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
@@ -73,7 +72,7 @@ func InspectGrant(c context.Context, certs tokensigning.CertificatesSupplier, to
 		},
 		Lifespan: func(b proto.Message) tokensigning.Lifespan {
 			body := b.(*tokenserver.OAuthTokenGrantBody)
-			issuedAt := google.TimeFromProto(body.IssuedAt)
+			issuedAt := body.IssuedAt.AsTime()
 			return tokensigning.Lifespan{
 				NotBefore: issuedAt,
 				NotAfter:  issuedAt.Add(time.Duration(body.ValidityDuration) * time.Second),

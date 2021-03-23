@@ -25,8 +25,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -367,10 +367,10 @@ func (lsp *LogStreamQuery) TimeBound(lower, upper *timestamp.Timestamp) {
 	// we use a datastore filter here because lsp.q is already ordered by
 	// -Created, and so we can apply an inequality to it.
 	if lower != nil {
-		lsp.q = lsp.q.Gt("Created", google.TimeFromProto(lower).UTC())
+		lsp.q = lsp.q.Gt("Created", lower.AsTime().UTC())
 	}
 	if upper != nil {
-		lsp.q = lsp.q.Lt("Created", google.TimeFromProto(upper).UTC())
+		lsp.q = lsp.q.Lt("Created", upper.AsTime().UTC())
 	}
 }
 

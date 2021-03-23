@@ -25,7 +25,6 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -139,7 +138,7 @@ func (p *luciTSTokenProvider) MintToken(ctx context.Context, base *Token) (*Toke
 	return &Token{
 		Token: oauth2.Token{
 			AccessToken: accessToken,
-			Expiry:      google.TimeFromProto(resp.Expiry),
+			Expiry:      resp.Expiry.AsTime(),
 			TokenType:   "Bearer",
 		},
 		IDToken: idToken,

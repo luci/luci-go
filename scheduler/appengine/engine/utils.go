@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -192,8 +191,8 @@ func sortTriggers(t []*internal.Trigger) {
 //
 // Compares IDs in case of a tie.
 func isTriggerOlder(t1, t2 *internal.Trigger) bool {
-	ts1 := google.TimeFromProto(t1.Created)
-	ts2 := google.TimeFromProto(t2.Created)
+	ts1 := t1.Created.AsTime()
+	ts2 := t2.Created.AsTime()
 	switch {
 	case ts1.After(ts2):
 		return false
@@ -293,7 +292,7 @@ func filteredFinishedInvs(raw []byte, oldest time.Time) ([]*internal.FinishedInv
 	}
 	filtered := make([]*internal.FinishedInvocation, 0, len(invs))
 	for _, inv := range invs {
-		if google.TimeFromProto(inv.Finished).After(oldest) {
+		if inv.Finished.AsTime().After(oldest) {
 			filtered = append(filtered, inv)
 		}
 	}

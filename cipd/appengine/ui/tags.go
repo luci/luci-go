@@ -20,8 +20,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	"go.chromium.org/luci/common/proto/google"
-
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -41,7 +39,7 @@ func tagsListing(tags []*api.Tag, pkg string, now time.Time) []tagItem {
 			Title: tag,
 			Href:  instancePageURL(pkg, tag),
 			User:  strings.TrimPrefix(t.AttachedBy, "user:"),
-			Age:   humanize.RelTime(google.TimeFromProto(t.AttachedTs), now, "", ""),
+			Age:   humanize.RelTime(t.AttachedTs.AsTime(), now, "", ""),
 		}
 	}
 	return l

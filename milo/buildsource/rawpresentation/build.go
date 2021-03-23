@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -139,7 +138,7 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 					log.Warningf(c, "Annotation stream links LogDog substream [%+v], not supported!", t.AnnotationStream)
 
 				case *annopb.Step_Substep_Step:
-					endedTime := google.TimeFromProto(t.Step.Ended)
+					endedTime := t.Step.Ended.AsTime()
 					if t.Step.Ended != nil && endedTime.After(latestEndedTime) {
 						latestEndedTime = endedTime
 					}
@@ -147,7 +146,7 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 			}
 			if latestEndedTime.IsZero() {
 				// No substep had an ended time :(
-				latestEndedTime = google.TimeFromProto(step.Started)
+				latestEndedTime = step.Started.AsTime()
 			}
 			as.step = &step
 		}

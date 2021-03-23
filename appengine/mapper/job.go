@@ -207,7 +207,7 @@ func (j *Job) FetchInfo(ctx context.Context) (*JobInfo, error) {
 		sh := s.info()
 		info.Shards[i] = sh
 		info.ProcessedEntities += sh.ProcessedEntities
-		if ts := google.TimeFromProto(sh.Updated); ts.After(updated) {
+		if ts := sh.Updated.AsTime(); ts.After(updated) {
 			updated = ts
 		}
 		if sh.TotalEntities == -1 {
@@ -229,7 +229,7 @@ func (j *Job) FetchInfo(ctx context.Context) (*JobInfo, error) {
 		for _, s := range info.Shards {
 			info.TotalEntities += s.TotalEntities
 			if s.Eta != nil {
-				if ts := google.TimeFromProto(s.Eta); maxETA.IsZero() || ts.After(maxETA) {
+				if ts := s.Eta.AsTime(); maxETA.IsZero() || ts.After(maxETA) {
 					maxETA = ts
 				}
 			}

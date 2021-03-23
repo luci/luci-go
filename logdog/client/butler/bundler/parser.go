@@ -21,7 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/data/chunkstream"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -69,7 +68,7 @@ type parser interface {
 func newParser(d *logpb.LogStreamDescriptor, c *counter) (parser, error) {
 	base := baseParser{
 		counter:  c,
-		timeBase: google.TimeFromProto(d.Timestamp),
+		timeBase: d.Timestamp.AsTime(),
 	}
 
 	switch d.StreamType {

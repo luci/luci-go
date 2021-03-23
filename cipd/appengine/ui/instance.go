@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -104,7 +103,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 		"HexDigest":   inst.Instance.HexDigest,
 		"DownloadURL": url.SignedUrl,
 		"Uploader":    strings.TrimPrefix(inst.RegisteredBy, "user:"),
-		"Age":         humanize.RelTime(google.TimeFromProto(inst.RegisteredTs), now, "", ""),
+		"Age":         humanize.RelTime(inst.RegisteredTs.AsTime(), now, "", ""),
 		"Refs":        refsListing(desc.Refs, pkg, now),
 		"Tags":        tagsListing(desc.Tags, pkg, now),
 		"Metadata":    instanceMetadataListing(md.Metadata, now),

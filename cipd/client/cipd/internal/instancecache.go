@@ -212,7 +212,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 	// Kick out entries older than some threshold first.
 	garbage := stringset.New(0)
 	for instanceID, e := range state.Entries {
-		age := now.Sub(google.TimeFromProto(e.LastAccess))
+		age := now.Sub(e.LastAccess.AsTime())
 		if age > c.maxAge {
 			garbage.Add(instanceID)
 			logging.Infof(ctx, "cipd: purging cached instance %s (age %s)", instanceID, age)
@@ -229,7 +229,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 			if !garbage.Has(instanceID) {
 				g = append(g, &garbageCandidate{
 					instanceID:     instanceID,
-					lastAccessTime: google.TimeFromProto(e.LastAccess),
+					lastAccessTime: e.LastAccess.AsTime(),
 				})
 			}
 		}
@@ -290,7 +290,7 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 			cutOff := now.
 				Add(-instanceCacheSyncInterval).
 				Add(time.Duration(rand.Int63n(int64(5 * time.Minute))))
-			sync = google.TimeFromProto(state.LastSynced).Before(cutOff)
+			sync = state.LastSynced.AsTime().Before(cutOff)
 		}
 	}
 
@@ -397,7 +397,7 @@ func (c *InstanceCache) getAccessTime(ctx context.Context, now time.Time, pin co
 	c.withState(ctx, now, func(s *messages.InstanceCache) {
 		var entry *messages.InstanceCache_Entry
 		if entry, ok = s.Entries[pin.InstanceID]; ok {
-			lastAccess = google.TimeFromProto(entry.LastAccess)
+			lastAccess = entry.LastAccess.AsTime()
 		}
 	})
 	return

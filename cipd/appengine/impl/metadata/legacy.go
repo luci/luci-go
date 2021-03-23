@@ -524,7 +524,7 @@ func applyACLDiff(ctx context.Context, ents []*packageACL, md *api.PrefixMetadat
 		oldACL.Users = users
 		oldACL.Groups = groups
 		oldACL.ModifiedBy = md.UpdateUser
-		oldACL.ModifiedTS = google.TimeFromProto(md.UpdateTime)
+		oldACL.ModifiedTS = md.UpdateTime.AsTime()
 		toPut = append(toPut, oldACL)
 	}
 
