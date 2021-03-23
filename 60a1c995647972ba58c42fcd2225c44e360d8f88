@@ -51,6 +51,24 @@
       "message": "Is there a test in demo for this case?",
       "revId": "60a1c995647972ba58c42fcd2225c44e360d8f88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8c734ad_e4cd6b2d",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index_new.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T22:57:09Z",
+      "side": 1,
+      "message": "https://weiweilin-0-dot-luci-milo.appspot.com/ui/p/chromium/builders/try/mac_optional_gpu_tests_rel/56207/test-results-new?q\u003d",
+      "parentUuid": "0dfc8f8d_3d984fad",
+      "revId": "60a1c995647972ba58c42fcd2225c44e360d8f88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
