@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6ad7c8c_83a7fad0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2021-03-23T00:55:55Z",
+      "side": 1,
+      "message": "Just let me do sanity check.\nI guess cas client is a muti-thread application.  How many threads will be created and own buffer memory space?  Is it limited to at most 1?  If yes, this code should be fine.  If no, I guess we might also need to limit the number of threads.",
+      "revId": "ca6171652c5b37b710f2a27fcff573fea8f8e6d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0c06cc13_184da20a",
