@@ -349,7 +349,7 @@ message Verifiers {
     Toggle cancel_stale_tryjobs = 3 [deprecated = true];
 
     message Builder {
-      // Next field number: 12
+      // Next field number: 14
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
@@ -464,8 +464,8 @@ message Verifiers {
       // chain, although CQ may eventually relax this requirement.
       EquivalentBuilder equivalent_to = 5;
 
-      // Optional. Require this builder only if location_regexp matches a file in
-      // this CL.
+      // Optional. Require this builder only if location_regexp matches a file
+      // in this CL.
       //
       // This means:
       //   * If specified and no file in a CL matches any of the location_regexp,
@@ -517,6 +517,18 @@ message Verifiers {
       // If set, this builder will only be triggered if the CL owner (who first
       // uploaded the CL) is a member of at least one of these groups.
       repeated string owner_whitelist_group = 8;
+
+      // Optional. Require this builder only if any of mode_regexp matches the
+      // CQ Run mode and none of mode_regexp_exclude matches it.
+      //
+      // If mode_regexp is not provided, defaults to `.+`.
+      // If the Run mode is matched by both, mode_regexp_exclude takes
+      // precedence.
+      //
+      // Implicitly anchored with (?i)^...$  (i.e. complete case-insensitive
+      // match), so there is no need add them.
+      repeated string mode_regexp = 12;
+      repeated string mode_regexp_exclude = 13;
     }
 
     message EquivalentBuilder {
