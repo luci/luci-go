@@ -24,9 +24,10 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -213,7 +214,7 @@ func triggerJobAction(c *router.Context) {
 			job: {
 				{
 					Id:            id,
-					Created:       google.NewTimestamp(clock.Now(ctx)),
+					Created:       timestamppb.New(clock.Now(ctx)),
 					Title:         "Triggered via web UI",
 					EmittedByUser: string(auth.CurrentIdentity(ctx)),
 					Payload: &internal.Trigger_Webui{

@@ -19,13 +19,15 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -69,13 +71,13 @@ func TestEvents(t *testing.T) {
 					Kind:    api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package: "x/y/z",
 					Who:     string(testutil.TestUser),
-					When:    google.NewTimestamp(testutil.TestTime.Add(time.Second + 1)),
+					When:    timestamppb.New(testutil.TestTime.Add(time.Second + 1)),
 				},
 				{
 					Kind:    api.EventKind_INSTANCE_REF_SET,
 					Package: "x/y/z",
 					Who:     string(testutil.TestUser),
-					When:    google.NewTimestamp(testutil.TestTime.Add(time.Second)),
+					When:    timestamppb.New(testutil.TestTime.Add(time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
@@ -83,13 +85,13 @@ func TestEvents(t *testing.T) {
 					Instance: "cccc",
 					Tag:      "k:v",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(1)),
+					When:     timestamppb.New(testutil.TestTime.Add(1)),
 				},
 				{
 					Kind:    api.EventKind_PACKAGE_CREATED,
 					Package: "a/b/c",
 					Who:     string(testutil.TestUser),
-					When:    google.NewTimestamp(testutil.TestTime),
+					When:    timestamppb.New(testutil.TestTime),
 				},
 			})
 		})
@@ -137,7 +139,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
-				When:    google.NewTimestamp(testutil.TestTime),
+				When:    timestamppb.New(testutil.TestTime),
 				GrantedRole: []*api.PrefixMetadata_ACL{
 					{
 						Role:       api.Role_READER,
@@ -169,7 +171,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
-				When:    google.NewTimestamp(testutil.TestTime),
+				When:    timestamppb.New(testutil.TestTime),
 				RevokedRole: []*api.PrefixMetadata_ACL{
 					{
 						Role:       api.Role_READER,
@@ -199,7 +201,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
-				When:    google.NewTimestamp(testutil.TestTime),
+				When:    timestamppb.New(testutil.TestTime),
 				GrantedRole: []*api.PrefixMetadata_ACL{
 					{
 						Role:       api.Role_OWNER,

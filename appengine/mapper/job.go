@@ -19,11 +19,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -184,8 +184,8 @@ func (j *Job) FetchInfo(ctx context.Context) (*JobInfo, error) {
 	info := &JobInfo{
 		Id:            int64(j.ID),
 		State:         j.State,
-		Created:       google.NewTimestamp(j.Created),
-		Updated:       google.NewTimestamp(j.Updated),
+		Created:       timestamppb.New(j.Created),
+		Updated:       timestamppb.New(j.Updated),
 		TotalEntities: -1, // assume unknown, will be replaced below if known
 	}
 
@@ -217,7 +217,7 @@ func (j *Job) FetchInfo(ctx context.Context) (*JobInfo, error) {
 
 	// Calculate the overall rate from scratch, do NOT sum rates of shards,
 	// since it will also sum estimation errors too (which can be wild).
-	info.Updated = google.NewTimestamp(updated)
+	info.Updated = timestamppb.New(updated)
 	if runtime := updated.Sub(j.Created); runtime > 0 {
 		info.EntitiesPerSec = float32(float64(info.ProcessedEntities) / runtime.Seconds())
 	}
@@ -238,7 +238,7 @@ func (j *Job) FetchInfo(ctx context.Context) (*JobInfo, error) {
 		// The job completes when its longest shard does. Shards do not pass work
 		// to each other.
 		if !maxETA.IsZero() {
-			info.Eta = google.NewTimestamp(maxETA)
+			info.Eta = timestamppb.New(maxETA)
 		}
 	}
 
@@ -329,7 +329,7 @@ func (s *shard) info() *ShardInfo {
 		rate = float64(s.ProcessedCount) / runtime.Seconds()
 		if s.ExpectedCount != -1 && rate > 0.0001 {
 			secs := float64(s.ExpectedCount) / rate
-			eta = google.NewTimestamp(s.Created.Add(time.Duration(float64(time.Second) * secs)))
+			eta = timestamppb.New(s.Created.Add(time.Duration(float64(time.Second) * secs)))
 		}
 	}
 
@@ -337,8 +337,8 @@ func (s *shard) info() *ShardInfo {
 		Index:             int32(s.Index),
 		State:             s.State,
 		Error:             s.Error,
-		Created:           google.NewTimestamp(s.Created),
-		Updated:           google.NewTimestamp(s.Updated),
+		Created:           timestamppb.New(s.Created),
+		Updated:           timestamppb.New(s.Updated),
 		Eta:               eta, // nil if unknown
 		ProcessedEntities: s.ProcessedCount,
 		TotalEntities:     s.ExpectedCount, // -1 if unknown

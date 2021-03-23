@@ -24,9 +24,9 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -64,7 +65,7 @@ func TestRegisterInstance(t *testing.T) {
 					HexDigest: inst.InstanceID,
 				},
 				RegisteredBy: "user:a@example.com",
-				RegisteredTs: google.NewTimestamp(testutil.TestTime),
+				RegisteredTs: timestamppb.New(testutil.TestTime),
 			})
 		})
 
@@ -100,14 +101,14 @@ func TestRegisterInstance(t *testing.T) {
 				{
 					Kind:     api.EventKind_INSTANCE_CREATED,
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(1)),
+					When:     timestamppb.New(testutil.TestTime.Add(1)),
 					Package:  pkg.Name,
 					Instance: expected.InstanceID,
 				},
 				{
 					Kind:    api.EventKind_PACKAGE_CREATED,
 					Who:     string(testutil.TestUser),
-					When:    google.NewTimestamp(testutil.TestTime),
+					When:    timestamppb.New(testutil.TestTime),
 					Package: pkg.Name,
 				},
 			})
@@ -140,7 +141,7 @@ func TestRegisterInstance(t *testing.T) {
 				{
 					Kind:     api.EventKind_INSTANCE_CREATED,
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime),
+					When:     timestamppb.New(testutil.TestTime),
 					Package:  pkg.Name,
 					Instance: inst.InstanceID,
 				},
@@ -322,13 +323,13 @@ func TestFetchProcessors(t *testing.T) {
 				{
 					Id:         "f1",
 					State:      api.Processor_FAILED,
-					FinishedTs: google.NewTimestamp(ts),
+					FinishedTs: timestamppb.New(ts),
 					Error:      "fail 1",
 				},
 				{
 					Id:         "f2",
 					State:      api.Processor_FAILED,
-					FinishedTs: google.NewTimestamp(ts),
+					FinishedTs: timestamppb.New(ts),
 					Error:      "fail 2",
 				},
 				{
@@ -342,7 +343,7 @@ func TestFetchProcessors(t *testing.T) {
 				{
 					Id:         "s1",
 					State:      api.Processor_SUCCEEDED,
-					FinishedTs: google.NewTimestamp(ts),
+					FinishedTs: timestamppb.New(ts),
 					Result: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"result": {Kind: &structpb.Value_StringValue{StringValue: "success 1"}},
@@ -352,7 +353,7 @@ func TestFetchProcessors(t *testing.T) {
 				{
 					Id:         "s2",
 					State:      api.Processor_SUCCEEDED,
-					FinishedTs: google.NewTimestamp(ts),
+					FinishedTs: timestamppb.New(ts),
 					Result: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"result": {Kind: &structpb.Value_StringValue{StringValue: "success 2"}},

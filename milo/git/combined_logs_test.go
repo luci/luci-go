@@ -21,13 +21,13 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
@@ -67,7 +67,7 @@ func TestCombinedLogs(t *testing.T) {
 			fakeCommits[i] = &gitpb.Commit{
 				Id: hex.EncodeToString(commitID),
 				Committer: &gitpb.Commit_User{
-					Time: google.NewTimestamp( // each next commit is 1 minute older
+					Time: timestamppb.New( // each next commit is 1 minute older
 						epoch.Add(-time.Duration(i) * time.Minute)),
 				},
 			}
@@ -134,11 +134,11 @@ func TestCombinedLogs(t *testing.T) {
 			//  - commit 2 back in time between 22 and 23,
 			//  - commit 3 back in time past 23 (should be truncated by limit) and
 			//  - commit 20 forward in time between 0 and 1.
-			fakeCommits[2].Committer.Time = google.NewTimestamp(
+			fakeCommits[2].Committer.Time = timestamppb.New(
 				epoch.Add(-time.Duration(22)*time.Minute - time.Second))
-			fakeCommits[3].Committer.Time = google.NewTimestamp(
+			fakeCommits[3].Committer.Time = timestamppb.New(
 				epoch.Add(-time.Duration(23)*time.Minute - time.Second))
-			fakeCommits[20].Committer.Time = google.NewTimestamp(
+			fakeCommits[20].Committer.Time = timestamppb.New(
 				epoch.Add(-time.Duration(0)*time.Minute - time.Second))
 
 			mockLogCall(fakeCommits[0].Id, fakeCommits[0:4])

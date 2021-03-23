@@ -22,9 +22,10 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/gcloud/pubsub"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -204,7 +205,7 @@ func (t *ActivatedTask) Finish(resultJSON string, expire ...time.Time) {
 	switch len(expire) {
 	case 0:
 	case 1:
-		req.Data.Expiration = google.NewTimestamp(expire[0])
+		req.Data.Expiration = timestamppb.New(expire[0])
 	default:
 		panic("may only specify 0 or 1 expire values")
 	}

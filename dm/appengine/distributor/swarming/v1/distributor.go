@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/duration"
@@ -31,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	sv1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
 	dm "go.chromium.org/luci/dm/api/service/v1"
@@ -329,7 +329,7 @@ func (d *swarmingDist) GetStatus(q *dm.Quest_Desc, tok distributor.Token) (*dm.R
 		ret.Data = &dm.JsonResult{
 			Object: data,
 			Size:   uint32(len(data)),
-			Expiration: google.NewTimestamp(
+			Expiration: timestamppb.New(
 				clock.Now(d).Add(d.sCfg.Isolate.Expiration.AsDuration())),
 		}
 

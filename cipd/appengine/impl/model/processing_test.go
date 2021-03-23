@@ -18,13 +18,13 @@ import (
 	"testing"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
-
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -78,7 +78,7 @@ func TestProcessingResult(t *testing.T) {
 			So(p, ShouldResembleProto, &api.Processor{
 				Id:         "zzz",
 				State:      api.Processor_SUCCEEDED,
-				FinishedTs: google.NewTimestamp(testutil.TestTime),
+				FinishedTs: timestamppb.New(testutil.TestTime),
 				Result: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"a": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
@@ -97,7 +97,7 @@ func TestProcessingResult(t *testing.T) {
 			So(p, ShouldResembleProto, &api.Processor{
 				Id:         "zzz",
 				State:      api.Processor_FAILED,
-				FinishedTs: google.NewTimestamp(testutil.TestTime),
+				FinishedTs: timestamppb.New(testutil.TestTime),
 				Error:      "blah",
 			})
 		})

@@ -21,16 +21,17 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -57,7 +58,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 		ServiceAccount:   "serviceaccount@robots.com",
 		Proxy:            "user:proxy@example.com",
 		EndUser:          "user:enduser@example.com",
-		IssuedAt:         google.NewTimestamp(clock.Now(ctx)),
+		IssuedAt:         timestamppb.New(clock.Now(ctx)),
 		ValidityDuration: 3600,
 	}
 

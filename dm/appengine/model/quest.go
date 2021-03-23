@@ -19,9 +19,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
@@ -78,7 +78,7 @@ func (q *Quest) DataProto() *dm.Quest_Data {
 	}
 
 	return &dm.Quest_Data{
-		Created: google.NewTimestamp(q.Created),
+		Created: timestamppb.New(q.Created),
 		Desc:    &q.Desc,
 		BuiltBy: spec,
 	}

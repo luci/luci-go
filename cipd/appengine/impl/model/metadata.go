@@ -21,10 +21,11 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -65,7 +66,7 @@ func (md *InstanceMetadata) Proto() *api.InstanceMetadata {
 		ContentType: md.ContentType,
 		Fingerprint: md.Fingerprint,
 		AttachedBy:  md.AttachedBy,
-		AttachedTs:  google.NewTimestamp(md.AttachedTs),
+		AttachedTs:  timestamppb.New(md.AttachedTs),
 	}
 }
 
@@ -316,7 +317,7 @@ func orderByTsAndKey(md []*InstanceMetadata) {
 
 // flushToEventLog emits a bunch of event log entries with metadata.
 func flushToEventLog(ctx context.Context, ents []*InstanceMetadata, kind api.EventKind, inst *Instance, who string, now time.Time) error {
-	nowTS := google.NewTimestamp(now)
+	nowTS := timestamppb.New(now)
 	events := Events{}
 	for _, ent := range ents {
 		// Export only valid UTF-8 values of known text-like content types.

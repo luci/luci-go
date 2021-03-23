@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -34,6 +34,7 @@ import (
 	tokenserverapi "go.chromium.org/luci/tokenserver/api"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -75,7 +76,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		ServiceAccount:   "serviceaccount@robots.com",
 		Proxy:            "user:proxy@example.com",
 		EndUser:          "user:enduser@example.com",
-		IssuedAt:         google.NewTimestamp(clock.Now(ctx)),
+		IssuedAt:         timestamppb.New(clock.Now(ctx)),
 		ValidityDuration: 3600,
 	}
 	grant, _ := SignGrant(ctx, rpc.Signer, grantBody)
@@ -90,7 +91,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(resp, ShouldResembleProto, &minter.MintOAuthTokenViaGrantResponse{
 			AccessToken:    "access-token-for-serviceaccount@robots.com",
-			Expiry:         google.NewTimestamp(testclock.TestTimeUTC.Add(time.Hour)),
+			Expiry:         timestamppb.New(testclock.TestTimeUTC.Add(time.Hour)),
 			ServiceVersion: "unit-tests/mocked-ver",
 		})
 		So(lastMintParams, ShouldResemble, auth.MintAccessTokenParams{

@@ -23,10 +23,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
@@ -220,7 +220,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &minter.LuciMachineToken{
 						MachineToken: signedToken,
-						Expiry:       google.NewTimestamp(expiry),
+						Expiry:       timestamppb.New(expiry),
 					},
 				},
 			},

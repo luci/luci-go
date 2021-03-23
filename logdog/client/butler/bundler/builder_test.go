@@ -22,8 +22,9 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -179,7 +180,7 @@ func TestBuilder(t *testing.T) {
 		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		b := &builder{
 			template: logpb.ButlerLogBundle{
-				Timestamp: google.NewTimestamp(tc.Now()),
+				Timestamp: timestamppb.New(tc.Now()),
 			},
 		}
 		templateSize := protoSize(&b.template)

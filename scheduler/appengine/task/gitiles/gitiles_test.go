@@ -27,13 +27,13 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	commonpb "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -110,7 +110,7 @@ func TestTriggerBuild(t *testing.T) {
 				committedAt = committedAt.Add(-time.Minute)
 				res.Log = append(res.Log, &git.Commit{
 					Id:        id,
-					Committer: &git.Commit_User{Time: google.NewTimestamp(committedAt)},
+					Committer: &git.Commit_User{Time: timestamppb.New(committedAt)},
 				})
 			}
 			return gitilesMock.EXPECT().Log(gomock.Any(), commonpb.MatcherEqual(req)).Return(res, nil)
@@ -143,7 +143,7 @@ func TestTriggerBuild(t *testing.T) {
 				committedAt = committedAt.Add(-time.Minute)
 				res.Log = append(res.Log, &git.Commit{
 					Id:        id,
-					Committer: &git.Commit_User{Time: google.NewTimestamp(committedAt)},
+					Committer: &git.Commit_User{Time: timestamppb.New(committedAt)},
 					TreeDiff:  diff,
 				})
 			}

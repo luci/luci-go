@@ -19,10 +19,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -56,7 +56,7 @@ func (e *Ref) Proto() *api.Ref {
 		Package:    e.Package.StringID(),
 		Instance:   common.InstanceIDToObjectRef(e.InstanceID),
 		ModifiedBy: e.ModifiedBy,
-		ModifiedTs: google.NewTimestamp(e.ModifiedTs),
+		ModifiedTs: timestamppb.New(e.ModifiedTs),
 	}
 }
 

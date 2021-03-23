@@ -19,8 +19,9 @@ import (
 	"net"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/proto/google"
 
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -60,7 +61,7 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.ServiceAccountToken {
 		IdTokenAudience: i.Request.IdTokenAudience,
 		RequestIdentity: string(i.RequestIdentity),
 		PeerIdentity:    string(i.PeerIdentity),
-		RequestedAt:     google.NewTimestamp(i.RequestedAt),
+		RequestedAt:     timestamppb.New(i.RequestedAt),
 		Expiration:      i.Response.Expiry,
 		AuditTags:       i.Request.AuditTags,
 		ConfigRev:       i.ConfigRev,

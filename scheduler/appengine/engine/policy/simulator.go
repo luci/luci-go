@@ -19,9 +19,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -138,7 +138,7 @@ func (s *Simulator) AddTrigger(delay time.Duration, t ...internal.Trigger) {
 		s.seenTriggers = stringset.New(0)
 	}
 
-	ts := google.NewTimestamp(s.Now)
+	ts := timestamppb.New(s.Now)
 	for _, tr := range t {
 		tr := proto.Clone(&tr).(*internal.Trigger)
 		tr.Created = ts

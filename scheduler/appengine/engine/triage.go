@@ -21,11 +21,12 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -344,7 +345,7 @@ func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.P
 				op.debugInfoLog(c, "Invocation %d is acknowledged as finished", id)
 				finishedRecord = append(finishedRecord, &internal.FinishedInvocation{
 					InvocationId: id,
-					Finished:     google.NewTimestamp(now),
+					Finished:     timestamppb.New(now),
 				})
 			}
 			job.ActiveInvocations = filtered

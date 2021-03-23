@@ -28,13 +28,13 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth/realms"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -178,7 +178,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 
 		default:
 			resp.SignedUrls = &logdog.GetResponse_SignedUrls{
-				Expiration: google.NewTimestamp(signedURLs.Expiration),
+				Expiration: timestamppb.New(signedURLs.Expiration),
 				Stream:     signedURLs.Stream,
 				Index:      signedURLs.Index,
 			}

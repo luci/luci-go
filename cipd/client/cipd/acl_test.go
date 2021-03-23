@@ -18,11 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -43,7 +44,7 @@ func TestPrefixMetadataToACLs(t *testing.T) {
 						{Role: api.Role_OWNER, Principals: []string{"group:c"}},
 					},
 					UpdateUser: "user:a-updater@example.com",
-					UpdateTime: google.NewTimestamp(epoch),
+					UpdateTime: timestamppb.New(epoch),
 				},
 				{
 					Prefix: "a/b/c",
@@ -51,7 +52,7 @@ func TestPrefixMetadataToACLs(t *testing.T) {
 						{Role: api.Role_OWNER, Principals: []string{"group:c"}},
 					},
 					UpdateUser: "user:c-updater@example.com",
-					UpdateTime: google.NewTimestamp(epoch),
+					UpdateTime: timestamppb.New(epoch),
 				},
 			},
 		})

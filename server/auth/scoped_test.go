@@ -22,10 +22,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -60,7 +60,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 			response: minter.MintProjectTokenResponse{
 				ServiceAccountEmail: "foobarserviceaccount",
 				AccessToken:         "tok",
-				Expiry:              google.NewTimestamp(clock.Now(ctx).Add(MaxScopedTokenTTL)),
+				Expiry:              timestamppb.New(clock.Now(ctx).Add(MaxScopedTokenTTL)),
 			},
 		}
 
@@ -104,7 +104,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 			// Unless it expires sooner than requested TTL.
 			rollTimeForward := MaxDelegationTokenTTL - 30*time.Minute
 			clock.Get(ctx).(testclock.TestClock).Add(rollTimeForward)
-			mockedClient.response.Expiry = google.NewTimestamp(clock.Now(ctx).Add(MaxScopedTokenTTL))
+			mockedClient.response.Expiry = timestamppb.New(clock.Now(ctx).Add(MaxScopedTokenTTL))
 
 			tok, err = MintProjectToken(ctx, ProjectTokenParams{
 				MinTTL:      10 * time.Minute,
@@ -135,7 +135,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 			mockedClient.response = minter.MintProjectTokenResponse{
 				ServiceAccountEmail: "foobarserviceaccount",
 				AccessToken:         "tok",
-				Expiry:              google.NewTimestamp(clock.Now(ctx).Add(MaxScopedTokenTTL)),
+				Expiry:              timestamppb.New(clock.Now(ctx).Add(MaxScopedTokenTTL)),
 			}
 			mockedClient.err = nil
 			tok, err = MintProjectToken(ctx, ProjectTokenParams{
@@ -151,7 +151,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 			mockedClient.response = minter.MintProjectTokenResponse{
 				ServiceAccountEmail: "foobarserviceaccount",
 				AccessToken:         "tok",
-				Expiry:              google.NewTimestamp(clock.Now(ctx).Add(MaxScopedTokenTTL)),
+				Expiry:              timestamppb.New(clock.Now(ctx).Add(MaxScopedTokenTTL)),
 			}
 			mockedClient.err = nil
 			tok, err = MintProjectToken(ctx, ProjectTokenParams{

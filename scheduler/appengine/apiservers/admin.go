@@ -19,9 +19,9 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	schedulerpb "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
@@ -55,12 +55,12 @@ func (s *AdminServer) GetDebugJobState(ctx context.Context, r *schedulerpb.JobRe
 		return &internal.DebugJobState{
 			Enabled:    state.Job.Enabled,
 			Paused:     state.Job.Paused,
-			LastTriage: google.NewTimestamp(state.Job.LastTriage),
+			LastTriage: timestamppb.New(state.Job.LastTriage),
 			CronState: &internal.DebugJobState_CronState{
 				Enabled:       state.Job.Cron.Enabled,
 				Generation:    state.Job.Cron.Generation,
-				LastRewind:    google.NewTimestamp(state.Job.Cron.LastRewind),
-				LastTickWhen:  google.NewTimestamp(state.Job.Cron.LastTick.When),
+				LastRewind:    timestamppb.New(state.Job.Cron.LastRewind),
+				LastTickWhen:  timestamppb.New(state.Job.Cron.LastTick.When),
 				LastTickNonce: state.Job.Cron.LastTick.TickNonce,
 			},
 			ManagerState:        state.ManagerState,

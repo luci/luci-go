@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -134,7 +135,7 @@ func TestRecentInvQuery(t *testing.T) {
 	t.Parallel()
 
 	c, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-	now := google.NewTimestamp(clock.Now(c))
+	now := timestamppb.New(clock.Now(c))
 
 	Convey("Works", t, func() {
 		q := recentInvQuery(c, &Job{
@@ -147,7 +148,7 @@ func TestRecentInvQuery(t *testing.T) {
 				{InvocationId: 8, Finished: now},
 				{InvocationId: 6, Finished: now},
 				// And this one should be ignored, as it is "too old".
-				{InvocationId: 9, Finished: google.NewTimestamp(clock.Now(c).Add(-FinishedInvocationsHorizon - 1))},
+				{InvocationId: 9, Finished: timestamppb.New(clock.Now(c).Add(-FinishedInvocationsHorizon - 1))},
 			}),
 		}, 3)
 		So(invIDs(q.invs), ShouldResemble, []int64{4, 5, 6, 8})

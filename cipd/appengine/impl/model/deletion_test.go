@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -112,7 +113,7 @@ func TestDeletePackage(t *testing.T) {
 			Kind:    api.EventKind_PACKAGE_DELETED,
 			Package: "pkg",
 			Who:     string(testutil.TestUser),
-			When:    google.NewTimestamp(testutil.TestTime),
+			When:    timestamppb.New(testutil.TestTime),
 		})
 
 		// And DeletePackage now complains that the package is gone.

@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -90,7 +91,7 @@ func TestTags(t *testing.T) {
 				Key:        "k",
 				Value:      "v",
 				AttachedBy: string(testutil.TestUser),
-				AttachedTs: google.NewTimestamp(testutil.TestTime),
+				AttachedTs: timestamppb.New(testutil.TestTime),
 			})
 		})
 
@@ -133,7 +134,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:4",
 					Who:      "user:def@example.com",
-					When:     google.NewTimestamp(testutil.TestTime.Add(2*time.Second + 1)),
+					When:     timestamppb.New(testutil.TestTime.Add(2*time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
@@ -141,7 +142,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:3",
 					Who:      "user:def@example.com",
-					When:     google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
+					When:     timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
@@ -149,7 +150,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:2",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(1*time.Second + 1)),
+					When:     timestamppb.New(testutil.TestTime.Add(1*time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
@@ -157,7 +158,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:1",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(1 * time.Second)),
+					When:     timestamppb.New(testutil.TestTime.Add(1 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
@@ -165,7 +166,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:0",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime),
+					When:     timestamppb.New(testutil.TestTime),
 				},
 			})
 		})
@@ -212,7 +213,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:4",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(3*time.Second + 1)),
+					When:     timestamppb.New(testutil.TestTime.Add(3*time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
@@ -220,7 +221,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:3",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(3 * time.Second)),
+					When:     timestamppb.New(testutil.TestTime.Add(3 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
@@ -228,7 +229,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:2",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(2*time.Second + 1)),
+					When:     timestamppb.New(testutil.TestTime.Add(2*time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
@@ -236,7 +237,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:1",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
+					When:     timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
@@ -244,7 +245,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:0",
 					Who:      string(testutil.TestUser),
-					When:     google.NewTimestamp(testutil.TestTime.Add(time.Second)),
+					When:     timestamppb.New(testutil.TestTime.Add(time.Second)),
 				},
 			})
 		})

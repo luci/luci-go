@@ -23,11 +23,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -363,7 +363,7 @@ func (b *Butler) AddStreamServer(streamServer StreamServer) {
 func (b *Butler) AddStream(rc io.ReadCloser, d *logpb.LogStreamDescriptor) error {
 	d = proto.Clone(d).(*logpb.LogStreamDescriptor)
 	if d.Timestamp == nil || d.Timestamp.AsTime().IsZero() {
-		d.Timestamp = google.NewTimestamp(clock.Now(b.ctx))
+		d.Timestamp = timestamppb.New(clock.Now(b.ctx))
 	}
 	if err := d.Validate(false); err != nil {
 		return err

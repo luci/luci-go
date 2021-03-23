@@ -25,10 +25,11 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
@@ -334,7 +335,7 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 					state.Entries = map[string]*messages.InstanceCache_Entry{}
 				}
 				state.Entries[id] = &messages.InstanceCache_Entry{
-					LastAccess: google.NewTimestamp(now),
+					LastAccess: timestamppb.New(now),
 				}
 			}
 		}
@@ -346,7 +347,7 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 		}
 	}
 
-	state.LastSynced = google.NewTimestamp(now)
+	state.LastSynced = timestamppb.New(now)
 	logging.Infof(ctx, "cipd: synchronized instance cache with instance files")
 	return nil
 }
@@ -413,5 +414,5 @@ func touch(state *messages.InstanceCache, instanceID string, now time.Time) {
 		}
 		state.Entries[instanceID] = entry
 	}
-	entry.LastAccess = google.NewTimestamp(now)
+	entry.LastAccess = timestamppb.New(now)
 }

@@ -23,10 +23,11 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/common/proto/google"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
@@ -360,7 +361,7 @@ func TestButler(t *testing.T) {
 				desc := &logpb.LogStreamDescriptor{
 					Name:        "stdout",
 					ContentType: "test/data",
-					Timestamp:   google.NewTimestamp(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
+					Timestamp:   timestamppb.New(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
 				}
 
 				closeStreams := make(chan *testStreamData)

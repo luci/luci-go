@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
@@ -33,10 +35,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/trace/tracetest"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -90,12 +92,12 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 				ServiceAccount:   p.serviceAccount,
 				Proxy:            string(p.proxyID),
 				EndUser:          string(p.endUserID),
-				IssuedAt:         google.NewTimestamp(now),
+				IssuedAt:         timestamppb.New(now),
 				ValidityDuration: p.validityDuration,
 			}
 			return &minter.MintOAuthTokenGrantResponse{
 				GrantToken:     "valid_token",
-				Expiry:         google.NewTimestamp(expiry),
+				Expiry:         timestamppb.New(expiry),
 				ServiceVersion: p.serviceVer,
 			}, lastBody, nil
 		}

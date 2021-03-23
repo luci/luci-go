@@ -22,11 +22,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth"
@@ -118,7 +118,7 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 	// The RPC response.
 	resp := &minter.MintOAuthTokenViaGrantResponse{
 		AccessToken:    accessTok.Token,
-		Expiry:         google.NewTimestamp(accessTok.Expiry),
+		Expiry:         timestamppb.New(accessTok.Expiry),
 		ServiceVersion: serviceVer,
 	}
 

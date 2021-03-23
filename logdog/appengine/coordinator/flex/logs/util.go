@@ -15,14 +15,15 @@
 package logs
 
 import (
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
 
 func fillStateFromLogStream(s *logdog.LogStreamState, ls *coordinator.LogStream) {
 	s.ProtoVersion = ls.ProtoVersion
-	s.Created = google.NewTimestamp(ls.Created)
+	s.Created = timestamppb.New(ls.Created)
 	s.Purged = ls.Purged
 }
 

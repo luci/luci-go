@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -39,7 +40,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -198,7 +198,7 @@ func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetad
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Fill in server-assigned fields.
-	r.UpdateTime = google.NewTimestamp(clock.Now(c))
+	r.UpdateTime = timestamppb.New(clock.Now(c))
 	r.UpdateUser = string(auth.CurrentIdentity(c))
 
 	// Normalize and validate format of the PrefixMetadata.

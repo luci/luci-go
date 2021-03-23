@@ -21,14 +21,15 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -96,7 +97,7 @@ func TestLegacyMetadata(t *testing.T) {
 			"a": {
 				Prefix:      "a",
 				Fingerprint: "BK-o5e-PimWmXtF3zdzvjiyAqSU",
-				UpdateTime:  google.NewTimestamp(ts.Add(5 * time.Second)), // WRITER:a mod time
+				UpdateTime:  timestamppb.New(ts.Add(5 * time.Second)), // WRITER:a mod time
 				UpdateUser:  "user:a-writer-mod@example.com",
 				Acls: []*api.PrefixMetadata_ACL{
 					{Role: api.Role_OWNER, Principals: []string{"user:a-owner@example.com", "group:a-owner"}},
@@ -107,13 +108,13 @@ func TestLegacyMetadata(t *testing.T) {
 			"a/b": {
 				Prefix:      "a/b",
 				Fingerprint: "RyIXeT0HBpfv5Lj8FLqMzCu60ZI",
-				UpdateTime:  google.NewTimestamp(ts),
+				UpdateTime:  timestamppb.New(ts),
 				UpdateUser:  "user:b-owner-mod@example.com",
 			},
 			"a/b/c/d": {
 				Prefix:      "a/b/c/d",
 				Fingerprint: "4B97z37yN22RnBHS336ROctEC2w",
-				UpdateTime:  google.NewTimestamp(ts),
+				UpdateTime:  timestamppb.New(ts),
 				UpdateUser:  "user:d-owner-mod@example.com",
 				Acls: []*api.PrefixMetadata_ACL{
 					// Note: bad:ident is skipped here.
@@ -189,7 +190,7 @@ func TestLegacyMetadata(t *testing.T) {
 			modTime := ts.Add(10 * time.Second)
 
 			newMD := proto.Clone(expected["a"]).(*api.PrefixMetadata)
-			newMD.UpdateTime = google.NewTimestamp(modTime)
+			newMD.UpdateTime = timestamppb.New(modTime)
 			newMD.UpdateUser = "user:updater@example.com"
 			newMD.Acls[0].Principals = []string{
 				"group:new-owning-group",
@@ -270,7 +271,7 @@ func TestLegacyMetadata(t *testing.T) {
 		Convey("UpdateMetadata creates new metadata", func() {
 			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
 				So(md, ShouldResembleProto, &api.PrefixMetadata{Prefix: "z"})
-				md.UpdateTime = google.NewTimestamp(ts)
+				md.UpdateTime = timestamppb.New(ts)
 				md.UpdateUser = "user:updater@example.com"
 				md.Acls = []*api.PrefixMetadata_ACL{
 					{
@@ -296,7 +297,7 @@ func TestLegacyMetadata(t *testing.T) {
 			expected := &api.PrefixMetadata{
 				Prefix:      "z",
 				Fingerprint: "ppDqWKGcl8Pu1hMiXQ1hac0vAH0",
-				UpdateTime:  google.NewTimestamp(ts),
+				UpdateTime:  timestamppb.New(ts),
 				UpdateUser:  "user:updater@example.com",
 				Acls: []*api.PrefixMetadata_ACL{
 					{

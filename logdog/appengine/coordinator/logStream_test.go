@@ -20,8 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -29,6 +30,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -94,7 +96,7 @@ func TestLogStream(t *testing.T) {
 			Name:        "log/stream",
 			StreamType:  logpb.StreamType_TEXT,
 			ContentType: string(types.ContentTypeText),
-			Timestamp:   google.NewTimestamp(now),
+			Timestamp:   timestamppb.New(now),
 			Tags: map[string]string{
 				"foo":  "bar",
 				"baz":  "qux",
@@ -172,7 +174,7 @@ func TestLogStream(t *testing.T) {
 				}
 				So(ds.Put(c, &lsCopy), ShouldBeNil)
 
-				times[name] = google.NewTimestamp(lsCopy.Created)
+				times[name] = timestamppb.New(lsCopy.Created)
 			}
 
 			getAll := func(q *LogStreamQuery) []*LogStream {
@@ -282,7 +284,7 @@ func TestNewLogStreamGlob(t *testing.T) {
 			Prefix:      string(prefix),
 			Name:        string(name),
 			ContentType: string(types.ContentTypeText),
-			Timestamp:   google.NewTimestamp(now),
+			Timestamp:   timestamppb.New(now),
 		}), ShouldBeNil)
 		updateLogStreamID(ret)
 		return ret
