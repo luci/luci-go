@@ -32,6 +32,7 @@ import { consumeInvocationState, InvocationState } from '../context/invocation_s
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../libs/analytics_utils';
 import {
+  DEFAULT_COLUMN_WIDTH,
   VARIANT_STATUS_CLASS_MAP,
   VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE,
   VARIANT_STATUS_ICON_MAP,
@@ -69,6 +70,10 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         })
       );
     }
+  }
+
+  @computed private get columnWidthConfig() {
+    return this.invocationState.displayedColumns.map((col) => DEFAULT_COLUMN_WIDTH[col] || '100px').join(' ');
   }
 
   onBeforeEnter() {
@@ -295,6 +300,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         (v) => html`
           <milo-variant-entry-new
             .variant=${v}
+            .columns=${this.invocationState.displayedColumns}
             .expanded=${this.invocationState.testLoader?.testVariantCount === 1 || (v === firstVariant && expandFirst)}
             .prerender=${true}
             .renderCallback=${this.variantRenderedCallback}
@@ -378,14 +384,20 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
         </milo-hotkey>
       </div>
-      <div id="main">${this.renderMain()}</div>
+      <div id="table-header" style="--columns: ${this.columnWidthConfig}">
+        <div><!-- Expand toggle --></div>
+        <div title="variant status">&nbsp&nbspS</div>
+        ${this.invocationState.displayedColumns.map((col) => html`<div title=${col}>${col.split('.', 2)[1]}</div>`)}
+        <div title="test name">Name</div>
+      </div>
+      <div id="main" style="--columns: ${this.columnWidthConfig}">${this.renderMain()}</div>
     `;
   }
 
   static styles = css`
     :host {
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto auto 1fr;
       overflow-y: hidden;
     }
 
@@ -421,6 +433,17 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       height: 100%;
     }
 
+    #table-header {
+      display: grid;
+      grid-template-columns: 24px 24px var(--columns) 1fr;
+      grid-gap: 5px;
+      line-height: 24px;
+      padding: 2px 2px 2px 10px;
+      font-weight: bold;
+      border-top: 1px solid var(--divider-color);
+      background-color: var(--block-background-color);
+    }
+
     #main {
       display: flex;
       border-top: 1px solid var(--divider-color);
@@ -450,9 +473,8 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       display: grid;
       grid-template-columns: auto auto 1fr;
       grid-gap: 5px;
-      font-size: 16px;
       font-weight: bold;
-      padding: 5px 5px 5px 10px;
+      padding: 2px 2px 2px 10px;
       position: sticky;
       background-color: white;
       border-top: 1px solid var(--divider-color);
