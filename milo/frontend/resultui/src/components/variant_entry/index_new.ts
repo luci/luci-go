@@ -15,7 +15,6 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
-import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
@@ -40,6 +39,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @customElement('milo-variant-entry-new')
 export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
+  @observable.ref columns = ['v.test_suite'];
   @observable.ref renderCallback: Function | null = null;
   @observable.ref expandedCallback: Function | null = null;
 
@@ -139,6 +139,19 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     return this.variant.results?.findIndex((e) => !e.result.expected) ?? -1;
   }
 
+  @computed get columnValues() {
+    return this.columns.map((column) => {
+      const [type, key] = column.split('.', 2);
+      switch (type) {
+        case 'v':
+          return this.variant.variant?.def[key] || '';
+        default:
+          console.warn('invalid column type', type);
+          return '';
+      }
+    });
+  }
+
   private renderBody() {
     if (!this.shouldRenderContent) {
       return html``;
@@ -203,9 +216,10 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <div id="header" slot="header">
-          <mwc-icon id="status-indicator" class=${classMap({ [VARIANT_STATUS_CLASS_MAP[this.variant.status]]: true })}>
+          <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
           </mwc-icon>
+          ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
           <div id="test-identifier">
             <span title=${this.longName}>${this.shortName}</span>
             <milo-copy-to-clipboard
@@ -223,6 +237,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   static styles = css`
     :host {
       display: block;
+      --columns: 350px;
     }
 
     #place-holder {
@@ -231,15 +246,17 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
 
     #header {
       display: grid;
-      user-select: none;
-      grid-template-columns: 24px 1fr;
-      grid-template-rows: 24px;
+      grid-template-columns: 24px var(--columns) 1fr;
       grid-gap: 5px;
+      user-select: none;
+      font-size: 16px;
+      line-height: 24px;
     }
-    #status-indicator {
-      grid-row: 1;
-      grid-column: 1;
+    #header > * {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+
     .unexpected {
       color: var(--failure-color);
     }
@@ -260,7 +277,6 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     }
     #test-identifier {
       display: flex;
-      overflow: hidden;
       font-size: 16px;
       line-height: 24px;
     }

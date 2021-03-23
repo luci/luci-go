@@ -38,6 +38,10 @@ import {
 } from '../libs/constants';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
+const DEFAULT_COLUMN_WIDTH = Object.freeze<{ [key: string]: string }>({
+  'v.test_suite': '350px',
+});
+
 /**
  * Display a list of test results.
  */
@@ -69,6 +73,10 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         })
       );
     }
+  }
+
+  @computed private get columnWidthConfig() {
+    return this.invocationState.displayedColumns.map((col) => DEFAULT_COLUMN_WIDTH[col] || '100px').join(' ');
   }
 
   onBeforeEnter() {
@@ -154,7 +162,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   private renderAllVariants() {
     const testLoader = this.invocationState.testLoader;
     return html`
-      ${this.renderIntegrationHint()}
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTED,
         testLoader?.unexpectedTestVariants || [],
@@ -221,7 +228,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
             >
           </div>
         `
-      : html``;
+      : html`<div></div>`;
   }
 
   @computed private get gaLabelPrefix() {
@@ -295,6 +302,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         (v) => html`
           <milo-variant-entry-new
             .variant=${v}
+            .columns=${this.invocationState.displayedColumns}
             .expanded=${this.invocationState.testLoader?.testVariantCount === 1 || (v === firstVariant && expandFirst)}
             .prerender=${true}
             .renderCallback=${this.variantRenderedCallback}
@@ -328,7 +336,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     `;
   }
 
-  private renderMain() {
+  private renderVariantTable() {
     const state = this.invocationState;
 
     if (state.invocationId === '') {
@@ -343,12 +351,21 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     }
 
     return html`
-      <milo-hotkey
-        key="space,shift+space,up,down,pageup,pagedown"
-        style="display: none;"
-        .handler=${() => this.shadowRoot!.getElementById('test-result-view')!.focus()}
-      ></milo-hotkey>
-      <milo-lazy-list id="test-result-view" .growth=${300} tabindex="-1">${this.renderAllVariants()}</milo-lazy-list>
+      <div id="test-variant-table" style="--columns: ${this.columnWidthConfig}">
+        <milo-hotkey
+          key="space,shift+space,up,down,pageup,pagedown"
+          style="display: none;"
+          .handler=${() => this.shadowRoot!.getElementById('test-variant-list')!.focus()}
+        ></milo-hotkey>
+        <div id="table-header">
+          <div><!-- Expand toggle --></div>
+          <div title="variant status">&nbsp&nbspS</div>
+          ${this.invocationState.displayedColumns.map((col) => html`<div title=${col}>${col.split('.', 2)[1]}</div>`)}
+          <div title="test name">Name</div>
+        </div>
+
+        <milo-lazy-list id="test-variant-list" .growth=${300} tabindex="-1">${this.renderAllVariants()}</milo-lazy-list>
+      </div>
     `;
   }
 
@@ -378,20 +395,21 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
         </milo-hotkey>
       </div>
-      <div id="main">${this.renderMain()}</div>
+      ${this.renderIntegrationHint()} ${this.renderVariantTable()}
     `;
   }
 
   static styles = css`
     :host {
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto auto 1fr;
       overflow-y: hidden;
     }
 
     #header {
       display: grid;
       grid-template-columns: auto auto auto 1fr auto;
+      border-bottom: 1px solid var(--divider-color);
       grid-gap: 5px;
       height: 30px;
       padding: 5px 10px 3px 10px;
@@ -421,9 +439,24 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       height: 100%;
     }
 
-    #main {
-      display: flex;
-      border-top: 1px solid var(--divider-color);
+    #test-variant-table {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    #table-header {
+      display: grid;
+      grid-template-columns: 24px 24px var(--columns) 1fr;
+      grid-gap: 5px;
+      line-height: 24px;
+      padding: 2px 2px 2px 10px;
+      font-weight: bold;
+      border-bottom: 1px solid var(--divider-color);
+      background-color: var(--block-background-color);
+    }
+
+    #table-body {
       overflow-y: hidden;
     }
     milo-lazy-list > * {
@@ -432,8 +465,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     #no-invocation {
       padding: 10px;
     }
-    #test-result-view {
-      flex: 1;
+    #test-variant-list {
       overflow-y: auto;
       outline: none;
     }
@@ -450,9 +482,8 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       display: grid;
       grid-template-columns: auto auto 1fr;
       grid-gap: 5px;
-      font-size: 16px;
       font-weight: bold;
-      padding: 5px 5px 5px 10px;
+      padding: 2px 2px 2px 10px;
       position: sticky;
       background-color: white;
       border-top: 1px solid var(--divider-color);
