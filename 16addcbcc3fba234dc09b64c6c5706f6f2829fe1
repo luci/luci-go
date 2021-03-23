@@ -116,6 +116,24 @@
       "parentUuid": "766301de_47a961cf",
       "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "85e7117c_c5db0f6a",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T23:00:22Z",
+      "side": 1,
+      "message": "I did update it. But I think it probably didn\u0027t include the change to sw configuration. So you will need to open the demo, close all the tabs, then open the demo again. (refresh doesn\u0027t work).\nI updated the demo again. Now the service worker should skip the waiting phase. So loading the demo then refresh should work.",
+      "parentUuid": "b5daa5d0_f0ab78d6",
+      "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
