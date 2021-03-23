@@ -24,7 +24,9 @@ export default merge(common, {
   plugins: [
     new DefinePlugin({ PRODUCTION: JSON.stringify(true) }),
     new Workbox.GenerateSW({
-      clientsClaim: true,
+      // Without this, new release will not take effect until users close
+      // all build page tabs.
+      skipWaiting: true,
       navigateFallback: '/ui/index.html',
       // Workbox source map changes every build.
       // This causes noise in the auto-roller.
