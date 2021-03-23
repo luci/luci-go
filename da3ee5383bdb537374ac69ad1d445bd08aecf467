@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b56badf5_32cf5aac",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-23T18:27:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fef655cc_2512c976",
+      "range": {
+        "startLine": 37,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 26
+      },
+      "revId": "da3ee5383bdb537374ac69ad1d445bd08aecf467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3a75005d_53f1f911",
@@ -94,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b3a61f4_7740fe56",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-23T18:27:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f695d1db_780094cc",
+      "range": {
+        "startLine": 101,
+        "startChar": 13,
+        "endLine": 101,
+        "endChar": 28
+      },
+      "revId": "da3ee5383bdb537374ac69ad1d445bd08aecf467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c01543b2_a9afbdca",
@@ -107,6 +155,30 @@
       "writtenOn": "2021-03-23T00:27:20Z",
       "side": 1,
       "message": "golint: Go error messages must not start with a capital letter",
+      "range": {
+        "startLine": 103,
+        "startChar": 50,
+        "endLine": 103,
+        "endChar": 51
+      },
+      "revId": "da3ee5383bdb537374ac69ad1d445bd08aecf467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3137f7d3_37ae3923",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-23T18:27:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c01543b2_a9afbdca",
       "range": {
         "startLine": 103,
         "startChar": 50,
@@ -148,6 +220,24 @@
       "side": 1,
       "message": "can you formulate this as a TODO? Currently the code is incorrect (CancelBuild is not a read request) and doesn\u0027t ack that with a comment.",
       "parentUuid": "33447bd9_2698e1f9",
+      "revId": "da3ee5383bdb537374ac69ad1d445bd08aecf467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0ced9fb_284df7ab",
+        "filename": "buildbucket/appengine/rpc/batch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-23T18:27:09Z",
+      "side": 1,
+      "message": "added a TODO",
+      "parentUuid": "b47632c2_9aa00e60",
       "revId": "da3ee5383bdb537374ac69ad1d445bd08aecf467",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
