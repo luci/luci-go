@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3aef702a_4c08c7d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-03-23T21:15:28Z",
+      "side": 1,
+      "message": "FWIW, Logdog produces correct signed URLs now, e.g. https://storage.googleapis.com/chromium-luci-logdog/luci-logdog/infra/buildbucket/cr-buildbucket.appspot.com/8851937088152813456/+/u/bot_update/stdout/logstream.entries?Expires\u003d1616537682\u0026GoogleAccessId\u003dluci-logdog%40appspot.gserviceaccount.com\u0026Signature\u003djnDwocl7J8JcW4OcM0CYFvdy6BZjlg7%2FrL14WUUguH8kB9vpfaKnfI8Iow3OWiciRsyuSURO72JQTV78a0Ufm76K%2FoMzt73MlD7gy0lJdHcepAfD4szzIIDAlNxoZ2TyA%2Fm9vICMdxS3k%2F5M5Q4P2X8FwGCyKdKUOjzW41j%2FWtfBVZqdcjVMbqul6A4%2FH59O3prP%2FVoB90WmnoUwCI%2Bvhya3JXdMsbb%2FwbbUXq0tuaAe1MvgYD30PXxVVdTSX4qB7ouwtjTBKRk0M%2F4Npz%2FgXn8dlSHUDL%2B1acn7m0t6b2cswoERarYthZgQ8ekjnI25Otism4Ll5JJyfl8ebKUrFQ%3D%3D\n\nSo it was indeed a bug.",
+      "revId": "24e672d682e83dd66506a94e5e600012720f4c1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
