@@ -23,11 +23,11 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -204,9 +205,9 @@ func TestRegisterPrefix(t *testing.T) {
 
 			Convey(`When service, project, and request have expiration, chooses smallest.`, func() {
 				env.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
-					pcfg.PrefixExpiration = google.NewDuration(time.Hour)
+					pcfg.PrefixExpiration = durationpb.New(time.Hour)
 				})
-				req.Expiration = google.NewDuration(time.Minute)
+				req.Expiration = durationpb.New(time.Minute)
 
 				_, err := svr.RegisterPrefix(c, &req)
 				So(err, ShouldBeNil)
@@ -219,7 +220,7 @@ func TestRegisterPrefix(t *testing.T) {
 
 			Convey(`When service, and project have expiration, chooses smallest.`, func() {
 				env.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
-					pcfg.PrefixExpiration = google.NewDuration(time.Hour)
+					pcfg.PrefixExpiration = durationpb.New(time.Hour)
 				})
 
 				_, err := svr.RegisterPrefix(c, &req)

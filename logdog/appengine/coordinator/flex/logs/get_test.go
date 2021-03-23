@@ -25,6 +25,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/golang/protobuf/proto"
 
@@ -49,6 +50,7 @@ import (
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -496,7 +498,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.LogCount = -1
 
 					sr := logdog.GetRequest_SignURLRequest{
-						Lifetime: google.NewDuration(duration),
+						Lifetime: durationpb.New(duration),
 						Stream:   true,
 						Index:    true,
 					}

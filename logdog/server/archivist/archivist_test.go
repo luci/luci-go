@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -39,8 +38,10 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -450,7 +451,7 @@ func TestHandleArchive(t *testing.T) {
 		})
 
 		Convey(`When not enforcing stream completeness`, func() {
-			stream.Age = google.NewDuration(expired)
+			stream.Age = durationpb.New(expired)
 
 			Convey(`With no terminal index`, func() {
 				Convey(`Will successfully archive if there are no entries.`, func() {

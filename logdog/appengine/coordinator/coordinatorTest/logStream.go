@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -156,7 +158,7 @@ func (ts *TestStream) Get(c context.Context) (err error) {
 // specific log stream index.
 func (ts *TestStream) LogEntry(c context.Context, i int) *logpb.LogEntry {
 	le := logpb.LogEntry{
-		TimeOffset:  google.NewDuration(clock.Now(c).Sub(ts.Stream.Created)),
+		TimeOffset:  durationpb.New(clock.Now(c).Sub(ts.Stream.Created)),
 		StreamIndex: uint64(i),
 	}
 

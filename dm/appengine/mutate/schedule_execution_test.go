@@ -19,15 +19,17 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/dm/api/service/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor/fake"
 	"go.chromium.org/luci/dm/appengine/model"
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -38,7 +40,7 @@ func TestScheduleExecution(t *testing.T) {
 		_, c, dist := fake.Setup(FinishExecutionFn)
 
 		qdesc := fake.QuestDesc("quest")
-		qdesc.Meta.Timeouts.Start = google.NewDuration(time.Minute * 5)
+		qdesc.Meta.Timeouts.Start = durationpb.New(time.Minute * 5)
 		qid := qdesc.QuestID()
 		se := &ScheduleExecution{dm.NewAttemptID(qid, 1)}
 

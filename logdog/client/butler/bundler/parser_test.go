@@ -19,7 +19,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -75,7 +76,7 @@ func (s *parserTestStream) base() baseParser {
 
 func (s *parserTestStream) next(d interface{}) *logpb.LogEntry {
 	le := &logpb.LogEntry{
-		TimeOffset:  google.NewDuration(s.offset),
+		TimeOffset:  durationpb.New(s.offset),
 		PrefixIndex: uint64(s.prefixIndex),
 		StreamIndex: uint64(s.streamIndex),
 	}

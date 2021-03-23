@@ -23,20 +23,21 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func gen(i int) *logpb.LogEntry {
 	return &logpb.LogEntry{
-		TimeOffset:  google.NewDuration(time.Duration(i) * time.Second),
+		TimeOffset:  durationpb.New(time.Duration(i) * time.Second),
 		PrefixIndex: uint64(i) * 2,
 		StreamIndex: uint64(i),
 		Sequence:    uint64(i),

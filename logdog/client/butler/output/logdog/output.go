@@ -26,7 +26,6 @@ import (
 	ps "go.chromium.org/luci/common/gcloud/pubsub"
 	"go.chromium.org/luci/common/lhttp"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
@@ -41,6 +40,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Scopes returns the set of OAuth scopes required for this Output.
@@ -236,7 +236,7 @@ func (cfg *Config) registerPrefix(c context.Context, auth *auth.Authenticator) (
 		Realm:      cfg.Auth.Realm(),
 		Prefix:     string(cfg.Prefix),
 		SourceInfo: sourceInfo,
-		Expiration: google.NewDuration(cfg.PrefixExpiration),
+		Expiration: durationpb.New(cfg.PrefixExpiration),
 		OpNonce:    nonce,
 	}
 

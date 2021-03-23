@@ -20,13 +20,15 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"go.chromium.org/luci/common/proto/google"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -67,6 +69,7 @@ func TestLoadStream(t *testing.T) {
 						TerminalIndex: -1,
 						Secret:        tls.State.Secret,
 					},
+					Age: durationpb.New(0),
 				})
 			})
 
@@ -90,7 +93,7 @@ func TestLoadStream(t *testing.T) {
 						Secret:        tls.State.Secret,
 					},
 					ArchivalKey: []byte("archival key"),
-					Age:         google.NewDuration(1 * time.Hour),
+					Age:         durationpb.New(1 * time.Hour),
 				})
 			})
 
@@ -111,6 +114,7 @@ func TestLoadStream(t *testing.T) {
 						Secret:        tls.State.Secret,
 					},
 					Desc: d,
+					Age:  durationpb.New(0),
 				})
 			})
 

@@ -20,8 +20,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	services "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
@@ -58,7 +59,7 @@ func (s *Stream) Write(bs []byte) (int, error) {
 	s.streamIndex++
 
 	entry := &logpb.LogEntry{
-		TimeOffset:  google.NewDuration(s.start.Sub(clock.Now(s.c.ctx))),
+		TimeOffset:  durationpb.New(s.start.Sub(clock.Now(s.c.ctx))),
 		PrefixIndex: atomic.AddUint64(s.prefixIndex, 1) - 1, // 0 based
 		StreamIndex: uint64(sIdx),
 		Sequence:    s.sequence,
