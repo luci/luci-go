@@ -52,6 +52,24 @@
       "parentUuid": "173bbb44_54a80f5f",
       "revId": "d011b9e1aedf267f68c3fc2abc5820f040414d1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e2b9ab1_10e67531",
+        "filename": "milo/frontend/resultui/patches/@types+gapi.auth2+0.0.54.patch",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T23:58:33Z",
+      "side": 1,
+      "message": "The risk is low because this is patching just type definitions.\nIn the worst case, we will still notice it when tsc fails to compile.",
+      "parentUuid": "ae054ff6_9d9683c5",
+      "revId": "d011b9e1aedf267f68c3fc2abc5820f040414d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
