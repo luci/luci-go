@@ -97,6 +97,8 @@ enum CommentLevel {
 
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
+//
+// Next field number: 8
 message ConfigGroup {
   reserved 3; // allow_cq_depend.
 
@@ -183,6 +185,38 @@ message ConfigGroup {
   // and fallback one for refs/heads/* which will pick up all CLs on
   // non-master branches.
   Toggle fallback = 5;
+
+  // Optional. Additional run modes supported besides standard DRY_RUN and
+  // FULL_RUN.
+  //
+  // If specified, the order matters. CQ will create the Run with the first
+  // mode for which triggering conditions are fulfilled. If there is no such
+  // mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
+  repeated Mode additonal_modes = 7;
+}
+
+// Mode defines a CQ Run mode and how it can be triggered.
+message Mode {
+  // Required. Name of this mode.
+  //
+  // The mode name will be passed verbatim to all Tryjobs that this CQ Run
+  // launches. Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$".
+  //
+  // As of March 2021, only `QUICK_DRY_RUN` is allowed.
+  string name = 1;
+  // Required. The value of Commit-Queue label that MUST be set to when
+  // triggering a CQ Run in this mode.
+  //
+  // Must be either 1 or 2.
+  int32 cq_label_value = 2;
+  // Required. The Gerrit label that MUST also be set in order to trigger a
+  // CQ Run in this mode.
+  //
+  // Both this label and the Commit-Queue label MUST be set at the same time.
+  string triggering_label = 3;
+  // Required. The value of the `triggering_label` that MUST be set to when
+  // triggering a CQ Run in this mode.
+  int32 triggering_value = 4;
 }
 
 // CombineCLs defines how CQ works with >1 CL per attempt.
@@ -349,7 +383,7 @@ message Verifiers {
     Toggle cancel_stale_tryjobs = 3 [deprecated = true];
 
     message Builder {
-      // Next field number: 14
+      // Next field number: 12
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
