@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-5-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/9260/test-results-new?q\u003d\n",
       "revId": "ee090cc078a4128d8dc4504161cfbb77f28626d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02bb4ce5_93d168f2",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index_new.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T02:01:43Z",
+      "side": 1,
+      "message": "It seems like a lot of test results in prod do not have a test name.\nIs there a way to boost the adoption rate of test names?",
+      "range": {
+        "startLine": 79,
+        "startChar": 4,
+        "endLine": 79,
+        "endChar": 71
+      },
+      "revId": "ee090cc078a4128d8dc4504161cfbb77f28626d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
