@@ -70,6 +70,28 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref private shouldRenderContent = false;
 
   @computed
+  private get shortName() {
+    if (this.variant.testMetadata?.name) {
+      return this.variant.testMetadata.name;
+    }
+
+    // Generate a good enough short name base on the test ID.
+    const suffix = this.variant.testId.match(/^.*[.]([^.]*?.{40})$/);
+    if (suffix) {
+      return '...' + suffix[1];
+    }
+    return this.variant.testId;
+  }
+
+  @computed
+  private get longName() {
+    if (this.variant.testMetadata?.name) {
+      return this.variant.testMetadata.name;
+    }
+    return this.variant.testId;
+  }
+
+  @computed
   private get sourceUrl() {
     const testLocation = this.variant.testMetadata?.location;
     if (!testLocation) {
@@ -177,7 +199,6 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
     if (this.prerender) {
       return html`<div id="place-holder"></div>`;
     }
-
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <div id="header" slot="header">
@@ -185,11 +206,11 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
           </mwc-icon>
           <div id="test-identifier">
-            <span>${this.variant.testId}</span>
+            <span title=${this.longName}>${this.shortName}</span>
             <milo-copy-to-clipboard
-              .textToCopy=${this.variant.testId}
+              .textToCopy=${this.longName}
               @click=${(e: Event) => e.stopPropagation()}
-              title="copy test ID to clipboard"
+              title="copy test name to clipboard"
             ></milo-copy-to-clipboard>
           </div>
         </div>
