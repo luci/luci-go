@@ -98,6 +98,24 @@
       "parentUuid": "bccd362a_32f31dac",
       "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b5daa5d0_f0ab78d6",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-23T20:22:31Z",
+      "side": 1,
+      "message": "Did you also update the demo? It still shows the header above the instruction banner for me.",
+      "parentUuid": "766301de_47a961cf",
+      "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
