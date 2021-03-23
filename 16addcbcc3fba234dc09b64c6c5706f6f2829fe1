@@ -16,6 +16,46 @@
       "message": "Demo: https://weiweilin-6-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-marshmallow-arm64-rel-swarming/11154/test-results-new?q\u003d",
       "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f93bee74_f718b329",
+        "filename": "milo/frontend/resultui/src/libs/constants.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-23T04:28:47Z",
+      "side": 1,
+      "message": "Giving that this is in libs/constants.ts, I think the name here should be more descriptive (e.g. DEFAULT_TEST_RESULTS_COLUMN_WIDTH). Or even better, we can keep this name and move this const to tests_result_tab_new.ts.",
+      "range": {
+        "startLine": 107,
+        "startChar": 13,
+        "endLine": 107,
+        "endChar": 33
+      },
+      "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bccd362a_32f31dac",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-23T04:28:47Z",
+      "side": 1,
+      "message": "I guess we need to move this down after the instruction banner, see https://screenshot.googleplex.com/574U9tQyPaPfdvf",
+      "revId": "16addcbcc3fba234dc09b64c6c5706f6f2829fe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
