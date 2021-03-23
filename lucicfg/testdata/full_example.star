@@ -437,6 +437,7 @@ luci.cq_group(
             owner_whitelist = ["another-project-committers"],
         ),
     ],
+    additional_modes = cq.MODE_QUICK_DRY_RUN
 )
 
 luci.cq_tryjob_verifier(
@@ -559,6 +560,12 @@ lucicfg.emit(
 #         timeout_weight: 100
 #       }
 #     }
+#   }
+#   additional_modes {
+#     name: "QUICK_DRY_RUN"
+#     cq_label_value: 1
+#     triggering_label: "QUICK_RUN"
+#     triggering_value: 1
 #   }
 # }
 # ===
