@@ -34,6 +34,24 @@
       "parentUuid": "8bf7381a_ce403399",
       "revId": "d011b9e1aedf267f68c3fc2abc5820f040414d1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae054ff6_9d9683c5",
+        "filename": "milo/frontend/resultui/patches/@types+gapi.auth2+0.0.54.patch",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-23T23:37:25Z",
+      "side": 1,
+      "message": "A warning is good. I was just afraid it can secretly break something.",
+      "parentUuid": "173bbb44_54a80f5f",
+      "revId": "d011b9e1aedf267f68c3fc2abc5820f040414d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
