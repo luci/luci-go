@@ -2281,6 +2281,7 @@ luci.cq_group(
     retry_config = None,
     cancel_stale_tryjobs = None,
     verifiers = None,
+    additional_modes = None,
 )
 ```
 
@@ -2302,6 +2303,7 @@ a ref in the watched set.
 * **retry_config**: a new [cq.retry_config(...)](#cq.retry_config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
 * **cancel_stale_tryjobs**: unused anymore, but kept for backward compatibility.
 * **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
+* **additional_modes**: either a single [cq.run_mode(...)](#cq.run_mode) or a list of [cq.run_mode(...)](#cq.run_mode) defining additional run modes supported by this CQ group apart from standard DRY_RUN and FULL_RUN. If specified, CQ will create the Run with the first mode for which triggering conditions are fulfilled. If there is no such mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
 
 
 
@@ -3134,6 +3136,38 @@ Some commonly used presents are available as `cq.RETRY_*` constants. See
 #### Returns  {#cq.retry_config-returns}
 
 cq.retry_config struct.
+
+
+
+### cq.run_mode {#cq.run_mode}
+
+```python
+cq.run_mode(
+    # Required arguments.
+    cq_label_value,
+    triggering_label,
+    triggering_value,
+
+    # Optional arguments.
+    name = None,
+)
+```
+
+
+
+Defines a CQ Run mode and how it can be triggered.
+
+#### Arguments {#cq.run_mode-args}
+
+* **name**: name of this mode. Required. Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$".
+* **cq_label_value**: the value of Commit-Queue label that MUST be set to when triggering a CQ Run in this mode. Required.
+* **triggering_label**: the Gerrit label that MUST also be set in order to trigger a CQ Run in this mode. Required.
+* **triggering_value**: the value of the `triggering_label` that MUST be set to when triggering a CQ Run in this mode. Required.
+
+
+#### Returns  {#cq.run_mode-returns}
+
+cq.run_mode struct.
 
 
 
