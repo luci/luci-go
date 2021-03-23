@@ -39,6 +39,30 @@
       },
       "revId": "ee090cc078a4128d8dc4504161cfbb77f28626d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "afb20bd9_7cb050ce",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index_new.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-23T18:41:13Z",
+      "side": 1,
+      "message": "Filed https://crbug.com/1191614 to track this.",
+      "parentUuid": "02bb4ce5_93d168f2",
+      "range": {
+        "startLine": 79,
+        "startChar": 4,
+        "endLine": 79,
+        "endChar": 71
+      },
+      "revId": "ee090cc078a4128d8dc4504161cfbb77f28626d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
