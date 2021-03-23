@@ -16,6 +16,24 @@
       "message": "Does this mean whenever we update the gapi package, we need to remember to change the name of this file?",
       "revId": "d011b9e1aedf267f68c3fc2abc5820f040414d1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "173bbb44_54a80f5f",
+        "filename": "milo/frontend/resultui/patches/@types+gapi.auth2+0.0.54.patch",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T23:34:46Z",
+      "side": 1,
+      "message": "We don\u0027t have to.\npatch-package will try to apply the changes to the new package.\nbut patch-package will emit a warning to ask you to update the version.",
+      "parentUuid": "8bf7381a_ce403399",
+      "revId": "d011b9e1aedf267f68c3fc2abc5820f040414d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
