@@ -43,6 +43,8 @@ export class InvocationState {
   @observable.ref showExoneratedVariants = true;
   @observable.ref showExpectedVariants = true;
 
+  @observable.ref displayedColumns = ['v.test_suite'];
+
   @observable.ref searchText = '';
 
   @observable.ref searchFilter = (_v: TestVariant) => true;
