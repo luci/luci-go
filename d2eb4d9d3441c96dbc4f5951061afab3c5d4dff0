@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f07039f6_468c0319",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T07:52:54Z",
+      "side": 1,
+      "message": "👍\n\nwhen I got email with diff, I thought \"ah, but it should be {1,40}!\".",
+      "range": {
+        "startLine": 203,
+        "startChar": 55,
+        "endLine": 203,
+        "endChar": 61
+      },
+      "revId": "d2eb4d9d3441c96dbc4f5951061afab3c5d4dff0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
