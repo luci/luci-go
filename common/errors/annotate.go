@@ -32,6 +32,13 @@ import (
 	"go.chromium.org/luci/common/runtime/goroutine"
 )
 
+const (
+	// renderedStackDumpFormat is used as the prefix format when renderedStack is dumped to string.
+	renderedStackDumpFormat = "goroutine %d:\n"
+	// RenderedStackDumpRe is coupled with renderedStackDumpFormat to indicate its regex expression.
+	RenderedStackDumpRe = `goroutine \d+:\n`
+)
+
 type stack struct {
 	id     goroutine.ID
 	frames []uintptr
@@ -355,7 +362,7 @@ func (r *renderedStack) dumpTo(w io.Writer, excludePkgs ...string) (n int, err e
 	excludeSet := stringset.NewFromSlice(excludePkgs...)
 
 	return iotools.WriteTracker(w, func(w io.Writer) error {
-		fmt.Fprintf(w, "goroutine %d:\n", r.goID)
+		fmt.Fprintf(w, renderedStackDumpFormat, r.goID)
 
 		lastIdx := 0
 		needNL := false
