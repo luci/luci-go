@@ -33,7 +33,8 @@ def _cq_group(
         tree_status_host = None,
         retry_config = None,
         cancel_stale_tryjobs = None,
-        verifiers = None):
+        verifiers = None,
+        additional_modes = None):
     """Defines a set of refs to watch and a set of verifier to run.
 
     The CQ will run given verifiers whenever there's a pending approved CL for
@@ -81,6 +82,12 @@ def _cq_group(
         details. As a shortcut, each entry can also either be a dict or a
         string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and
         a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
+      additional_modes: either a single cq.run_mode(...) or a list of
+        cq.run_mode(...) defining additional run modes supported by this CQ
+        group apart from standard DRY_RUN and FULL_RUN. If specified, CQ will
+        create the Run with the first mode for which triggering conditions are
+        fulfilled. If there is no such mode, CQ will fallback to standard
+        DRY_RUN or FULL_RUN.
     """
     key = keys.cq_group(validate.string("name", name))
 
@@ -90,6 +97,14 @@ def _cq_group(
         watch = [watch]
     for w in validate.list("watch", watch, required = True):
         cqimpl.validate_refset("watch", w)
+
+    # Accept cq.run_mode passed as is (not wrapped in a list).
+    if additional_modes:
+        if type(additional_modes) != "list":
+            additional_modes = [additional_modes]
+        validate.list("additional_modes", additional_modes, required = False)
+        for m in additional_modes:
+            cqimpl.validate_run_mode("run_mode", m)
 
     # TODO(vadimsh): Convert `acls` to luci.binding(...). Need to figure out
     # what realm to use for them. This probably depends on a design of
@@ -116,6 +131,7 @@ def _cq_group(
             default = cq.RETRY_TRANSIENT_FAILURES,
             required = False,
         ),
+        "additional_modes": additional_modes,
     })
     graph.add_edge(keys.project(), key)
 
