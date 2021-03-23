@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "db5675f9_9220e851",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-23T03:21:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0cd94412_7f5e2676",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 3
+      },
+      "revId": "c0299b3bf3cbf88631885a33b2be0b18c87d1b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bacf3c7e_51d8c1f1",
@@ -70,6 +94,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de0060f9_732de586",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-23T03:21:51Z",
+      "side": 1,
+      "message": "added",
+      "parentUuid": "4a28dd4e_10597966",
+      "range": {
+        "startLine": 37,
+        "startChar": 41,
+        "endLine": 37,
+        "endChar": 42
+      },
+      "revId": "c0299b3bf3cbf88631885a33b2be0b18c87d1b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1000a42e_301395dc",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-23T03:21:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bacf3c7e_51d8c1f1",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 20
+      },
+      "revId": "c0299b3bf3cbf88631885a33b2be0b18c87d1b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5d145ec1_fc6bb507",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-03-19T23:44:40Z",
       "side": 1,
       "message": "it would be nice if this test actually tested the real implementation\n\nconsider adding a function\n  \n  func prepErrorReportingEntry(l *LogEntry) errorreporting.Entry\n\nAnd then test it (and use it from CloudErrorsSink.Write).\n\nConsider also adding an end-to-end test that simulates an error and uses errors.Log to dump it to the logger. But it is more complicated to setup.",
+      "range": {
+        "startLine": 80,
+        "startChar": 5,
+        "endLine": 80,
+        "endChar": 19
+      },
+      "revId": "c0299b3bf3cbf88631885a33b2be0b18c87d1b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ddb6211f_64ac7b65",
+        "filename": "common/logging/sdlogger/logger_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-23T03:21:51Z",
+      "side": 1,
+      "message": "Added the `prepErrorReportingEntry()` and write end-to-end tests for all paths.",
+      "parentUuid": "5d145ec1_fc6bb507",
       "range": {
         "startLine": 80,
         "startChar": 5,
