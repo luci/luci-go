@@ -66,12 +66,26 @@ export class OverviewTabElement extends MobxLitElement {
   private renderActionButtons() {
     const build = this.buildState.build!;
 
+    const canRetry = this.buildState.permittedActions.has('ADD_BUILD');
+    const canCancel = this.buildState.permittedActions.has('CANCEL_BUILD');
+
+    if (build.endTime) {
+      return html`
+        <h3>Actions</h3>
+        <div title=${canRetry ? '' : 'You have no permission to retry this build.'}>
+          <mwc-button dense unelevated @click=${() => (this.showRetryDialog = true)} ?disabled=${!canRetry}>
+            Retry Build
+          </mwc-button>
+        </div>
+      `;
+    }
+
     return html`
       <h3>Actions</h3>
-      <div>
-        ${build.endTime
-          ? html`<mwc-button dense unelevated @click=${() => (this.showRetryDialog = true)}>Retry Build</mwc-button>`
-          : html`<mwc-button dense unelevated @click=${() => (this.showCancelDialog = true)}>Cancel Build</mwc-button>`}
+      <div title=${canCancel ? '' : 'You have no permission to cancel this build.'}>
+        <mwc-button dense unelevated @click=${() => (this.showCancelDialog = true)} ?disabled=${!canCancel}>
+          Cancel Build
+        </mwc-button>
       </div>
     `;
   }
@@ -216,7 +230,7 @@ export class OverviewTabElement extends MobxLitElement {
         <h3>
           Steps & Logs (<a
             href=${router.urlForName('build-steps', {
-              ...this.buildState.builderId,
+              ...this.buildState.builderIdParam,
               build_num_or_id: this.buildState.buildNumOrId!,
             })}
             >View All</a

@@ -57,3 +57,11 @@ export function displayCompactDuration(duration: Duration) {
   }
   return `${shifted.milliseconds}ms`;
 }
+
+/**
+ * Parses the JSON encoding of google.protobuf.Duration (e.g. '4.5s').
+ * Returns the number of seconds.
+ */
+export function parseProtoDuration(duration: string): number {
+  return Number(duration.substring(0, duration.length - 1));
+}

@@ -15,6 +15,8 @@
 import { PrpcClient } from '@chopsui/prpc-client';
 
 import { cached, CacheOption } from '../libs/cached_fn';
+import { parseProtoDuration } from '../libs/time_utils';
+import { timeout } from '../libs/utils';
 
 /* eslint-disable max-len */
 /**
@@ -220,12 +222,12 @@ export interface PermittedActionsRequest {
 }
 
 export interface PermittedActionsResponse {
-  readonly permitted: ResourcePermissions;
-  readonly validityDuration: string;
+  permitted: { [key: string]: ResourcePermissions };
+  validityDuration: string;
 }
 
 export interface ResourcePermissions {
-  readonly actions: readonly string[];
+  readonly actions?: readonly string[];
 }
 
 export interface CancelBuildRequest {
@@ -313,5 +315,38 @@ export class BuildersService {
 
   async getBuilder(req: GetBuilderRequest, cacheOpt = CacheOption.Cached) {
     return (await this.cachedCallFn(cacheOpt, 'GetBuilder', req)) as BuilderItem;
+  }
+}
+
+export class AccessService {
+  private static SERVICE = 'access.Access';
+
+  private readonly cachedPermittedActionsFn: (
+    cacheOpt: CacheOption,
+    req: PermittedActionsRequest
+  ) => Promise<PermittedActionsResponse>;
+
+  constructor(readonly host: string, accessToken: string) {
+    const client = new PrpcClient({ host, accessToken });
+
+    // TODO(weiweilin): access service can be unreliable.
+    // Try to cache this in service worker or localStorage.
+    this.cachedPermittedActionsFn = cached(
+      async (req: PermittedActionsRequest) => {
+        return (await client.call(AccessService.SERVICE, 'PermittedActions', req)) as PermittedActionsResponse;
+      },
+      {
+        key: (req) => JSON.stringify(req),
+        expire: async (_req, resPromise) => {
+          const res = await resPromise;
+          await timeout(parseProtoDuration(res.validityDuration) * 1000);
+          return;
+        },
+      }
+    );
+  }
+
+  async permittedActions(req: PermittedActionsRequest, cacheOpt = CacheOption.Cached) {
+    return this.cachedPermittedActionsFn(cacheOpt, req);
   }
 }

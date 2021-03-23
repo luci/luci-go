@@ -170,7 +170,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         () => {
           this.buildState?.dispose();
           this.buildState = new BuildState(this.appState);
-          this.buildState.builderId = this.builderIdParam;
+          this.buildState.builderIdParam = this.builderIdParam;
           this.buildState.buildNumOrId = this.buildNumOrIdParam;
 
           // Emulate @property() update.
