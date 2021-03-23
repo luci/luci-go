@@ -443,5 +443,23 @@ func TestBatch(t *testing.T) {
 			So(actualRes, ShouldBeNil)
 			So(err, ShouldErrLike, "code = Internal desc = failed to get Py BB RPC transport")
 		})
+
+		Convey("exceed max read reqs amount", func() {
+			req := &pb.BatchRequest{}
+			for i := 0; i < readReqsSizeLimit+1; i++ {
+				req.Requests = append(req.Requests, &pb.BatchRequest_Request{Request: &pb.BatchRequest_Request_GetBuild{}})
+			}
+			_, err := srv.Batch(ctx, req)
+			So(err, ShouldErrLike, "the maximum allowed read request count in Batch is 1000.")
+		})
+
+		Convey("exceed max write reqs amount", func() {
+			req := &pb.BatchRequest{}
+			for i := 0; i < writeReqsSizeLimit+1; i++ {
+				req.Requests = append(req.Requests, &pb.BatchRequest_Request{Request: &pb.BatchRequest_Request_ScheduleBuild{}})
+			}
+			_, err := srv.Batch(ctx, req)
+			So(err, ShouldErrLike, "the maximum allowed write request count in Batch is 200.")
+		})
 	})
 }

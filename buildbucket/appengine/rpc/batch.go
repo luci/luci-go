@@ -33,6 +33,11 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+const (
+	readReqsSizeLimit  = 1000
+	writeReqsSizeLimit = 200
+)
+
 var testFakeTransportError = "used in tests only to mock the transport error"
 
 // pyBatchResponse captures the BatchResponse from Py service.
@@ -93,14 +98,14 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 		}
 	}
 
-	// TODO(yuanjunh): remove it after getting an estimate of the maximum amount.
-	// try this number because the p99 latency of ScheduleBuild is 3.67s.
-	if len(pyBatchReq.Requests) > 10 {
-		logging.Debugf(ctx, "Batch: write operation size - %d", len(pyBatchReq.Requests))
+	// validate request count
+	// TODO(crbug.com/1144958): refactor code to correctly calculate read and write req count after ScheduleBuild is done.
+	// pyBatchReq current only contains ScheduleBuild requests.
+	if len(pyBatchReq.Requests) > writeReqsSizeLimit {
+		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed write request count in Batch is %d.", writeReqsSizeLimit).Err())
 	}
-	// p99 for Search is 1.51s.
-	if len(goBatchReq) > 25 {
-		logging.Debugf(ctx, "Batch: read operation size - %d", len(goBatchReq))
+	if len(goBatchReq) > readReqsSizeLimit {
+		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed read request count in Batch is %d.", readReqsSizeLimit).Err())
 	}
 
 	// TODO(crbug.com/1144958): remove calling py after ScheduleBuild is done.
