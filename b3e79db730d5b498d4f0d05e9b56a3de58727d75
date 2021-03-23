@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5a9df05_eb9910fe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T01:26:43Z",
+      "side": 1,
+      "message": "lgtm % doc nits.",
+      "revId": "b3e79db730d5b498d4f0d05e9b56a3de58727d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a3a251d_303977ec",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T01:26:43Z",
+      "side": 1,
+      "message": "nit: remove",
+      "range": {
+        "startLine": 193,
+        "startChar": 45,
+        "endLine": 193,
+        "endChar": 48
+      },
+      "revId": "b3e79db730d5b498d4f0d05e9b56a3de58727d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1ccb734e_8f66c91e",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T01:26:43Z",
+      "side": 1,
+      "message": "for which",
+      "range": {
+        "startLine": 193,
+        "startChar": 10,
+        "endLine": 193,
+        "endChar": 18
+      },
+      "revId": "b3e79db730d5b498d4f0d05e9b56a3de58727d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d0e03f3_2a54be4d",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T01:26:43Z",
+      "side": 1,
+      "message": "nit: \"work\" is ambiguous. How about:\n\nIf there is no such mode,",
+      "range": {
+        "startLine": 194,
+        "startChar": 11,
+        "endLine": 194,
+        "endChar": 16
+      },
+      "revId": "b3e79db730d5b498d4f0d05e9b56a3de58727d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "076b4500_b93763a9",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T01:26:43Z",
+      "side": 1,
+      "message": "Required.",
+      "range": {
+        "startLine": 200,
+        "startChar": 4,
+        "endLine": 200,
+        "endChar": 5
+      },
+      "revId": "b3e79db730d5b498d4f0d05e9b56a3de58727d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2deea83_949931d5",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T01:26:43Z",
+      "side": 1,
+      "message": "let\u0027s limit to 40 chars, too.",
+      "range": {
+        "startLine": 203,
+        "startChar": 49,
+        "endLine": 203,
+        "endChar": 59
+      },
+      "revId": "b3e79db730d5b498d4f0d05e9b56a3de58727d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4cd177b0_73e69872",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T01:26:43Z",
+      "side": 1,
+      "message": "March (less confusing across the globe)",
+      "range": {
+        "startLine": 205,
+        "startChar": 11,
+        "endLine": 205,
+        "endChar": 14
+      },
+      "revId": "b3e79db730d5b498d4f0d05e9b56a3de58727d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a5abe28_ff171d19",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-23T01:26:43Z",
+      "side": 1,
+      "message": "nit: also\n\n(to emphasize both labels must be set at the same time. Maybe this should be stated explicitly?)",
+      "range": {
+        "startLine": 212,
+        "startChar": 41,
+        "endLine": 212,
+        "endChar": 42
+      },
+      "revId": "b3e79db730d5b498d4f0d05e9b56a3de58727d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
