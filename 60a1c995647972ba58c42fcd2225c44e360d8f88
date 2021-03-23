@@ -16,6 +16,24 @@
       "message": "Perhaps we should have a unittest for this?",
       "revId": "60a1c995647972ba58c42fcd2225c44e360d8f88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "066b9ee4_ca3cdee2",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index_new.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-23T05:11:18Z",
+      "side": 1,
+      "message": "I think a unit test is not very valuable here.\nThis is just a best effort estimation after all.\nIt\u0027s likely that\n1. in the short term, we will keep modifying the implementation to suit users need. Some special cases will be added if this doesn\u0027t work well on some tests. Some special cases might be removed if they completed migration to use test name. A breaking test case does not mean the implementation is wrong.\n2. in the long term, we will probably just remove this once all tests adopted the test name.",
+      "parentUuid": "4710dc5b_914b701c",
+      "revId": "60a1c995647972ba58c42fcd2225c44e360d8f88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
