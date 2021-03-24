@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/11486/overview\n",
       "revId": "639534342c51b6c9c9a8a200695938724f63cc78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6570efbe_70b58ad9",
+        "filename": "milo/frontend/resultui/src/components/build_tag_row.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-24T18:57:43Z",
+      "side": 1,
+      "message": "related to my comment in the lower CL: does lit-element sanitize this URL?",
+      "range": {
+        "startLine": 33,
+        "startChar": 22,
+        "endLine": 33,
+        "endChar": 28
+      },
+      "revId": "639534342c51b6c9c9a8a200695938724f63cc78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
