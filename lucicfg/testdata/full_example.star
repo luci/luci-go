@@ -420,12 +420,14 @@ luci.cq_group(
             cancel_stale = False,
             result_visibility = cq.COMMENT_LEVEL_RESTRICTED,
             location_regexp_exclude = ["https://example.com/repo/[+]/all/one.txt"],
+            mode_regexp = ["DRY_RUN"],
         ),
         # An experimental verifier with location_regexp_exclude.
         luci.cq_tryjob_verifier(
             builder = "linux try builder 2",
             location_regexp_exclude = ["https://example.com/repo/[+]/all/two.txt"],
             experiment_percentage = 50,
+            mode_regexp_exclude = ["FULL_RUN"],
         ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
         {"builder": "try/generically named builder", "disable_reuse": True},
@@ -435,6 +437,8 @@ luci.cq_group(
             builder = "another-project:try/zzz",
             includable_only = True,
             owner_whitelist = ["another-project-committers"],
+            mode_regexp = ["DRY_RUN"],
+            mode_regexp_exclude = ["FULL_RUN"],
         ),
     ],
     additional_modes = cq.run_mode(
@@ -523,6 +527,8 @@ lucicfg.emit(
 #         name: "another-project/try/zzz"
 #         includable_only: true
 #         owner_whitelist_group: "another-project-committers"
+#         mode_regexp: "DRY_RUN"
+#         mode_regexp_exclude: "FULL_RUN"
 #       }
 #       builders {
 #         name: "infra/inline/triggered builder"
@@ -542,12 +548,15 @@ lucicfg.emit(
 #         cancel_stale: NO
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+#         mode_regexp: "DRY_RUN"
 #       }
 #       builders {
 #         name: "infra/try/linux try builder 2"
 #         experiment_percentage: 50
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/two.txt"
+#         mode_regexp: ".+"
+#         mode_regexp_exclude: "FULL_RUN"
 #       }
 #       builders {
 #         name: "infra/try/main cq builder"
