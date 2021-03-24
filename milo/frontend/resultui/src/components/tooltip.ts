@@ -151,7 +151,7 @@ export class TooltipElement extends LitElement {
   static styles = css`
     :host {
       display: none;
-      position: absolute;
+      position: fixed;
       background: white;
       border-radius: 4px;
       padding: 5px;
