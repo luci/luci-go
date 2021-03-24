@@ -420,12 +420,15 @@ luci.cq_group(
             cancel_stale = False,
             result_visibility = cq.COMMENT_LEVEL_RESTRICTED,
             location_regexp_exclude = ["https://example.com/repo/[+]/all/one.txt"],
+            mode_regexp = ["DRY_RUN"],
+            mode_regexp_exclude = ["FULL_RUN"],
         ),
         # An experimental verifier with location_regexp_exclude.
         luci.cq_tryjob_verifier(
             builder = "linux try builder 2",
             location_regexp_exclude = ["https://example.com/repo/[+]/all/two.txt"],
             experiment_percentage = 50,
+            mode_regexp_exclude = ["FULL_RUN"],
         ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
         {"builder": "try/generically named builder", "disable_reuse": True},
@@ -542,12 +545,16 @@ lucicfg.emit(
 #         cancel_stale: NO
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+#         mode_regexp: "DRY_RUN"
+#         mode_regexp_exclude: "FULL_RUN"
 #       }
 #       builders {
 #         name: "infra/try/linux try builder 2"
 #         experiment_percentage: 50
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/two.txt"
+#         mode_regexp: ".+"
+#         mode_regexp_exclude: "FULL_RUN"
 #       }
 #       builders {
 #         name: "infra/try/main cq builder"

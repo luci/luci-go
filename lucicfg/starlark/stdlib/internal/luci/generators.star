@@ -970,6 +970,8 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
         location_regexp = verifier.props.location_regexp,
         location_regexp_exclude = verifier.props.location_regexp_exclude,
         equivalent_to = _cq_equivalent_to(verifier, project),
+        mode_regexp = verifier.props.mode_regexp,
+        mode_regexp_exclude = verifier.props.mode_regexp_exclude,
     )
 
 def _cq_builder_from_node(node):
