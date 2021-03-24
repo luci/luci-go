@@ -34,6 +34,9 @@ _refset_ctor = __native__.genstruct("cq.refset")
 # A struct returned by cq.retry_config(...).
 _retry_config_ctor = __native__.genstruct("cq.retry_config")
 
+# A struct returned by cq.run_mode(...).
+_run_mode_ctor = __native__.genstruct("cq.run_mode")
+
 def _refset(repo = None, *, refs = None, refs_exclude = None):
     """Defines a repository and a subset of its refs.
 
@@ -136,6 +139,55 @@ def _validate_retry_config(attr, val, *, default = None, required = True):
     """Validates that `val` was constructed via cq.retry_config(...)."""
     return validate.struct(attr, val, _retry_config_ctor, default = default, required = required)
 
+def _run_mode(
+        name = None,
+        cq_label_value = None,
+        triggering_label = None,
+        triggering_value = None):
+    """Defines a CQ Run mode and how it can be triggered.
+
+    Args:
+      name: name of this mode. Required.
+        Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$".
+      cq_label_value: the value of Commit-Queue label that MUST be set to when
+        triggering a CQ Run in this mode. Required.
+      triggering_label: the Gerrit label that MUST also be set in order to
+        trigger a CQ Run in this mode. Required.
+      triggering_value: the value of the `triggering_label` that MUST be set to
+        when triggering a CQ Run in this mode. Required.
+
+    Returns:
+      cq.run_mode struct.
+    """
+    if name in ("DRY_RUN", "FULL_RUN"):
+        fail('bad "mode_name": "DRY_RUN" and "FULL_RUN" are reserved by CQ')
+    return _run_mode_ctor(
+        name = validate.string(
+            "mode_name",
+            name,
+            regexp = "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$",
+        ),
+        cq_label_value = validate.int(
+            "cq_label_value",
+            cq_label_value,
+            min = 1,
+            max = 2,
+        ),
+        triggering_label = validate.string(
+            "triggering_label",
+            triggering_label,
+        ),
+        triggering_value = validate.int(
+            "triggering_value",
+            triggering_value,
+            min = 1,
+        ),
+    )
+
+def _validate_run_mode(attr, val, *, default = None, required = True):
+    """Validates that `val` was constructed via cq.run_mode(...)."""
+    return validate.struct(attr, val, _run_mode_ctor, default = default, required = required)
+
 # CQ module exposes structs and enums useful when defining luci.cq_group(...)
 # entities.
 #
@@ -176,6 +228,7 @@ def _validate_retry_config(attr, val, *, default = None, required = True):
 cq = struct(
     refset = _refset,
     retry_config = _retry_config,
+    run_mode = _run_mode,
     ACTION_NONE = cq_pb.Verifiers.GerritCQAbility.UNSET,
     ACTION_DRY_RUN = cq_pb.Verifiers.GerritCQAbility.DRY_RUN,
     ACTION_COMMIT = cq_pb.Verifiers.GerritCQAbility.COMMIT,
@@ -202,4 +255,5 @@ cq = struct(
 cqimpl = struct(
     validate_refset = _validate_refset,
     validate_retry_config = _validate_retry_config,
+    validate_run_mode = _validate_run_mode,
 )
