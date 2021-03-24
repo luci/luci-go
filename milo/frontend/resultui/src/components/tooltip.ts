@@ -14,12 +14,12 @@
 
 import { css, customElement, html, LitElement, property } from 'lit-element';
 
-const GAP_SIZE = 5;
-
 export interface ShowTooltipEventDetail {
   tooltip: HTMLElement;
   // The location around which the tooltip should be displayed.
   targetRect: DOMRectReadOnly;
+  // The gap between the tooltip and the targetRect.
+  gapSize: number;
 }
 
 export type ShowTooltipEvent = CustomEvent<ShowTooltipEventDetail>;
@@ -48,6 +48,7 @@ export type HideTooltipEvent = CustomEvent<HideTooltipEventDetail>;
 export class TooltipElement extends LitElement {
   @property() private tooltip?: HTMLElement;
   @property() private targetRect?: DOMRectReadOnly;
+  @property() private gapSize?: number;
 
   private hideTooltipTimeout = 0;
 
@@ -57,6 +58,7 @@ export class TooltipElement extends LitElement {
     const e = event as CustomEvent<ShowTooltipEventDetail>;
     this.tooltip = e.detail.tooltip;
     this.targetRect = e.detail.targetRect;
+    this.gapSize = e.detail.gapSize;
 
     this.style.display = 'block';
 
@@ -79,6 +81,7 @@ export class TooltipElement extends LitElement {
     this.style.display = 'none';
     this.tooltip = undefined;
     this.targetRect = undefined;
+    this.gapSize = undefined;
   };
 
   onmouseover = () => window.clearTimeout(this.hideTooltipTimeout);
@@ -101,7 +104,7 @@ export class TooltipElement extends LitElement {
   }
 
   protected updated() {
-    if (!this.tooltip || !this.targetRect) {
+    if (!this.tooltip || !this.targetRect || this.gapSize === undefined) {
       return;
     }
 
@@ -109,13 +112,13 @@ export class TooltipElement extends LitElement {
 
     const offsets = [
       // Bottom.
-      [this.targetRect.left, this.targetRect.bottom + GAP_SIZE],
+      [this.targetRect.left, this.targetRect.bottom + this.gapSize],
       // Top.
-      [this.targetRect.left, this.targetRect.top - selfRect.height - GAP_SIZE],
+      [this.targetRect.left, this.targetRect.top - selfRect.height - this.gapSize],
       // Right.
-      [this.targetRect.right + GAP_SIZE, this.targetRect.top],
+      [this.targetRect.right + this.gapSize, this.targetRect.top],
       // Left.
-      [this.targetRect.left - selfRect.width - GAP_SIZE, this.targetRect.top],
+      [this.targetRect.left - selfRect.width - this.gapSize, this.targetRect.top],
     ];
 
     // Show the tooltip at the bottom by default.

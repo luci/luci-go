@@ -27,7 +27,7 @@ describe('instant tooltip', () => {
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect() },
+        detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
       })
     );
 
@@ -37,7 +37,7 @@ describe('instant tooltip', () => {
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect() },
+        detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
       })
     );
 
@@ -54,7 +54,7 @@ describe('instant tooltip', () => {
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip, targetRect: tooltipContainer.getBoundingClientRect() },
+        detail: { tooltip, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
       })
     );
 
@@ -83,7 +83,7 @@ describe('instant tooltip', () => {
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect() },
+        detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
       })
     );
 
@@ -102,7 +102,7 @@ describe('instant tooltip', () => {
     // Show another tooltip before the first one is dismissed.
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect() },
+        detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
       })
     );
 
