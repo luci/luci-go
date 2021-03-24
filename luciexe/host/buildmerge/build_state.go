@@ -175,6 +175,7 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 		ret.latestState.build = &bbpb.Build{}
 		setErrorOnBuild(ret.latestState.build, err)
 		ret.finalize()
+		ret.Close()
 	} else {
 		ret.work, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
 			Buffer: buffer.Options{
@@ -322,8 +323,10 @@ func (t *buildStateTracker) handleNewData(entry *logpb.LogEntry) {
 }
 
 func (t *buildStateTracker) closeWorkLocked() {
-	if !t.workClosed && t.work.C != nil {
-		close(t.work.C)
+	if !t.workClosed {
+		if t.work.C != nil {
+			close(t.work.C)
+		}
 		t.workClosed = true
 	}
 }

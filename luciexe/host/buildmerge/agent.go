@@ -45,6 +45,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
@@ -203,6 +204,11 @@ func (a *Agent) Attach(b *butler.Butler) {
 	b.AddStreamRegistrationCallback(a.onNewStream, true)
 }
 
+var validContentTypes = stringset.NewFromSlice(
+	luciexe.BuildProtoContentType,
+	luciexe.BuildProtoZlibContentType,
+)
+
 func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) butler.StreamChunkCallback {
 	if !a.collectingData() {
 		return nil
@@ -210,22 +216,21 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) butler.StreamChunkC
 
 	namespace, base := types.StreamName(desc.Name).Split()
 
-	if !strings.HasPrefix(desc.Name, string(a.userNamespace)) || base != luciexe.BuildProtoStreamSuffix {
-		// outside our monitored prefix, or not a ".../build.proto" stream
-		return nil
-	}
-
 	var err error
 	zlib := false
-	switch desc.ContentType {
-	case luciexe.BuildProtoContentType:
-	case luciexe.BuildProtoZlibContentType:
-		zlib = true
+	switch validStreamT, validContentT := desc.StreamType == logpb.StreamType_DATAGRAM, validContentTypes.Has(desc.ContentType); {
+	case validStreamT && validContentT:
+		zlib = desc.ContentType == luciexe.BuildProtoZlibContentType
+	case validStreamT && !validContentT:
+		err = errors.Reason("stream %q has content type %q, expected one of %v", desc.Name, desc.ContentType, validContentTypes.ToSortedSlice()).Err()
+	case !validStreamT && validContentT:
+		err = errors.Reason("build proto stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err()
+	case strings.HasPrefix(desc.Name, string(a.userNamespace)) && base == luciexe.BuildProtoStreamSuffix:
+		err = errors.Reason("build.proto stream %q has stream type %q and content type %q, expected %q and one of %v", desc.Name, desc.StreamType, desc.ContentType, logpb.StreamType_DATAGRAM, validContentTypes.ToSortedSlice()).Err()
 	default:
-		err = errors.Reason("stream %q has content type %q, expected %q", desc.Name, desc.ContentType, luciexe.BuildProtoContentType).Err()
-	}
-	if err == nil && desc.StreamType != logpb.StreamType_DATAGRAM {
-		err = errors.Reason("stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err()
+		// neither a ".../build.proto" stream nor a stream with valid stream type
+		// or content type.
+		return nil
 	}
 
 	url, _ := a.calculateURLs("", types.StreamName(desc.Name))
@@ -234,7 +239,10 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) butler.StreamChunkC
 	a.statesMu.Lock()
 	defer a.statesMu.Unlock()
 	a.states[url] = bState
-	return bState.handleNewData
+	if err == nil {
+		return bState.handleNewData
+	}
+	return nil // no need to handle invalid stream.
 }
 
 // Close causes the Agent to stop collecting data, emit a final merged build,
