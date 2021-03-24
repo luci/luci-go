@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4749b716_dc531ef0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-24T18:11:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "839b3cc2_8629e4e5",
+      "range": {
+        "startLine": 286,
+        "startChar": 82,
+        "endLine": 286,
+        "endChar": 83
+      },
+      "revId": "e01f0a1a829abfbc0c00cfe207241a49ab17ac1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5b81ab8a_0bfaa1c9",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-03-24T09:03:13Z",
       "side": 1,
       "message": "i think mode_regexp has to be added here,\nand the L290..L298 has to be moved above below L274.",
+      "revId": "e01f0a1a829abfbc0c00cfe207241a49ab17ac1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "618760b6_84811a13",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-24T18:11:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b81ab8a_0bfaa1c9",
       "revId": "e01f0a1a829abfbc0c00cfe207241a49ab17ac1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
