@@ -908,6 +908,10 @@ def _cq_config_group(cq_group, project, triggering_map):
             tree_status = tree_status,
             tryjob = tryjob if tryjob.builders else None,
         ),
+        additional_modes = [
+            _cq_run_mode(m)
+            for m in cq_group.props.additional_modes
+        ] if cq_group.props.additional_modes else None,
     )
 
 def _cq_retry_config(retry_config):
@@ -920,6 +924,17 @@ def _cq_retry_config(retry_config):
         failure_weight = retry_config.failure_weight,
         transient_failure_weight = retry_config.transient_failure_weight,
         timeout_weight = retry_config.timeout_weight,
+    )
+
+def _cq_run_mode(run_mode):
+    """cq._run_mode(...) => cq_pb.Mode."""
+    if not run_mode:
+        return None
+    return cq_pb.Mode(
+        name = run_mode.name,
+        cq_label_value = run_mode.cq_label_value,
+        triggering_label = run_mode.triggering_label,
+        triggering_value = run_mode.triggering_value,
     )
 
 def _cq_tryjob_builder(verifier, cq_group, project, seen):

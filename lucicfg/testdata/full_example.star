@@ -437,6 +437,12 @@ luci.cq_group(
             owner_whitelist = ["another-project-committers"],
         ),
     ],
+    additional_modes = cq.run_mode(
+        name = "TEST_RUN",
+        cq_label_value = 1,
+        triggering_label = "TEST_RUN_LABEL",
+        triggering_value = 1,
+    ),
 )
 
 luci.cq_tryjob_verifier(
@@ -559,6 +565,12 @@ lucicfg.emit(
 #         timeout_weight: 100
 #       }
 #     }
+#   }
+#   additional_modes {
+#     name: "TEST_RUN"
+#     cq_label_value: 1
+#     triggering_label: "TEST_RUN_LABEL"
+#     triggering_value: 1
 #   }
 # }
 # ===
