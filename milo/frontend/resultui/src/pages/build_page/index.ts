@@ -210,6 +210,10 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           this.invocationState?.dispose();
           this.invocationState = new InvocationState(appState);
           this.invocationState.invocationId = this.buildState.invocationId;
+          this.invocationState.presentationConfig =
+            this.buildState.build?.output.properties.test_presentation_config ||
+            this.buildState.build?.input.properties.test_presentation_config ||
+            {};
 
           // Emulate @property() update.
           this.updated(new Map([['invocationState', this.invocationState]]));
@@ -223,6 +227,17 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       reaction(
         () => this.buildState.invocationId,
         (invId) => (this.invocationState.invocationId = invId),
+        { fireImmediately: true }
+      )
+    );
+
+    this.disposers.push(
+      reaction(
+        () =>
+          this.buildState.build?.output.properties.test_presentation_config ||
+          this.buildState.build?.input.properties.test_presentation_config ||
+          {},
+        (config) => (this.invocationState.presentationConfig = config),
         { fireImmediately: true }
       )
     );

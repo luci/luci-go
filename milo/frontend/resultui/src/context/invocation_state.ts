@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { autorun, computed, observable } from 'mobx';
+import { autorun, comparer, computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../libs/context';
 import { parseSearchQuery } from '../libs/search_query';
 import { TestLoader } from '../models/test_loader';
+import { TestPresentationConfig } from '../services/buildbucket';
 import { Invocation, TestVariant } from '../services/resultdb';
 import { AppState } from './app_state';
 
@@ -43,11 +44,13 @@ export class InvocationState {
   @observable.ref showExoneratedVariants = true;
   @observable.ref showExpectedVariants = true;
 
-  @observable.ref displayedColumns = ['v.test_suite'];
-
   @observable.ref searchText = '';
-
   @observable.ref searchFilter = (_v: TestVariant) => true;
+
+  @observable.ref presentationConfig: TestPresentationConfig = {};
+  @computed({ equals: comparer.shallow }) get displayedColumns() {
+    return this.presentationConfig.columns || ['v.test_suite'];
+  }
 
   private disposers: Array<() => void> = [];
   constructor(private appState: AppState) {

@@ -107,8 +107,38 @@ export enum BuildStatus {
   Canceled = 'CANCELED',
 }
 
+export interface TestPresentationConfig {
+  /**
+   * A list of keys that will be used for grouping test variants in the test
+   * results tab.
+   *
+   * A key must be one of the following:
+   * 1. 'status': status of the test variant.
+   * 2. 'name': test_metadata.name of the test variant.
+   * 3. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
+   * v.gpu).
+   *
+   * Caveat: expected test variants are not affected by this setting and are
+   * always in their own group.
+   */
+  groupingKeys?: string[];
+  /**
+   * A list of keys that will be rendered as columns in the test results tab.
+   * status is always the first column and name is always the last column (you
+   * don't need to specify them).
+   *
+   * A key must be one of the following:
+   * 1. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
+   * v.gpu).
+   */
+  columns?: string[];
+}
+
 export interface BuildInput {
-  readonly properties: { [key: string]: unknown };
+  readonly properties: {
+    test_presentation_config?: TestPresentationConfig;
+    [key: string]: unknown;
+  };
   readonly gitilesCommit?: GitilesCommit;
   readonly gerritChanges?: GerritChange[];
   readonly experiments?: string[];
@@ -130,7 +160,10 @@ export interface GerritChange {
 }
 
 export interface BuildOutput {
-  readonly properties: { [key: string]: unknown };
+  readonly properties: {
+    test_presentation_config?: TestPresentationConfig;
+    [key: string]: unknown;
+  };
   readonly gitilesCommit?: GitilesCommit;
   readonly logs: Log[];
 }
