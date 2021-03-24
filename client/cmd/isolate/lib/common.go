@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -53,14 +54,38 @@ import (
 type commonFlags struct {
 	subcommands.CommandRunBase
 	defaultFlags common.Flags
+	logConfig    logging.Config // for -log-level, used by ModifyContext
 }
+
+var _ cli.ContextModificator = (*commonFlags)(nil)
 
 func (c *commonFlags) Init() {
 	c.defaultFlags.Init(&c.Flags)
+	c.logConfig.Level = logging.Warning
+	c.logConfig.AddFlags(&c.Flags)
 }
 
 func (c *commonFlags) Parse() error {
+	if c.logConfig.Level == logging.Debug {
+		// extract glog flag used in remote-apis-sdks
+		logtostderr := flag.Lookup("logtostderr")
+		if logtostderr == nil {
+			return errors.Reason("logtostderr flag for glog not found").Err()
+		}
+		v := flag.Lookup("v")
+		if v == nil {
+			return errors.Reason("v flag for glog not found").Err()
+		}
+		logtostderr.Value.Set("true")
+		v.Value.Set("9")
+	}
+
 	return c.defaultFlags.Parse()
+}
+
+// ModifyContext implements cli.ContextModificator.
+func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
+	return c.logConfig.Set(ctx)
 }
 
 type commonServerFlags struct {
