@@ -18,11 +18,9 @@ import (
 	"context"
 
 	"github.com/dgraph-io/badger/v3"
-	"github.com/shirou/gopsutil/mem"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 )
 
 type KVS struct {
@@ -31,27 +29,7 @@ type KVS struct {
 
 // New instantiates KVS.
 func New(ctx context.Context, path string) (*KVS, error) {
-	v, err := mem.VirtualMemory()
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get memory stats").Err()
-	}
 	opt := badger.DefaultOptions(path).WithLoggingLevel(badger.WARNING)
-
-	// Using /8 as ValueLogFileSize is used with 2x in
-	// https://github.com/dgraph-io/badger/blob/42d5e9510a4d0165f42a856e203562774aab6603/value.go#L519
-	if valuelog := int64(v.Available / 8); valuelog < opt.ValueLogFileSize {
-		opt.WithValueLogFileSize(valuelog)
-		logging.Infof(ctx, "set ValueLogFileSize: %s", valuelog)
-	}
-
-	// Using /12 as MemTableSize seems to used with 3x memory in
-	// https://github.com/dgraph-io/badger/blob/42d5e9510a4d0165f42a856e203562774aab6603/memtable.go#L112
-	// https://github.com/dgraph-io/badger/blob/42d5e9510a4d0165f42a856e203562774aab6603/memtable.go#L130
-	if memlog := int64(v.Available / uint64(opt.NumMemtables*12)); memlog < opt.MemTableSize {
-		opt.WithMemTableSize(memlog)
-		logging.Infof(ctx, "set MemTableSize: %s", memlog)
-	}
-
 	db, err := badger.Open(opt)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to open database: %s", path).Err()
