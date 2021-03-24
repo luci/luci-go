@@ -117,6 +117,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
               detail: {
                 tooltip,
                 targetRect: (e.target as HTMLElement).getBoundingClientRect(),
+                gapSize: 5,
               },
             })
           );
