@@ -129,8 +129,16 @@ export interface GerritChange {
   readonly patchset: string;
 }
 
+export interface TestPresentationConfig {
+  groupingKeys?: string[];
+  columns?: string[];
+}
+
 export interface BuildOutput {
-  readonly properties: { [key: string]: unknown };
+  readonly properties: {
+    test_presentation_config?: TestPresentationConfig;
+    [key: string]: unknown;
+  };
   readonly gitilesCommit?: GitilesCommit;
   readonly logs: Log[];
 }
