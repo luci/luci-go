@@ -25,6 +25,8 @@ import '../../components/build_step_entry';
 import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
+import '../../components/timestamp';
+import { TimeZoneConfig } from '../../components/timestamp';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -44,6 +46,17 @@ import { renderMarkdown } from '../../libs/utils';
 import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
 import { BuildStatus } from '../../services/buildbucket';
+
+const EXTRA_ZONE_CONFIGS: TimeZoneConfig[] = [
+  {
+    label: 'MTV',
+    zone: 'America/Los_Angeles',
+  },
+  {
+    label: 'UTC',
+    zone: 'utc',
+  },
+];
 
 @customElement('milo-overview-tab')
 @consumeBuildState
@@ -290,22 +303,40 @@ export class OverviewTabElement extends MobxLitElement {
       <table>
         <tr>
           <td>Created:</td>
-          <td>${build.createTime.toFormat(LONG_TIME_FORMAT)} (${displayDuration(build.timeSinceCreated)} ago)</td>
+          <td>
+            <milo-timestamp
+              .datetime=${build.createTime}
+              .format=${LONG_TIME_FORMAT}
+              .extraZones=${EXTRA_ZONE_CONFIGS}
+            ></milo-timestamp>
+          </td>
         </tr>
         <tr>
           <td>Started:</td>
           <td>
-            ${(build.startTime &&
-              build.startTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceStarted!)} ago)`) ||
-            'N/A'}
+            ${build.startTime
+              ? html`
+                  <milo-timestamp
+                    .datetime=${build.startTime}
+                    .format=${LONG_TIME_FORMAT}
+                    .extraZones=${EXTRA_ZONE_CONFIGS}
+                  ></milo-timestamp>
+                `
+              : 'N/A'}
           </td>
         </tr>
         <tr>
           <td>Ended:</td>
           <td>
-            ${(build.endTime &&
-              build.endTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceEnded!)} ago)`) ||
-            'N/A'}
+            ${build.endTime
+              ? html`
+                  <milo-timestamp
+                    .datetime=${build.endTime}
+                    .format=${LONG_TIME_FORMAT}
+                    .extraZones=${EXTRA_ZONE_CONFIGS}
+                  ></milo-timestamp>
+                `
+              : 'N/A'}
           </td>
         </tr>
         <tr>
