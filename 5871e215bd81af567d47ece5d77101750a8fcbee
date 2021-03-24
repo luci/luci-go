@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d781c4a_7fce4787",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-24T18:56:42Z",
+      "side": 1,
+      "message": "this looks like a security vulnerability. Could you spell out what you expect here, to prevent an attacker URL?",
+      "range": {
+        "startLine": 105,
+        "startChar": 54,
+        "endLine": 105,
+        "endChar": 58
+      },
+      "revId": "5871e215bd81af567d47ece5d77101750a8fcbee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
