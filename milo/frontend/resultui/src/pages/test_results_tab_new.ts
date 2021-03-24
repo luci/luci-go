@@ -132,20 +132,28 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     if (searchParams.has('clean')) {
       this.invocationState.showEmptyGroups = false;
     }
+    if (searchParams.has('cols')) {
+      const cols = searchParams.get('cols')!;
+      this.invocationState.columnsParam = cols.split(',').filter((col) => col !== '');
+    }
 
     // Update the querystring when filters are updated.
     this.disposers.push(
       reaction(
         () => {
+          const displayedCols = this.invocationState.displayedColumns.join(',');
+          const defaultCols = this.invocationState.defaultColumns.join(',');
           const newSearchParams = new URLSearchParams({
-            q: this.invocationState.searchText,
+            ...(!this.invocationState.searchText ? {} : { q: this.invocationState.searchText }),
             ...(this.invocationState.showEmptyGroups ? {} : { clean: '' }),
+            ...(displayedCols === defaultCols ? {} : { cols: displayedCols }),
           });
-          return newSearchParams.toString();
+          const newSearchParamsStr = newSearchParams.toString();
+          return newSearchParamsStr ? '?' + newSearchParamsStr : '';
         },
         (newQueryStr) => {
           const location = window.location;
-          const newUrl = `${location.protocol}//${location.host}${location.pathname}?${newQueryStr}`;
+          const newUrl = `${location.protocol}//${location.host}${location.pathname}${newQueryStr}`;
           window.history.replaceState({ path: newUrl }, '', newUrl);
         },
         { fireImmediately: true }
