@@ -48,8 +48,12 @@ export class InvocationState {
   @observable.ref searchFilter = (_v: TestVariant) => true;
 
   @observable.ref presentationConfig: TestPresentationConfig = {};
-  @computed({ equals: comparer.shallow }) get displayedColumns() {
+  @observable.ref columnsParam?: string[];
+  @computed({ equals: comparer.shallow }) get defaultColumns() {
     return this.presentationConfig.columns || ['v.test_suite'];
+  }
+  @computed({ equals: comparer.shallow }) get displayedColumns() {
+    return this.columnsParam || this.defaultColumns;
   }
 
   private disposers: Array<() => void> = [];
