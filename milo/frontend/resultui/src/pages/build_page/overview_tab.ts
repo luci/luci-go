@@ -155,23 +155,29 @@ export class OverviewTabElement extends MobxLitElement {
     }
     return html`
       <h3>Input</h3>
-      ${input.gitilesCommit
-        ? html`
-            <div>
-              Revision:
-              <a href=${getURLForGitilesCommit(input.gitilesCommit)} target="_blank">${input.gitilesCommit.id}</a>
-              ${input.gitilesCommit.position ? `CP #${input.gitilesCommit.position}` : ''}
-            </div>
+      <table>
+        ${input.gitilesCommit
+          ? html`
+              <tr>
+                <td>Revision:</td>
+                <td>
+                  <a href=${getURLForGitilesCommit(input.gitilesCommit)} target="_blank">${input.gitilesCommit.id}</a>
+                  ${input.gitilesCommit.position ? `CP #${input.gitilesCommit.position}` : ''}
+                </td>
+              </tr>
+            `
+          : ''}
+        ${(input.gerritChanges || []).map(
+          (gc) => html`
+            <tr>
+              <td>Patch:</td>
+              <td>
+                <a href=${getURLForGerritChange(gc)}> ${gc.change} (ps #${gc.patchset}) </a>
+              </td>
+            </tr>
           `
-        : ''}
-      ${(input.gerritChanges || []).map(
-        (gc) => html`
-          <div>
-            Patch:
-            <a href=${getURLForGerritChange(gc)}> ${gc.change} (ps #${gc.patchset}) </a>
-          </div>
-        `
-      )}
+        )}
+      </table>
     `;
   }
 
@@ -180,35 +186,38 @@ export class OverviewTabElement extends MobxLitElement {
     const botLink = build.infra?.swarming ? getBotLink(build.infra.swarming) : null;
     return html`
       <h3>Infra</h3>
-      <div class="key-value-list">
-        <div class="key">Buildbucket ID:</div>
-        <div class="value"><milo-link .link=${getBuildbucketLink(
-          CONFIGS.BUILDBUCKET.HOST,
-          build.id
-        )} target="_blank"></div>
+      <table>
+        <tr>
+          <td>Buildbucket ID:</td>
+          <td><milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, build.id)} target="_blank"></td>
+        </tr>
         ${
           build.infra?.swarming
             ? html`
-                <div class="key">Swarming Task:</div>
-                <div class="value">
-                  ${!build.infra.swarming.taskId
-                    ? 'N/A'
-                    : html`
-                        <a href=${getURLForSwarmingTask(build.infra.swarming.hostname, build.infra.swarming.taskId)}>
-                          ${build.infra.swarming.taskId}
-                        </a>
-                      `}
-                </div>
-                <div class="key">Bot:</div>
-                <div class="value">
-                  ${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}
-                </div>
+                <tr>
+                  <td>Swarming Task:</td>
+                  <td>
+                    ${!build.infra.swarming.taskId
+                      ? 'N/A'
+                      : html`
+                          <a href=${getURLForSwarmingTask(build.infra.swarming.hostname, build.infra.swarming.taskId)}>
+                            ${build.infra.swarming.taskId}
+                          </a>
+                        `}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Bot:</td>
+                  <td>${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</td>
+                </tr>
               `
             : ''
         }
-        <div class="key">Recipe:</div>
-        <div class="value"><milo-link .link=${build.recipeLink} target="_blank"></milo-link></div>
-      </div>
+        <tr>
+          <td>Recipe:</td>
+          <td><milo-link .link=${build.recipeLink} target="_blank"></milo-link></td>
+        </tr>
+      </table>
     `;
   }
 
@@ -278,37 +287,45 @@ export class OverviewTabElement extends MobxLitElement {
 
     return html`
       <h3>Timing</h3>
-      <div class="key-value-list">
-        <div class="key">Created:</div>
-        <div class="value">
-          ${build.createTime.toFormat(LONG_TIME_FORMAT)} (${displayDuration(build.timeSinceCreated)} ago)
-        </div>
-        <div class="key">Started:</div>
-        <div class="value">
-          ${(build.startTime &&
-            build.startTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceStarted!)} ago)`) ||
-          'N/A'}
-        </div>
-        <div class="key">Ended:</div>
-        <div class="value">
-          ${(build.endTime &&
-            build.endTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceEnded!)} ago)`) ||
-          'N/A'}
-        </div>
-        <div class="key">Pending:</div>
-        <div class="value">
-          ${(build.pendingDuration && displayDuration(build.pendingDuration)) || 'N/A'}${(!build.startTime &&
-            ' (and counting)') ||
-          ''}
-        </div>
-        <div class="key">Execution:</div>
-        <div class="value">
-          ${(build.executionDuration && displayDuration(build.executionDuration)) || 'N/A'}${(!build.endTime &&
-            build.startTime &&
-            ' (and counting)') ||
-          ''}
-        </div>
-      </div>
+      <table>
+        <tr>
+          <td>Created:</td>
+          <td>${build.createTime.toFormat(LONG_TIME_FORMAT)} (${displayDuration(build.timeSinceCreated)} ago)</td>
+        </tr>
+        <tr>
+          <td>Started:</td>
+          <td>
+            ${(build.startTime &&
+              build.startTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceStarted!)} ago)`) ||
+            'N/A'}
+          </td>
+        </tr>
+        <tr>
+          <td>Ended:</td>
+          <td>
+            ${(build.endTime &&
+              build.endTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceEnded!)} ago)`) ||
+            'N/A'}
+          </td>
+        </tr>
+        <tr>
+          <td>Pending:</td>
+          <td>
+            ${(build.pendingDuration && displayDuration(build.pendingDuration)) || 'N/A'}${(!build.startTime &&
+              ' (and counting)') ||
+            ''}
+          </td>
+        </tr>
+        <tr>
+          <td>Execution:</td>
+          <td>
+            ${(build.executionDuration && displayDuration(build.executionDuration)) || 'N/A'}${(!build.endTime &&
+              build.startTime &&
+              ' (and counting)') ||
+            ''}
+          </td>
+        </tr>
+      </table>
     `;
   }
 
@@ -319,14 +336,16 @@ export class OverviewTabElement extends MobxLitElement {
     }
     return html`
       <h3>Tags</h3>
-      <div class="key-value-list">
+      <table>
         ${tags.map(
           (tag) => html`
-            <div class="key">${tag.key}:</div>
-            <div class="value">${tag.value}</div>
+            <tr>
+              <td>${tag.key}:</td>
+              <td>${tag.value}</td>
+            </tr>
           `
         )}
-      </div>
+      </table>
     `;
   }
 
@@ -488,20 +507,9 @@ export class OverviewTabElement extends MobxLitElement {
       padding: 5px;
     }
 
-    .key-value-list {
-      display: grid;
-      grid-template-columns: auto 1fr;
-    }
-    .key-value-list div {
+    td:nth-child(2) {
       clear: both;
       overflow-wrap: anywhere;
-    }
-    .key-value-list .value {
-      margin-left: 10px;
-    }
-    .key-value-list > div {
-      margin-top: 1px;
-      margin-bottom: 1px;
     }
 
     .step-summary-line {
