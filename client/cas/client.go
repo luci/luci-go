@@ -88,9 +88,9 @@ func ClientOptions(creds credentials.PerRPCCredentials) []client.Opt {
 	}
 }
 
-func ContextWithMetadata(ctx context.Context) (context.Context, error) {
+func ContextWithMetadata(ctx context.Context, toolName string) (context.Context, error) {
 	ctx, err := client.ContextWithMetadata(ctx, &client.ContextMetadata{
-		ToolName: "cas",
+		ToolName: toolName,
 	})
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to attach metadata").Err()

@@ -288,7 +288,7 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs *embedded
 func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
-	ctx, err := cas.ContextWithMetadata(ctx)
+	ctx, err := cas.ContextWithMetadata(ctx, "cas")
 	if err != nil {
 		return err
 	}
