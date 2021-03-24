@@ -92,3 +92,21 @@ export function getLogdogRawUrl(logdogURL: string): string | null {
   }
   return `https://${match[2]}/logs/${match[3]}?format=raw`;
 }
+
+export function getUrlFromBuildset(buildset: string): string | null {
+  {
+    const match = buildset.match(/^patch[/]gerrit[/]([^/]+)[/](\d+[/]\d+)$/);
+    if (match) {
+      const [, host, cl] = match as string[];
+      return `https://${host}/c/${cl}`;
+    }
+  }
+  {
+    const match = buildset.match(/^commit[/]gitiles[/](.+)$/);
+    if (match) {
+      const [, url] = match as string[];
+      return `https://${url}`;
+    }
+  }
+  return null;
+}
