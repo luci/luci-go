@@ -237,7 +237,6 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   static styles = css`
     :host {
       display: block;
-      --columns: 350px;
     }
 
     #place-holder {
