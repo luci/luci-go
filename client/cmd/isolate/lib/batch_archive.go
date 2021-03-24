@@ -57,7 +57,6 @@ isolate. Format of files is:
 		CommandRun: func() subcommands.CommandRun {
 			c := batchArchiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
-			c.loggingFlags.Init(&c.Flags)
 			c.casFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
 			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maximum number of in-flight check requests.")
@@ -69,7 +68,6 @@ isolate. Format of files is:
 
 type batchArchiveRun struct {
 	commonServerFlags
-	loggingFlags         loggingFlags
 	casFlags             cas.Flags
 	dumpJSON             string
 	maxConcurrentChecks  int
