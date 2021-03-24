@@ -124,15 +124,19 @@ type refKey struct {
 	refStr  string
 }
 
+var (
+	configGroupNameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
+	modeNameRegexp        = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
+)
+
 func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNames stringset.Set) {
-	re, _ := regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	switch {
 	case group.Name == "":
 		// TODO(crbug/1063508): make this an error.
 		ctx.Warningf("please, specify `name` for monitoring and analytics")
-	case !re.MatchString(group.Name):
+	case !configGroupNameRegexp.MatchString(group.Name):
 		// TODO(crbug/1063508): make this an error.
-		ctx.Warningf("`name` must match %q but %q given", re, group.Name)
+		ctx.Warningf("`name` must match %q but %q given", configGroupNameRegexp, group.Name)
 	case knownNames.Has(group.Name):
 		ctx.Errorf("duplicate config_group `name` %q not allowed", group.Name)
 	default:
@@ -175,6 +179,38 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNa
 	} else {
 		ctx.Enter("verifiers")
 		validateVerifiers(ctx, group.Verifiers)
+		ctx.Exit()
+	}
+
+	if l := len(group.AdditionalModes); l > 0 {
+		ctx.Enter("additional_modes")
+		nameSet := stringset.New(l)
+		for _, m := range group.AdditionalModes {
+			switch name := m.Name; {
+			case name == "":
+				ctx.Errorf("`name` is required")
+			case name == "DRY_RUN" || name == "FULL_RUN":
+				ctx.Errorf("`name` MUST not be DRY_RUN or FULL_RUN")
+			case !modeNameRegexp.MatchString(name):
+				ctx.Errorf("`name` must match %q but %q is given", modeNameRegexp, name)
+			case nameSet.Has(name):
+				ctx.Errorf("duplicate `name` %q not allowed", name)
+			default:
+				nameSet.Add(name)
+			}
+			if val := m.CqLabelValue; val < 1 || val > 2 {
+				ctx.Errorf("`cq_label_value` must be either 1 or 2, got %d", val)
+			}
+			switch m.TriggeringLabel {
+			case "":
+				ctx.Errorf("`triggering_label` is required")
+			case "Commit-Queue":
+				ctx.Errorf("`triggering_label` MUST not be \"Commit-Queue\"")
+			}
+			if m.TriggeringValue <= 0 {
+				ctx.Errorf("`triggering_value` must be > 0")
+			}
+		}
 		ctx.Exit()
 	}
 }
@@ -390,8 +426,8 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			}
 		}
 		if len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0 {
-			validateLocationRegexp(ctx, "location_regexp", b.LocationRegexp)
-			validateLocationRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude)
+			validateRegexp(ctx, "location_regexp", b.LocationRegexp)
+			validateRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude)
 			if b.IncludableOnly {
 				ctx.Errorf("includable_only is not combinable with location_regexp[_exclude]")
 			}
@@ -403,6 +439,17 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 					ctx.Errorf("must not be empty string")
 					ctx.Exit()
 				}
+			}
+		}
+		if len(b.ModeRegexp)+len(b.ModeRegexpExclude) > 0 {
+			validateRegexp(ctx, "mode_regexp", b.ModeRegexp)
+			validateRegexp(ctx, "mode_regexp_exclude", b.ModeRegexpExclude)
+			// TODO(crbug/1191855): See if CV should loose the following restrictions.
+			if b.TriggeredBy != "" {
+				ctx.Errorf("triggered_by is not combinable with mode_regexp[_exclude]")
+			}
+			if b.IncludableOnly {
+				ctx.Errorf("includable_only is not combinable with mode_regexp[_exclude]")
 			}
 		}
 		if b.ExperimentPercentage == 0 && b.TriggeredBy == "" && b.EquivalentTo == nil {
@@ -487,7 +534,7 @@ func validateEquivalentBuilder(ctx *validation.Context, b *v2.Verifiers_Tryjob_E
 	}
 }
 
-func validateLocationRegexp(ctx *validation.Context, field string, values []string) {
+func validateRegexp(ctx *validation.Context, field string, values []string) {
 	valid := stringset.New(len(values))
 	for i, v := range values {
 		if v == "" {
