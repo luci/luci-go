@@ -158,8 +158,8 @@ func TestValidation(t *testing.T) {
 			Convey("config_groups", func() {
 				orig := cfg.ConfigGroups[0]
 				add := func(refRegexps ...string) {
-					// Add new regexps sequence with constant valid gerrit url and project and
-					// the same valid verifers.
+					// Add new regexps sequence with constant valid gerrit url and
+					// project and the same valid verifiers.
 					cfg.ConfigGroups = append(cfg.ConfigGroups, &v2.ConfigGroup{
 						Name: fmt.Sprintf("group-%d", len(cfg.ConfigGroups)),
 						Gerrit: []*v2.ConfigGroup_Gerrit{
@@ -193,7 +193,7 @@ func TestValidation(t *testing.T) {
 					So(vctx.Finalize(), ShouldErrLike, "At most 1 config_group with fallback=YES allowed")
 				})
 
-				Convey("with unqiue names", func() {
+				Convey("with unique names", func() {
 					cfg.ConfigGroups = nil
 					add("refs/heads/.+")
 					add("refs/branch-heads/.+")
@@ -215,7 +215,7 @@ func TestValidation(t *testing.T) {
 			})
 		})
 
-		Convey("ConfiGroups", func() {
+		Convey("ConfigGroups", func() {
 			Convey("with no Name", func() {
 				cfg.ConfigGroups[0].Name = ""
 				validateProjectConfig(vctx, &cfg)
@@ -261,6 +261,65 @@ func TestValidation(t *testing.T) {
 					cfg.ConfigGroups[0].Verifiers.GerritCqAbility.AllowSubmitWithOpenDeps = true
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "allow_submit_with_open_deps=true")
+				})
+			})
+			Convey("Additional modes", func() {
+				mode := &v2.Mode{
+					Name:            "TEST_RUN",
+					CqLabelValue:    1,
+					TriggeringLabel: "TEST_RUN_LABEL",
+					TriggeringValue: 2,
+				}
+				cfg.ConfigGroups[0].AdditionalModes = []*v2.Mode{mode}
+				Convey("OK", func() {
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldBeNil)
+				})
+				Convey("Requires name", func() {
+					mode.Name = ""
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "`name` is required")
+				})
+				Convey("Uses reserved mode name", func() {
+					for _, m := range []string{"DRY_RUN", "FULL_RUN"} {
+						mode.Name = m
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, "`name` MUST not be DRY_RUN or FULL_RUN")
+					}
+				})
+				Convey("Invalid name", func() {
+					mode.Name = "~!Invalid Run Mode!~"
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "`name` must match")
+				})
+				Convey("Duplicate modes", func() {
+					cfg.ConfigGroups[0].AdditionalModes = []*v2.Mode{mode, mode}
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "duplicate `name` \"TEST_RUN\" not allowed")
+				})
+				Convey("CQ label value out of range", func() {
+					for _, val := range []int32{-1, 0, 3, 10} {
+						mode.CqLabelValue = val
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, "`cq_label_value` must be either 1 or 2")
+					}
+				})
+				Convey("Requires triggering_label", func() {
+					mode.TriggeringLabel = ""
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "`triggering_label` is required")
+				})
+				Convey("triggering_label must not be Commit-Queue", func() {
+					mode.TriggeringLabel = "Commit-Queue"
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "`triggering_label` MUST not be \"Commit-Queue\"")
+				})
+				Convey("triggering_value out of range", func() {
+					for _, val := range []int32{-1, 0} {
+						mode.TriggeringValue = val
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, "`triggering_value` must be > 0")
+					}
 				})
 			})
 		})
@@ -572,6 +631,24 @@ func TestTryjobValidation(t *testing.T) {
 				"must not be empty string")
 		})
 
+		Convey("mode_regexps", func() {
+			So(validate(`builders {name: "a/b/c" mode_regexp: ""}`), ShouldErrLike, "must not be empty")
+			So(validate(`builders {name: "a/b/c" mode_regexp_exclude: "*"}`), ShouldErrLike, "error parsing regexp")
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					mode_regexp: ".+"
+					mode_regexp: ".+"
+				}`), ShouldErrLike, "duplicate")
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					mode_regexp: "\\w*DRY\\w+"
+					mode_regexp_exclude: "\\w*FULL\\w+"
+				}`), ShouldBeNil)
+		})
+
 		Convey("allowed combinations", func() {
 			So(validate(`
 				builders {
@@ -628,6 +705,14 @@ func TestTryjobValidation(t *testing.T) {
 				}`),
 				ShouldErrLike,
 				"includable_only is not combinable with location_regexp[_exclude]")
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					mode_regexp: "\\w*DRY\\w+"
+					includable_only: true
+				}`),
+				ShouldErrLike,
+				"includable_only is not combinable with mode_regexp[_exclude]")
 
 			So(validate(`builders {name: "one/is/enough" includable_only: true}`), ShouldBeNil)
 		})
@@ -648,6 +733,14 @@ func TestTryjobValidation(t *testing.T) {
 				builders {name: "a/b/1" triggered_by: "a/b/0"}
 			`), ShouldErrLike,
 				`builder a/b/1): triggered_by must refer to an existing builder without`)
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					mode_regexp: "\\w*DRY\\w+"
+					triggered_by: "a/b/0"
+				}`), ShouldErrLike,
+				"triggered_by is not combinable with mode_regexp[_exclude]")
 
 			Convey("doesn't form loops", func() {
 				So(validate(`
