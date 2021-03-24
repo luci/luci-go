@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "15066528_e257d034",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-24T17:59:26Z",
+      "side": 1,
+      "message": "ah! I misuse the -b option.",
+      "parentUuid": "9ba7249b_fbc85c8e",
+      "revId": "3d08d996e3ce4358e4ffa98544b833a9eb6cea1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "d773356f_2b4484f0",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -75,6 +93,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a077773d_46e832d2",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-24T17:59:26Z",
+      "side": 1,
+      "message": "Good point. Done.",
+      "parentUuid": "18863396_a875e63b",
+      "range": {
+        "startLine": 183,
+        "startChar": 2,
+        "endLine": 183,
+        "endChar": 63
+      },
+      "revId": "3d08d996e3ce4358e4ffa98544b833a9eb6cea1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "338164f0_2a742eb0",
@@ -88,6 +130,30 @@
       "writtenOn": "2021-03-24T09:13:09Z",
       "side": 1,
       "message": "please also check that it isn\u0027t \u0027Commit-Queue\u0027",
+      "range": {
+        "startLine": 201,
+        "startChar": 3,
+        "endLine": 201,
+        "endChar": 31
+      },
+      "revId": "3d08d996e3ce4358e4ffa98544b833a9eb6cea1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae4d8fc6_4c2cbcbe",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-24T17:59:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "338164f0_2a742eb0",
       "range": {
         "startLine": 201,
         "startChar": 3,
