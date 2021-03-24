@@ -39,7 +39,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @customElement('milo-variant-entry-new')
 export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
-  @observable.ref columns = ['v.test_suite'];
+  @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
   @observable.ref renderCallback: Function | null = null;
   @observable.ref expandedCallback: Function | null = null;
 
@@ -140,16 +140,7 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   }
 
   @computed get columnValues() {
-    return this.columns.map((column) => {
-      const [type, key] = column.split('.', 2);
-      switch (type) {
-        case 'v':
-          return this.variant.variant?.def[key] || '';
-        default:
-          console.warn('invalid column type', type);
-          return '';
-      }
-    });
+    return this.columnGetters.map((fn) => fn(this.variant));
   }
 
   private renderBody() {
