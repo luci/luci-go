@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -85,4 +86,22 @@ func ClientOptions(creds credentials.PerRPCCredentials) []client.Opt {
 		client.RegularMode(0600),
 		client.CompressedBytestreamThreshold(0),
 	}
+}
+
+func ContextWithMetadata(ctx context.Context) (context.Context, error) {
+	ctx, err := client.ContextWithMetadata(ctx, &client.ContextMetadata{
+		ToolName: "cas",
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to attach metadata").Err()
+	}
+
+	m, err := client.GetContextMetadata(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to extract metadata").Err()
+	}
+
+	logging.Infof(ctx, "context metadata: %#+v", *m)
+
+	return ctx, nil
 }

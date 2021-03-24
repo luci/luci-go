@@ -25,6 +25,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -107,7 +108,7 @@ func getRoot(paths isolated.ScatterGather) (string, error) {
 func (c *archiveRun) doArchive(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
-	ctx, err := contextWithMetadata(ctx)
+	ctx, err := cas.ContextWithMetadata(ctx)
 	if err != nil {
 		return err
 	}
