@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2072dd21_442247f5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 932,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-24T00:48:07Z",
+      "side": 1,
+      "message": "(Shame)\n\nIt was \n    if not _cq_run_mode:\n        return None\n\nand the last PS is intended to fix this. but I copy-paste at the wrong place.",
+      "parentUuid": "1237d0f9_f667ecd2",
+      "range": {
+        "startLine": 931,
+        "startChar": 0,
+        "endLine": 932,
+        "endChar": 23
+      },
+      "revId": "7f529667fabc60bf5981496e0c80e85a7f9464a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5433fc81_2b0e38ca",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-03-23T22:45:33Z",
       "side": 1,
       "message": "In https://docs.google.com/document/d/1ncHbwvwMyNzIM5FqzqNyhzrmCjYQi-LT9UF8kAS8xZM/edit#heading\u003dh.bv7cu8lgqcs1\nwe agreed to `Quick-DryRun`\n\nBut I suspect this may have to change.\nSo, how about not defining the constant for now until we settle down on a value shared by \u003e1 project?",
+      "range": {
+        "startLine": 261,
+        "startChar": 28,
+        "endLine": 261,
+        "endChar": 37
+      },
+      "revId": "7f529667fabc60bf5981496e0c80e85a7f9464a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "358f39bc_f2c25993",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-24T00:48:07Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "5433fc81_2b0e38ca",
       "range": {
         "startLine": 261,
         "startChar": 28,
