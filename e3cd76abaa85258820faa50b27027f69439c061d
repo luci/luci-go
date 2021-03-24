@@ -22,6 +22,30 @@
       },
       "revId": "e3cd76abaa85258820faa50b27027f69439c061d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "78783316_3b33f4a6",
+        "filename": "milo/frontend/resultui/src/libs/prpc_client_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-24T23:55:55Z",
+      "side": 1,
+      "message": "I still prefer composition here because with inheritance\n1. prpcClientExt.accessToken doesn\u0027t give you the accessToken, while prpcClient.accessToken does.\n2. if someday PrpcClient decided to add setAccessToken (or any method that interact with the accessToken), prpcClientExt.setAccessToken won\u0027t work. Even though adding a method is typically considered a non-breaking change.\n\nThere\u0027s really no guarantee that PrpcClientExt can always be a drop in replacement for PrpcClient. And with typescript\u0027s typing system, we can always just use an interface if a function doesn\u0027t care whether it\u0027s PrpcClientExt or PrpcClient (we don\u0027t have to add implement statement to PrpcClient).",
+      "parentUuid": "11c9ef35_99b680f7",
+      "range": {
+        "startLine": 20,
+        "startChar": 27,
+        "endLine": 21,
+        "endChar": 29
+      },
+      "revId": "e3cd76abaa85258820faa50b27027f69439c061d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
