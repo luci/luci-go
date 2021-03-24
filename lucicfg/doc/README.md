@@ -2328,6 +2328,8 @@ luci.cq_tryjob_verifier(
     equivalent_builder = None,
     equivalent_builder_percentage = None,
     equivalent_builder_whitelist = None,
+    mode_regexp = None,
+    mode_regexp_exclude = None,
 )
 ```
 
@@ -2468,6 +2470,8 @@ For example:
 * **equivalent_builder**: an optional alternative builder for the CQ to choose instead. If provided, the CQ will choose only one of the equivalent builders as required based purely on the given CL and CL's owner and **regardless** of the possibly already completed try jobs.
 * **equivalent_builder_percentage**: a percentage expressing probability of the CQ triggering `equivalent_builder` instead of `builder`. A choice itself is made deterministically based on CL alone, hereby all CQ attempts on all patchsets of a given CL will trigger the same builder, assuming CQ config doesn't change in the mean time. Note that if `equivalent_builder_whitelist` is also specified, the choice over which of the two builders to trigger will be made only for CLs owned by the accounts in the whitelisted group. Defaults to 0, meaning the equivalent builder is never triggered by the CQ, but an existing build can be re-used.
 * **equivalent_builder_whitelist**: a group name with accounts to enable the equivalent builder substitution for. If set, only CLs that are owned by someone from this group have a chance to be verified by the equivalent builder. All other CLs are verified via the main builder.
+* **mode_regexp**: a list of regexps that define a set of CQ Run modes for which CQ will trigger this verifier. CQ supports "DRY_RUN" and "FULL_RUN" out of the box. Additional Run modes can be defined via `luci.cq_group(additional_modes=[[cq.run_mode(...)](#cq.run_mode),])`.
+* **mode_regexp_exclude**: a list of regexps that define a set of CQ Run modes for which CQ will skip this verifier when evaluating whether this verifier should be applied to this Run or not.
 
 
 
