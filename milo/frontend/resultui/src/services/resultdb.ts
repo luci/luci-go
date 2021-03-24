@@ -348,3 +348,22 @@ export async function getInvIdFromBuildNum(builder: BuilderID, buildNum: number)
   const builderId = `${builder.project}/${builder.bucket}/${builder.builder}`;
   return `build-${await sha256(builderId)}-${buildNum}`;
 }
+
+/**
+ * Create a test variant property getter for the given key.
+ */
+export function createVariantPropGetter(key: string): (v: TestVariant) => unknown {
+  if (key.match(/^v[.]/i)) {
+    const variantKey = key.slice(2);
+    return (v) => v.variant?.def[variantKey] || '';
+  }
+  key = key.toLowerCase();
+  switch (key) {
+    case 'status':
+      return (v) => v.status.toString();
+    case 'name':
+      return (v) => v.testMetadata?.name || v.testId;
+    default:
+      throw new Error('');
+  }
+}
