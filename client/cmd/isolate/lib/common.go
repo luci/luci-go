@@ -170,15 +170,6 @@ func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 	return nil
 }
 
-// loggingFlags configures eventlog logging.
-type loggingFlags struct {
-	EventlogEndpoint string
-}
-
-func (lf *loggingFlags) Init(f *flag.FlagSet) {
-	f.StringVar(&lf.EventlogEndpoint, "eventlog-endpoint", "", `The URL destination for eventlogs. The special values "prod" or "test" may be used to target the standard prod or test urls respectively. An empty string disables eventlogging.`)
-}
-
 func elideNestedPaths(deps []string, pathSep string) []string {
 	// For |deps| having a pattern like below:
 	// "ab/"
