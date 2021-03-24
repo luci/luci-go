@@ -14,7 +14,13 @@
 
 import { assert } from 'chai';
 
-import { getInvIdFromBuildId, getInvIdFromBuildNum } from './resultdb';
+import {
+  createTVPropGetter,
+  getInvIdFromBuildId,
+  getInvIdFromBuildNum,
+  TestVariant,
+  TestVariantStatus,
+} from './resultdb';
 
 describe('resultdb', () => {
   it('should compute invocation ID from build number correctly', async () => {
@@ -25,5 +31,40 @@ describe('resultdb', () => {
   it('should compute invocation ID from build ID correctly', async () => {
     const invId = await getInvIdFromBuildId('123456');
     assert.strictEqual(invId, 'build-123456');
+  });
+});
+
+describe('createTVPropGetter', () => {
+  it('can create a status getter', async () => {
+    const getter = createTVPropGetter('status');
+    const prop = getter(({ status: TestVariantStatus.EXONERATED } as Partial<TestVariant>) as TestVariant);
+    assert.strictEqual(prop, TestVariantStatus.EXONERATED);
+  });
+
+  it('can create a name getter', async () => {
+    const getter = createTVPropGetter('Name');
+
+    const prop1 = getter(({
+      testId: 'test-id',
+      testMetadata: { name: 'test-name' },
+    } as Partial<TestVariant>) as TestVariant);
+    assert.strictEqual(prop1, 'test-name');
+
+    // Fallback to test id.
+    const prop2 = getter(({ testId: 'test-id' } as Partial<TestVariant>) as TestVariant);
+    assert.strictEqual(prop2, 'test-id');
+  });
+
+  it('can create a variant value getter', async () => {
+    const getter = createTVPropGetter('v.variant_key');
+
+    const prop1 = getter(({
+      variant: { def: { variant_key: 'variant_value' } },
+    } as Partial<TestVariant>) as TestVariant);
+    assert.strictEqual(prop1, 'variant_value');
+
+    // Fallback to empty string.
+    const prop2 = getter(({} as Partial<TestVariant>) as TestVariant);
+    assert.strictEqual(prop2, '');
   });
 });
