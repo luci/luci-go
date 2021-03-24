@@ -160,6 +160,10 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	}
 
 	if c.casFlags.Instance != "" {
+		ctx, err := cas.ContextWithMetadata(ctx)
+		if err != nil {
+			return err
+		}
 		_, err := uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, opts...)
 		return err
 	}
