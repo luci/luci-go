@@ -92,7 +92,7 @@ describe('Invocation Page', () => {
           invocation: 'invocations/invocation-id',
         },
       },
-      input: {},
+      input: { properties: {} },
       output: {
         properties: {},
       },
@@ -135,7 +135,7 @@ describe('Invocation Page', () => {
       builder,
       number: 123,
       id: '1234',
-      input: {},
+      input: { properties: {} },
       output: { properties: {} },
     } as Build);
 
