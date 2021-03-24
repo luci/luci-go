@@ -32,6 +32,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/embeddedkvs"
@@ -287,7 +288,7 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs *embedded
 func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
-	ctx, err := contextWithMetadata(ctx)
+	ctx, err := cas.ContextWithMetadata(ctx)
 	if err != nil {
 		return err
 	}
