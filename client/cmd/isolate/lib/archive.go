@@ -44,7 +44,6 @@ func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c := archiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.isolateFlags.Init(&c.Flags)
-			c.loggingFlags.Init(&c.Flags)
 			c.casFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.Isolated, "isolated", "", ".isolated file to generate")
 			c.Flags.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
@@ -60,7 +59,6 @@ func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 type archiveRun struct {
 	commonServerFlags
 	isolateFlags
-	loggingFlags         loggingFlags
 	casFlags             cas.Flags
 	maxConcurrentChecks  int
 	maxConcurrentUploads int
