@@ -310,7 +310,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         (v) => html`
           <milo-variant-entry-new
             .variant=${v}
-            .columns=${this.invocationState.displayedColumns}
+            .columnGetters=${this.invocationState.displayedColumnGetters}
             .expanded=${this.invocationState.testLoader?.testVariantCount === 1 || (v === firstVariant && expandFirst)}
             .prerender=${true}
             .renderCallback=${this.variantRenderedCallback}

@@ -348,3 +348,28 @@ export async function getInvIdFromBuildNum(builder: BuilderID, buildNum: number)
   const builderId = `${builder.project}/${builder.bucket}/${builder.builder}`;
   return `build-${await sha256(builderId)}-${buildNum}`;
 }
+
+/**
+ * Create a test variant property getter for the given property key.
+ *
+ * A property key must be one of the following:
+ * 1. 'status': status of the test variant.
+ * 2. 'name': test_metadata.name of the test variant.
+ * 3. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
+ * v.gpu).
+ */
+export function createTVPropGetter(propKey: string): (v: TestVariant) => unknown {
+  if (propKey.match(/^v[.]/i)) {
+    const variantKey = propKey.slice(2);
+    return (v) => v.variant?.def[variantKey] || '';
+  }
+  propKey = propKey.toLowerCase();
+  switch (propKey) {
+    case 'status':
+      return (v) => v.status.toString();
+    case 'name':
+      return (v) => v.testMetadata?.name || v.testId;
+    default:
+      throw new Error('');
+  }
+}

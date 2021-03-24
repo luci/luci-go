@@ -19,7 +19,7 @@ import { consumeContext, provideContext } from '../libs/context';
 import { parseSearchQuery } from '../libs/search_query';
 import { TestLoader } from '../models/test_loader';
 import { TestPresentationConfig } from '../services/buildbucket';
-import { Invocation, TestVariant } from '../services/resultdb';
+import { createTVPropGetter, Invocation, TestVariant } from '../services/resultdb';
 import { AppState } from './app_state';
 
 export class QueryInvocationError {
@@ -54,6 +54,9 @@ export class InvocationState {
   }
   @computed({ equals: comparer.shallow }) get displayedColumns() {
     return this.columnsParam || this.defaultColumns;
+  }
+  @computed get displayedColumnGetters() {
+    return this.displayedColumns.map((col) => createTVPropGetter(col));
   }
 
   private disposers: Array<() => void> = [];
