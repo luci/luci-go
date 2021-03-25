@@ -77,9 +77,11 @@ module.exports = (config: Config) => {
       plugins: [
         new DefinePlugin({
           CONFIGS: fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
-          // JS values need to be converted to JSON notation.
+          WORKBOX_PROMISE: 'Promise.race([])',
           ENABLE_GA: JSON.stringify(false),
           VISIT_ID: JSON.stringify('0'),
+          CACHED_ACCESS_TOKEN: JSON.stringify(''),
+          CACHED_USER_ID: JSON.stringify(null),
         }),
         new ProvidePlugin({
           process: 'process/browser',
