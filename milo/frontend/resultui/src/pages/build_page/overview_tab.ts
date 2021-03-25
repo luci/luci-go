@@ -25,6 +25,7 @@ import '../../components/build_step_entry';
 import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
+import '../../components/timestamp';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -39,7 +40,7 @@ import {
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
+import { displayDuration } from '../../libs/time_utils';
 import { renderMarkdown } from '../../libs/utils';
 import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
@@ -290,23 +291,17 @@ export class OverviewTabElement extends MobxLitElement {
       <table>
         <tr>
           <td>Created:</td>
-          <td>${build.createTime.toFormat(LONG_TIME_FORMAT)} (${displayDuration(build.timeSinceCreated)} ago)</td>
+          <td>
+            <milo-timestamp .datetime=${build.createTime}></milo-timestamp>
+          </td>
         </tr>
         <tr>
           <td>Started:</td>
-          <td>
-            ${(build.startTime &&
-              build.startTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceStarted!)} ago)`) ||
-            'N/A'}
-          </td>
+          <td>${build.startTime ? html`<milo-timestamp .datetime=${build.startTime}></milo-timestamp>` : 'N/A'}</td>
         </tr>
         <tr>
           <td>Ended:</td>
-          <td>
-            ${(build.endTime &&
-              build.endTime.toFormat(LONG_TIME_FORMAT) + ` (${displayDuration(build.timeSinceEnded!)} ago)`) ||
-            'N/A'}
-          </td>
+          <td>${build.endTime ? html`<milo-timestamp .datetime=${build.endTime}></milo-timestamp>` : 'N/A'}</td>
         </tr>
         <tr>
           <td>Pending:</td>
