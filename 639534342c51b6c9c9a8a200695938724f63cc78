@@ -87,6 +87,30 @@
       },
       "revId": "639534342c51b6c9c9a8a200695938724f63cc78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c23d41a4_e29cbe37",
+        "filename": "milo/frontend/resultui/src/components/build_tag_row.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T01:39:52Z",
+      "side": 1,
+      "message": "\u003e do you mean we can use safeHrefHtml here\nI\u0027m not sure if that\u0027s helpful. The url can\u0027t be dangerous url like \"javascript:\", so safeHrefHtml won\u0027t do anything.\nAnd safeHrefHtml is quite heavy. It renders the url to an element, use dompurify to sanitise the element, then retrieve the href attribute.\n\nI think we only need to make sure the url constructed by our code is safe. Otherwise, we will need to replace all html`` with safeHrefHtml.",
+      "parentUuid": "4ed68e2f_71541dc2",
+      "range": {
+        "startLine": 33,
+        "startChar": 22,
+        "endLine": 33,
+        "endChar": 28
+      },
+      "revId": "639534342c51b6c9c9a8a200695938724f63cc78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
