@@ -308,6 +308,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f906969d_4f155229",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T03:46:07Z",
+      "side": 1,
+      "message": "ah! I actually choose to do this at the call site[1] (of course, it\u0027s a transactional task). I think from the API point of view, it should just tell the caller whether you\u0027ve successfully acquired the slot or wait till I notify you it\u0027s your turn. It should be the caller\u0027s responsibility ensure that it doesn\u0027t hold the slot forever in case of failure.\n\n[1]: https://crrev.com/c/2770969/4/cv/internal/run/impl/handler/verification_completed.go#125",
+      "parentUuid": "ab218aee_7c92f93b",
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8abdd3a3_086d8a58",
         "filename": "cv/internal/run/impl/submit/queue_test.go",
         "patchSetId": 6
