@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27fdb5ed_0e737239",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T03:23:33Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6835/overview\n\nYou can run\ngapi.auth2.getAuthInstance().currentUser.get().reloadAuthResponse()\nin the console to force updating the token.",
+      "revId": "aa281b0b6969e50958ce4e20a5f69659a7c84a18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
