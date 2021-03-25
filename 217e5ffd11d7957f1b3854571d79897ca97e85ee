@@ -16,6 +16,24 @@
       "message": "Demo: https://weiweilin-6-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6835/test-results-new\n\ndemo is hard coded to use [\u0027test_suite\u0027, \u0027status\u0027] as grouping keys.\n",
       "revId": "217e5ffd11d7957f1b3854571d79897ca97e85ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a35d3b39_e7411e00",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T03:56:59Z",
+      "side": 1,
+      "message": "new demo link:\nhttps://weiweilin-6-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6835/test-results-new?cols\u003d\u0026groupby\u003dv.test_suite%2Cstatus",
+      "parentUuid": "3d947355_0e793cbd",
+      "revId": "217e5ffd11d7957f1b3854571d79897ca97e85ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
