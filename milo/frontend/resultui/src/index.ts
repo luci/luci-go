@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Workbox } from 'workbox-window';
 import './routes';
 
-if ('serviceWorker' in navigator) {
+window.SW_PROMISE = new Promise((resolve) => {
   // Don't cache resources in development mode. Otherwise we will need to
   // refresh the page manually for changes to take effect.
-  if (PRODUCTION) {
-    window.addEventListener(
-      'load',
-      async () => {
-        const registration = await navigator.serviceWorker.register('/ui/service-worker.js');
-        console.log('UI SW registered: ', registration);
-      },
-      { once: true }
-    );
+  if (PRODUCTION && 'serviceWorker' in navigator) {
+    const wb = new Workbox('/ui/service-worker.js');
+    wb.register({ immediate: true }).then((registration) => {
+      console.log('UI SW registered: ', registration);
+      resolve(wb);
+    });
   }
+});
 
+if ('serviceWorker' in navigator) {
   if (!document.cookie.includes('showNewBuildPage=false')) {
     window.addEventListener(
       'load',
