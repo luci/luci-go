@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PrpcClient } from '@chopsui/prpc-client';
-
 import { cached, CacheOption } from '../libs/cached_fn';
+import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { parseProtoDuration } from '../libs/time_utils';
 import { timeout } from '../libs/utils';
 
@@ -293,8 +292,8 @@ export class BuildsService {
   private static SERVICE = 'buildbucket.v2.Builds';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({ host, accessToken });
+  constructor(readonly host: string, getAccessToken: () => string) {
+    const client = new PrpcClientExt({ host }, getAccessToken);
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(BuildsService.SERVICE, method, message),
       {
@@ -338,8 +337,8 @@ export class BuildersService {
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({ host, accessToken });
+  constructor(readonly host: string, getAccessToken: () => string) {
+    const client = new PrpcClientExt({ host }, getAccessToken);
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(BuildersService.SERVICE, method, message),
       { key: (method, message) => `${method}-${JSON.stringify(message)}` }
@@ -359,8 +358,8 @@ export class AccessService {
     req: PermittedActionsRequest
   ) => Promise<PermittedActionsResponse>;
 
-  constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({ host, accessToken });
+  constructor(readonly host: string, getAccessToken: () => string) {
+    const client = new PrpcClientExt({ host }, getAccessToken);
 
     // TODO(weiweilin): access service can be unreliable.
     // Try to cache this in service worker or localStorage.
