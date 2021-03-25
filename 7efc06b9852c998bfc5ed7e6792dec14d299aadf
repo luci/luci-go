@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b187439_c9565d04",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-25T00:52:19Z",
+      "side": 1,
+      "message": "nit: include",
+      "range": {
+        "startLine": 120,
+        "startChar": 32,
+        "endLine": 120,
+        "endChar": 40
+      },
+      "revId": "7efc06b9852c998bfc5ed7e6792dec14d299aadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
