@@ -290,6 +290,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ab218aee_7c92f93b",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-25T01:17:49Z",
+      "side": 1,
+      "message": "We must send event even if queue is required right away -- otherwise the RM may not know that it has acquired it if RM crashes right after acquisition.",
+      "parentUuid": "3b6c6a4e_436d1176",
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8abdd3a3_086d8a58",
         "filename": "cv/internal/run/impl/submit/queue_test.go",
         "patchSetId": 6
