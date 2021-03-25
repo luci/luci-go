@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "45a3ad2c_0a017289",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T00:53:34Z",
+      "side": 1,
+      "message": "both",
+      "parentUuid": "3b144f0b_da246cfe",
+      "range": {
+        "startLine": 82,
+        "startChar": 13,
+        "endLine": 82,
+        "endChar": 15
+      },
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e2fb4277_0659bf32",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-19T02:36:34Z",
       "side": 1,
       "message": "nit: use either quota or rate limit. I prefer rate limit.",
+      "range": {
+        "startLine": 88,
+        "startChar": 56,
+        "endLine": 88,
+        "endChar": 72
+      },
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14fe7bbd_e9341af7",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T00:53:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2fb4277_0659bf32",
       "range": {
         "startLine": 88,
         "startChar": 56,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c1fddf4_d154cf04",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T00:53:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8684a384_3b6eeeb0",
+      "range": {
+        "startLine": 127,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 33
+      },
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2dfb0f90_6660db79",
@@ -93,6 +165,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f311f333_8c241a5b",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T00:53:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2dfb0f90_6660db79",
+      "range": {
+        "startLine": 141,
+        "startChar": 0,
+        "endLine": 142,
+        "endChar": 76
+      },
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a88824e_fa788c59",
@@ -106,6 +202,30 @@
       "writtenOn": "2021-03-19T02:36:34Z",
       "side": 1,
       "message": "nit (cont.) \n  q.Current, q.Waitlist \u003d q.Waitlist[0], q.Waitlist[1:]   // typical, so ok to keep 😊\n  shouldSave \u003d true",
+      "range": {
+        "startLine": 149,
+        "startChar": 39,
+        "endLine": 149,
+        "endChar": 68
+      },
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "faf3c70d_adcbdb09",
+        "filename": "cv/internal/run/impl/submit/queue.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T00:53:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a88824e_fa788c59",
       "range": {
         "startLine": 149,
         "startChar": 39,
@@ -152,6 +272,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3b6c6a4e_436d1176",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T00:53:34Z",
+      "side": 1,
+      "message": "I think run event will only sent when queue gets rate limited and decides to put it in waitlist first but not when a slot can be acquired right away.\n\nI will add the test when I implement rate limit functionalities.\n\nOr do you mean we should send the event regardless?",
+      "parentUuid": "c2436c9f_64187f62",
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8abdd3a3_086d8a58",
         "filename": "cv/internal/run/impl/submit/queue_test.go",
         "patchSetId": 6
@@ -163,6 +301,30 @@
       "writtenOn": "2021-03-19T02:36:34Z",
       "side": 1,
       "message": "the",
+      "range": {
+        "startLine": 122,
+        "startChar": 18,
+        "endLine": 122,
+        "endChar": 19
+      },
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a72365d3_4ec32b0c",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T00:53:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8abdd3a3_086d8a58",
       "range": {
         "startLine": 122,
         "startChar": 18,
@@ -186,6 +348,24 @@
       "writtenOn": "2021-03-19T02:36:34Z",
       "side": 1,
       "message": "also, please assert notification event was sent.",
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c84df48_1b70fc2e",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-25T00:53:34Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "5550e7fa_c0af4025",
       "revId": "aea101c7f5631378e6605468e864114e57335d2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
