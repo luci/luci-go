@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b55b5f83_06ba2086",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T00:47:31Z",
+      "side": 1,
+      "message": "Added doc-string to the relevant public properties.\nThis will appear in a few places, documenting it everywhere seems a bit excessive.",
+      "parentUuid": "1e786d60_5338131f",
+      "range": {
+        "startLine": 133,
+        "startChar": 30,
+        "endLine": 133,
+        "endChar": 59
+      },
+      "revId": "07374b755ce0e1193014774f7be458e5b38ae239",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "aece238e_dab8f7cf",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-25T00:22:12Z",
       "side": 1,
       "message": "The description is \u0027should not return empty groups\u0027, but you are checking if it is empty?",
+      "range": {
+        "startLine": 551,
+        "startChar": 8,
+        "endLine": 551,
+        "endChar": 38
+      },
+      "revId": "07374b755ce0e1193014774f7be458e5b38ae239",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a752b5cc_c6d6f5d9",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 551,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T00:47:31Z",
+      "side": 1,
+      "message": "[] means there are no groups.\n[[]] means there is one empty group.\nAdded a comment to clarify that.",
+      "parentUuid": "aece238e_dab8f7cf",
       "range": {
         "startLine": 551,
         "startChar": 8,
