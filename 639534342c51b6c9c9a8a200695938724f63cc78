@@ -63,6 +63,30 @@
       },
       "revId": "639534342c51b6c9c9a8a200695938724f63cc78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ed68e2f_71541dc2",
+        "filename": "milo/frontend/resultui/src/components/build_tag_row.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-25T00:53:38Z",
+      "side": 1,
+      "message": "do you mean we can use safeHrefHtml here? sgtm",
+      "parentUuid": "129457e9_98ac8bdc",
+      "range": {
+        "startLine": 33,
+        "startChar": 22,
+        "endLine": 33,
+        "endChar": 28
+      },
+      "revId": "639534342c51b6c9c9a8a200695938724f63cc78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
