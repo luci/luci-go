@@ -111,6 +111,30 @@
       },
       "revId": "639534342c51b6c9c9a8a200695938724f63cc78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2550c585_7c246a14",
+        "filename": "milo/frontend/resultui/src/components/build_tag_row.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-25T05:56:37Z",
+      "side": 1,
+      "message": "ok, can you then rename getUrlFromBuildset to something like getSafeUrlFromBuildset?",
+      "parentUuid": "c23d41a4_e29cbe37",
+      "range": {
+        "startLine": 33,
+        "startChar": 22,
+        "endLine": 33,
+        "endChar": 28
+      },
+      "revId": "639534342c51b6c9c9a8a200695938724f63cc78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
