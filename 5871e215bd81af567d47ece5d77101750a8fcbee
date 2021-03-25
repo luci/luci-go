@@ -94,6 +94,30 @@
       },
       "revId": "5871e215bd81af567d47ece5d77101750a8fcbee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "197e9f27_2388e0c1",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-25T05:55:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "adfb4ca5_9f41c94c",
+      "range": {
+        "startLine": 105,
+        "startChar": 54,
+        "endLine": 105,
+        "endChar": 58
+      },
+      "revId": "5871e215bd81af567d47ece5d77101750a8fcbee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

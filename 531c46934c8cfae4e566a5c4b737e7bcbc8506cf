@@ -22,6 +22,30 @@
       },
       "revId": "531c46934c8cfae4e566a5c4b737e7bcbc8506cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b56fe304_5a226f13",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-25T05:55:36Z",
+      "side": 1,
+      "message": "idk. I think we better not to assume the valid chars of gerrit projects.\n\nI think checking the host is enough. We trust everything on *.googlesource.com because we trust googlesource.com. Therefore I recommend\n\n   ([\\w-]+\\.googlesource\\.com\\/.+)",
+      "parentUuid": "ba6e4ce5_b5a2164e",
+      "range": {
+        "startLine": 105,
+        "startChar": 80,
+        "endLine": 105,
+        "endChar": 86
+      },
+      "revId": "531c46934c8cfae4e566a5c4b737e7bcbc8506cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
