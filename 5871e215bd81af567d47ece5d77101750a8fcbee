@@ -22,6 +22,30 @@
       },
       "revId": "5871e215bd81af567d47ece5d77101750a8fcbee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2dd86025_695aba0e",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T00:06:23Z",
+      "side": 1,
+      "message": "Made the regex stricter. I\u0027m not sure if this actually helps however.\n\nIf we are worrying about `javascript:` URLs, *I think* that shouldn\u0027t be an issue because we always have \u0027https://\u0027 prefix.\njclinton@ could you give me some feedback on this?\n\nIf we are worrying about sending users to random websites, then we will need to constrain the host. (what are the valid hosts? [*.]googlesource.com?).",
+      "parentUuid": "7d781c4a_7fce4787",
+      "range": {
+        "startLine": 105,
+        "startChar": 54,
+        "endLine": 105,
+        "endChar": 58
+      },
+      "revId": "5871e215bd81af567d47ece5d77101750a8fcbee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
