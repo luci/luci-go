@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc57eee9_7fbf8019",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T07:39:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5b43366_7f749e49",
+      "revId": "bf7f69928dce04f564c820cf243f5dd49b76e655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "08a4b325_80d0f1bf",
@@ -41,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9ea937c_241291bf",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T07:39:47Z",
+      "side": 1,
+      "message": "It\u0027s not possible but combining them does make the code cleaner.\nUpdated.",
+      "parentUuid": "08a4b325_80d0f1bf",
+      "range": {
+        "startLine": 179,
+        "startChar": 41,
+        "endLine": 179,
+        "endChar": 62
+      },
+      "revId": "bf7f69928dce04f564c820cf243f5dd49b76e655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "005992db_e294640a",
@@ -54,6 +96,30 @@
       "writtenOn": "2021-03-25T05:50:26Z",
       "side": 1,
       "message": "maybe not for this CL, but the fact that keys and values are not aligned across rows makes it a bit hard to read: https://screenshot.googleplex.com/6eJNQjmJqHgkofV\n\nnot sure how easy it is to align them, though",
+      "range": {
+        "startLine": 271,
+        "startChar": 43,
+        "endLine": 271,
+        "endChar": 47
+      },
+      "revId": "bf7f69928dce04f564c820cf243f5dd49b76e655",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82049c6b_14aacd75",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T07:39:47Z",
+      "side": 1,
+      "message": "I\u0027ll address this in a future CL.",
+      "parentUuid": "005992db_e294640a",
       "range": {
         "startLine": 271,
         "startChar": 43,
