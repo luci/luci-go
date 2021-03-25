@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PrpcClient } from '@chopsui/prpc-client';
-
 import { cached, CacheOption } from '../libs/cached_fn';
+import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { sha256 } from '../libs/utils';
 import { BuilderID } from './buildbucket';
 
@@ -239,8 +238,8 @@ export class ResultDb {
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({ host, accessToken });
+  constructor(readonly host: string, getAccessToken: () => string) {
+    const client = new PrpcClientExt({ host }, getAccessToken);
     this.cachedCallFn = cached((method: string, message: object) => client.call(ResultDb.SERVICE, method, message), {
       key: (method, message) => `${method}-${JSON.stringify(message)}`,
     });
@@ -276,8 +275,8 @@ export class UISpecificService {
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(readonly host: string, accessToken: string) {
-    const client = new PrpcClient({ host, accessToken });
+  constructor(readonly host: string, getAccessToken: () => string) {
+    const client = new PrpcClientExt({ host }, getAccessToken);
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(UISpecificService.SERVICE, method, message),
       { key: (method, message) => `${method}-${JSON.stringify(message)}` }

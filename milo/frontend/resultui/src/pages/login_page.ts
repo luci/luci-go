@@ -40,7 +40,7 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
   connectedCallback() {
     super.connectedCallback();
     when(
-      () => !!this.appState.accessToken,
+      () => !!this.appState.userId,
       () => Router.go(this.redirectUri)
     );
   }

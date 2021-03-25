@@ -48,7 +48,7 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
 
   constructor() {
     super();
-    gAuthPromise.then((gAuth) => (this.appState.gAuth = gAuth)).catch(() => (this.appState.accessToken = ''));
+    gAuthPromise.then((gAuth) => (this.appState.gAuth = gAuth)).catch(() => (this.appState.userId = ''));
   }
 
   errorHandler = (event: ErrorEvent) => {
@@ -107,6 +107,7 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
                 .gAuth=${this.appState.gAuth}
                 @user-update=${(e: UserUpdateEvent) => {
                   this.appState.accessToken = e.detail.getAuthResponse().access_token || '';
+                  this.appState.userId = e.detail.isSignedIn() ? e.detail.getId() : '';
                 }}
               ></milo-signin>`
             : ''}
