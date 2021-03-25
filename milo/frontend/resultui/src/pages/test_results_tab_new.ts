@@ -31,16 +31,16 @@ import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../libs/analytics_utils';
-import {
-  VARIANT_STATUS_CLASS_MAP,
-  VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE,
-  VARIANT_STATUS_ICON_MAP,
-} from '../libs/constants';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
 const DEFAULT_COLUMN_WIDTH = Object.freeze<{ [key: string]: string }>({
   'v.test_suite': '350px',
 });
+
+function getColumnLabel(key: string) {
+  // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
+  return key.split('.', 2)[1] ?? key;
+}
 
 /**
  * Display a list of test results.
@@ -169,43 +169,15 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
 
   private renderAllVariants() {
     const testLoader = this.invocationState.testLoader;
+    const groupers = this.invocationState.groupers;
     return html`
-      ${this.renderVariants(
-        TestVariantStatus.UNEXPECTED,
-        testLoader?.unexpectedTestVariants || [],
-        this.invocationState.showUnexpectedVariants,
-        (display) => (this.invocationState.showUnexpectedVariants = display),
-        testLoader?.loadedAllUnexpectedVariants || false,
-        true
+      ${(testLoader?.groupedNonExpectedVariants || []).map((group) =>
+        this.renderVariantGroup(
+          groupers.map(([key, getter]) => [key, getter(group[0])]),
+          group
+        )
       )}
-      ${this.renderVariants(
-        TestVariantStatus.UNEXPECTEDLY_SKIPPED,
-        testLoader?.unexpectedlySkippedTestVariants || [],
-        this.invocationState.showUnexpectedlySkippedVariants,
-        (display) => (this.invocationState.showUnexpectedlySkippedVariants = display),
-        testLoader?.loadedAllUnexpectedlySkippedVariants || false
-      )}
-      ${this.renderVariants(
-        TestVariantStatus.FLAKY,
-        testLoader?.flakyTestVariants || [],
-        this.invocationState.showFlakyVariants,
-        (display) => (this.invocationState.showFlakyVariants = display),
-        testLoader?.loadedAllFlakyVariants || false
-      )}
-      ${this.renderVariants(
-        TestVariantStatus.EXONERATED,
-        testLoader?.exoneratedTestVariants || [],
-        this.invocationState.showExoneratedVariants,
-        (display) => (this.invocationState.showExoneratedVariants = display),
-        testLoader?.loadedAllExoneratedVariants || false
-      )}
-      ${this.renderVariants(
-        TestVariantStatus.EXPECTED,
-        testLoader?.expectedTestVariants || [],
-        this.invocationState.showExpectedVariants,
-        (display) => (this.invocationState.showExpectedVariants = display),
-        testLoader?.loadedAllExpectedVariants || false
-      )}
+      ${this.renderVariantGroup([['status', TestVariantStatus.EXPECTED]], testLoader?.expectedTestVariants || [])}
       <div id="variant-list-tail">
         Showing ${testLoader?.testVariantCount || 0} /
         ${testLoader?.unfilteredTestVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'} tests.
@@ -271,47 +243,39 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     }
   }
 
-  private renderVariants(
-    status: TestVariantStatus,
-    variants: TestVariant[],
-    display: boolean,
-    toggleDisplay: (display: boolean) => void,
-    fullyLoaded: boolean,
-    expandFirst = false
-  ) {
-    const variantCountLabel = `${variants.length}${fullyLoaded ? '' : '+'}`;
-    if (variants.length === 0 && !this.invocationState.showEmptyGroups) {
-      return html``;
-    }
-    const firstVariant = variants[0];
+  @observable private collapsedVariantGroups = new Set<string>();
+  private renderVariantGroup(groupDef: [string, unknown][], variants: TestVariant[]) {
+    const groupId = JSON.stringify(groupDef);
+    const expanded = !this.collapsedVariantGroups.has(groupId);
     return html`
       <div
         class=${classMap({
-          expanded: display,
+          expanded,
           empty: variants.length === 0,
           'group-header': true,
         })}
-        @click=${() => toggleDisplay(!display)}
+        @click=${() => {
+          if (expanded) {
+            this.collapsedVariantGroups.add(groupId);
+          } else {
+            this.collapsedVariantGroups.delete(groupId);
+          }
+        }}
       >
-        <mwc-icon class="group-icon">${display ? 'expand_more' : 'chevron_right'}</mwc-icon>
-        <mwc-icon class=${'group-icon ' + VARIANT_STATUS_CLASS_MAP[status]}
-          >${VARIANT_STATUS_ICON_MAP[status]}</mwc-icon
-        >
-        <div class="group-title">
-          ${VARIANT_STATUS_DISPLAY_MAP_TITLE_CASE[status]} (${variantCountLabel})
-          <span class="active-text" style=${styleMap({ display: fullyLoaded ? 'none' : '' })}
-            >${this.renderLoadMore(status)}</span
-          >
+        <mwc-icon class="group-icon">${expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
+        <div>
+          <b>${variants.length} test variant${variants.length === 1 ? '' : 's'}:</b>
+          ${groupDef.map(([k, v]) => html`<span class="group-kv"><span>${getColumnLabel(k)}=</span><b>${v}</b></span>`)}
         </div>
       </div>
       ${repeat(
-        display ? variants : [],
+        expanded ? variants : [],
         (v) => `${v.testId} ${v.variantHash}`,
         (v) => html`
           <milo-variant-entry-new
             .variant=${v}
             .columnGetters=${this.invocationState.displayedColumnGetters}
-            .expanded=${this.invocationState.testLoader?.testVariantCount === 1 || (v === firstVariant && expandFirst)}
+            .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
             .prerender=${true}
             .renderCallback=${this.variantRenderedCallback}
             .expandedCallback=${this.variantExpandedCallback}
@@ -368,7 +332,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         <div id="table-header">
           <div><!-- Expand toggle --></div>
           <div title="variant status">&nbsp&nbspS</div>
-          ${this.invocationState.displayedColumns.map((col) => html`<div title=${col}>${col.split('.', 2)[1]}</div>`)}
+          ${this.invocationState.displayedColumns.map((col) => html`<div title=${col}>${getColumnLabel(col)}</div>`)}
           <div title="test name">Name</div>
         </div>
 
@@ -490,27 +454,31 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       display: grid;
       grid-template-columns: auto auto 1fr;
       grid-gap: 5px;
-      font-weight: bold;
       padding: 2px 2px 2px 10px;
       position: sticky;
-      background-color: white;
+      font-size: 14px;
+      background-color: var(--block-background-color);
       border-top: 1px solid var(--divider-color);
       top: -1px;
       cursor: pointer;
       user-select: none;
-    }
-    .group-title {
       line-height: 24px;
     }
     .group-header:first-child {
       top: 0px;
       border-top: none;
     }
-    .group-header.expanded {
-      background-color: var(--block-background-color);
-    }
     .group-header.expanded:not(.empty) {
       border-bottom: 1px solid var(--divider-color);
+    }
+    .group-kv:not(:last-child)::after {
+      content: ', ';
+    }
+    .group-kv > span {
+      color: var(--light-text-color);
+    }
+    .group-kv > b {
+      font-style: italic;
     }
 
     .unexpected {

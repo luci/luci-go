@@ -17,7 +17,7 @@ import chai from 'chai';
 import sinon from 'sinon';
 
 import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
-import { TestVariantStatus, UISpecificService } from '../services/resultdb';
+import { createTVPropGetter, TestVariantStatus, UISpecificService } from '../services/resultdb';
 import { LoadingStage, TestLoader } from './test_loader';
 
 chai.use(chaiRecursiveDeepInclude);
@@ -554,7 +554,7 @@ describe('TestLoader', () => {
     });
 
     it('should group test variants correctly', async () => {
-      testLoader.groupByPropGetters = [(v) => v.status];
+      testLoader.groupers = [['status', createTVPropGetter('status')]];
       await testLoader.loadNextTestVariants();
       await testLoader.loadNextTestVariants();
 
@@ -567,7 +567,10 @@ describe('TestLoader', () => {
     });
 
     it('should support multiple grouping keys', async () => {
-      testLoader.groupByPropGetters = [(v) => v.status, (v) => v.variant?.def['key1']];
+      testLoader.groupers = [
+        ['status', createTVPropGetter('status')],
+        ['v.key1', createTVPropGetter('v.key1')],
+      ];
       await testLoader.loadNextTestVariants();
       await testLoader.loadNextTestVariants();
 
