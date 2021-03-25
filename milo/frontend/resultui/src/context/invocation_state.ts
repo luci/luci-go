@@ -59,6 +59,17 @@ export class InvocationState {
     return this.displayedColumns.map((col) => createTVPropGetter(col));
   }
 
+  @observable.ref groupingKeysParam?: string[];
+  @computed({ equals: comparer.shallow }) get defaultGroupingKeys() {
+    return this.presentationConfig.groupingKeys || ['status'];
+  }
+  @computed({ equals: comparer.shallow }) get groupingKeys() {
+    return this.groupingKeysParam || this.defaultGroupingKeys;
+  }
+  @computed get groupers(): Array<[string, (v: TestVariant) => unknown]> {
+    return this.groupingKeys.map((key) => [key, createTVPropGetter(key)]);
+  }
+
   private disposers: Array<() => void> = [];
   constructor(private appState: AppState) {
     this.disposers.push(
@@ -77,6 +88,7 @@ export class InvocationState {
           return;
         }
         this.testLoader.filter = this.searchFilter;
+        this.testLoader.groupers = this.groupers;
       })
     );
   }
