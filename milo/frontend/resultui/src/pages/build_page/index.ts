@@ -189,7 +189,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         const err = this.buildState.build$.value as GrpcError;
         // If the build is not found and the user is not logged in, redirect
         // them to the login page.
-        if (err.code === RpcCode.NOT_FOUND && this.appState.accessToken === '') {
+        if (err.code === RpcCode.NOT_FOUND && this.appState.userId === '') {
           Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
           return;
         }

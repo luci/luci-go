@@ -23,10 +23,13 @@ import { ResultDb, UISpecificService } from '../services/resultdb';
  * Records the app-level state.
  */
 export class AppState {
-  // null means the access token is uninitialized (i.e. we don't know whether
+  // Don't make this an observable so services won't be refreshed after updating
+  // the access token.
+  accessToken = '';
+  // null means the userId is uninitialized (i.e. we don't know whether
   // the user is logged in or not).
-  // '' means there's no access token (i.e. the user is not logged in).
-  @observable.ref accessToken: string | null = null;
+  // '' means the user is not logged in.
+  @observable.ref userId: string | null = null;
   @observable.ref selectedTabId = '';
   @observable.ref selectedBlamelistPinIndex = 0;
 
@@ -51,50 +54,50 @@ export class AppState {
 
   @computed
   get resultDb(): ResultDb | null {
-    if (this.accessToken === null) {
+    if (this.userId === null) {
       return null;
     }
-    return new ResultDb(CONFIGS.RESULT_DB.HOST, this.accessToken);
+    return new ResultDb(CONFIGS.RESULT_DB.HOST, () => this.accessToken);
   }
 
   @computed
   get uiSpecificService(): UISpecificService | null {
-    if (this.accessToken === null) {
+    if (this.userId === null) {
       return null;
     }
-    return new UISpecificService(CONFIGS.RESULT_DB.HOST, this.accessToken);
+    return new UISpecificService(CONFIGS.RESULT_DB.HOST, () => this.accessToken);
   }
 
   @computed
   get milo(): MiloInternal | null {
-    if (this.accessToken === null) {
+    if (this.userId === null) {
       return null;
     }
-    return new MiloInternal(this.accessToken);
+    return new MiloInternal(() => this.accessToken);
   }
 
   @computed
   get buildsService(): BuildsService | null {
-    if (this.accessToken === null) {
+    if (this.userId === null) {
       return null;
     }
-    return new BuildsService(CONFIGS.BUILDBUCKET.HOST, this.accessToken);
+    return new BuildsService(CONFIGS.BUILDBUCKET.HOST, () => this.accessToken);
   }
 
   @computed
   get buildersService(): BuildersService | null {
-    if (this.accessToken === null) {
+    if (this.userId === null) {
       return null;
     }
-    return new BuildersService(CONFIGS.BUILDBUCKET.HOST, this.accessToken);
+    return new BuildersService(CONFIGS.BUILDBUCKET.HOST, () => this.accessToken);
   }
 
   @computed
   get accessService(): AccessService | null {
-    if (this.accessToken === null) {
+    if (this.userId === null) {
       return null;
     }
-    return new AccessService(CONFIGS.BUILDBUCKET.HOST, this.accessToken);
+    return new AccessService(CONFIGS.BUILDBUCKET.HOST, () => this.accessToken);
   }
 }
 

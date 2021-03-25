@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PrpcClient } from '@chopsui/prpc-client';
-
 import { cached, CacheOption } from '../libs/cached_fn';
+import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { BuilderID, GitilesCommit } from './buildbucket';
 
 /**
@@ -78,8 +77,8 @@ export class MiloInternal {
   private static SERVICE = 'luci.milo.v1.MiloInternal';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(accessToken: string) {
-    const client = new PrpcClient({ host: '', accessToken });
+  constructor(getAccessToken: () => string) {
+    const client = new PrpcClientExt({ host: '' }, getAccessToken);
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(MiloInternal.SERVICE, method, message),
       {
