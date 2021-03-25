@@ -17,6 +17,7 @@
  * results and exonerations from resultDb to a TestNode.
  */
 
+import { groupBy } from 'lodash-es';
 import { action, computed, observable } from 'mobx';
 
 import {
@@ -64,6 +65,7 @@ export class LoadTestVariantsError {
  */
 export class TestLoader {
   @observable.ref filter = (_v: TestVariant) => true;
+  @observable.ref groupByPropGetters: Array<(v: TestVariant) => unknown> = [];
 
   @computed get isLoading() {
     return !this.loadedAllVariants && this.loadingReqCount !== 0;
@@ -98,6 +100,29 @@ export class TestLoader {
     );
   }
 
+  /**
+   * non-expected test variants grouped by keys from groupByPropGetters.
+   * expected test variants are not included.
+   */
+  @computed get groupedNonExpectedVariants() {
+    if (this.nonExpectedTestVariants.length === 0) {
+      return [];
+    }
+
+    let groups = [this.nonExpectedTestVariants];
+    for (const propGetter of this.groupByPropGetters) {
+      groups = groups.flatMap((group) => Object.values(groupBy(group, (v) => propGetter(v))));
+    }
+    return groups;
+  }
+
+  /**
+   * non-expected test variants include test variants of any status except
+   * TestVariantStatus.Expected.
+   */
+  @computed get nonExpectedTestVariants() {
+    return this.unfilteredNonExpectedVariants.filter(this.filter);
+  }
   @computed get unexpectedTestVariants() {
     return this.unfilteredUnexpectedVariants.filter(this.filter);
   }
@@ -114,6 +139,7 @@ export class TestLoader {
     return this.unfilteredExpectedVariants.filter(this.filter);
   }
 
+  @observable.shallow private unfilteredNonExpectedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredUnexpectedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredUnexpectedlySkippedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredFlakyVariants: TestVariant[] = [];
@@ -249,18 +275,22 @@ export class TestLoader {
         case TestVariantStatus.UNEXPECTED:
           this._stage = LoadingStage.LoadingUnexpected;
           this.unfilteredUnexpectedVariants.push(testVariant);
+          this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
           this._stage = LoadingStage.LoadingUnexpectedlySkipped;
           this.unfilteredUnexpectedlySkippedVariants.push(testVariant);
+          this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.FLAKY:
           this._stage = LoadingStage.LoadingFlaky;
           this.unfilteredFlakyVariants.push(testVariant);
+          this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.EXONERATED:
           this._stage = LoadingStage.LoadingExonerated;
           this.unfilteredExoneratedVariants.push(testVariant);
+          this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.EXPECTED:
           this._stage = LoadingStage.LoadingExpected;
