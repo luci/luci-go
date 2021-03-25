@@ -16,6 +16,92 @@
       "message": "Demo: https://weiweilin-4-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6042/overview\n",
       "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9657355_b610e42d",
+        "filename": "milo/frontend/resultui/src/components/timestamp.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-25T00:58:37Z",
+      "side": 1,
+      "message": "why do we create a tooltip and render it when trying to hide it?",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 75,
+        "endChar": 0
+      },
+      "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be42d025_ab3b7aef",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-25T00:58:37Z",
+      "side": 1,
+      "message": "let\u0027s use \"PT\". It is more inclusive, e.g. folks in Seattle.",
+      "range": {
+        "startLine": 52,
+        "startChar": 12,
+        "endLine": 52,
+        "endChar": 15
+      },
+      "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7cfb6a3a_189d3a2a",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-25T00:58:37Z",
+      "side": 1,
+      "message": "what if we need timestamp on another page or tab? as a user, I\u0027d expect the entire milo application to use the same timezones. Why not define this as the default inside \u003cmilo-timestamp\u003e",
+      "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3cac6e4_57d9b897",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-25T00:58:37Z",
+      "side": 1,
+      "message": "should this be the default too?",
+      "range": {
+        "startLine": 309,
+        "startChar": 24,
+        "endLine": 309,
+        "endChar": 40
+      },
+      "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
