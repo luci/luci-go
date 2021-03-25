@@ -25,11 +25,11 @@ import { ResultDb, UISpecificService } from '../services/resultdb';
 export class AppState {
   // Don't make this an observable so services won't be refreshed after updating
   // the access token.
-  accessToken = '';
+  accessToken = CACHED_ACCESS_TOKEN;
   // null means the userId is uninitialized (i.e. we don't know whether
   // the user is logged in or not).
   // '' means the user is not logged in.
-  @observable.ref userId: string | null = null;
+  @observable.ref userId: string | null = CACHED_USER_ID;
   @observable.ref selectedTabId = '';
   @observable.ref selectedBlamelistPinIndex = 0;
 
