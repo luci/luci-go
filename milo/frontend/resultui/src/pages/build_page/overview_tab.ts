@@ -21,6 +21,7 @@ import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
+import '../../components/build_tag_row';
 import '../../components/build_step_entry';
 import '../../components/link';
 import '../../components/log';
@@ -332,14 +333,7 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       <h3>Tags</h3>
       <table>
-        ${tags.map(
-          (tag) => html`
-            <tr>
-              <td>${tag.key}:</td>
-              <td>${tag.value}</td>
-            </tr>
-          `
-        )}
+        ${tags.map((tag) => html` <milo-build-tag-row .key=${tag.key} .value=${tag.value}> </milo-build-tag-row> `)}
       </table>
     `;
   }
