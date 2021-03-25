@@ -14,7 +14,7 @@
 
 import { assert } from 'chai';
 
-import { getBuildbucketLink, getLogdogRawUrl } from './build_utils';
+import { getBuildbucketLink, getLogdogRawUrl, getSafeUrlFromBuildset } from './build_utils';
 
 describe('Build Utils Tests', () => {
   describe('Get Logdog URL', () => {
@@ -51,6 +51,23 @@ describe('Build Utils Tests', () => {
         buildbucketLink.url,
         // eslint-disable-next-line max-len
         'https://cr-buildbucket-dev.appspot.com/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?request=%7B%22id%22%3A%22123%22%7D'
+      );
+    });
+  });
+
+  describe('getSafeUrlFromBuildset', () => {
+    it('should get the correct gerrit url', async () => {
+      const url = getSafeUrlFromBuildset('patch/gerrit/chromium-review.googlesource.com/2365643/6');
+      assert.strictEqual(url, 'https://chromium-review.googlesource.com/c/2365643/6');
+    });
+
+    it('should get the correct gitiles url', async () => {
+      const url = getSafeUrlFromBuildset(
+        'commit/gitiles/chromium.googlesource.com/chromium/src/+/6ae002709a6e0df5f61428d962e44a62920e76e1'
+      );
+      assert.strictEqual(
+        url,
+        'https://chromium.googlesource.com/chromium/src/+/6ae002709a6e0df5f61428d962e44a62920e76e1'
       );
     });
   });
