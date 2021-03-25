@@ -136,6 +136,10 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       const cols = searchParams.get('cols')!;
       this.invocationState.columnsParam = cols.split(',').filter((col) => col !== '');
     }
+    if (searchParams.has('groupby')) {
+      const groupingKeys = searchParams.get('groupby')!;
+      this.invocationState.groupingKeysParam = groupingKeys.split(',').filter((key) => key !== '');
+    }
 
     // Update the querystring when filters are updated.
     this.disposers.push(
@@ -143,10 +147,14 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         () => {
           const displayedCols = this.invocationState.displayedColumns.join(',');
           const defaultCols = this.invocationState.defaultColumns.join(',');
+          const groupingKeys = this.invocationState.groupingKeys.join(',');
+          const defaultGroupingKeys = this.invocationState.defaultGroupingKeys.join(',');
+
           const newSearchParams = new URLSearchParams({
             ...(!this.invocationState.searchText ? {} : { q: this.invocationState.searchText }),
             ...(this.invocationState.showEmptyGroups ? {} : { clean: '' }),
             ...(displayedCols === defaultCols ? {} : { cols: displayedCols }),
+            ...(groupingKeys === defaultGroupingKeys ? {} : { groupby: groupingKeys }),
           });
           const newSearchParamsStr = newSearchParams.toString();
           return newSearchParamsStr ? '?' + newSearchParamsStr : '';
