@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5762937_bfcc23fc",
+        "filename": "milo/frontend/resultui/src/components/timestamp.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T01:21:06Z",
+      "side": 1,
+      "message": "oops. Forget to delete it after copy pasting.",
+      "parentUuid": "e9657355_b610e42d",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 75,
+        "endChar": 0
+      },
+      "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be42d025_ab3b7aef",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-03-25T00:58:37Z",
       "side": 1,
       "message": "let\u0027s use \"PT\". It is more inclusive, e.g. folks in Seattle.",
+      "range": {
+        "startLine": 52,
+        "startChar": 12,
+        "endLine": 52,
+        "endChar": 15
+      },
+      "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d398fa3f_496c9964",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T01:21:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be42d025_ab3b7aef",
       "range": {
         "startLine": 52,
         "startChar": 12,
@@ -81,6 +129,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c5fab42_dc833ccb",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T01:21:06Z",
+      "side": 1,
+      "message": "Moved the default value to \u003cmilo-timestamp\u003e.\nOriginally I wanted it to be a bit more generic. In the future, I plan to publish some of the generic components under npm @chopsui/. So I stripped out milo specific logic (other than the \u0027milo-\u0027 component name prefix).",
+      "parentUuid": "7cfb6a3a_189d3a2a",
+      "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f3cac6e4_57d9b897",
@@ -94,6 +160,30 @@
       "writtenOn": "2021-03-25T00:58:37Z",
       "side": 1,
       "message": "should this be the default too?",
+      "range": {
+        "startLine": 309,
+        "startChar": 24,
+        "endLine": 309,
+        "endChar": 40
+      },
+      "revId": "41c6f962f9f8d70b1f1edc25bb24680ffd3b5b4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4650ab34_1c2ac36c",
+        "filename": "milo/frontend/resultui/src/pages/build_page/overview_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-25T01:21:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3cac6e4_57d9b897",
       "range": {
         "startLine": 309,
         "startChar": 24,
