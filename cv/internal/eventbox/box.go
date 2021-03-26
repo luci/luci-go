@@ -75,15 +75,16 @@ func IsErrConcurretMutation(err error) bool {
 // and performing arbitrary side effects.
 //
 // Returns wrapped ErrConcurretMutation if entity's EVersion has changed.
-func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) (err error) {
+func ProcessBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([]PostProcessFn, error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch")
+	var err error
 	span.Attribute("recipient", recipient.String())
 	defer func() { span.End(err) }()
-
-	return processBatch(ctx, recipient, p)
+	postProcessFn, err := processBatch(ctx, recipient, p)
+	return postProcessFn, err
 }
 
-func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) error {
+func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) ([]PostProcessFn, error) {
 	var state State
 	var expectedEV EVersion
 	eg, ectx := errgroup.WithContext(ctx)
@@ -103,23 +104,24 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) er
 		return
 	})
 	if err := eg.Wait(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Compute resulting state before transaction.
 	transitions, garbage, err := p.Mutate(ctx, toEvents(listing.Items), state)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := deleteSemanticGarbage(ctx, &d, garbage); err != nil {
-		return err
+		return nil, err
 	}
 	transitions = withoutNoops(transitions, state)
 	if len(transitions) == 0 {
-		return nil // nothing to do.
+		return nil, nil // nothing to do.
 	}
 
 	var innerErr error
+	var postProcessFns []PostProcessFn
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
 
@@ -140,6 +142,9 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) er
 				return err
 			}
 			newState = t.TransitionTo
+			if t.PostProcessFn != nil {
+				postProcessFns = append(postProcessFns, t.PostProcessFn)
+			}
 			eventsConsumed += len(t.Events)
 		}
 
@@ -155,11 +160,11 @@ func processBatch(ctx context.Context, recipient *datastore.Key, p Processor) er
 	}, nil)
 	switch {
 	case innerErr != nil:
-		return innerErr
+		return nil, innerErr
 	case err != nil:
-		return errors.Annotate(err, "failed to commit mutation").Tag(transient.Tag).Err()
+		return nil, errors.Annotate(err, "failed to commit mutation").Tag(transient.Tag).Err()
 	default:
-		return nil
+		return postProcessFns, nil
 	}
 }
 
@@ -242,6 +247,9 @@ type State interface{}
 // EVersion is recipient entity version.
 type EVersion int
 
+// PostProcessFn should be executed after event processing completes.
+type PostProcessFn func(context.Context) error
+
 // SideEffectFn performs side effects with a Datastore transaction context.
 // See Transition.SideEffectFn doc.
 type SideEffectFn func(context.Context) error
@@ -287,6 +295,13 @@ type Transition struct {
 	//
 	// It's allowed to transition to the exact same state.
 	TransitionTo State
+	// PostProcessFn is the function to be called after event processing
+	// completes.
+	//
+	// Note that it is called outside of the transaction of all state
+	// transitions, so the operation inside this function is not expected
+	// to be atomic with this state transition.
+	PostProcessFn PostProcessFn
 }
 
 func (t *Transition) apply(ctx context.Context, p *dsset.PopOp) error {
@@ -303,7 +318,7 @@ func (t *Transition) apply(ctx context.Context, p *dsset.PopOp) error {
 
 // isNoop returns true if the Transition can be skipped entirely.
 func (t *Transition) isNoop(oldState State) bool {
-	return t.SideEffectFn == nil && len(t.Events) == 0 && t.TransitionTo == oldState
+	return t.SideEffectFn == nil && len(t.Events) == 0 && t.TransitionTo == oldState && t.PostProcessFn == nil
 }
 
 // withoutNoops returns only actionable transitions in the original order.

@@ -117,7 +117,7 @@ func (p *processor) Mutate(ctx context.Context, events Events, s State) (ts []Tr
 	}
 	if len(minus) > 0 {
 		t := Transition{
-			Events: minus, // Always consume all advertisements to emmigrate.
+			Events: minus, // Always consume all advertisements to emigrate.
 		}
 		if *population <= 1 {
 			logging.Debugf(ctx, "consuming %d ads", len(minus))
@@ -148,37 +148,55 @@ func TestEventboxWorks(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(l, ShouldHaveLength, 1)
 
-		So(ProcessBatch(ctx, key(ctx, 65), &processor{65}), ShouldBeNil)
+		ppfns, err := ProcessBatch(ctx, key(ctx, 65), &processor{65})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 1)
 		So(mustGet(ctx, 65).Population, ShouldEqual, 1)
 		So(mustList(ctx, 65), ShouldHaveLength, 0)
 
 		// Let the cell grow without incoming events.
-		So(ProcessBatch(ctx, key(ctx, 65), &processor{65}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 2)
 		So(mustGet(ctx, 65).Population, ShouldEqual, 1+3)
 		// Can't grow any more, no change to anything.
-		So(ProcessBatch(ctx, key(ctx, 65), &processor{65}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 2)
 		So(mustGet(ctx, 65).Population, ShouldEqual, 1+3)
 
 		// Advertise from nearby cell, twice.
-		So(ProcessBatch(ctx, key(ctx, 64), &processor{64}), ShouldBeNil)
-		So(ProcessBatch(ctx, key(ctx, 64), &processor{64}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustList(ctx, 65), ShouldHaveLength, 2)
 		// Emigrate, at most once.
-		So(ProcessBatch(ctx, key(ctx, 65), &processor{65}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 65), &processor{65})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 65).EVersion, ShouldEqual, 3)
 		So(mustGet(ctx, 65).Population, ShouldEqual, 4-1)
 		So(mustList(ctx, 65), ShouldHaveLength, 0)
 
 		// Accept immigrants.
-		So(ProcessBatch(ctx, key(ctx, 64), &processor{64}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 64).Population, ShouldEqual, +1)
 
 		// Advertise to a cell with population = 1 is a noop.
-		So(ProcessBatch(ctx, key(ctx, 63), &processor{63}), ShouldBeNil)
-		So(ProcessBatch(ctx, key(ctx, 64), &processor{64}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 63), &processor{63})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 64), &processor{64})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 
 		// Lots of events at once.
 		So(Emit(ctx, []byte{'+'}, key(ctx, 49)), ShouldBeNil)
@@ -187,14 +205,20 @@ func TestEventboxWorks(t *testing.T) {
 		So(Emit(ctx, []byte{'-'}, key(ctx, 49)), ShouldBeNil) // not enough people, ignored.
 		So(Emit(ctx, []byte{'-'}, key(ctx, 49)), ShouldBeNil) // not enough people, ignored.
 		So(mustList(ctx, 49), ShouldHaveLength, 5)
-		So(ProcessBatch(ctx, key(ctx, 49), &processor{49}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).EVersion, ShouldEqual, 1)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 1)
 		So(mustList(ctx, 49), ShouldHaveLength, 2) // 2x'+' are waiting
 		// Slowly welcome remaining newcomers.
-		So(ProcessBatch(ctx, key(ctx, 49), &processor{49}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 2)
-		So(ProcessBatch(ctx, key(ctx, 49), &processor{49}), ShouldBeNil)
+		ppfns, err = ProcessBatch(ctx, key(ctx, 49), &processor{49})
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, 49).Population, ShouldEqual, 3)
 		// Finally, must be done.
 		So(mustList(ctx, 49), ShouldHaveLength, 0)
@@ -227,6 +251,62 @@ func mustList(ctx context.Context, index int) Events {
 	return l
 }
 
+func TestEventboxPostProcessFn(t *testing.T) {
+	t.Parallel()
+
+	Convey("eventbox", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		recipient := key(ctx, 753)
+
+		initState := int(149)
+		p := &mockProc{
+			loadState: func(context.Context) (State, EVersion, error) {
+				return State(&initState), EVersion(0), nil
+			},
+			fetchEVersion: func(context.Context) (EVersion, error) {
+				return 0, nil
+			},
+			saveState: func(context.Context, State, EVersion) error {
+				return nil
+			},
+		}
+		Convey("Returns PostProcessFns for successful state transitions", func() {
+			var calledForStates []int
+			p.mutate = func(ctx context.Context, es Events, s State) ([]Transition, Events, error) {
+				gotState := *(s.(*int))
+				return []Transition{
+					{
+						TransitionTo: gotState + 1,
+						PostProcessFn: func(ctx context.Context) error {
+							calledForStates = append(calledForStates, gotState+1)
+							return nil
+						},
+					},
+					{
+						TransitionTo: gotState + 2,
+					},
+					{
+						TransitionTo: gotState + 3,
+						PostProcessFn: func(ctx context.Context) error {
+							calledForStates = append(calledForStates, gotState+3)
+							return nil
+						},
+					},
+				}, nil, nil
+			}
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldBeNil)
+			So(ppfns, ShouldHaveLength, 2)
+			for _, ppfn := range ppfns {
+				So(ppfn(ctx), ShouldBeNil)
+			}
+			So(calledForStates, ShouldResemble, []int{150, 152})
+		})
+	})
+}
+
 func TestEventboxFails(t *testing.T) {
 	t.Parallel()
 
@@ -251,7 +331,9 @@ func TestEventboxFails(t *testing.T) {
 			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, nil, errors.New("oops")
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "oops")
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldErrLike, "oops")
+			So(ppfns, ShouldBeEmpty)
 		})
 
 		firstSideEffectCalled := false
@@ -280,12 +362,15 @@ func TestEventboxFails(t *testing.T) {
 			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 				return 0, errors.New("ev error")
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "ev error")
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldErrLike, "ev error")
+			So(ppfns, ShouldBeEmpty)
 			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 				return 1, nil
 			}
-			err := ProcessBatch(ctx, recipient, p)
+			ppfns, err = ProcessBatch(ctx, recipient, p)
 			So(IsErrConcurretMutation(err), ShouldBeTrue)
+			So(ppfns, ShouldBeEmpty)
 			So(firstSideEffectCalled, ShouldBeFalse)
 		})
 
@@ -297,7 +382,9 @@ func TestEventboxFails(t *testing.T) {
 			second = func(_ context.Context) error {
 				return transient.Tag.Apply(errors.New("2nd failed"))
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "2nd failed")
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldErrLike, "2nd failed")
+			So(ppfns, ShouldBeEmpty)
 			So(firstSideEffectCalled, ShouldBeTrue)
 			// ... but w/o any effect since transaction should have been aborted
 			So(datastore.Get(ctx, &cell{Index: firstIndex}),
@@ -313,7 +400,9 @@ func TestEventboxFails(t *testing.T) {
 				So(s, ShouldEqual, secondState)
 				return transient.Tag.Apply(errors.New("savvvvvvvvvvvvvvvvvvvvvvvvvv hung"))
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldErrLike, "savvvvvvvvvvvvvvvv")
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldErrLike, "savvvvvvvvvvvvvvvv")
+			So(ppfns, ShouldBeEmpty)
 			// ... still no side effect.
 			So(datastore.Get(ctx, &cell{Index: firstIndex}),
 				ShouldEqual, datastore.ErrNoSuchEntity)
@@ -327,7 +416,9 @@ func TestEventboxFails(t *testing.T) {
 		// Finally, check that first side effect is real, otherwise assertions above
 		// might be giving false sense of correctness.
 		p.saveState = func(context.Context, State, EVersion) error { return nil }
-		So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+		ppfns, err := ProcessBatch(ctx, recipient, p)
+		So(err, ShouldBeNil)
+		So(ppfns, ShouldBeEmpty)
 		So(mustGet(ctx, firstIndex), ShouldNotBeNil)
 	})
 }
@@ -346,6 +437,9 @@ func TestEventboxNoopTransitions(t *testing.T) {
 		So(t.isNoop(initState), ShouldBeFalse)
 		t.Events = nil
 		t.SideEffectFn = func(context.Context) error { return nil }
+		So(t.isNoop(initState), ShouldBeFalse)
+		t.SideEffectFn = nil
+		t.PostProcessFn = func(context.Context) error { return nil }
 		So(t.isNoop(initState), ShouldBeFalse)
 	})
 
@@ -371,7 +465,9 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, nil, nil
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldBeNil)
+			So(ppfns, ShouldBeEmpty)
 		})
 		Convey("Mutate returns no transitions, but some semantic garbage is still cleaned up", func() {
 			So(Emit(ctx, []byte("msg"), recipient), ShouldBeNil)
@@ -379,7 +475,9 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], nil
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldBeNil)
+			So(ppfns, ShouldBeEmpty)
 			l, err := List(ctx, recipient)
 			So(err, ShouldBeNil)
 			So(l, ShouldHaveLength, 1)
@@ -389,7 +487,9 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return []Transition{}, nil, nil
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldBeNil)
+			So(ppfns, ShouldBeEmpty)
 		})
 		Convey("Mutate returns noop transitions only", func() {
 			p.mutate = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
@@ -397,7 +497,9 @@ func TestEventboxNoopTransitions(t *testing.T) {
 					{TransitionTo: s},
 				}, nil, nil
 			}
-			So(ProcessBatch(ctx, recipient, p), ShouldBeNil)
+			ppfns, err := ProcessBatch(ctx, recipient, p)
+			So(err, ShouldBeNil)
+			So(ppfns, ShouldBeEmpty)
 		})
 
 		Convey("Test's own sanity check that fetchEVersion is called and panics", func() {
