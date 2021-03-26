@@ -326,6 +326,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9dea020a_6bec5030",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-26T01:07:24Z",
+      "side": 1,
+      "message": "First, let me sum up how I see current API semantics:\n1  Release() notifies\n2  Acquire() does not\n3    If acquire() starts its own trans, then caller-code may never run at all, and hence will never notify.\n\nSo, for correctness, at least (3) must be fixed, e.g. by requiring transactional context in Acquire().\n\nSecond, we probably disagree on our API vision 😊\nYou are free to proceed as you think best, but I\u0027ll leave you why I think Acquire() should notify below.\n\nI\u0027m looking at this package from perspective of what invariant is upheld by this package (if any).\n\n(INV)\nA strong invariant is \n  IF Current slot changes to some Run X,\n  THEN sq package guarantees X is notified transactionally.\n\nRelease() is already like this.\nAcquire() is not.\n\n(ALT) \nAlternatively, the package can abstain from notifying Runs entirely AND require transactional context passed in Acquire() and Lease().\n\n\nIf starting from scratch, I prefer (ALT) which keeps this package fully decoupled from Runs. However, given the code has been written already, (INV) is fine, and it upside is that it\u0027s harder to misuse in future refactorings.",
+      "parentUuid": "f906969d_4f155229",
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8abdd3a3_086d8a58",
         "filename": "cv/internal/run/impl/submit/queue_test.go",
         "patchSetId": 6
