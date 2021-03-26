@@ -344,6 +344,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "60ca08cf_b043622e",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-26T21:27:20Z",
+      "side": 1,
+      "message": "\u003e (INV)\n\u003e A strong invariant is \n\u003e   IF Current slot changes to some Run X,\n\u003e   THEN sq package guarantees X is notified transactionally.\n\u003e \n\u003e Release() is already like this.\n\u003e Acquire() is not.\n\nI don\u0027t think this invariant is 100% correct. Note that `Release` doesn\u0027t changes the Current slot to Run X right away. It leaves the Current as empty and notify Run X to `Acquire` the slot. So my POV on the invariant of this package is,\n\n\nNotify Run X iff `Acquire` Run X will succeed immediately, i.e.\n  1. Current slot is empty\n  2. rate limit permits\n\nwhich is what `Acquire` and `Release` is doing.\n\nNow, I agree that in the future, the caller code may misuse this code and block the SQ forever if say, it doesn\u0027t notify the Run to handle the sad path where the subsequent code execution fails due to whatever reason.  But I still believe it should be the caller\u0027s responsibility to figure out how to handle this. Notifying Run is one way, periodically check and give up the slot could be another (though not the most efficient one).\n\nI like the idea to force the transactional context for both APIs. Although it means slightly more code on the caller side, it\u0027s less likely to misuse. I can also add a comment to the method to state that it is recommended to notify the Run after a successful acquisition as a fail-safe. WDYT?",
+      "parentUuid": "9dea020a_6bec5030",
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8abdd3a3_086d8a58",
         "filename": "cv/internal/run/impl/submit/queue_test.go",
         "patchSetId": 6
