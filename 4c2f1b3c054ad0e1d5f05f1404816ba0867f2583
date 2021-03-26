@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c83475f_3d093c1e",
+        "filename": "cv/internal/prjmanager/run_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-26T19:31:16Z",
+      "side": 1,
+      "message": "nit: I would probably add another test with input CLs\n\n```\nInputCLs: []RunBuilderCL{\n\t\t\t\t{\n\t\t\t\t\tSnapshot:    snapshotOf(\"x-review.example.com\", 1234567, \"rev2\"),\n\t\t\t\t\tTriggerInfo: triggerAt(run.FullRun, 006, 49999999*time.NanoSecond),\n\t\t\t\t},\n\t\t\t\t{\n\t\t\t\t\tSnapshot:    snapshotOf(\"y-review.example.com\", 7654321, \"rev3\"),\n\t\t\t\t\tTriggerInfo: triggerAt(run.FullRun, 007, 777777777*time.NanoSecond),\n\t\t\t\t},\n\t\t\t},\n```\n\nand assert that it yields same hash.",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 82,
+        "endChar": 81
+      },
+      "revId": "4c2f1b3c054ad0e1d5f05f1404816ba0867f2583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
