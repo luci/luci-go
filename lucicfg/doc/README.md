@@ -3148,12 +3148,10 @@ cq.retry_config struct.
 ```python
 cq.run_mode(
     # Required arguments.
+    name,
     cq_label_value,
     triggering_label,
     triggering_value,
-
-    # Optional arguments.
-    name = None,
 )
 ```
 
@@ -3163,7 +3161,7 @@ Defines a CQ Run mode and how it can be triggered.
 
 #### Arguments {#cq.run_mode-args}
 
-* **name**: name of this mode. Required. Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$".
+* **name**: name of this mode. Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$". Required.
 * **cq_label_value**: the value of Commit-Queue label that MUST be set to when triggering a CQ Run in this mode. Required.
 * **triggering_label**: the Gerrit label that MUST also be set in order to trigger a CQ Run in this mode. Required.
 * **triggering_value**: the value of the `triggering_label` that MUST be set to when triggering a CQ Run in this mode. Required.
