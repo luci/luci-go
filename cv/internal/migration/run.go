@@ -63,10 +63,7 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Run, e
 					return errors.Annotate(err, "fetch CLs for run %q", r.ID).Tag(transient.Tag).Err()
 				}
 				mcls := make([]*migrationpb.RunCL, len(runCLs))
-				mode := cvbqpb.Mode_FULL_RUN
-				if r.Mode == run.DryRun {
-					mode = cvbqpb.Mode_DRY_RUN
-				}
+				mode := r.Mode.BQAttemptMode()
 				for i, cl := range runCLs {
 					trigger := &migrationpb.RunCL_Trigger{
 						Email:     cl.Trigger.GetEmail(),
