@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -115,4 +116,27 @@ func AssertReceivedCLUpdate(ctx context.Context, runID common.RunID, clid common
 			},
 		},
 	})
+}
+
+// MockDispatch installs and returns MockDispatcher for Run Manager.
+func MockDispatch(ctx context.Context) (context.Context, MockDispatcher) {
+	m := MockDispatcher{&cvtesting.DispatchRecorder{}}
+	ctx = eventpb.InstallMockDispatcher(ctx, m.Dispatch)
+	return ctx, m
+}
+
+// MockDispatcher records in memory what would have resulted in task enqueues
+// for a Run Manager.
+type MockDispatcher struct {
+	*cvtesting.DispatchRecorder
+}
+
+// Runs returns sorted list of Run IDs.
+func (m *MockDispatcher) Runs() common.RunIDs {
+	return common.MakeRunIDs(m.Targets()...)
+}
+
+// PopRuns returns sorted list of Run IDs and resets the state.
+func (m *MockDispatcher) PopRuns() common.RunIDs {
+	return common.MakeRunIDs(m.PopTargets()...)
 }
