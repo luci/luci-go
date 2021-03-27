@@ -34,13 +34,13 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// stageNewRuns sets .runBuilders if new Runs have to be created.
+// stageNewRuns sets .Creators if new Runs have to be created.
 //
 // Otherwise, returns the time when this could be done.
 // NOTE: because this function may take considerable time, the returned time may
 // be already in the past.
 //
-// Guarantees that a CL can be in at most 1 RunBuilder. This avoids conflicts
+// Guarantees that a CL can be in at most 1 Creator. This avoids conflicts
 // whereby 2+ Runs need to modify the same CL entity.
 func (a *Actor) stageNewRuns(ctx context.Context) (time.Time, error) {
 	a.visitedCLs = map[int64]struct{}{}
@@ -81,11 +81,11 @@ func (a *Actor) stageNewRunsSingle(ctx context.Context, info *clInfo, cg *config
 
 	combo := combo{}
 	combo.add(info)
-	rb, err := a.makeRunBuilder(ctx, &combo, cg)
+	rb, err := a.makeCreator(ctx, &combo, cg)
 	if err != nil {
 		return time.Time{}, err
 	}
-	a.runBuilders = append(a.runBuilders, rb)
+	a.runCreators = append(a.runCreators, rb)
 	return clock.Now(ctx), nil
 }
 
@@ -105,7 +105,7 @@ func (a *Actor) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (
 	return time.Time{}, nil
 }
 
-func (a *Actor) makeRunBuilder(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*runcreator.RunBuilder, error) {
+func (a *Actor) makeCreator(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*runcreator.Creator, error) {
 	latestIndex := -1
 	cls := make([]*changelist.CL, len(combo.all))
 	for i, info := range combo.all {
@@ -134,10 +134,10 @@ func (a *Actor) makeRunBuilder(ctx context.Context, combo *combo, cg *config.Con
 		return nil, errors.Annotate(err, "failed to get OwnerIdentity of %d", cls[latestIndex].ID).Err()
 	}
 
-	bcls := make([]runcreator.RunBuilderCL, len(cls))
+	bcls := make([]runcreator.CL, len(cls))
 	for i, cl := range cls {
 		pcl := combo.all[i].pcl
-		bcls[i] = runcreator.RunBuilderCL{
+		bcls[i] = runcreator.CL{
 			ID:               common.CLID(pcl.GetClid()),
 			ExpectedEVersion: int(pcl.GetEversion()),
 			TriggerInfo:      pcl.GetTrigger(),
@@ -145,7 +145,7 @@ func (a *Actor) makeRunBuilder(ctx context.Context, combo *combo, cg *config.Con
 		}
 	}
 
-	return &runcreator.RunBuilder{
+	return &runcreator.Creator{
 		ConfigGroupID:            cg.ID,
 		LUCIProject:              cg.ProjectString(),
 		Mode:                     run.Mode(combo.latestTriggered.pcl.GetTrigger().GetMode()),
