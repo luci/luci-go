@@ -47,36 +47,44 @@ func TestComputeCLsDigest(t *testing.T) {
 
 	Convey("RunBuilder.computeCLsDigest works", t, func() {
 		// This test mirrors the `test_attempt_key_hash` in CQDaemon's
-		// pending_manager/test/base_test.py file.
-		snapshotOf := func(host string, num int64) *changelist.Snapshot {
+		// pending_manager/test/gerrit_test.py file.
+		snapshotOf := func(host string, num int64, rev string) *changelist.Snapshot {
 			return &changelist.Snapshot{
 				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
 					Host: host,
-					Info: &gerritpb.ChangeInfo{Number: num},
+					Info: &gerritpb.ChangeInfo{Number: num, CurrentRevision: rev},
 				}},
 			}
 		}
 		epoch := time.Date(2020, time.December, 31, 0, 0, 0, 0, time.UTC)
-		triggerAt := func(delay time.Duration) *run.Trigger {
-			return &run.Trigger{Time: timestamppb.New(epoch.Add(delay))}
+		triggerAt := func(mode run.Mode, account int64, delay time.Duration) *run.Trigger {
+			return &run.Trigger{
+				Time:            timestamppb.New(epoch.Add(delay)),
+				Mode:            string(mode),
+				GerritAccountId: account,
+			}
 		}
 
 		rb := RunBuilder{
 			InputCLs: []RunBuilderCL{
 				{
-					Snapshot:    snapshotOf("b.example.com", 1),
-					TriggerInfo: triggerAt(49999 * time.Microsecond),
+					Snapshot:    snapshotOf("x-review.example.com", 1234567, "rev2"),
+					TriggerInfo: triggerAt(run.FullRun, 006, 49999*time.Microsecond),
 				},
 				{
-					Snapshot:    snapshotOf("a.example.com", 2),
-					TriggerInfo: triggerAt(777777 * time.Microsecond),
+					Snapshot:    snapshotOf("y-review.example.com", 7654321, "rev3"),
+					TriggerInfo: triggerAt(run.FullRun, 007, 777777*time.Microsecond),
 				},
 			},
 		}
 		rb.computeCLsDigest()
 		So(rb.runIDBuilder.version, ShouldEqual, 1)
-		So(hex.EncodeToString(rb.runIDBuilder.digest), ShouldEqual,
-			"28cb4b82698febb13483f5b2eb5e3ec19d5d77e9c503d5aefcb2b11a")
+		So(hex.EncodeToString(rb.runIDBuilder.digest), ShouldEqual, "bc86ed248de55fb0")
+
+		// The CLsDigest must be agnostic of input CLs order.
+		rb2 := RunBuilder{InputCLs: []RunBuilderCL{rb.InputCLs[1], rb.InputCLs[0]}}
+		rb2.computeCLsDigest()
+		So(hex.EncodeToString(rb2.runIDBuilder.digest), ShouldEqual, "bc86ed248de55fb0")
 	})
 }
 
@@ -222,7 +230,7 @@ func TestRunBuilder(t *testing.T) {
 			})
 		})
 
-		const expectedRunID = "infra/9223372036854-1-6f432997511a722c89da1d8efb5d1a5d673e42430e87aa4426f57f86"
+		const expectedRunID = "infra/9223372036854-1-afc7c13288093a6d"
 
 		Convey("First test to fail: check ID assumption", func() {
 			// If this test fails due to change of runID scheme, update the constant

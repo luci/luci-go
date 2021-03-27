@@ -354,56 +354,50 @@ func (rb *RunBuilder) registerSaveCL(ctx context.Context, index int, now time.Ti
 
 // computeCLsDigest populates `.runIDBuilder` for use by computeRunID.
 func (rb *RunBuilder) computeCLsDigest() {
-	// The first version uses truncated CQDaemon's `attempt_key_hash` aimed for
+	// The first version uses CQDaemon's `attempt_key_hash` aimed for
 	// ease of comparison and log grepping during migration. However, this
 	// assumes Gerrit CLs and requires having changelist.Snapshot pre-loaded.
 	// TODO(tandrii): after migration is over, change to hash CLIDs instead, since
 	// it's good enough for the purpose of avoiding spurious collision of RunIDs.
 	rb.runIDBuilder.version = 1
 
-	triples := make([]struct {
-		host          string
-		number        int64
-		unixMicrosecs int64
-	}, len(rb.InputCLs))
-	for i, cl := range rb.InputCLs {
-		triples[i].host = cl.Snapshot.GetGerrit().GetHost()
-		triples[i].number = cl.Snapshot.GetGerrit().GetInfo().GetNumber()
-		secs := cl.TriggerInfo.GetTime().GetSeconds()
-		// CQDaemon truncates ns precision to microseconds in gerrit_util.parse_time.
-		microsecs := int64(cl.TriggerInfo.GetTime().GetNanos() / 1000)
-		triples[i].unixMicrosecs = (secs*1000*1000 + microsecs)
-	}
-	sort.Slice(triples, func(i, j int) bool {
-		a, b := triples[i], triples[j]
+	cls := append([]RunBuilderCL(nil), rb.InputCLs...) // copy
+	sort.Slice(cls, func(i, j int) bool {
+		a := cls[i].Snapshot.GetGerrit()
+		b := cls[j].Snapshot.GetGerrit()
 		switch {
-		case a.host < b.host:
+		case a.GetHost() < b.GetHost():
 			return true
-		case a.host > b.host:
-			return false
-		case a.number < b.number:
-			return true
-		case a.number > b.number:
+		case a.GetHost() > b.GetHost():
 			return false
 		default:
-			return a.unixMicrosecs < b.unixMicrosecs
+			return a.GetInfo().GetNumber() < b.GetInfo().GetNumber()
 		}
 	})
 	separator := []byte{0}
-	// TODO(tandrii): 224 bit mode gives us nothing extra, better to use entire
-	// 256 and iff we need, truncate it to whatever length we want at the end.
-	h := sha256.New224()
-	for i, t := range triples {
+	h := sha256.New()
+	for i, cl := range cls {
 		if i > 0 {
 			h.Write(separator)
 		}
-		h.Write([]byte(t.host))
+		h.Write([]byte(cl.Snapshot.GetGerrit().GetHost()))
 		h.Write(separator)
-		h.Write([]byte(strconv.FormatInt(t.number, 10)))
+		h.Write([]byte(strconv.FormatInt(cl.Snapshot.GetGerrit().GetInfo().GetNumber(), 10)))
 		h.Write(separator)
-		h.Write([]byte(strconv.FormatInt(t.unixMicrosecs, 10)))
+		h.Write([]byte(cl.Snapshot.GetGerrit().GetInfo().GetCurrentRevision()))
+		h.Write(separator)
+
+		// CQDaemon truncates ns precision to microseconds in gerrit_util.parse_time.
+		microsecs := int64(cl.TriggerInfo.GetTime().GetNanos() / 1000)
+		secs := cl.TriggerInfo.GetTime().GetSeconds()
+		h.Write([]byte(strconv.FormatInt(secs*1000*1000+microsecs, 10)))
+		h.Write(separator)
+
+		h.Write([]byte(cl.TriggerInfo.GetMode()))
+		h.Write(separator)
+		h.Write([]byte(strconv.FormatInt(cl.TriggerInfo.GetGerritAccountId(), 10)))
 	}
-	rb.runIDBuilder.digest = h.Sum(nil)
+	rb.runIDBuilder.digest = h.Sum(nil)[:8]
 }
 
 // computeRunID generates and saves new Run ID in `.runID`.
