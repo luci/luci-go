@@ -15,6 +15,7 @@
 package cvtesting
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -85,4 +86,15 @@ func (d *DispatchRecorder) ETAsOF(target string) []time.Time {
 		}
 	}
 	return unique
+}
+
+// LatestETAof returns teh last ETA of given target.
+//
+// Panics if target has no ETAs.
+func (d *DispatchRecorder) LatestETAof(target string) time.Time {
+	etas := d.ETAsOF(target)
+	if len(etas) == 0 {
+		panic(fmt.Errorf("Target %q has no dispatches", target))
+	}
+	return etas[len(etas)-1]
 }
