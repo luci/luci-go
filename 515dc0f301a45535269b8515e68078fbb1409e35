@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "515dc0f301a45535269b8515e68078fbb1409e35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50599cfd_8c054c54",
+        "filename": "lucicfg/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-27T03:13:08Z",
+      "side": 1,
+      "message": "strictly speaking, this isn\u0027t necessary, since this is just a doc change.",
+      "revId": "515dc0f301a45535269b8515e68078fbb1409e35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
