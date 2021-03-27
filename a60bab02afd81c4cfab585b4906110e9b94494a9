@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c11c8a6_6f66bb42",
+        "filename": "cv/internal/run/mode.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-27T03:12:09Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "c544dc18_cea23126",
+      "range": {
+        "startLine": 25,
+        "startChar": 14,
+        "endLine": 25,
+        "endChar": 35
+      },
+      "revId": "a60bab02afd81c4cfab585b4906110e9b94494a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "067a415f_8e482935",
@@ -41,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b26df992_13f629ac",
+        "filename": "cv/internal/run/mode.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-27T03:12:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "067a415f_8e482935",
+      "revId": "a60bab02afd81c4cfab585b4906110e9b94494a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "938eb9a4_fe2a7af1",
@@ -54,6 +96,30 @@
       "writtenOn": "2021-03-26T19:33:44Z",
       "side": 1,
       "message": "cv",
+      "range": {
+        "startLine": 38,
+        "startChar": 49,
+        "endLine": 38,
+        "endChar": 51
+      },
+      "revId": "a60bab02afd81c4cfab585b4906110e9b94494a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29c694c6_645d6f67",
+        "filename": "cv/internal/run/mode.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-27T03:12:09Z",
+      "side": 1,
+      "message": "I actually meant CQ here because IMO we need to define new CV BQ export. Renamed to \"legacy CQ BQ export\".",
+      "parentUuid": "938eb9a4_fe2a7af1",
       "range": {
         "startLine": 38,
         "startChar": 49,
