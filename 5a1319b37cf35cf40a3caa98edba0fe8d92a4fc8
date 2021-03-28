@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1f973f5_45b22ec9",
+        "filename": "cv/internal/prjmanager/runcreator/run_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-28T22:31:34Z",
+      "side": 1,
+      "message": "be sent",
+      "range": {
+        "startLine": 320,
+        "startChar": 20,
+        "endLine": 320,
+        "endChar": 24
+      },
+      "revId": "5a1319b37cf35cf40a3caa98edba0fe8d92a4fc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
