@@ -46,3 +46,19 @@ declare const PRODUCTION: boolean;
  * A string that is unique per page load;
  */
 declare const VISIT_ID: string;
+
+/**
+ * A promise that returns the ui service worker.
+ */
+// eslint-disable-next-line no-var
+declare var SW_PROMISE: Promise<import('workbox-window').Workbox>;
+
+/**
+ * A cached access token loaded from the service worker.
+ */
+declare const CACHED_ACCESS_TOKEN: string;
+
+/**
+ * A cached user ID loaded from the service worker.
+ */
+declare const CACHED_USER_ID: string | null;

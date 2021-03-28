@@ -37,7 +37,8 @@
     "mobx-utils": "^5.6.2",
     "moment": "^2.29.1",
     "vis-data": "^7.1.2",
-    "vis-timeline": "^7.4.6"
+    "vis-timeline": "^7.4.6",
+    "workbox-window": "^6.1.2"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.13.10",
