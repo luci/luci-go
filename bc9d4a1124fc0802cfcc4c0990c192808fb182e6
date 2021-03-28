@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7bd9f6fd_52041c4c",
+        "filename": "cv/internal/run/eventpb/tq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-28T22:36:53Z",
+      "side": 1,
+      "message": "nit: I would probably prefix it with RM so that it\u0027s less likely to conflict with any other key added in the future.",
+      "range": {
+        "startLine": 120,
+        "startChar": 32,
+        "endLine": 120,
+        "endChar": 54
+      },
+      "revId": "bc9d4a1124fc0802cfcc4c0990c192808fb182e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
