@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42340c14_9b7faa0a",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-29T22:15:26Z",
+      "side": 1,
+      "message": "nit: statuses\n\nAlso I am a bit confused here about this comment. Is this more like a TODO, in case there are \u003e 10 status?",
+      "range": {
+        "startLine": 227,
+        "startChar": 43,
+        "endLine": 227,
+        "endChar": 50
+      },
+      "revId": "d1b40af9675c5969aa1c890a64c836bf88fd96d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
