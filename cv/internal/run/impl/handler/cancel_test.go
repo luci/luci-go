@@ -39,6 +39,8 @@ func TestCancel(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, close := ct.SetUp()
 		defer close()
+		ctx, _ = pmtest.MockDispatch(ctx)
+
 		var runID common.RunID = "chromium/111-1-deadbeef"
 		var clid common.CLID = 11
 		rs := &state.RunState{
