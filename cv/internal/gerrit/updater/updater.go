@@ -59,6 +59,7 @@ func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        TaskClass,
 		Prototype: &RefreshGerritCL{},
+		Kind:      tq.NonTransactional,
 		Queue:     "refresh-gerrit-cl",
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
