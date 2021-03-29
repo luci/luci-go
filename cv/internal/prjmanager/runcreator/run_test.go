@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package prjmanager
+package runcreator
 
 import (
 	"encoding/hex"
@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -170,8 +172,8 @@ func TestRunBuilder(t *testing.T) {
 			},
 		}
 
-		projectStateOffload := &ProjectStateOffload{
-			Project:    datastore.MakeKey(ctx, ProjectKind, rb.LUCIProject),
+		projectStateOffload := &prjmanager.ProjectStateOffload{
+			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, rb.LUCIProject),
 			ConfigHash: "sha256:cafe",
 			Status:     prjpb.Status_STARTED,
 		}
@@ -314,11 +316,9 @@ func TestRunBuilder(t *testing.T) {
 				})
 			}
 
-			// TODO(tandrii): PM is notified.
-			// This currently creates a package cycle.
-			// pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
-			// 	RunId: string(r.ID),
-			// }}})
+			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
+				RunId: string(r.ID),
+			}}})
 			runtest.AssertInEventbox(ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
 		})
 	})

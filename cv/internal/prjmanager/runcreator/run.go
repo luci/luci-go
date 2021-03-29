@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package prjmanager
+// Package runcreator creates new Runs.
+package runcreator
 
 import (
 	"context"
@@ -33,9 +34,12 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
+
+// TODO(tandrii): rename RunBuilder to just Builder.
 
 // RunBuilder creates a new Run.
 //
@@ -228,8 +232,8 @@ func (rb *RunBuilder) checkRunExists(ctx context.Context) {
 // checkProjectState checks if the project is enabled and uses the expected
 // ConfigHash.
 func (rb *RunBuilder) checkProjectState(ctx context.Context) {
-	ps := &ProjectStateOffload{
-		Project: datastore.MakeKey(ctx, ProjectKind, rb.LUCIProject),
+	ps := &prjmanager.ProjectStateOffload{
+		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, rb.LUCIProject),
 	}
 	rb.dsBatcher.register(ps, func(err error) error {
 		switch {
@@ -299,7 +303,7 @@ func (rb *RunBuilder) save(ctx context.Context) error {
 	if err := rb.dsBatcher.put(ctx); err != nil {
 		return err
 	}
-	if err := NotifyRunCreated(ctx, rb.runID); err != nil {
+	if err := prjmanager.NotifyRunCreated(ctx, rb.runID); err != nil {
 		return err
 	}
 	return run.Start(ctx, rb.runID)
