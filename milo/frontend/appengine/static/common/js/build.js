@@ -21,6 +21,14 @@
 $(document).ready(function() {
   'use strict';
 
+  ga('send', {
+    hitType: 'event',
+    eventCategory: 'Old Build Page',
+    eventAction: 'Page Visited',
+    eventLabel: window.location.href,
+    transport: 'beacon',
+  });
+
   $('li.substeps').each(function() {
     const substep = $(this);
     $(this).find('>div.result').click(function() {
