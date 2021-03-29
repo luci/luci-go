@@ -321,12 +321,8 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 
 	var eg errgroup.Group
 
-	// limit the number of concurrent I/O operations.
-	ioN := runtime.NumCPU() * 2
-	if runtime.GOOS == "windows" {
-		ioN = runtime.NumCPU()
-	}
-	ch := make(chan struct{}, ioN)
+	// limit the number of concurrent hash calculations and I/O operations.
+	ch := make(chan struct{}, runtime.NumCPU())
 	logger := logging.Get(ctx)
 
 	for i, o := range opts {
