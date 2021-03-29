@@ -160,6 +160,8 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
   connectedCallback() {
     super.connectedCallback();
+    trackEvent(GA_CATEGORIES.NEW_BUILD_PAGE, GA_ACTIONS.PAGE_VISITED, window.location.href);
+
     this.appState.hasSettingsDialog++;
 
     this.addEventListener('error', this.errorHandler);

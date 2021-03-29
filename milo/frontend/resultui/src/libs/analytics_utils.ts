@@ -13,6 +13,7 @@
 // limitations under the License.
 
 export enum GA_CATEGORIES {
+  NEW_BUILD_PAGE = 'New Build Page',
   OVERVIEW_TAB = 'Overview Tab',
   TEST_RESULTS_TAB = 'Test Results Tab',
   STEPS_TAB = 'Steps Tab',
@@ -25,6 +26,7 @@ export enum GA_CATEGORIES {
 
 export enum GA_ACTIONS {
   SWITCH_VERSION = 'Switch Version',
+  PAGE_VISITED = 'Page Visited',
   TAB_VISITED = 'Tab Visited',
   CLICK = 'Click',
   LOADING_TIME = 'Loading Time',
