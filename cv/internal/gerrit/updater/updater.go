@@ -61,6 +61,7 @@ func init() {
 		Prototype: &RefreshGerritCL{},
 		Queue:     "refresh-gerrit-cl",
 		Quiet:     true,
+		Kind:      tq.FollowsContext,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
