@@ -16,7 +16,6 @@ package impl
 
 import (
 	"context"
-	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -53,6 +52,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		ctx, _ = runtest.MockDispatch(ctx)
 
 		const lProject = "infra"
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
@@ -91,6 +91,7 @@ func TestProjectLifeCycle(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		ctx, rmDispatcher := runtest.MockDispatch(ctx)
 
 		const lProject = "infra"
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
@@ -144,8 +145,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				So(p.IncompleteRuns(), ShouldEqual, common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe"))
 				// Must schedule a task per Run for config updates for each of the
 				// started run.
-				runsWithTasks := runtest.SortedRuns(ct.TQ.Tasks())
-				So(runsWithTasks, ShouldResemble, p.IncompleteRuns())
+				So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
 
 				Convey("disable project with incomplete runs", func() {
 					ct.Cfg.Disable(ctx, lProject)
@@ -157,11 +157,8 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
 					So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 
-					// Must schedule a task per Run for cancelation on top of already
-					// scheduled ones before for config disabling.
-					expected := append(runsWithTasks, p.IncompleteRuns()...)
-					sort.Sort(expected)
-					So(runtest.SortedRuns(ct.TQ.Tasks()), ShouldResemble, expected)
+					// Must schedule a task per Run for cancelation.
+					So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
 
 					Convey("wait for all IncompleteRuns to finish", func() {
 						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
