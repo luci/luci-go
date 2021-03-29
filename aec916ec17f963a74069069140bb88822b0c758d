@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "835008be_9be7a3ec",
+        "filename": "milo/frontend/resultui/src/@types/index.d.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-29T23:05:11Z",
+      "side": 1,
+      "message": "We also have a redirect service worker that handles redirection in the browser.",
+      "parentUuid": "f763865e_65328c58",
+      "range": {
+        "startLine": 43,
+        "startChar": 14,
+        "endLine": 43,
+        "endChar": 26
+      },
+      "revId": "aec916ec17f963a74069069140bb88822b0c758d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5dc85fc3_46dc9241",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-29T20:41:34Z",
       "side": 1,
       "message": "Is this correct? I can\u0027t see the file https://source.chromium.org/search?q\u003dindex.template.ejs\u0026sq\u003d.",
+      "range": {
+        "startLine": 85,
+        "startChar": 50,
+        "endLine": 85,
+        "endChar": 68
+      },
+      "revId": "aec916ec17f963a74069069140bb88822b0c758d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b172d013_e8c32e98",
+        "filename": "milo/frontend/resultui/webpack.common.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-29T23:05:11Z",
+      "side": 1,
+      "message": "the file is renamed in this CL.",
+      "parentUuid": "5dc85fc3_46dc9241",
       "range": {
         "startLine": 85,
         "startChar": 50,
