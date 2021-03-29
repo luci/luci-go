@@ -136,6 +136,10 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       const cols = searchParams.get('cols')!;
       this.invocationState.columnsParam = cols.split(',').filter((col) => col !== '');
     }
+    if (searchParams.has('sortby')) {
+      const sortingKeys = searchParams.get('sortby')!;
+      this.invocationState.sortingKeysParam = sortingKeys.split(',').filter((col) => col !== '');
+    }
     if (searchParams.has('groupby')) {
       const groupingKeys = searchParams.get('groupby')!;
       this.invocationState.groupingKeysParam = groupingKeys.split(',').filter((key) => key !== '');
@@ -147,6 +151,8 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         () => {
           const displayedCols = this.invocationState.displayedColumns.join(',');
           const defaultCols = this.invocationState.defaultColumns.join(',');
+          const sortingKeys = this.invocationState.sortingKeys.join(',');
+          const defaultSortingKeys = this.invocationState.defaultSortingKeys.join(',');
           const groupingKeys = this.invocationState.groupingKeys.join(',');
           const defaultGroupingKeys = this.invocationState.defaultGroupingKeys.join(',');
 
@@ -154,6 +160,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
             ...(!this.invocationState.searchText ? {} : { q: this.invocationState.searchText }),
             ...(this.invocationState.showEmptyGroups ? {} : { clean: '' }),
             ...(displayedCols === defaultCols ? {} : { cols: displayedCols }),
+            ...(sortingKeys === defaultSortingKeys ? {} : { sortby: sortingKeys }),
             ...(groupingKeys === defaultGroupingKeys ? {} : { groupby: groupingKeys }),
           });
           const newSearchParamsStr = newSearchParams.toString();
