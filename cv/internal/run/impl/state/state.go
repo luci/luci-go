@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/config"
 	gobupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -35,6 +36,8 @@ import (
 // depending on the event received).
 type RunState struct {
 	Run run.Run
+
+	cachedConfigGroup *config.ConfigGroup
 	// TODO(yiwzhang): add RunOwner, []RunCL, []RunTryjob.
 }
 
@@ -44,7 +47,8 @@ func (rs *RunState) ShallowCopy() *RunState {
 		return nil
 	}
 	ret := &RunState{
-		Run: rs.Run,
+		Run:               rs.Run,
+		cachedConfigGroup: rs.cachedConfigGroup,
 	}
 	return ret
 }
@@ -124,4 +128,20 @@ func (rs *RunState) RemoveRunFromCLs(ctx context.Context) error {
 		return errors.Annotate(err, "failed to put CLs").Tag(transient.Tag).Err()
 	}
 	return nil
+}
+
+// LoadConfigGroup loads the ConfigGroup used by this Run.
+//
+// Result is cached inside the state.
+func (rs *RunState) LoadConfigGroup(ctx context.Context) (*config.ConfigGroup, error) {
+	cgID := rs.Run.ConfigGroupID
+	if rs.cachedConfigGroup != nil && cgID == rs.cachedConfigGroup.ID {
+		return rs.cachedConfigGroup, nil
+	}
+	var err error
+	rs.cachedConfigGroup, err = config.GetConfigGroup(ctx, rs.Run.ID.LUCIProject(), cgID)
+	if err != nil {
+		return nil, err
+	}
+	return rs.cachedConfigGroup, nil
 }
