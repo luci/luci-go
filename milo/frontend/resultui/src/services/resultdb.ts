@@ -224,6 +224,17 @@ export const enum TestVariantStatus {
   EXPECTED = 'EXPECTED',
 }
 
+// Note: once we have more than 9 statuses, we need to add '0' prefix so '10'
+// won't appear before '2' after sorting.
+export const TEST_VARIANT_STATUS_CMP_STRING = {
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: '0',
+  [TestVariantStatus.UNEXPECTED]: '1',
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: '2',
+  [TestVariantStatus.FLAKY]: '3',
+  [TestVariantStatus.EXONERATED]: '4',
+  [TestVariantStatus.EXPECTED]: '5',
+};
+
 export interface TestMetadata {
   readonly name?: string;
   readonly location?: TestLocation;
@@ -357,7 +368,7 @@ export async function getInvIdFromBuildNum(builder: BuilderID, buildNum: number)
  * 3. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
  * v.gpu).
  */
-export function createTVPropGetter(propKey: string): (v: TestVariant) => unknown {
+export function createTVPropGetter(propKey: string): (v: TestVariant) => { toString(): string } {
   if (propKey.match(/^v[.]/i)) {
     const variantKey = propKey.slice(2);
     return (v) => v.variant?.def[variantKey] || '';
@@ -365,10 +376,40 @@ export function createTVPropGetter(propKey: string): (v: TestVariant) => unknown
   propKey = propKey.toLowerCase();
   switch (propKey) {
     case 'status':
-      return (v) => v.status.toString();
+      return (v) => v.status;
     case 'name':
       return (v) => v.testMetadata?.name || v.testId;
     default:
       throw new Error('');
   }
+}
+
+/**
+ * Create a test variant compare function for the given sorting key list.
+ *
+ * A sorting key must be one of the following:
+ * 1. '{property_key}': sort by property_key in ascending order.
+ * 2. '-{property_key}': sort by property_key in descending order.
+ */
+export function createTVCmpFn(sortingKeys: string[]): (v1: TestVariant, v2: TestVariant) => number {
+  const sorters: Array<[number, (v: TestVariant) => { toString(): string }]> = sortingKeys.map((key) => {
+    const [mul, propKey] = key.startsWith('-') ? [-1, key.slice(1)] : [1, key];
+    const propGetter = createTVPropGetter(propKey);
+
+    // Status should be be sorted by their significance not by their string
+    // representation.
+    if (propKey.toLowerCase() === 'status') {
+      return [mul, (v) => TEST_VARIANT_STATUS_CMP_STRING[propGetter(v) as TestVariantStatus]];
+    }
+    return [mul, propGetter];
+  });
+  return (v1, v2) => {
+    for (const [mul, propGetter] of sorters) {
+      const cmp = propGetter(v1).toString().localeCompare(propGetter(v2).toString()) * mul;
+      if (cmp !== 0) {
+        return cmp;
+      }
+    }
+    return 0;
+  };
 }
