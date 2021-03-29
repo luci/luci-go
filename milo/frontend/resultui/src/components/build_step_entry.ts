@@ -65,8 +65,10 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     return this.configsStore.stepIsPinned(this.step.name);
   }
 
+  private expandSubSteps = false;
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
+    this.expandSubSteps = expand;
     this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry').forEach((e) =>
       e.toggleAllSteps(expand)
     );
@@ -94,7 +96,12 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       </ul>
       ${this.step.children?.map(
         (child, i) => html`
-          <milo-build-step-entry class="list-entry" .number=${i + 1} .step=${child}></milo-build-step-entry>
+          <milo-build-step-entry
+            class="list-entry"
+            .number=${i + 1}
+            .step=${child}
+            .expanded=${this.expandSubSteps}
+          ></milo-build-step-entry>
         `
       ) || ''}
     `;
