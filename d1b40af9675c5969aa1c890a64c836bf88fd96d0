@@ -22,6 +22,30 @@
       },
       "revId": "d1b40af9675c5969aa1c890a64c836bf88fd96d0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6958930_7adc019a",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-29T22:51:58Z",
+      "side": 1,
+      "message": "fixes the typo.\nI don\u0027t want to make it a TODO because we may not need to do anything ever. It adds noise when you search TODO in the codebase.\nAdded \u0027Note: \u0027 instead.",
+      "parentUuid": "42340c14_9b7faa0a",
+      "range": {
+        "startLine": 227,
+        "startChar": 43,
+        "endLine": 227,
+        "endChar": 50
+      },
+      "revId": "d1b40af9675c5969aa1c890a64c836bf88fd96d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
