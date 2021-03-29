@@ -40,7 +40,6 @@ export class PropertyViewerElement extends MobxLitElement {
   private editorOptions: EditorConfiguration = {
     mode: { name: 'javascript', json: true },
     readOnly: true,
-    scrollbarStyle: 'null',
     matchBrackets: true,
     lineWrapping: true,
     foldGutter: true,
