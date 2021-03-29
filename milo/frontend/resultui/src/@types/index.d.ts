@@ -38,9 +38,9 @@ declare const CONFIGS: {
 declare const ENABLE_GA: boolean;
 
 /**
- * Whether the app is in production mode.
+ * Whether the UI service worker should be enabled.
  */
-declare const PRODUCTION: boolean;
+declare const ENABLE_UI_SW: boolean;
 
 /**
  * A string that is unique per page load;

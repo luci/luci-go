@@ -14,6 +14,7 @@
 
 import path from 'path';
 
+import Workbox from 'workbox-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
@@ -81,13 +82,24 @@ const config: Configuration = {
     }),
     new HtmlWebpackPlugin({
       alwaysWriteToDisk: true,
-      template: path.resolve(__dirname, './assets/index.template.html'),
+      template: path.resolve(__dirname, './assets/index.template.ejs'),
       filename: path.resolve(__dirname, './out/index.html'),
       // We should only include one entry chunk so modules won't be initialized
       // multiple times.
       chunks: ['index'],
     }),
     new HtmlWebpackHarddiskPlugin(),
+    new Workbox.GenerateSW({
+      // Without this, new release will not take effect until users close
+      // all build page tabs.
+      skipWaiting: true,
+      navigateFallback: '/ui/index.html',
+      // Workbox source map changes every build.
+      // This causes noise in the auto-roller.
+      // https://github.com/GoogleChrome/workbox/issues/2784
+      sourcemap: process.env.DEBUG_SW === 'true',
+      importScriptsViaChunks: ['service-worker-ext'],
+    }),
     new DefinePlugin({ ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true') }),
   ],
 };

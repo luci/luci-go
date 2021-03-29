@@ -18,7 +18,7 @@ import './routes';
 window.SW_PROMISE = new Promise((resolve) => {
   // Don't cache resources in development mode. Otherwise we will need to
   // refresh the page manually for changes to take effect.
-  if (PRODUCTION && 'serviceWorker' in navigator) {
+  if (ENABLE_UI_SW && 'serviceWorker' in navigator) {
     const wb = new Workbox('/ui/service-worker.js');
     wb.register({ immediate: true }).then((registration) => {
       console.log('UI SW registered: ', registration);
