@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "f2eeae96_1628a44e",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-29T22:29:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a995edd8_18f45bd3",
+      "revId": "fa6da63907ada34bed54c0e744f61c9de69187af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a70e7980_55fa92ec",
         "filename": "cv/internal/eventbox/box.go",
         "patchSetId": 1
@@ -31,6 +49,30 @@
       "writtenOn": "2021-03-29T19:07:30Z",
       "side": 1,
       "message": "why is the context here? To make it easy to pass non-eventboxish context from within Mutate(), whose context is eventboxy-ish?",
+      "range": {
+        "startLine": 251,
+        "startChar": 23,
+        "endLine": 251,
+        "endChar": 40
+      },
+      "revId": "fa6da63907ada34bed54c0e744f61c9de69187af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4cfa0c8f_c84f2689",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-29T22:29:47Z",
+      "side": 1,
+      "message": "Right. In case there\u0027re needs to pass additional info through context or set timeout/deadline.",
+      "parentUuid": "a70e7980_55fa92ec",
       "range": {
         "startLine": 251,
         "startChar": 23,
@@ -54,6 +96,30 @@
       "writtenOn": "2021-03-29T19:07:30Z",
       "side": 1,
       "message": "nit: by the eventbox user.",
+      "range": {
+        "startLine": 299,
+        "startChar": 13,
+        "endLine": 299,
+        "endChar": 14
+      },
+      "revId": "fa6da63907ada34bed54c0e744f61c9de69187af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "246da339_345efeac",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-29T22:29:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39ed9426_c8d07390",
       "range": {
         "startLine": 299,
         "startChar": 13,
