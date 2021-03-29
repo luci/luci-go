@@ -312,6 +312,8 @@ func TestUpdateCLWorks(t *testing.T) {
 		const gHostInternal = "internal-review.example.com"
 		const gRepo = "depot_tools"
 
+		ctx, pmDispatches := pmtest.MockDispatch(ctx)
+
 		ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 		gobmap.Update(ctx, lProject)
 
@@ -442,10 +444,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			}
 			So(sortedRefreshTasks(ct), ShouldResembleProto, expectedTasks)
 			// Project Manager should be notified.
-			// NOTE: since PM won't be consuming these notifications in this test, we
-			// keep a list of notifications and assert against the accumulated list.
-			pmNotifications := []string{lProject}
-			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+			So(pmDispatches.PopProjects(), ShouldResemble, []string{lProject})
 
 			// Simulate Gerrit change being updated with +1s timestamp.
 			ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
@@ -470,14 +469,13 @@ func TestUpdateCLWorks(t *testing.T) {
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
 				So(Refresh(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
-				So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+				So(pmDispatches.PopProjects(), ShouldBeEmpty)
 
 				Convey("But notifies PM if explicitly asked to do so", func() {
 					task.ForceNotifyPm = true
 					So(Refresh(ctx, task), ShouldBeNil)
-					So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion) // not touched
-					pmNotifications = append(pmNotifications, lProject)
-					So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications) // notified
+					So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)      // not touched
+					So(pmDispatches.PopProjects(), ShouldResemble, []string{lProject}) // notified
 				})
 			})
 
@@ -490,7 +488,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(err, ShouldErrLike, "stale Gerrit data")
 				So(transient.Tag.In(err), ShouldBeTrue)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
-				So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+				So(pmDispatches.PopProjects(), ShouldBeEmpty)
 			})
 
 			Convey("Heeds updatedHint and updates the CL", func() {
@@ -508,8 +506,7 @@ func TestUpdateCLWorks(t *testing.T) {
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				So(cl2.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble,
 					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Second))
-				pmNotifications = append(pmNotifications, lProject)
-				So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+				So(pmDispatches.PopProjects(), ShouldResemble, []string{lProject}) // notified
 
 				Convey("New revision doesn't re-use files & related changes", func() {
 					// Stay within the same blindRefreshInterval for de-duping refresh
@@ -547,8 +544,7 @@ func TestUpdateCLWorks(t *testing.T) {
 							ClidHint:    int64(getCL(ctx, gHostInternal, 477).ID),
 						},
 					))
-					pmNotifications = append(pmNotifications, lProject)
-					So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+					So(pmDispatches.PopProjects(), ShouldResemble, []string{lProject}) // notified
 				})
 			})
 
@@ -563,10 +559,8 @@ func TestUpdateCLWorks(t *testing.T) {
 				// Snapshot is preserved (handy, if this is temporal misconfiguration).
 				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
 				// PM is still notified.
-				pmNotifications = append(pmNotifications, lProject)
-				So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+				So(pmDispatches.PopProjects(), ShouldResemble, []string{lProject})
 			})
-			return
 
 			Convey("Watched by a diff project", func() {
 				ct.Clock.Add(time.Second)
@@ -589,8 +583,7 @@ func TestUpdateCLWorks(t *testing.T) {
 						ct.GFake.GetChange(gHost, 123).Info.GetUpdated())
 					So(cl2.ApplicableConfig.HasOnlyProject(lProject2), ShouldBeTrue)
 					// A different PM is notified.
-					pmNotifications = append(pmNotifications, lProject2)
-					So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+					So(pmDispatches.PopProjects(), ShouldResemble, []string{lProject2})
 				})
 
 				Convey("without access", func() {
@@ -605,13 +598,11 @@ func TestUpdateCLWorks(t *testing.T) {
 					So(cl2.ApplicableConfig.HasOnlyProject(lProject2), ShouldBeTrue)
 					So(cl2.DependentMeta.GetByProject()[lProject2].GetNoAccess(), ShouldBeTrue)
 					// A different PM is notified anyway.
-					pmNotifications = append(pmNotifications, lProject2)
-					So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, pmNotifications)
+					So(pmDispatches.PopProjects(), ShouldResemble, []string{lProject2})
 				})
 			})
 		})
 
-		return
 		Convey("Fetch dep after bare CL was crated", func() {
 			eid, err := changelist.GobID(gHost, 101)
 			So(err, ShouldBeNil)
@@ -629,7 +620,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			So(cl2.EVersion, ShouldEqual, 2)
 			changelist.RemoveUnusedGerritInfo(ci)
 			So(cl2.Snapshot.GetGerrit().GetInfo(), ShouldResembleProto, ci)
-			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+			So(pmDispatches.PopProjects(), ShouldResemble, []string{lProject})
 		})
 	})
 }
