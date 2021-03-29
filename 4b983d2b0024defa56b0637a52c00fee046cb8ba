@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ecc0b4ca_f0e9bb2d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-29T18:33:25Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "4b983d2b0024defa56b0637a52c00fee046cb8ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f03ccebc_3fa4add2",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-29T18:33:25Z",
+      "side": 1,
+      "message": "Glad we have this. Otherwise, we would have to add this to each test.",
+      "revId": "4b983d2b0024defa56b0637a52c00fee046cb8ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
