@@ -105,9 +105,12 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
           ${this.appState.gAuth
             ? html` <milo-signin
                 .gAuth=${this.appState.gAuth}
-                @user-update=${(e: UserUpdateEvent) => {
-                  this.appState.accessToken = e.detail.getAuthResponse().access_token || '';
-                  this.appState.userId = e.detail.isSignedIn() ? e.detail.getId() : '';
+                @user-update=${async (e: UserUpdateEvent) => {
+                  const authResponse = e.detail.getAuthResponse();
+                  this.appState.accessToken = authResponse.access_token || '';
+                  const userId = e.detail.isSignedIn() ? e.detail.getId() : '';
+                  this.appState.userId = userId;
+                  (await window.SW_PROMISE).messageSW({ type: 'SET_AUTH_DATA', authResponse, userId });
                 }}
               ></milo-signin>`
             : ''}
