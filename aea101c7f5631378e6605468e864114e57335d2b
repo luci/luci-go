@@ -378,6 +378,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3639f5a4_f42965f5",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-29T18:49:34Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a907bd48_64db30b5",
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8abdd3a3_086d8a58",
