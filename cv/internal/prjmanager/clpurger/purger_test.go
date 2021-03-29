@@ -44,6 +44,8 @@ func TestPurgeCL(t *testing.T) {
 		ct := cvtesting.Test{AppID: "cv"}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
+
 		const lProject = "lprj"
 		const gHost = "x-review"
 		const gRepo = "repo"
@@ -137,7 +139,7 @@ func TestPurgeCL(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clAfter.EVersion)
 				assertPMNotified("op-2")
-				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
 		})
 
@@ -148,7 +150,7 @@ func TestPurgeCL(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")
-				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
 
 			Convey("Trigger is no longer matching latest CL Snapshot", func() {
@@ -161,7 +163,7 @@ func TestPurgeCL(t *testing.T) {
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")
 				// The PM task should be ASAP.
-				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
 			})
 
 			Convey("Doesn't purge if CV isn't managing Runs for the project", func() {
@@ -173,7 +175,7 @@ func TestPurgeCL(t *testing.T) {
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")
 				// Should create PM task with ETA ~1 minute later.
-				So(pmtest.LatestETAof(ct.TQ.Tasks(), lProject), ShouldHappenAfter, ct.Clock.Now().Add(time.Minute-2*time.Second))
+				So(pmDispatcher.LatestETAof(lProject), ShouldHappenAfter, ct.Clock.Now().Add(time.Minute-2*time.Second))
 			})
 		})
 	})
