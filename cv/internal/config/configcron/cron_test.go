@@ -45,6 +45,7 @@ func TestConfigRefreshCron(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 
 		Convey("for a new project", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
@@ -57,7 +58,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				{Project: "chromium"},
 			})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{"chromium"})
+			So(pmDispatcher.PopProjects(), ShouldResemble, []string{"chromium"})
 		})
 
 		Convey("for an existing project", func() {
@@ -74,7 +75,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				{Project: "chromium"},
 			})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{"chromium"})
+			So(pmDispatcher.PopProjects(), ShouldResemble, []string{"chromium"})
 		})
 
 		Convey("Disable project", func() {
@@ -92,7 +93,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					{Project: "chromium", Disable: true},
 				})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-				So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{"chromium"})
+				So(pmDispatcher.PopProjects(), ShouldResemble, []string{"chromium"})
 			})
 			Convey("that doesn't exist in LUCI Config", func() {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
@@ -106,7 +107,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					{Project: "chromium", Disable: true},
 				})
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-				So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{"chromium"})
+				So(pmDispatcher.PopProjects(), ShouldResemble, []string{"chromium"})
 			})
 
 			Convey("Skip already disabled Project", func() {
