@@ -44,12 +44,14 @@ func init() {
 	ManageRunTaskRef = tq.RegisterTaskClass(tq.TaskClass{
 		ID:        ManageRunTaskClass,
 		Prototype: &ManageRunTask{},
+		Kind:      tq.NonTransactional,
 		Queue:     "manage-run",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        fmt.Sprintf("kick-%s", ManageRunTaskClass),
 		Prototype: &KickManageRunTask{},
+		Kind:      tq.NonTransactional,
 		Queue:     "kick-manage-run",
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {

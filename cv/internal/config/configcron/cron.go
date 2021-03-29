@@ -104,6 +104,7 @@ func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "refresh-project-config",
 		Prototype: &RefreshProjectConfigTask{},
+		Kind:      tq.NonTransactional,
 		Queue:     "refresh-project-config",
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {

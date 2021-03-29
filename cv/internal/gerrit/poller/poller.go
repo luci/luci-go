@@ -98,6 +98,7 @@ func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        task.ClassID,
 		Prototype: &task.PollGerritTask{},
+		Kind:      tq.NonTransactional,
 		Queue:     "poll-gerrit",
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
