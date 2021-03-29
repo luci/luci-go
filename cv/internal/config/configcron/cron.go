@@ -105,6 +105,7 @@ func init() {
 		ID:        "refresh-project-config",
 		Prototype: &RefreshProjectConfigTask{},
 		Queue:     "refresh-project-config",
+		Kind:      tq.NonTransactional,
 		Quiet:     true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*RefreshProjectConfigTask)
