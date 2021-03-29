@@ -16,17 +16,21 @@ import fs from 'fs';
 import path from 'path';
 
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { DefinePlugin } from 'webpack';
 import merge from 'webpack-merge';
 
 import common from './webpack.common';
+import { DefinePlugin } from 'webpack';
 
 export default merge(common, {
   mode: 'development',
   devtool: 'eval-source-map',
-  plugins: [new DefinePlugin({ PRODUCTION: JSON.stringify(false) })],
+  plugins: [new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(process.env.DEBUG_SW === 'true') })],
 
   devServer: {
+    // In inline mode, webpack-dev-server injects code to service worker
+    // scripts, making them unable to bootstrap.
+    // Disabling inline will break hot module replacement.
+    inline: process.env.DEBUG_SW !== 'true',
     contentBase: path.join(__dirname, './out/'),
     historyApiFallback: {
       index: '/ui/index.html',
