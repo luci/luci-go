@@ -48,7 +48,19 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
 
   constructor() {
     super();
-    gAuthPromise.then((gAuth) => (this.appState.gAuth = gAuth)).catch(() => (this.appState.userId = ''));
+    // Expires the token slightly (10s) earlier so an expired token won't be
+    // used if gAuth takes a while to return the new access token.
+    if (CACHED_AUTH_STATE && CACHED_AUTH_STATE.expiresAt > Date.now() - 10000) {
+      this.appState.accessToken = CACHED_AUTH_STATE.accessToken;
+      this.appState.userId = CACHED_AUTH_STATE.userId;
+    }
+
+    gAuthPromise
+      .then((gAuth) => (this.appState.gAuth = gAuth))
+      .catch(() => {
+        this.appState.userId = '';
+        this.appState.accessToken = '';
+      });
   }
 
   errorHandler = (event: ErrorEvent) => {
@@ -105,9 +117,20 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
           ${this.appState.gAuth
             ? html` <milo-signin
                 .gAuth=${this.appState.gAuth}
-                @user-update=${(e: UserUpdateEvent) => {
-                  this.appState.accessToken = e.detail.getAuthResponse().access_token || '';
-                  this.appState.userId = e.detail.isSignedIn() ? e.detail.getId() : '';
+                @user-update=${async (e: UserUpdateEvent) => {
+                  const authResponse = e.detail.getAuthResponse();
+                  const accessToken = authResponse.access_token || '';
+                  const userId = e.detail.isSignedIn() ? e.detail.getId() : '';
+                  this.appState.accessToken = accessToken;
+                  this.appState.userId = userId;
+                  const authState: AuthState = {
+                    accessToken,
+                    userId,
+                    // authResponse.expires_at is undefined when user is logged
+                    // out. We can cache this indefinitely.
+                    expiresAt: (authResponse.expires_at || Infinity) * 1000,
+                  };
+                  (await window.SW_PROMISE).messageSW({ type: 'SET_AUTH_STATE', authState });
                 }}
               ></milo-signin>`
             : ''}
