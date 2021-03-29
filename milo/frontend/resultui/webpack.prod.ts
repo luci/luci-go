@@ -32,6 +32,7 @@ export default merge(common, {
       // This causes noise in the auto-roller.
       // https://github.com/GoogleChrome/workbox/issues/2784
       sourcemap: false,
+      importScriptsViaChunks: ['service-worker-ext'],
     }),
   ],
 });
