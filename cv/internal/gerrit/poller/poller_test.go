@@ -161,6 +161,7 @@ func TestPoller(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 
 		const lProject = "chromium"
 		const gHost = "chromium-review.example.com"
@@ -292,7 +293,7 @@ func TestPoller(t *testing.T) {
 						uTask33 := updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber()[1]
 						So(uTask33.GetForceNotifyPm(), ShouldBeTrue)
 
-						So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
+						So(pmDispatcher.PopProjects(), ShouldResemble, []string{lProject})
 						// And PM is notified only 31 and 32 for now.
 						pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
 							getCL(gHost, 31), getCL(gHost, 32),
@@ -310,8 +311,8 @@ func TestPoller(t *testing.T) {
 							So(mustGetState(lProject).SubPollers.GetSubPollers()[0].GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 
 							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
-							So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 							// PM must be notified on all 31..34.
+							So(pmDispatcher.PopProjects(), ShouldResemble, []string{lProject})
 							pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
 								getCL(gHost, 31), getCL(gHost, 32), getCL(gHost, 33), getCL(gHost, 34),
 							})
@@ -347,8 +348,8 @@ func TestPoller(t *testing.T) {
 
 							// 1x Poll + 1x PM task + 4x CL refresh.
 							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
-							So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 							// PM must be still notified on all 31..34, but in 2 phases.
+							So(pmDispatcher.PopProjects(), ShouldResemble, []string{lProject})
 							pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
 								getCL(gHost, 31), getCL(gHost, 32),
 							})
@@ -410,7 +411,7 @@ func TestPoller(t *testing.T) {
 					// PM can't be notified directly, because CL31 and CL32 are not in
 					// Datastore yet (unlikely, but possible if Gerrit updater TQ is
 					// stalled).
-					So(pmtest.Projects(ct.TQ.Tasks()), ShouldBeEmpty)
+					So(pmDispatcher.PopProjects(), ShouldBeEmpty)
 					So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32})
 					for _, p := range updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber() {
 						So(p.GetForceNotifyPm(), ShouldBeTrue)
