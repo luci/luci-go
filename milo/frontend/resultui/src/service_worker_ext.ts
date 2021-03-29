@@ -14,6 +14,8 @@
 
 import { get as kvGet, set as kvSet } from 'idb-keyval';
 
+importScripts('/configs.js');
+
 // TSC isn't able to determine the scope properly.
 // Perform manual casting to fix typing.
 const _self = (self as unknown) as ServiceWorkerGlobalScope;
@@ -39,6 +41,7 @@ _self.addEventListener('message', async (e) => {
 
 _self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
+  // Serve cached auth data.
   if (url.pathname === '/ui/cached-auth-state.js') {
     e.respondWith(
       (async () => {
@@ -48,5 +51,12 @@ _self.addEventListener('fetch', (e) => {
         });
       })()
     );
+  }
+
+  // Ensure all clients served by this service worker use the same config.
+  if (url.pathname === '/configs.js') {
+    const res = new Response(`var CONFIGS=${JSON.stringify(CONFIGS)};`);
+    res.headers.set('content-type', 'application/javascript');
+    e.respondWith(res);
   }
 });
