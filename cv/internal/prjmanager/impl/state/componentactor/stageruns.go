@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -105,7 +105,7 @@ func (a *Actor) postponeDueNotYetLoadedDeps(ctx context.Context, info *clInfo) (
 	return time.Time{}, nil
 }
 
-func (a *Actor) makeRunBuilder(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*prjmanager.RunBuilder, error) {
+func (a *Actor) makeRunBuilder(ctx context.Context, combo *combo, cg *config.ConfigGroup) (*runcreator.RunBuilder, error) {
 	latestIndex := -1
 	cls := make([]*changelist.CL, len(combo.all))
 	for i, info := range combo.all {
@@ -134,10 +134,10 @@ func (a *Actor) makeRunBuilder(ctx context.Context, combo *combo, cg *config.Con
 		return nil, errors.Annotate(err, "failed to get OwnerIdentity of %d", cls[latestIndex].ID).Err()
 	}
 
-	bcls := make([]prjmanager.RunBuilderCL, len(cls))
+	bcls := make([]runcreator.RunBuilderCL, len(cls))
 	for i, cl := range cls {
 		pcl := combo.all[i].pcl
-		bcls[i] = prjmanager.RunBuilderCL{
+		bcls[i] = runcreator.RunBuilderCL{
 			ID:               common.CLID(pcl.GetClid()),
 			ExpectedEVersion: int(pcl.GetEversion()),
 			TriggerInfo:      pcl.GetTrigger(),
@@ -145,7 +145,7 @@ func (a *Actor) makeRunBuilder(ctx context.Context, combo *combo, cg *config.Con
 		}
 	}
 
-	return &prjmanager.RunBuilder{
+	return &runcreator.RunBuilder{
 		ConfigGroupID:            cg.ID,
 		LUCIProject:              cg.ProjectString(),
 		Mode:                     run.Mode(combo.latestTriggered.pcl.GetTrigger().GetMode()),

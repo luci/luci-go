@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
 
 // Supporter provides limited access to resources of PM state for ease of
@@ -71,7 +71,7 @@ type Actor struct {
 	visitedCLs map[int64]struct{}
 
 	// runBuilders are prepared by NextActionTime() and executed in Act().
-	runBuilders []*prjmanager.RunBuilder
+	runBuilders []*runcreator.RunBuilder
 	// purgeCLtasks for subset of CLs in toPurge which can be purged now.
 	purgeCLtasks []*prjpb.PurgeCLTask
 }
