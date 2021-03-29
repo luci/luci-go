@@ -23,6 +23,7 @@ import { Configuration, DefinePlugin } from 'webpack';
 const config: Configuration = {
   entry: {
     index: './src/index.ts',
+    'service-worker-ext': './src/service_worker_ext.ts',
   },
   output: {
     path: path.resolve(__dirname, './out/'),
@@ -55,9 +56,11 @@ const config: Configuration = {
     configs: 'CONFIGS',
   },
   optimization: {
-    runtimeChunk: 'single',
+    // Disable runtime chunk so standalone scripts can be executed/imported
+    // independently.
+    runtimeChunk: false,
     splitChunks: {
-      chunks: 'all',
+      chunks: (chunk) => chunk.name !== 'service-worker-ext',
       maxInitialRequests: Infinity,
       minSize: 0,
       cacheGroups: {
@@ -80,6 +83,9 @@ const config: Configuration = {
       alwaysWriteToDisk: true,
       template: path.resolve(__dirname, './assets/index.template.html'),
       filename: path.resolve(__dirname, './out/index.html'),
+      // We should only include one entry chunk so modules won't be initialized
+      // multiple times.
+      chunks: ['index'],
     }),
     new HtmlWebpackHarddiskPlugin(),
     new DefinePlugin({ ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true') }),
