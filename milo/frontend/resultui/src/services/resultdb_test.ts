@@ -16,6 +16,7 @@ import { assert } from 'chai';
 
 import {
   createTVPropGetter,
+  createTVCmpFn,
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
   TestVariant,
@@ -66,5 +67,62 @@ describe('createTVPropGetter', () => {
     // Fallback to empty string.
     const prop2 = getter(({} as Partial<TestVariant>) as TestVariant);
     assert.strictEqual(prop2, '');
+  });
+});
+
+describe('createTVCmpFn', () => {
+  const variant1 = ({
+    status: TestVariantStatus.UNEXPECTED,
+    testMetadata: {
+      name: 'a',
+    },
+    variant: { def: { key1: 'val1' } },
+  } as Partial<TestVariant>) as TestVariant;
+  const variant2 = ({
+    status: TestVariantStatus.EXONERATED,
+    testMetadata: {
+      name: 'b',
+    },
+    variant: { def: { key1: 'val2' } },
+  } as Partial<TestVariant>) as TestVariant;
+  const variant3 = ({
+    status: TestVariantStatus.EXONERATED,
+    testMetadata: {
+      name: 'b',
+    },
+    variant: { def: { key1: 'val1' } },
+  } as Partial<TestVariant>) as TestVariant;
+
+  it('can create a sort fn', async () => {
+    const cmpFn = createTVCmpFn(['name']);
+
+    assert.strictEqual(cmpFn(variant1, variant2), -1);
+    assert.strictEqual(cmpFn(variant2, variant1), 1);
+    assert.strictEqual(cmpFn(variant1, variant1), 0);
+  });
+
+  it('can sort in descending order', async () => {
+    const cmpFn = createTVCmpFn(['-name']);
+
+    assert.strictEqual(cmpFn(variant1, variant2), 1);
+    assert.strictEqual(cmpFn(variant2, variant1), -1);
+    assert.strictEqual(cmpFn(variant1, variant1), 0);
+  });
+
+  it('can sort by status correctly', async () => {
+    const cmpFn = createTVCmpFn(['status']);
+
+    // Status should be treated as numbers rather than as strings when sorting.
+    assert.strictEqual(cmpFn(variant1, variant2), -1);
+    assert.strictEqual(cmpFn(variant2, variant1), 1);
+    assert.strictEqual(cmpFn(variant1, variant1), 0);
+  });
+
+  it('can sort by multiple keys', async () => {
+    const cmpFn = createTVCmpFn(['status', '-v.key1']);
+
+    assert.strictEqual(cmpFn(variant1, variant2), -1);
+    assert.strictEqual(cmpFn(variant2, variant1), 1);
+    assert.strictEqual(cmpFn(variant2, variant3), -1);
   });
 });
