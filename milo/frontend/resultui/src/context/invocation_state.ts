@@ -19,7 +19,7 @@ import { consumeContext, provideContext } from '../libs/context';
 import { parseSearchQuery } from '../libs/search_query';
 import { TestLoader } from '../models/test_loader';
 import { TestPresentationConfig } from '../services/buildbucket';
-import { createTVPropGetter, Invocation, TestVariant } from '../services/resultdb';
+import { createTVPropGetter, createTVCmpFn, Invocation, TestVariant } from '../services/resultdb';
 import { AppState } from './app_state';
 
 export class QueryInvocationError {
@@ -59,6 +59,17 @@ export class InvocationState {
     return this.displayedColumns.map((col) => createTVPropGetter(col));
   }
 
+  @observable.ref sortingKeysParam?: string[];
+  @computed({ equals: comparer.shallow }) get defaultSortingKeys() {
+    return ['status', ...this.defaultColumns, 'name'];
+  }
+  @computed({ equals: comparer.shallow }) get sortingKeys() {
+    return this.sortingKeysParam || this.defaultSortingKeys;
+  }
+  @computed get testVariantCmpFn(): (v1: TestVariant, v2: TestVariant) => number {
+    return createTVCmpFn(this.sortingKeys);
+  }
+
   @observable.ref groupingKeysParam?: string[];
   @computed({ equals: comparer.shallow }) get defaultGroupingKeys() {
     return this.presentationConfig.groupingKeys || ['status'];
@@ -89,6 +100,7 @@ export class InvocationState {
         }
         this.testLoader.filter = this.searchFilter;
         this.testLoader.groupers = this.groupers;
+        this.testLoader.cmpFn = this.testVariantCmpFn;
       })
     );
   }

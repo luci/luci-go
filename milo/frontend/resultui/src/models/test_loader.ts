@@ -66,6 +66,7 @@ export class LoadTestVariantsError {
 export class TestLoader {
   @observable.ref filter = (_v: TestVariant) => true;
   @observable.ref groupers: Array<[string, (v: TestVariant) => unknown]> = [];
+  @observable.ref cmpFn = (_v1: TestVariant, _v2: TestVariant) => 0;
 
   @computed get isLoading() {
     return !this.loadedAllVariants && this.loadingReqCount !== 0;
@@ -113,7 +114,7 @@ export class TestLoader {
     for (const [, propGetter] of this.groupers) {
       groups = groups.flatMap((group) => Object.values(groupBy(group, (v) => propGetter(v))));
     }
-    return groups;
+    return groups.map((group) => group.sort(this.cmpFn));
   }
 
   /**
