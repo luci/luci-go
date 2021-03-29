@@ -15,11 +15,13 @@
 package clpurger
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -118,10 +120,16 @@ func TestPurgeCL(t *testing.T) {
 		}
 		So(task.Trigger, ShouldNotBeNil)
 
+		schedule := func() error {
+			return datastore.RunInTransaction(ctx, func(tCtx context.Context) error {
+				return Schedule(tCtx, task)
+			}, nil)
+		}
+
 		ct.Clock.Add(time.Minute)
 
 		Convey("Happy path: cancel trigger, refresh CL, and notify PM", func() {
-			So(Schedule(ctx, task), ShouldBeNil)
+			So(schedule(), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			clAfter := loadCL()
@@ -135,7 +143,7 @@ func TestPurgeCL(t *testing.T) {
 				// Use different Operation ID s.t. we can easily assert PM was notified
 				// the 2nd time.
 				task.PurgingCl.OperationId = "op-2"
-				So(Schedule(ctx, task), ShouldBeNil)
+				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clAfter.EVersion)
 				assertPMNotified("op-2")
@@ -146,7 +154,7 @@ func TestPurgeCL(t *testing.T) {
 		Convey("Even if no purging is done, PM is always notified", func() {
 			Convey("Task arrives after the deadline", func() {
 				task.PurgingCl.Deadline = timestamppb.New(ct.Clock.Now().Add(-time.Minute))
-				So(Schedule(ctx, task), ShouldBeNil)
+				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")
@@ -158,7 +166,7 @@ func TestPurgeCL(t *testing.T) {
 				gf.CQ(+1, ct.Clock.Now().Add(-time.Hour), gf.U("user-1"))(ci)
 				task.Trigger = trigger.Find(ci)
 
-				So(Schedule(ctx, task), ShouldBeNil)
+				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")
@@ -170,7 +178,7 @@ func TestPurgeCL(t *testing.T) {
 				settings.UseCvRuns.ProjectRegexpExclude = []string{lProject}
 				So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-				So(Schedule(ctx, task), ShouldBeNil)
+				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				So(loadCL().EVersion, ShouldEqual, clBefore.EVersion) // no changes.
 				assertPMNotified("op")

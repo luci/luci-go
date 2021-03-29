@@ -60,17 +60,22 @@ func init() {
 		ID:        ManageProjectTaskClass,
 		Prototype: &ManageProjectTask{},
 		Queue:     "manage-project",
+		Kind:      tq.NonTransactional,
+		Quiet:     true,
 	})
 	KickManageProjectTaskRef = tq.RegisterTaskClass(tq.TaskClass{
 		ID:        KickManageProjectTaskClass,
 		Prototype: &KickManageProjectTask{},
 		Queue:     "kick-manage-project",
+		Kind:      tq.Transactional,
+		Quiet:     true,
 	})
 	PurgeProjectCLTaskRef = tq.RegisterTaskClass(tq.TaskClass{
 		ID:        PurgeProjectCLTaskClass,
 		Prototype: &PurgeCLTask{},
 		Queue:     "purge-project-cl",
-		Quiet:     false, // these tasks are rare enought that verbosity only helps.
+		Kind:      tq.Transactional,
+		Quiet:     false, // these tasks are rare enough that verbosity only helps.
 	})
 }
 

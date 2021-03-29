@@ -45,6 +45,7 @@ import (
 	serverauth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/config"
