@@ -79,7 +79,11 @@ func init() {
 // ProjectManager will be invoked at approximately no earlier than both:
 // * eta time
 // * next possible.
+//
+// To avoid actually dispatching TQ tasks in tests, use pmtest.MockDispatch().
 func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
+	mock, mocked := ctx.Value(&mockDispatcherContextKey).(func(string, time.Time))
+
 	if datastore.CurrentTransaction(ctx) != nil {
 		// TODO(tandrii): use txndefer to immediately trigger a ManageProjectTask after
 		// transaction completes to reduce latency in *most* circumstances.
@@ -87,6 +91,11 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 		payload := &KickManageProjectTask{LuciProject: luciProject}
 		if !eta.IsZero() {
 			payload.Eta = timestamppb.New(eta)
+		}
+
+		if mocked {
+			mock(luciProject, eta)
+			return nil
 		}
 		return tq.AddTask(ctx, &tq.Task{
 			Title:            luciProject,
@@ -109,10 +118,25 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 		eta = now
 	}
 	eta = eta.Truncate(PMTaskInterval).Add(PMTaskInterval)
+
+	if mocked {
+		mock(luciProject, eta)
+		return nil
+	}
 	return tq.AddTask(ctx, &tq.Task{
 		Title:            luciProject,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", luciProject, eta.UnixNano()),
 		ETA:              eta,
 		Payload:          &ManageProjectTask{LuciProject: luciProject, Eta: timestamppb.New(eta)},
 	})
+}
+
+var mockDispatcherContextKey = "prjpb.mockDispatcher"
+
+// InstallMockDispatcher is used in test to run tests emitting PM events without
+// actually dispatching PM tasks.
+//
+// See pmtest.MockDispatch().
+func InstallMockDispatcher(ctx context.Context, f func(luciProject string, eta time.Time)) context.Context {
+	return context.WithValue(ctx, &mockDispatcherContextKey, f)
 }

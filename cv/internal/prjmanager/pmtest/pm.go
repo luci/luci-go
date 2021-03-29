@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -152,3 +153,22 @@ func AssertReceivedCLsNotified(ctx context.Context, project string, cls []*chang
 		},
 	})
 }
+
+// MockDispatch installs and returns MockDispatcher for PM.
+func MockDispatch(ctx context.Context) (context.Context, MockDispatcher) {
+	m := MockDispatcher{&cvtesting.DispatchRecorder{}}
+	ctx = prjpb.InstallMockDispatcher(ctx, m.Dispatch)
+	return ctx, m
+}
+
+// MockDispatcher records in memory what would have resulted in task enqueues
+// for a PM.
+type MockDispatcher struct {
+	*cvtesting.DispatchRecorder
+}
+
+// Projects returns sorted list of Projects.
+func (m *MockDispatcher) Projects() []string { return m.Targets() }
+
+// PopProjects returns sorted list of Projects and resets the state.
+func (m *MockDispatcher) PopProjects() []string { return m.PopTargets() }
