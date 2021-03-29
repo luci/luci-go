@@ -69,11 +69,20 @@ func init() {
 // RunManager will be invoked at approximately no earlier than both:
 //  * eta time (if given)
 //  * next possible.
+//
+// To avoid actually dispatching TQ tasks in tests, use runtest.MockDispatch().
 func Dispatch(ctx context.Context, runID string, eta time.Time) error {
+	mock, mocked := ctx.Value(&mockDispatcherContextKey).(func(string, time.Time))
+
 	if datastore.CurrentTransaction(ctx) != nil {
 		payload := &KickManageRunTask{RunId: runID}
 		if !eta.IsZero() {
 			payload.Eta = timestamppb.New(eta)
+		}
+
+		if mocked {
+			mock(runID, eta)
+			return nil
 		}
 		return tq.AddTask(ctx, &tq.Task{
 			DeduplicationKey: "", // not allowed in a transaction
@@ -95,10 +104,25 @@ func Dispatch(ctx context.Context, runID string, eta time.Time) error {
 		eta = now
 	}
 	eta = eta.Truncate(taskInterval).Add(taskInterval)
+
+	if mocked {
+		mock(runID, eta)
+		return nil
+	}
 	return tq.AddTask(ctx, &tq.Task{
 		Title:            runID,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", runID, eta.UnixNano()),
 		ETA:              eta,
 		Payload:          &ManageRunTask{RunId: runID},
 	})
+}
+
+var mockDispatcherContextKey = "eventpb.mockDispatcher"
+
+// InstallMockDispatcher is used in test to run tests emitting RM events without
+// actually dispatching RM tasks.
+//
+// See runtest.MockDispatch().
+func InstallMockDispatcher(ctx context.Context, f func(runID string, eta time.Time)) context.Context {
+	return context.WithValue(ctx, &mockDispatcherContextKey, f)
 }
