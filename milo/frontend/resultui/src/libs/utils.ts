@@ -12,21 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import MarkdownIt from 'markdown-it';
-
-import { defaultTarget } from './markdown_it_plugins/default_target';
-import { sanitizeHTML } from './sanitize_html';
-
-const md = MarkdownIt({ html: true, linkify: true }).use(defaultTarget, '_blank');
-
-export function renderMarkdown(markdown: string) {
-  return sanitizeHTML(renderMarkdownUnsanitized(markdown));
-}
-
-export function renderMarkdownUnsanitized(markdown: string): string {
-  return md.render(markdown);
-}
-
 /**
  * Extend URL with methods that can be chained.
  */

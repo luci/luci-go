@@ -15,7 +15,7 @@
 import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
-import { renderMarkdownUnsanitized } from '../libs/utils';
+import { renderMarkdownUnsanitized } from '../libs/markdown_utils';
 import { BuildStatus, Log, Step } from '../services/buildbucket';
 
 /**
