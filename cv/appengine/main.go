@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
