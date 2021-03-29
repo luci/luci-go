@@ -67,8 +67,8 @@ func TestComputeCLsDigest(t *testing.T) {
 			}
 		}
 
-		rb := RunBuilder{
-			InputCLs: []RunBuilderCL{
+		rb := Creator{
+			InputCLs: []CL{
 				{
 					Snapshot:    snapshotOf("x-review.example.com", 1234567, "rev2"),
 					TriggerInfo: triggerAt(run.FullRun, 006, 49999*time.Microsecond),
@@ -84,7 +84,7 @@ func TestComputeCLsDigest(t *testing.T) {
 		So(hex.EncodeToString(rb.runIDBuilder.digest), ShouldEqual, "bc86ed248de55fb0")
 
 		// The CLsDigest must be agnostic of input CLs order.
-		rb2 := RunBuilder{InputCLs: []RunBuilderCL{rb.InputCLs[1], rb.InputCLs[0]}}
+		rb2 := Creator{InputCLs: []CL{rb.InputCLs[1], rb.InputCLs[0]}}
 		rb2.computeCLsDigest()
 		So(hex.EncodeToString(rb2.runIDBuilder.digest), ShouldEqual, "bc86ed248de55fb0")
 	})
@@ -149,14 +149,14 @@ func TestRunBuilder(t *testing.T) {
 		owner, err := identity.MakeIdentity("user:owner@example.com")
 		So(err, ShouldBeNil)
 
-		rb := RunBuilder{
+		rb := Creator{
 			LUCIProject:              lProject,
 			ConfigGroupID:            config.ConfigGroupID("sha256:cafe/cq-group"),
 			OperationID:              "this-operation-id",
 			Mode:                     run.DryRun,
 			Owner:                    owner,
 			ExpectedIncompleteRunIDs: common.MakeRunIDs("expected/000-run"),
-			InputCLs: []RunBuilderCL{
+			InputCLs: []CL{
 				{
 					ID:               cl1.ID,
 					TriggerInfo:      triggerOf(cl1),

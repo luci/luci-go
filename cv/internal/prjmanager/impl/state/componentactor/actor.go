@@ -70,8 +70,8 @@ type Actor struct {
 	// visitedCLs tracks clid of visited CLs during stageNewRuns.
 	visitedCLs map[int64]struct{}
 
-	// runBuilders are prepared by NextActionTime() and executed in Act().
-	runBuilders []*runcreator.RunBuilder
+	// runCreators are prepared by NextActionTime() and executed in Act().
+	runCreators []*runcreator.Creator
 	// purgeCLtasks for subset of CLs in toPurge which can be purged now.
 	purgeCLtasks []*prjpb.PurgeCLTask
 }
@@ -89,7 +89,7 @@ func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, e
 	switch {
 	case err != nil:
 		return time.Time{}, err
-	case len(a.runBuilders) > 0:
+	case len(a.runCreators) > 0:
 		// Required by the componentActor.NextActionTime
 		when = now
 	}
@@ -116,10 +116,10 @@ func (a *Actor) Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask
 }
 
 func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
-	if len(a.runBuilders) == 0 {
+	if len(a.runCreators) == 0 {
 		return nil, nil
 	}
-	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, a.runBuilders[0].LUCIProject); {
+	switch yes, err := migrationcfg.IsCQDUsingMyRuns(ctx, a.runCreators[0].LUCIProject); {
 	case err != nil:
 		return nil, err
 	case !yes:
@@ -127,13 +127,13 @@ func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
 		// that won't be finalized.
 		// TODO(tandrii): delete this check once RunManager cancels Runs based on
 		// user actions and finalizes based on CQD reports.
-		logging.Debugf(ctx, "would have created %d Runs", len(a.runBuilders))
+		logging.Debugf(ctx, "would have created %d Runs", len(a.runCreators))
 		return nil, nil
 	}
 
-	toAdd := make([]*prjpb.PRun, 0, len(a.runBuilders))
+	toAdd := make([]*prjpb.PRun, 0, len(a.runCreators))
 	var errs errors.MultiError
-	for _, rb := range a.runBuilders {
+	for _, rb := range a.runCreators {
 		switch r, err := rb.Create(ctx); {
 		case err != nil:
 			errs = append(errs, err)
