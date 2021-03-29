@@ -75,8 +75,13 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 	}
 
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
-	switch err := eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject}); {
+	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject}); {
 	case err == nil:
+		for _, postProcessFn := range postProcessFns {
+			if err := postProcessFn(ctx); err != nil {
+				return errors.Annotate(err, "project %q", luciProject).Err()
+			}
+		}
 		return nil
 	case eventbox.IsErrConcurretMutation(err):
 		// Instead of retrying this task at a later time, which has already
