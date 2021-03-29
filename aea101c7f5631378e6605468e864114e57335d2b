@@ -362,6 +362,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a907bd48_64db30b5",
+        "filename": "cv/internal/run/impl/submit/queue_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-29T18:30:11Z",
+      "side": 1,
+      "message": "Ha, you are right -- I misremembered Release() when I typed the above. So, this CL is LGTM.\n\nAs for trans context -- yes for Acquire().\nFor Release() -- non-trans is also fine. It doesn\u0027t really matter, i think.",
+      "parentUuid": "60ca08cf_b043622e",
+      "revId": "aea101c7f5631378e6605468e864114e57335d2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8abdd3a3_086d8a58",
         "filename": "cv/internal/run/impl/submit/queue_test.go",
         "patchSetId": 6
