@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "abc27867_a57baa67",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-29T20:49:25Z",
+      "side": 1,
+      "message": "nits: use / are using",
+      "range": {
+        "startLine": 56,
+        "startChar": 54,
+        "endLine": 56,
+        "endChar": 62
+      },
+      "revId": "a5d2c911359533d0c2a6667f6c5ac783265559ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
