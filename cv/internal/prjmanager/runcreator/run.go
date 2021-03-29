@@ -39,14 +39,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// TODO(tandrii): rename RunBuilder to just Builder.
-
-// RunBuilder creates a new Run.
+// Creator creates a new Run.
 //
 // If Expected<...> parameters differ from what's read from Datastore during
 // transaction, the creation is aborted with error tagged with StateChangedTag.
-// See RunBuilder.Create doc.
-type RunBuilder struct {
+// See Creator.Create doc.
+type Creator struct {
 	// All public fields are required.
 
 	// LUCIProject. Required.
@@ -59,7 +57,7 @@ type RunBuilder struct {
 	// InputCLs will reference the newly created Run via their IncompleteRuns
 	// field, and Run's RunCL entities will reference these InputCLs back.
 	// Required.
-	InputCLs []RunBuilderCL
+	InputCLs []CL
 	// Mode is the Run's mode. Required.
 	Mode run.Mode
 	// Owner is the Run Owner. Required.
@@ -100,8 +98,8 @@ type RunBuilder struct {
 	run *run.Run
 }
 
-// RunBuilderCL is a helper struct for per-CL input for run creation.
-type RunBuilderCL struct {
+// CL is a helper struct for per-CL input for run creation.
+type CL struct {
 	ID               common.CLID
 	ExpectedEVersion int
 	TriggerInfo      *run.Trigger
@@ -129,7 +127,7 @@ var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("the task should be d
 //
 //   * all other errors are non retryable and typically indicate a bug or severe
 //     misconfiguration. For example, lack of ProjectStateOffload entity.
-func (rb *RunBuilder) Create(ctx context.Context) (ret *run.Run, err error) {
+func (rb *Creator) Create(ctx context.Context) (ret *run.Run, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")
 	defer func() { span.End(err) }()
 
@@ -151,7 +149,7 @@ func (rb *RunBuilder) Create(ctx context.Context) (ret *run.Run, err error) {
 	}
 }
 
-func (rb *RunBuilder) prepare(ctx context.Context) error {
+func (rb *Creator) prepare(ctx context.Context) error {
 	switch {
 	case rb.LUCIProject == "":
 		panic("LUCIProject is required")
@@ -175,7 +173,7 @@ func (rb *RunBuilder) prepare(ctx context.Context) error {
 	return nil
 }
 
-func (rb *RunBuilder) createTransactionally(ctx context.Context) (*run.Run, error) {
+func (rb *Creator) createTransactionally(ctx context.Context) (*run.Run, error) {
 	rb.computeRunID(ctx)
 	switch err := rb.load(ctx); {
 	case err == errAlreadyCreated:
@@ -190,7 +188,7 @@ func (rb *RunBuilder) createTransactionally(ctx context.Context) (*run.Run, erro
 }
 
 // load reads latest state from Datastore and verifies creation can proceed.
-func (rb *RunBuilder) load(ctx context.Context) error {
+func (rb *Creator) load(ctx context.Context) error {
 	rb.dsBatcher.reset()
 	rb.checkRunExists(ctx)
 	rb.checkProjectState(ctx)
@@ -204,7 +202,7 @@ var errAlreadyCreated = errors.New("already created")
 
 // checkRunExists checks whether a Run already exists in datastore, and whether
 // it was created by us.
-func (rb *RunBuilder) checkRunExists(ctx context.Context) {
+func (rb *Creator) checkRunExists(ctx context.Context) {
 	rb.run = &run.Run{ID: rb.runID}
 	rb.dsBatcher.register(rb.run, func(err error) error {
 		switch {
@@ -231,7 +229,7 @@ func (rb *RunBuilder) checkRunExists(ctx context.Context) {
 
 // checkProjectState checks if the project is enabled and uses the expected
 // ConfigHash.
-func (rb *RunBuilder) checkProjectState(ctx context.Context) {
+func (rb *Creator) checkProjectState(ctx context.Context) {
 	ps := &prjmanager.ProjectStateOffload{
 		Project: datastore.MakeKey(ctx, prjmanager.ProjectKind, rb.LUCIProject),
 	}
@@ -253,7 +251,7 @@ func (rb *RunBuilder) checkProjectState(ctx context.Context) {
 
 // checkCLsUnchanged sets `.cls` with the latest Datastore value and verifies
 // that their EVersion matches what's expected.
-func (rb *RunBuilder) checkCLsUnchanged(ctx context.Context) {
+func (rb *Creator) checkCLsUnchanged(ctx context.Context) {
 	rb.cls = make([]*changelist.CL, len(rb.InputCLs))
 	for i, inputCL := range rb.InputCLs {
 		rb.cls[i] = &changelist.CL{ID: inputCL.ID}
@@ -281,7 +279,7 @@ func (rb *RunBuilder) checkCLsUnchanged(ctx context.Context) {
 // save saves all modified and created Datastore entities.
 //
 // It may be retried multiple times on failure.
-func (rb *RunBuilder) save(ctx context.Context) error {
+func (rb *Creator) save(ctx context.Context) error {
 	rb.dsBatcher.reset()
 	// Keep .CreateTime and .UpdateTime entities the same across all saved
 	// entities. Do pre-emptive rounding before Datastore layer does it, such
@@ -309,7 +307,7 @@ func (rb *RunBuilder) save(ctx context.Context) error {
 	return run.Start(ctx, rb.runID)
 }
 
-func (rb *RunBuilder) registerSaveRun(ctx context.Context, now time.Time) {
+func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
 	ids := make(common.CLIDs, len(rb.InputCLs))
 	for i, cl := range rb.InputCLs {
 		ids[i] = cl.ID
@@ -333,7 +331,7 @@ func (rb *RunBuilder) registerSaveRun(ctx context.Context, now time.Time) {
 	})
 }
 
-func (rb *RunBuilder) registerSaveRunCL(ctx context.Context, index int) {
+func (rb *Creator) registerSaveRunCL(ctx context.Context, index int) {
 	inputCL := rb.InputCLs[index]
 	entity := &run.RunCL{
 		Run:     datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
@@ -346,7 +344,7 @@ func (rb *RunBuilder) registerSaveRunCL(ctx context.Context, index int) {
 	})
 }
 
-func (rb *RunBuilder) registerSaveCL(ctx context.Context, index int, now time.Time) {
+func (rb *Creator) registerSaveCL(ctx context.Context, index int, now time.Time) {
 	cl := rb.cls[index]
 	cl.EVersion++
 	cl.UpdateTime = now
@@ -357,7 +355,7 @@ func (rb *RunBuilder) registerSaveCL(ctx context.Context, index int, now time.Ti
 }
 
 // computeCLsDigest populates `.runIDBuilder` for use by computeRunID.
-func (rb *RunBuilder) computeCLsDigest() {
+func (rb *Creator) computeCLsDigest() {
 	// The first version uses CQDaemon's `attempt_key_hash` aimed for
 	// ease of comparison and log grepping during migration. However, this
 	// assumes Gerrit CLs and requires having changelist.Snapshot pre-loaded.
@@ -365,7 +363,7 @@ func (rb *RunBuilder) computeCLsDigest() {
 	// it's good enough for the purpose of avoiding spurious collision of RunIDs.
 	rb.runIDBuilder.version = 1
 
-	cls := append([]RunBuilderCL(nil), rb.InputCLs...) // copy
+	cls := append([]CL(nil), rb.InputCLs...) // copy
 	sort.Slice(cls, func(i, j int) bool {
 		a := cls[i].Snapshot.GetGerrit()
 		b := cls[j].Snapshot.GetGerrit()
@@ -405,7 +403,7 @@ func (rb *RunBuilder) computeCLsDigest() {
 }
 
 // computeRunID generates and saves new Run ID in `.runID`.
-func (rb *RunBuilder) computeRunID(ctx context.Context) {
+func (rb *Creator) computeRunID(ctx context.Context) {
 	b := &rb.runIDBuilder
 	rb.runID = common.MakeRunID(rb.LUCIProject, clock.Now(ctx), b.version, b.digest)
 }
