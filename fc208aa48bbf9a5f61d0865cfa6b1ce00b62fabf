@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e147ac94_34ab2559",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-29T18:59:02Z",
+      "side": 1,
+      "message": "lgtm % \":\u003d\" bug",
+      "revId": "fc208aa48bbf9a5f61d0865cfa6b1ce00b62fabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f304ed2_a2c0cdca",
+        "filename": "cv/internal/run/impl/handler/verification_completed.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-29T18:59:02Z",
+      "side": 1,
+      "message": "What about BQ emitter? Do we need to record the fact that this run has associated `migration.VerifiedCQDRun{ID: rid}`,\nOR is your thinking that BQ handler would just read it unconditionally and if it exists, send richer data (e.g. with triggered tryjobs)?",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 51
+      },
+      "revId": "fc208aa48bbf9a5f61d0865cfa6b1ce00b62fabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "698db46a_feb9e01c",
+        "filename": "cv/internal/run/impl/handler/verification_completed.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-29T18:59:02Z",
+      "side": 1,
+      "message": "curious, why do you need it *transactional*?\nIn PM, I just enqueue it right here, and on transient err, the current task gets retried.",
+      "range": {
+        "startLine": 69,
+        "startChar": 4,
+        "endLine": 72,
+        "endChar": 6
+      },
+      "revId": "fc208aa48bbf9a5f61d0865cfa6b1ce00b62fabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e084882a_0dad22dc",
+        "filename": "cv/internal/run/impl/handler/verification_completed.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-29T18:59:02Z",
+      "side": 1,
+      "message": "can you add a comment here that this Run expects to be notified once SQ its turn is coming.",
+      "revId": "fc208aa48bbf9a5f61d0865cfa6b1ce00b62fabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f09dd5ba_ea1dd41f",
+        "filename": "cv/internal/run/impl/handler/verification_completed.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-29T18:59:02Z",
+      "side": 1,
+      "message": "\u003d\n\nscary that it wasn\u0027t caught by tests -- can you think of a way to at least catch `waitlisted` being incorrect?",
+      "range": {
+        "startLine": 121,
+        "startChar": 29,
+        "endLine": 121,
+        "endChar": 32
+      },
+      "revId": "fc208aa48bbf9a5f61d0865cfa6b1ce00b62fabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f65ad82_03ee28a6",
+        "filename": "cv/internal/run/impl/handler/verification_completed_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-29T18:59:02Z",
+      "side": 1,
+      "message": "because of :\u003d bug above, I think here the following would actually not fail\n \n   runtest.AssertReceivedReadyForSubmission(...)\n\nso, perhaps you can assert here that run\u0027s eventbox doesn\u0027t contain such event and verify that this catches the bug above?",
+      "revId": "fc208aa48bbf9a5f61d0865cfa6b1ce00b62fabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3895db96_ac1a3a54",
+        "filename": "cv/internal/run/impl/state/state.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-29T18:59:02Z",
+      "side": 1,
+      "message": "you can also copy cachedConfigGroup, since it\u0027s 100% safe (you are checking that it matches the hash)",
+      "revId": "fc208aa48bbf9a5f61d0865cfa6b1ce00b62fabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
