@@ -69,6 +69,28 @@ export class CodeMirrorEditorElement extends LitElement {
       .cm-string:not(.cm-property) {
         color: #036a06;
       }
+
+      .CodeMirror-vscrollbar::-webkit-scrollbar {
+        opacity: 0;
+        -webkit-appearance: none;
+        width: 7px;
+      }
+
+      .CodeMirror-vscrollbar::-webkit-scrollbar-thumb {
+        opacity: 0;
+        border-radius: 4px;
+        background-color: rgba(0, 0, 0, 0.5);
+        box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+      }
+
+      .CodeMirror .CodeMirror-vscrollbar {
+        opacity: 0;
+        transition-duration: 0.5s;
+      }
+
+      .CodeMirror:hover .CodeMirror-vscrollbar {
+        opacity: 1;
+      }
     `,
   ];
 }
