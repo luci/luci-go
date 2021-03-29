@@ -39,6 +39,24 @@
       "message": "I think the old build page has also been integrated with GA (before I implemented the GA for the new build page). Like https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/appengine/templates/includes/base.html;l\u003d115",
       "revId": "ec89a870f84f3b627779f8548d3a3e7947f3f08a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0002350_6c0cd356",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-29T23:03:12Z",
+      "side": 1,
+      "message": "removed init script and moved event tracking to build.js.",
+      "parentUuid": "4bb63163_fae8a664",
+      "revId": "ec89a870f84f3b627779f8548d3a3e7947f3f08a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
