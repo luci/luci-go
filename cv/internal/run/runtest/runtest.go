@@ -17,9 +17,12 @@ package runtest
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -93,6 +96,13 @@ func matchEventBox(ctx context.Context, runID common.RunID, targets []*eventpb.E
 	return
 }
 
+// AssertEventboxEmpty asserts the eventbox of the provided Run is empty.
+func AssertEventboxEmpty(ctx context.Context, runID common.RunID) {
+	iterEventBox(ctx, runID, func(evt *eventpb.Event) {
+		So(fmt.Sprintf("%s eventbox received event %s", runID, evt), ShouldBeEmpty)
+	})
+}
+
 // AssertNotInEventbox asserts none of the target events exists in the Eventbox.
 func AssertNotInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
 	matched, _ := matchEventBox(ctx, runID, targets)
@@ -116,6 +126,20 @@ func AssertReceivedCLUpdate(ctx context.Context, runID common.RunID, clid common
 			},
 		},
 	})
+}
+
+// AssertReceivedReadyForSubmission asserts Run has received ReadyForSubmission
+// event.
+func AssertReceivedReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) {
+	target := &eventpb.Event{
+		Event: &eventpb.Event_ReadyForSubmission{
+			ReadyForSubmission: &eventpb.ReadyForSubmission{},
+		},
+	}
+	if !eta.IsZero() {
+		target.ProcessAfter = timestamppb.New(eta)
+	}
+	AssertInEventbox(ctx, runID, target)
 }
 
 // MockDispatch installs and returns MockDispatcher for Run Manager.
