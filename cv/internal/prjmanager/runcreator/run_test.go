@@ -20,11 +20,12 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -98,6 +99,7 @@ func TestRunBuilder(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
+		ctx, rmDispatcher := runtest.MockDispatch(ctx)
 
 		const lProject = "infra"
 		const gHost = "x-review.example.com"
@@ -322,8 +324,9 @@ func TestRunBuilder(t *testing.T) {
 				RunId: string(r.ID),
 			}}})
 			So(pmDispatcher.PopProjects(), ShouldBeEmpty)
-			// TODO(tandrii): assert RM is actually dispatched.
+			// RM must be sent an event and dispatched.
 			runtest.AssertInEventbox(ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
+			So(rmDispatcher.PopRuns(), ShouldResemble, common.RunIDs{r.ID})
 		})
 	})
 }
