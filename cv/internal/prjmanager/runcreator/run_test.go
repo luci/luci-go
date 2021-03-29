@@ -97,6 +97,7 @@ func TestRunBuilder(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 
 		const lProject = "infra"
 		const gHost = "x-review.example.com"
@@ -316,9 +317,12 @@ func TestRunBuilder(t *testing.T) {
 				})
 			}
 
+			// PM event must sent, but PM itself must not be dispatched.
 			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
 				RunId: string(r.ID),
 			}}})
+			So(pmDispatcher.PopProjects(), ShouldBeEmpty)
+			// TODO(tandrii): assert RM is actually dispatched.
 			runtest.AssertInEventbox(ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
 		})
 	})
