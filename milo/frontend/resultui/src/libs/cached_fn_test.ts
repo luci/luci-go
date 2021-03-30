@@ -79,6 +79,26 @@ describe('cached_fn', () => {
     assert.strictEqual(fnSpy.callCount, 2);
   });
 
+  it('should invalidate the old cache when invalidateCache = true', async () => {
+    const res1 = cachedFn({}, 1, 'a');
+    const res2 = cachedFn({ invalidateCache: true }, 1, 'a');
+    const res3 = cachedFn({}, 1, 'a');
+    assert.strictEqual(res1, '1-a-0');
+    assert.strictEqual(res2, '1-a-0');
+    assert.strictEqual(res3, '1-a-1');
+    assert.strictEqual(fnSpy.callCount, 2);
+  });
+
+  it('should not invalidate the new cache when invalidateCache = true', async () => {
+    const res1 = cachedFn({}, 1, 'a');
+    const res2 = cachedFn({ acceptCache: false, invalidateCache: true }, 1, 'a');
+    const res3 = cachedFn({}, 1, 'a');
+    assert.strictEqual(res1, '1-a-0');
+    assert.strictEqual(res2, '1-a-1');
+    assert.strictEqual(res3, '1-a-1');
+    assert.strictEqual(fnSpy.callCount, 2);
+  });
+
   describe('when config.expire(...) returns a promise that resolves', () => {
     beforeEach(() => {
       cachedFn = cached(fnSpy, {
