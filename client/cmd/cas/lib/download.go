@@ -269,17 +269,23 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs *embedded
 		return largeOutputs[i].Path < largeOutputs[j].Path
 	})
 
+	logger := logging.Get(ctx)
+
 	if kvs != nil {
+		start := time.Now()
 		if err := cacheSmallFiles(kvs, smallOutputs); err != nil {
 			return err
 		}
+		logger.Infof("finished cacheSmallFiles %d, took %s", len(smallOutputs), time.Since(start))
 	}
 
+	start := time.Now()
 	for _, output := range largeOutputs {
 		if err := diskcache.AddFileWithoutValidation(ctx, isolated.HexDigest(output.Digest.Hash), output.Path); err != nil {
 			return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
 		}
 	}
+	logger.Infof("finished cache large files %d, took %s", len(largeOutputs), time.Since(start))
 
 	return nil
 }
