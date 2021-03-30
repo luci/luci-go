@@ -16,6 +16,75 @@
       "message": "Demo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/9379/overview\n",
       "revId": "e96afc4d706a9c461c123f246652ca7f2215549a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8102b41d_0027f2fa",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-30T21:45:18Z",
+      "side": 1,
+      "message": "How is {} a unique key?",
+      "range": {
+        "startLine": 46,
+        "startChar": 17,
+        "endLine": 46,
+        "endChar": 19
+      },
+      "revId": "e96afc4d706a9c461c123f246652ca7f2215549a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "847c587e_eabebd62",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-30T21:45:18Z",
+      "side": 1,
+      "message": "Just for my information, why do we need the bracket here?\n\nAs this function is getting long, is it possible to move this to another function?",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 3
+      },
+      "revId": "e96afc4d706a9c461c123f246652ca7f2215549a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ac845f8_31d94c44",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-30T21:45:18Z",
+      "side": 1,
+      "message": "Why is it \"includes\", not \"\u003d\u003d\u003d\"?",
+      "range": {
+        "startLine": 128,
+        "startChar": 101,
+        "endLine": 128,
+        "endChar": 109
+      },
+      "revId": "e96afc4d706a9c461c123f246652ca7f2215549a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
