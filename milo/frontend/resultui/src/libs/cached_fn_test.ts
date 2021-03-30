@@ -30,16 +30,16 @@ describe('cached_fn', () => {
   });
 
   it('should return cached response when params are identical', async () => {
-    const res1 = cachedFn(CacheOption.Cached, 1, 'a');
-    const res2 = cachedFn(CacheOption.Cached, 1, 'a');
+    const res1 = cachedFn({}, 1, 'a');
+    const res2 = cachedFn({}, 1, 'a');
     assert.strictEqual(res1, res2);
     assert.strictEqual(fnSpy.callCount, 1);
   });
 
   it('should return cached response when params are different', async () => {
-    const res1 = cachedFn(CacheOption.Cached, 1, 'a');
-    const res2 = cachedFn(CacheOption.Cached, 2, 'a');
-    const res3 = cachedFn(CacheOption.Cached, 1, 'b');
+    const res1 = cachedFn({}, 1, 'a');
+    const res2 = cachedFn({}, 2, 'a');
+    const res3 = cachedFn({}, 1, 'b');
     assert.strictEqual(res1, '1-a-0');
     assert.strictEqual(res2, '2-a-1');
     assert.strictEqual(res3, '1-b-2');
@@ -47,32 +47,32 @@ describe('cached_fn', () => {
   });
 
   it('should be able to cache multiple different function calls', async () => {
-    const res1a = cachedFn(CacheOption.Cached, 1, 'a');
-    const res2a = cachedFn(CacheOption.Cached, 2, 'a');
-    const res3a = cachedFn(CacheOption.Cached, 1, 'b');
-    const res1b = cachedFn(CacheOption.Cached, 1, 'a');
-    const res2b = cachedFn(CacheOption.Cached, 2, 'a');
-    const res3b = cachedFn(CacheOption.Cached, 1, 'b');
+    const res1a = cachedFn({}, 1, 'a');
+    const res2a = cachedFn({}, 2, 'a');
+    const res3a = cachedFn({}, 1, 'b');
+    const res1b = cachedFn({}, 1, 'a');
+    const res2b = cachedFn({}, 2, 'a');
+    const res3b = cachedFn({}, 1, 'b');
     assert.strictEqual(res1a, res1b);
     assert.strictEqual(res2a, res2b);
     assert.strictEqual(res3a, res3b);
     assert.strictEqual(fnSpy.callCount, 3);
   });
 
-  it('should refresh the cache when calling with ForceRefresh', async () => {
-    const res1 = cachedFn(CacheOption.Cached, 1, 'a');
-    const res2 = cachedFn(CacheOption.ForceRefresh, 1, 'a');
-    const res3 = cachedFn(CacheOption.Cached, 1, 'a');
+  it('should refresh the cache when acceptCache = false', async () => {
+    const res1 = cachedFn({}, 1, 'a');
+    const res2 = cachedFn({ acceptCache: false }, 1, 'a');
+    const res3 = cachedFn({}, 1, 'a');
     assert.strictEqual(res1, '1-a-0');
     assert.strictEqual(res2, '1-a-1');
     assert.strictEqual(res3, '1-a-1');
     assert.strictEqual(fnSpy.callCount, 2);
   });
 
-  it('should bypass the cache when calling with NoCache', async () => {
-    const res1 = cachedFn(CacheOption.Cached, 1, 'a');
-    const res2 = cachedFn(CacheOption.NoCache, 1, 'a');
-    const res3 = cachedFn(CacheOption.Cached, 1, 'a');
+  it('should not update the cache when calling with skipUpdate = true', async () => {
+    const res1 = cachedFn({}, 1, 'a');
+    const res2 = cachedFn({ acceptCache: false, skipUpdate: true }, 1, 'a');
+    const res3 = cachedFn({}, 1, 'a');
     assert.strictEqual(res1, '1-a-0');
     assert.strictEqual(res2, '1-a-1');
     assert.strictEqual(res3, '1-a-0');
@@ -88,28 +88,28 @@ describe('cached_fn', () => {
     });
 
     it('should return cached response when cache has not expired', async () => {
-      const res1 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res1 = cachedFn({}, 1, 'a');
       await aTimeout(10);
-      const res2 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res2 = cachedFn({}, 1, 'a');
       assert.strictEqual(res1, res2);
       assert.strictEqual(fnSpy.callCount, 1);
     });
 
     it('should return a new response when cache has expired', async () => {
-      const res1 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res1 = cachedFn({}, 1, 'a');
       await aTimeout(30);
-      const res2 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res2 = cachedFn({}, 1, 'a');
       assert.strictEqual(res1, '1-a-0');
       assert.strictEqual(res2, '1-a-1');
       assert.strictEqual(fnSpy.callCount, 2);
     });
 
-    it('should not invalidate refreshed cache too early', async () => {
-      const res1 = cachedFn(CacheOption.Cached, 1, 'a');
+    it('should not expire refreshed cache too early', async () => {
+      const res1 = cachedFn({}, 1, 'a');
       await aTimeout(15);
-      const res2 = cachedFn(CacheOption.ForceRefresh, 1, 'a');
+      const res2 = cachedFn({ acceptCache: false }, 1, 'a');
       await aTimeout(15);
-      const res3 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res3 = cachedFn({}, 1, 'a');
       assert.strictEqual(res1, '1-a-0');
       assert.strictEqual(res2, '1-a-1');
       assert.strictEqual(res3, '1-a-1');
@@ -129,28 +129,28 @@ describe('cached_fn', () => {
     });
 
     it('should return cached response when cache has not expired', async () => {
-      const res1 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res1 = cachedFn({}, 1, 'a');
       await aTimeout(10);
-      const res2 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res2 = cachedFn({}, 1, 'a');
       assert.strictEqual(res1, res2);
       assert.strictEqual(fnSpy.callCount, 1);
     });
 
     it('should return a new response when cache has expired', async () => {
-      const res1 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res1 = cachedFn({}, 1, 'a');
       await aTimeout(30);
-      const res2 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res2 = cachedFn({}, 1, 'a');
       assert.strictEqual(res1, '1-a-0');
       assert.strictEqual(res2, '1-a-1');
       assert.strictEqual(fnSpy.callCount, 2);
     });
 
     it('should not invalidate refreshed cache too early', async () => {
-      const res1 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res1 = cachedFn({}, 1, 'a');
       await aTimeout(15);
-      const res2 = cachedFn(CacheOption.ForceRefresh, 1, 'a');
+      const res2 = cachedFn({ acceptCache: false }, 1, 'a');
       await aTimeout(15);
-      const res3 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res3 = cachedFn({}, 1, 'a');
       assert.strictEqual(res1, '1-a-0');
       assert.strictEqual(res2, '1-a-1');
       assert.strictEqual(res3, '1-a-1');
@@ -167,15 +167,15 @@ describe('cached_fn', () => {
     });
 
     it('should not delete the cache before the function returns', async () => {
-      const res1 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res1 = cachedFn({}, 1, 'a');
       assert.strictEqual(res1, '1-a-0');
       assert.strictEqual(fnSpy.callCount, 1);
     });
 
     it('should delete the cache in the next event cycle', async () => {
-      const res1 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res1 = cachedFn({}, 1, 'a');
       await aTimeout(0);
-      const res2 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res2 = cachedFn({}, 1, 'a');
       assert.strictEqual(res1, '1-a-0');
       assert.strictEqual(res2, '1-a-1');
       assert.strictEqual(fnSpy.callCount, 2);
@@ -199,9 +199,9 @@ describe('cached_fn', () => {
 
     it('should not cache the response', async () => {
       try {
-        cachedFn(CacheOption.Cached, 1, 'a');
+        cachedFn({}, 1, 'a');
       } catch {} // eslint-disable-line no-empty
-      const res2 = cachedFn(CacheOption.Cached, 1, 'a');
+      const res2 = cachedFn({}, 1, 'a');
       assert.strictEqual(res2, '1-a-1');
       assert.strictEqual(fnSpy.callCount, 2);
     });

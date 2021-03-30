@@ -28,20 +28,21 @@ export interface CacheConfig<T extends unknown[], V> {
   expire?: (params: T, result: V) => Promise<void>;
 }
 
-export enum CacheOption {
+export interface CacheOption {
   /**
-   * Return the cached result if present.
-   * Otherwise call the original function and cache the result.
+   * Whether the cache result should be returned on a cache hit.
+   *
+   * Default to true.
    */
-  Cached,
+  acceptCache?: boolean;
   /**
-   * Refresh the cache then return the cached result.
+   * Whether cache update should be skipped when a new result is computed.
+   * Cache update is always skipped if no new results were computed (e.g. on a
+   * cache hit) regardless of this setting.
+   *
+   * Default to false.
    */
-  ForceRefresh,
-  /**
-   * By pass the cache and call the original function.
-   */
-  NoCache,
+  skipUpdate?: boolean;
 }
 
 /**
@@ -55,27 +56,32 @@ export function cached<T extends unknown[], V>(
   const cache = new Map<unknown, [V]>();
 
   return (opt: CacheOption, ...params: T) => {
-    if (opt === CacheOption.NoCache) {
-      return fn(...params);
-    }
     const key = config.key(...params);
-    if (opt === CacheOption.ForceRefresh || !cache.has(key)) {
-      // Wraps in [] to create a unique reference.
-      const value: [V] = [fn(...params)];
-      const deleteCache = () => {
-        // Only invalidate the cache when it has not been refreshed yet.
-        if (cache.get(key) === value) {
-          cache.delete(key);
-        }
-      };
-      // Also invalidates the cache when the promise is rejected to prevent
-      // unexpected cache build up.
-      config.expire?.(params, value[0]).finally(deleteCache);
+    let value: V;
 
-      // Set the cache after config.expire call so there's no memory leak when
-      // config.expire throws.
-      cache.set(key, value);
+    if ((opt.acceptCache ?? true) && cache.has(key)) {
+      value = cache.get(key)![0];
+    } else {
+      value = fn(...params);
+      if (!opt.skipUpdate) {
+        // Wraps in [] to create a unique reference.
+        const valueRef: [V] = [value];
+        const deleteCache = () => {
+          // Only invalidate the cache when it has not been refreshed yet.
+          if (cache.get(key) === valueRef) {
+            cache.delete(key);
+          }
+        };
+        // Also invalidates the cache when the promise is rejected to prevent
+        // unexpected cache build up.
+        config.expire?.(params, value).finally(deleteCache);
+
+        // Set the cache after config.expire call so there's no memory leak when
+        // config.expire throws.
+        cache.set(key, valueRef);
+      }
     }
-    return cache.get(key)![0];
+
+    return value;
   };
 }
