@@ -420,7 +420,7 @@ export class OverviewTabElement extends MobxLitElement {
     @media screen and (min-width: 1300px) {
       #main {
         display: grid;
-        grid-template-columns: auto 20px 1fr;
+        grid-template-columns: auto 20px auto;
       }
     }
     .first-column {
@@ -430,6 +430,7 @@ export class OverviewTabElement extends MobxLitElement {
     }
     .second-column {
       overflow: hidden;
+      min-width: 30vw;
       grid-column: 3;
     }
 
