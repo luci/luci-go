@@ -16,6 +16,75 @@
       "message": "friendly ping :)",
       "revId": "778acd8bbdb2aaa8d4c1048eadf2039e92f390d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a831aaed_d924079b",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-30T02:08:21Z",
+      "side": 1,
+      "message": "note: may be empty if no export is configured.",
+      "range": {
+        "startLine": 138,
+        "startChar": 11,
+        "endLine": 138,
+        "endChar": 12
+      },
+      "revId": "778acd8bbdb2aaa8d4c1048eadf2039e92f390d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d812511_366170c5",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-30T02:08:21Z",
+      "side": 1,
+      "message": "this is confusing... can you document above the distinction between \u0027project\u0027 and \u0027dest\u0027?\n\n(is `project` really `luciProject`?)",
+      "range": {
+        "startLine": 166,
+        "startChar": 43,
+        "endLine": 166,
+        "endChar": 50
+      },
+      "revId": "778acd8bbdb2aaa8d4c1048eadf2039e92f390d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2d8da34_bb344e04",
+        "filename": "logdog/server/archivist/archivist_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-30T02:08:21Z",
+      "side": 1,
+      "message": "this is a bit tricky; You probably want this factory to return an interface rather than a *struct (unless you have a way to actually mock the behavior of cl.Client?)",
+      "range": {
+        "startLine": 216,
+        "startChar": 62,
+        "endLine": 216,
+        "endChar": 70
+      },
+      "revId": "778acd8bbdb2aaa8d4c1048eadf2039e92f390d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
