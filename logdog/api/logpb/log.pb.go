@@ -90,7 +90,7 @@ type LogStreamDescriptor struct {
 	// Logs originating from the same Butler instance will share a Prefix.
 	//
 	// A valid prefix value is a StreamName described in:
-	// https://go.chromium.org/luci/common/logdog/types
+	// https://go.chromium.org/luci/logdog/common/types#StreamName
 	Prefix string `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	//
 	// The log stream's name (required).
@@ -99,7 +99,7 @@ type LogStreamDescriptor struct {
 	// prefix.
 	//
 	// A valid name value is a StreamName described in:
-	// https://go.chromium.org/luci/common/logdog/types
+	// https://go.chromium.org/luci/logdog/common/types#StreamName
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The log stream's content type (required).
 	StreamType StreamType `protobuf:"varint,3,opt,name=stream_type,json=streamType,proto3,enum=logpb.StreamType" json:"stream_type,omitempty"`
