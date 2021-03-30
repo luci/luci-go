@@ -98,7 +98,6 @@ type Build struct {
 	// Each element should look like "[-+]$experiment_name".
 	Experiments         []string  `gae:"experiments"`
 	Incomplete          bool      `gae:"incomplete"`
-	IsLuci              bool      `gae:"is_luci"`
 	ResultDBUpdateToken string    `gae:"resultdb_update_token,noindex"`
 	Status              pb.Status `gae:"status_v2"`
 	StatusChangedTime   time.Time `gae:"status_changed_time"`
