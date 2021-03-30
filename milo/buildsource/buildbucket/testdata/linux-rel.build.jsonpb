@@ -439,7 +439,6 @@
       "got_v8_revision_cp": "refs/heads/7.3.132@{#1}",
       "$recipe_engine/runtime": {
         "is_experimental": false,
-        "is_luci": true
       },
       "buildnumber": 13052,
       "path_config": "generic",
@@ -451,7 +450,6 @@
     "properties": {
       "$recipe_engine/runtime": {
         "is_experimental": false,
-        "is_luci": true
       },
       "recipe": "chromium",
       "repository": "https://chromium.googlesource.com/chromium/src.git",

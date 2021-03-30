@@ -5899,7 +5899,6 @@
       "bot_id": "vm76-m9",
       "$recipe_engine/runtime": {
         "is_experimental": false,
-        "is_luci": true
       },
       "parent_got_nacl_revision": "ff15c51d20785fa51c0ef03ccb480b87299acbeb",
       "parent_buildername": "Mac Builder",
@@ -6077,7 +6076,6 @@
       "builder_group": "chromium.mac",
       "$recipe_engine/runtime": {
         "is_experimental": false,
-        "is_luci": true
       },
       "buildbucket": {
         "hostname": "cr-buildbucket.appspot.com",

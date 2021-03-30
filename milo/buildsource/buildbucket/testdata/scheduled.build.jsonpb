@@ -23,7 +23,6 @@
       "patch_storage": "gerrit",
       "$recipe_engine/runtime": {
         "is_experimental": false,
-        "is_luci": true
       },
       "recipe": "chromium_trybot",
       "buildbucket": {
