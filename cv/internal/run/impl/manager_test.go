@@ -303,7 +303,7 @@ func TestRunManager(t *testing.T) {
 
 		Convey("Existing event due during the interval", func() {
 			So(run.PokeNow(ctx, runID), ShouldBeNil)
-			So(run.Poke(ctx, runID, 30*time.Second), ShouldBeNil)
+			So(run.PokeAfter(ctx, runID, 30*time.Second), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 
 			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{

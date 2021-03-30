@@ -298,7 +298,7 @@ func applyResult(res *handler.Result, events eventbox.Events, transitions []even
 func enqueueNextPoke(ctx context.Context, runID common.RunID, nextReadyEventTime time.Time) error {
 	switch now := clock.Now(ctx); {
 	case nextReadyEventTime.IsZero():
-		return run.Poke(ctx, runID, pokeInterval)
+		return run.PokeAfter(ctx, runID, pokeInterval)
 	case now.After(nextReadyEventTime):
 		// It is possible that by this time, next ready event is already overdue.
 		// Invoke Run Manager immediately.
@@ -306,6 +306,6 @@ func enqueueNextPoke(ctx context.Context, runID common.RunID, nextReadyEventTime
 	case nextReadyEventTime.Before(now.Add(pokeInterval)):
 		return eventpb.Dispatch(ctx, string(runID), nextReadyEventTime)
 	default:
-		return run.Poke(ctx, runID, pokeInterval)
+		return run.PokeAfter(ctx, runID, pokeInterval)
 	}
 }
