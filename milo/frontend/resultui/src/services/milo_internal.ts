@@ -86,7 +86,7 @@ export class MiloInternal {
     );
   }
 
-  async queryBlamelist(req: QueryBlamelistRequest, cacheOpt = CacheOption.Cached) {
+  async queryBlamelist(req: QueryBlamelistRequest, cacheOpt = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryBlamelist', req)) as QueryBlamelistResponse;
   }
 }
