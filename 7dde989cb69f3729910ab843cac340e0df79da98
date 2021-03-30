@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4637121_ba916621",
+        "filename": "cv/internal/eventbox/box.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-30T06:59:03Z",
+      "side": 1,
+      "message": "..., but will be done anyway via other means in case of a crash.",
+      "range": {
+        "startLine": 80,
+        "startChar": 10,
+        "endLine": 80,
+        "endChar": 64
+      },
+      "revId": "7dde989cb69f3729910ab843cac340e0df79da98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
