@@ -22,6 +22,7 @@ import '.';
 import { BuildPageElement } from '.';
 import { AppState } from '../../context/app_state';
 import { UserConfigsStore } from '../../context/user_configs';
+import { PrpcClientExt } from '../../libs/prpc_client_ext';
 import { Build, BuildsService, GetBuildRequest } from '../../services/buildbucket';
 import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../../services/resultdb';
 
@@ -81,8 +82,8 @@ describe('Invocation Page', () => {
   });
 
   it('should fallback to invocation ID from buildbucket when invocation is not found', async () => {
-    const resultDbStub = sinon.stub(new ResultDb('', ''));
-    const buildsServiceStub = sinon.stub(new BuildsService('', ''));
+    const resultDbStub = sinon.stub(new ResultDb(new PrpcClientExt({}, () => '')));
+    const buildsServiceStub = sinon.stub(new BuildsService(new PrpcClientExt({}, () => '')));
     resultDbStub?.getInvocation.onCall(0).rejects();
     resultDbStub?.getInvocation.onCall(1).resolves();
     buildsServiceStub?.getBuild.onCall(0).resolves({
@@ -146,7 +147,7 @@ describe('Invocation Page', () => {
         .appState=${{
           ...new AppState(),
           buildsService: {
-            ...new BuildsService('', ''),
+            ...new BuildsService(new PrpcClientExt({}, () => '')),
             getBuild: getBuildMock,
           },
         }}

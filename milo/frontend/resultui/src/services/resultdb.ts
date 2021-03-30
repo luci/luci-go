@@ -249,8 +249,7 @@ export class ResultDb {
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(readonly host: string, getAccessToken: () => string) {
-    const client = new PrpcClientExt({ host }, getAccessToken);
+  constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached((method: string, message: object) => client.call(ResultDb.SERVICE, method, message), {
       key: (method, message) => `${method}-${JSON.stringify(message)}`,
     });
@@ -286,8 +285,7 @@ export class UISpecificService {
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(readonly host: string, getAccessToken: () => string) {
-    const client = new PrpcClientExt({ host }, getAccessToken);
+  constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(UISpecificService.SERVICE, method, message),
       { key: (method, message) => `${method}-${JSON.stringify(message)}` }
