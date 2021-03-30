@@ -5,7 +5,7 @@ help:
 	@sed -n '/^[a-zA-Z0-9_]*:/s/:.*//p' <Makefile
 
 node_deps:
-	npm install
+	npm ci
 
 build: node_deps
 	npm run build
