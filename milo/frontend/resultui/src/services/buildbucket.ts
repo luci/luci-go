@@ -292,8 +292,7 @@ export class BuildsService {
   private static SERVICE = 'buildbucket.v2.Builds';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(readonly host: string, getAccessToken: () => string) {
-    const client = new PrpcClientExt({ host }, getAccessToken);
+  constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(BuildsService.SERVICE, method, message),
       {
@@ -337,8 +336,7 @@ export class BuildersService {
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(readonly host: string, getAccessToken: () => string) {
-    const client = new PrpcClientExt({ host }, getAccessToken);
+  constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(BuildersService.SERVICE, method, message),
       { key: (method, message) => `${method}-${JSON.stringify(message)}` }
@@ -358,9 +356,7 @@ export class AccessService {
     req: PermittedActionsRequest
   ) => Promise<PermittedActionsResponse>;
 
-  constructor(readonly host: string, getAccessToken: () => string) {
-    const client = new PrpcClientExt({ host }, getAccessToken);
-
+  constructor(client: PrpcClientExt) {
     // TODO(weiweilin): access service can be unreliable.
     // Try to cache this in service worker or localStorage.
     this.cachedPermittedActionsFn = cached(

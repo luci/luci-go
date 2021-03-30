@@ -77,8 +77,7 @@ export class MiloInternal {
   private static SERVICE = 'luci.milo.v1.MiloInternal';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
-  constructor(getAccessToken: () => string) {
-    const client = new PrpcClientExt({ host: '' }, getAccessToken);
+  constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(MiloInternal.SERVICE, method, message),
       {
