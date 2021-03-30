@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "38ab3274_43ae005d",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-30T22:55:30Z",
+      "side": 1,
+      "message": "reworded.",
+      "parentUuid": "70790387_7d1eed7c",
+      "range": {
+        "startLine": 33,
+        "startChar": 13,
+        "endLine": 33,
+        "endChar": 25
+      },
+      "revId": "2bdd9b80f954f4805ff31efc7dc5dbaa06bd10bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ccd08be5_44a2ffbe",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-30T21:56:01Z",
       "side": 1,
       "message": "The default value here seems to refer to the cached function below, not for this object. I think we should move it down.",
+      "range": {
+        "startLine": 34,
+        "startChar": 5,
+        "endLine": 34,
+        "endChar": 20
+      },
+      "revId": "2bdd9b80f954f4805ff31efc7dc5dbaa06bd10bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c21679e_aca7f1b5",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-30T22:55:30Z",
+      "side": 1,
+      "message": "Documenting in the param position is not ideal, because the function we want to document is not a standalone function but a closure returned from `cached`. It\u0027s not obvious that the inline doc is actually documenting the interface. Even if we document it there, the IDE won\u0027t show you the doc when you hover over the function.\n\nAnd I think this is a pretty standard practice. In proto definition, we also (usually) define the default value in the request message rather than in the service method.",
+      "parentUuid": "ccd08be5_44a2ffbe",
       "range": {
         "startLine": 34,
         "startChar": 5,
