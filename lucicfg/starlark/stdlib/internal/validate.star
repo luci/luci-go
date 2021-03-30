@@ -48,6 +48,36 @@ def _string(attr, val, *, regexp = None, allow_empty = False, default = None, re
 
     return val
 
+def _hostname(attr, val, *, allow_empty = False, default = None, required = True):
+    """Validates that the value is a string RFC 1123 hostname and returns it.
+
+    Args:
+      attr: field name with this value, for error messages.
+      val: a value to validate.
+      default: a value to use if 'val' is None, ignored if required is True.
+      required: if False, allow 'val' to be None, return 'default' in this case.
+
+    Returns:
+      The validated hostname or None if required is False and default is None.
+    """
+    if val == None:
+        if required:
+            fail("missing required field %r" % attr)
+        if default == None:
+            return None
+        val = default
+
+    if type(val) != "string":
+        fail("bad %r: got %s, want string" % (attr, type(val)))
+    if not val:
+        fail("bad %r: must not be empty" % (attr,))
+
+    hostnameRE = r"^(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*(?:[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$"
+    if not re.submatches(hostnameRE, val):
+        fail("bad %r: %r is not valid RFC1123 hostname" % (attr, val))
+
+    return val
+
 def _int(attr, val, *, min = None, max = None, default = None, required = True):
     """Validates that the value is an integer and returns it.
 
@@ -440,6 +470,7 @@ validate = struct(
     struct = _struct,
     type = _type,
     repo_url = _repo_url,
+    hostname = _hostname,
     relative_path = _relative_path,
     regex_list = _regex_list,
     str_list = _str_list,

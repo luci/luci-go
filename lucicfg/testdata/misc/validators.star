@@ -15,6 +15,23 @@ def test_validate_string():
     assert.fails(lambda: call("a", "abcd", regexp = "a.c$"), r'bad "a": "abcd" should match "a\.c\$"')
     assert.fails(lambda: call("a", "", default = "zzz", required = False), 'bad "a": must not be empty')
 
+def test_validate_hostname():
+    call = validate.hostname
+    assert.eq(call("a", "zzz"), "zzz")
+    assert.eq(call("a", "test-domain.example.com"), "test-domain.example.com")
+    assert.eq(call("a", "xn--ls8h.example.com"), "xn--ls8h.example.com")
+    assert.eq(call("a", None, default = "zzz", required = False), "zzz")
+    assert.eq(call("a", None, required = False), None)
+
+    assert.fails(lambda: call("a", None), 'missing required field "a"')
+    assert.fails(lambda: call("a", 1), 'bad "a": got int, want string')
+    assert.fails(lambda: call("a", []), 'bad "a": got list, want string')
+    assert.fails(lambda: call("a", None, default = 1, required = False), 'bad "a": got int, want string')
+    assert.fails(lambda: call("a", "!notdomain"), r'bad "a": "!notdomain" is not valid RFC1123 hostname')
+    assert.fails(lambda: call("a", "https://i.am.a.url.example.com"),
+      r'bad "a": "https://i.am.a.url.example.com" is not valid RFC1123 hostname')
+    assert.fails(lambda: call("a", "", default = "zzz", required = False), 'bad "a": must not be empty')
+
 def test_validate_int():
     call = validate.int
     assert.eq(call("a", 123, min = 123, max = 123), 123)
@@ -167,6 +184,7 @@ def test_validate_str_list():
     assert.fails(lambda: call("a", [], required = True), 'missing required field "a"')
 
 test_validate_string()
+test_validate_hostname()
 test_validate_int()
 test_validate_float()
 test_validate_bool()

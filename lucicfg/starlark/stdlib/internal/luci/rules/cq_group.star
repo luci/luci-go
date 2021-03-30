@@ -124,7 +124,7 @@ def _cq_group(
             default = cq.ACTION_NONE,
             required = False,
         ),
-        "tree_status_host": validate.string("tree_status_host", tree_status_host, required = False),
+        "tree_status_host": validate.hostname("tree_status_host", tree_status_host, required = False),
         "retry_config": cqimpl.validate_retry_config(
             "retry_config",
             retry_config,
