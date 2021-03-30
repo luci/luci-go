@@ -346,7 +346,12 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 			if err != nil {
 				return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 			}
-			logger.Infof("ComputeMerkleTree returns %d entries for %s, took %s", len(entrs), o.Isolate, time.Since(start))
+			var sizeSum int64
+			for _, entry := range entrs {
+				sizeSum += entry.Digest.Size
+			}
+			logger.Infof("ComputeMerkleTree returns %d entries with total size %d for %s, took %s",
+				len(entrs), sizeSum, o.Isolate, time.Since(start))
 
 			rootDgs[i] = rootDg
 			mu.Lock()
