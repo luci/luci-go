@@ -16,6 +16,57 @@
       "message": "PTAL",
       "revId": "5229b89cfe18e5576d609a46de61ea2e563c95c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8355cb6b_6d908083",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-30T07:06:35Z",
+      "side": 1,
+      "message": "thank you!",
+      "revId": "5229b89cfe18e5576d609a46de61ea2e563c95c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "965a39da_44c71259",
+        "filename": "cv/internal/config/configcron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-30T07:06:35Z",
+      "side": 1,
+      "message": "these are fixed in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2790262 -- I thought it landed yesterday, but bot_update failed at rebasing 😞",
+      "revId": "5229b89cfe18e5576d609a46de61ea2e563c95c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79ebac98_6fd37af2",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 598,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-30T07:06:35Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "5229b89cfe18e5576d609a46de61ea2e563c95c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
