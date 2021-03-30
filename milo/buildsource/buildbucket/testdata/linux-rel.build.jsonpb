@@ -488,7 +488,11 @@
       "project": "chromium/src",
       "host": "chromium.googlesource.com",
       "id": "62c93f6041326a2c4781680583e433bbfad93884"
-    }
+    },
+    "experiments": [
+      "arbitrary.experiment.name",
+      "other.experiment"
+    ]
   },
   "endTime": "2018-12-14T01:12:56.253875Z",
   "createTime": "2018-12-14T01:02:19.498335Z",
