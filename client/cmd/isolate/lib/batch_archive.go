@@ -303,5 +303,6 @@ func (c *batchArchiveRun) Run(a subcommands.Application, args []string, _ subcom
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	defer c.profiler.Stop()
 	return 0
 }
