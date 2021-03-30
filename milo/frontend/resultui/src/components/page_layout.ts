@@ -128,7 +128,7 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
                     userId,
                     // authResponse.expires_at is undefined when user is logged
                     // out. We can cache this indefinitely.
-                    expiresAt: (authResponse.expires_at || Infinity) * 1000,
+                    expiresAt: authResponse.expires_at ?? Infinity,
                   };
                   (await window.SW_PROMISE).messageSW({ type: 'SET_AUTH_STATE', authState });
                 }}
