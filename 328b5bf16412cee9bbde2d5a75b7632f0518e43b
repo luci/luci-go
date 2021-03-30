@@ -16,6 +16,29 @@
       "message": "PTAL",
       "revId": "328b5bf16412cee9bbde2d5a75b7632f0518e43b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5d4a311_47771bf1",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-30T07:00:28Z",
+      "side": 1,
+      "message": "that\u0027s a very strong word. The TQ itself doesn\u0027t guarantee this.",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 13
+      },
+      "revId": "328b5bf16412cee9bbde2d5a75b7632f0518e43b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
