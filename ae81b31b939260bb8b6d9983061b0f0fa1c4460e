@@ -88,6 +88,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d94df4c3_db0279d6",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-30T19:14:00Z",
+      "side": 1,
+      "message": "The ResultDB side will do the dedup by using the BatchCreateInvocationsRequest.RequestId. So if it\u0027s the whole batch retry, it can identify.\n\nBut if it\u0027s the partial retry where a batch contains a subset of already handled builds, I think the ResultDB won\u0027t dedup it and would create new invocations?@robertocn correct me if it\u0027s wrong. But I think this partial retry scenario should be handled in earlier ScheduleBuild flow before it reaches to this function, right?",
+      "parentUuid": "7ee71ca8_ad383f2a",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "65176cb4_28a16ee2",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 2
@@ -99,6 +117,24 @@
       "writtenOn": "2021-03-30T11:05:28Z",
       "side": 1,
       "message": "Does the response not contain the invocation name? I think it\u0027d be better to use that rather than assuming indices are aligned (although indices being aligned in requests and responses is not unreasonable).",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f6ec60e_880080c8",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-30T19:14:00Z",
+      "side": 1,
+      "message": "The map does use the invocation name from the response. The `inv.Name` is from the `res.Invocations` and `res.UpdateTokens[i]` is also from the response. So those indices are aligned.",
+      "parentUuid": "65176cb4_28a16ee2",
       "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
