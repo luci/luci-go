@@ -16,7 +16,6 @@ import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
 import { getGitilesRepoURL } from '../libs/build_utils';
-import { CacheOption } from '../libs/cached_fn';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { BuildExt } from '../models/build_ext';
@@ -115,7 +114,9 @@ export class BuildState {
     //
     // If we record the query time instead, no other code will need to read
     // or update the query time.
-    const cacheOpt = this.buildQueryTime < this.timestamp ? CacheOption.ForceRefresh : CacheOption.Cached;
+    const cacheOpt = {
+      acceptCache: this.buildQueryTime < this.timestamp,
+    };
     this.buildQueryTime = this.timestamp;
 
     const req: GetBuildRequest = this.buildId
