@@ -1,0 +1,123 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f526125c_d16e8b4a",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-30T11:05:28Z",
+      "side": 1,
+      "message": "Is there something to do differently if the build isn\u0027t realms-enabled?",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2008f4c9_108fcfa4",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-30T11:05:28Z",
+      "side": 1,
+      "message": "So there\u0027s one request with the build ID, and another with the build number (if build numbers are enabled) which references the original? Could you add a comment, and choose names clearer than invReq1 and invReq2?",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cdb5fd89_65b0914c",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-30T11:05:28Z",
+      "side": 1,
+      "message": "Consider parallel.WorkPool here so there\u0027s some upper bound on the number of concurrent goroutines. This code will probably execute in parallel with updating the tag indices, which may create up to 64.",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "908a97b3_9379564f",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-30T11:05:28Z",
+      "side": 1,
+      "message": "How about \"proj, req\" (same order as key, value in the loop)?",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ee71ca8_ad383f2a",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-30T11:05:28Z",
+      "side": 1,
+      "message": "This won\u0027t dedupe if the ScheduleBuild request is retried with a different batch containing the same requests, for example if the caller retries a subset of the builds handled in a previous request. Is that an issue for ResultDB? It would be nice if it could dedupe by individual requests in a batch.\n\nNot batching at all avoids this problem while simultaneously simplifying implementation, though the obvious trade-off is that it\u0027s inefficient.",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65176cb4_28a16ee2",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-30T11:05:28Z",
+      "side": 1,
+      "message": "Does the response not contain the invocation name? I think it\u0027d be better to use that rather than assuming indices are aligned (although indices being aligned in requests and responses is not unreasonable).",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fb3c75ec_0e02d6fb",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-30T11:05:28Z",
+      "side": 1,
+      "message": "While iterating over builds in order to construct the requests in the first place, you could also construct a map of invocation name -\u003e build. Then when iterating over the responses you can directly set invNameToBuild[inv.Name] \u003d res.UpdateTokens[i] and avoid a second iteration over builds here.",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
