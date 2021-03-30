@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	cl "cloud.google.com/go/logging"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -189,6 +191,14 @@ func (w *testGSWriter) Count() int64 {
 	return w.writeCount
 }
 
+// testCLClient implements cloud.google.com/go/logging.Client sufficient for testing
+// and instrumentation.
+type testCLClient struct {
+	cl.Client
+
+	// TODO(ddoman): mock functions.
+}
+
 func TestHandleArchive(t *testing.T) {
 	t.Parallel()
 
@@ -202,7 +212,10 @@ func TestHandleArchive(t *testing.T) {
 		gscFactory := func(context.Context, string) (gs.Client, error) {
 			return &gsc, nil
 		}
-
+		clc := testCLClient{}
+		clcFactory := func(context.Context, string, string, bool) (*cl.Client, error) {
+			return &clc.Client, nil
+		}
 		// Set up our test log stream.
 		project := "test-project"
 		desc := logpb.LogStreamDescriptor{
@@ -299,6 +312,7 @@ func TestHandleArchive(t *testing.T) {
 			},
 			Storage:         &st,
 			GSClientFactory: gscFactory,
+			CLClientFactory: clcFactory,
 		}
 
 		gsURL := func(project, name string) string {

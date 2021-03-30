@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	cl "cloud.google.com/go/logging"
+
 	"go.chromium.org/luci/appengine/gaesettings"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -289,6 +291,16 @@ func (a *application) runArchivist(c context.Context) error {
 		return gsClient, nil
 	}
 
+	// Defines our Cloud Logging client factory.
+	clClientFactory := func(ctx context.Context, project, dest string, useProjectScope bool) (*cl.Client, error) {
+		clClient, err := a.CLClient(ctx, project, dest, useProjectScope)
+		if err != nil {
+			log.WithError(err).Errorf(c, "Failed to get Cloud Logging client.")
+			return nil, err
+		}
+		return clClient, nil
+	}
+
 	// Initialize a Coordinator client that bundles requests together.
 	coordClient := &bundleServicesClient.Client{
 		ServicesClient:       a.Coordinator,
@@ -302,6 +314,7 @@ func (a *application) runArchivist(c context.Context) error {
 		SettingsLoader:  GetSettingsLoader(a.ServiceID, acfg),
 		Storage:         st,
 		GSClientFactory: gsClientFactory,
+		CLClientFactory: clClientFactory,
 	}
 
 	// Application shutdown will now operate by stopping the Iterator.
