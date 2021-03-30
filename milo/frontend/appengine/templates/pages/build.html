@@ -316,6 +316,7 @@
 {{define "attributes"}}
 <div id="attributes" class="column">
   <h2>Tags</h2>{{ template "tags_table" .BuildPage.GetTags }}
+  <h2>Enabled Experiments</h2>{{ template "experiments" .BuildPage.GetInput.GetExperiments }}
   <h2>Input Properties</h2>{{ template "properties_table" .BuildPage.InputProperties }}
   <h2>Output Properties</h2>{{ template "properties_table" .BuildPage.OutputProperties }}
 </div>
@@ -352,6 +353,18 @@
       </tr>
     {{ end }}
     </table>
+  {{ else }}
+    <div>N/A</div>
+  {{ end }}
+{{end}}
+
+{{define "experiments"}}
+  {{ with . }}
+    <ul>
+    {{ range . }}
+      <li>{{.}}</li>
+    {{ end }}
+    </ul>
   {{ else }}
     <div>N/A</div>
   {{ end }}

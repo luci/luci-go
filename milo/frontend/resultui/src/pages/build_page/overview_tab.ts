@@ -338,6 +338,19 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderExperiments() {
+    const experiments = this.buildState.build?.input?.experiments;
+    if (!experiments) {
+      return html``;
+    }
+    return html`
+      <h3>Enabled Experiments</h3>
+      <ul>
+        ${experiments.map((exp) => html`<li>${exp}</li>`)}
+      </ul>
+    `;
+  }
+
   private renderBuildLogs() {
     const logs = this.buildState.build?.output?.logs;
     if (!logs) {
@@ -395,7 +408,7 @@ export class OverviewTabElement extends MobxLitElement {
         </div>
         <div class="second-column">
           ${this.renderInput()} ${this.renderTiming()} ${this.renderInfra()} ${this.renderBuildLogs()}
-          ${this.renderActionButtons()} ${this.renderTags()}
+          ${this.renderActionButtons()} ${this.renderTags()} ${this.renderExperiments()}
           <h3>Input Properties</h3>
           <milo-property-viewer
             .properties=${build.input.properties}
