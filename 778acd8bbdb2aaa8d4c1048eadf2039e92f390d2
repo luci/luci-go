@@ -85,6 +85,30 @@
       },
       "revId": "778acd8bbdb2aaa8d4c1048eadf2039e92f390d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69a5acae_44a61429",
+        "filename": "logdog/server/archivist/archivist_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-30T02:25:33Z",
+      "side": 1,
+      "message": "I was going to mock it by overriding member functions on testCLClient with the same trick I used in https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/batch_create_artifacts_test.go;l\u003d43-63.\n\ni.e.,\n```\ntype testCLClient struct {\n  cl.Client\n\n  logID string,\n  opts []cl.LoggerOption\n}\n\ntype testCLLogger struct {\n  ...\n}\n\nfunc (c *testCLClient) Logger(logID string, opts ...cl.LoggerOption) *cl.Logger {\n  c.logID \u003d logID\n  c.opts \u003d opts\n  return testCLLogger(logID)\n}\n\n```\n\nWDYT?",
+      "parentUuid": "e2d8da34_bb344e04",
+      "range": {
+        "startLine": 216,
+        "startChar": 62,
+        "endLine": 216,
+        "endChar": 70
+      },
+      "revId": "778acd8bbdb2aaa8d4c1048eadf2039e92f390d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
