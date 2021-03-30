@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "LUCI Test Results",
   "author": "weiweilin@google.com",
+  "repository": "https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/milo/frontend/resultui",
   "license": "Apache-2.0",
   "engines": {
     "node": "^12.13.0"
