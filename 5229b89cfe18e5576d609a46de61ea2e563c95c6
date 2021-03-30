@@ -67,6 +67,29 @@
       "message": "👍",
       "revId": "5229b89cfe18e5576d609a46de61ea2e563c95c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9124f72_343b05f6",
+        "filename": "server/tq/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-30T17:53:48Z",
+      "side": 1,
+      "message": "Del",
+      "range": {
+        "startLine": 24,
+        "startChar": 69,
+        "endLine": 25,
+        "endChar": 12
+      },
+      "revId": "5229b89cfe18e5576d609a46de61ea2e563c95c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
