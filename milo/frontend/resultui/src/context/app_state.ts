@@ -15,6 +15,7 @@
 import { computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../libs/context';
+import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { AccessService, BuildersService, BuildsService } from '../services/buildbucket';
 import { MiloInternal } from '../services/milo_internal';
 import { ResultDb, UISpecificService } from '../services/resultdb';
@@ -57,7 +58,7 @@ export class AppState {
     if (this.userId === null) {
       return null;
     }
-    return new ResultDb(CONFIGS.RESULT_DB.HOST, () => this.accessToken);
+    return new ResultDb(this.makeClient(CONFIGS.RESULT_DB.HOST));
   }
 
   @computed
@@ -65,7 +66,7 @@ export class AppState {
     if (this.userId === null) {
       return null;
     }
-    return new UISpecificService(CONFIGS.RESULT_DB.HOST, () => this.accessToken);
+    return new UISpecificService(this.makeClient(CONFIGS.RESULT_DB.HOST));
   }
 
   @computed
@@ -73,7 +74,7 @@ export class AppState {
     if (this.userId === null) {
       return null;
     }
-    return new MiloInternal(() => this.accessToken);
+    return new MiloInternal(this.makeClient(''));
   }
 
   @computed
@@ -81,7 +82,7 @@ export class AppState {
     if (this.userId === null) {
       return null;
     }
-    return new BuildsService(CONFIGS.BUILDBUCKET.HOST, () => this.accessToken);
+    return new BuildsService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
   }
 
   @computed
@@ -89,7 +90,7 @@ export class AppState {
     if (this.userId === null) {
       return null;
     }
-    return new BuildersService(CONFIGS.BUILDBUCKET.HOST, () => this.accessToken);
+    return new BuildersService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
   }
 
   @computed
@@ -97,7 +98,11 @@ export class AppState {
     if (this.userId === null) {
       return null;
     }
-    return new AccessService(CONFIGS.BUILDBUCKET.HOST, () => this.accessToken);
+    return new AccessService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
+  }
+
+  private makeClient(host: string) {
+    return new PrpcClientExt({ host }, () => this.accessToken);
   }
 }
 
