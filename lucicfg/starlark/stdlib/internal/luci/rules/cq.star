@@ -65,7 +65,7 @@ def _cq(
         "submit_max_burst": submit_max_burst,
         "submit_burst_delay": submit_burst_delay,
         "draining_start_time": validate.string("draining_start_time", draining_start_time, required = False),
-        "status_host": validate.string("status_host", status_host, required = False),
+        "status_host": validate.hostname("status_host", status_host, required = False),
     })
     graph.add_edge(keys.project(), key)
 
