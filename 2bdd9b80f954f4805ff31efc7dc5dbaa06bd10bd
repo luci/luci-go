@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70790387_7d1eed7c",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-30T21:56:01Z",
+      "side": 1,
+      "message": "I am not sure which function you are referring to here. Is it the \"cached\" function below?\n\nI\u0027d just omit the \"the function\" part",
+      "range": {
+        "startLine": 33,
+        "startChar": 13,
+        "endLine": 33,
+        "endChar": 25
+      },
+      "revId": "2bdd9b80f954f4805ff31efc7dc5dbaa06bd10bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ccd08be5_44a2ffbe",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-30T21:56:01Z",
+      "side": 1,
+      "message": "The default value here seems to refer to the cached function below, not for this object. I think we should move it down.",
+      "range": {
+        "startLine": 34,
+        "startChar": 5,
+        "endLine": 34,
+        "endChar": 20
+      },
+      "revId": "2bdd9b80f954f4805ff31efc7dc5dbaa06bd10bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
