@@ -26,6 +26,8 @@ import '../components/dot_spinner';
 import '../components/hotkey';
 import '../components/test_search_filter';
 import '../components/variant_entry/index_new';
+import '../components/drag_tracker';
+import { DragEvent } from '../components/drag_tracker';
 import { VariantEntryElement } from '../components/variant_entry/index_new';
 import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
@@ -33,8 +35,8 @@ import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../libs/analytics_utils';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
-const DEFAULT_COLUMN_WIDTH = Object.freeze<{ [key: string]: string }>({
-  'v.test_suite': '350px',
+const DEFAULT_COLUMN_WIDTH = Object.freeze<{ [key: string]: number }>({
+  'v.test_suite': 350,
 });
 
 function getColumnLabel(key: string) {
@@ -75,8 +77,12 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     }
   }
 
-  @computed private get columnWidthConfig() {
-    return this.invocationState.displayedColumns.map((col) => DEFAULT_COLUMN_WIDTH[col] || '100px').join(' ');
+  @observable private customColumnWidths: { [key: string]: number } = {};
+
+  @computed private get columnWidths() {
+    return this.invocationState.displayedColumns.map(
+      (col) => this.customColumnWidths[col] ?? DEFAULT_COLUMN_WIDTH[col] ?? 100
+    );
   }
 
   onBeforeEnter() {
@@ -338,7 +344,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     }
 
     return html`
-      <div id="test-variant-table" style="--columns: ${this.columnWidthConfig}">
+      <div id="test-variant-table" style="--columns: ${this.columnWidths.map((w) => w + 'px').join(' ')}">
         <milo-hotkey
           key="space,shift+space,up,down,pageup,pagedown"
           style="display: none;"
@@ -347,7 +353,32 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         <div id="table-header">
           <div><!-- Expand toggle --></div>
           <div title="variant status">&nbsp&nbspS</div>
-          ${this.invocationState.displayedColumns.map((col) => html`<div title=${col}>${getColumnLabel(col)}</div>`)}
+          ${this.invocationState.displayedColumns.map((col, i) => {
+            const startWidth = this.columnWidths[i];
+            let currentWidth = this.columnWidths[i];
+            return html`
+              <div class="resizable">
+                <div class="content" title=${col}>${getColumnLabel(col)}</div>
+                <milo-drag-tracker
+                  class="resizer"
+                  @drag=${(e: DragEvent) => {
+                    currentWidth = Math.max(startWidth + e.detail.dx, 24);
+
+                    const newWidths = this.columnWidths.slice();
+                    newWidths[i] = currentWidth;
+                    (e.target as HTMLElement).parentElement!.parentElement!.style.setProperty(
+                      '--columns',
+                      newWidths.map((w) => w + 'px').join(' ')
+                    );
+                  }}
+                  @drag-end=${(e: DragEvent) => {
+                    this.customColumnWidths[col] = currentWidth;
+                    (e.target as HTMLElement).parentElement!.parentElement!.style.removeProperty('--columns');
+                  }}
+                ></milo-drag-tracker>
+              </div>
+            `;
+          })}
           <div title="test name">Name</div>
         </div>
 
@@ -441,6 +472,21 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       font-weight: bold;
       border-bottom: 1px solid var(--divider-color);
       background-color: var(--block-background-color);
+    }
+    .resizable {
+      display: flex;
+    }
+    .resizable > .content {
+      flex: 1 1 auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .resizer {
+      flex: 0 0 auto;
+      background: linear-gradient(var(--divider-color), var(--divider-color)) 2px 0/1px 100% no-repeat;
+      width: 5px;
+      height: 100%;
+      cursor: col-resize;
     }
 
     #table-body {
