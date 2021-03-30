@@ -26,7 +26,7 @@ import { sanitizeHTML } from '../../libs/sanitize_html';
 import { TestVariant } from '../../services/resultdb';
 import '../copy_to_clipboard';
 import { OnEnterList } from '../lazy_list';
-import './result_entry';
+import '../variant_entry/result_entry';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -35,9 +35,8 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 /**
  * Renders an expandable entry of the given test variant.
  */
-// TODO(crbug/1178662): replace <milo-variant-entry> and drop the -new postfix.
-@customElement('milo-variant-entry-new')
-export class VariantEntryElement extends MobxLitElement implements OnEnterList {
+@customElement('milo-test-variant-entry')
+export class TestVariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
   @observable.ref expandedCallback: Function | null = null;
