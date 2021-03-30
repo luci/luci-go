@@ -60,7 +60,16 @@ func manageRun(ctx context.Context, runID common.RunID) error {
 	} else {
 		rm.handler = &handler.Impl{}
 	}
-	return eventbox.ProcessBatch(ctx, recipient, rm)
+	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, rm)
+	if err != nil {
+		return errors.Annotate(err, "run: %q", runID).Err()
+	}
+	for _, postProcessFn := range postProcessFns {
+		if err := postProcessFn(ctx); err != nil {
+			return errors.Annotate(err, "run: %q", runID).Err()
+		}
+	}
+	return nil
 }
 
 // runManager implements eventbox.Processor.
