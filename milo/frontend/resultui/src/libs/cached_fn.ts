@@ -43,6 +43,15 @@ export interface CacheOption {
    * Default to false.
    */
   skipUpdate?: boolean;
+  /**
+   * Whether the existing cache should be invalidated.
+   * If acceptCache is set to true, the existing cache will still be returned
+   * before being invalidated. This is useful when the cached value can't be
+   * reused (e.g. Response.body).
+   *
+   * Default to false.
+   */
+  invalidateCache?: boolean;
 }
 
 /**
@@ -58,6 +67,7 @@ export function cached<T extends unknown[], V>(
   return (opt: CacheOption, ...params: T) => {
     const key = config.key(...params);
     let value: V;
+    let updatedCache = false;
 
     if ((opt.acceptCache ?? true) && cache.has(key)) {
       value = cache.get(key)![0];
@@ -79,7 +89,13 @@ export function cached<T extends unknown[], V>(
         // Set the cache after config.expire call so there's no memory leak when
         // config.expire throws.
         cache.set(key, valueRef);
+        updatedCache = true;
       }
+    }
+
+    // Only invalidates old cache values.
+    if (!updatedCache && opt.invalidateCache) {
+      cache.delete(key);
     }
 
     return value;
