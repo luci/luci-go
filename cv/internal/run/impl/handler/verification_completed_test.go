@@ -23,13 +23,16 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -51,17 +54,45 @@ func TestOnVerificationCompleted(t *testing.T) {
 		defer cancel()
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		runCLs := common.CLIDs{1, 2}
-		cgID := config.MakeConfigGroupID("deadbeef", "main")
-		rs := &state.RunState{
-			Run: run.Run{
-				ID:            rid,
-				Status:        run.Status_RUNNING,
-				CreateTime:    ct.Clock.Now().UTC().Add(-2 * time.Minute),
-				StartTime:     ct.Clock.Now().UTC().Add(-1 * time.Minute),
-				ConfigGroupID: cgID,
-				CLs:           runCLs,
-			},
+		cgID := config.MakeConfigGroupID("cafecafe", "main")
+		r := run.Run{
+			ID:            rid,
+			Status:        run.Status_RUNNING,
+			CreateTime:    ct.Clock.Now().UTC().Add(-2 * time.Minute),
+			StartTime:     ct.Clock.Now().UTC().Add(-1 * time.Minute),
+			ConfigGroupID: cgID,
+			CLs:           runCLs,
 		}
+		So(datastore.Put(ctx, &r,
+			&run.RunCL{
+				ID:  runCLs[0],
+				Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
+				Detail: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: "example.com",
+							Info: gf.CI(1111),
+						},
+					},
+					Deps: []*changelist.Dep{
+						{Clid: 2, Kind: changelist.DepKind_HARD},
+					},
+				},
+			},
+			&run.RunCL{
+				ID:  runCLs[1],
+				Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
+				Detail: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: "example.com",
+							Info: gf.CI(2222),
+						},
+					},
+				},
+			},
+		), ShouldBeNil)
+		rs := &state.RunState{Run: r}
 		h := &Impl{}
 
 		statuses := []run.Status{
@@ -80,109 +111,106 @@ func TestOnVerificationCompleted(t *testing.T) {
 			})
 		}
 
-		Convey("Submit", func() {
-			vr := migration.VerifiedCQDRun{
-				ID: rid,
-				Payload: &migrationpb.ReportVerifiedRunRequest{
-					Action: migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT,
-				},
-			}
-			So(datastore.Put(ctx, &vr), ShouldBeNil)
+		vr := migration.VerifiedCQDRun{
+			ID: rid,
+			Payload: &migrationpb.ReportVerifiedRunRequest{
+				Action: migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT,
+			},
+		}
+		So(datastore.Put(ctx, &vr), ShouldBeNil)
 
-			cfg := &cfgpb.Config{
-				ConfigGroups: []*cfgpb.ConfigGroup{
-					{
-						Name: "main",
-						Verifiers: &cfgpb.Verifiers{
-							TreeStatus: &cfgpb.Verifiers_TreeStatus{
-								Url: "tree.example.com",
-							},
+		cfg := &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					Verifiers: &cfgpb.Verifiers{
+						TreeStatus: &cfgpb.Verifiers_TreeStatus{
+							Url: "tree.example.com",
 						},
 					},
 				},
-			}
-			ct.Cfg.Create(ctx, rid.LUCIProject(), cfg)
-			updateConfigGroupToLatest := func(rs *state.RunState) {
-				meta, err := config.GetLatestMeta(ctx, rs.Run.ID.LUCIProject())
+			},
+		}
+		ct.Cfg.Create(ctx, rid.LUCIProject(), cfg)
+		updateConfigGroupToLatest := func(rs *state.RunState) {
+			meta, err := config.GetLatestMeta(ctx, rs.Run.ID.LUCIProject())
+			So(err, ShouldBeNil)
+			So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
+			rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
+		}
+		updateConfigGroupToLatest(rs)
+		now := ct.Clock.Now().UTC()
+		ctx, cancel = clock.WithDeadline(ctx, now.Add(1*time.Minute))
+		defer cancel()
+
+		Convey("Works (Happy Path)", func() {
+			res, err := h.OnCQDVerificationCompleted(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+			So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
+			So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+				Deadline:          timestamppb.New(now.Add(1 * time.Minute)), // same as deadline in ctx
+				AttemptCount:      1,
+				Cls:               []int64{2, 1}, // in submission order
+				ExternalCls:       []string{"gerrit/example.com/2222", "gerrit/example.com/1111"},
+				TreeOpen:          true,
+				LastTreeCheckTime: timestamppb.New(now),
+			})
+			current, _, err := submit.LoadCurrentAndWaitlist(ctx, rid)
+			So(err, ShouldBeNil)
+			So(current, ShouldEqual, rid)
+			runtest.AssertReceivedReadyForSubmission(ctx, rid, now.Add(10*time.Second))
+		})
+
+		Convey("Add Run to waitlist when submit queue is occupied", func() {
+			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				// another run has taken the current slot
+				waitlisted, err := submit.TryAcquire(ctx, common.MakeRunID("infra", now, 1, []byte("cafecafe")), cfg.GetSubmitOptions())
+				So(waitlisted, ShouldBeFalse)
 				So(err, ShouldBeNil)
-				So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
-				rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
-			}
+				return nil
+			}, nil), ShouldBeNil)
+			res, err := h.OnCQDVerificationCompleted(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+			So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+			_, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rid)
+			So(err, ShouldBeNil)
+			So(waitlist.Index(rid), ShouldEqual, 0)
+		})
+
+		Convey("Revisit after 1 mintues if tree is closed", func() {
+			ct.TreeFake.ModifyState(ctx, tree.Closed)
+			res, err := h.OnCQDVerificationCompleted(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+			So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+			So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+				Cls:               []int64{2, 1}, // in submission order
+				ExternalCls:       []string{"gerrit/example.com/2222", "gerrit/example.com/1111"},
+				TreeOpen:          false,
+				LastTreeCheckTime: timestamppb.New(now),
+			})
+			So(res.SideEffectFn, ShouldBeNil)
+			runtest.AssertInEventbox(ctx, rid, &eventpb.Event{
+				Event: &eventpb.Event_Poke{
+					Poke: &eventpb.Poke{},
+				},
+				ProcessAfter: timestamppb.New(now.Add(1 * time.Minute)),
+			})
+		})
+
+		Convey("Treat Tree url not defined as open", func() {
+			cfg := proto.Clone(cfg).(*cfgpb.Config)
+			cfg.ConfigGroups[0].Verifiers = nil
+			ct.Cfg.Update(ctx, rid.LUCIProject(), cfg)
 			updateConfigGroupToLatest(rs)
 
-			Convey("Works (Happy Path)", func() {
-				now := ct.Clock.Now().UTC()
-				res, err := h.OnCQDVerificationCompleted(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				// TODO(yiwzhang): change the expectation after OnReadyForSubmission is
-				// implemented.
-				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Cls:               common.CLIDsAsInt64s(runCLs),
-					TreeOpen:          true,
-					LastTreeCheckTime: timestamppb.New(now),
-				})
-				current, _, err := submit.LoadCurrentAndWaitlist(ctx, rid)
-				So(err, ShouldBeNil)
-				So(current, ShouldEqual, rid)
-				runtest.AssertReceivedReadyForSubmission(ctx, rid, now.Add(10*time.Second))
-			})
-
-			Convey("Add Run to waitlist when submit queue is occupied", func() {
-				now := ct.Clock.Now().UTC()
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					// another run has taken the current slot
-					waitlisted, err := submit.TryAcquire(ctx, common.MakeRunID("infra", now, 1, []byte("cafecafe")), cfg.GetSubmitOptions())
-					So(waitlisted, ShouldBeFalse)
-					So(err, ShouldBeNil)
-					return nil
-				}, nil), ShouldBeNil)
-				res, err := h.OnCQDVerificationCompleted(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-				_, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rid)
-				So(err, ShouldBeNil)
-				So(waitlist.Index(rid), ShouldEqual, 0)
-			})
-
-			Convey("Revisit after 1 mintues if tree is closed", func() {
-				ct.TreeFake.ModifyState(ctx, tree.Closed)
-				now := ct.Clock.Now().UTC()
-				res, err := h.OnCQDVerificationCompleted(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
-				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Cls:               common.CLIDsAsInt64s(runCLs),
-					TreeOpen:          false,
-					LastTreeCheckTime: timestamppb.New(now),
-				})
-				So(res.SideEffectFn, ShouldBeNil)
-				runtest.AssertInEventbox(ctx, rid, &eventpb.Event{
-					Event: &eventpb.Event_Poke{
-						Poke: &eventpb.Poke{},
-					},
-					ProcessAfter: timestamppb.New(now.Add(1 * time.Minute)),
-				})
-			})
-
-			Convey("Treat Tree url not defined as open", func() {
-				cfg := proto.Clone(cfg).(*cfgpb.Config)
-				cfg.ConfigGroups[0].Verifiers = nil
-				ct.Cfg.Update(ctx, rid.LUCIProject(), cfg)
-				updateConfigGroupToLatest(rs)
-
-				res, err := h.OnCQDVerificationCompleted(ctx, rs)
-				So(err, ShouldBeNil)
-				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Cls:               common.CLIDsAsInt64s(runCLs),
-					TreeOpen:          true,
-					LastTreeCheckTime: timestamppb.New(ct.Clock.Now().UTC()),
-				})
-			})
+			res, err := h.OnCQDVerificationCompleted(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+			So(res.State.Run.Submission.TreeOpen, ShouldEqual, true)
+			So(res.State.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(now))
 		})
 	})
 }

@@ -200,6 +200,16 @@ func release(ctx context.Context, runID common.RunID) error {
 	return nil
 }
 
+// CurrentRun returns the RunID that is currently submitting in the submit queue
+// of the provided LUCI Project.
+func CurrentRun(ctx context.Context, luciProject string) (common.RunID, error) {
+	q, err := loadQueue(ctx, luciProject)
+	if err != nil {
+		return "", err
+	}
+	return q.Current, nil
+}
+
 // LoadCurrentAndWaitlist loads the current submission slot and the waitlist.
 func LoadCurrentAndWaitlist(ctx context.Context, runID common.RunID) (current common.RunID, waitlist common.RunIDs, err error) {
 	q, err := loadQueue(ctx, runID.LUCIProject())
