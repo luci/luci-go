@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud"
 	"go.chromium.org/luci/common/gcloud/gs"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -50,6 +51,7 @@ const (
 // unit tests to stub out CloudLogging.
 type CLClient interface {
 	Close() error
+	Ping(context.Context) error
 }
 
 var (
@@ -422,6 +424,15 @@ func (a *Archivist) makeStagedArchival(c context.Context, project string,
 	var clc CLClient
 	if st.CloudLoggingProjectID != "" {
 		log.Infof(c, "Log stream will be exported to %s via CloudLogging.", st.CloudLoggingProjectID)
+
+		// Validate the project ID, and ping the project to verify the auth.
+		if err = gcloud.ValidateProjectID(st.CloudLoggingProjectID); err != nil {
+			prID := st.CloudLoggingProjectID
+			if len(prID) > 64 {
+				prID = fmt.Sprintf("%.50s...(truncated)", prID)
+			}
+			return nil, errors.Annotate(err, "CloudLoggingProjectID %q", prID).Err()
+		}
 		clc, err = a.CLClientFactory(c, project, st.CloudLoggingProjectID, st.CloudLoggingWithProjectScope)
 		if err != nil {
 			log.Fields{
@@ -429,6 +440,9 @@ func (a *Archivist) makeStagedArchival(c context.Context, project string,
 				"protoVersion": ls.State.ProtoVersion,
 			}.Errorf(c, "Failed to obtain CloudLogging client.")
 			return nil, err
+		}
+		if err = clc.Ping(c); err != nil {
+			return nil, errors.Annotate(err, "failed to ping CloudProject %q for log-export", st.CloudLoggingProjectID).Err()
 		}
 	}
 
