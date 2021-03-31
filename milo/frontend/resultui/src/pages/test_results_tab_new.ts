@@ -16,30 +16,21 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
-import { classMap } from 'lit-html/directives/class-map';
-import { repeat } from 'lit-html/directives/repeat';
-import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
 import '../components/dot_spinner';
 import '../components/hotkey';
 import '../components/test_search_filter';
-import '../components/variant_entry/index_new';
-import { VariantEntryElement } from '../components/variant_entry/index_new';
+import '../components/test_variants_table';
+import { TestVariantsTableElement } from '../components/test_variants_table';
 import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
-import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
 const DEFAULT_COLUMN_WIDTH = Object.freeze<{ [key: string]: string }>({
   'v.test_suite': '350px',
 });
-
-function getColumnLabel(key: string) {
-  // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
-  return key.split('.', 2)[1] ?? key;
-}
 
 /**
  * Display a list of test results.
@@ -57,31 +48,14 @@ export class TestResultsTabElement extends MobxLitElement {
 
   private disposers: Array<() => void> = [];
 
-  async loadMore(untilStatus?: TestVariantStatus) {
-    try {
-      await this.invocationState.testLoader?.loadNextTestVariants(untilStatus);
-    } catch (e) {
-      this.dispatchEvent(
-        new ErrorEvent('error', {
-          error: e,
-          message: e.toString(),
-          composed: true,
-          bubbles: true,
-        })
-      );
-    }
-  }
-
   @computed private get columnWidthConfig() {
     return this.invocationState.displayedColumns.map((col) => DEFAULT_COLUMN_WIDTH[col] || '100px').join(' ');
   }
 
-  @observable.ref private allVariantsWereExpanded = false;
+  private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
     this.allVariantsWereExpanded = expand;
-    this.shadowRoot!.querySelectorAll<VariantEntryElement>('milo-variant-entry-new').forEach(
-      (e) => (e.expanded = expand)
-    );
+    this.shadowRoot!.querySelector<TestVariantsTableElement>('milo-test-variants-table')!.toggleAllVariants(expand);
   }
   private readonly toggleAllVariantsByHotkey = () => this.toggleAllVariants(!this.allVariantsWereExpanded);
 
@@ -90,26 +64,6 @@ export class TestResultsTabElement extends MobxLitElement {
     this.appState.selectedTabId = 'test-results';
     trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
     // TODO(weiweilin): track test results tab loading time.
-
-    // When a new test loader is received, load the first page and reset the
-    // selected node.
-    this.disposers.push(
-      reaction(
-        () => this.invocationState.testLoader,
-        (testLoader) => {
-          if (!testLoader) {
-            return;
-          }
-          // The previous instance of the test results tab could've triggered
-          // the loading operation already. In that case we don't want to load
-          // more test results.
-          if (!testLoader.firstRequestSent) {
-            this.loadMore();
-          }
-        },
-        { fireImmediately: true }
-      )
-    );
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
@@ -169,29 +123,6 @@ export class TestResultsTabElement extends MobxLitElement {
     }
   }
 
-  private renderAllVariants() {
-    const testLoader = this.invocationState.testLoader;
-    const groupers = this.invocationState.groupers;
-    return html`
-      ${(testLoader?.groupedNonExpectedVariants || []).map((group) =>
-        this.renderVariantGroup(
-          groupers.map(([key, getter]) => [key, getter(group[0])]),
-          group
-        )
-      )}
-      ${this.renderVariantGroup([['status', TestVariantStatus.EXPECTED]], testLoader?.expectedTestVariants || [])}
-      <div id="variant-list-tail">
-        Showing ${testLoader?.testVariantCount || 0} /
-        ${testLoader?.unfilteredTestVariantCount || 0}${testLoader?.loadedAllVariants ? '' : '+'} tests.
-        <span
-          class="active-text"
-          style=${styleMap({ display: this.invocationState.testLoader?.loadedAllVariants ?? true ? 'none' : '' })}
-          >${this.renderLoadMore()}</span
-        >
-      </div>
-    `;
-  }
-
   private renderIntegrationHint() {
     return this.configsStore.userConfigs.hints.showTestResultsHint
       ? html`
@@ -213,79 +144,7 @@ export class TestResultsTabElement extends MobxLitElement {
       : html`<div></div>`;
   }
 
-  @computed private get gaLabelPrefix() {
-    return 'testresults_' + this.invocationState.invocationId;
-  }
-
-  private variantExpandedCallback = () => {
-    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.EXPAND_ENTRY, `${this.gaLabelPrefix}_${VISIT_ID}`, 1);
-  };
-
-  @observable private collapsedVariantGroups = new Set<string>();
-  private renderVariantGroup(groupDef: [string, unknown][], variants: TestVariant[]) {
-    const groupId = JSON.stringify(groupDef);
-    const expanded = !this.collapsedVariantGroups.has(groupId);
-    return html`
-      <div
-        class=${classMap({
-          expanded,
-          empty: variants.length === 0,
-          'group-header': true,
-        })}
-        @click=${() => {
-          if (expanded) {
-            this.collapsedVariantGroups.add(groupId);
-          } else {
-            this.collapsedVariantGroups.delete(groupId);
-          }
-        }}
-      >
-        <mwc-icon class="group-icon">${expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
-        <div>
-          <b>${variants.length} test variant${variants.length === 1 ? '' : 's'}:</b>
-          ${groupDef.map(([k, v]) => html`<span class="group-kv"><span>${getColumnLabel(k)}=</span><b>${v}</b></span>`)}
-        </div>
-      </div>
-      ${repeat(
-        expanded ? variants : [],
-        (v) => `${v.testId} ${v.variantHash}`,
-        (v) => html`
-          <milo-variant-entry-new
-            .variant=${v}
-            .columnGetters=${this.invocationState.displayedColumnGetters}
-            .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
-            .prerender=${true}
-            .expandedCallback=${this.variantExpandedCallback}
-          ></milo-variant-entry-new>
-        `
-      )}
-    `;
-  }
-
-  private renderLoadMore(forStatus?: TestVariantStatus) {
-    const state = this.invocationState;
-    return html`
-      <span
-        style=${styleMap({ display: state.testLoader?.isLoading ?? true ? 'none' : '' })}
-        @click=${(e: Event) => {
-          this.loadMore(forStatus);
-          e.stopPropagation();
-        }}
-      >
-        [load more]
-      </span>
-      <span
-        style=${styleMap({
-          display: state.testLoader?.isLoading ?? true ? '' : 'none',
-          cursor: 'initial',
-        })}
-      >
-        loading <milo-dot-spinner></milo-dot-spinner>
-      </span>
-    `;
-  }
-
-  private renderVariantTable() {
+  private renderBody() {
     const state = this.invocationState;
 
     if (state.invocationId === '') {
@@ -299,23 +158,7 @@ export class TestResultsTabElement extends MobxLitElement {
       `;
     }
 
-    return html`
-      <div id="test-variant-table" style="--columns: ${this.columnWidthConfig}">
-        <milo-hotkey
-          key="space,shift+space,up,down,pageup,pagedown"
-          style="display: none;"
-          .handler=${() => this.shadowRoot!.getElementById('test-variant-list')!.focus()}
-        ></milo-hotkey>
-        <div id="table-header">
-          <div><!-- Expand toggle --></div>
-          <div title="variant status">&nbsp&nbspS</div>
-          ${this.invocationState.displayedColumns.map((col) => html`<div title=${col}>${getColumnLabel(col)}</div>`)}
-          <div title="test name">Name</div>
-        </div>
-
-        <milo-lazy-list id="test-variant-list" .growth=${300} tabindex="-1">${this.renderAllVariants()}</milo-lazy-list>
-      </div>
-    `;
+    return html`<milo-test-variants-table style="--columns: ${this.columnWidthConfig}"></milo-test-variants-table>`;
   }
 
   protected render() {
@@ -344,7 +187,7 @@ export class TestResultsTabElement extends MobxLitElement {
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
         </milo-hotkey>
       </div>
-      ${this.renderIntegrationHint()} ${this.renderVariantTable()}
+      ${this.renderIntegrationHint()} ${this.renderBody()}
     `;
   }
 
@@ -388,95 +231,6 @@ export class TestResultsTabElement extends MobxLitElement {
       height: 100%;
     }
 
-    #test-variant-table {
-      overflow: hidden;
-      display: grid;
-      grid-template-rows: auto 1fr;
-    }
-
-    #table-header {
-      display: grid;
-      grid-template-columns: 24px 24px var(--columns) 1fr;
-      grid-gap: 5px;
-      line-height: 24px;
-      padding: 2px 2px 2px 10px;
-      font-weight: bold;
-      border-bottom: 1px solid var(--divider-color);
-      background-color: var(--block-background-color);
-    }
-
-    #table-body {
-      overflow-y: hidden;
-    }
-    milo-lazy-list > * {
-      padding-left: 10px;
-    }
-    #no-invocation {
-      padding: 10px;
-    }
-    #test-variant-list {
-      overflow-y: auto;
-      outline: none;
-    }
-    milo-variant-entry-new {
-      margin: 2px 0px;
-    }
-
-    #integration-hint {
-      border-bottom: 1px solid var(--divider-color);
-      padding: 0 0 5px 15px;
-    }
-
-    .group-header {
-      display: grid;
-      grid-template-columns: auto auto 1fr;
-      grid-gap: 5px;
-      padding: 2px 2px 2px 10px;
-      position: sticky;
-      font-size: 14px;
-      background-color: var(--block-background-color);
-      border-top: 1px solid var(--divider-color);
-      top: -1px;
-      cursor: pointer;
-      user-select: none;
-      line-height: 24px;
-    }
-    .group-header:first-child {
-      top: 0px;
-      border-top: none;
-    }
-    .group-header.expanded:not(.empty) {
-      border-bottom: 1px solid var(--divider-color);
-    }
-    .group-kv:not(:last-child)::after {
-      content: ', ';
-    }
-    .group-kv > span {
-      color: var(--light-text-color);
-    }
-    .group-kv > b {
-      font-style: italic;
-    }
-
-    .unexpected {
-      color: var(--failure-color);
-    }
-    .unexpectedly-skipped {
-      color: var(--critical-failure-color);
-    }
-    .flaky {
-      color: var(--warning-color);
-    }
-    span.flaky {
-      color: var(--warning-text-color);
-    }
-    .exonerated {
-      color: var(--exonerated-color);
-    }
-    .expected {
-      color: var(--success-color);
-    }
-
     .active-text {
       color: var(--active-text-color);
       cursor: pointer;
@@ -486,16 +240,6 @@ export class TestResultsTabElement extends MobxLitElement {
     .inline-icon {
       --mdc-icon-size: 1.2em;
       vertical-align: bottom;
-    }
-
-    #variant-list-tail {
-      padding: 5px 0 5px 15px;
-    }
-    #variant-list-tail:not(:first-child) {
-      border-top: 1px solid var(--divider-color);
-    }
-    #load {
-      color: var(--active-text-color);
     }
   `;
 }
