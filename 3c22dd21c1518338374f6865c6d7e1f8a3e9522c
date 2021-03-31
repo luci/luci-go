@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ad4f35d_5948d841",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-31T05:57:51Z",
+      "side": 1,
+      "message": "This is moved from verification_completed.go",
+      "revId": "3c22dd21c1518338374f6865c6d7e1f8a3e9522c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
