@@ -39,6 +39,30 @@
       },
       "revId": "328b5bf16412cee9bbde2d5a75b7632f0518e43b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d4cb2a8_01022eec",
+        "filename": "cv/internal/run/send.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-31T05:29:18Z",
+      "side": 1,
+      "message": "I think it is actually guaranteed in RM[1] unless there\u0027s a clock skew. RM won\u0027t process the event if `eta` is before now (strictly speaking not after).\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/run/impl/manager.go;l\u003d174-179;drc\u003dfcdb6b978814759f3afd8b0cea019c4708a290c0",
+      "parentUuid": "d5d4a311_47771bf1",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 13
+      },
+      "revId": "328b5bf16412cee9bbde2d5a75b7632f0518e43b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
