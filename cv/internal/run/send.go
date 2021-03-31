@@ -36,12 +36,17 @@ func Start(ctx context.Context, runID common.RunID) error {
 }
 
 // PokeNow tells RunManager to check its own state immediately.
+//
+// It's a shorthand of `PokeAfter(ctx, runID, after)` where `after` <= 0 or
+// `PokeAt(ctx, runID, eta)` where `eta` is an earlier timestamp.
 func PokeNow(ctx context.Context, runID common.RunID) error {
-	return Poke(ctx, runID, 0)
+	return PokeAfter(ctx, runID, 0)
 }
 
-// Poke tells RunManager to check its own state.
-func Poke(ctx context.Context, runID common.RunID, after time.Duration) error {
+// PokeAfter tells RunManager to check its own state after the given duration.
+//
+// Providing a non-positive duration is equivalent to `PokeNow(...)`.
+func PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error {
 	evt := &eventpb.Event{
 		Event: &eventpb.Event_Poke{
 			Poke: &eventpb.Poke{},
@@ -51,6 +56,25 @@ func Poke(ctx context.Context, runID common.RunID, after time.Duration) error {
 		t := clock.Now(ctx).Add(after)
 		evt.ProcessAfter = timestamppb.New(t)
 		return eventpb.Send(ctx, runID, evt, t)
+
+	}
+	return eventpb.SendNow(ctx, runID, evt)
+}
+
+// PokeAt tells RunManager to check its own state at around `eta`.
+//
+// Guarantees no earlier than `eta` but may not be exactly at `eta`.
+// Providing an earlier timestamp than the current is equivalent to
+// `PokeNow(...)`.
+func PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error {
+	evt := &eventpb.Event{
+		Event: &eventpb.Event_Poke{
+			Poke: &eventpb.Poke{},
+		},
+	}
+	if eta.After(clock.Now(ctx)) {
+		evt.ProcessAfter = timestamppb.New(eta)
+		return eventpb.Send(ctx, runID, evt, eta)
 
 	}
 	return eventpb.SendNow(ctx, runID, evt)
