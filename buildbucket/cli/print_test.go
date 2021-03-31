@@ -56,8 +56,7 @@ var buildJSON = `
         "dry_run": true
       },
       "$recipe_engine/runtime": {
-        "is_experimental": false,
-        "is_luci": true
+        "is_experimental": false
       },
       "blamelist": [
         "hinoka@chromium.org"
@@ -169,8 +168,7 @@ const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chrom
     "dry_run": true
   },
   "$recipe_engine/runtime": {
-    "is_experimental": false,
-    "is_luci": true
+    "is_experimental": false
   },
   "blamelist": [
     "hinoka@chromium.org"

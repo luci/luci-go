@@ -96,9 +96,12 @@ type Build struct {
 	Experimental bool `gae:"experimental"`
 	// Experiments is a slice of experiments enabled or disabled on this build.
 	// Each element should look like "[-+]$experiment_name".
-	Experiments         []string  `gae:"experiments"`
-	Incomplete          bool      `gae:"incomplete"`
-	IsLuci              bool      `gae:"is_luci"`
+	Experiments []string `gae:"experiments"`
+	Incomplete  bool     `gae:"incomplete"`
+
+	// Deprecated; remove after v1 api turndown
+	IsLuci bool `gae:"is_luci"`
+
 	ResultDBUpdateToken string    `gae:"resultdb_update_token,noindex"`
 	Status              pb.Status `gae:"status_v2"`
 	StatusChangedTime   time.Time `gae:"status_changed_time"`

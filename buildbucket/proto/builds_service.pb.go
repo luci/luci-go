@@ -500,7 +500,6 @@ type ScheduleBuildRequest struct {
 	// * ["buildbucket"]
 	// * ["buildername"]
 	// * ["blamelist""]
-	// * ["$recipe_engine/runtime", "is_luci"]
 	// * ["$recipe_engine/runtime", "is_experimental"]
 	//
 	// V1 equivalent: corresponds to "properties" key in "parameters_json".
