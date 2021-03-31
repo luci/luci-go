@@ -16,6 +16,98 @@
       "message": "Addressed the feedback. PTAL, thanks. ",
       "revId": "088037abbca87380b8929c012c81add1da695e92",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d072611e_f704297b",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-31T04:47:22Z",
+      "side": 1,
+      "message": "Nit: add an empty line before?",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 8
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1bceb5b_f6b19fa3",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-31T04:47:22Z",
+      "side": 1,
+      "message": "How about logging.Warningf(ctx, fmt.Sprintf(\"the builder has resultDB enabled while the build %s doesn\u0027t have realm\", b.Proto.id)",
+      "range": {
+        "startLine": 59,
+        "startChar": 65,
+        "endLine": 59,
+        "endChar": 125
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3abdf13e_f7fb6545",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-31T04:47:22Z",
+      "side": 1,
+      "message": "nit: has",
+      "range": {
+        "startLine": 81,
+        "startChar": 73,
+        "endLine": 81,
+        "endChar": 77
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba298eed_ea21dfcf",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-31T04:47:22Z",
+      "side": 1,
+      "message": "Move the client creation out here to make it shared between goroutines?",
+      "range": {
+        "startLine": 112,
+        "startChar": 4,
+        "endLine": 115,
+        "endChar": 5
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

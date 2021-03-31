@@ -195,6 +195,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "17317524_636ff4c7",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-31T04:47:22Z",
+      "side": 1,
+      "message": "\u003e But if it\u0027s the partial retry where a batch contains a subset of already handled builds, I think the ResultDB won\u0027t dedup it and would create new invocations?\n\nResultDB will return error in this case: http://shortn/_JsDbWt26Pz\n\nAnd IIUC we tried to avoid this case by constructing the request id using the first build id in the batch and the length of the batch.",
+      "parentUuid": "d94df4c3_db0279d6",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "65176cb4_28a16ee2",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 2
