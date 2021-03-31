@@ -28,6 +28,7 @@ import (
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -41,9 +42,16 @@ var mockRecorderClientKey = "used in tests only for setting the mock recorder cl
 //
 // Note: it will mutate the value of build.Proto.Infra.Resultdb.Invocation and build.ResultDBUpdateToken.
 func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.Builder) error {
-	// TODO(yuanjunh): in the next CL, fetch settings.cfg for rdbHost; get proper bbHost.
-	rdbHost := "rdbHost"
-	bbHost := "bbHost"
+	serviceCfg, err := config.GetSettingsCfg(ctx)
+	switch {
+	case err != nil:
+		return err
+	case serviceCfg.Resultdb.Hostname == "":
+		// resultdb host needs to be enabled at service level, i.e. globally per buildbucket deployment.
+		return nil
+	}
+	rdbHost := serviceCfg.Resultdb.Hostname
+	bbHost := getBBHostname(ctx)
 
 	// We need to do one batch request per project, since the rpc to create invocations uses per-project credentials.
 	batchReqs := make(map[string]*rdbPb.BatchCreateInvocationsRequest)
@@ -100,7 +108,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 	}
 	// make BatchCreateInvocations calls
 	resps := make([]*rdbPb.BatchCreateInvocationsResponse, len(batchReqs))
-	err := parallel.WorkPool(64, func(ch chan<- func() error) {
+	err = parallel.WorkPool(64, func(ch chan<- func() error) {
 		count := 0
 		for proj, req := range batchReqs {
 			i := count
@@ -147,4 +155,15 @@ func newRecorderClient(ctx context.Context, host string, project string) (rdbPb.
 			C:    &http.Client{Transport: t},
 			Host: host,
 		}), nil
+}
+
+func getBBHostname(ctx context.Context) string {
+	switch ctx.Value("env").(string) {
+	case "Dev":
+		return "cr-buildbucket-dev.appspot.com"
+	case "Prod":
+		return "cr-buildbucket.appspot.com"
+	default:
+		return ""
+	}
 }
