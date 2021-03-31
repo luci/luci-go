@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea26866d_07ed49fd",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-31T04:48:22Z",
+      "side": 1,
+      "message": "I couldn\u0027t see an equivalent API in go, but probably you can get the app id from https://pkg.go.dev/google.golang.org/appengine#AppID, so you don\u0027t need to do the switch?",
+      "range": {
+        "startLine": 160,
+        "startChar": 5,
+        "endLine": 160,
+        "endChar": 18
+      },
+      "revId": "883fcf3301ecdeb275409771058354abe6a314d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
