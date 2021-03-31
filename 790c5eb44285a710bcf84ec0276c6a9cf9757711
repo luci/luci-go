@@ -51,6 +51,24 @@
       "parentUuid": "1734a2b3_5dc34496",
       "revId": "790c5eb44285a710bcf84ec0276c6a9cf9757711",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca5aac39_59a60f65",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-31T03:53:33Z",
+      "side": 1,
+      "message": "I guess what I\u0027m saying is, if you remove it from the datastore model here, it should also be removed from the cr-buildbucket python code.\n\nI\u0027d be inclined to just comment \"deprecated; remove after v1 api turndown\" next to the field, but leave it in the datastore model for now.",
+      "parentUuid": "f8af6e8c_e6e74034",
+      "revId": "790c5eb44285a710bcf84ec0276c6a9cf9757711",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
