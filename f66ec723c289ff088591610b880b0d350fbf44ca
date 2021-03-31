@@ -16,6 +16,24 @@
       "message": "is this a native function on the underlying cloud logging client?",
       "revId": "f66ec723c289ff088591610b880b0d350fbf44ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4dc12711_06e1b5c0",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-31T22:36:41Z",
+      "side": 1,
+      "message": "yes. It\u0027s effectively the same call as Logger.LogSync().\n\n\"Ping writes a log entry \"ping\" to a log named \"ping\"\"\nhttps://github.com/googleapis/google-cloud-go/blob/logging/v1.3.0/logging/logging.go#L178",
+      "parentUuid": "cb79a41f_46b59906",
+      "revId": "f66ec723c289ff088591610b880b0d350fbf44ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
