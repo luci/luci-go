@@ -22,6 +22,23 @@
       },
       "revId": "883fcf3301ecdeb275409771058354abe6a314d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d637b08_6463a622",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-31T12:23:09Z",
+      "side": 1,
+      "message": "ctx.Value(\"env\") is intended to be removed once we remove the traffic splitter, so it\u0027s only suitable for temporary use (e.g. the switch in Batch is ok because it will be removed before we remove traffic splitting).",
+      "revId": "883fcf3301ecdeb275409771058354abe6a314d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
