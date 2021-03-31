@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "68e1dea0_6cc7fc92",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T00:31:45Z",
+      "side": 1,
+      "message": "Nits: Displays",
+      "range": {
+        "startLine": 37,
+        "startChar": 3,
+        "endLine": 37,
+        "endChar": 10
+      },
+      "revId": "6d4262da16cb21013fd71b1a4a8f12c95f2cd1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fece40d6_a053d6dc",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T00:31:45Z",
+      "side": 1,
+      "message": "Perhaps move this one to line 43?",
+      "revId": "6d4262da16cb21013fd71b1a4a8f12c95f2cd1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad0ed655_9806dd2e",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T00:31:45Z",
+      "side": 1,
+      "message": "Nits: empty line before this.",
+      "revId": "6d4262da16cb21013fd71b1a4a8f12c95f2cd1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
