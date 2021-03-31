@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b24d2694_66c927e3",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-31T00:39:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68e1dea0_6cc7fc92",
+      "range": {
+        "startLine": 37,
+        "startChar": 3,
+        "endLine": 37,
+        "endChar": 10
+      },
+      "revId": "6d4262da16cb21013fd71b1a4a8f12c95f2cd1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fece40d6_a053d6dc",
@@ -41,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd282795_e129d65b",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-31T00:39:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fece40d6_a053d6dc",
+      "revId": "6d4262da16cb21013fd71b1a4a8f12c95f2cd1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ad0ed655_9806dd2e",
@@ -54,6 +96,24 @@
       "writtenOn": "2021-03-31T00:31:45Z",
       "side": 1,
       "message": "Nits: empty line before this.",
+      "revId": "6d4262da16cb21013fd71b1a4a8f12c95f2cd1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0724b89f_4760371d",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-31T00:39:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad0ed655_9806dd2e",
       "revId": "6d4262da16cb21013fd71b1a4a8f12c95f2cd1f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
