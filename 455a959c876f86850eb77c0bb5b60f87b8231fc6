@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b6930ab_63254c3f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-31T13:10:33Z",
+      "side": 1,
+      "message": "Python only adds gitiles_ref if ref is set, but when it validates the schedule request, it seems to require a ref for all gitiles commits:\n\n[1] https://chromium.googlesource.com/infra/infra/+/a38abc1af1b48c6906a57cd8ac9af8996b0cf06f/appengine/cr-buildbucket/creation.py#225\n[2] https://chromium.googlesource.com/infra/infra/+/a38abc1af1b48c6906a57cd8ac9af8996b0cf06f/appengine/cr-buildbucket/validation.py#222\n[3] https://chromium.googlesource.com/infra/infra/+/a38abc1af1b48c6906a57cd8ac9af8996b0cf06f/appengine/cr-buildbucket/validation.py#84",
+      "revId": "455a959c876f86850eb77c0bb5b60f87b8231fc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
