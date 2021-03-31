@@ -43,6 +43,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d2d33369_0dab3e16",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-31T07:03:38Z",
+      "side": 1,
+      "message": "Consider a short explanation of why you\u0027re building this map as well.",
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b1bceb5b_f6b19fa3",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 3
@@ -54,6 +71,30 @@
       "writtenOn": "2021-03-31T04:47:22Z",
       "side": 1,
       "message": "How about logging.Warningf(ctx, fmt.Sprintf(\"the builder has resultDB enabled while the build %s doesn\u0027t have realm\", b.Proto.id)",
+      "range": {
+        "startLine": 59,
+        "startChar": 65,
+        "endLine": 59,
+        "endChar": 125
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8928e02_7e099a33",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-31T07:03:38Z",
+      "side": 1,
+      "message": "Maybe also reference the name of the builder which doesn\u0027t have realms enabled.",
+      "parentUuid": "b1bceb5b_f6b19fa3",
       "range": {
         "startLine": 59,
         "startChar": 65,

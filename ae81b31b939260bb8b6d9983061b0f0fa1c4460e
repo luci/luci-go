@@ -213,6 +213,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f32e3727_296620f2",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-31T07:03:38Z",
+      "side": 1,
+      "message": "Chan:\nUsing the first build ID and length of the batch can only deduplicate exactly that batch. It\u0027ll incorrectly dedupe a different batch if the first build and number of builds are the same but the second build is different, and it\u0027ll incorrectly not dedupe retried requests batched differently.\n\nI see BatchCreateInvocationsRequest has a top-level RequestId field, but each CreateInvocationRequest also has a RequestId field. If we send a batch with an empty top-level RequestId but fill in per-request RequestIds, will it dedupe each invocation correctly?\n\nYuanjun:\nTrue but that that means this function is only safe to use from ScheduleBuild or from another call site that works in a similar way to ScheduleBuild. If we change ScheduleBuild it may affect ResultDB invocations even if we don\u0027t touch that part, because this function in this package doesn\u0027t dedupe correctly. We may have to change our interaction with this function per Backend API work in Q2/Q3, and this function has a lot of undocumented assumptions.\n\nDepending on Chan\u0027s answer, I think we should specify no RequestId at the Batch level and specify RequestIds for each individual CreateInvocationRequest instead. This will dedupe everything correctly in all scenarios.",
+      "parentUuid": "17317524_636ff4c7",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "65176cb4_28a16ee2",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 2
@@ -242,6 +260,24 @@
       "side": 1,
       "message": "The map does use the invocation name from the response. The `inv.Name` is from the `res.Invocations` and `res.UpdateTokens[i]` is also from the response. So those indices are aligned.",
       "parentUuid": "65176cb4_28a16ee2",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ab40005_a1019977",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-03-31T07:03:38Z",
+      "side": 1,
+      "message": "Can you document this? I find it confusing. It seems that each \"res\" returned by ResultDB has this form:\n\ntype Response struct {\n UpdateTokens []string\n Invocations []*Invocation\n}\n\nWhich I didn\u0027t realize before. I originally thought you were matching indices between the returned response and some data we constructed. I wouldn\u0027t normally expect to have to match indices between two different slices in the response.",
+      "parentUuid": "4f6ec60e_880080c8",
       "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
