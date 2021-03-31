@@ -14,6 +14,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
+import '@material/mwc-dialog';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable, reaction } from 'mobx';
@@ -157,9 +158,103 @@ export class TestResultsTabElement extends MobxLitElement {
     return html`<milo-test-variants-table style="--columns: ${this.columnWidthConfig}"></milo-test-variants-table>`;
   }
 
+  private renderPropKeysConfigRow(label: string, keys: string[], updateKeys: (newKeys: string[]) => void) {
+    return html`
+      <tr>
+        <td>${label}:</td>
+        <td>
+          <input
+            .value=${keys.join(', ')}
+            placeholder="A list of comma separated property keys (e.g. v.test_suite,v.gpu)."
+            @input=${(e: InputEvent) => {
+              const newKeys = (e.target as HTMLInputElement).value
+                .split(',')
+                .map((k) => k.trim())
+                .filter((k) => k !== '');
+              updateKeys(newKeys);
+            }}
+          />
+        </td>
+      </tr>
+    `;
+  }
+
+  private uncommittedColumnKeys: string[] = [];
+  private uncommittedSortingKeys: string[] = [];
+  private uncommittedGroupingKeys: string[] = [];
+  @observable.ref private showTableConfigDialog = false;
   protected render() {
     return html`
+      <mwc-dialog
+        id="table-config-dialog"
+        heading="Table Configuration"
+        ?open=${this.showTableConfigDialog}
+        @closed=${(event: CustomEvent<{ action: string }>) => {
+          if (event.detail.action === 'apply') {
+            this.invocationState.columnsParam = this.uncommittedColumnKeys;
+            this.invocationState.sortingKeysParam = this.uncommittedSortingKeys;
+            this.invocationState.groupingKeysParam = this.uncommittedGroupingKeys;
+          }
+          this.showTableConfigDialog = false;
+        }}
+      >
+        <table>
+          ${this.renderPropKeysConfigRow(
+            'Column Keys',
+            this.uncommittedColumnKeys,
+            (newKeys) => (this.uncommittedColumnKeys = newKeys)
+          )}
+          ${this.renderPropKeysConfigRow(
+            'Sorting Keys',
+            this.uncommittedSortingKeys,
+            (newKeys) => (this.uncommittedSortingKeys = newKeys)
+          )}
+          ${this.renderPropKeysConfigRow(
+            'Grouping Keys',
+            this.uncommittedGroupingKeys,
+            (newKeys) => (this.uncommittedGroupingKeys = newKeys)
+          )}
+          </tr>
+        </table>
+        <mwc-button
+          id="reset-table-config"
+          dense
+          unelevated
+          @click=${() => {
+            this.uncommittedColumnKeys = this.invocationState.defaultColumns;
+            this.uncommittedSortingKeys = this.invocationState.defaultSortingKeys;
+            this.uncommittedGroupingKeys = this.invocationState.defaultGroupingKeys;
+            this.update(new Map());
+          }}
+        >
+          Reset to default
+        </mwc-button>
+        <p>A key must be one of the following:</p>
+        <ol>
+          <li>'status': status of the test variant.</li>
+          <li>'name': test_metadata.name of the test variant.</li>
+          <li>'v.{variant_key}': variant.def[variant_key] of the test variant (e.g. v.gpu).</li>
+        </ol>
+        <p>Sorting keys can have '-' prefix to sort in descending order.</p>
+        <p>The default values are defined in build.output.properties['test_presentation_config'].</p>
+        <mwc-button slot="primaryAction" dialogAction="apply" dense unelevated>Apply</mwc-button>
+        <mwc-button slot="secondaryAction" dialogAction="cancel">Cancel</mwc-button>
+      </mwc-dialog>
       <div id="header">
+        <div
+          id="configure-table"
+          class="filters-container"
+          @click=${() => {
+            this.showTableConfigDialog = true;
+            this.uncommittedColumnKeys = this.invocationState.displayedColumns;
+            this.uncommittedSortingKeys = this.invocationState.sortingKeys;
+            this.uncommittedGroupingKeys = this.invocationState.groupingKeys;
+          }}
+        >
+          <mwc-icon class="inline-icon">table_chart</mwc-icon>
+          <span>Configure Table</span>
+        </div>
+        <div class="filters-container-delimiter"></div>
         <milo-test-search-filter></milo-test-search-filter>
         <milo-hotkey key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(true)}>Expand All</mwc-button>
@@ -173,13 +268,13 @@ export class TestResultsTabElement extends MobxLitElement {
   static styles = css`
     :host {
       display: grid;
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto auto auto 1fr;
       overflow-y: hidden;
     }
 
     #header {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: auto auto 1fr auto;
       border-bottom: 1px solid var(--divider-color);
       grid-gap: 5px;
       height: 30px;
@@ -202,6 +297,45 @@ export class TestResultsTabElement extends MobxLitElement {
       height: 100%;
     }
 
+    #configure-table {
+      cursor: initial;
+      line-height: 24px;
+      color: var(--active-text-color);
+    }
+
+    #table-config-dialog {
+      --mdc-dialog-min-width: 700px;
+    }
+    #table-config-dialog table {
+      width: 100%;
+    }
+    #table-config-dialog table td:first-child {
+      width: 120px;
+    }
+    #table-config-dialog p {
+      margin-block-start: 0.5em;
+      margin-block-end: 0.5em;
+      margin-inline-start: 4px;
+    }
+    #table-config-dialog ol {
+      margin-block-start: 0.5em;
+      margin-block-end: 0.5em;
+    }
+
+    input {
+      display: inline-block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.3rem 0.5rem;
+      font-size: 1rem;
+      color: var(--light-text-color);
+      background-clip: padding-box;
+      border: 1px solid var(--divider-color);
+      border-radius: 0.25rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      text-overflow: ellipsis;
+    }
+
     .active-text {
       color: var(--active-text-color);
       cursor: pointer;
@@ -209,7 +343,6 @@ export class TestResultsTabElement extends MobxLitElement {
       font-weight: normal;
     }
     .inline-icon {
-      --mdc-icon-size: 1.2em;
       vertical-align: bottom;
     }
   `;

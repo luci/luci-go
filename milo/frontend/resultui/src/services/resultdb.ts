@@ -378,7 +378,8 @@ export function createTVPropGetter(propKey: string): (v: TestVariant) => { toStr
     case 'name':
       return (v) => v.testMetadata?.name || v.testId;
     default:
-      throw new Error('');
+      console.warn('invalid property key', propKey);
+      return () => '';
   }
 }
 
