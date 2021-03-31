@@ -16,6 +16,23 @@
       "message": "Demo: https://weiweilin-3-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6886/test-results-new?q\u003dID%3Anet+\u0026groupby\u003dstatus%2Cv.test_suite\n",
       "revId": "f85c0b08887b5b5f1c778c844fe0086e525de9a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7a60dbb_0dcd9a9f",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab_new.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T21:27:39Z",
+      "side": 1,
+      "message": "Would it make sense to move this one to a separate component?",
+      "revId": "f85c0b08887b5b5f1c778c844fe0086e525de9a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
