@@ -57,5 +57,5 @@ export async function sha256(message: string) {
  * Returns a promise that resolves after the specified duration.
  */
 export function timeout(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
