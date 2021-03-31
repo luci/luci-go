@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -106,8 +107,10 @@ func populateSubmissionCLs(ctx context.Context, clids common.CLIDs, runID common
 		return err
 	}
 	sub.Cls = make([]int64, len(cls))
+	sub.ExternalCls = make([]string, len(cls))
 	for i, cl := range cls {
 		sub.Cls[i] = int64(cl.ID)
+		sub.ExternalCls[i] = string(changelist.MustGobID(cl.Detail.GetGerrit().GetHost(), cl.Detail.GetGerrit().GetInfo().GetNumber()))
 	}
 	return nil
 }
