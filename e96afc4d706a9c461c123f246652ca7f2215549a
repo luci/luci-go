@@ -91,6 +91,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1ff58323_2d7386d0",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-31T00:32:44Z",
+      "side": 1,
+      "message": "This function is actually defined to return unknown.\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/resultui/src/libs/cached_fn.ts;l\u003d19\n\nThis is because anything can be used as a key in ES6 Map.",
+      "parentUuid": "548d3a1c_cb189996",
+      "range": {
+        "startLine": 46,
+        "startChar": 17,
+        "endLine": 46,
+        "endChar": 19
+      },
+      "revId": "e96afc4d706a9c461c123f246652ca7f2215549a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "847c587e_eabebd62",
         "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
         "patchSetId": 5
@@ -126,6 +150,30 @@
       "side": 1,
       "message": "Sorry, I forgot to remove this.\nOriginally, I was prefetching a couple of other resources in the same CL.\n{} creates a local scope, so I can define `const match` multiple times.\n\nRemoved the brackets and moved this to another function.",
       "parentUuid": "847c587e_eabebd62",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 3
+      },
+      "revId": "e96afc4d706a9c461c123f246652ca7f2215549a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26ad0b85_c092176f",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-31T00:32:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f09ad9c_54614d31",
       "range": {
         "startLine": 93,
         "startChar": 2,

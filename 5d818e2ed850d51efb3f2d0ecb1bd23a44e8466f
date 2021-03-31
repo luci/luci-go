@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "21d71b0d_5e23abe8",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-31T00:32:44Z",
+      "side": 1,
+      "message": "_expiresIn is used in L55.\nIt\u0027s not used to perform the fetch, but it is used to compute the cache duration.\n\n_expiresIn is specified here so typescript can generate the correct type definition.\n\nAdded comment to explain this.",
+      "parentUuid": "4a62584c_b9625564",
+      "range": {
+        "startLine": 36,
+        "startChar": 53,
+        "endLine": 36,
+        "endChar": 63
+      },
+      "revId": "5d818e2ed850d51efb3f2d0ecb1bd23a44e8466f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8b799ee5_067e3ef0",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-03-31T00:00:53Z",
       "side": 1,
       "message": "Nits: Prefetches",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 11
+      },
+      "revId": "5d818e2ed850d51efb3f2d0ecb1bd23a44e8466f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a64c2ec3_51eadd29",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-31T00:32:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b799ee5_067e3ef0",
       "range": {
         "startLine": 113,
         "startChar": 3,
