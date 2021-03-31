@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9871abf_fbccf55a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-31T05:09:45Z",
+      "side": 1,
+      "message": "Thanks for a review; landing.",
+      "parentUuid": "49062613_3bb932ee",
+      "revId": "b3e04cff53ae54825b1628a9371bb3217d4155e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "31edc4a2_0a293745",
@@ -41,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "04d080ce_e7207f24",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-31T05:09:45Z",
+      "side": 1,
+      "message": "Oops. Thanks for catching it. It was copied from [bigtable.go], and I removed the statement from both places.\n\n[bigtable.go]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/common/storage/bigtable/bigtable.go;l\u003d55-56",
+      "parentUuid": "31edc4a2_0a293745",
+      "range": {
+        "startLine": 50,
+        "startChar": 38,
+        "endLine": 50,
+        "endChar": 74
+      },
+      "revId": "b3e04cff53ae54825b1628a9371bb3217d4155e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "106a9e49_1f3f6a74",
@@ -54,6 +96,24 @@
       "writtenOn": "2021-03-31T03:59:24Z",
       "side": 1,
       "message": "I think you need to call Flatten on this (https://chromium.googlesource.com/infra/luci/luci-go/+/04cc9a23bff6/common/errors/multierror.go#98) to squeeze out the nils.\n\nnote:\n\n  var err error\n  err \u003d errors.MultiError{nil, nil}\n  if err !\u003d nil {\n    panic(err) // this will panic\n  }\n\n  if errors.Flatten(err) !\u003d nil {\n    panic(err) // this will not\n  }\n\nAlternately you could use LazyMultiError which has this \u0027flatten\u0027 functionality built in.",
+      "revId": "b3e04cff53ae54825b1628a9371bb3217d4155e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df11b0a8_5a46c19a",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 754,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-31T05:09:45Z",
+      "side": 1,
+      "message": "done with Flatten()",
+      "parentUuid": "106a9e49_1f3f6a74",
       "revId": "b3e04cff53ae54825b1628a9371bb3217d4155e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
