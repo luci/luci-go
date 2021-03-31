@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "74c02999_13d189d0",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-31T01:36:40Z",
+      "side": 1,
+      "message": "In general, if the resultDB is enabled in the builder cfg, the build should also opt in. But just in case the \u0027+luci.use_realms\u0027 isn\u0027t in Build.Experiments field even if the builder has rdb-enabled config, I added a warning log here.",
+      "parentUuid": "f526125c_d16e8b4a",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2008f4c9_108fcfa4",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-03-30T11:05:28Z",
       "side": 1,
       "message": "So there\u0027s one request with the build ID, and another with the build number (if build numbers are enabled) which references the original? Could you add a comment, and choose names clearer than invReq1 and invReq2?",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9ec62f6_7fd179cc",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-31T01:36:40Z",
+      "side": 1,
+      "message": "Done. Added a comment.",
+      "parentUuid": "2008f4c9_108fcfa4",
       "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -69,6 +105,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b5ab4a6e_d51f80af",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-31T01:36:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cdb5fd89_65b0914c",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "908a97b3_9379564f",
@@ -82,6 +136,24 @@
       "writtenOn": "2021-03-30T11:05:28Z",
       "side": 1,
       "message": "How about \"proj, req\" (same order as key, value in the loop)?",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53981584_8843811d",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-31T01:36:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "908a97b3_9379564f",
       "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -169,6 +241,24 @@
       "writtenOn": "2021-03-30T11:05:28Z",
       "side": 1,
       "message": "While iterating over builds in order to construct the requests in the first place, you could also construct a map of invocation name -\u003e build. Then when iterating over the responses you can directly set invNameToBuild[inv.Name] \u003d res.UpdateTokens[i] and avoid a second iteration over builds here.",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dabb2a71_25f717b6",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-03-31T01:36:40Z",
+      "side": 1,
+      "message": "Added invNameToBuild map .",
+      "parentUuid": "fb3c75ec_0e02d6fb",
       "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
