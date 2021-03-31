@@ -55,11 +55,13 @@ import (
 
 	cloudBT "cloud.google.com/go/bigtable"
 	"cloud.google.com/go/datastore"
+	cl "cloud.google.com/go/logging"
 	"cloud.google.com/go/pubsub"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -432,6 +434,21 @@ func (s *Service) GSClient(c context.Context, project string) (gs.Client, error)
 		return nil, err
 	}
 	return client, nil
+}
+
+// CLClient returns an authenticated Cloud Logging client instance.
+func (s *Service) CLClient(c context.Context, project, dest string, useProjectScope bool) (*cl.Client, error) {
+	kind, rpcOpts := serverAuth.AsSelf, []serverAuth.RPCOption{}
+	if useProjectScope {
+		kind = serverAuth.AsProject
+		rpcOpts = append(rpcOpts, serverAuth.WithProject(project))
+	}
+	cred, err := serverAuth.GetPerRPCCredentials(c, kind, rpcOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return cl.NewClient(c, project, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)))
 }
 
 // PubSubSubscriberClient returns a Pub/Sub client instance that is

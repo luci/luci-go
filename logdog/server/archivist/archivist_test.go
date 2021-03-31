@@ -189,6 +189,27 @@ func (w *testGSWriter) Count() int64 {
 	return w.writeCount
 }
 
+// testCLClient iis a testing implementation of the CLClient interface.
+type testCLClient struct {
+	closeFn func() error
+
+	isClosed            bool
+	clProject           string
+	luciProject         string
+	projectScopeEnabled bool
+}
+
+func (c *testCLClient) Close() error {
+	if c.isClosed {
+		panic("double close")
+	}
+	c.isClosed = true
+	if c.closeFn != nil {
+		return c.closeFn()
+	}
+	return nil
+}
+
 func TestHandleArchive(t *testing.T) {
 	t.Parallel()
 
@@ -203,8 +224,20 @@ func TestHandleArchive(t *testing.T) {
 			return &gsc, nil
 		}
 
+		var clc *testCLClient
+		clcFactory := func(ctx context.Context, luciProject, clProject string, projectScopeEnabled bool) (CLClient, error) {
+			clc = &testCLClient{
+				clProject:           clProject,
+				luciProject:         luciProject,
+				projectScopeEnabled: projectScopeEnabled,
+			}
+			return clc, nil
+		}
 		// Set up our test log stream.
 		project := "test-project"
+		clProject := "test-cloud-project"
+		projectScopeEnabled := true
+
 		desc := logpb.LogStreamDescriptor{
 			Prefix: "testing",
 			Name:   "foo",
@@ -295,10 +328,13 @@ func TestHandleArchive(t *testing.T) {
 				st := stBase
 				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", project))
 				st.GSStagingBase = gs.Path(fmt.Sprintf("gs://archival-staging/%s/path/to/archive/", project))
+				st.CloudLoggingProjectID = func() string { return clProject }()
+				st.CloudLoggingWithProjectScope = func() bool { return projectScopeEnabled }()
 				return &st, nil
 			},
 			Storage:         &st,
 			GSClientFactory: gscFactory,
+			CLClientFactory: clcFactory,
 		}
 
 		gsURL := func(project, name string) string {
@@ -652,5 +688,37 @@ func TestHandleArchive(t *testing.T) {
 				So(ms.Get(c, tsTotalLogEntries, time.Time{}, fv(st)), ShouldEqual, 5)
 			})
 		})
+
+		Convey(`Will construct CLClient if CloudLoggingProjectID is set.`, func() {
+			Convey(`w/ projectScope`, func() {
+				projectScopeEnabled = true
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(clc, ShouldNotBeNil)
+				So(clc.clProject, ShouldEqual, clProject)
+				So(clc.luciProject, ShouldEqual, project)
+				So(clc.projectScopeEnabled, ShouldBeTrue)
+			})
+
+			Convey(`w/o projectScope`, func() {
+				projectScopeEnabled = false
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(clc, ShouldNotBeNil)
+				So(clc.clProject, ShouldEqual, clProject)
+				So(clc.luciProject, ShouldEqual, project)
+				So(clc.projectScopeEnabled, ShouldBeFalse)
+			})
+		})
+
+		Convey(`Will not construct CLClient if CloudLoggingProjectID is not set.`, func() {
+			clProject = ""
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+			So(clc, ShouldBeNil)
+		})
+
+		Convey(`Will close CLClient`, func() {
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+			So(clc.isClosed, ShouldBeTrue)
+		})
+
 	})
 }

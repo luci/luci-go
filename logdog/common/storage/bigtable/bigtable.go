@@ -53,7 +53,7 @@ const (
 type btGetCallback func(*rowKey, []byte) error
 
 // btIface is a general interface for BigTable operations intended to enable
-// unit tests to stub out BigTable without adding runtime inefficiency.
+// unit tests to stub out BigTable.
 type btIface interface {
 	// putLogData adds new log data to BigTable.
 	//
