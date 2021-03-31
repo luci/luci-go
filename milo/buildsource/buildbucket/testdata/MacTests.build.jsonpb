@@ -5898,8 +5898,7 @@
       "got_v8_revision_cp": "refs/heads/7.4.32@{#1}",
       "bot_id": "vm76-m9",
       "$recipe_engine/runtime": {
-        "is_experimental": false,
-        "is_luci": true
+        "is_experimental": false
       },
       "parent_got_nacl_revision": "ff15c51d20785fa51c0ef03ccb480b87299acbeb",
       "parent_buildername": "Mac Builder",
@@ -6076,8 +6075,7 @@
       "parent_got_buildtools_revision": "2f02e1f363b1af2715536f38e239853f04ec1497",
       "builder_group": "chromium.mac",
       "$recipe_engine/runtime": {
-        "is_experimental": false,
-        "is_luci": true
+        "is_experimental": false
       },
       "buildbucket": {
         "hostname": "cr-buildbucket.appspot.com",

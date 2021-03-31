@@ -22,8 +22,7 @@
       "patch_issue": 1447158.0,
       "patch_storage": "gerrit",
       "$recipe_engine/runtime": {
-        "is_experimental": false,
-        "is_luci": true
+        "is_experimental": false
       },
       "recipe": "chromium_trybot",
       "buildbucket": {
