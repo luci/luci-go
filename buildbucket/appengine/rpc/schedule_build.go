@@ -262,6 +262,26 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	sort.Strings(build.Experiments)
 }
 
+// setTags computes the tags from the given request, setting them in the model.
+// Mutates the given *model.Build.
+func setTags(req *pb.ScheduleBuildRequest, build *model.Build) {
+	build.Tags = make([]string, len(req.GetTags()))
+	for i, t := range req.GetTags() {
+		build.Tags[i] = fmt.Sprintf("%s:%s", t.Key, t.Value)
+	}
+	if req.GetBuilder() != nil {
+		build.Tags = append(build.Tags, fmt.Sprintf("builder:%s", req.Builder.Builder))
+	}
+	if req.GetGitilesCommit() != nil {
+		build.Tags = append(build.Tags, fmt.Sprintf("buildset:%s", protoutil.GitilesBuildSet(req.GitilesCommit)))
+		build.Tags = append(build.Tags, fmt.Sprintf("gitiles_ref:%s", req.GitilesCommit.Ref))
+	}
+	for _, ch := range req.GetGerritChanges() {
+		build.Tags = append(build.Tags, fmt.Sprintf("buildset:%s", protoutil.GerritBuildSet(ch)))
+	}
+	sort.Strings(build.Tags)
+}
+
 // scheduleBuilds handles requests to schedule builds. Requests must be
 // validated and authorized.
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
@@ -296,6 +316,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		}
 
 		setExperiments(ctx, reqs[i], cfg, blds[i])
+		setTags(reqs[i], blds[i])
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
