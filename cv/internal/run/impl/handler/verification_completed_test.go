@@ -150,6 +150,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 					Cls:               []int64{2, 1}, // in submission order
+					ExternalCls:       []string{"gerrit/example.com/2222", "gerrit/example.com/1111"},
 					TreeOpen:          true,
 					LastTreeCheckTime: timestamppb.New(now),
 				})
@@ -184,6 +185,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
 					Cls:               []int64{2, 1}, // in submission order
+					ExternalCls:       []string{"gerrit/example.com/2222", "gerrit/example.com/1111"},
 					TreeOpen:          false,
 					LastTreeCheckTime: timestamppb.New(now),
 				})

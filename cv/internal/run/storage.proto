@@ -98,10 +98,14 @@ message Submission {
   int32 attempt_count = 2;
   // IDs of all CLs that should be submitted in this submission.
   //
-  // Must be ordered in submission order.
+  // MUST be ordered in submission order.
   repeated int64 cls = 3;
+  // The corresponding external IDs of each CL in `cls`.
+  //
+  // MUST have same length as `cls`.
+  repeated string external_cls = 4;
   // IDs of all CLs that have been submitted successfully already.
-  repeated int64 submitted_cls = 4;
+  repeated int64 submitted_cls = 5;
   // If True, Tree is currently in open state.
   bool tree_open = 10;
   // The timestamp when the Tree status was last fetched.
