@@ -67,6 +67,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "548d3a1c_cb189996",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T00:00:53Z",
+      "side": 1,
+      "message": "So the function can both return a string (Json.stringify) and an object. Is it a common practice?",
+      "parentUuid": "a14211fc_1217c76a",
+      "range": {
+        "startLine": 46,
+        "startChar": 17,
+        "endLine": 46,
+        "endChar": 19
+      },
+      "revId": "e96afc4d706a9c461c123f246652ca7f2215549a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "847c587e_eabebd62",
         "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
         "patchSetId": 5

@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a62584c_b9625564",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T00:00:53Z",
+      "side": 1,
+      "message": "The _expiresIn argument is not being used, so the value 5000 in line 133 is not used?",
+      "range": {
+        "startLine": 36,
+        "startChar": 53,
+        "endLine": 36,
+        "endChar": 63
+      },
+      "revId": "5d818e2ed850d51efb3f2d0ecb1bd23a44e8466f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b799ee5_067e3ef0",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T00:00:53Z",
+      "side": 1,
+      "message": "Nits: Prefetches",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 11
+      },
+      "revId": "5d818e2ed850d51efb3f2d0ecb1bd23a44e8466f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
