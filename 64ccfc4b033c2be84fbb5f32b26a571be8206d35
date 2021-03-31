@@ -34,6 +34,24 @@
       "parentUuid": "5ba86266_162e077e",
       "revId": "64ccfc4b033c2be84fbb5f32b26a571be8206d35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "94bc2d91_541ff4f7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-03-31T20:29:48Z",
+      "side": 1,
+      "message": "\u003e why can\u0027t submission handler just load each individual RunCL before triggering Gerrit?\n\nIt definitely can, but my thinking is since we are anyway loading all RunCLs when creating run.Submission to compute submission order, why don\u0027t we just save a little bit of extra information to save all potential future loads. Without this, the submission handler will need to load everytime even including reties.",
+      "parentUuid": "d7c1ee6e_c62b83cc",
+      "revId": "64ccfc4b033c2be84fbb5f32b26a571be8206d35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
