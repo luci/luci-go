@@ -15,7 +15,6 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
 import '@material/mwc-icon';
-import { BeforeEnterObserver } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
@@ -30,7 +29,7 @@ import { VariantEntryElement } from '../components/variant_entry/index_new';
 import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
-import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../libs/analytics_utils';
+import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 
 const DEFAULT_COLUMN_WIDTH = Object.freeze<{ [key: string]: string }>({
@@ -51,12 +50,10 @@ function getColumnLabel(key: string) {
 @consumeInvocationState
 @consumeConfigsStore
 @consumeAppState
-export class TestResultsTabElement extends MobxLitElement implements BeforeEnterObserver {
+export class TestResultsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
-  private enterTimestamp = 0;
-  private sentLoadingTimeToGA = false;
 
   private disposers: Array<() => void> = [];
 
@@ -79,10 +76,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     return this.invocationState.displayedColumns.map((col) => DEFAULT_COLUMN_WIDTH[col] || '100px').join(' ');
   }
 
-  onBeforeEnter() {
-    this.enterTimestamp = Date.now();
-  }
-
   @observable.ref private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
     this.allVariantsWereExpanded = expand;
@@ -96,13 +89,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     super.connectedCallback();
     this.appState.selectedTabId = 'test-results';
     trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
-
-    // If first page of test results has already been loaded when connected
-    // (happens when users switch tabs), we don't want to track the loading
-    // time (only a few ms in this case)
-    if (this.invocationState.testLoader?.firstPageLoaded) {
-      this.sentLoadingTimeToGA = true;
-    }
+    // TODO(weiweilin): track test results tab loading time.
 
     // When a new test loader is received, load the first page and reset the
     // selected node.
@@ -230,33 +217,9 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
     return 'testresults_' + this.invocationState.invocationId;
   }
 
-  private sendLoadingTimeToGA() {
-    if (this.sentLoadingTimeToGA) {
-      return;
-    }
-    this.sentLoadingTimeToGA = true;
-    trackEvent(
-      GA_CATEGORIES.TEST_RESULTS_TAB,
-      GA_ACTIONS.LOADING_TIME,
-      generateRandomLabel(this.gaLabelPrefix),
-      Date.now() - this.enterTimestamp
-    );
-  }
-
-  private variantRenderedCallback = () => {
-    this.sendLoadingTimeToGA();
-  };
-
   private variantExpandedCallback = () => {
     trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.EXPAND_ENTRY, `${this.gaLabelPrefix}_${VISIT_ID}`, 1);
   };
-
-  protected updated() {
-    // If first page is empty, we will not get variantRenderedCallback
-    if (this.invocationState.testLoader?.firstPageIsEmpty) {
-      this.sendLoadingTimeToGA();
-    }
-  }
 
   @observable private collapsedVariantGroups = new Set<string>();
   private renderVariantGroup(groupDef: [string, unknown][], variants: TestVariant[]) {
@@ -292,7 +255,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
             .columnGetters=${this.invocationState.displayedColumnGetters}
             .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
             .prerender=${true}
-            .renderCallback=${this.variantRenderedCallback}
             .expandedCallback=${this.variantExpandedCallback}
           ></milo-variant-entry-new>
         `

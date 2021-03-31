@@ -40,7 +40,6 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 export class VariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
-  @observable.ref renderCallback: Function | null = null;
   @observable.ref expandedCallback: Function | null = null;
 
   @observable.ref private _expanded = false;
@@ -191,12 +190,6 @@ export class VariantEntryElement extends MobxLitElement implements OnEnterList {
         `
       )}
     `;
-  }
-
-  protected updated() {
-    if (!this.prerender && this.renderCallback) {
-      this.renderCallback();
-    }
   }
 
   protected render() {
