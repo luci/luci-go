@@ -365,11 +365,12 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 	logger.Infof("finished %d ComputeMerkleTree calls, took %s", len(opts), time.Since(start))
 
 	start = time.Now()
-	uploadedDgs, _, err := cl.UploadIfMissing(ctx, entries...)
+	uploadedDgs, uploadedBytes, err := cl.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		return nil, err
 	}
-	logger.Infof("finished UploadIfMissing for %d entries (%d uploaded), took %s", len(entries), len(uploadedDgs), time.Since(start))
+	logger.Infof("finished UploadIfMissing for %d entries (%d uploaded, %d bytes), took %s",
+		len(entries), len(uploadedDgs), uploadedBytes, time.Since(start))
 
 	if al != nil {
 		missing := int64(len(uploadedDgs))
