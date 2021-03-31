@@ -33,6 +33,24 @@
       "message": "Actually; I\u0027m not certain if `is_luci` is true for buildbucket v1 jobs, and so I\u0027m not sure it\u0027s safe to remove from the appengine model.",
       "revId": "790c5eb44285a710bcf84ec0276c6a9cf9757711",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f8af6e8c_e6e74034",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-03-31T00:40:30Z",
+      "side": 1,
+      "message": "I assume that is_luci was only for runtime recipe modules.\nBut we already removed that property from there.\n\nOr is this used in other place?",
+      "parentUuid": "1734a2b3_5dc34496",
+      "revId": "790c5eb44285a710bcf84ec0276c6a9cf9757711",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
