@@ -1,6 +1,69 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f6f82b5_2a4cbcf1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-31T16:05:18Z",
+      "side": 1,
+      "message": "LGTM, but imo https://pkg.go.dev/go.chromium.org/luci/common/data/strpair would make the code shorter",
+      "revId": "455a959c876f86850eb77c0bb5b60f87b8231fc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7eec2968_fcf944f7",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-31T16:05:18Z",
+      "side": 1,
+      "message": "nit:\n\n  make([]string, len(req.GetTags()), len(req.GetTags()) + 4)\n\nmost requests specify a builder.\nmost requests have 0 or 1 input CL\n\n---------\n\nstepping back, consider\n\n1) here https://pkg.go.dev/go.chromium.org/luci/buildbucket/protoutil#StringPairMap\n2) below https://pkg.go.dev/go.chromium.org/luci/common/data/strpair#Map.Add\n3) then https://pkg.go.dev/go.chromium.org/luci/buildbucket/protoutil#StringPairs",
+      "range": {
+        "startLine": 268,
+        "startChar": 29,
+        "endLine": 268,
+        "endChar": 48
+      },
+      "revId": "455a959c876f86850eb77c0bb5b60f87b8231fc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88e3b88c_e0194c0a",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-03-31T16:05:18Z",
+      "side": 1,
+      "message": "nit: strpair.Format\nhttps://pkg.go.dev/go.chromium.org/luci/common/data/strpair#Format\n\nsame below",
+      "range": {
+        "startLine": 270,
+        "startChar": 18,
+        "endLine": 270,
+        "endChar": 29
+      },
+      "revId": "455a959c876f86850eb77c0bb5b60f87b8231fc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6b6930ab_63254c3f",
