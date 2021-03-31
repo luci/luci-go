@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e7b3dab3_e02f6678",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-03-31T03:39:59Z",
+      "side": 1,
+      "message": "L58 is not the same function as L39.\n\nL39 defines the function we want to cache (let\u0027s call it the target fn).\nIt can be any function so it can take any parameters.\n\nL58 defines the expire function.\nIt takes 2 parameters\nparams: an array of parameters passed to the target fn.\nresult: the result returned by the target fn.\n\nIn L58, we unpack the params and take the last parameter, which is \u0027expiredIn\u0027, and use it to compute the expiration time.",
+      "parentUuid": "b5fda51b_bae2b887",
+      "range": {
+        "startLine": 36,
+        "startChar": 53,
+        "endLine": 36,
+        "endChar": 63
+      },
+      "revId": "5d818e2ed850d51efb3f2d0ecb1bd23a44e8466f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8b799ee5_067e3ef0",
         "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
         "patchSetId": 6
