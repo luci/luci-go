@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "16f86a3f_97bbfb84",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-31T19:51:20Z",
+      "side": 1,
+      "message": "lgtm % suggestion",
+      "revId": "3c22dd21c1518338374f6865c6d7e1f8a3e9522c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6ad4f35d_5948d841",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2
@@ -14,6 +31,29 @@
       "writtenOn": "2021-03-31T05:57:51Z",
       "side": 1,
       "message": "This is moved from verification_completed.go",
+      "revId": "3c22dd21c1518338374f6865c6d7e1f8a3e9522c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "551a27a3_46cd4dd7",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-31T19:51:20Z",
+      "side": 1,
+      "message": "since `sub` is only used to set output, consider instead to return CLIDs and assign them to sub.CLs at callsite.",
+      "range": {
+        "startLine": 82,
+        "startChar": 86,
+        "endLine": 82,
+        "endChar": 107
+      },
       "revId": "3c22dd21c1518338374f6865c6d7e1f8a3e9522c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
