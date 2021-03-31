@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49062613_3bb932ee",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-31T03:59:24Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "b3e04cff53ae54825b1628a9371bb3217d4155e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31edc4a2_0a293745",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-31T03:59:24Z",
+      "side": 1,
+      "message": "I mean... technically this DOES introduce some very small inefficiency (interfaces are ~\u003d vtable). But I think it\u0027s nanoscopic compared to all the network I/O that the archiver is doing.",
+      "range": {
+        "startLine": 50,
+        "startChar": 38,
+        "endLine": 50,
+        "endChar": 74
+      },
+      "revId": "b3e04cff53ae54825b1628a9371bb3217d4155e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "106a9e49_1f3f6a74",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 754,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-03-31T03:59:24Z",
+      "side": 1,
+      "message": "I think you need to call Flatten on this (https://chromium.googlesource.com/infra/luci/luci-go/+/04cc9a23bff6/common/errors/multierror.go#98) to squeeze out the nils.\n\nnote:\n\n  var err error\n  err \u003d errors.MultiError{nil, nil}\n  if err !\u003d nil {\n    panic(err) // this will panic\n  }\n\n  if errors.Flatten(err) !\u003d nil {\n    panic(err) // this will not\n  }\n\nAlternately you could use LazyMultiError which has this \u0027flatten\u0027 functionality built in.",
+      "revId": "b3e04cff53ae54825b1628a9371bb3217d4155e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
