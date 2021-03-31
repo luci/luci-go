@@ -51,6 +51,24 @@
       "parentUuid": "4b6d42f8_65fc4857",
       "revId": "4eb1051d68a84eb11675ce69b54391c914f32975",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a01592e6_b1ccffe3",
+        "filename": "common/gcloud/project_id.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-31T23:27:23Z",
+      "side": 1,
+      "message": "The current implementation can give errors with more details. I\u0027m landing this as it is now but let me know if anyone has different opinions. Thanks",
+      "parentUuid": "6463f8d4_b7e6f8b7",
+      "revId": "4eb1051d68a84eb11675ce69b54391c914f32975",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
