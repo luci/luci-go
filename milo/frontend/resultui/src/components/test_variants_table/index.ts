@@ -100,6 +100,12 @@ export class TestVariantsTableElement extends MobxLitElement {
     const testLoader = this.invocationState.testLoader;
     const groupers = this.invocationState.groupers;
     return html`
+      ${
+        // Indicates that there are no unexpected test variants.
+        testLoader?.loadedAllUnexpectedVariants && testLoader.unexpectedTestVariants.length === 0
+          ? this.renderVariantGroup([['status', TestVariantStatus.UNEXPECTED]], [])
+          : ''
+      }
       ${(testLoader?.groupedNonExpectedVariants || []).map((group) =>
         this.renderVariantGroup(
           groupers.map(([key, getter]) => [key, getter(group[0])]),
