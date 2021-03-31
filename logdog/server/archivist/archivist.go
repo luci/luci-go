@@ -46,6 +46,12 @@ const (
 	tsIndexField   = "index"
 )
 
+// CLClient is a general interface for CloudLogging client and intended to enable
+// unit tests to stub out CloudLogging.
+type CLClient interface {
+	Close() error
+}
+
 var (
 	// tsCount counts the raw number of archival tasks that this instance has
 	// processed, regardless of success/failure.
@@ -132,6 +138,16 @@ type Settings struct {
 	// IndexByteRange is the maximum number of stream data bytes in between index
 	// entries. See archive.Manifest for more information.
 	IndexByteRange int
+
+	// CloudLoggingProjectID is the ID of the Google Cloud Platform project to export
+	// logs to.
+	//
+	// May be empty, if no export is configured.
+	CloudLoggingProjectID string
+
+	// CloudLoggingWithProjectScope tells whether Logdog should export logs to
+	// Cloud Logging with the ProjectScope credential or the default Logdog service account.
+	CloudLoggingWithProjectScope bool
 }
 
 // SettingsLoader returns archival Settings for a given project.
@@ -152,6 +168,11 @@ type Archivist struct {
 
 	// GSClientFactory obtains a Google Storage client for archive generation.
 	GSClientFactory func(ctx context.Context, project string) (gs.Client, error)
+
+	// CLClientFactory obtains a Cloud Logging client for log exports.
+	// `luciProject` is the ID of the LUCI project to export logs from, and
+	// `clProject` is the ID of the Google Cloud project to export logs to.
+	CLClientFactory func(ctx context.Context, luciProject, clProject string, useProjectScope bool) (CLClient, error)
 }
 
 // storageBufferSize is the size, in bytes, of the LogEntry buffer that is used
@@ -256,6 +277,8 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
 		return err
 	}
+
+	// TODO(crbug.com/1164124) - handle the error from clClient.Close()
 	defer staged.Close()
 
 	// Archive to staging.
@@ -396,11 +419,25 @@ func (a *Archivist) makeStagedArchival(c context.Context, project string,
 		return nil, err
 	}
 
+	var clc CLClient
+	if st.CloudLoggingProjectID != "" {
+		log.Infof(c, "Log stream will be exported to %s via CloudLogging.", st.CloudLoggingProjectID)
+		clc, err = a.CLClientFactory(c, project, st.CloudLoggingProjectID, st.CloudLoggingWithProjectScope)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey:   err,
+				"protoVersion": ls.State.ProtoVersion,
+			}.Errorf(c, "Failed to obtain CloudLogging client.")
+			return nil, err
+		}
+	}
+
 	sa := stagedArchival{
 		Archivist: a,
 		Settings:  st,
 		project:   project,
 		gsclient:  gsClient,
+		clclient:  clc,
 
 		terminalIndex: types.MessageIndex(ls.State.TerminalIndex),
 	}
@@ -439,6 +476,7 @@ type stagedArchival struct {
 	logEntryCount int64
 
 	gsclient gs.Client
+	clclient CLClient
 }
 
 // makeStagingPaths returns a stagingPaths instance for the given path and
@@ -709,7 +747,11 @@ func (sa *stagedArchival) finalize(c context.Context, ar *logdog.ArchiveStreamRe
 }
 
 func (sa *stagedArchival) Close() error {
-	return sa.gsclient.Close()
+	var clErr error
+	if sa.clclient != nil {
+		clErr = sa.clclient.Close()
+	}
+	return errors.Flatten(errors.MultiError{sa.gsclient.Close(), clErr})
 }
 
 func (sa *stagedArchival) cleanup(c context.Context) {
