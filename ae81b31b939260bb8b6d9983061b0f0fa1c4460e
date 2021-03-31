@@ -231,6 +231,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "61b5056c_feabf3a7",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-03-31T22:50:20Z",
+      "side": 1,
+      "message": "\u003e I see BatchCreateInvocationsRequest has a top-level RequestId field, but each CreateInvocationRequest also has a RequestId field. If we send a batch with an empty top-level RequestId but fill in per-request RequestIds, will it dedupe each invocation correctly?\n\nI don\u0027t think so. The per-request RequestId is supposed to be empty or the same as the top-level request id (http://shortn/_4LDVIPYyws).",
+      "parentUuid": "f32e3727_296620f2",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "65176cb4_28a16ee2",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 2
