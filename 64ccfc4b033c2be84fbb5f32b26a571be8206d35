@@ -52,6 +52,24 @@
       "parentUuid": "d7c1ee6e_c62b83cc",
       "revId": "64ccfc4b033c2be84fbb5f32b26a571be8206d35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9544bd74_a1ddbbb9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-31T20:38:55Z",
+      "side": 1,
+      "message": "I don\u0027t have strong opinion.\n\nMy thinking was that reloading is cheap, as it\u0027ll likely hitting Redis.\nExtra state means potentially more things to be out of sync.\nIn PM, I didn\u0027t have a choice -- re-loading all CLs even from Redis every time is way too expensive. OTOH, here it\u0027s bearable.\n\nDeferring to you.",
+      "parentUuid": "94bc2d91_541ff4f7",
+      "revId": "64ccfc4b033c2be84fbb5f32b26a571be8206d35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
