@@ -33,6 +33,24 @@
       "message": "I feel like this whole function should be done with a regex\n\n  ^[[:alpha:]](?:[[:alpha:]]|\\d|-){4,62}(?:[[:alpha:]]|\\d)$\n\nhttps://regex101.com/r/i48WDJ/1",
       "revId": "4eb1051d68a84eb11675ce69b54391c914f32975",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6463f8d4_b7e6f8b7",
+        "filename": "common/gcloud/project_id.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-03-31T22:31:09Z",
+      "side": 1,
+      "message": "I felt that regex is too heavy for this simple check, and that was probably the reason why [config/project_name.go] was implemented in the same way.\n\n```\n# with ^[a-z](?:[a-z0-9\\-]){4,28}(?:[a-z0-9])$\nBenchmarkFOO-16           421909              2798 ns/op\nBenchmarkFOO-16           417398              2797 ns/op\nBenchmarkFOO-16           418382              2828 ns/op\n\n# w/o regex\nBenchmarkFOO-16          1871151               640 ns/op\nBenchmarkFOO-16          1880722               635 ns/op\n```\n\nHaving said, I don\u0027t think we need this micro(?) optimization until we need it, and regex is easier to maintain? WDYT?\n\n[config/project_name.go]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/config/project_name.go",
+      "parentUuid": "4b6d42f8_65fc4857",
+      "revId": "4eb1051d68a84eb11675ce69b54391c914f32975",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
