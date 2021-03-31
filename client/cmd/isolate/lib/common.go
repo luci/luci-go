@@ -342,16 +342,12 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 			}
 
 			start := time.Now()
-			rootDg, entrs, _, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
+			rootDg, entrs, stats, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
 			if err != nil {
 				return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 			}
-			var sizeSum int64
-			for _, entry := range entrs {
-				sizeSum += entry.Digest.Size
-			}
 			logger.Infof("ComputeMerkleTree returns %d entries with total size %d for %s, took %s",
-				len(entrs), sizeSum, o.Isolate, time.Since(start))
+				len(entrs), stats.TotalInputBytes, o.Isolate, time.Since(start))
 
 			rootDgs[i] = rootDg
 			mu.Lock()
