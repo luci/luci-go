@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2af5318f_5f645569",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_column_header.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T21:22:29Z",
+      "side": 1,
+      "message": "I believe \"ascending\" is the more correct word.",
+      "range": {
+        "startLine": 43,
+        "startChar": 13,
+        "endLine": 43,
+        "endChar": 22
+      },
+      "revId": "2b71ebd53fd3e74cb69d59b06dd7ef03e268dc5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4562577d_45d3c167",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_column_header.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T21:22:29Z",
+      "side": 1,
+      "message": "IMO, \"Sort up\" and \"sort down\" (from Monorail?) is very confusing. Could we use \"Sort in ascending order\" (It\u0027s long, but as it\u0027s a dialog, it should not block anything).",
+      "range": {
+        "startLine": 71,
+        "startChar": 61,
+        "endLine": 71,
+        "endChar": 68
+      },
+      "revId": "2b71ebd53fd3e74cb69d59b06dd7ef03e268dc5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66286446_83a8a6ed",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_column_header.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-03-31T21:22:29Z",
+      "side": 1,
+      "message": "How about \"Group test variants on ${this.propKey}\"?",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 19
+      },
+      "revId": "2b71ebd53fd3e74cb69d59b06dd7ef03e268dc5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
