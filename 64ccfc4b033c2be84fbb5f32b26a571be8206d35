@@ -16,6 +16,24 @@
       "message": "Please hold on to this change. I think externalID is not enough. I think I\u0027ll need extra stuff like revision. I\u0027ll revise this CL. Moving back to WIP",
       "revId": "64ccfc4b033c2be84fbb5f32b26a571be8206d35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7c1ee6e_c62b83cc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-03-31T19:52:32Z",
+      "side": 1,
+      "message": "qq: why can\u0027t submission handler just load each individual RunCL before triggering Gerrit?\n\nSo long as each RunCL snapshot is immutable after the creation, this should work just fine.",
+      "parentUuid": "5ba86266_162e077e",
+      "revId": "64ccfc4b033c2be84fbb5f32b26a571be8206d35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
