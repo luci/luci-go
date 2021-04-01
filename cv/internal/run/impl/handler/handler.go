@@ -33,7 +33,9 @@ type Result struct {
 	// PreserveEvents, if true, instructs RunManager not to consume the events
 	// during state transition.
 	PreserveEvents bool
-	// TODO(yiwzhang): introduce PostProcessFn
+	// PostProcessFn is executed by the eventbox user after event processing
+	// completes.
+	PostProcessFn eventbox.PostProcessFn
 }
 
 // Handler is an interface that handles events that RunManager receives.

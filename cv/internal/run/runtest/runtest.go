@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -113,6 +114,23 @@ func AssertNotInEventbox(ctx context.Context, runID common.RunID, targets ...*ev
 func AssertInEventbox(ctx context.Context, runID common.RunID, targets ...*eventpb.Event) {
 	_, remaining := matchEventBox(ctx, runID, targets)
 	So(remaining, ShouldBeEmpty)
+}
+
+// AssertReceivedPoke asserts Run has received Poke event that should be
+// processed at `eta`.
+//
+// If `eta` is not later than now, assert that Poke event should be processed
+// immediately.
+func AssertReceivedPoke(ctx context.Context, runID common.RunID, eta time.Time) {
+	expect := &eventpb.Event{
+		Event: &eventpb.Event_Poke{
+			Poke: &eventpb.Poke{},
+		},
+	}
+	if eta.After(clock.Now(ctx)) {
+		expect.ProcessAfter = timestamppb.New(eta)
+	}
+	AssertInEventbox(ctx, runID, expect)
 }
 
 // AssertReceivedCLUpdate asserts Run has received CLUpdated event for

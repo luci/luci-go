@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -140,15 +141,17 @@ func TestOnVerificationCompleted(t *testing.T) {
 			}
 			updateConfigGroupToLatest(rs)
 			now := ct.Clock.Now().UTC()
+			ctx, cancel = clock.WithDeadline(ctx, now.Add(1*time.Minute))
+			defer cancel()
 
 			Convey("Works (Happy Path)", func() {
 				res, err := h.OnCQDVerificationCompleted(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
-				// TODO(yiwzhang): change the expectation after OnReadyForSubmission is
-				// implemented.
-				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+				So(res.State.Run.Status, ShouldEqual, run.Status_SUBMITTING)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
+					Deadline:          timestamppb.New(now.Add(1 * time.Minute)), // deadline in ctx
+					AttemptCount:      1,
 					Cls:               []int64{2, 1}, // in submission order
 					TreeOpen:          true,
 					LastTreeCheckTime: timestamppb.New(now),
