@@ -124,7 +124,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         id: 'test-results',
         label: 'Test Results',
         href: router.urlForName(
-          this.configsStore.userConfigs.newTestResultsTab ? 'invocation-test-results-new' : 'invocation-test-results',
+          this.configsStore.userConfigs.results.newLayout ? 'invocation-test-results-new' : 'invocation-test-results',
           { invocation_id: this.invocationState.invocationId! }
         ),
       },
