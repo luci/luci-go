@@ -14,12 +14,12 @@
 
 import path from 'path';
 
-import Workbox from 'workbox-webpack-plugin';
-import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { Configuration, DefinePlugin } from 'webpack';
+import Workbox from 'workbox-webpack-plugin';
 
 const config: Configuration = {
   entry: {

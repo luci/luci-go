@@ -14,8 +14,8 @@
 
 import { css, customElement, LitElement, property } from 'lit-element';
 import { html } from 'lit-html';
-
 import { styleMap } from 'lit-html/directives/style-map';
+
 import { getLogdogRawUrl } from '../libs/build_utils';
 import { Log } from '../services/buildbucket';
 

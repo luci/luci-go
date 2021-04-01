@@ -14,6 +14,7 @@
 
 import { css, customElement, LitElement, property } from 'lit-element';
 import { html } from 'lit-html';
+
 import { getSafeUrlFromBuildset } from '../libs/build_utils';
 
 /**

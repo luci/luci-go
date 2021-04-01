@@ -16,6 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { observable, when } from 'mobx';
+
 import { AppState, consumeAppState } from '../context/app_state';
 
 /**

@@ -14,6 +14,7 @@
 
 import MarkdownIt from 'markdown-it';
 import Token from 'markdown-it/lib/token';
+
 import { specialLine } from './special_line';
 
 /**
