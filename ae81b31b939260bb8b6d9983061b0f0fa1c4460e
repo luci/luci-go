@@ -267,6 +267,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3ab6d554_5d5cc992",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-01T04:43:52Z",
+      "side": 1,
+      "message": "So you want both build ID generation and build number generation to transact on request ID entities, to ensure we dedupe and never generate extra IDs or numbers?\n\nIn that case, let\u0027s do #2 now and TODO #1 because these tasks seem independent. Doing just #2 will mean everything works correctly but ResultDB may have unnecessary invocations created. Then #1 can fix that later.",
+      "parentUuid": "a2bae23a_61568693",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "65176cb4_28a16ee2",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 2
