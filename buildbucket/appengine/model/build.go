@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	bb "go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -120,7 +121,7 @@ type Build struct {
 // Realm returns this build's auth realm, or an empty string if not opted into the
 // realms experiment.
 func (b *Build) Realm() string {
-	rlm := "+luci.use_realms"
+	rlm := "+" + bb.ExperimentUseRealms
 	for _, e := range b.Experiments {
 		if e == rlm {
 			return fmt.Sprintf("%s:%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket)
