@@ -26,10 +26,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
+	luciFlag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/logging"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
+
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -75,7 +80,23 @@ func cmdAdd(p Params) *subcommands.Command {
 					bb add -t a:1 -t b:2 chromium/try/linux-rel
 			`))
 			r.Flags.BoolVar(&r.experimental, "exp", false, doc(`
-				Mark the builds as experimental
+				(deprecated) Mark the builds as experimental.
+
+				Identical to the preferred:
+				  -experiment +`+buildbucket.ExperimentNonProduction+`
+			`))
+			r.Flags.Var(luciFlag.StringSlice(&r.experiments), "experiment", doc(`
+				Adds or removes an experiment from the build.
+
+				Well-known experiments:
+				  * `+buildbucket.ExperimentNonProduction+`
+					* `+buildbucket.ExperimentBBCanarySoftware+`
+					* `+buildbucket.ExperimentBBAgent+`
+					* `+buildbucket.ExperimentUseRealms+`
+
+				Must have the form '[+-]experimentname'.
+				  * +experiment adds the experiment to the build.
+				  * -experiment prevents the experiment from being set on the build.
 			`))
 			r.Flags.Var(PropertiesFlag(&r.properties), "p", doc(`
 				Input properties for the build.
@@ -92,10 +113,16 @@ func cmdAdd(p Params) *subcommands.Command {
 				Different property names can be specified multiple times.
 			`))
 			r.Flags.BoolVar(&r.canary, "canary", false, doc(`
-				Force the build to use canary infrastructure.
+				(deprecated) Force the build to use canary infrastructure.
+
+				Identical to the preferred:
+				  -experiment +`+buildbucket.ExperimentBBCanarySoftware+`
 			`))
 			r.Flags.BoolVar(&r.noCanary, "nocanary", false, doc(`
-				Force the build to NOT use canary infrastructure.
+				(deprecated) Force the build to NOT use canary infrastructure.
+
+				Identical to the preferred:
+				  -experiment -`+buildbucket.ExperimentBBCanarySoftware+`
 			`))
 			r.Flags.StringVar(&r.swarmingParentRunID, "swarming-parent-run-id", "", doc(`
 				Establish parent->child relationship between provided swarming task (parent)
@@ -121,6 +148,7 @@ type addRun struct {
 
 	ref                 string
 	experimental        bool
+	experiments         []string
 	canary, noCanary    bool
 	properties          structpb.Struct
 	swarmingParentRunID string
@@ -167,15 +195,38 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildReque
 		Swarming:   &pb.ScheduleBuildRequest_Swarming{ParentRunId: r.swarmingParentRunID},
 	}
 
+	experiments := make([]string, len(r.experiments))
+	copy(experiments, r.experiments)
+
 	switch {
 	case r.canary:
-		ret.Canary = pb.Trinary_YES
+		experiments = append(experiments, "+"+buildbucket.ExperimentBBCanarySoftware)
+		logging.Warningf(ctx, "-canary is deprecated, adding experiment %s", experiments[len(experiments)-1])
 	case r.noCanary:
-		ret.Canary = pb.Trinary_NO
+		experiments = append(experiments, "-"+buildbucket.ExperimentBBCanarySoftware)
+		logging.Warningf(ctx, "-noCanary is deprecated, adding experiment %s", experiments[len(experiments)-1])
 	}
 
 	if r.experimental {
-		ret.Experimental = pb.Trinary_YES
+		experiments = append(experiments, "+"+buildbucket.ExperimentNonProduction)
+		logging.Warningf(ctx, "-experimental is deprecated, adding experiment %s", experiments[len(experiments)-1])
+	}
+	if len(r.experiments) > 0 {
+		ret.Experiments = make(map[string]bool, len(r.experiments))
+		for i, exp := range r.experiments {
+			if len(exp) < 2 {
+				return nil, errors.Reason("experiment %d: expected [+-]experiment_name, got %q", i, exp).Err()
+			}
+			plusMinus, expname := exp[0], exp[1:]
+			switch plusMinus {
+			case '+':
+				ret.Experiments[expname] = true
+			case '-':
+				ret.Experiments[expname] = false
+			default:
+				return nil, errors.Reason("experiment %d: expected [+-]experiment_name, got %q", i, exp).Err()
+			}
+		}
 	}
 
 	var err error

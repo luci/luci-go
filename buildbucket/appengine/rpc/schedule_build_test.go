@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -1183,14 +1184,14 @@ func TestScheduleBuild(t *testing.T) {
 			So(ent, ShouldResemble, &model.Build{
 				Canary: true,
 				Experiments: []string{
-					"+luci.buildbucket.canary_software",
-					"-luci.non_production",
+					"+" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentNonProduction,
 				},
 				Proto: pb.Build{
 					Canary: true,
 					Input: &pb.Build_Input{
 						Experiments: []string{
-							"luci.buildbucket.canary_software",
+							bb.ExperimentBBCanarySoftware,
 						},
 					},
 				},
@@ -1232,8 +1233,8 @@ func TestScheduleBuild(t *testing.T) {
 					Canary:       pb.Trinary_YES,
 					Experimental: pb.Trinary_NO,
 					Experiments: map[string]bool{
-						"luci.buildbucket.canary_software": false,
-						"luci.non_production":              true,
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    true,
 					},
 				}
 				ent := &model.Build{
@@ -1246,14 +1247,14 @@ func TestScheduleBuild(t *testing.T) {
 				So(ent, ShouldResemble, &model.Build{
 					Experimental: true,
 					Experiments: []string{
-						"+luci.non_production",
-						"-luci.buildbucket.canary_software",
+						"+" + bb.ExperimentNonProduction,
+						"-" + bb.ExperimentBBCanarySoftware,
 					},
 					Proto: pb.Build{
 						Input: &pb.Build_Input{
 							Experimental: true,
 							Experiments: []string{
-								"luci.non_production",
+								bb.ExperimentNonProduction,
 							},
 						},
 					},
@@ -1267,8 +1268,8 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				cfg := &pb.Builder{
 					Experiments: map[string]int32{
-						"luci.buildbucket.canary_software": 0,
-						"luci.non_production":              100,
+						bb.ExperimentBBCanarySoftware: 0,
+						bb.ExperimentNonProduction:    100,
 					},
 				}
 				ent := &model.Build{
@@ -1281,14 +1282,14 @@ func TestScheduleBuild(t *testing.T) {
 				So(ent, ShouldResemble, &model.Build{
 					Canary: true,
 					Experiments: []string{
-						"+luci.buildbucket.canary_software",
-						"-luci.non_production",
+						"+" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentNonProduction,
 					},
 					Proto: pb.Build{
 						Canary: true,
 						Input: &pb.Build_Input{
 							Experiments: []string{
-								"luci.buildbucket.canary_software",
+								bb.ExperimentBBCanarySoftware,
 							},
 						},
 					},
@@ -1335,18 +1336,18 @@ func TestScheduleBuild(t *testing.T) {
 					Canary:       pb.Trinary_YES,
 					Experimental: pb.Trinary_NO,
 					Experiments: map[string]bool{
-						"luci.buildbucket.canary_software": false,
-						"luci.non_production":              true,
-						"experiment1":                      true,
-						"experiment2":                      false,
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    true,
+						"experiment1":                 true,
+						"experiment2":                 false,
 					},
 				}
 				cfg := &pb.Builder{
 					Experiments: map[string]int32{
-						"luci.buildbucket.canary_software": 100,
-						"luci.non_production":              100,
-						"experiment1":                      0,
-						"experiment2":                      0,
+						bb.ExperimentBBCanarySoftware: 100,
+						bb.ExperimentNonProduction:    100,
+						"experiment1":                 0,
+						"experiment2":                 0,
 					},
 				}
 				ent := &model.Build{
@@ -1360,16 +1361,16 @@ func TestScheduleBuild(t *testing.T) {
 					Experimental: true,
 					Experiments: []string{
 						"+experiment1",
-						"+luci.non_production",
+						"+" + bb.ExperimentNonProduction,
 						"-experiment2",
-						"-luci.buildbucket.canary_software",
+						"-" + bb.ExperimentBBCanarySoftware,
 					},
 					Proto: pb.Build{
 						Input: &pb.Build_Input{
 							Experimental: true,
 							Experiments: []string{
 								"experiment1",
-								"luci.non_production",
+								bb.ExperimentNonProduction,
 							},
 						},
 					},
