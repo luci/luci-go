@@ -14,8 +14,8 @@
 
 import { css, customElement, LitElement, property } from 'lit-element';
 import { html, render } from 'lit-html';
-
 import { DateTime } from 'luxon';
+
 import { displayDuration, LONG_TIME_FORMAT } from '../libs/time_utils';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 

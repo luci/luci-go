@@ -40,12 +40,12 @@ import {
   getURLForSwarmingTask,
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { renderMarkdown } from '../../libs/markdown_utils';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
 import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
 import { BuildStatus } from '../../services/buildbucket';
-import { renderMarkdown } from '../../libs/markdown_utils';
 
 @customElement('milo-overview-tab')
 @consumeBuildState
