@@ -51,6 +51,7 @@ var buildJSON = `
   "canary": true,
   "input": {
     "experimental": true,
+		"experiments": ["luci.buildbucket.canary_software", "luci.non_production"],
     "properties": {
       "$recipe_engine/cq": {
         "dry_run": true
@@ -182,6 +183,9 @@ const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chrom
   },
   "bot_id": "build234-m9"
 }
+<white+b>Experiments<reset>: 
+  luci.buildbucket.canary_software
+  luci.non_production
 <green+h>Step "first"    SUCCESS   59ms      Logs: "stdout", "stderr"<reset>
   first summary markdown
   summary second line
