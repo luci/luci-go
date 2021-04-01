@@ -16,6 +16,46 @@
       "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/mac-rel-swarming/8851/test-results-new",
       "revId": "732f193efa70b4f0efa28069fd5b8df0ccde82af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3afda689_15c06a53",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:32:08Z",
+      "side": 1,
+      "message": "I like this! Is it worth/possible to resize the content columns on the fly during the dragging? (Currently it only updates after the dragging finishes)",
+      "revId": "732f193efa70b4f0efa28069fd5b8df0ccde82af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ce3565a_befdaaff",
+        "filename": "milo/frontend/resultui/src/components/drag_tracker.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:32:08Z",
+      "side": 1,
+      "message": "Do we need to removeEventListener, or it will be auto removed?",
+      "range": {
+        "startLine": 49,
+        "startChar": 13,
+        "endLine": 49,
+        "endChar": 29
+      },
+      "revId": "732f193efa70b4f0efa28069fd5b8df0ccde82af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
