@@ -22,6 +22,7 @@
     "@material/mwc-button": "^0.20.0",
     "@material/mwc-dialog": "^0.20.0",
     "@material/mwc-icon": "^0.20.0",
+    "@material/mwc-menu": "^0.20.0",
     "@material/mwc-textarea": "^0.20.0",
     "@vaadin/router": "^1.7.4",
     "bottleneck": "^2.19.5",

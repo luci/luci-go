@@ -21,6 +21,7 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
+import './tvt_column_header';
 import '../dot_spinner';
 import './test_variant_entry';
 import { TestVariantEntryElement } from './test_variant_entry';
@@ -28,7 +29,7 @@ import { consumeInvocationState, InvocationState } from '../../context/invocatio
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
 
-function getColumnLabel(key: string) {
+function getPropKeyLabel(key: string) {
   // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
   return key.split('.', 2)[1] ?? key;
 }
@@ -148,7 +149,9 @@ export class TestVariantsTableElement extends MobxLitElement {
         <mwc-icon class="group-icon">${expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
         <div>
           <b>${variants.length} test variant${variants.length === 1 ? '' : 's'}:</b>
-          ${groupDef.map(([k, v]) => html`<span class="group-kv"><span>${getColumnLabel(k)}=</span><b>${v}</b></span>`)}
+          ${groupDef.map(
+            ([k, v]) => html`<span class="group-kv"><span>${getPropKeyLabel(k)}=</span><b>${v}</b></span>`
+          )}
         </div>
       </div>
       ${repeat(
@@ -199,9 +202,19 @@ export class TestVariantsTableElement extends MobxLitElement {
       ></milo-hotkey>
       <div id="table-header">
         <div><!-- Expand toggle --></div>
-        <div title="variant status">&nbsp&nbspS</div>
-        ${this.invocationState.displayedColumns.map((col) => html`<div title=${col}>${getColumnLabel(col)}</div>`)}
-        <div title="test name">Name</div>
+        <milo-tvt-column-header
+          .propKey=${'status'}
+          .label=${/* invis char */ '\u2002' + 'S'}
+          .canHide=${false}
+        ></milo-tvt-column-header>
+        ${this.invocationState.displayedColumns.map(
+          (col) => html`<milo-tvt-column-header
+            .propKey=${col}
+            .label=${getPropKeyLabel(col)}
+          ></milo-tvt-column-header>`
+        )}
+        <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
+        </milo-tvt-column-header>
       </div>
 
       <milo-lazy-list id="test-variant-list" .growth=${300} tabindex="-1">${this.renderAllVariants()}</milo-lazy-list>
