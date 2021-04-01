@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a03436bc_3359b0ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-01T04:19:06Z",
+      "side": 1,
+      "message": "I tried this. It caused a bit of lag when there are many rows.\nAdded a comment to document this.",
+      "parentUuid": "3afda689_15c06a53",
+      "revId": "732f193efa70b4f0efa28069fd5b8df0ccde82af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8ce3565a_befdaaff",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-04-01T03:32:08Z",
       "side": 1,
       "message": "Do we need to removeEventListener, or it will be auto removed?",
+      "range": {
+        "startLine": 49,
+        "startChar": 13,
+        "endLine": 49,
+        "endChar": 29
+      },
+      "revId": "732f193efa70b4f0efa28069fd5b8df0ccde82af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e1be962_27199a92",
+        "filename": "milo/frontend/resultui/src/components/drag_tracker.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-01T04:19:06Z",
+      "side": 1,
+      "message": "This is removed in L55.",
+      "parentUuid": "8ce3565a_befdaaff",
       "range": {
         "startLine": 49,
         "startChar": 13,
