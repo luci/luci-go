@@ -16,6 +16,23 @@
       "message": "Done, PTAL; I also adjusted the log format so that the log level shows up (so that \u0027Warningf\u0027 actually looks like a warning...)",
       "revId": "70cdd2ac4085af825e4ad0c694677931917770a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e398bd57_8a1b9aa3",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-01T16:24:48Z",
+      "side": 1,
+      "message": "also FYI I changed this from \u0027-experiment\u0027 to \u0027-ex\u0027... Regrettably \u0027-exp\u0027 is the deprecated experimental flag, but hopefully we can remove it some day and not be stuck with the very long \u0027-experiment\u0027 flag, since people do actually use this on the command line by hand and the experiment names are already long.",
+      "revId": "70cdd2ac4085af825e4ad0c694677931917770a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
