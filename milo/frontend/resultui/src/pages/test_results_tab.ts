@@ -152,7 +152,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
   private renderAllVariants() {
     const testLoader = this.invocationState.testLoader;
     return html`
-      ${this.renderIntegrationHint()}
       ${this.renderVariants(
         TestVariantStatus.UNEXPECTED,
         testLoader?.unexpectedTestVariants || [],
@@ -199,27 +198,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         >
       </div>
     `;
-  }
-
-  private renderIntegrationHint() {
-    return this.configsStore.userConfigs.hints.showTestResultsHint
-      ? html`
-          <div id="integration-hint">
-            <p>
-              Don't see results of your test framework here? This might be because they are not integrated with ResultDB
-              yet. Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
-            </p>
-            <span
-              class="active-text"
-              @click=${() => {
-                this.configsStore.userConfigs.hints.showTestResultsHint = false;
-                this.configsStore.save();
-              }}
-              >Don't show again</span
-            >
-          </div>
-        `
-      : html``;
   }
 
   @computed private get gaLabelPrefix() {

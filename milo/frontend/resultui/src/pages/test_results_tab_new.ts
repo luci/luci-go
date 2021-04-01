@@ -119,27 +119,6 @@ export class TestResultsTabElement extends MobxLitElement {
     }
   }
 
-  private renderIntegrationHint() {
-    return this.configsStore.userConfigs.hints.showTestResultsHint
-      ? html`
-          <div id="integration-hint">
-            <p>
-              Don't see results of your test framework here? This might be because they are not integrated with ResultDB
-              yet. Please ask <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
-            </p>
-            <span
-              class="active-text"
-              @click=${() => {
-                this.configsStore.userConfigs.hints.showTestResultsHint = false;
-                this.configsStore.save();
-              }}
-              >Don't show again</span
-            >
-          </div>
-        `
-      : html`<div></div>`;
-  }
-
   private renderBody() {
     const state = this.invocationState;
 
@@ -166,14 +145,14 @@ export class TestResultsTabElement extends MobxLitElement {
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
         </milo-hotkey>
       </div>
-      ${this.renderIntegrationHint()} ${this.renderBody()}
+      ${this.renderBody()}
     `;
   }
 
   static styles = css`
     :host {
       display: grid;
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto 1fr;
       overflow-y: hidden;
     }
 
