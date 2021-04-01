@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1d06246_97dc3e69",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-01T05:20:54Z",
+      "side": 1,
+      "message": "Just \"experiments\" (and below) I think. Currently you create \"experiments\", copy r.experiments, add canary/experimental values, but then do nothing with it.\n\nYou could also set ret.Experiments first and then add values based on canary/noCanary/experimental to avoid copying r.experiments and appending +/- strings which immediately get converted to bool anyway.",
+      "range": {
+        "startLine": 214,
+        "startChar": 8,
+        "endLine": 214,
+        "endChar": 21
+      },
+      "revId": "f3db9a70ff7ed7f41faff8e695358a65ab0ce9e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
