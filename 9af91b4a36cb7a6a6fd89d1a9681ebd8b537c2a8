@@ -22,6 +22,30 @@
       },
       "revId": "9af91b4a36cb7a6a6fd89d1a9681ebd8b537c2a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d18d1572_189c4cd4",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1356118
+      },
+      "writtenOn": "2021-04-01T16:04:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26c3fc4c_228bef90",
+      "range": {
+        "startLine": 190,
+        "startChar": 91,
+        "endLine": 190,
+        "endChar": 101
+      },
+      "revId": "9af91b4a36cb7a6a6fd89d1a9681ebd8b537c2a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
