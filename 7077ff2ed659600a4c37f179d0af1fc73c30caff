@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2482a60_2c8f710a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-01T08:30:33Z",
+      "side": 1,
+      "message": "This looks ready, so i\u0027ve reviewed it too.",
+      "revId": "7077ff2ed659600a4c37f179d0af1fc73c30caff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7f94e4a2_14e0ab7e",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-01T08:30:33Z",
+      "side": 1,
+      "message": "It should be Failed Precondition (and Gerrit proto CL should translate it from HTTP 409 Conflict)\n\n(see http://cs/_triage_submit_failure in CQ code)",
+      "range": {
+        "startLine": 273,
+        "startChar": 34,
+        "endLine": 273,
+        "endChar": 49
+      },
+      "revId": "7077ff2ed659600a4c37f179d0af1fc73c30caff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f136107_b569e3f1",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-01T08:30:33Z",
+      "side": 1,
+      "message": "nit: in most projects with CQ, we use submit strategy which *always* creates a new patchset. So, i think we should simulate creation of a new patchset in our Gerrit fake.",
+      "revId": "7077ff2ed659600a4c37f179d0af1fc73c30caff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77f1b0ec_8efd1697",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-01T08:30:33Z",
+      "side": 1,
+      "message": "IIRC, it also gives HTTP 409 Conflict, but with different error message than not current revision.",
+      "revId": "7077ff2ed659600a4c37f179d0af1fc73c30caff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e788efaf_49a87c57",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-01T08:30:33Z",
+      "side": 1,
+      "message": "btw, one other even more frequent cause of HTTP 409 from Gerrit.Submit is CL git merge conflict.\n\nIn terms of CQ/CV behavior today, stale revision \u0026\u0026 (git) merge conflict are treated exact same thing -- bail and post to user exact English string that Gerrit gave to CQ/CV. So, maybe we don\u0027t need to worry about this for now.",
+      "revId": "7077ff2ed659600a4c37f179d0af1fc73c30caff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
