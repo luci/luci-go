@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a7732ed_ec1952f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-01T08:31:12Z",
+      "side": 1,
+      "message": "lgtm % comments. I\u0027m ok with fixing InvalidArgument -\u003e PreconditionFailure in a follow up.",
+      "revId": "7077ff2ed659600a4c37f179d0af1fc73c30caff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7f94e4a2_14e0ab7e",
