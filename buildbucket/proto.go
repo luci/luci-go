@@ -34,3 +34,8 @@ const (
 	ExperimentBBAgent   = "luci.buildbucket.use_bbagent"
 	ExperimentUseRealms = "luci.use_realms"
 )
+
+// WellKnownExperiments is the list of all well-known experiments.
+var WellKnownExperiments = []string{
+	ExperimentBBCanarySoftware, ExperimentNonProduction, ExperimentBBAgent, ExperimentUseRealms,
+}

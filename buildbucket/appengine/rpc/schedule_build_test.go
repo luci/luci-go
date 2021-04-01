@@ -1136,7 +1136,12 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			setExperiments(ctx, nil, nil, ent)
-			So(ent.Experiments, ShouldBeNil)
+			So(ent.Experiments, ShouldResemble, []string{
+				"-" + bb.ExperimentBBCanarySoftware,
+				"-" + bb.ExperimentBBAgent,
+				"-" + bb.ExperimentNonProduction,
+				"-" + bb.ExperimentUseRealms,
+			})
 			So(ent.Proto.Input.Experiments, ShouldBeNil)
 		})
 
@@ -1158,6 +1163,10 @@ func TestScheduleBuild(t *testing.T) {
 				Experiments: []string{
 					"+experiment1",
 					"-experiment2",
+					"-" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentBBAgent,
+					"-" + bb.ExperimentNonProduction,
+					"-" + bb.ExperimentUseRealms,
 				},
 				Proto: pb.Build{
 					Input: &pb.Build_Input{
@@ -1185,7 +1194,9 @@ func TestScheduleBuild(t *testing.T) {
 				Canary: true,
 				Experiments: []string{
 					"+" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentBBAgent,
 					"-" + bb.ExperimentNonProduction,
+					"-" + bb.ExperimentUseRealms,
 				},
 				Proto: pb.Build{
 					Canary: true,
@@ -1216,6 +1227,10 @@ func TestScheduleBuild(t *testing.T) {
 				Experiments: []string{
 					"+experiment1",
 					"-experiment2",
+					"-" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentBBAgent,
+					"-" + bb.ExperimentNonProduction,
+					"-" + bb.ExperimentUseRealms,
 				},
 				Proto: pb.Build{
 					Input: &pb.Build_Input{
@@ -1249,6 +1264,8 @@ func TestScheduleBuild(t *testing.T) {
 					Experiments: []string{
 						"+" + bb.ExperimentNonProduction,
 						"-" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
+						"-" + bb.ExperimentUseRealms,
 					},
 					Proto: pb.Build{
 						Input: &pb.Build_Input{
@@ -1283,7 +1300,9 @@ func TestScheduleBuild(t *testing.T) {
 					Canary: true,
 					Experiments: []string{
 						"+" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
 						"-" + bb.ExperimentNonProduction,
+						"-" + bb.ExperimentUseRealms,
 					},
 					Proto: pb.Build{
 						Canary: true,
@@ -1320,6 +1339,10 @@ func TestScheduleBuild(t *testing.T) {
 					Experiments: []string{
 						"+experiment1",
 						"-experiment2",
+						"-" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
+						"-" + bb.ExperimentNonProduction,
+						"-" + bb.ExperimentUseRealms,
 					},
 					Proto: pb.Build{
 						Input: &pb.Build_Input{
@@ -1364,6 +1387,8 @@ func TestScheduleBuild(t *testing.T) {
 						"+" + bb.ExperimentNonProduction,
 						"-experiment2",
 						"-" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
+						"-" + bb.ExperimentUseRealms,
 					},
 					Proto: pb.Build{
 						Input: &pb.Build_Input{
