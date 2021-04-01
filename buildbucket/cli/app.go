@@ -35,7 +35,7 @@ type Params struct {
 }
 
 var logCfg = gologger.LoggerConfig{
-	Format: `%{message}`,
+	Format: `%{level}: %{message}`,
 	Out:    os.Stderr,
 }
 

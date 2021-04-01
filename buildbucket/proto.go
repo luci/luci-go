@@ -23,3 +23,14 @@ package buildbucket
 // Defined in
 // https://chromium.googlesource.com/infra/infra/+/c189064/appengine/cr-buildbucket/v2/api.py#35
 const BuildTokenHeader = "x-build-token"
+
+// Well-known experiment strings.
+//
+// See the Builder.experiments field documentation.
+const (
+	ExperimentBBCanarySoftware = "luci.buildbucket.canary_software"
+	ExperimentNonProduction    = "luci.non_production"
+
+	ExperimentBBAgent   = "luci.buildbucket.use_bbagent"
+	ExperimentUseRealms = "luci.use_realms"
+)
