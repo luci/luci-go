@@ -192,6 +192,7 @@ func (w *testGSWriter) Count() int64 {
 // testCLClient iis a testing implementation of the CLClient interface.
 type testCLClient struct {
 	closeFn func() error
+	pingFn  func(context.Context) error
 
 	isClosed            bool
 	clProject           string
@@ -210,6 +211,12 @@ func (c *testCLClient) Close() error {
 	return nil
 }
 
+func (c *testCLClient) Ping(ctx context.Context) error {
+	if c.pingFn != nil {
+		return c.pingFn(ctx)
+	}
+	return nil
+}
 func TestHandleArchive(t *testing.T) {
 	t.Parallel()
 
@@ -720,5 +727,20 @@ func TestHandleArchive(t *testing.T) {
 			So(clc.isClosed, ShouldBeTrue)
 		})
 
+		Convey("Will validate CloudLoggingProjectID.", func() {
+			clProject = "123-foo"
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "must start with a lowercase")
+		})
+
+		Convey("Will ping", func() {
+			ar.CLClientFactory = func(ctx context.Context, lp, cp string, s bool) (CLClient, error) {
+				cl, err := clcFactory(c, lp, cp, s)
+				cl.(*testCLClient).pingFn = func(context.Context) error {
+					return errors.New("Permission Denied")
+				}
+				return cl, err
+			}
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "failed to ping")
+		})
 	})
 }
