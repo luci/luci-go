@@ -27,9 +27,11 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -51,17 +53,45 @@ func TestOnVerificationCompleted(t *testing.T) {
 		defer cancel()
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		runCLs := common.CLIDs{1, 2}
-		cgID := config.MakeConfigGroupID("deadbeef", "main")
-		rs := &state.RunState{
-			Run: run.Run{
-				ID:            rid,
-				Status:        run.Status_RUNNING,
-				CreateTime:    ct.Clock.Now().UTC().Add(-2 * time.Minute),
-				StartTime:     ct.Clock.Now().UTC().Add(-1 * time.Minute),
-				ConfigGroupID: cgID,
-				CLs:           runCLs,
-			},
+		cgID := config.MakeConfigGroupID("cafecafe", "main")
+		r := run.Run{
+			ID:            rid,
+			Status:        run.Status_RUNNING,
+			CreateTime:    ct.Clock.Now().UTC().Add(-2 * time.Minute),
+			StartTime:     ct.Clock.Now().UTC().Add(-1 * time.Minute),
+			ConfigGroupID: cgID,
+			CLs:           runCLs,
 		}
+		So(datastore.Put(ctx, &r,
+			&run.RunCL{
+				ID:  runCLs[0],
+				Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
+				Detail: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: "example.com",
+							Info: gf.CI(1111),
+						},
+					},
+					Deps: []*changelist.Dep{
+						{Clid: 2, Kind: changelist.DepKind_HARD},
+					},
+				},
+			},
+			&run.RunCL{
+				ID:  runCLs[1],
+				Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
+				Detail: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: "example.com",
+							Info: gf.CI(2222),
+						},
+					},
+				},
+			},
+		), ShouldBeNil)
+		rs := &state.RunState{Run: r}
 		h := &Impl{}
 
 		statuses := []run.Status{
@@ -109,9 +139,9 @@ func TestOnVerificationCompleted(t *testing.T) {
 				rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
 			}
 			updateConfigGroupToLatest(rs)
+			now := ct.Clock.Now().UTC()
 
 			Convey("Works (Happy Path)", func() {
-				now := ct.Clock.Now().UTC()
 				res, err := h.OnCQDVerificationCompleted(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
@@ -119,7 +149,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				// implemented.
 				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Cls:               common.CLIDsAsInt64s(runCLs),
+					Cls:               []int64{2, 1}, // in submission order
 					TreeOpen:          true,
 					LastTreeCheckTime: timestamppb.New(now),
 				})
@@ -130,7 +160,6 @@ func TestOnVerificationCompleted(t *testing.T) {
 			})
 
 			Convey("Add Run to waitlist when submit queue is occupied", func() {
-				now := ct.Clock.Now().UTC()
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					// another run has taken the current slot
 					waitlisted, err := submit.TryAcquire(ctx, common.MakeRunID("infra", now, 1, []byte("cafecafe")), cfg.GetSubmitOptions())
@@ -149,13 +178,12 @@ func TestOnVerificationCompleted(t *testing.T) {
 
 			Convey("Revisit after 1 mintues if tree is closed", func() {
 				ct.TreeFake.ModifyState(ctx, tree.Closed)
-				now := ct.Clock.Now().UTC()
 				res, err := h.OnCQDVerificationCompleted(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.State.Run.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
 				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Cls:               common.CLIDsAsInt64s(runCLs),
+					Cls:               []int64{2, 1}, // in submission order
 					TreeOpen:          false,
 					LastTreeCheckTime: timestamppb.New(now),
 				})
@@ -177,11 +205,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 				res, err := h.OnCQDVerificationCompleted(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
-				So(res.State.Run.Submission, ShouldResembleProto, &run.Submission{
-					Cls:               common.CLIDsAsInt64s(runCLs),
-					TreeOpen:          true,
-					LastTreeCheckTime: timestamppb.New(ct.Clock.Now().UTC()),
-				})
+				So(res.State.Run.Submission.TreeOpen, ShouldEqual, true)
+				So(res.State.Run.Submission.LastTreeCheckTime, ShouldResembleProto, timestamppb.New(now))
 			})
 		})
 	})
