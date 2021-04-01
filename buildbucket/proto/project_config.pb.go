@@ -616,7 +616,14 @@ type Builder struct {
 	// protocol, rather than the deprecated '@@@annotation@@@' protocol.
 	//
 	// Over time we'll be moving the default up from 0%. Ideally we'll be removing
-	// the @@@annotation@@@ protocol entirely in 2020Q3.
+	// the @@@annotation@@@ protocol entirely in 2021Q3.
+	//
+	// # "luci.use_realms"  (default 0%)
+	// Opts the build into using LUCI realms for ACLs.
+	//
+	// Requires configuration in your project (to set up realms, roles and
+	// permission grants). Affects Buildbucket's interaction with Swarming,
+	// and will cause underlying swarming tasks to be in 'realms' mode.
 	Experiments map[string]int32 `protobuf:"bytes,28,rep,name=experiments,proto3" json:"experiments,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 	// This field will set the default value of the "critical" field of
 	// all the builds of this builder. Please refer to build.proto for
