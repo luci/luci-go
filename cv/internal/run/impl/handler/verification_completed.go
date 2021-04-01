@@ -27,11 +27,9 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
-	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/tree"
 )
 
@@ -58,8 +56,10 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	switch vr.Payload.Action {
 	case migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT:
 		rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
-		rs.Run.Submission = &run.Submission{
-			Cls: common.CLIDsAsInt64s(rs.Run.CLs),
+		rs.Run.Submission = &run.Submission{}
+		var err error
+		if rs.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.Run.CLs, rs.Run.ID, rs.Run.Submission); err != nil {
+			return nil, err
 		}
 		switch treeOpen, err := checkTreeOpen(ctx, rs); {
 		case err != nil:
@@ -107,36 +107,4 @@ func checkTreeOpen(ctx context.Context, rs *state.RunState) (bool, error) {
 	rs.Run.Submission.TreeOpen = treeOpen
 	rs.Run.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
 	return treeOpen, nil
-}
-
-func acquireSubmitQueue(ctx context.Context, rs *state.RunState) (waitlisted bool, err error) {
-	cg, err := rs.LoadConfigGroup(ctx)
-	if err != nil {
-		return false, err
-	}
-	now := clock.Now(ctx).UTC()
-	rid := rs.Run.ID
-	var innerErr error
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		waitlisted, innerErr = submit.TryAcquire(ctx, rid, cg.SubmitOptions)
-		switch {
-		case innerErr != nil:
-			return innerErr
-		case !waitlisted:
-			// If not waitlisted, RM will proceed as if ReadyForSubmission event is
-			// received. Sends a ReadyForSubmission event 10 seconds later in case
-			// the event processing has failed in the middle.
-			return run.NotifyReadyForSubmission(ctx, rid, now.Add(10*time.Second))
-		default:
-			return nil
-		}
-	}, nil)
-	switch {
-	case innerErr != nil:
-		return false, innerErr
-	case err != nil:
-		return false, errors.Annotate(err, "failed to run the transaction to acquire submit queue").Tag(transient.Tag).Err()
-	default:
-		return waitlisted, nil
-	}
 }
