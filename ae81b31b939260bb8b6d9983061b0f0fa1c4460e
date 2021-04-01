@@ -249,6 +249,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a2bae23a_61568693",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-01T02:32:10Z",
+      "side": 1,
+      "message": "Here is a summary from the discussion with Robbie and ResultDB folks (Chan and Scott):\n\n**The user scenario**: \nUser retries Batch scheduleBuild reqs where some reqs may have succeeded in previous call. \n\n**Current resultDB state**: \n1) BatchCreateInvocation don’t accept different sub-request level reqID. \n2) If you make a BatchCreateInvocation RPC with a mix of created/not-created invocations, it returns an error. However if you make a BatchCreateInvocation RPC with a requestId, then: 1) all requested invocations will be created (or not), not a mix. 2) retries with the same parameters + requestId is idempotent and will succeed if the original RPC succeeded \n\n**The bug**: \nFrom the current Go code and TODO comments,`scheduleBuilds` func always generates new buildIDs and numbers regardless whether the requestID is duplicate or not. Then it tries to call resultDB and other stuff. At last, it will commit builds during which it performs the deduplication by requestID. \nSo when calling resultDB, the build id and number are always new which means it will always succeed in resultDB.   For the event of re-trying builds, it may lead to wasted numbers + invocations (because the current deduplication logic will discard them for duplicate builds). \n\nWe should avoid wasting build ids and numbers (especially the build number).  So we need to dedup BB req first and reuse ids \u0026 numbers. \n\n**The proposed flow**:\n1. dedup schedule build requests: \n    1.1 Load the saved IDs + numbers by ScheduleBuildRequest requestID,  or allocate new IDs and numbers.\n    2.1. Save them to datastore `RequestID` entities\n2. Call CreateInvocations function where it will make CreateInvocationRequest per build (if build has number, it will make BatchCreateInvocationRequest for id and number). This call will use a request id derived from id+number, meaning that it should be idempotent. This func can ignore the `AlreadyExists` error returned by resultDB. \n3. commit builds to datastore in the transaction. \n\nIt means the `scheduleBuilds` func need to refactor and RequestID should capture build number. WDYT? @smut\n\n(FYI, confirmed that making that many concurrent calls to resultDB is acceptable.)",
+      "parentUuid": "61b5056c_feabf3a7",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "65176cb4_28a16ee2",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 2
