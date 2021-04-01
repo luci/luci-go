@@ -217,27 +217,33 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 // model.Build.Proto.Input must not be nil.
 func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
 	// Experiment -> enabled.
-	exps := make(map[string]bool, len(req.GetExperiments()))
+	exps := make(map[string]bool, len(bb.WellKnownExperiments)+len(req.GetExperiments()))
 
 	// Experiment values in the experiments field of the request have highest precedence,
 	// followed by legacy fields in the request, followed by values in the builder config.
-	for exp, en := range req.GetExperiments() {
-		exps[exp] = en
+
+	// All well-known experiments need to show up in the model.Build, so
+	// initialize them all to false.
+	for _, wke := range bb.WellKnownExperiments {
+		exps[wke] = false
 	}
 
-	// Legacy.
-	if _, ok := exps[bb.ExperimentBBCanarySoftware]; !ok && req.GetCanary() != pb.Trinary_UNSET {
+	// Override from builder config.
+	for exp, pct := range cfg.GetExperiments() {
+		exps[exp] = mathrand.Int31n(ctx, 100) < pct
+	}
+
+	// Then override with legacy fields.
+	if req.GetCanary() != pb.Trinary_UNSET {
 		exps[bb.ExperimentBBCanarySoftware] = req.Canary == pb.Trinary_YES
 	}
-	if _, ok := exps[bb.ExperimentNonProduction]; !ok && req.GetExperimental() != pb.Trinary_UNSET {
+	if req.GetExperimental() != pb.Trinary_UNSET {
 		exps[bb.ExperimentNonProduction] = req.Experimental == pb.Trinary_YES
 	}
 
-	for exp, pct := range cfg.GetExperiments() {
-		if _, ok := exps[exp]; ok {
-			continue
-		}
-		exps[exp] = mathrand.Int31n(ctx, 100) < pct
+	// Finally override with explicitly requested experiments.
+	for exp, en := range req.GetExperiments() {
+		exps[exp] = en
 	}
 
 	// The model stores all experiment values, while the proto only contains enabled experiments.
@@ -250,7 +256,7 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 		}
 	}
 
-	// Set legacy field values.
+	// Finally, set legacy field values from the experiments.
 	if en := exps[bb.ExperimentBBCanarySoftware]; en {
 		build.Canary = true
 		build.Proto.Canary = true
