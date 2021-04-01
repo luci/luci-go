@@ -14,7 +14,6 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
-import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable, reaction } from 'mobx';
 
@@ -22,6 +21,7 @@ import '../components/dot_spinner';
 import '../components/hotkey';
 import '../components/test_search_filter';
 import '../components/test_variants_table';
+import '../components/test_variants_table/tvt_config_widget';
 import { TestVariantsTableElement } from '../components/test_variants_table';
 import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
@@ -139,6 +139,8 @@ export class TestResultsTabElement extends MobxLitElement {
   protected render() {
     return html`
       <div id="header">
+        <milo-tvt-config-widget class="filters-container"></milo-tvt-config-widget>
+        <div class="filters-container-delimiter"></div>
         <milo-test-search-filter></milo-test-search-filter>
         <milo-hotkey key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(true)}>Expand All</mwc-button>
@@ -158,7 +160,7 @@ export class TestResultsTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: auto auto 1fr auto;
       border-bottom: 1px solid var(--divider-color);
       grid-gap: 5px;
       height: 30px;
@@ -186,10 +188,6 @@ export class TestResultsTabElement extends MobxLitElement {
       cursor: pointer;
       font-size: 14px;
       font-weight: normal;
-    }
-    .inline-icon {
-      --mdc-icon-size: 1.2em;
-      vertical-align: bottom;
     }
   `;
 }
