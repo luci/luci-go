@@ -82,10 +82,10 @@ func cmdAdd(p Params) *subcommands.Command {
 			r.Flags.BoolVar(&r.experimental, "exp", false, doc(`
 				(deprecated) Mark the builds as experimental.
 
-				Identical and lower precedence to the preferred:
-				  -ex +`+buildbucket.ExperimentNonProduction+`
+				Identical to the preferred:
+				  -experiment +`+buildbucket.ExperimentNonProduction+`
 			`))
-			r.Flags.Var(luciFlag.StringSlice(&r.experiments), "ex", doc(`
+			r.Flags.Var(luciFlag.StringSlice(&r.experiments), "experiment", doc(`
 				Adds or removes an experiment from the build.
 
 				Well-known experiments:
@@ -96,7 +96,7 @@ func cmdAdd(p Params) *subcommands.Command {
 
 				Must have the form '[+-]experimentname'.
 				  * +experiment adds the experiment to the build.
-				  * -ex prevents the experiment from being set on the build.
+				  * -experiment prevents the experiment from being set on the build.
 			`))
 			r.Flags.Var(PropertiesFlag(&r.properties), "p", doc(`
 				Input properties for the build.
@@ -115,14 +115,14 @@ func cmdAdd(p Params) *subcommands.Command {
 			r.Flags.BoolVar(&r.canary, "canary", false, doc(`
 				(deprecated) Force the build to use canary infrastructure.
 
-				Identical and lower precedence to the preferred:
-				  -ex +`+buildbucket.ExperimentBBCanarySoftware+`
+				Identical to the preferred:
+				  -experiment +`+buildbucket.ExperimentBBCanarySoftware+`
 			`))
 			r.Flags.BoolVar(&r.noCanary, "nocanary", false, doc(`
 				(deprecated) Force the build to NOT use canary infrastructure.
 
-				Identical and lower precedence to the preferred:
-				  -ex -`+buildbucket.ExperimentBBCanarySoftware+`
+				Identical to the preferred:
+				  -experiment -`+buildbucket.ExperimentBBCanarySoftware+`
 			`))
 			r.Flags.StringVar(&r.swarmingParentRunID, "swarming-parent-run-id", "", doc(`
 				Establish parent->child relationship between provided swarming task (parent)
@@ -195,32 +195,37 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildReque
 		Swarming:   &pb.ScheduleBuildRequest_Swarming{ParentRunId: r.swarmingParentRunID},
 	}
 
-	ret.Experiments = make(map[string]bool, len(r.experiments))
+	experiments := make([]string, len(r.experiments))
+	copy(experiments, r.experiments)
+
 	switch {
 	case r.canary:
-		ret.Experiments[buildbucket.ExperimentBBCanarySoftware] = true
-		logging.Warningf(ctx, "-canary is deprecated, setting experiment +%s", buildbucket.ExperimentBBCanarySoftware)
+		experiments = append(experiments, "+"+buildbucket.ExperimentBBCanarySoftware)
+		logging.Warningf(ctx, "-canary is deprecated, adding experiment %s", experiments[len(experiments)-1])
 	case r.noCanary:
-		ret.Experiments[buildbucket.ExperimentBBCanarySoftware] = false
-		logging.Warningf(ctx, "-canary is deprecated, setting experiment -%s", buildbucket.ExperimentBBCanarySoftware)
-	}
-	if r.experimental {
-		ret.Experiments[buildbucket.ExperimentNonProduction] = true
-		logging.Warningf(ctx, "-exp is deprecated, setting experiment +%s", buildbucket.ExperimentNonProduction)
+		experiments = append(experiments, "-"+buildbucket.ExperimentBBCanarySoftware)
+		logging.Warningf(ctx, "-noCanary is deprecated, adding experiment %s", experiments[len(experiments)-1])
 	}
 
-	for i, exp := range r.experiments {
-		if len(exp) < 2 {
-			return nil, errors.Reason("experiment %d: expected [+-]experiment_name, got %q", i, exp).Err()
-		}
-		plusMinus, expname := exp[0], exp[1:]
-		switch plusMinus {
-		case '+':
-			ret.Experiments[expname] = true
-		case '-':
-			ret.Experiments[expname] = false
-		default:
-			return nil, errors.Reason("experiment %d: expected [+-]experiment_name, got %q", i, exp).Err()
+	if r.experimental {
+		experiments = append(experiments, "+"+buildbucket.ExperimentNonProduction)
+		logging.Warningf(ctx, "-experimental is deprecated, adding experiment %s", experiments[len(experiments)-1])
+	}
+	if len(r.experiments) > 0 {
+		ret.Experiments = make(map[string]bool, len(r.experiments))
+		for i, exp := range r.experiments {
+			if len(exp) < 2 {
+				return nil, errors.Reason("experiment %d: expected [+-]experiment_name, got %q", i, exp).Err()
+			}
+			plusMinus, expname := exp[0], exp[1:]
+			switch plusMinus {
+			case '+':
+				ret.Experiments[expname] = true
+			case '-':
+				ret.Experiments[expname] = false
+			default:
+				return nil, errors.Reason("experiment %d: expected [+-]experiment_name, got %q", i, exp).Err()
+			}
 		}
 	}
 
