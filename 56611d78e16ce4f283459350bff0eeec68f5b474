@@ -1,0 +1,257 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff3ad0b1_81393127",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Nits: omit \"the\"",
+      "range": {
+        "startLine": 30,
+        "startChar": 38,
+        "endLine": 30,
+        "endChar": 41
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8073a6b_a317a8ae",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Nits: comma-separated",
+      "range": {
+        "startLine": 45,
+        "startChar": 35,
+        "endLine": 45,
+        "endChar": 50
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d6cf2bfc_64ebc999",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Maybe make it cursor: pointer?",
+      "range": {
+        "startLine": 72,
+        "startChar": 14,
+        "endLine": 72,
+        "endChar": 29
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "215f60af_5f3fbce7",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Maybe also mention somewhere that status and name are required columns?",
+      "range": {
+        "startLine": 89,
+        "startChar": 13,
+        "endLine": 89,
+        "endChar": 24
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5a8fd75d_fdb52849",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Maybe: \"Sorted by\"?",
+      "range": {
+        "startLine": 94,
+        "startChar": 13,
+        "endLine": 94,
+        "endChar": 25
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a1cfb36d_bfc08bf4",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Maybe \"Grouped by\"?",
+      "range": {
+        "startLine": 99,
+        "startChar": 13,
+        "endLine": 99,
+        "endChar": 26
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1863ff9c_5c44e673",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Maybe put some examples here (e.g. Unexpected, Flaky...)",
+      "range": {
+        "startLine": 123,
+        "startChar": 50,
+        "endLine": 123,
+        "endChar": 51
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f688e309_9be7a1a7",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "I suspect that a normal user will not know what is test_metadata. I\u0027d just say \"Test variant name\".",
+      "range": {
+        "startLine": 124,
+        "startChar": 22,
+        "endLine": 124,
+        "endChar": 40
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f434b54_3eb8ed25",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Similar to above, I don\u0027t think the users will know what we are refering to. Better provide more examples, and if possible, make it a dropdown?",
+      "range": {
+        "startLine": 125,
+        "startChar": 33,
+        "endLine": 125,
+        "endChar": 57
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1d6a663b_6aa108e6",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Maybe (e.g. -status, -name)?",
+      "range": {
+        "startLine": 127,
+        "startChar": 71,
+        "endLine": 127,
+        "endChar": 72
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b6c4bf9_6ebadf48",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-01T03:26:09Z",
+      "side": 1,
+      "message": "Is it possible to make it a link?\n\nAnd is it not 100% correct? The default is defined in Milo, but can be overridden in build.output.properties[\u0027test_presentation_config\u0027].\n\nI think the build.output.properties[\u0027test_presentation_config\u0027] part is only relevant to builder owner, most people don\u0027t really care about this, so perhaps we can document it somewhere else but the UI?",
+      "range": {
+        "startLine": 128,
+        "startChar": 45,
+        "endLine": 128,
+        "endChar": 96
+      },
+      "revId": "56611d78e16ce4f283459350bff0eeec68f5b474",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
