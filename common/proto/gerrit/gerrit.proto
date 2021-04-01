@@ -142,6 +142,11 @@ service Gerrit {
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
   rpc AbandonChange(AbandonChangeRequest) returns (ChangeInfo);
+
+  // Submit a revision.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
+  rpc SubmitRevision(SubmitRevisionRequest) returns (SubmitInfo);
 }
 
 // Specifies what extra information to include in the response.
@@ -741,6 +746,34 @@ message SubmitChangeRequest {
   string project = 2;
 }
 
+// Information to submit a specific revision of a change.
+//
+// Fields encode the path arguments of
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
+message SubmitRevisionRequest {
+  // The change number.
+  int64 number = 1;
+
+  // Unique ID that identifies one revision of this change.
+  //
+  // Source of truth:
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+  string revision_id = 2;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 5;
+}
+
+// Information about the change status after submitting.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-info
+message SubmitInfo {
+  // The status of the change after submitting is MERGED.
+  ChangeStatus status = 1;
+}
 // Information for changing contents of single file in a change edit.
 //
 // Fields encode the path arguments of

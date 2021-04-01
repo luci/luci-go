@@ -415,6 +415,26 @@ func (mr *MockGerritClientMockRecorder) AbandonChange(ctx, in interface{}, opts 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritClient)(nil).AbandonChange), varargs...)
 }
 
+// SubmitRevision mocks base method.
+func (m *MockGerritClient) SubmitRevision(ctx context.Context, in *SubmitRevisionRequest, opts ...grpc.CallOption) (*SubmitInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SubmitRevision", varargs...)
+	ret0, _ := ret[0].(*SubmitInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitRevision indicates an expected call of SubmitRevision.
+func (mr *MockGerritClientMockRecorder) SubmitRevision(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRevision", reflect.TypeOf((*MockGerritClient)(nil).SubmitRevision), varargs...)
+}
+
 // MockGerritServer is a mock of GerritServer interface.
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -721,4 +741,19 @@ func (m *MockGerritServer) AbandonChange(arg0 context.Context, arg1 *AbandonChan
 func (mr *MockGerritServerMockRecorder) AbandonChange(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritServer)(nil).AbandonChange), arg0, arg1)
+}
+
+// SubmitRevision mocks base method.
+func (m *MockGerritServer) SubmitRevision(arg0 context.Context, arg1 *SubmitRevisionRequest) (*SubmitInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitRevision", arg0, arg1)
+	ret0, _ := ret[0].(*SubmitInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitRevision indicates an expected call of SubmitRevision.
+func (mr *MockGerritServerMockRecorder) SubmitRevision(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRevision", reflect.TypeOf((*MockGerritServer)(nil).SubmitRevision), arg0, arg1)
 }

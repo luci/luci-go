@@ -476,6 +476,37 @@ func TestRestCreateChange(t *testing.T) {
 	})
 }
 
+func TestSubmitRevision(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("SubmitRevision", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'`)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"status": "MERGED",
+			})
+		})
+		defer srv.Close()
+
+		req := &gerritpb.SubmitRevisionRequest{
+			Number:     42,
+			RevisionId: "someRevision",
+			Project:    "someProject",
+		}
+		res, err := c.SubmitRevision(ctx, req)
+		So(err, ShouldBeNil)
+		So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+			Status: gerritpb.ChangeStatus_MERGED,
+		})
+		So(actualURL.Path, ShouldEqual, "/changes/someProject~42/revisions/someRevision/submit")
+	})
+}
+
 func TestRestChangeEditFileContent(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

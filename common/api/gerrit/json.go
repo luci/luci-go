@@ -498,3 +498,14 @@ func (pi *projectInfo) ToProto() (*gerritpb.ProjectInfo, error) {
 		WebLinks:    pi.WebLinks,
 	}, nil
 }
+
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-info
+type submitInfo struct {
+	Status string `json:"status"`
+}
+
+func (si *submitInfo) ToProto() *gerritpb.SubmitInfo {
+	return &gerritpb.SubmitInfo{
+		Status: gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[si.Status]),
+	}
+}
