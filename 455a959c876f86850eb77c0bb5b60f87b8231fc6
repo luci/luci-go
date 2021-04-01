@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e8dd489_85ac116d",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-01T05:05:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7eec2968_fcf944f7",
+      "range": {
+        "startLine": 268,
+        "startChar": 29,
+        "endLine": 268,
+        "endChar": 48
+      },
+      "revId": "455a959c876f86850eb77c0bb5b60f87b8231fc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "88e3b88c_e0194c0a",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-03-31T16:05:18Z",
       "side": 1,
       "message": "nit: strpair.Format\nhttps://pkg.go.dev/go.chromium.org/luci/common/data/strpair#Format\n\nsame below",
+      "range": {
+        "startLine": 270,
+        "startChar": 18,
+        "endLine": 270,
+        "endChar": 29
+      },
+      "revId": "455a959c876f86850eb77c0bb5b60f87b8231fc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cff54796_697b4aef",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-01T05:05:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88e3b88c_e0194c0a",
       "range": {
         "startLine": 270,
         "startChar": 18,
