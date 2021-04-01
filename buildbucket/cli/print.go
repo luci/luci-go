@@ -31,9 +31,11 @@ import (
 	"github.com/mgutz/ansi"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text/color"
 	"go.chromium.org/luci/common/data/text/indented"
 
+	bb "go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -166,11 +168,13 @@ func (p *printer) Build(b *pb.Build) {
 		p.summary(b.SummaryMarkdown)
 	}
 
+	experiments := stringset.NewFromSlice(b.Input.GetExperiments()...)
+
 	var systemTags []string
-	if b.Input.GetExperimental() {
+	if experiments.Has(bb.ExperimentNonProduction) {
 		systemTags = append(systemTags, "Experimental")
 	}
-	if b.Canary {
+	if experiments.Has(bb.ExperimentBBCanarySoftware) {
 		systemTags = append(systemTags, "Canary")
 	}
 	if len(systemTags) > 0 {
@@ -219,6 +223,17 @@ func (p *printer) Build(b *pb.Build) {
 	if props := b.Output.GetProperties(); props != nil {
 		p.attr("Output properties")
 		p.JSONPB(props, false)
+	}
+
+	// Experiments
+	if exps := b.Input.GetExperiments(); len(exps) > 0 {
+		p.attr("Experiments")
+		p.f("\n")
+		p.indent.Level += 2
+		for _, exp := range exps {
+			p.f("%s\n", exp)
+		}
+		p.indent.Level -= 2
 	}
 
 	// Steps
