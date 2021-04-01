@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "36cfe5e7_0005ded3",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-01T20:48:10Z",
+      "side": 1,
+      "message": "search replace gone wrong :O",
+      "parentUuid": "c084fe35_102db603",
+      "range": {
+        "startLine": 99,
+        "startChar": 8,
+        "endLine": 99,
+        "endChar": 11
+      },
+      "revId": "2c79a5060bc0b4a21d9d53ba7a3c015f941d0804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "914fb83a_65bbb871",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-01T20:24:59Z",
       "side": 1,
       "message": "nit: can be one line :)",
+      "range": {
+        "startLine": 216,
+        "startChar": 2,
+        "endLine": 217,
+        "endChar": 20
+      },
+      "revId": "2c79a5060bc0b4a21d9d53ba7a3c015f941d0804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8fb4f97_b4acbc54",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-01T20:48:10Z",
+      "side": 1,
+      "message": "😮",
+      "parentUuid": "914fb83a_65bbb871",
       "range": {
         "startLine": 216,
         "startChar": 2,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a5799d7_d5e0bd8a",
+        "filename": "buildbucket/cli/app.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-01T20:48:10Z",
+      "side": 1,
+      "message": "I was tempted to just do this; your complaint has given me additional resolve :). Fixed.",
+      "parentUuid": "ddd55a11_80b62781",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 31
+      },
+      "revId": "2c79a5060bc0b4a21d9d53ba7a3c015f941d0804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "161b090b_23b6ae8f",
@@ -83,6 +155,30 @@
       "writtenOn": "2021-04-01T20:24:59Z",
       "side": 1,
       "message": "\"when communicating with Swarming\"\n\nBuildbucket own ACL checks (e.g. who can trigger and see the build) are not affected by this experiment. They are controlled via `luci.project(..., enforce_realms_in\u003d[...])`.",
+      "range": {
+        "startLine": 549,
+        "startChar": 43,
+        "endLine": 549,
+        "endChar": 51
+      },
+      "revId": "2c79a5060bc0b4a21d9d53ba7a3c015f941d0804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b53ec94c_46da64bc",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 549,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-01T20:48:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "161b090b_23b6ae8f",
       "range": {
         "startLine": 549,
         "startChar": 43,
