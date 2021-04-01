@@ -668,3 +668,58 @@ func TestSetReview(t *testing.T) {
 		})
 	})
 }
+
+func TestSubmitRevision(t *testing.T) {
+	t.Parallel()
+
+	Convey("SubmitRevision", t, func() {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ciBefore := CI(10001, Updated(tc.Now()))
+		f := WithCIs(
+			"example",
+			ACLGrant(OpSubmit, codes.PermissionDenied, "chromium"),
+			ciBefore,
+		)
+		tc.Add(2 * time.Minute)
+		ctx = f.Install(ctx)
+
+		mustWriterClient := func(host, luciProject string) gerrit.CLWriterClient {
+			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
+			So(err, ShouldBeNil)
+			return cl
+		}
+
+		Convey("ACLs enforced", func() {
+			client := mustWriterClient("example", "not-chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: ciBefore.GetCurrentRevision(),
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("Non-existent revision", func() {
+			client := mustWriterClient("example", "chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: "non-existent",
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+		})
+
+		Convey("Works", func() {
+			client := mustWriterClient("example", "chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: ciBefore.GetCurrentRevision(),
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+				Status: gerritpb.ChangeStatus_MERGED,
+			})
+			So(f.GetChange("example", 10001).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+		})
+	})
+}
