@@ -84,6 +84,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c2636a10_fdb58eb2",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-01T23:42:30Z",
+      "side": 1,
+      "message": "update: I think we must do that. Otherwise, there\u0027s no way for us to distinguish 409 and 5XX code in CV.",
+      "parentUuid": "da55a0e7_d5080671",
+      "range": {
+        "startLine": 273,
+        "startChar": 34,
+        "endLine": 273,
+        "endChar": 49
+      },
+      "revId": "7077ff2ed659600a4c37f179d0af1fc73c30caff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8f136107_b569e3f1",
         "filename": "cv/internal/gerrit/gerritfake/client.go",
         "patchSetId": 2
