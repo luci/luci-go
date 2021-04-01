@@ -70,9 +70,6 @@ export class TestResultsTabElement extends MobxLitElement {
     if (searchParams.has('q')) {
       this.invocationState.searchText = searchParams.get('q')!;
     }
-    if (searchParams.has('clean')) {
-      this.invocationState.showEmptyGroups = false;
-    }
     if (searchParams.has('cols')) {
       const cols = searchParams.get('cols')!;
       this.invocationState.columnsParam = cols.split(',').filter((col) => col !== '');
@@ -99,7 +96,6 @@ export class TestResultsTabElement extends MobxLitElement {
 
           const newSearchParams = new URLSearchParams({
             ...(!this.invocationState.searchText ? {} : { q: this.invocationState.searchText }),
-            ...(this.invocationState.showEmptyGroups ? {} : { clean: '' }),
             ...(displayedCols === defaultCols ? {} : { cols: displayedCols }),
             ...(sortingKeys === defaultSortingKeys ? {} : { sortby: sortingKeys }),
             ...(groupingKeys === defaultGroupingKeys ? {} : { groupby: groupingKeys }),
@@ -164,23 +160,6 @@ export class TestResultsTabElement extends MobxLitElement {
   protected render() {
     return html`
       <div id="header">
-        <div class="filters-container">
-          <input
-            id="empty-groups-checkbox"
-            type="checkbox"
-            ?checked=${this.invocationState.showEmptyGroups}
-            @change=${(e: MouseEvent) => {
-              this.invocationState.showEmptyGroups = (e.target as HTMLInputElement).checked;
-              this.configsStore.save();
-            }}
-          />
-          <label for="empty-groups-checkbox" title="Show groups with no tests.">
-            Empty Groups
-            <mwc-icon class="inline-icon">info</mwc-icon>
-          </label>
-        </div>
-        <div class="filters-container-delimiter"></div>
-        <div id="search-label">Search:</div>
         <milo-test-search-filter></milo-test-search-filter>
         <milo-hotkey key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(true)}>Expand All</mwc-button>
@@ -200,15 +179,11 @@ export class TestResultsTabElement extends MobxLitElement {
 
     #header {
       display: grid;
-      grid-template-columns: auto auto auto 1fr auto;
+      grid-template-columns: 1fr auto;
       border-bottom: 1px solid var(--divider-color);
       grid-gap: 5px;
       height: 30px;
       padding: 5px 10px 3px 10px;
-    }
-    #search-label {
-      margin: auto;
-      padding-left: 5px;
     }
     milo-test-search-filter {
       max-width: 800px;
@@ -217,10 +192,6 @@ export class TestResultsTabElement extends MobxLitElement {
       margin-top: 1px;
     }
 
-    input[type='checkbox'] {
-      transform: translateY(1px);
-      margin-right: 3px;
-    }
     .filters-container {
       display: inline-block;
       padding: 4px 5px 0;
