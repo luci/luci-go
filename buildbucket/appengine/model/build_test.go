@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	bb "go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -111,7 +112,7 @@ func TestBuild(t *testing.T) {
 				b := &Build{
 					ID: 1,
 					Experiments: []string{
-						"-luci.use_realms",
+						"-" + bb.ExperimentUseRealms,
 					},
 					Proto: pb.Build{
 						Id: 1,
@@ -130,7 +131,7 @@ func TestBuild(t *testing.T) {
 					ID: 1,
 					Experiments: []string{
 						"+enabled",
-						"+luci.use_realms",
+						"+" + bb.ExperimentUseRealms,
 						"-disabled",
 					},
 					Proto: pb.Build{

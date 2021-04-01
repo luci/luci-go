@@ -16,7 +16,6 @@ package cli
 
 import (
 	"context"
-	"os"
 
 	"github.com/maruel/subcommands"
 
@@ -34,11 +33,6 @@ type Params struct {
 	Auth                   auth.Options
 }
 
-var logCfg = gologger.LoggerConfig{
-	Format: `%{message}`,
-	Out:    os.Stderr,
-}
-
 // application creates the application and configures its subcommands.
 // Ignores p.Auth.Scopes.
 func application(p Params) *cli.Application {
@@ -51,7 +45,7 @@ func application(p Params) *cli.Application {
 		Name:  "bb",
 		Title: "A CLI client for buildbucket.",
 		Context: func(ctx context.Context) context.Context {
-			return logCfg.Use(ctx)
+			return gologger.StdConfig.Use(ctx)
 		},
 		Commands: []*subcommands.Command{
 			cmdAdd(p),
