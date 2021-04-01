@@ -199,6 +199,11 @@ export class TestVariantsTableElement extends MobxLitElement {
     `;
   }
 
+  private tableHeaderEle?: HTMLElement;
+  protected updated() {
+    this.tableHeaderEle = this.shadowRoot!.getElementById('table-header')!;
+  }
+
   protected render() {
     return html`
       <milo-hotkey
@@ -214,7 +219,19 @@ export class TestVariantsTableElement extends MobxLitElement {
           .canHide=${false}
         ></milo-tvt-column-header>
         ${this.invocationState.displayedColumns.map(
-          (col) => html`<milo-tvt-column-header
+          (col, i) => html`<milo-tvt-column-header
+            .colIndex=${i}
+            .tryResizeTo=${(newWidth: number) => {
+              const newColWidths = this.invocationState.columnWidths.slice();
+              newColWidths[i] = newWidth;
+              // Update the style directly so lit-element doesn't need to
+              // re-render the component frequently.
+              this.tableHeaderEle?.style.setProperty('--columns', newColWidths.map((w) => w + 'px').join(' '));
+            }}
+            .resizeTo=${(newWidth: number) => {
+              this.invocationState.customColumnWidths[col] = newWidth;
+              this.tableHeaderEle?.style.removeProperty('--columns');
+            }}
             .propKey=${col}
             .label=${getPropKeyLabel(col)}
           ></milo-tvt-column-header>`
@@ -222,7 +239,6 @@ export class TestVariantsTableElement extends MobxLitElement {
         <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
         </milo-tvt-column-header>
       </div>
-
       <milo-lazy-list id="test-variant-list" .growth=${300} tabindex="-1">${this.renderAllVariants()}</milo-lazy-list>
     `;
   }
