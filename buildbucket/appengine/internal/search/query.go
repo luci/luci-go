@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
@@ -37,6 +36,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -55,18 +55,17 @@ var (
 
 // Query is the intermediate to store the arguments for ds search query.
 type Query struct {
-	Builder             *pb.BuilderID
-	Tags                strpair.Map
-	Status              pb.Status
-	CreatedBy           identity.Identity
-	StartTime           time.Time
-	EndTime             time.Time
-	IncludeExperimental bool
-	BuildIDHigh         int64
-	BuildIDLow          int64
-	Canary              *bool
-	PageSize            int32
-	PageToken           string
+	Builder     *pb.BuilderID
+	Tags        strpair.Map
+	Status      pb.Status
+	CreatedBy   identity.Identity
+	StartTime   time.Time
+	EndTime     time.Time
+	Experiments []string
+	BuildIDHigh int64
+	BuildIDLow  int64
+	PageSize    int32
+	PageToken   string
 }
 
 // NewQuery builds a Query from pb.SearchBuildsRequest.
@@ -81,15 +80,15 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 
 	p := req.Predicate
 	q := &Query{
-		Builder:             p.GetBuilder(),
-		Tags:                protoutil.StringPairMap(p.Tags),
-		Status:              p.Status,
-		CreatedBy:           identity.Identity(fixCreatedBy(p.CreatedBy)),
-		StartTime:           mustTimestamp(p.CreateTime.GetStartTime()),
-		EndTime:             mustTimestamp(p.CreateTime.GetEndTime()),
-		IncludeExperimental: p.IncludeExperimental,
-		PageSize:            fixPageSize(req.PageSize),
-		PageToken:           req.PageToken,
+		Builder:     p.GetBuilder(),
+		Tags:        protoutil.StringPairMap(p.Tags),
+		Status:      p.Status,
+		CreatedBy:   identity.Identity(fixCreatedBy(p.CreatedBy)),
+		StartTime:   mustTimestamp(p.CreateTime.GetStartTime()),
+		EndTime:     mustTimestamp(p.CreateTime.GetEndTime()),
+		Experiments: p.Experiments,
+		PageSize:    fixPageSize(req.PageSize),
+		PageToken:   req.PageToken,
 	}
 
 	// Filter by gerrit changes.
@@ -112,9 +111,17 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 	}
 
 	// Filter by canary.
-	if p.GetCanary() != pb.Trinary_UNSET {
-		q.Canary = proto.Bool(p.GetCanary() == pb.Trinary_YES)
+	if c := p.GetCanary(); c == pb.Trinary_YES {
+		q.Experiments = append(q.Experiments, "+"+bb.ExperimentBBCanarySoftware)
+	} else if c == pb.Trinary_NO {
+		q.Experiments = append(q.Experiments, "-"+bb.ExperimentBBCanarySoftware)
 	}
+
+	// Apply IncludeExperimental
+	if !p.IncludeExperimental {
+		q.Experiments = append(q.Experiments, "-"+bb.ExperimentNonProduction)
+	}
+
 	return q
 }
 
@@ -202,8 +209,15 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	if q.CreatedBy != "" {
 		dq = dq.Eq("created_by", q.CreatedBy)
 	}
-	if q.Canary != nil {
-		dq = dq.Eq("canary", *q.Canary)
+
+	var dropExperimental bool
+	for _, exp := range q.Experiments {
+		if exp == "-"+bb.ExperimentNonProduction {
+			// filter these in post
+			dropExperimental = true
+		} else {
+			dq = dq.Eq("experiments", exp)
+		}
 	}
 
 	idLow, idHigh := q.idRange()
@@ -251,8 +265,13 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 
 		// Filter here instead of at the datastore level to reduce the zigzag merge
 		// in index scans as majority builds are non-experimental.
-		if b.Experimental && !q.IncludeExperimental {
-			return nil
+		if dropExperimental {
+			target := "+" + bb.ExperimentNonProduction
+			for _, exp := range b.Experiments {
+				if exp == target {
+					return nil
+				}
+			}
 		}
 
 		rsp.Builds = append(rsp.Builds, b.ToSimpleBuildProto(ctx))
@@ -343,9 +362,10 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 				(q.Status != pb.Status_STATUS_UNSPECIFIED && q.Status != pb.Status_ENDED_MASK && q.Status != b.Status) ||
 				(q.CreatedBy != "" && q.CreatedBy != b.CreatedBy) ||
 				(q.Builder.GetBuilder() != "" && b.Proto.Builder.Builder != q.Builder.Builder) ||
-				(q.Builder.GetProject() != "" && b.Proto.Builder.Project != q.Builder.Project) ||
-				(b.Experimental && !q.IncludeExperimental) ||
-				(q.Canary != nil && *q.Canary != b.Canary) {
+				(q.Builder.GetProject() != "" && b.Proto.Builder.Project != q.Builder.Project) {
+				continue
+			}
+			if !stringset.NewFromSlice(b.Experiments...).HasAll(q.Experiments...) {
 				continue
 			}
 			results = append(results, b.ToSimpleBuildProto(ctx))
