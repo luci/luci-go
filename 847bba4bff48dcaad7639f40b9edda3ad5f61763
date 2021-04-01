@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "abc790ba_a53ed64d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-01T20:07:39Z",
+      "side": 1,
+      "message": "We can use stringset.Set and initialize it with `stringset.NewFromSlice(p.Experiments...)` in NewQuery. So when it checks if an item exists later, it doesn\u0027t need to use for loop. It can also dedup.",
+      "range": {
+        "startLine": 64,
+        "startChar": 13,
+        "endLine": 64,
+        "endChar": 21
+      },
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "90bfa2e3_c4469cfb",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-01T20:07:39Z",
+      "side": 1,
+      "message": "Is this backward compatibility? Does it mean we plan to populate the experiments field for all old builds in datastore according to build.canary value?",
+      "range": {
+        "startLine": 114,
+        "startChar": 4,
+        "endLine": 114,
+        "endChar": 43
+      },
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c2c1773_3a4cc82d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-01T20:07:39Z",
+      "side": 1,
+      "message": "same as above",
+      "range": {
+        "startLine": 121,
+        "startChar": 1,
+        "endLine": 121,
+        "endChar": 27
+      },
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48e668d0_cc43f574",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-01T20:07:39Z",
+      "side": 1,
+      "message": "A general question: do we need to add `noindex` in the Build.Experiments in model?  Because we don\u0027t directly search by Experiments field.",
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
