@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "67f8a0aa_3e6be319",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_column_header.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-01T00:20:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2af5318f_5f645569",
+      "range": {
+        "startLine": 43,
+        "startChar": 13,
+        "endLine": 43,
+        "endChar": 22
+      },
+      "revId": "2b71ebd53fd3e74cb69d59b06dd7ef03e268dc5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4562577d_45d3c167",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "11a3b4bc_51f79603",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_column_header.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-01T00:20:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4562577d_45d3c167",
+      "range": {
+        "startLine": 71,
+        "startChar": 61,
+        "endLine": 71,
+        "endChar": 68
+      },
+      "revId": "2b71ebd53fd3e74cb69d59b06dd7ef03e268dc5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66286446_83a8a6ed",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-03-31T21:22:29Z",
       "side": 1,
       "message": "How about \"Group test variants on ${this.propKey}\"?",
+      "range": {
+        "startLine": 74,
+        "startChar": 10,
+        "endLine": 74,
+        "endChar": 19
+      },
+      "revId": "2b71ebd53fd3e74cb69d59b06dd7ef03e268dc5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bec55c6a_7e0f3b2c",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_column_header.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-01T00:20:48Z",
+      "side": 1,
+      "message": "updated to group by ${this.label}.",
+      "parentUuid": "66286446_83a8a6ed",
       "range": {
         "startLine": 74,
         "startChar": 10,
