@@ -46,6 +46,30 @@
       },
       "revId": "f3db9a70ff7ed7f41faff8e695358a65ab0ce9e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f24c37f2_c828f49e",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-01T16:00:38Z",
+      "side": 1,
+      "message": "Let me see if I can refactor this to do less copying/parsing",
+      "parentUuid": "283c6bc5_0768bbba",
+      "range": {
+        "startLine": 214,
+        "startChar": 8,
+        "endLine": 214,
+        "endChar": 21
+      },
+      "revId": "f3db9a70ff7ed7f41faff8e695358a65ab0ce9e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
