@@ -1378,6 +1378,172 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
+	Convey("setTags", t, func() {
+		Convey("nil", func() {
+			ent := &model.Build{}
+
+			setTags(nil, ent)
+			So(ent.Tags, ShouldBeEmpty)
+			So(ent.Proto.Tags, ShouldBeNil)
+		})
+
+		Convey("request", func() {
+			req := &pb.ScheduleBuildRequest{
+				Tags: []*pb.StringPair{
+					{
+						Key:   "key2",
+						Value: "value2",
+					},
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
+			}
+			ent := &model.Build{}
+
+			setTags(req, ent)
+			So(ent.Tags, ShouldResemble, []string{
+				"key1:value1",
+				"key2:value2",
+			})
+			So(ent.Proto.Tags, ShouldBeNil)
+		})
+
+		Convey("builder", func() {
+			req := &pb.ScheduleBuildRequest{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			}
+			ent := &model.Build{}
+
+			setTags(req, ent)
+			So(ent.Tags, ShouldResemble, []string{
+				"builder:builder",
+			})
+			So(ent.Proto.Tags, ShouldBeNil)
+		})
+
+		Convey("gitiles commit", func() {
+			req := &pb.ScheduleBuildRequest{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:    "host",
+					Project: "project",
+					Id:      "id",
+					Ref:     "ref",
+				},
+			}
+			ent := &model.Build{}
+
+			setTags(req, ent)
+			So(ent.Tags, ShouldResemble, []string{
+				"buildset:commit/gitiles/host/project/+/id",
+				"gitiles_ref:ref",
+			})
+			So(ent.Proto.Tags, ShouldBeNil)
+		})
+
+		Convey("gerrit changes", func() {
+			Convey("one", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{
+							Host:     "host",
+							Change:   1,
+							Patchset: 2,
+						},
+					},
+				}
+				ent := &model.Build{}
+
+				setTags(req, ent)
+				So(ent.Tags, ShouldResemble, []string{
+					"buildset:patch/gerrit/host/1/2",
+				})
+				So(ent.Proto.Tags, ShouldBeNil)
+			})
+
+			Convey("many", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{
+							Host:     "host",
+							Change:   3,
+							Patchset: 4,
+						},
+						{
+							Host:     "host",
+							Change:   1,
+							Patchset: 2,
+						},
+					},
+				}
+				ent := &model.Build{}
+
+				setTags(req, ent)
+				So(ent.Tags, ShouldResemble, []string{
+					"buildset:patch/gerrit/host/1/2",
+					"buildset:patch/gerrit/host/3/4",
+				})
+				So(ent.Proto.Tags, ShouldBeNil)
+			})
+		})
+
+		Convey("various", func() {
+			req := &pb.ScheduleBuildRequest{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				GerritChanges: []*pb.GerritChange{
+					{
+						Host:     "host",
+						Change:   3,
+						Patchset: 4,
+					},
+					{
+						Host:     "host",
+						Change:   1,
+						Patchset: 2,
+					},
+				},
+				GitilesCommit: &pb.GitilesCommit{
+					Host:    "host",
+					Project: "project",
+					Id:      "id",
+					Ref:     "ref",
+				},
+				Tags: []*pb.StringPair{
+					{
+						Key:   "key2",
+						Value: "value2",
+					},
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
+			}
+			ent := &model.Build{}
+
+			setTags(req, ent)
+			So(ent.Tags, ShouldResemble, []string{
+				"builder:builder",
+				"buildset:commit/gitiles/host/project/+/id",
+				"buildset:patch/gerrit/host/1/2",
+				"buildset:patch/gerrit/host/3/4",
+				"gitiles_ref:ref",
+				"key1:value1",
+				"key2:value2",
+			})
+			So(ent.Proto.Tags, ShouldBeNil)
+		})
+	})
+
 	Convey("ScheduleBuild", t, func() {
 		srv := &Builds{}
 		ctx, _ := testclock.UseTime(mathrand.Set(txndefer.FilterRDS(memory.Use(context.Background())), rand.New(rand.NewSource(0))), testclock.TestRecentTimeUTC)
