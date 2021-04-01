@@ -335,6 +335,16 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 	return resp.ToProto()
 }
 
+func (c *client) SubmitRevision(ctx context.Context, req *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error) {
+	var resp submitInfo
+	path := fmt.Sprintf("/changes/%s/revisions/%s/submit", gerritChangeIDForRouting(req.Number, req.Project), req.RevisionId)
+	var data struct{}
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+		return nil, errors.Annotate(err, "submit revision").Err()
+	}
+	return resp.ToProto(), nil
+}
+
 func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
 	var resp mergeableInfo
 	path := fmt.Sprintf("/changes/%s/revisions/%s/mergeable", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
