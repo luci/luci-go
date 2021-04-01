@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { html, TemplateResult } from 'lit-html';
+
 import { Suggestion } from '../components/auto_complete';
 import { TestVariant } from '../services/resultdb';
 

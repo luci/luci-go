@@ -24,10 +24,10 @@ import { computed, observable, reaction } from 'mobx';
 import './tvt_column_header';
 import '../dot_spinner';
 import './test_variant_entry';
-import { TestVariantEntryElement } from './test_variant_entry';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
+import { TestVariantEntryElement } from './test_variant_entry';
 
 function getPropKeyLabel(key: string) {
   // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.

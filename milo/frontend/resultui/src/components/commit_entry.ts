@@ -18,9 +18,9 @@ import { css, customElement, html } from 'lit-element';
 import { DateTime } from 'luxon';
 import MarkdownIt from 'markdown-it';
 import { computed, observable } from 'mobx';
-import { bugnizerLink } from '../libs/markdown_it_plugins/bugnizer_link';
 
 import { bugLine } from '../libs/markdown_it_plugins/bug_line';
+import { bugnizerLink } from '../libs/markdown_it_plugins/bugnizer_link';
 import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
 import { defaultTarget } from '../libs/markdown_it_plugins/default_target';
 import { reviewerLine } from '../libs/markdown_it_plugins/reviewer_line';

@@ -16,10 +16,10 @@ import fs from 'fs';
 import path from 'path';
 
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { DefinePlugin } from 'webpack';
 import merge from 'webpack-merge';
 
 import common from './webpack.common';
-import { DefinePlugin } from 'webpack';
 
 export default merge(common, {
   mode: 'development',
