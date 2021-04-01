@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
@@ -225,11 +226,11 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	}
 
 	// Legacy.
-	if _, ok := exps["luci.buildbucket.canary_software"]; !ok && req.GetCanary() != pb.Trinary_UNSET {
-		exps["luci.buildbucket.canary_software"] = req.Canary == pb.Trinary_YES
+	if _, ok := exps[bb.ExperimentBBCanarySoftware]; !ok && req.GetCanary() != pb.Trinary_UNSET {
+		exps[bb.ExperimentBBCanarySoftware] = req.Canary == pb.Trinary_YES
 	}
-	if _, ok := exps["luci.non_production"]; !ok && req.GetExperimental() != pb.Trinary_UNSET {
-		exps["luci.non_production"] = req.Experimental == pb.Trinary_YES
+	if _, ok := exps[bb.ExperimentNonProduction]; !ok && req.GetExperimental() != pb.Trinary_UNSET {
+		exps[bb.ExperimentNonProduction] = req.Experimental == pb.Trinary_YES
 	}
 
 	for exp, pct := range cfg.GetExperiments() {
@@ -250,11 +251,11 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	}
 
 	// Set legacy field values.
-	if en := exps["luci.buildbucket.canary_software"]; en {
+	if en := exps[bb.ExperimentBBCanarySoftware]; en {
 		build.Canary = true
 		build.Proto.Canary = true
 	}
-	if en := exps["luci.non_production"]; en {
+	if en := exps[bb.ExperimentNonProduction]; en {
 		build.Experimental = true
 		build.Proto.Input.Experimental = true
 	}
