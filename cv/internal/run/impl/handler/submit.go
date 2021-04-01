@@ -16,10 +16,14 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -31,9 +35,91 @@ import (
 )
 
 // OnReadyForSubmission implements Handler interface.
-func (*Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
-	// TODO(yiwzhang): implement
-	return &Result{State: rs}, nil
+func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
+	switch status := rs.Run.Status; {
+	case run.IsEnded(status):
+		// It is safe to discard this event because this event either
+		//  * arrives after Run gets cancelled while waiting for submission.
+		//  * is sent by OnCQDVerificationCompleted handler as a fail-safe and Run
+		//    submission has already completed.
+		logging.Debugf(ctx, "received ReadyForSubmission event when Run is %s", status)
+		// Under certain race condition, this Run may still occupy the submit
+		// queue. So, check first without a transaction and then initiate a
+		// transaction to release if this Run is current.
+		switch current, err := submit.CurrentRun(ctx, rs.Run.ID.LUCIProject()); {
+		case err != nil:
+			return nil, err
+		case current == rs.Run.ID:
+			var innerErr error
+			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				innerErr = submit.Release(ctx, rs.Run.ID)
+				return innerErr
+			}, nil)
+			switch {
+			case innerErr != nil:
+				return nil, innerErr
+			case err != nil:
+				return nil, errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
+			}
+		}
+		return &Result{State: rs}, nil
+	case status == run.Status_SUBMITTING:
+		if rs.Run.Submission.GetDeadline() == nil {
+			panic(fmt.Errorf("impossible; run %q is submitting but Run.Submission.Deadline is not set", rs.Run.ID))
+		}
+		if deadline := rs.Run.Submission.Deadline.AsTime(); deadline.After(clock.Now(ctx)) {
+			// Deadline hasn't expired yet. Presumably another task is still working
+			// on the submission. So poke as soon as the deadline expires.
+			if err := run.PokeAt(ctx, rs.Run.ID, deadline); err != nil {
+				return nil, err
+			}
+			return &Result{State: rs}, nil
+		}
+		// Deadline has already expired. Try to acquire submit queue again
+		// and attempt another submission if not waitlisted. Otherwise,
+		// falls back to WAITING_FOR_SUBMISSION status.
+		switch waitlist, err := acquireSubmitQueue(ctx, rs); {
+		case err != nil:
+			return nil, err
+		case waitlist:
+			rs = rs.ShallowCopy()
+			rs.Run.Status = run.Status_WAITING_FOR_SUBMISSION
+			rs.Run.Submission.Deadline = nil
+			return &Result{State: rs}, nil
+		}
+		fallthrough // re-acquired submit queue successfully, try submitting again.
+	case status == run.Status_RUNNING || status == run.Status_WAITING_FOR_SUBMISSION:
+		rs = rs.ShallowCopy()
+		markSubmitting(ctx, rs)
+		s := submitter{}
+		return &Result{
+			State:         rs,
+			PostProcessFn: s.submit,
+		}, nil
+	default:
+		panic(fmt.Errorf("impossible status %s", status))
+	}
+}
+
+const defaultSubmissionDuration = 30 * time.Second
+
+func markSubmitting(ctx context.Context, rs *state.RunState) error {
+	rs.Run.Status = run.Status_SUBMITTING
+	if rs.Run.Submission == nil {
+		rs.Run.Submission = &run.Submission{}
+		var err error
+		if rs.Run.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.Run.CLs, rs.Run.ID, rs.Run.Submission); err != nil {
+			return err
+		}
+	}
+	deadline, ok := ctx.Deadline()
+	if ok {
+		rs.Run.Submission.Deadline = timestamppb.New(deadline.UTC())
+	} else {
+		rs.Run.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(defaultSubmissionDuration))
+	}
+	rs.Run.Submission.AttemptCount += 1
+	return nil
 }
 
 // OnCLSubmitted implements Handler interface.
@@ -109,4 +195,11 @@ func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID 
 		ret[i] = int64(cl.ID)
 	}
 	return ret, nil
+}
+
+type submitter struct {
+}
+
+func (s submitter) submit(ctx context.Context) error {
+	return errors.New("not implemented")
 }
