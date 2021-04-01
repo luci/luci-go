@@ -49,6 +49,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ffa9d710_ab185839",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-01T23:48:53Z",
+      "side": 1,
+      "message": "Not _all_ old builds, but at least 6+ months of them already have this experiment set (as well as the non_production experiment).\n\nFor example http://shortn/_GpOBsnEzcn is from September of last year and has negative canary and non_production experiments indexed in the datastore.\n\nSo, I think that\u0027s a long enough history to switch (I doubt anyone is doing SearchBuilds calls past that point instead of BQ?)",
+      "parentUuid": "90bfa2e3_c4469cfb",
+      "range": {
+        "startLine": 114,
+        "startChar": 4,
+        "endLine": 114,
+        "endChar": 43
+      },
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4c2c1773_3a4cc82d",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 2
@@ -60,6 +84,30 @@
       "writtenOn": "2021-04-01T20:07:39Z",
       "side": 1,
       "message": "same as above",
+      "range": {
+        "startLine": 121,
+        "startChar": 1,
+        "endLine": 121,
+        "endChar": 27
+      },
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4df5640f_91678e96",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-01T23:48:53Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4c2c1773_3a4cc82d",
       "range": {
         "startLine": 121,
         "startChar": 1,
