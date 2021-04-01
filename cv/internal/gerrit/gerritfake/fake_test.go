@@ -668,3 +668,105 @@ func TestSetReview(t *testing.T) {
 		})
 	})
 }
+
+func TestSubmitRevision(t *testing.T) {
+	t.Parallel()
+
+	Convey("SubmitRevision", t, func() {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ci := CI(10001, Updated(tc.Now()), PS(3), AllRevs())
+		f := WithCIs(
+			"example.com",
+			ACLGrant(OpSubmit, codes.PermissionDenied, "chromium"),
+			ci,
+		)
+		tc.Add(2 * time.Minute)
+		ctx = f.Install(ctx)
+
+		mustWriterClient := func(host, luciProject string) gerrit.CLWriterClient {
+			cl, err := gerrit.CurrentClient(ctx, host, luciProject)
+			So(err, ShouldBeNil)
+			return cl
+		}
+
+		Convey("ACLs enforced", func() {
+			client := mustWriterClient("example.com", "not-chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: ci.GetCurrentRevision(),
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("Non-existent revision", func() {
+			client := mustWriterClient("example.com", "chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: "non-existent",
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("Old revision", func() {
+			client := mustWriterClient("example.com", "chromium")
+			var oldRev string
+			for rev := range ci.GetRevisions() {
+				if rev != ci.GetCurrentRevision() {
+					oldRev = rev
+					break
+				}
+			}
+			So(oldRev, ShouldNotBeEmpty)
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: oldRev,
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
+			So(err, ShouldErrLike, "is not current")
+		})
+
+		Convey("Works", func() {
+			client := mustWriterClient("example.com", "chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: ci.GetCurrentRevision(),
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+				Status: gerritpb.ChangeStatus_MERGED,
+			})
+			So(f.GetChange("example.com", 10001).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+		})
+
+		Convey("Already Merged", func() {
+			f.MutateChange("example.com", 10001, func(c *Change) {
+				c.Info.Status = gerritpb.ChangeStatus_MERGED
+			})
+			client := mustWriterClient("example.com", "chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: ci.GetCurrentRevision(),
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
+			So(err, ShouldErrLike, "change is merged")
+		})
+
+		Convey("Abandoned", func() {
+			f.MutateChange("example.com", 10001, func(c *Change) {
+				c.Info.Status = gerritpb.ChangeStatus_ABANDONED
+			})
+			client := mustWriterClient("example.com", "chromium")
+			res, err := client.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+				Number:     10001,
+				RevisionId: ci.GetCurrentRevision(),
+			})
+			So(res, ShouldBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
+			So(err, ShouldErrLike, "change is abandoned")
+		})
+	})
+}

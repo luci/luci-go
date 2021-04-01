@@ -228,26 +228,8 @@ func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewReque
 	if err := client.setReviewEnforceACLs(in, ch); err != nil {
 		return nil, err
 	}
-	// Always push Updated time forward.
-	now := clock.Now(ctx).UTC() // UTC is for easy to read logs
-	switch u := ch.Info.GetUpdated().AsTime(); {
-	case now.Before(u):
-		panic(fmt.Errorf("Clock's time [%s] is before the Updated time [%s]", now, u))
-	case u.Equal(now):
-		if tclock, ok := clock.Get(ctx).(testclock.TestClock); ok {
-			logging.Debugf(ctx, "testclock.Time += 1second to ensure increasing Updated time")
-			tclock.Add(time.Second)
-			now = tclock.Now()
-		} else {
-			return nil, status.Errorf(
-				codes.Internal,
-				"Clock's time [%s] is equal to the Updated time [%s] and not running in test",
-				now, u,
-			)
-		}
-	}
-	ch.Info.Updated = timestamppb.New(now)
-
+	ch.Info.Updated = calcUpdatedTime(ctx, ch.Info.GetUpdated())
+	now := clock.Now(ctx).UTC()
 	if in.Message != "" {
 		ch.Info.Messages = append(ch.Info.Messages, &gerritpb.ChangeMessageInfo{
 			Id:      strconv.Itoa(len(ch.Info.Messages)),
@@ -268,6 +250,47 @@ func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewReque
 	}
 
 	return &gerritpb.ReviewResult{Labels: in.GetLabels()}, nil
+}
+
+// Submit a specific revision of a change.
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
+func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error) {
+	client.f.m.Lock()
+	defer client.f.m.Unlock()
+	client.f.recordRequest(in)
+
+	ch, found := client.f.cs[key(client.host, int(in.GetNumber()))]
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "change %s/%d not found", client.host, in.GetNumber())
+	}
+	if status := ch.ACLs(OpSubmit, client.luciProject); status.Code() != codes.OK {
+		return nil, status.Err()
+	}
+
+	rev := in.GetRevisionId()
+	if _, ok := ch.Info.GetRevisions()[rev]; !ok {
+		return nil, status.Errorf(codes.NotFound, "revision %s not found", rev)
+	}
+	if rev != ch.Info.GetCurrentRevision() {
+		return nil, status.Errorf(codes.Internal, "revision %s is not current revision", rev)
+	}
+
+	switch ch.Info.GetStatus() {
+	case gerritpb.ChangeStatus_NEW:
+		ch.Info.Status = gerritpb.ChangeStatus_MERGED
+		// Most projects use a submit strategy which always creates a new patchset.
+		// simulate the behavior here.
+		PS(int(ch.Info.GetRevisions()[rev].GetNumber() + 1))(ch.Info)
+		ch.Info.Updated = calcUpdatedTime(ctx, ch.Info.Updated)
+		return &gerritpb.SubmitInfo{Status: gerritpb.ChangeStatus_MERGED}, nil
+	case gerritpb.ChangeStatus_MERGED:
+		return nil, status.Errorf(codes.Internal, "change is merged")
+	case gerritpb.ChangeStatus_ABANDONED:
+		return nil, status.Errorf(codes.Internal, "change is abandoned")
+	default:
+		panic(fmt.Errorf("unrecognized status %s", ch.Info.GetStatus()))
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -359,6 +382,23 @@ func applyChangeOpts(change *Change, opts []gerritpb.QueryOption) *gerritpb.Chan
 	}
 
 	return ci
+}
+
+// calcUpdatedTime always push Updated time forward.
+func calcUpdatedTime(ctx context.Context, curUpdatedTime *timestamppb.Timestamp) *timestamppb.Timestamp {
+	now := clock.Now(ctx).UTC() // UTC is for easy to read logs
+	switch u := curUpdatedTime.AsTime(); {
+	case now.Before(u):
+		panic(fmt.Errorf("clock's time [%s] is before the Updated time [%s]", now, u))
+	case u.Equal(now):
+		if tclock, ok := clock.Get(ctx).(testclock.TestClock); ok {
+			logging.Debugf(ctx, "testclock.Time += 1second to ensure increasing Updated time")
+			tclock.Add(time.Second)
+			return timestamppb.New(tclock.Now())
+		}
+		panic(fmt.Errorf("clock's time [%s] is equal to the Updated time [%s] and not running in test", now, u))
+	}
+	return timestamppb.New(now)
 }
 
 type parsedListChangesQuery struct {
