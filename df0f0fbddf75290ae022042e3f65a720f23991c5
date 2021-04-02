@@ -72,6 +72,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "5867edf2_47daf65d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T05:50:56Z",
+      "side": 1,
+      "message": "About your suggestion, do you mean we return nil when getting ErrClosedPipe during write?\n\nI think it should solve our problem. \n\nBut I don\u0027t really know why this problem could happen in the first place. I mean this is the only error we got, so it seems that reader side exits gracefully, which means reader reads EOF, and if so writer shouldn\u0027t have any subsequent writes (because there\u0027s already EOF).",
+      "parentUuid": "b6da9d8b_03c45e59",
+      "revId": "df0f0fbddf75290ae022042e3f65a720f23991c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "9e17c6c1_e2ab6bdd",
