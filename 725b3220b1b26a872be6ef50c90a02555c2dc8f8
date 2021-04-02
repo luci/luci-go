@@ -90,6 +90,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ce95aac6_d0ebef5b",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T21:40:12Z",
+      "side": 1,
+      "message": "Without it, the now erred with \"read/write on closed pipe\" tasks will still stuck, but with a more correct error \"line too long\", right?\n\nI can potentially split this CL into 2, and use this one to check sc.Err() then another one to handle long line. But I don\u0027t really see it as a problem to use one CL to do both.",
+      "parentUuid": "3405e540_31ea927a",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 4
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77d24a94_fcde6300",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 8
