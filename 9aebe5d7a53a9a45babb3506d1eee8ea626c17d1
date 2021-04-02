@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbb91d25_9ea1c999",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-02T09:41:03Z",
+      "side": 1,
+      "message": "Have to first choose to use the UpdateToken in build number invocation response, in order to work for this situation: build id invocation already exists while build number invocation doesn\u0027t.",
+      "range": {
+        "startLine": 120,
+        "startChar": 7,
+        "endLine": 120,
+        "endChar": 86
+      },
+      "revId": "9aebe5d7a53a9a45babb3506d1eee8ea626c17d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

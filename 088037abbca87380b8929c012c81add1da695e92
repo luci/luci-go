@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "adf93665_bc4a0ac5",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-02T09:41:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d072611e_f704297b",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 8
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d2d33369_0dab3e16",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-03-31T07:03:38Z",
       "side": 1,
       "message": "Consider a short explanation of why you\u0027re building this map as well.",
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "add6aad1_02f75d53",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-02T09:41:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2d33369_0dab3e16",
       "revId": "088037abbca87380b8929c012c81add1da695e92",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -105,6 +147,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "85345d32_5a398a89",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-02T09:41:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8928e02_7e099a33",
+      "range": {
+        "startLine": 59,
+        "startChar": 65,
+        "endLine": 59,
+        "endChar": 125
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3abdf13e_f7fb6545",
@@ -128,6 +194,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "23f18b77_d3afc22a",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-02T09:41:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3abdf13e_f7fb6545",
+      "range": {
+        "startLine": 81,
+        "startChar": 73,
+        "endLine": 81,
+        "endChar": 77
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ba298eed_ea21dfcf",
@@ -141,6 +231,30 @@
       "writtenOn": "2021-03-31T04:47:22Z",
       "side": 1,
       "message": "Move the client creation out here to make it shared between goroutines?",
+      "range": {
+        "startLine": 112,
+        "startChar": 4,
+        "endLine": 115,
+        "endChar": 5
+      },
+      "revId": "088037abbca87380b8929c012c81add1da695e92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "488e5118_4ce04497",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-02T09:41:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba298eed_ea21dfcf",
       "range": {
         "startLine": 112,
         "startChar": 4,
