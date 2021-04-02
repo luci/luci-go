@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
@@ -119,15 +120,15 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		}
 	}
 
-	return ac.DownloadRBECASContent(ctx, b.rbecasClient, func(pr io.Reader) error {
+	return ac.DownloadRBECASContent(ctx, b.rbecasClient, func(c context.Context, pr io.Reader) error {
 		sc := bufio.NewScanner(pr)
 		for sc.Scan() {
 			// TODO(crbug.com/1149736): handle the case that a single line is 5MB+.
 			// If such case happens, we should split the line.
 			if str.Len()+len(sc.Bytes())+len(lineBreak) > contentShardSize {
 				select {
-				case <-ctx.Done():
-					return ctx.Err()
+				case <-c.Done():
+					return errors.Annotate(c.Err(), "read rbe cas content").Err()
 				case rowC <- input():
 				}
 				shardId++
@@ -138,8 +139,8 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		}
 		if str.Len() > 0 {
 			select {
-			case <-ctx.Done():
-				return ctx.Err()
+			case <-c.Done():
+				return errors.Annotate(c.Err(), "read rbe cas content").Err()
 			case rowC <- input():
 			}
 		}
