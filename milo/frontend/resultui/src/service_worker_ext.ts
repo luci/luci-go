@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(weiweilin): add integration tests to ensure the SW works properly.
+
 import { get as kvGet, set as kvSet } from 'idb-keyval';
 
 import { cached } from './libs/cached_fn';
 import { PrpcClientExt } from './libs/prpc_client_ext';
+import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
 import { timeout } from './libs/utils';
 import { BuildsService, GetBuildRequest } from './services/buildbucket';
 
@@ -26,6 +29,7 @@ importScripts('/configs.js');
 const _self = (self as unknown) as ServiceWorkerGlobalScope;
 
 const AUTH_STATE_KEY = 'auth-state';
+const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
 
 export interface SetAuthStateEventData {
   type: 'SET_AUTH_STATE';
@@ -33,29 +37,13 @@ export interface SetAuthStateEventData {
 }
 
 const cachedFetch = cached(
-  // _expiresIn is not used here but is used in the expire function below.
-  // _expiresIn is listed here to help TSC generates the correct type
-  // definition.
-  (info: RequestInfo, init: RequestInit | undefined, _expiresIn: number) => fetch(info, init),
+  // _cacheKey and _expiresIn are not used here but is used in the expire
+  // and key functions below.
+  // they are listed here to help TSC generates the correct type definition.
+  (info: RequestInfo, init: RequestInit | undefined, _cacheKey: unknown, _expiresIn: number) => fetch(info, init),
   {
-    key: (info, init) => {
-      const req = new Request(info, init);
-      let body: string | undefined = undefined;
-      if (req.body) {
-        body = init?.body?.toString();
-        // If we can't get the string representation of the body, we can't
-        // compare the request with others. Return a unique key.
-        if (body === undefined) {
-          return {};
-        }
-      }
-      return JSON.stringify({
-        ...req,
-        headers: [...req.headers].sort(([k1, v1], [k2, v2]) => k1.localeCompare(k2) || v1.localeCompare(v2)),
-        body,
-      });
-    },
-    expire: ([, , expiresIn]) => timeout(expiresIn),
+    key: (_info, _init, cacheKey) => cacheKey,
+    expire: ([, , , expiresIn]) => timeout(expiresIn),
   }
 );
 
@@ -103,7 +91,8 @@ _self.addEventListener('fetch', async (e) => {
           // The response can't be reused, don't keep it in cache.
           { skipUpdate: true, invalidateCache: true },
           e.request,
-          { body: await e.request.clone().text() },
+          undefined,
+          await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, e.request.clone()),
           0
         );
         return res;
@@ -121,7 +110,7 @@ async function prefetchResources(reqUrl: URL) {
   if (!match) {
     return;
   }
-  const [, project, bucket, builder, buildIdOrNum] = match as string[];
+  const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
   const req: GetBuildRequest = buildIdOrNum.startsWith('b')
     ? { id: buildIdOrNum.slice(1), fields: '*' }
     : { builder: { project, bucket, builder }, buildNumber: Number(buildIdOrNum), fields: '*' };
@@ -132,8 +121,15 @@ async function prefetchResources(reqUrl: URL) {
       {
         host: CONFIGS.BUILDBUCKET.HOST,
         fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
-          // Because build info is time sensitive, don't keep it too long.
-          await cachedFetch({}, info, init, 5000);
+          const req = new Request(info, init);
+          await cachedFetch(
+            {},
+            req,
+            undefined,
+            await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
+            // Because build info is time sensitive, don't keep it too long.
+            5000
+          );
 
           // Abort the function to prevent the response from being consumed.
           throw 0;
