@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd68d317_99f01057",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-02T07:40:40Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-0-dot-luci-milo.appspot.com/ui/p/chromium/builders/ci/Win%207%20Tests%20x64%20(1)/78921/overview",
+      "revId": "51f4b882f2ed9593f5f9fe98a9773e59b6016046",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
