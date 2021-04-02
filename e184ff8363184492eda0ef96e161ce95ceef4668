@@ -3,6 +3,40 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ea321062_f2d55e2c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-02T15:25:34Z",
+      "side": 1,
+      "message": "Seems more straightforward now.",
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11d944b2_3c31e4cc",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-02T15:25:34Z",
+      "side": 1,
+      "message": "%q for builder name since it may contain spaces.",
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a6a9c78b_cdbc60dc",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 6
@@ -20,6 +54,63 @@
         "endLine": 73,
         "endChar": 17
       },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "767d2f38_8668d657",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-02T15:25:34Z",
+      "side": 1,
+      "message": "recoder -\u003e recorder.",
+      "range": {
+        "startLine": 73,
+        "startChar": 4,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45d026b5_9de03809",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-02T15:25:34Z",
+      "side": 1,
+      "message": "I think \"already exists\" should not be filtered, I assume it means \"already exists but request ID was different\" (otherwise it should dedupe), in which case it probably doesn\u0027t have an update token anyway. Might as well fail here.\n\nOr does it still return an update token?",
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08998a25_24802052",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-02T15:25:34Z",
+      "side": 1,
+      "message": "Is this the same update token? I\u0027d just remove this comment and move it above so it always comes from the first request. It should be clear that we don\u0027t need to save the second invocation\u0027s update token because it\u0027s just a reference to the first.",
       "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
