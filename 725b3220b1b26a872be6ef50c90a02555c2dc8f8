@@ -66,6 +66,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3405e540_31ea927a",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T21:30:31Z",
+      "side": 1,
+      "message": "also, fixing this TODO feels in this CL feels like a scope creep to me.\nFWIW I meant in Scott\u0027s comment, I only meant that we need to check sc.Err()",
+      "parentUuid": "bc72aaee_9798bc96",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 4
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77d24a94_fcde6300",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 8
