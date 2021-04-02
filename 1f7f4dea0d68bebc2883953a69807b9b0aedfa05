@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8cee02b9_ae7e38dc",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T06:43:54Z",
+      "side": 1,
+      "message": "i think this should be ctx, otherwise it is pretty easy to use ctx outside.\nit is fairly typical in Go to override/shadow variables that shouldn\u0027t be used",
+      "range": {
+        "startLine": 123,
+        "startChar": 59,
+        "endLine": 123,
+        "endChar": 60
+      },
+      "revId": "1f7f4dea0d68bebc2883953a69807b9b0aedfa05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
