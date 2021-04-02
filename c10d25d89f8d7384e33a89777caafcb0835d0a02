@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2acd758b_750bf5fe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-02T07:23:57Z",
+      "side": 1,
+      "message": "PTAL, mostly a glue to combine Tink and GSM APIs.",
+      "revId": "c10d25d89f8d7384e33a89777caafcb0835d0a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
