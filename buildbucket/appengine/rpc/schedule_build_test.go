@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -248,6 +249,274 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			})
+		})
+	})
+
+	Convey("scheduleBuilds", t, func() {
+		ctx, _ := testclock.UseTime(mathrand.Set(txndefer.FilterRDS(memory.Use(context.Background())), rand.New(rand.NewSource(0))), testclock.TestRecentTimeUTC)
+		ctx, sch := tq.TestingContext(ctx, nil)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		// stripProtos strips the Proto field from each of the given *model.Builds,
+		// returning a slice whose ith index is the stripped *pb.Build value.
+		// Needed because model.Build.Proto can only be compared with ShouldResembleProto
+		// while model.Build can only be compared with ShouldResemble.
+		stripProtos := func(builds []*model.Build) []*pb.Build {
+			ret := make([]*pb.Build, len(builds))
+			for i, b := range builds {
+				p := b.Proto
+				ret[i] = &p
+				b.Proto = pb.Build{}
+			}
+			return ret
+		}
+
+		Convey("builder not found", func() {
+			req := &pb.ScheduleBuildRequest{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			}
+
+			blds, err := scheduleBuilds(ctx, req)
+			So(err, ShouldErrLike, "error fetching builders")
+			So(blds, ShouldBeNil)
+			So(sch.Tasks(), ShouldBeEmpty)
+		})
+
+		Convey("zero", func() {
+			blds, err := scheduleBuilds(ctx)
+			So(err, ShouldBeNil)
+			So(blds, ShouldBeEmpty)
+			So(sch.Tasks(), ShouldBeEmpty)
+		})
+
+		Convey("one", func() {
+			req := &pb.ScheduleBuildRequest{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			}
+			So(datastore.Put(ctx, &model.Builder{
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				ID:     "builder",
+			}), ShouldBeNil)
+
+			blds, err := scheduleBuilds(ctx, req)
+			So(err, ShouldBeNil)
+			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id:    9021868963221667745,
+					Input: &pb.Build_Input{},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+				},
+			})
+			So(blds, ShouldResemble, []*model.Build{
+				{
+					ID:         9021868963221667745,
+					BucketID:   "project/bucket",
+					BuilderID:  "project/bucket/builder",
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: testclock.TestRecentTimeUTC,
+					Experiments: []string{
+						"-" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
+						"-" + bb.ExperimentNonProduction,
+						"-" + bb.ExperimentUseRealms,
+					},
+					Incomplete: true,
+					Status:     pb.Status_SCHEDULED,
+					Tags: []string{
+						"builder:builder",
+					},
+					Project: "project",
+				},
+			})
+			So(sch.Tasks(), ShouldHaveLength, 1)
+		})
+
+		Convey("many", func() {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Critical: pb.Trinary_UNSET,
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Critical: pb.Trinary_YES,
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Critical: pb.Trinary_NO,
+				},
+			}
+			So(datastore.Put(ctx, &model.Builder{
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				ID:     "builder",
+			}), ShouldBeNil)
+
+			blds, err := scheduleBuilds(ctx, reqs...)
+			So(err, ShouldBeNil)
+			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id:    9021868963221610337,
+					Input: &pb.Build_Input{},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Critical:   pb.Trinary_YES,
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id:    9021868963221610321,
+					Input: &pb.Build_Input{},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Critical:   pb.Trinary_NO,
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id:    9021868963221610305,
+					Input: &pb.Build_Input{},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+				},
+			})
+			So(blds, ShouldResemble, []*model.Build{
+				{
+					ID:         9021868963221610337,
+					BucketID:   "project/bucket",
+					BuilderID:  "project/bucket/builder",
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: testclock.TestRecentTimeUTC,
+					Experiments: []string{
+						"-" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
+						"-" + bb.ExperimentNonProduction,
+						"-" + bb.ExperimentUseRealms,
+					},
+					Incomplete: true,
+					Status:     pb.Status_SCHEDULED,
+					Tags: []string{
+						"builder:builder",
+					},
+					Project: "project",
+				},
+				{
+					ID:         9021868963221610321,
+					BucketID:   "project/bucket",
+					BuilderID:  "project/bucket/builder",
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: testclock.TestRecentTimeUTC,
+					Experiments: []string{
+						"-" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
+						"-" + bb.ExperimentNonProduction,
+						"-" + bb.ExperimentUseRealms,
+					},
+					Incomplete: true,
+					Status:     pb.Status_SCHEDULED,
+					Tags: []string{
+						"builder:builder",
+					},
+					Project: "project",
+				},
+				{
+					ID:         9021868963221610305,
+					BucketID:   "project/bucket",
+					BuilderID:  "project/bucket/builder",
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: testclock.TestRecentTimeUTC,
+					Experiments: []string{
+						"-" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBAgent,
+						"-" + bb.ExperimentNonProduction,
+						"-" + bb.ExperimentUseRealms,
+					},
+					Incomplete: true,
+					Status:     pb.Status_SCHEDULED,
+					Tags: []string{
+						"builder:builder",
+					},
+					Project: "project",
+				},
+			})
+			So(sch.Tasks(), ShouldHaveLength, 3)
 		})
 	})
 
@@ -1570,6 +1839,104 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
+	Convey("setTimeouts", t, func() {
+		Convey("nil", func() {
+			ent := &model.Build{}
+
+			setTimeouts(nil, nil, ent)
+			So(ent.Proto.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 10800,
+			})
+			So(ent.Proto.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 30,
+			})
+			So(ent.Proto.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 21600,
+			})
+		})
+
+		Convey("request only", func() {
+			req := &pb.ScheduleBuildRequest{
+				ExecutionTimeout: &durationpb.Duration{
+					Seconds: 1,
+				},
+				GracePeriod: &durationpb.Duration{
+					Seconds: 2,
+				},
+				SchedulingTimeout: &durationpb.Duration{
+					Seconds: 3,
+				},
+			}
+			ent := &model.Build{}
+
+			setTimeouts(req, nil, ent)
+			So(ent.Proto.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 1,
+			})
+			So(ent.Proto.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 2,
+			})
+			So(ent.Proto.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 3,
+			})
+		})
+
+		Convey("config only", func() {
+			cfg := &pb.Builder{
+				ExecutionTimeoutSecs: 1,
+				ExpirationSecs:       3,
+				GracePeriod: &durationpb.Duration{
+					Seconds: 2,
+				},
+			}
+			ent := &model.Build{}
+
+			setTimeouts(nil, cfg, ent)
+			So(ent.Proto.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 1,
+			})
+			So(ent.Proto.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 2,
+			})
+			So(ent.Proto.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 3,
+			})
+		})
+
+		Convey("override", func() {
+			req := &pb.ScheduleBuildRequest{
+				ExecutionTimeout: &durationpb.Duration{
+					Seconds: 1,
+				},
+				GracePeriod: &durationpb.Duration{
+					Seconds: 2,
+				},
+				SchedulingTimeout: &durationpb.Duration{
+					Seconds: 3,
+				},
+			}
+			cfg := &pb.Builder{
+				ExecutionTimeoutSecs: 4,
+				ExpirationSecs:       6,
+				GracePeriod: &durationpb.Duration{
+					Seconds: 5,
+				},
+			}
+			ent := &model.Build{}
+
+			setTimeouts(req, cfg, ent)
+			So(ent.Proto.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 1,
+			})
+			So(ent.Proto.GracePeriod, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 2,
+			})
+			So(ent.Proto.SchedulingTimeout, ShouldResembleProto, &durationpb.Duration{
+				Seconds: 3,
+			})
+		})
+	})
+
 	Convey("ScheduleBuild", t, func() {
 		srv := &Builds{}
 		ctx, _ := testclock.UseTime(mathrand.Set(txndefer.FilterRDS(memory.Use(context.Background())), rand.New(rand.NewSource(0))), testclock.TestRecentTimeUTC)
@@ -1687,10 +2054,12 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						CreatedBy:  "user:caller@example.com",
 						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						Id:         9021868963221667745,
 						Input:      &pb.Build_Input{},
 						Number:     1,
+						Status:     pb.Status_SCHEDULED,
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
@@ -1759,9 +2128,11 @@ func TestScheduleBuild(t *testing.T) {
 								Bucket:  "bucket",
 								Builder: "builder",
 							},
+							CreatedBy:  "user:caller@example.com",
 							CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 							Id:         9021868963221667745,
 							Input:      &pb.Build_Input{},
+							Status:     pb.Status_SCHEDULED,
 						})
 						So(sch.Tasks(), ShouldHaveLength, 1)
 
@@ -1865,10 +2236,12 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						CreatedBy:  "user:caller@example.com",
 						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						Id:         9021868963221667745,
 						Input:      &pb.Build_Input{},
 						Number:     1,
+						Status:     pb.Status_SCHEDULED,
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
