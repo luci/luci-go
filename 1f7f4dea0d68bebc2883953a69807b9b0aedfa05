@@ -22,6 +22,29 @@
       },
       "revId": "1f7f4dea0d68bebc2883953a69807b9b0aedfa05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce8814ab_cc8c601a",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-02T08:15:41Z",
+      "side": 1,
+      "message": "Err() check is missing? \n\nhttps://golang.org/pkg/bufio/#Scanner.Scan\n```\nScan ... returns false when ... reaching the end of the input or an error.\nAfter Scan returns false, the Err method will return any error that occurred during scanning, except that if it was io.EOF, Err will return nil.\n```\n\nI think this is a possible cause of ErrClosedPipe.\n\nhttps://golang.org/pkg/bufio/#Scanner shows that\n1. Scan method will step through the `tokens` of a file\n2. The specification of a token is defined by a split function.\n3. The default split function breaks the input into lines.\n4. Scan stops if a token is too large to fit in the buffer.\n5. By default, Scan uses an internal buffer and sets the maximum token size to MaxScanTokenSize.\n6. MaxScanTokenSize is 64kb.\n\nThus, if a single line is longer than 64kb,\na) Scan() returns False, and Err() returns ErrTooLong.\nb) but this go-routine returns nil,\nc) the parent closes pr.\nd) the other go-routine receives ErrClosedPipe when it writes data to pw.\n\nIf this function checks and returns sc.Err(), then eg.Wait() would return the error, as it\u0027s the first error.",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 147,
+        "endChar": 12
+      },
+      "revId": "1f7f4dea0d68bebc2883953a69807b9b0aedfa05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
