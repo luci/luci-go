@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b0d0fee3_33915f1e",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T23:29:06Z",
+      "side": 1,
+      "message": "I don\u0027t get it, is this comment about ErrClosedPipe can mask the other error so we should disregard it at all times?",
+      "parentUuid": "c6fcb1ea_4c77a831",
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4c1c02b3_9edf32fe",
         "filename": "resultdb/internal/artifactcontent/rbecas_test.go",
         "patchSetId": 8
@@ -49,6 +67,30 @@
       "writtenOn": "2021-04-02T21:29:15Z",
       "side": 1,
       "message": "does _ work?",
+      "range": {
+        "startLine": 41,
+        "startChar": 114,
+        "endLine": 41,
+        "endChar": 118
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "69236a55_302c23eb",
+        "filename": "resultdb/internal/artifactcontent/rbecas_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T23:29:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c1c02b3_9edf32fe",
       "range": {
         "startLine": 41,
         "startChar": 114,
@@ -143,6 +185,30 @@
       "writtenOn": "2021-04-02T21:29:15Z",
       "side": 1,
       "message": "I think we should check this immediately after sc.Scan() loop is over.",
+      "range": {
+        "startLine": 168,
+        "startChar": 9,
+        "endLine": 168,
+        "endChar": 17
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "182f7253_a94fc3c7",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T23:29:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77d24a94_fcde6300",
       "range": {
         "startLine": 168,
         "startChar": 9,
