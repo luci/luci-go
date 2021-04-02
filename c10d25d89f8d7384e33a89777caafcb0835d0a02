@@ -16,6 +16,75 @@
       "message": "PTAL, mostly a glue to combine Tink and GSM APIs.",
       "revId": "c10d25d89f8d7384e33a89777caafcb0835d0a02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8569aab6_8371bf2b",
+        "filename": "server/cmd/tink-aead-key/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-02T19:31:12Z",
+      "side": 1,
+      "message": "iiuc, you are expecting to use it somewhere else soonish?",
+      "range": {
+        "startLine": 55,
+        "startChar": 5,
+        "endLine": 55,
+        "endChar": 16
+      },
+      "revId": "c10d25d89f8d7384e33a89777caafcb0835d0a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6714cb2d_fb9a5639",
+        "filename": "server/cmd/tink-aead-key/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-02T19:31:12Z",
+      "side": 1,
+      "message": "😊",
+      "range": {
+        "startLine": 112,
+        "startChar": 65,
+        "endLine": 112,
+        "endChar": 67
+      },
+      "revId": "c10d25d89f8d7384e33a89777caafcb0835d0a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7504644_fd76be1c",
+        "filename": "server/cmd/tink-aead-key/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-02T19:31:12Z",
+      "side": 1,
+      "message": "yet?",
+      "range": {
+        "startLine": 157,
+        "startChar": 46,
+        "endLine": 157,
+        "endChar": 48
+      },
+      "revId": "c10d25d89f8d7384e33a89777caafcb0835d0a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
