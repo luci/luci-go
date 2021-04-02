@@ -56,6 +56,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4dbede08_5c9abfb5",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-02T23:37:08Z",
+      "side": 1,
+      "message": "If ErrClosedPipe happened because f() decided to exit early, then this goroutine should disregard it so that the original error from f() will be honored.\n\nIf ErrClosedPipe happened unexpectedly, then it would fall into the following block.\n```\ndefault:\n  // A bug?\n```\n\ni.e., if ErrClosedPipe was expected, discard it. If it was not expected, return it.",
+      "parentUuid": "b0d0fee3_33915f1e",
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4c1c02b3_9edf32fe",
         "filename": "resultdb/internal/artifactcontent/rbecas_test.go",
         "patchSetId": 8
