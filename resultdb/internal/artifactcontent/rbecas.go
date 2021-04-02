@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -154,9 +155,9 @@ func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteSt
 
 	pr, pw := io.Pipe()
 	eg, ctx := errgroup.WithContext(ctx)
+	defer pr.Close()
 	defer eg.Wait()
 	eg.Go(func() error {
-		defer pr.Close()
 		return f(pr)
 	})
 
@@ -180,7 +181,7 @@ func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteSt
 
 			default:
 				if _, err := pw.Write(chunk.Data); err != nil {
-					return err
+					return errors.Annotate(ctx.Err(), "write to pipe").Err()
 				}
 			}
 		}
