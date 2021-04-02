@@ -83,6 +83,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "be253824_8ca8154d",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T17:57:34Z",
+      "side": 1,
+      "message": "invId?",
+      "range": {
+        "startLine": 81,
+        "startChar": 19,
+        "endLine": 81,
+        "endChar": 54
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "45d026b5_9de03809",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 6
@@ -100,6 +123,93 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cbd7816b_bc8c9e09",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T17:57:34Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "45d026b5_9de03809",
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e405cdc1_4994b086",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T17:57:34Z",
+      "side": 1,
+      "message": "Nit: includes?",
+      "range": {
+        "startLine": 98,
+        "startChar": 66,
+        "endLine": 98,
+        "endChar": 74
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "155596f1_159850d8",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T17:57:34Z",
+      "side": 1,
+      "message": "Since we\u0027re creating build id invocation and build number invocation separately, maybe we don\u0027t need to correlate build id with build number invocation? I mean it seems OK to just use this invocation\u0027s id as request id.",
+      "range": {
+        "startLine": 110,
+        "startChar": 17,
+        "endLine": 110,
+        "endChar": 72
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47a6ef35_180f4305",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T17:57:34Z",
+      "side": 1,
+      "message": "Also include builder info here? Build number alone seems not very useful (But id is also mentioned here, so probably it\u0027s fine...).",
+      "range": {
+        "startLine": 113,
+        "startChar": 71,
+        "endLine": 113,
+        "endChar": 87
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "08998a25_24802052",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 6
@@ -111,6 +221,24 @@
       "writtenOn": "2021-04-02T15:25:34Z",
       "side": 1,
       "message": "Is this the same update token? I\u0027d just remove this comment and move it above so it always comes from the first request. It should be clear that we don\u0027t need to save the second invocation\u0027s update token because it\u0027s just a reference to the first.",
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "312f8727_e7aa541b",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T17:57:34Z",
+      "side": 1,
+      "message": "+1\n\nAlso at L124 build invocation\u0027s name is saved in the build proto, so we should guarantee that the update token is the one for build id invocation.",
+      "parentUuid": "08998a25_24802052",
       "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
