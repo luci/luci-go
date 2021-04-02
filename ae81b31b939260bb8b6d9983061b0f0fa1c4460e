@@ -285,6 +285,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "edacc30d_2ec745f3",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-02T00:39:49Z",
+      "side": 1,
+      "message": "I suppose it would be possible to do this independently as long as we use 2 rpcs per build (one per the de-duplicated build id, and one for the \u0027new\u0027 build number; each could have a requestid which was appropriately idempotent), but it would still require restructuring the code to do the deduplication logic before allocating ids (and before making the createinvocation RPCs).\n\nIIUC, making a combo RPC wouldn\u0027t work though, because on the first call it would send (buildID\u003d1, buildNumber\u003d1, requestId\u003d1:1) and on the second call it would send (buildId\u003d1, buildNumber\u003d2, requestId\u003d1:2), which would not deduplicate on the resultdb side and thus reject the whole request (because the invocation for buildId\u003d1 already exists)",
+      "parentUuid": "3ab6d554_5d5cc992",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "65176cb4_28a16ee2",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 2
