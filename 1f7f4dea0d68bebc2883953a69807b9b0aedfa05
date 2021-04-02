@@ -45,6 +45,30 @@
       },
       "revId": "1f7f4dea0d68bebc2883953a69807b9b0aedfa05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9a1680a_6b53ae0f",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T15:24:29Z",
+      "side": 1,
+      "message": "+1, this is a bug too",
+      "parentUuid": "ce8814ab_cc8c601a",
+      "range": {
+        "startLine": 147,
+        "startChar": 2,
+        "endLine": 147,
+        "endChar": 12
+      },
+      "revId": "1f7f4dea0d68bebc2883953a69807b9b0aedfa05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
