@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f3a38cf_84972022",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T04:57:04Z",
+      "side": 1,
+      "message": "We got the error because writer still tries to write when reader closed, right.\n\nAnd in this CL I make sure writer closes before reader, so we should only see \"subsequent reads from the read half of the pipe will return no bytes and EOF.\"",
+      "parentUuid": "5442f03f_123327fa",
+      "revId": "df0f0fbddf75290ae022042e3f65a720f23991c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "9e17c6c1_e2ab6bdd",
