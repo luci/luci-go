@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
@@ -42,6 +43,9 @@ import (
 var textArtifactRowSchema bigquery.Schema
 
 var lineBreak = []byte("\n")
+
+// Max size of a token the scanner can buffer.
+var maxTokenSize = bufio.MaxScanTokenSize
 
 const (
 	artifactRowMessage = "luci.resultdb.bq.TextArtifactRow"
@@ -119,31 +123,46 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		}
 	}
 
-	return ac.DownloadRBECASContent(ctx, b.rbecasClient, func(pr io.Reader) error {
+	return ac.DownloadRBECASContent(ctx, b.rbecasClient, func(ctx context.Context, pr io.Reader) error {
 		sc := bufio.NewScanner(pr)
+		buf := make([]byte, maxTokenSize)
+		sc.Buffer(buf, maxTokenSize)
+		sc.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+			advance, token, err = bufio.ScanLines(data, atEOF)
+			switch {
+			case atEOF:
+				return
+			case err != nil:
+				return
+			case advance == 0:
+				// No line break in the buffered bytes, return it as is.
+				return len(data), data, nil
+			default:
+				// token is a line without linebreak at the end, append linebreak.
+				return advance, append(token, lineBreak...), err
+			}
+		})
+
 		for sc.Scan() {
-			// TODO(crbug.com/1149736): handle the case that a single line is 5MB+.
-			// If such case happens, we should split the line.
 			if str.Len()+len(sc.Bytes())+len(lineBreak) > contentShardSize {
 				select {
 				case <-ctx.Done():
-					return ctx.Err()
+					return errors.Annotate(ctx.Err(), "read rbe cas content").Err()
 				case rowC <- input():
 				}
 				shardId++
 				str.Reset()
 			}
 			str.Write(sc.Bytes())
-			str.Write(lineBreak)
 		}
 		if str.Len() > 0 {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return errors.Annotate(ctx.Err(), "read rbe cas content").Err()
 			case rowC <- input():
 			}
 		}
-		return nil
+		return sc.Err()
 	})
 }
 
