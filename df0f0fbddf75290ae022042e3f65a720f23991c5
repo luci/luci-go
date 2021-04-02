@@ -144,6 +144,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "a65508c1_2e401e16",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T06:41:35Z",
+      "side": 1,
+      "message": "\u003e If context was canceled, we should be able to see another error, right?\n\nnot necessarily. If two goroutines are not synchronized with a lock or something, then they race. The order could be:\n1) goroutine1 checks context in rbecas.go:167 and it proceeds\n2) goroutine2 checks context and it is canceled, closes the reader, but didn\u0027t return to eg yet\n3) goroutine1 tries to write pipe, fails and returns to eg before the other\n4) eg sees the error of goroutine1, records it as the first error\n4) eg sees the error of goroutine2, but ignores it because it is not the first error",
+      "parentUuid": "d8e6f5b4_34d1a3d3",
+      "revId": "df0f0fbddf75290ae022042e3f65a720f23991c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "9e17c6c1_e2ab6bdd",
