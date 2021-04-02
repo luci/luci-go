@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "1297e878_61ec336e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T05:33:07Z",
+      "side": 1,
+      "message": "thanks for explaining the problem (it should probably be in the commit message). However, the solution to that problem creates a new problem, it seems: imagine a situation:\n1) we finished reading from rbe-cas and call pr.Close()\n2) but the reader didn\u0027t finish reading yet. It tries to read and gets ErrClosedPipe (unlike io.EOF), so they fail.\n\nshould we check that Write() returned ErrClosedPipe? that would be direct solution to the problem.",
+      "parentUuid": "8f3a38cf_84972022",
+      "revId": "df0f0fbddf75290ae022042e3f65a720f23991c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "9e17c6c1_e2ab6bdd",
