@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
@@ -127,7 +128,7 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 			if str.Len()+len(sc.Bytes())+len(lineBreak) > contentShardSize {
 				select {
 				case <-ctx.Done():
-					return ctx.Err()
+					return errors.Annotate(ctx.Err(), "read rbe cas content").Err()
 				case rowC <- input():
 				}
 				shardId++
@@ -139,7 +140,7 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		if str.Len() > 0 {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return errors.Annotate(ctx.Err(), "read rbe cas content").Err()
 			case rowC <- input():
 			}
 		}
