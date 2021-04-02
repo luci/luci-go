@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
-import { AppState, consumeAppState } from '../../context/app_state';
 import '../../context/artifact_provider';
-import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { sanitizeHTML } from '../../libs/sanitize_html';
-import { Artifact, ListArtifactsResponse, TestResult } from '../../services/resultdb';
 import '../expandable_entry';
 import './image_diff_artifact';
 import './text_artifact';
 import './text_diff_artifact';
+import { AppState, consumeAppState } from '../../context/app_state';
+import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { sanitizeHTML } from '../../libs/sanitize_html';
+import { Artifact, ListArtifactsResponse, TestResult } from '../../services/resultdb';
 
 /**
  * Renders an expandable entry of the given test result.

@@ -19,9 +19,9 @@ import { html } from 'lit-element';
 import sinon from 'sinon';
 
 import '.';
-import { InvocationPageElement } from '.';
 import { AppState } from '../../context/app_state';
 import { NOT_FOUND_URL } from '../../routes';
+import { InvocationPageElement } from '.';
 
 describe('Invocation Page', () => {
   it('should get invocation ID from URL', async () => {

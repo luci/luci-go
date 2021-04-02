@@ -19,7 +19,7 @@ import { consumeContext, provideContext } from '../libs/context';
 import { parseSearchQuery } from '../libs/search_query';
 import { TestLoader } from '../models/test_loader';
 import { TestPresentationConfig } from '../services/buildbucket';
-import { createTVPropGetter, createTVCmpFn, Invocation, TestVariant } from '../services/resultdb';
+import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant } from '../services/resultdb';
 import { AppState } from './app_state';
 
 export class QueryInvocationError {

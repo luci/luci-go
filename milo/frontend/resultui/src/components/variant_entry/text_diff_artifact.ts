@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
+import '../expandable_entry';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { router } from '../../routes';
 import { Artifact } from '../../services/resultdb';
-import '../expandable_entry';
 
 /**
  * Renders a text diff artifact.

@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { DateTime } from 'luxon';
 import MarkdownIt from 'markdown-it';
 import { computed, observable } from 'mobx';
 
+import './expandable_entry';
 import { bugLine } from '../libs/markdown_it_plugins/bug_line';
 import { bugnizerLink } from '../libs/markdown_it_plugins/bugnizer_link';
 import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
@@ -27,7 +28,6 @@ import { reviewerLine } from '../libs/markdown_it_plugins/reviewer_line';
 import { sanitizeHTML } from '../libs/sanitize_html';
 import { NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
-import './expandable_entry';
 
 const md = MarkdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])

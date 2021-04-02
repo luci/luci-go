@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { autorun, computed, observable, reaction } from 'mobx';
@@ -21,13 +21,13 @@ import { REJECTED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
+import './invocation_details_tab';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { NOT_FOUND_URL, router } from '../../routes';
-import './invocation_details_tab';
 
 /**
  * Main test results page.
