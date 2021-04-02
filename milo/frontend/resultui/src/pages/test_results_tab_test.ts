@@ -17,6 +17,7 @@ import { assert } from 'chai';
 import { customElement, html, LitElement, property } from 'lit-element';
 import sinon, { SinonStub } from 'sinon';
 
+import './test_results_tab';
 import { AppState, provideAppState } from '../context/app_state';
 import { InvocationState, provideInvocationState } from '../context/invocation_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
@@ -26,7 +27,6 @@ import {
   TestVariantStatus,
   UISpecificService,
 } from '../services/resultdb';
-import './test_results_tab';
 import { TestResultsTabElement } from './test_results_tab';
 
 const variant1 = {

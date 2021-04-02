@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import fs from 'fs';
-import path from 'path';
-
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import path from 'path';
 import { DefinePlugin } from 'webpack';
 import merge from 'webpack-merge';
 

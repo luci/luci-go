@@ -19,12 +19,12 @@ import { html } from 'lit-element';
 import sinon from 'sinon';
 
 import '.';
-import { BuildPageElement } from '.';
 import { AppState } from '../../context/app_state';
 import { UserConfigsStore } from '../../context/user_configs';
 import { PrpcClientExt } from '../../libs/prpc_client_ext';
 import { Build, BuildsService, GetBuildRequest } from '../../services/buildbucket';
 import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../../services/resultdb';
+import { BuildPageElement } from '.';
 
 const builder = {
   project: 'project',
