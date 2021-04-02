@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as CodeMirror from 'codemirror';
 import 'codemirror/addon/edit/matchbrackets';
 import 'codemirror/addon/fold/brace-fold';
 import 'codemirror/addon/fold/foldcode';
 import 'codemirror/addon/fold/foldgutter';
 import 'codemirror/mode/javascript/javascript';
+import * as CodeMirror from 'codemirror';
 import { css, customElement, LitElement } from 'lit-element';
 import { html } from 'lit-html';
 import { observable } from 'mobx';

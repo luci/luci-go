@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import path from 'path';
-
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import path from 'path';
 import { Configuration, DefinePlugin } from 'webpack';
 import Workbox from 'workbox-webpack-plugin';
 

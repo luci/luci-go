@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
-import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 import '../expandable_entry';
 import '../lazy_list';
+import '../copy_to_clipboard';
+import '../variant_entry/result_entry';
+import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { TestVariant } from '../../services/resultdb';
-import '../copy_to_clipboard';
 import { OnEnterList } from '../lazy_list';
-import '../variant_entry/result_entry';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
-import { router } from '../../routes';
-import { Artifact } from '../../services/resultdb';
 import '../expandable_entry';
 import '../image_diff_viewer';
+import { router } from '../../routes';
+import { Artifact } from '../../services/resultdb';
 
 /**
  * Renders an image diff artifact entry.

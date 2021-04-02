@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html, property } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
+import '../dot_spinner';
 import { consumeContext } from '../../libs/context';
 import { Artifact } from '../../services/resultdb';
-import '../dot_spinner';
 
 /**
  * Renders a text artifact.

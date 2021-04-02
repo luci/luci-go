@@ -15,8 +15,8 @@
 import { assert } from 'chai';
 
 import {
-  createTVPropGetter,
   createTVCmpFn,
+  createTVPropGetter,
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
   TestVariant,

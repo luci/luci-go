@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';

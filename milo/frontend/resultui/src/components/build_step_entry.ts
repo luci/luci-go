@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement } from 'lit-element';
 import { html, render } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
+import './copy_to_clipboard';
+import './expandable_entry';
+import './log';
+import './pin_toggle';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
 import { renderMarkdown } from '../libs/markdown_utils';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { StepExt } from '../models/step_ext';
-import './copy_to_clipboard';
-import './expandable_entry';
 import { OnEnterList } from './lazy_list';
-import './log';
-import './pin_toggle';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
 /**

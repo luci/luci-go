@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Workbox } from 'workbox-window';
+
 import './routes';
 
 window.SW_PROMISE = new Promise((resolve) => {

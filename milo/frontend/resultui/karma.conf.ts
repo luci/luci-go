@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import fs from 'fs';
-import path from 'path';
-
 import { Config } from 'karma';
+import path from 'path';
 import { DefinePlugin, ProvidePlugin } from 'webpack';
 
 import webpackConfig from './webpack.common';

@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
+import './signin';
+import './tooltip';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { genFeedbackUrl } from '../libs/utils';
-import './signin';
 import { UserUpdateEvent } from './signin';
-import './tooltip';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
   window.gapi?.load('auth2', () => {

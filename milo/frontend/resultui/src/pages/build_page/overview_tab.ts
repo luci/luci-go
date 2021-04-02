@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
 import '@material/mwc-dialog';
 import '@material/mwc-textarea';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
