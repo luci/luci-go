@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c6fcb1ea_4c77a831",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-02T21:41:29Z",
+      "side": 1,
+      "message": "A possible solution is to use CloseWithErrror() at L160.\nThen, this check would look like\n\n```\nswitch _, err :\u003d pw.Write(...); err {\n// TODO: find a better error name :(\ncase DOWNLOAD_READER_EXITED:\n  // if f() exited before EOF for whatever reasons, such as timeout, error, etc,\n  // then stop reading the remaining contents from RBE-CAS, but \n  // return nil so that eg.Wait() will return the error from f().\n  return nil\n\ncase nil:\ndefault:\n  // A bug? \n}\n```",
+      "parentUuid": "b4f95b22_cd365d19",
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4c1c02b3_9edf32fe",
         "filename": "resultdb/internal/artifactcontent/rbecas_test.go",
         "patchSetId": 8
