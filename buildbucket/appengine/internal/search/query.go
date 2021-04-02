@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
@@ -37,6 +36,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -55,21 +55,20 @@ var (
 
 // Query is the intermediate to store the arguments for ds search query.
 type Query struct {
-	Builder             *pb.BuilderID
-	Tags                strpair.Map
-	Status              pb.Status
-	CreatedBy           identity.Identity
-	StartTime           time.Time
-	EndTime             time.Time
-	IncludeExperimental bool
-	BuildIDHigh         int64
-	BuildIDLow          int64
-	Canary              *bool
-	PageSize            int32
-	PageToken           string
+	Builder           *pb.BuilderID
+	Tags              strpair.Map
+	Status            pb.Status
+	CreatedBy         identity.Identity
+	StartTime         time.Time
+	EndTime           time.Time
+	ExperimentFilters stringset.Set
+	BuildIDHigh       int64
+	BuildIDLow        int64
+	PageSize          int32
+	PageToken         string
 }
 
-// NewQuery builds a Query from pb.SearchBuildsRequest.
+// NewQuery builds a Query from a pb.SearchBuildsRequest.
 // It assumes req is valid, otherwise may panic.
 func NewQuery(req *pb.SearchBuildsRequest) *Query {
 	if req.GetPredicate() == nil {
@@ -81,15 +80,15 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 
 	p := req.Predicate
 	q := &Query{
-		Builder:             p.GetBuilder(),
-		Tags:                protoutil.StringPairMap(p.Tags),
-		Status:              p.Status,
-		CreatedBy:           identity.Identity(fixCreatedBy(p.CreatedBy)),
-		StartTime:           mustTimestamp(p.CreateTime.GetStartTime()),
-		EndTime:             mustTimestamp(p.CreateTime.GetEndTime()),
-		IncludeExperimental: p.IncludeExperimental,
-		PageSize:            fixPageSize(req.PageSize),
-		PageToken:           req.PageToken,
+		Builder:           p.GetBuilder(),
+		Tags:              protoutil.StringPairMap(p.Tags),
+		Status:            p.Status,
+		CreatedBy:         identity.Identity(fixCreatedBy(p.CreatedBy)),
+		StartTime:         mustTimestamp(p.CreateTime.GetStartTime()),
+		EndTime:           mustTimestamp(p.CreateTime.GetEndTime()),
+		ExperimentFilters: stringset.NewFromSlice(p.Experiments...),
+		PageSize:          fixPageSize(req.PageSize),
+		PageToken:         req.PageToken,
 	}
 
 	// Filter by gerrit changes.
@@ -111,10 +110,21 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		q.BuildIDLow = p.Build.GetEndBuildId() - 1
 	}
 
-	// Filter by canary.
-	if p.GetCanary() != pb.Trinary_UNSET {
-		q.Canary = proto.Bool(p.GetCanary() == pb.Trinary_YES)
+	// Filter by canary. Note that validateExperiment has already verified that
+	// p.Experiments doesn't contain a filter for ExperimentBBCanarySoftware.
+	if c := p.GetCanary(); c == pb.Trinary_YES {
+		q.ExperimentFilters.Add("+" + bb.ExperimentBBCanarySoftware)
+	} else if c == pb.Trinary_NO {
+		q.ExperimentFilters.Add("-" + bb.ExperimentBBCanarySoftware)
 	}
+
+	// Apply IncludeExperimental. Note that validateExperiment has already
+	// verified that p.Experiments does not contain +ExperimentNonProduction
+	// which would conflict with this.
+	if !p.IncludeExperimental {
+		q.ExperimentFilters.Add("-" + bb.ExperimentNonProduction)
+	}
+
 	return q
 }
 
@@ -202,9 +212,17 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	if q.CreatedBy != "" {
 		dq = dq.Eq("created_by", q.CreatedBy)
 	}
-	if q.Canary != nil {
-		dq = dq.Eq("canary", *q.Canary)
-	}
+
+	var dropExperimental bool
+	q.ExperimentFilters.Iter(func(filter string) bool {
+		if filter[0] == '-' && filter[1:] == bb.ExperimentNonProduction {
+			// filter these in post
+			dropExperimental = true
+		} else {
+			dq = dq.Eq("experiments", filter)
+		}
+		return true
+	})
 
 	idLow, idHigh := q.idRange()
 	if idLow != 0 {
@@ -249,9 +267,10 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 			return nil
 		}
 
-		// Filter here instead of at the datastore level to reduce the zigzag merge
-		// in index scans as majority builds are non-experimental.
-		if b.Experimental && !q.IncludeExperimental {
+		// Filter non-production builds here instead of at the datastore level to
+		// reduce the zigzag merge in index scans as the majority of builds are
+		// production.
+		if dropExperimental && b.ExperimentStatus(bb.ExperimentNonProduction) == pb.Trinary_YES {
 			return nil
 		}
 
@@ -344,8 +363,7 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 				(q.CreatedBy != "" && q.CreatedBy != b.CreatedBy) ||
 				(q.Builder.GetBuilder() != "" && b.Proto.Builder.Builder != q.Builder.Builder) ||
 				(q.Builder.GetProject() != "" && b.Proto.Builder.Project != q.Builder.Project) ||
-				(b.Experimental && !q.IncludeExperimental) ||
-				(q.Canary != nil && *q.Canary != b.Canary) {
+				!stringset.NewFromSlice(b.Experiments...).Contains(q.ExperimentFilters) {
 				continue
 			}
 			results = append(results, b.ToSimpleBuildProto(ctx))

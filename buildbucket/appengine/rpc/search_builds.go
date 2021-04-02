@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 
+	bb "go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -39,6 +40,27 @@ func validateChange(ch *pb.GerritChange) error {
 	default:
 		return nil
 	}
+}
+
+// validateExperiment validates a single experiment directive
+func validateExperiment(exp string, canary pb.Trinary, includeExperimental bool) error {
+	if len(exp) < 2 {
+		return errors.New("too short (expected [+-]$experiment_name)")
+	}
+	switch exp[0] {
+	case '+', '-':
+	default:
+		return errors.New("first character must be + or -")
+	}
+
+	if exp[1:] == bb.ExperimentBBCanarySoftware && canary != pb.Trinary_UNSET {
+		return errors.Reason("cannot specify %q and canary in the same predicate", exp[1:]).Err()
+	}
+	if exp == "+"+bb.ExperimentNonProduction && !includeExperimental {
+		return errors.Reason("cannot specify %q and includeExperimental == false in the same predicate", exp).Err()
+	}
+
+	return nil
 }
 
 // validatePredicate validates the given build predicate.
@@ -63,6 +85,11 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 	}
 	if pr.GetBuild() != nil && pr.CreateTime != nil {
 		return errors.Reason("build is mutually exclusive with create_time").Err()
+	}
+	for i, exp := range pr.GetExperiments() {
+		if err := validateExperiment(exp, pr.GetCanary(), pr.GetIncludeExperimental()); err != nil {
+			return errors.Annotate(err, "experiments %d", i).Err()
+		}
 	}
 	// TODO(crbug/1053813): Disallow empty predicate.
 	return nil
