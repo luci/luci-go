@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "b6da9d8b_03c45e59",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-02T05:44:26Z",
+      "side": 1,
+      "message": "We read from rbe-cas and write the chunks to pipe, then bqexporter read from the pipe.\n\nSo the situation I\u0027m imagine is that:\n1. we finished erading from rbe-cas -\u003e close pw -\u003e close pr.\n2. bq_exporter reads contents from pipe.",
+      "parentUuid": "1297e878_61ec336e",
+      "revId": "df0f0fbddf75290ae022042e3f65a720f23991c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "9e17c6c1_e2ab6bdd",
