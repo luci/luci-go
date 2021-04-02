@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4f95b22_cd365d19",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T21:29:15Z",
+      "side": 1,
+      "message": "this still may return ErrClosedPipe if f() decided to exit early?\n(in this case we shouldn\u0027t assume why f() may exit)",
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c1c02b3_9edf32fe",
+        "filename": "resultdb/internal/artifactcontent/rbecas_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T21:29:15Z",
+      "side": 1,
+      "message": "does _ work?",
+      "range": {
+        "startLine": 41,
+        "startChar": 114,
+        "endLine": 41,
+        "endChar": 118
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc72aaee_9798bc96",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T21:29:15Z",
+      "side": 1,
+      "message": "sorry, what problem does this solve? It seems like the intention is to fix the TODO, but I don\u0027t see mention of 5mb (or a constant related to bq row size limit) in this case.",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 4
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77d24a94_fcde6300",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T21:29:15Z",
+      "side": 1,
+      "message": "I think we should check this immediately after sc.Scan() loop is over.",
+      "range": {
+        "startLine": 168,
+        "startChar": 9,
+        "endLine": 168,
+        "endChar": 17
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
