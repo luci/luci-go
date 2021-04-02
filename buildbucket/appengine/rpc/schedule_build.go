@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cipd/common"
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
@@ -286,11 +289,63 @@ func setTags(req *pb.ScheduleBuildRequest, build *model.Build) {
 	build.Tags = tags.Format()
 }
 
+var (
+	// defExecutionTimeout is the default value for pb.Build.ExecutionTimeout.
+	// See setTimeouts.
+	defExecutionTimeout = durationpb.New(3 * time.Hour)
+
+	// defExecutionTimeout is the default value for pb.Build.GracePeriod.
+	// See setTimeouts.
+	defGracePeriod = durationpb.New(30 * time.Second)
+
+	// defExecutionTimeout is the default value for pb.Build.SchedulingTimeout.
+	// See setTimeouts.
+	defSchedulingTimeout = durationpb.New(6 * time.Hour)
+)
+
+// setTimeouts computes the timeouts from the given request and builder config,
+// setting them in the model. Mutates the given *model.Build.
+func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+	// Timeouts in the request have highest precedence, followed by
+	// values in the builder config, followed by default values.
+	switch {
+	case req.GetExecutionTimeout() != nil:
+		build.Proto.ExecutionTimeout = req.ExecutionTimeout
+	case cfg.GetExecutionTimeoutSecs() > 0:
+		build.Proto.ExecutionTimeout = &durationpb.Duration{
+			Seconds: int64(cfg.ExecutionTimeoutSecs),
+		}
+	default:
+		build.Proto.ExecutionTimeout = defExecutionTimeout
+	}
+
+	switch {
+	case req.GetGracePeriod() != nil:
+		build.Proto.GracePeriod = req.GracePeriod
+	case cfg.GetGracePeriod() != nil:
+		build.Proto.GracePeriod = cfg.GracePeriod
+	default:
+		build.Proto.GracePeriod = defGracePeriod
+	}
+
+	switch {
+	case req.GetSchedulingTimeout() != nil:
+		build.Proto.SchedulingTimeout = req.SchedulingTimeout
+	case cfg.GetExpirationSecs() > 0:
+		build.Proto.SchedulingTimeout = &durationpb.Duration{
+			Seconds: int64(cfg.ExpirationSecs),
+		}
+	default:
+		build.Proto.SchedulingTimeout = defSchedulingTimeout
+	}
+}
+
 // scheduleBuilds handles requests to schedule builds. Requests must be
 // validated and authorized.
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
 	// TODO(crbug/1042991): Deduplicate request IDs.
 	now := clock.Now(ctx).UTC()
+	user := auth.CurrentIdentity(ctx)
 
 	// Bucket -> Builder -> *pb.Builder.
 	cfgs, err := fetchBuilderConfigs(ctx, reqs)
@@ -305,22 +360,34 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		bucket := fmt.Sprintf("%s/%s", reqs[i].Builder.Project, reqs[i].Builder.Bucket)
 		cfg := cfgs[bucket][reqs[i].Builder.Builder]
 
+		// TODO(crbug/1042991): Fill in LogDog, ResultDB hostnames and Swarming caches from settings config.
 		// TODO(crbug/1042991): Fill in relevant proto fields from the builder config.
 		// TODO(crbug/1042991): Fill in relevant proto fields from the request.
 		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
 		blds[i] = &model.Build{
 			ID:         ids[i],
+			CreatedBy:  user,
 			CreateTime: now,
 			Proto: pb.Build{
 				Builder:    reqs[i].Builder,
+				CreatedBy:  string(user),
 				CreateTime: timestamppb.New(now),
 				Id:         ids[i],
 				Input:      &pb.Build_Input{},
+				Status:     pb.Status_SCHEDULED,
 			},
+		}
+
+		blds[i].Proto.Critical = cfg.GetCritical()
+		if reqs[i].Critical != pb.Trinary_UNSET {
+			blds[i].Proto.Critical = reqs[i].Critical
 		}
 
 		setExperiments(ctx, reqs[i], cfg, blds[i])
 		setTags(reqs[i], blds[i])
+		setTimeouts(reqs[i], cfg, blds[i])
+
+		// TODO(crbug/1042991): Fill in experimental priority, Exe.CipdVersion, Input, Infra, timeouts.
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
