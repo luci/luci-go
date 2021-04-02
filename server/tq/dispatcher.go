@@ -188,21 +188,15 @@ type TaskKind int
 const (
 	// NonTransactional is a task kind for tasks that must be enqueued outside
 	// of a transaction.
-	NonTransactional TaskKind = 0
+	NonTransactional TaskKind = 1
 
 	// Transactional is a task kind for tasks that must be enqueued only from
 	// a transaction.
-	//
-	// Using transactional tasks requires setting up a sweeper first, see
-	// ModuleOptions.
-	Transactional TaskKind = 1
+	Transactional TaskKind = 2
 
 	// FollowsContext is a task kind for tasks that are enqueue transactionally
 	// if the context is transactional or non-transactionally otherwise.
-	//
-	// Using transactional tasks requires setting up a sweeper first, see
-	// ModuleOptions.
-	FollowsContext TaskKind = 2
+	FollowsContext TaskKind = 3
 )
 
 // TaskClass defines how to treat tasks of a specific proto message type.
@@ -247,11 +241,11 @@ type TaskClass struct {
 
 	// Kind indicates whether the task requires a transaction to be enqueued.
 	//
-	// Note that using transactional tasks requires setting up a sweeper first,
-	// see ModuleOptions.
+	// Note that using transactional tasks requires setting up a sweeper first
+	// and importing a module that implements transactions support for the
+	// database you are using. See "Transactional tasks" section above.
 	//
-	// Default is NonTransactional which means that tasks can be enqueued only
-	// outside of transactions.
+	// Required. Pick one of NonTransactional, Transactional or FollowsContext.
 	Kind TaskKind
 
 	// Queue is a name of Cloud Tasks queue to use for the tasks.
@@ -481,6 +475,9 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 	if cls.RoutingPrefix != "" && !strings.HasPrefix(cls.RoutingPrefix, "/") {
 		panic("TaskClass RoutingPrefix must start with /")
 	}
+	if cls.Kind == 0 {
+		panic("TaskClass Kind is required")
+	}
 
 	var backend taskBackend
 	switch {
@@ -590,16 +587,20 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	}
 
 	// Examine the context to see if we are inside a transaction.
-	db := db.TxnDB(ctx)
+	txndb := db.TxnDB(ctx)
 	switch cls.Kind {
 	case FollowsContext:
-		// do nothing, will use `db` if it is non-nil
+		// do nothing, will use `txndb` if it is non-nil
 	case Transactional:
-		if db == nil {
+		if txndb == nil {
+			if !db.Configured() {
+				return errors.Reason("enqueuing of tasks %q requires transactions support, "+
+					"see https://pkg.go.dev/go.chromium.org/luci/server/tq#hdr-Transactional_tasks", cls.ID).Err()
+			}
 			return errors.Reason("enqueuing of tasks %q must be done from inside a transaction", cls.ID).Err()
 		}
 	case NonTransactional:
-		if db != nil {
+		if txndb != nil {
 			return errors.Reason("enqueuing of tasks %q must be done outside of a transaction", cls.ID).Err()
 		}
 	default:
@@ -607,7 +608,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	}
 
 	// If not inside a transaction, submit the task right away.
-	if db == nil {
+	if txndb == nil {
 		return internal.Submit(ctx, sub, payload, internal.TxnPathNone)
 	}
 
@@ -625,12 +626,12 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		return errors.Annotate(err, "failed to prepare a reminder").Err()
 	}
 	span.Attribute("cr.dev/reminder", r.ID)
-	if err := db.SaveReminder(ctx, r); err != nil {
+	if err := txndb.SaveReminder(ctx, r); err != nil {
 		return errors.Annotate(err, "failed to store a transactional enqueue reminder").Err()
 	}
 
 	once := int32(0)
-	db.Defer(ctx, func(ctx context.Context) {
+	txndb.Defer(ctx, func(ctx context.Context) {
 		if count := atomic.AddInt32(&once, 1); count > 1 {
 			panic("transaction defer has already been called")
 		}
@@ -645,7 +646,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		defer func() { span.End(err) }()
 
 		// Attempt to submit the task right away if the reminder is still fresh.
-		err = internal.ProcessReminderPostTxn(ctx, sub, db, r)
+		err = internal.ProcessReminderPostTxn(ctx, sub, txndb, r)
 	})
 
 	return nil
