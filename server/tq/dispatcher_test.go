@@ -76,6 +76,7 @@ func TestAddTask(t *testing.T) {
 		d.RegisterTaskClass(TaskClass{
 			ID:        "test-dur",
 			Prototype: &durationpb.Duration{}, // just some proto type
+			Kind:      NonTransactional,
 			Queue:     "queue-1",
 		})
 
@@ -242,6 +243,7 @@ func TestAddTask(t *testing.T) {
 			d.RegisterTaskClass(TaskClass{
 				ID:        "test-ts",
 				Prototype: &timestamppb.Timestamp{}, // just some proto type
+				Kind:      NonTransactional,
 				Queue:     "queue-1",
 				Custom: func(ctx context.Context, m proto.Message) (*CustomPayload, error) {
 					ts := m.(*timestamppb.Timestamp)
@@ -290,6 +292,7 @@ func TestPushHandler(t *testing.T) {
 		ref := d.RegisterTaskClass(TaskClass{
 			ID:        "test-1",
 			Prototype: &emptypb.Empty{},
+			Kind:      NonTransactional,
 			Queue:     "queue",
 			Handler: func(ctx context.Context, payload proto.Message) error {
 				if handlerCb != nil {
@@ -575,6 +578,7 @@ func TestTesting(t *testing.T) {
 		disp.RegisterTaskClass(TaskClass{
 			ID:        "test-dur",
 			Prototype: &durationpb.Duration{}, // just some proto type
+			Kind:      NonTransactional,
 			Queue:     "queue-1",
 			Handler: func(ctx context.Context, msg proto.Message) error {
 				m.Lock()
@@ -623,8 +627,8 @@ func TestPubSubEnqueue(t *testing.T) {
 		disp.RegisterTaskClass(TaskClass{
 			ID:        "test-dur",
 			Prototype: &durationpb.Duration{}, // just some proto type
-			Topic:     "topic-1",
 			Kind:      Transactional,
+			Topic:     "topic-1",
 			Custom: func(_ context.Context, msg proto.Message) (*CustomPayload, error) {
 				return &CustomPayload{
 					Meta: map[string]string{"a": "b"},
