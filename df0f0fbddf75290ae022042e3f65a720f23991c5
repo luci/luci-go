@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "5442f03f_123327fa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T04:27:58Z",
+      "side": 1,
+      "message": "could you elaborate on how this helps? I don\u0027t quite see this. https://pkg.go.dev/io#PipeWriter.Close says \"subsequent reads from the read half of the pipe will return no bytes and EOF.\" which is the intended behavior. \n\nin contrast, if we close the reader before we f() finished reading, then f must encounter ErrClosedPipe, see https://pkg.go.dev/io#PipeReader.Close",
+      "revId": "df0f0fbddf75290ae022042e3f65a720f23991c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "9e17c6c1_e2ab6bdd",
