@@ -37,12 +37,10 @@ export class BuildExt {
   readonly id: string;
   readonly builder: BuilderID;
   readonly number?: number;
-  readonly createdBy: string;
   readonly canceledBy?: string;
   readonly createTime: DateTime;
   readonly startTime: DateTime | null;
   readonly endTime: DateTime | null;
-  readonly updateTime: DateTime;
   readonly status: BuildStatus;
   readonly summaryMarkdown?: string | undefined;
   readonly input: BuildInput;
@@ -61,12 +59,10 @@ export class BuildExt {
     this.id = build.id;
     this.builder = build.builder;
     this.number = build.number;
-    this.createdBy = build.createdBy;
     this.canceledBy = build.canceledBy;
     this.createTime = DateTime.fromISO(build.createTime);
     this.startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
     this.endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
-    this.updateTime = DateTime.fromISO(build.updateTime);
     this.status = build.status;
     this.summaryMarkdown = build.summaryMarkdown;
     this.input = build.input;
