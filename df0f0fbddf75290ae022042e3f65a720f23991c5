@@ -90,6 +90,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "61dde4af_807ee39c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-02T06:05:50Z",
+      "side": 1,
+      "message": "\u003e close pw -\u003e close pr.\n\nclosing pw doesn\u0027t cause closing pr. It causes next Read() to return EOF, which should lead f() to finish, and *then* pr is closed.\n\n\u003e that reader side exits gracefully, which means reader reads EOF\n\nnot sure about this logical leap. It doesn\u0027t necessarily mean that reader reads EOF. That function might also exit if context was canceled. \n\nBTW, we have a bug here: text_artifact_row.go:130 uses the ctx which is outside of the callback. That is not the ctx created in rbecas.go:157. We should pass ctx into f, and text_artifact_row.go:130 must use that ctx.",
+      "parentUuid": "5867edf2_47daf65d",
+      "revId": "df0f0fbddf75290ae022042e3f65a720f23991c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "9e17c6c1_e2ab6bdd",
