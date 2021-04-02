@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2e5be2b_8bfdea30",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-02T06:48:21Z",
+      "side": 1,
+      "message": "Seems ok to me, but I defer to Yuanjun.",
+      "revId": "b991579e9d5166e7020156f71ddee3c96887c942",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

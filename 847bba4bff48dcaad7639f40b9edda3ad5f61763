@@ -73,6 +73,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b25fd920_be867e4c",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-02T06:48:21Z",
+      "side": 1,
+      "message": "Personally I think it\u0027s fine to break searches for six month old builds.",
+      "parentUuid": "ffa9d710_ab185839",
+      "range": {
+        "startLine": 114,
+        "startChar": 4,
+        "endLine": 114,
+        "endChar": 43
+      },
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4c2c1773_3a4cc82d",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 2
@@ -131,6 +155,24 @@
       "writtenOn": "2021-04-01T20:07:39Z",
       "side": 1,
       "message": "A general question: do we need to add `noindex` in the Build.Experiments in model?  Because we don\u0027t directly search by Experiments field.",
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4e76926a_3a21c31d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-02T06:48:21Z",
+      "side": 1,
+      "message": "L219 \u0027dq.Eq(\"experiments\", exp)\u0027, doesn\u0027t it imply we do search directly by this field and do need it to be indexed?",
+      "parentUuid": "48e668d0_cc43f574",
       "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
