@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c04d22f5_361319a9",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-02T21:59:11Z",
+      "side": 1,
+      "message": "Yep you\u0027re totally right; this is much better. I wasn\u0027t thinking about the wasted effort re-generating this filter list on every iteration in the tags flow case.",
+      "parentUuid": "abc790ba_a53ed64d",
+      "range": {
+        "startLine": 64,
+        "startChar": 13,
+        "endLine": 64,
+        "endChar": 21
+      },
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "90bfa2e3_c4469cfb",
@@ -85,6 +109,30 @@
       "side": 1,
       "message": "Personally I think it\u0027s fine to break searches for six month old builds.",
       "parentUuid": "ffa9d710_ab185839",
+      "range": {
+        "startLine": 114,
+        "startChar": 4,
+        "endLine": 114,
+        "endChar": 43
+      },
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "16394094_3c264e0e",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-02T21:59:11Z",
+      "side": 1,
+      "message": "Yep, I\u0027ll send this with the PSA.",
+      "parentUuid": "b25fd920_be867e4c",
       "range": {
         "startLine": 114,
         "startChar": 4,
@@ -173,6 +221,24 @@
       "side": 1,
       "message": "L219 \u0027dq.Eq(\"experiments\", exp)\u0027, doesn\u0027t it imply we do search directly by this field and do need it to be indexed?",
       "parentUuid": "48e668d0_cc43f574",
+      "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc09ab79_2a21ef66",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-02T21:59:11Z",
+      "side": 1,
+      "message": "Yes; there are actually two query paths here, a \u0027general\u0027 flow and a \u0027tags\u0027 flow; In the tags flow it doesn\u0027t use the index (but the general one does)",
+      "parentUuid": "4e76926a_3a21c31d",
       "revId": "847bba4bff48dcaad7639f40b9edda3ad5f61763",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
