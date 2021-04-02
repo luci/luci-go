@@ -106,6 +106,11 @@ func Register(db Impl) {
 	impls = append(impls, db)
 }
 
+// Configured returns true if there's at least one registered implementation.
+func Configured() bool {
+	return len(impls) > 0
+}
+
 // Kinds returns IDs of registered database implementations.
 func Kinds() []string {
 	kinds := make([]string, len(impls))

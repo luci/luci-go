@@ -55,6 +55,7 @@ func RegisterTokenKind(table string, prototype proto.Message) {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        table,
 		Prototype: prototype,
+		Kind:      tq.NonTransactional,
 		Topic:     "bigquery-log",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(m)
