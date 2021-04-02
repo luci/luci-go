@@ -54,6 +54,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b2eb0b5e_008ce193",
+        "filename": "cv/internal/config/configcron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-02T21:00:56Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "965a39da_44c71259",
+      "revId": "5229b89cfe18e5576d609a46de61ea2e563c95c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "79ebac98_6fd37af2",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 3
@@ -82,6 +100,30 @@
       "writtenOn": "2021-03-30T17:53:48Z",
       "side": 1,
       "message": "Del",
+      "range": {
+        "startLine": 24,
+        "startChar": 69,
+        "endLine": 25,
+        "endChar": 12
+      },
+      "revId": "5229b89cfe18e5576d609a46de61ea2e563c95c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "272b86d9_84ad32ea",
+        "filename": "server/tq/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-02T21:00:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9124f72_343b05f6",
       "range": {
         "startLine": 24,
         "startChar": 69,
