@@ -22,11 +22,14 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"go.chromium.org/luci/gae/impl/memory"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/proto"
+	luciconfig "go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -36,13 +39,22 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+type fakeCfgClient struct {
+	luciconfig.Interface
+}
+
+func (*fakeCfgClient) GetConfig(ctx context.Context, configSet luciconfig.Set, path string, metaOnly bool) (*luciconfig.Config, error) {
+	return &luciconfig.Config{Content: `resultdb {hostname: "rdbHost"}`}, nil
+}
+
 func TestCreateInvocations(t *testing.T) {
 	t.Parallel()
 
 	Convey("create invocations", t, func() {
 		mockClient := rdbPb.NewMockRecorderClient(gomock.NewController(t))
-		ctx := context.Background()
-		ctx = context.WithValue(ctx, &mockRecorderClientKey, mockClient)
+		ctx := context.WithValue(context.Background(), &mockRecorderClientKey, mockClient)
+		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
+		ctx = memory.UseInfo(ctx, "cr-buildbucket-dev")
 
 		bqExports := []*rdbPb.BigQueryExport{}
 		historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
@@ -98,7 +110,7 @@ func TestCreateInvocations(t *testing.T) {
 					InvocationId: "build-1",
 					Invocation: &rdbPb.Invocation{
 						BigqueryExports:  bqExports,
-						ProducerResource: "//bbHost/builds/1",
+						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
@@ -113,7 +125,7 @@ func TestCreateInvocations(t *testing.T) {
 					InvocationId: "build-2",
 					Invocation: &rdbPb.Invocation{
 						BigqueryExports:  bqExports,
-						ProducerResource: "//bbHost/builds/2",
+						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/2",
 						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
@@ -158,7 +170,7 @@ func TestCreateInvocations(t *testing.T) {
 					InvocationId: "build-1",
 					Invocation: &rdbPb.Invocation{
 						BigqueryExports:  bqExports,
-						ProducerResource: "//bbHost/builds/1",
+						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
@@ -173,7 +185,7 @@ func TestCreateInvocations(t *testing.T) {
 					InvocationId: fmt.Sprintf("build-%s-123", hex.EncodeToString(sha256Bldr[:])),
 					Invocation: &rdbPb.Invocation{
 						IncludedInvocations: []string{"invocations/build-1"},
-						ProducerResource:    "//bbHost/builds/1",
+						ProducerResource:    "//cr-buildbucket-dev.appspot.com/builds/1",
 						State:               rdbPb.Invocation_FINALIZING,
 						Realm:               "proj1:bucket",
 					},
@@ -213,7 +225,7 @@ func TestCreateInvocations(t *testing.T) {
 					InvocationId: "build-1",
 					Invocation: &rdbPb.Invocation{
 						BigqueryExports:  bqExports,
-						ProducerResource: "//bbHost/builds/1",
+						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
@@ -224,7 +236,7 @@ func TestCreateInvocations(t *testing.T) {
 					InvocationId: fmt.Sprintf("build-%s-123", hex.EncodeToString(sha256Bldr[:])),
 					Invocation: &rdbPb.Invocation{
 						IncludedInvocations: []string{"invocations/build-1"},
-						ProducerResource:    "//bbHost/builds/1",
+						ProducerResource:    "//cr-buildbucket-dev.appspot.com/builds/1",
 						State:               rdbPb.Invocation_FINALIZING,
 						Realm:               "proj1:bucket",
 					},
