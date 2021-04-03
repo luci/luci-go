@@ -324,6 +324,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "451759eb_5a8c3114",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-03T06:46:05Z",
+      "side": 1,
+      "message": "I have the same understanding with Chan.\n\nbufio.Scanner doesn\u0027t return ErrBufferFull.\nScanner may return ErrTooLong, if the read token is too large to be loaded in the buffer, of which length L129 sets.\n\nAs Chan said, buffer.Split() needs to be overridden to change the definition of a token. Otherwise, the task will fail repeatedly, as the artifact content will not change.",
+      "parentUuid": "0db2e22c_4e7b69a5",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 4
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77d24a94_fcde6300",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 8

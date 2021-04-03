@@ -38,6 +38,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3299934c_5e848125",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-03T06:46:05Z",
+      "side": 1,
+      "message": "I don\u0027t have enough context. Could you explain me why this uses bufio.Scanner?\n\nIf it was to prevent a single line from being cut into two shards in L150, then L142 will break the protection. If it\u0027s no longer necessary to keep line boundaries, then I\u0027d use io.CopyN() instead of bufio.Scanner{}.\n\nbufio.Scanner{} linear scans the entire input stream for tokenization. If the line-boundary protection is not necessary, io.CopyN() should be more performant and simpler.",
+      "range": {
+        "startLine": 145,
+        "startChar": 4,
+        "endLine": 145,
+        "endChar": 52
+      },
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "294d7425_ff07c76c",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 11
