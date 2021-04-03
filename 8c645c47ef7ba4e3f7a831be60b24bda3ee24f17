@@ -61,6 +61,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "50d39547_fa61b734",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-03T07:00:56Z",
+      "side": 1,
+      "message": "This is mostly for the case that, if an artifact is big enough that it can\u0027t fit in one TextArtifact row, we want to shard the content at a line break. So we use bufio.Scanner to read line by line until we reach the contentShardSize (L147).\n\nAnd when answering this question, I realized that with this CL we lose the guarantee because it\u0027s now possible that we decide to shard in the middle of scanning a really long line - but it should be rare. So probably we don\u0027t need to bother to fix it?",
+      "parentUuid": "3299934c_5e848125",
+      "range": {
+        "startLine": 145,
+        "startChar": 4,
+        "endLine": 145,
+        "endChar": 52
+      },
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "294d7425_ff07c76c",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 11
