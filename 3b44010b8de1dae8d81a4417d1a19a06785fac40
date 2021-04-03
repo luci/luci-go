@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca8e00ce_8836119a",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-03T07:12:25Z",
+      "side": 1,
+      "message": "this now checks to make sure the user doesn\u0027t search for \"+experiment\" \u0026\u0026 \"-experiment\"",
+      "revId": "3b44010b8de1dae8d81a4417d1a19a06785fac40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4eecc189_c98ddfbf",
+        "filename": "buildbucket/appengine/rpc/search_builds_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-03T07:12:25Z",
+      "side": 1,
+      "message": "I realized that my previous CL which added verification omitted these tests.",
+      "revId": "3b44010b8de1dae8d81a4417d1a19a06785fac40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
