@@ -84,6 +84,11 @@ type CLWriterClient interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
 	SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error)
+
+	// Submit a specific revision of a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
+	SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error)
 }
 
 // QueryClient defines a subset of Gerrit API used by CV to query for CLs.
