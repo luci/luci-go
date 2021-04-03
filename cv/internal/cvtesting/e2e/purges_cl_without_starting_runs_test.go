@@ -58,18 +58,18 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
 		So(trigger.Find(ct.GFake.GetChange(gHost, gChange).Info), ShouldNotBeNil)
 
-		/////////////////////////    Run CV   ////////////////////////////////
+		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
 		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
-			// Wait until CQ+2 vote is removed.
 			return trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil
 		})
+
+		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
-			// Ensure PM had a chance to react to CLUpdated event.
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
 		})
 
-		/////////////////////////    Verify   ////////////////////////////////
+		ct.LogPhase(ctx, "Verify")
 		So(trigger.Find(ct.GFake.GetChange(gHost, gChange).Info), ShouldBeNil)
 		p := ct.LoadProject(ctx, lProject)
 		So(p.State.GetPcls(), ShouldBeEmpty)
@@ -124,18 +124,18 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 			gf.Owner("user-1"),
 		)))
 
-		/////////////////////////    Run CV   ////////////////////////////////
+		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
 		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
-			// Wait until CQ+2 vote is removed.
 			return trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil
 		})
+
+		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
-			// Ensure PM had a chance to react to CLUpdated event.
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
 		})
 
-		/////////////////////////    Verify   ////////////////////////////////
+		ct.LogPhase(ctx, "Verify")
 		ci := ct.GFake.GetChange(gHost, gChange).Info
 		So(trigger.Find(ci), ShouldBeNil)
 		So(ci.GetMessages(), ShouldHaveLength, 1)
