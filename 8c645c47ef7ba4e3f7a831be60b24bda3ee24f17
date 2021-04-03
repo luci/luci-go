@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "87e89c70_284d59f1",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-03T06:00:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e012860_12e0b568",
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "294d7425_ff07c76c",
@@ -54,6 +72,54 @@
       "writtenOn": "2021-04-03T01:14:51Z",
       "side": 1,
       "message": "this is copied twice (here and in L168) and I suspect L162 missing it.\nif you goal is to annotate all errors coming from DownloadRBECASContent call, then maybe we should do\n\n  err :\u003d ac.DownloadRBECASContent(...)\n  return errors.Annotate(err, \"rea dartifact content\").Err()",
+      "range": {
+        "startLine": 153,
+        "startChar": 40,
+        "endLine": 153,
+        "endChar": 71
+      },
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fff19989_b884008b",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-03T06:00:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "294d7425_ff07c76c",
+      "range": {
+        "startLine": 153,
+        "startChar": 61,
+        "endLine": 153,
+        "endChar": 71
+      },
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1d52808_a592aef2",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-03T06:00:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92c84c77_48f2268f",
       "range": {
         "startLine": 153,
         "startChar": 40,

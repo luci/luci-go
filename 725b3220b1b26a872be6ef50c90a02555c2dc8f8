@@ -276,6 +276,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0db2e22c_4e7b69a5",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-03T06:00:48Z",
+      "side": 1,
+      "message": "\u003e sorry, are you saying that this code changes the error message to \"line too long\"? my interpretation of this code is that it calls ScanLine and returns its output as is in most cases\n\nI meant to say this customized Split function will fix the \"line too long\" errors if we get any. \n\n\u003e \n\u003e also, how can \"read/write on closed pipe\" happen here given that we don\u0027t call pr.Close() until f() returns?\n\nI think based on Scott\u0027s finding, line too long may be the root cause for the read half of pipe closed early. But because I didn\u0027t check sc.Err() before, this error doesn\u0027t show.\n\nSo I think if I now check sc.Err(), it\u0027s likely that when retrying the stuck tasks, they will end with \"line too long\" instead of \"read/write on closed pipe\" now. But they will still fail.\n\nAnd to really make those tasks succeed, I need the customized Split() to handle the long lines. \n\n\u003e the TODO itself needs to be fixed, but it is separate from the bug we are trying to solve\n\nThe main purpose of the customized Split() is to handle lines longer than bufio.MaxScanTokenSize (which is 64KiB) to avoid \"line too long\" errors. And it\u0027ll also fix the TODO as a side effect.",
+      "parentUuid": "e3040749_5612bcbb",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 4
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77d24a94_fcde6300",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 8
