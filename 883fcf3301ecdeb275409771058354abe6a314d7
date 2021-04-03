@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb8f3ec9_871137a6",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:44Z",
+      "side": 1,
+      "message": "`info.AppID(ctx) + \".appspot.com\"` which should get bb hostname properly (Got the idea from this piece of code -https://chromium.googlesource.com/infra/infra/+/42d544f66b2c02787c6374e61bf66b8c26f87f65/go/src/infra/appengine/sheriff-o-matic/som/handler/trees.go#62)",
+      "parentUuid": "ea26866d_07ed49fd",
+      "range": {
+        "startLine": 160,
+        "startChar": 5,
+        "endLine": 160,
+        "endChar": 18
+      },
+      "revId": "883fcf3301ecdeb275409771058354abe6a314d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7d637b08_6463a622",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-03-31T12:23:09Z",
       "side": 1,
       "message": "ctx.Value(\"env\") is intended to be removed once we remove the traffic splitter, so it\u0027s only suitable for temporary use (e.g. the switch in Batch is ok because it will be removed before we remove traffic splitting).",
+      "revId": "883fcf3301ecdeb275409771058354abe6a314d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d0ce78a_cdac8a1f",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d637b08_6463a622",
       "revId": "883fcf3301ecdeb275409771058354abe6a314d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
