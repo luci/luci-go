@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/deprecated"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
@@ -107,7 +108,7 @@ func TestFullFlow(t *testing.T) {
 		So(settings.Set(ctx, SettingsKey, &cfg, "who", "why"), ShouldBeNil)
 
 		method := CookieAuthMethod{
-			SessionStore:        &authtest.MemorySessionStore{},
+			SessionStore:        &deprecated.MemorySessionStore{},
 			Insecure:            true,
 			IncompatibleCookies: []string{"wrong_cookie"},
 		}
@@ -215,7 +216,7 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))
 		ctx = testsecrets.Use(ctx)
 
-		method := CookieAuthMethod{SessionStore: &authtest.MemorySessionStore{}}
+		method := CookieAuthMethod{SessionStore: &deprecated.MemorySessionStore{}}
 
 		call := func(query map[string]string) *httptest.ResponseRecorder {
 			q := url.Values{}
@@ -340,7 +341,7 @@ func TestNormalizeURL(t *testing.T) {
 func TestBadDestinationURLs(t *testing.T) {
 	Convey("Rejects bad destination URLs", t, func() {
 		ctx := context.Background()
-		method := CookieAuthMethod{SessionStore: &authtest.MemorySessionStore{}}
+		method := CookieAuthMethod{SessionStore: &deprecated.MemorySessionStore{}}
 
 		_, err := method.LoginURL(ctx, "http://somesite")
 		So(err, ShouldErrLike, "openid: dest URL in LoginURL or LogoutURL must be relative")

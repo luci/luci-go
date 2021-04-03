@@ -28,10 +28,11 @@ import (
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/deprecated"
 )
 
 // SessionStore stores auth sessions in the datastore (always in the default
-// namespace). It implements auth.SessionStore.
+// namespace). It implements deprecated.SessionStore.
 type SessionStore struct {
 	Prefix string // used as prefix for datastore keys
 }
@@ -120,13 +121,13 @@ func (s *SessionStore) CloseSession(ctx context.Context, sessionID string) error
 
 // GetSession returns existing non-expired session given its ID. Returns nil
 // if session doesn't exist, closed or expired. Returns only transient errors.
-func (s *SessionStore) GetSession(ctx context.Context, sessionID string) (*auth.Session, error) {
+func (s *SessionStore) GetSession(ctx context.Context, sessionID string) (*deprecated.Session, error) {
 	ctx = defaultNS(ctx)
 	ent, err := s.fetchSession(ctx, sessionID)
 	if ent == nil {
 		return nil, err
 	}
-	return &auth.Session{
+	return &deprecated.Session{
 		SessionID: sessionID,
 		UserID:    ent.Parent.StringID()[len(s.Prefix)+1:],
 		User: auth.User{
