@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -141,7 +142,7 @@ type Reader struct {
 }
 
 // DownloadRBECASContent calls f for the downloaded artifact content.
-func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteStreamClient, f func(io.Reader) error) error {
+func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteStreamClient, f func(context.Context, io.Reader) error) error {
 	stream, err := bs.Read(ctx, &bytestream.ReadRequest{
 		ResourceName: resourceName(r.RBEInstance, r.Hash, r.Size),
 	})
@@ -157,7 +158,7 @@ func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteSt
 	defer eg.Wait()
 	eg.Go(func() error {
 		defer pr.Close()
-		return f(pr)
+		return f(ctx, pr)
 	})
 
 	eg.Go(func() error {
@@ -180,7 +181,11 @@ func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteSt
 
 			default:
 				if _, err := pw.Write(chunk.Data); err != nil {
-					return err
+					if err == io.ErrClosedPipe {
+						// If f() exits early, return nil here to see what error that f() returns.
+						return nil
+					}
+					return errors.Annotate(err, "write to pipe").Err()
 				}
 			}
 		}

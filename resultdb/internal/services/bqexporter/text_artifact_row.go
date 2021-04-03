@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
@@ -119,11 +120,30 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		}
 	}
 
-	return ac.DownloadRBECASContent(ctx, b.rbecasClient, func(pr io.Reader) error {
+	err := ac.DownloadRBECASContent(ctx, b.rbecasClient, func(ctx context.Context, pr io.Reader) error {
 		sc := bufio.NewScanner(pr)
+		var buf []byte
+		sc.Buffer(buf, b.maxTokenSize)
+
+		// Return one line at a time, unless the line exceeds the buffer, then return
+		// data as it is.
+		sc.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+			advance, token, err = bufio.ScanLines(data, atEOF)
+			switch {
+			case atEOF:
+				return
+			case err != nil:
+				return
+			case advance == 0:
+				// No linebreak in data, return it as is.
+				return len(data), data, nil
+			default:
+				// token is a line with linebreak removed, append linebreak back.
+				return advance, append(token, lineBreak...), err
+			}
+		})
+
 		for sc.Scan() {
-			// TODO(crbug.com/1149736): handle the case that a single line is 5MB+.
-			// If such case happens, we should split the line.
 			if str.Len()+len(sc.Bytes())+len(lineBreak) > contentShardSize {
 				select {
 				case <-ctx.Done():
@@ -134,8 +154,11 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 				str.Reset()
 			}
 			str.Write(sc.Bytes())
-			str.Write(lineBreak)
 		}
+		if err := sc.Err(); err != nil {
+			return err
+		}
+
 		if str.Len() > 0 {
 			select {
 			case <-ctx.Done():
@@ -145,6 +168,7 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		}
 		return nil
 	})
+	return errors.Annotate(err, "read artifact content").Err()
 }
 
 type artifact struct {
