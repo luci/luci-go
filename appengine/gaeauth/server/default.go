@@ -20,7 +20,7 @@ import (
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/auth/deprecated"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/warmup"
 
@@ -31,7 +31,7 @@ import (
 //
 // By default on the dev server it is based on dev server cookies (implemented
 // by UsersAPIAuthMethod), in prod it is based on OpenID (implemented by
-// *openid.CookieAuthMethod).
+// *deprecated.CookieAuthMethod).
 //
 // Works only if appropriate handlers have been installed into the router. See
 // InstallHandlers.
@@ -67,7 +67,7 @@ func init() {
 	if appengine.IsDevAppServer() && !useOIDOnDevServer {
 		CookieAuth = UsersAPIAuthMethod{}
 	} else {
-		CookieAuth = &openid.CookieAuthMethod{
+		CookieAuth = &deprecated.CookieAuthMethod{
 			SessionStore:        &SessionStore{Prefix: "openid"},
 			IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
 			Insecure:            appengine.IsDevAppServer(), // for http:// cookie
