@@ -319,6 +319,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "456e1a36_9e203164",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6648217f_b3f28c0f",
+      "revId": "ae81b31b939260bb8b6d9983061b0f0fa1c4460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "65176cb4_28a16ee2",

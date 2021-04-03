@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "705b05d4_e33bb4ae",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11d944b2_3c31e4cc",
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a6a9c78b_cdbc60dc",
         "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
         "patchSetId": 6
@@ -81,6 +99,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "171a9fb9_f0c18f02",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "767d2f38_8668d657",
+      "range": {
+        "startLine": 73,
+        "startChar": 4,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be253824_8ca8154d",
@@ -94,6 +136,30 @@
       "writtenOn": "2021-04-02T17:57:34Z",
       "side": 1,
       "message": "invId?",
+      "range": {
+        "startLine": 81,
+        "startChar": 19,
+        "endLine": 81,
+        "endChar": 54
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "855634c0_c42622b8",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be253824_8ca8154d",
       "range": {
         "startLine": 81,
         "startChar": 19,
@@ -139,6 +205,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c36db486_a5d644a0",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "Agree. I misunderstood before. `AlreadyExists` error shouldn\u0027t be filtered out. \nAnd confirmed that UpdateToken header will be there as well for the deduplication case.",
+      "parentUuid": "cbd7816b_bc8c9e09",
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e405cdc1_4994b086",
@@ -152,6 +236,30 @@
       "writtenOn": "2021-04-02T17:57:34Z",
       "side": 1,
       "message": "Nit: includes?",
+      "range": {
+        "startLine": 98,
+        "startChar": 66,
+        "endLine": 98,
+        "endChar": 74
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc72c217_3a47e8fa",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e405cdc1_4994b086",
       "range": {
         "startLine": 98,
         "startChar": 66,
@@ -185,6 +293,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fea03d3_5d146aed",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "Because RequestID is restricted to at most 36 ASCII characters, this invocation id is too long (it contains sha256 hex string).\n\nActually the prefix \"build-\u003cbuild id\u003e-\" already takes 26 characters. Number may be longer that 6 chars. I\u0027ll short it to \"\u003cbuild id\u003e-\u003cbuild number\u003e\" format.",
+      "parentUuid": "155596f1_159850d8",
+      "range": {
+        "startLine": 110,
+        "startChar": 17,
+        "endLine": 110,
+        "endChar": 72
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "47a6ef35_180f4305",
@@ -198,6 +330,30 @@
       "writtenOn": "2021-04-02T17:57:34Z",
       "side": 1,
       "message": "Also include builder info here? Build number alone seems not very useful (But id is also mentioned here, so probably it\u0027s fine...).",
+      "range": {
+        "startLine": 113,
+        "startChar": 71,
+        "endLine": 113,
+        "endChar": 87
+      },
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c353436c_dc161456",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "yeah, build id should suffice.",
+      "parentUuid": "47a6ef35_180f4305",
       "range": {
         "startLine": 113,
         "startChar": 71,
@@ -239,6 +395,24 @@
       "side": 1,
       "message": "+1\n\nAlso at L124 build invocation\u0027s name is saved in the build proto, so we should guarantee that the update token is the one for build id invocation.",
       "parentUuid": "08998a25_24802052",
+      "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9f168fcf_099d6e05",
+        "filename": "buildbucket/appengine/internal/resultdb/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-03T03:04:24Z",
+      "side": 1,
+      "message": "Done. only use the update token from the first request.",
+      "parentUuid": "312f8727_e7aa541b",
       "revId": "e184ff8363184492eda0ef96e161ce95ceef4668",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
