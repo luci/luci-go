@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package openid
+package deprecated
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/deprecated"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -57,7 +57,7 @@ var errBadDestinationURL = errors.New("openid: dest URL in LoginURL or LogoutURL
 type CookieAuthMethod struct {
 	// SessionStore keeps user sessions in some permanent storage. Must be set,
 	// otherwise all methods return ErrNotConfigured.
-	SessionStore deprecated.SessionStore
+	SessionStore SessionStore
 
 	// Insecure is true to allow http:// URLs and non-https cookies. Useful for
 	// local development.
@@ -96,7 +96,7 @@ func (m *CookieAuthMethod) Warmup(c context.Context) (err error) {
 		return
 	}
 	if cfg.DiscoveryURL != "" {
-		_, err = fetchDiscoveryDoc(c, cfg.DiscoveryURL)
+		_, err = openid.FetchDiscoveryDoc(c, cfg.DiscoveryURL)
 	} else {
 		logging.Infof(c, "Skipping OpenID warmup, not configured")
 	}
