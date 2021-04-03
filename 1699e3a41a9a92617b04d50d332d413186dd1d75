@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cccaa2b5_b9afcd22",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-03T00:29:06Z",
+      "side": 1,
+      "message": "PTAL. Just code moves/renames and a very minor tweak/fix to avoid exporting ErrNotConfigured.",
+      "revId": "1699e3a41a9a92617b04d50d332d413186dd1d75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
