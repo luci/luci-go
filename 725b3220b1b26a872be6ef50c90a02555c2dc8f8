@@ -300,6 +300,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "49ce5166_ebaecada",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-03T06:13:48Z",
+      "side": 1,
+      "message": "\u003e to be clear: there is a bug currently that if there is a line that exceeds scanner buffer size (which defaults to 64KB), then scan.Err() will return bufio.ErrBufferFull,\n\nI should fix this error by:\n1. call sc.Buffer(buf, b.maxTokenSize) to make sure if a line exceeds b.maxTokenSize, scanner will use the buf without allocation (https://go.googlesource.com/go/+/go1.16.2/src/bufio/scan.go#261).\n\n2. the customized Split handles the case that scanner scan a chunk of data without linebreak at https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2801097/12/resultdb/internal/services/bqexporter/text_artifact_row.go#137.",
+      "parentUuid": "0db2e22c_4e7b69a5",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 4
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77d24a94_fcde6300",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 8
