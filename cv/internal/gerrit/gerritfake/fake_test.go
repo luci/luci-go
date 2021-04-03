@@ -724,7 +724,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: oldRev,
 			})
 			So(res, ShouldBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
+			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "is not current")
 		})
 
@@ -751,7 +751,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: ci.GetCurrentRevision(),
 			})
 			So(res, ShouldBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
+			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "change is merged")
 		})
 
@@ -765,7 +765,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: ci.GetCurrentRevision(),
 			})
 			So(res, ShouldBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
+			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "change is abandoned")
 		})
 	})
