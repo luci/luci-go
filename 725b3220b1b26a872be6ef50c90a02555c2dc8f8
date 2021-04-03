@@ -252,6 +252,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "801ce316_f8ca1f8e",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-03T05:57:54Z",
+      "side": 1,
+      "message": "to be clear: there is a bug currently that if there is a line that exceeds scanner buffer size (which defaults to 64KB), then scan.Err() will return bufio.ErrBufferFull, but it is a separate bug from [invalid pipe handling]. We need to fix it (perhaps in a separate CL), and this change isn\u0027t fixing it. I read a bit of bufio.Scanner and it seems like we have to switch from bufio.Scanner to something else (https://screenshot.googleplex.com/57J88QvBS2RepK7), which again is a larger change and seems unrelated to the fix in this CL.",
+      "parentUuid": "e3040749_5612bcbb",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 4
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77d24a94_fcde6300",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 8
