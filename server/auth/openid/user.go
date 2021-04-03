@@ -23,12 +23,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// userFromIDToken validates the ID token and extracts user information from it.
+// UserFromIDToken validates the ID token and extracts user information from it.
 //
 // Returns the partially validated token and auth.User extracted from it.
 //
 // The caller is still responsible to verify token's Audience field.
-func userFromIDToken(ctx context.Context, token string, discovery *discoveryDoc) (*IDToken, *auth.User, error) {
+func UserFromIDToken(ctx context.Context, token string, discovery *DiscoveryDoc) (*IDToken, *auth.User, error) {
 	// Validate the discovery doc has necessary fields to proceed.
 	switch {
 	case discovery.Issuer == "":
@@ -39,7 +39,7 @@ func userFromIDToken(ctx context.Context, token string, discovery *discoveryDoc)
 
 	// Grab the signing keys needed to verify the token. This is almost always
 	// hitting the local process cache and thus must be fast.
-	signingKeys, err := discovery.signingKeys(ctx)
+	signingKeys, err := discovery.SigningKeys(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

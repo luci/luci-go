@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package openid
+package deprecated
 
 import (
 	"context"
@@ -28,7 +28,7 @@ func TestSettings(t *testing.T) {
 		c := context.Background()
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 
-		cfg, err := fetchCachedSettings(c)
+		cfg, err := FetchOpenIDSettings(c)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldResemble, &Settings{})
 	})

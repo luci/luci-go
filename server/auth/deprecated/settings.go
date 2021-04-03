@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package openid
+package deprecated
 
 import (
 	"context"
@@ -55,8 +55,8 @@ type Settings struct {
 	RedirectURI string `json:"redirect_uri"`
 }
 
-// fetchCachedSettings fetches OpenID configuration from the settings store.
-func fetchCachedSettings(c context.Context) (*Settings, error) {
+// FetchOpenIDSettings fetches OpenID configuration from the settings store.
+func FetchOpenIDSettings(c context.Context) (*Settings, error) {
 	cfg := &Settings{}
 	if err := settings.Get(c, SettingsKey, cfg); err != settings.ErrNoSettings {
 		return cfg, err

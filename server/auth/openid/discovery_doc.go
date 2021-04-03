@@ -22,28 +22,32 @@ import (
 	"go.chromium.org/luci/server/caching"
 )
 
+// GoogleDiscoveryURL is an URL of the Google OpenID Connect discovery document.
+const GoogleDiscoveryURL = "https://accounts.google.com/.well-known/openid-configuration"
+
 var (
-	discoveryDocCache = caching.RegisterLRUCache(8) // URL string => *discoveryDoc
+	discoveryDocCache = caching.RegisterLRUCache(8) // URL string => *DiscoveryDoc
 	signingKeysCache  = caching.RegisterLRUCache(8) // URL string => *JSONWebKeySet
 )
 
-// discoveryDoc describes subset of OpenID Discovery JSON document.
+// DiscoveryDoc describes a subset of OpenID Discovery JSON document.
+//
 // See https://developers.google.com/identity/protocols/OpenIDConnect#discovery.
-type discoveryDoc struct {
+type DiscoveryDoc struct {
 	Issuer                string `json:"issuer"`
 	AuthorizationEndpoint string `json:"authorization_endpoint"`
 	TokenEndpoint         string `json:"token_endpoint"`
 	JwksURI               string `json:"jwks_uri"`
 }
 
-// signingKeys returns a JSON Web Key set fetched from the location specified
+// SigningKeys returns a JSON Web Key set fetched from the location specified
 // in the discovery document.
 //
 // It fetches them on the first use and then keeps them cached in the process
 // cache for 6h.
 //
 // May return both fatal and transient errors.
-func (d *discoveryDoc) signingKeys(ctx context.Context) (*JSONWebKeySet, error) {
+func (d *DiscoveryDoc) SigningKeys(ctx context.Context) (*JSONWebKeySet, error) {
 	fetcher := func() (interface{}, time.Duration, error) {
 		raw := &JSONWebKeySetStruct{}
 		req := internal.Request{
@@ -68,16 +72,12 @@ func (d *discoveryDoc) signingKeys(ctx context.Context) (*JSONWebKeySet, error) 
 	return cached.(*JSONWebKeySet), nil
 }
 
-// fetchDiscoveryDoc fetches discovery document from given URL.
+// FetchDiscoveryDoc fetches the discovery document from the given URL.
 //
 // It is cached in the process cache for 24 hours.
-func fetchDiscoveryDoc(ctx context.Context, url string) (*discoveryDoc, error) {
-	if url == "" {
-		return nil, ErrNotConfigured
-	}
-
+func FetchDiscoveryDoc(ctx context.Context, url string) (*DiscoveryDoc, error) {
 	fetcher := func() (interface{}, time.Duration, error) {
-		doc := &discoveryDoc{}
+		doc := &DiscoveryDoc{}
 		req := internal.Request{
 			Method: "GET",
 			URL:    url,
@@ -94,5 +94,5 @@ func fetchDiscoveryDoc(ctx context.Context, url string) (*discoveryDoc, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cached.(*discoveryDoc), nil
+	return cached.(*DiscoveryDoc), nil
 }
