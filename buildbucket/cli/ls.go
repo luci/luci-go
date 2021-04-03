@@ -27,6 +27,7 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/genproto/protobuf/field_mask"
 
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/system/pager"
@@ -79,6 +80,26 @@ func cmdLS(p Params) *subcommands.Command {
 				Print experimental builds too.
 				This flag is mutually exclusive with flag: -predicate.
 			`))
+			r.experimentsFlag.Register(&r.Flags, doc(`
+				Experiments that the builds must (or must not) have.
+				This flag is mutually exclusive with flag: -predicate
+
+				Can be specified multiple times. All provided values must match.
+
+				Each value is in the form of `+"`[+-]experiment_name`"+`, where "+" indiciates "must have"
+				and "-" indicates "must not have".
+
+				As a special case, "+luci.non_production" implies "-exp=true".
+
+				Example: list builds with expirement luci.non_production:
+				  bb ls -ex +luci.non_production
+
+				Well-known experiments:
+				  * `+bb.ExperimentNonProduction+`
+				  * `+bb.ExperimentBBCanarySoftware+`
+				  * `+bb.ExperimentBBAgent+`
+				  * `+bb.ExperimentUseRealms+`
+			`))
 			r.Flags.Var(StatusFlag(&r.status), "status",
 				fmt.Sprintf("Build status. Valid values: %s.\n"+
 					"This flag is mutually exclusive with flag: -predicate.",
@@ -118,6 +139,7 @@ type lsRun struct {
 	printRun
 	clsFlag
 	tagsFlag
+	experimentsFlag
 
 	predicates []*pb.BuildPredicate
 	status     pb.Status
@@ -231,6 +253,11 @@ func (r *lsRun) parseBuildPredicates(ctx context.Context, args []string) ([]*pb.
 		Tags:                r.Tags(),
 		Status:              r.status,
 		IncludeExperimental: r.includeExperimental,
+		Experiments:         r.experimentsFlag.experimentsFlat(),
+	}
+
+	if r.experimentsFlag.experiments[bb.ExperimentNonProduction] {
+		basePredicate.IncludeExperimental = true
 	}
 
 	var err error
