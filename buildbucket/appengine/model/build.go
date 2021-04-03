@@ -121,13 +121,33 @@ type Build struct {
 // Realm returns this build's auth realm, or an empty string if not opted into the
 // realms experiment.
 func (b *Build) Realm() string {
-	rlm := "+" + bb.ExperimentUseRealms
-	for _, e := range b.Experiments {
-		if e == rlm {
-			return fmt.Sprintf("%s:%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket)
-		}
+	if b.ExperimentStatus(bb.ExperimentUseRealms) == pb.Trinary_YES {
+		return fmt.Sprintf("%s:%s", b.Proto.Builder.Project, b.Proto.Builder.Bucket)
 	}
 	return ""
+}
+
+// ExperimentStatus scans the experiments attached to this Build and returns:
+//   * YES - The experiment was known at schedule time and enabled.
+//   * NO - The experiment was known at schedule time and disabled.
+//   * UNSET - The experiment was unknown at schedule time.
+//
+// Malformed Experiment filters are treated as UNSET.
+func (b *Build) ExperimentStatus(expname string) pb.Trinary {
+	for _, expFilter := range b.Experiments {
+		if len(expFilter) == 0 {
+			continue
+		}
+		if plusMinus, exp := expFilter[0], expFilter[1:]; exp == expname {
+			if plusMinus == '+' {
+				return pb.Trinary_YES
+			} else if plusMinus == '-' {
+				return pb.Trinary_NO
+			}
+			break
+		}
+	}
+	return pb.Trinary_UNSET
 }
 
 // Load overwrites this representation of a build by reading the given

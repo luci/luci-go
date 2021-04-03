@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -102,18 +103,20 @@ func TestNewSearchQuery(t *testing.T) {
 			}
 
 			So(query, ShouldResemble, &Query{
-				Builder:             expectedBuilder,
-				Tags:                expectedTags,
-				Status:              pb.Status_ENDED_MASK,
-				CreatedBy:           identity.Identity("user:abc@test.com"),
-				StartTime:           expectedStartTime,
-				EndTime:             expectedEndTime,
-				IncludeExperimental: false,
-				BuildIDHigh:         201,
-				BuildIDLow:          99,
-				Canary:              proto.Bool(true),
-				PageSize:            100,
-				PageToken:           "",
+				Builder:   expectedBuilder,
+				Tags:      expectedTags,
+				Status:    pb.Status_ENDED_MASK,
+				CreatedBy: identity.Identity("user:abc@test.com"),
+				StartTime: expectedStartTime,
+				EndTime:   expectedEndTime,
+				ExperimentFilters: stringset.NewFromSlice(
+					"+" + bb.ExperimentBBCanarySoftware,
+					"-" + bb.ExperimentNonProduction,
+				),
+				BuildIDHigh: 201,
+				BuildIDLow:  99,
+				PageSize:    100,
+				PageToken:   "",
 			})
 		})
 
@@ -188,6 +191,21 @@ func TestMustTimestamp(t *testing.T) {
 		res := mustTimestamp(nil)
 		So(res.IsZero(), ShouldBeTrue)
 	})
+}
+
+func experiments(canary, experimental bool) (ret []string) {
+	if canary {
+		ret = append(ret, "+"+bb.ExperimentBBCanarySoftware)
+	} else {
+		ret = append(ret, "-"+bb.ExperimentBBCanarySoftware)
+	}
+
+	if experimental {
+		ret = append(ret, "+"+bb.ExperimentNonProduction)
+	} else {
+		ret = append(ret, "-"+bb.ExperimentNonProduction)
+	}
+	return
 }
 
 func TestMainFetchFlow(t *testing.T) {
@@ -283,8 +301,9 @@ func TestMainFetchFlow(t *testing.T) {
 						Builder: "builder",
 					},
 				},
-				BucketID:  "project/bucket",
-				BuilderID: "project/bucket/builder",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder",
+				Experiments: experiments(false, false),
 			}), ShouldBeNil)
 
 			query := NewQuery(&pb.SearchBuildsRequest{})
@@ -342,9 +361,10 @@ func TestMainFetchFlow(t *testing.T) {
 						Builder: "builder",
 					},
 				},
-				BucketID:  "project/bucket",
-				BuilderID: "project/bucket/builder",
-				Tags:      []string{"buildset:1"},
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder",
+				Tags:        []string{"buildset:1"},
+				Experiments: experiments(false, false),
 			}), ShouldBeNil)
 
 			query.Tags = strpair.ParseMap([]string{"buildset:1"})
@@ -406,11 +426,12 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 				Status: pb.Status_SUCCESS,
 			},
-			Status:    pb.Status_SUCCESS,
-			Project:   "project",
-			BucketID:  "project/bucket",
-			BuilderID: "project/bucket/builder1",
-			Tags:      []string{"k1:v1", "k2:v2"},
+			Status:      pb.Status_SUCCESS,
+			Project:     "project",
+			BucketID:    "project/bucket",
+			BuilderID:   "project/bucket/builder1",
+			Tags:        []string{"k1:v1", "k2:v2"},
+			Experiments: experiments(false, false),
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 200,
@@ -423,10 +444,11 @@ func TestFetchOnBuild(t *testing.T) {
 				},
 				Status: pb.Status_CANCELED,
 			},
-			Status:    pb.Status_CANCELED,
-			Project:   "project",
-			BucketID:  "project/bucket",
-			BuilderID: "project/bucket/builder2",
+			Status:      pb.Status_CANCELED,
+			Project:     "project",
+			BucketID:    "project/bucket",
+			BuilderID:   "project/bucket/builder2",
+			Experiments: experiments(false, false),
 		}), ShouldBeNil)
 
 		Convey("found by builder", func() {
@@ -567,7 +589,8 @@ func TestFetchOnBuild(t *testing.T) {
 					},
 					Id: 8764414515958775808,
 				},
-				BucketID: "project/bucket",
+				BucketID:    "project/bucket",
+				Experiments: experiments(false, false),
 			}), ShouldBeNil)
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
@@ -607,8 +630,9 @@ func TestFetchOnBuild(t *testing.T) {
 						Builder: "builder1111",
 					},
 				},
-				CreatedBy: "project:infra",
-				BucketID:  "project/bucket",
+				CreatedBy:   "project:infra",
+				BucketID:    "project/bucket",
+				Experiments: experiments(false, false),
 			}), ShouldBeNil)
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
@@ -646,10 +670,11 @@ func TestFetchOnBuild(t *testing.T) {
 					},
 					Status: pb.Status_STARTED,
 				},
-				Project:   "project",
-				BucketID:  "project/bucket",
-				BuilderID: "project/bucket/builder3",
-				Status:    pb.Status_STARTED,
+				Project:     "project",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder3",
+				Status:      pb.Status_STARTED,
+				Experiments: experiments(false, false),
 			}), ShouldBeNil)
 
 			req := &pb.SearchBuildsRequest{
@@ -706,10 +731,10 @@ func TestFetchOnBuild(t *testing.T) {
 					},
 					Canary: true,
 				},
-				Project:   "project",
-				BucketID:  "project/bucket",
-				BuilderID: "project/bucket/builder321",
-				Canary:    true,
+				Project:     "project",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder321",
+				Experiments: experiments(true, false),
 			}), ShouldBeNil)
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnBuild(ctx)
@@ -723,6 +748,140 @@ func TestFetchOnBuild(t *testing.T) {
 							Builder: "builder321",
 						},
 						Canary: true,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("found only experimental", func() {
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					Experiments:         []string{"+" + bb.ExperimentNonProduction},
+					IncludeExperimental: true,
+				},
+			}
+			So(datastore.Put(ctx, &model.Build{
+				ID: 321,
+				Proto: pb.Build{
+					Id: 321,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder321",
+					},
+					Input: &pb.Build_Input{Experimental: true},
+				},
+				Project:     "project",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder321",
+				Experiments: experiments(false, true),
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				ID: 123,
+				Proto: pb.Build{
+					Id: 123,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder321",
+					},
+				},
+				Project:     "project",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder123",
+				Experiments: experiments(false, false),
+			}), ShouldBeNil)
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnBuild(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 321,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder321",
+						},
+						Input: &pb.Build_Input{Experimental: true},
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("found non experimental", func() {
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					Experiments: []string{"-" + bb.ExperimentNonProduction},
+				},
+			}
+			So(datastore.Put(ctx, &model.Build{
+				ID: 321,
+				Proto: pb.Build{
+					Id: 321,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder321",
+					},
+					Input: &pb.Build_Input{Experimental: true},
+				},
+				Project:     "project",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder321",
+				Experiments: experiments(false, true),
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				ID: 123,
+				Proto: pb.Build{
+					Id: 123,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder123",
+					},
+				},
+				Project:     "project",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder123",
+				Experiments: experiments(false, false),
+			}), ShouldBeNil)
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnBuild(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "k1", Value: "v1"},
+							{Key: "k2", Value: "v2"},
+						},
+						Status: pb.Status_SUCCESS,
+					},
+					{
+						Id: 123,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder123",
+						},
+					},
+					{
+						Id: 200,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+						Status: pb.Status_CANCELED,
 					},
 				},
 			}
@@ -777,9 +936,10 @@ func TestFetchOnBuild(t *testing.T) {
 						Builder: "builder3",
 					},
 				},
-				Project:   "project",
-				BucketID:  "project/bucket",
-				BuilderID: "project/bucket/builder3",
+				Project:     "project",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder3",
+				Experiments: experiments(false, false),
 			}), ShouldBeNil)
 
 			// this build can be fetched from db but not accessible by the user.
@@ -793,9 +953,10 @@ func TestFetchOnBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				},
-				Project:   "project_no_access",
-				BucketID:  "project_no_access/bucket",
-				BuilderID: "project_no_access/bucket/builder",
+				Project:     "project_no_access",
+				BucketID:    "project_no_access/bucket",
+				BuilderID:   "project_no_access/bucket/builder",
+				Experiments: experiments(false, false),
 			}), ShouldBeNil)
 
 			req := &pb.SearchBuildsRequest{
@@ -900,6 +1061,7 @@ func TestUpdateTagIndex(t *testing.T) {
 					"a:b",
 					"buildset:b1",
 				},
+				Experiments: experiments(false, false),
 			},
 			{
 				ID:       2,
@@ -909,6 +1071,7 @@ func TestUpdateTagIndex(t *testing.T) {
 					"build_address:address",
 					"buildset:b1",
 				},
+				Experiments: experiments(false, false),
 			},
 		}
 		So(UpdateTagIndex(ctx, builds), ShouldBeNil)
@@ -975,11 +1138,12 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 				Status: pb.Status_SUCCESS,
 			},
-			Status:    pb.Status_SUCCESS,
-			Project:   "project",
-			BucketID:  "project/bucket",
-			BuilderID: "project/bucket/builder1",
-			Tags:      []string{"buildset:commit/git/abcd"},
+			Status:      pb.Status_SUCCESS,
+			Project:     "project",
+			BucketID:    "project/bucket",
+			BuilderID:   "project/bucket/builder1",
+			Tags:        []string{"buildset:commit/git/abcd"},
+			Experiments: experiments(false, false),
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 200,
@@ -992,11 +1156,31 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 				Status: pb.Status_CANCELED,
 			},
-			Status:    pb.Status_CANCELED,
-			Project:   "project",
-			BucketID:  "project/bucket",
-			BuilderID: "project/bucket/builder2",
-			Tags:      []string{"buildset:commit/git/abcd"},
+			Status:      pb.Status_CANCELED,
+			Project:     "project",
+			BucketID:    "project/bucket",
+			BuilderID:   "project/bucket/builder2",
+			Tags:        []string{"buildset:commit/git/abcd"},
+			Experiments: experiments(false, false),
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Build{
+			ID: 300,
+			Proto: pb.Build{
+				Id: 300,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder3",
+				},
+				Status: pb.Status_CANCELED,
+				Input:  &pb.Build_Input{Experimental: true},
+			},
+			Status:      pb.Status_CANCELED,
+			Project:     "project",
+			BucketID:    "project/bucket",
+			BuilderID:   "project/bucket/builder3",
+			Tags:        []string{"buildset:commit/git/abcd"},
+			Experiments: experiments(false, true),
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.TagIndex{
 			ID: ":2:buildset:commit/git/abcd",
@@ -1012,6 +1196,10 @@ func TestFetchOnTagIndex(t *testing.T) {
 			Entries: []model.TagIndexEntry{
 				{
 					BuildID:  200,
+					BucketID: "project/bucket",
+				},
+				{
+					BuildID:  300,
 					BucketID: "project/bucket",
 				},
 			},
@@ -1094,11 +1282,12 @@ func TestFetchOnTagIndex(t *testing.T) {
 						Builder: "builder999",
 					},
 				},
-				Project:   "project",
-				BucketID:  "project/bucket",
-				BuilderID: "project/bucket/builder999",
-				Status:    pb.Status_STARTED,
-				Tags:      []string{"buildset:commit/git/abcd"},
+				Project:     "project",
+				BucketID:    "project/bucket",
+				BuilderID:   "project/bucket/builder999",
+				Status:      pb.Status_STARTED,
+				Tags:        []string{"buildset:commit/git/abcd"},
+				Experiments: experiments(false, false),
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.TagIndex{
 				ID: ":4:buildset:commit/git/abcd",
@@ -1219,6 +1408,19 @@ func TestFetchOnTagIndex(t *testing.T) {
 						Tags: []*pb.StringPair{
 							{Key: "buildset", Value: "commit/git/abcd"},
 						},
+						Status: pb.Status_CANCELED,
+					},
+					{
+						Id: 300,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder3",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Input:  &pb.Build_Input{Experimental: true},
 						Status: pb.Status_CANCELED,
 					},
 				},
