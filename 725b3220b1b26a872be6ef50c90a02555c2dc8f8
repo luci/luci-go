@@ -90,6 +90,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cde30868_aab0fe0c",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-03T00:47:12Z",
+      "side": 1,
+      "message": "I don\u0027t see other possibilities of ErrClosedPipe from the current code. However, if the logic changes in the future,such a check can be helpful for catching bugs. That said, I don\u0027t have a strong opinion on this.",
+      "parentUuid": "960ddaba_fdec297e",
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4c1c02b3_9edf32fe",

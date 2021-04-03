@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c60f879f_5381a825",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-03T00:47:12Z",
+      "side": 1,
+      "message": "nit;\n\n\"f() exited early. Return nil ....\"\nor\n\"If f() exited early, return nil ...\"",
+      "range": {
+        "startLine": 185,
+        "startChar": 9,
+        "endLine": 185,
+        "endChar": 29
+      },
+      "revId": "bd147d89b8f50cdcf59ced174ea8efdb712bb4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
