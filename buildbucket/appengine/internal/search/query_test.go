@@ -110,8 +110,8 @@ func TestNewSearchQuery(t *testing.T) {
 				StartTime: expectedStartTime,
 				EndTime:   expectedEndTime,
 				ExperimentFilters: stringset.NewFromSlice(
-					"+" + bb.ExperimentBBCanarySoftware,
-					"-" + bb.ExperimentNonProduction,
+					"+"+bb.ExperimentBBCanarySoftware,
+					"-"+bb.ExperimentNonProduction,
 				),
 				BuildIDHigh: 201,
 				BuildIDLow:  99,
@@ -758,8 +758,7 @@ func TestFetchOnBuild(t *testing.T) {
 		Convey("found only experimental", func() {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
-					Experiments:         []string{"+" + bb.ExperimentNonProduction},
-					IncludeExperimental: true,
+					Experiments: []string{"+" + bb.ExperimentNonProduction},
 				},
 			}
 			So(datastore.Put(ctx, &model.Build{
