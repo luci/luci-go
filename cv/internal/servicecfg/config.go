@@ -38,8 +38,12 @@ func ImportConfig(ctx context.Context) error {
 
 // GetMigrationConfig loads typically cached migration config.
 func GetMigrationConfig(ctx context.Context) (*migrationpb.Settings, error) {
-	v, err := cachedMigrationCfg.Get(ctx, &config.Meta{})
-	return v.(*migrationpb.Settings), err
+	switch v, err := cachedMigrationCfg.Get(ctx, &config.Meta{}); {
+	case err != nil:
+		return nil, err
+	default:
+		return v.(*migrationpb.Settings), nil
+	}
 }
 
 // SetTestMigrationConfig is used in tests only.
