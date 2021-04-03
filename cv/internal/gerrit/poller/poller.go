@@ -198,8 +198,7 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 	stateBefore := State{LuciProject: luciProject}
 	switch err := datastore.Get(ctx, &stateBefore); {
 	case err != nil && err != datastore.ErrNoSuchEntity:
-		return errors.Annotate(err, "failed to get poller state for %q", luciProject).Tag(
-			transient.Tag).Err()
+		return errors.Annotate(err, "failed to get poller state for %q", luciProject).Tag(transient.Tag).Err()
 	case err == datastore.ErrNoSuchEntity || stateBefore.ConfigHash != meta.Hash():
 		if err = updateConfig(ctx, &stateBefore, meta); err != nil {
 			return err
@@ -265,41 +264,42 @@ func updateConfig(ctx context.Context, s *State, meta config.Meta) error {
 }
 
 // save saves state of poller after the poll.
-func save(ctx context.Context, modified *State) error {
+func save(ctx context.Context, s *State) error {
 	var innerErr error
+	var copied State
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		latest := State{LuciProject: modified.LuciProject}
+		latest := State{LuciProject: s.LuciProject}
 		switch err = datastore.Get(ctx, &latest); {
 		case err == datastore.ErrNoSuchEntity:
-			if modified.EVersion > 0 {
+			if s.EVersion > 0 {
 				// At the beginning of the poll, we read an existing state.
 				// So, there was a concurrent deletion.
-				return errors.Reason("poller state for %q was unexpectedly missing", modified.LuciProject).Err()
+				return errors.Reason("poller state was unexpectedly missing").Err()
 			}
 			// Then, we'll create it.
 		case err != nil:
-			return errors.Annotate(err, "failed to get poller state for %q", modified.LuciProject).Err()
-		case latest.EVersion != modified.EVersion:
-			return errors.Annotate(errConcurrentStateUpdate, "project %q", modified.LuciProject).Err()
+			return errors.Annotate(err, "failed to get poller state").Tag(transient.Tag).Err()
+		case latest.EVersion != s.EVersion:
+			return errConcurrentStateUpdate
 		}
-		modified.EVersion++
-		modified.UpdateTime = clock.Now(ctx).UTC()
-		err = datastore.Put(ctx, modified)
-		if err != nil {
-			return errors.Annotate(err, "failed to save poller state for %s", modified.LuciProject).Err()
+		copied = *s
+		copied.EVersion++
+		copied.UpdateTime = clock.Now(ctx).UTC()
+		if err = datastore.Put(ctx, &copied); err != nil {
+			return errors.Annotate(err, "failed to save poller state").Tag(transient.Tag).Err()
 		}
 		return nil
 	}, nil)
 
 	switch {
 	case innerErr != nil:
-		return innerErr
-	case err == datastore.ErrConcurrentTransaction:
-		return errors.Annotate(errConcurrentStateUpdate, "project %q", modified.LuciProject).Err()
+		err = innerErr
 	case err != nil:
-		return errors.Annotate(err, "failed to save poller state for %q", modified.LuciProject).Tag(transient.Tag).Err()
+		err = errors.Annotate(err, "failed to save poller state").Tag(transient.Tag).Err()
 	default:
+		*s = copied
 		return nil
 	}
+	return errors.Annotate(err, "project %q", s.LuciProject).Err()
 }
