@@ -130,6 +130,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed1e5588_b0770e69",
+        "filename": "cv/internal/gerrit/gerritfake/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-03T00:59:40Z",
+      "side": 1,
+      "message": "Will have a follow-up CL.",
+      "parentUuid": "61f95bb2_a9e6604f",
+      "range": {
+        "startLine": 273,
+        "startChar": 34,
+        "endLine": 273,
+        "endChar": 49
+      },
+      "revId": "7077ff2ed659600a4c37f179d0af1fc73c30caff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8f136107_b569e3f1",
