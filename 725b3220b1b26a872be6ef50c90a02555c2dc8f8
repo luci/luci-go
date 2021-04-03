@@ -228,6 +228,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e3040749_5612bcbb",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-03T01:14:51Z",
+      "side": 1,
+      "message": "sorry, are you saying that this code changes the error message to \"line too long\"? my interpretation of this code is that it calls ScanLine and returns its output as is in most cases\n\nalso, how can \"read/write on closed pipe\" happen here given that we don\u0027t call pr.Close() until f() returns?\n\nThis part of the code change is the only that seems incorrect to me. I think bug is already fixed (by checking ErrClosedPipe returned from pw.Write) and this seems unnecessary.\n\n---\n\nthe TODO itself needs to be fixed, but it is separate from the bug we are trying to solve",
+      "parentUuid": "ce95aac6_d0ebef5b",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 4
+      },
+      "revId": "725b3220b1b26a872be6ef50c90a02555c2dc8f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "77d24a94_fcde6300",
         "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
         "patchSetId": 8

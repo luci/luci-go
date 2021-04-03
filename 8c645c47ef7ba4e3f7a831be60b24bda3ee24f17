@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e012860_12e0b568",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-03T01:14:51Z",
+      "side": 1,
+      "message": "this mutates global state \u003d\u003e it will cause flakes.\nplease make it a field of bqExporter and modify it there.\n\nbut stepping back, I am not sure about this part of the CL to begin with.",
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "294d7425_ff07c76c",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-03T01:14:51Z",
+      "side": 1,
+      "message": "at this level of abstraction, it doesn\u0027t know that it is a pipe",
+      "range": {
+        "startLine": 153,
+        "startChar": 61,
+        "endLine": 153,
+        "endChar": 71
+      },
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "92c84c77_48f2268f",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-03T01:14:51Z",
+      "side": 1,
+      "message": "this is copied twice (here and in L168) and I suspect L162 missing it.\nif you goal is to annotate all errors coming from DownloadRBECASContent call, then maybe we should do\n\n  err :\u003d ac.DownloadRBECASContent(...)\n  return errors.Annotate(err, \"rea dartifact content\").Err()",
+      "range": {
+        "startLine": 153,
+        "startChar": 40,
+        "endLine": 153,
+        "endChar": 71
+      },
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
