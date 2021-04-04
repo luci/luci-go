@@ -520,7 +520,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 		ctx, dbg := dbgIfVerbose(ctx)
 		tclock.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 			switch {
-			case testclock.HasTags(t, "coordinator") || testclock.HasTags(t, "test-itself"):
+			case testclock.HasTags(t, ClockTag) || testclock.HasTags(t, "test-itself"):
 				logging.Debugf(ctx, "unblocking %s", testclock.GetTags(t))
 				tclock.Add(d)
 			}
