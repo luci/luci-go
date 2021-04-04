@@ -18,12 +18,14 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/insecurecleartextkeyset"
 	"github.com/google/tink/go/keyset"
 	"github.com/google/tink/go/tink"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/encryptedcookies/internal/encryptedcookiespb"
 	"go.chromium.org/luci/server/encryptedcookies/session"
 )
@@ -88,4 +90,25 @@ func EncryptSessionCookie(aead tink.AEAD, pb *encryptedcookiespb.SessionCookie) 
 		HttpOnly: true, // no access from Javascript
 		MaxAge:   sessionCookieMaxAge,
 	}, nil
+}
+
+// EncryptedSessionCookie finds the encrypted session cookie in the request.
+//
+// Returns nil if the cookie is not set.
+func EncryptedSessionCookie(r *http.Request) *http.Cookie {
+	cookie, _ := r.Cookie(sessionCookieName)
+	return cookie
+}
+
+// DecryptSessionCookie decrypts the encrypted session cookie.
+func DecryptSessionCookie(aead tink.AEAD, c *http.Cookie) (*encryptedcookiespb.SessionCookie, error) {
+	if !strings.HasPrefix(c.Value, rawCookiePrefix) {
+		return nil, errors.Reason("the value doesn't start with prefix %q", rawCookiePrefix).Err()
+	}
+	enc := strings.TrimPrefix(c.Value, rawCookiePrefix)
+	cookie := &encryptedcookiespb.SessionCookie{}
+	if err := decryptB64(aead, enc, cookie, aeadContextSessionCookie); err != nil {
+		return nil, err
+	}
+	return cookie, nil
 }
