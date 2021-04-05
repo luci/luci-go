@@ -33,6 +33,24 @@
       "message": "btw, have you seen https://stackoverflow.com/a/36360323 ? Is it worth adding dedicated \"Deprecated blah\" block here and for structs below s.t. linters warn potential new users?",
       "revId": "481f5531a5ee6ffa01996acd83cadf76f86fd9f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa40963f_b9861fcf",
+        "filename": "server/auth/deprecated/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-05T23:38:17Z",
+      "side": 1,
+      "message": "I think the package named \"deprecated\" is already enough of a warning.",
+      "parentUuid": "5dcd96f4_cb066673",
+      "revId": "481f5531a5ee6ffa01996acd83cadf76f86fd9f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
