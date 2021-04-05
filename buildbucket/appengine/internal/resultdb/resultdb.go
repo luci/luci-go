@@ -24,12 +24,14 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/prpc"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -44,11 +46,17 @@ var mockRecorderClientKey = "used in tests only for setting the mock recorder cl
 //
 // Note: it will mutate the value of build.Proto.Infra.Resultdb.Invocation and build.ResultDBUpdateToken.
 func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.Builder) error {
-	// TODO(yuanjunh): in the next CL, fetch settings.cfg for rdbHost; get proper bbHost.
-	rdbHost := "rdbHost"
-	bbHost := "bbHost"
+	serviceCfg, err := config.GetSettingsCfg(ctx)
+	switch {
+	case err != nil:
+		return err
+	case serviceCfg.Resultdb.Hostname == "":
+		// resultdb host needs to be enabled at service level, i.e. globally per buildbucket deployment.
+		return nil
+	}
+	rdbHost := serviceCfg.Resultdb.Hostname
+	bbHost := info.AppID(ctx) + ".appspot.com"
 
-	var err error
 	err = parallel.WorkPool(64, func(ch chan<- func() error) {
 		for _, b := range builds {
 			b := b
