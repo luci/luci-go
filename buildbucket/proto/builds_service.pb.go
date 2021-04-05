@@ -843,13 +843,14 @@ type BuildPredicate struct {
 	// A build must have been created within the specified range.
 	// Both boundaries are optional.
 	CreateTime *TimeRange `protobuf:"bytes,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// DEPRECATED
-	//
 	// If false (the default), equivalent to filtering by experiment
 	// "-luci.non_production".
 	//
 	// If true, has no effect (both production and non_production builds will be
 	// returned).
+	//
+	// NOTE: If you explicitly search for non_production builds with the experiment
+	// filter "+luci.non_production", this is implied to be true.
 	//
 	// See `Builder.experiments` for well-known experiments.
 	IncludeExperimental bool `protobuf:"varint,8,opt,name=include_experimental,json=includeExperimental,proto3" json:"include_experimental,omitempty"`

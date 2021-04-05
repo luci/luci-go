@@ -118,10 +118,11 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		q.ExperimentFilters.Add("-" + bb.ExperimentBBCanarySoftware)
 	}
 
-	// Apply IncludeExperimental. Note that validateExperiment has already
-	// verified that p.Experiments does not contain +ExperimentNonProduction
-	// which would conflict with this.
-	if !p.IncludeExperimental {
+	// Apply IncludeExperimental.
+	//
+	// If the user explicitly requested builds which were non_production, then we
+	// ignore this.
+	if !p.IncludeExperimental && !q.ExperimentFilters.Has("+"+bb.ExperimentNonProduction) {
 		q.ExperimentFilters.Add("-" + bb.ExperimentNonProduction)
 	}
 
