@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package openid implements OpenID Connect Login protocol (client side).
-//
-// Tested only with Google's implementation of the protocol.
-//
-// See https://developers.google.com/identity/protocols/OpenIDConnect.
+// Package openid contains functionality related to OpenID Connect protocol.
 package openid

@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// IDToken is verified deserialized ID token.
+// IDToken is a verified deserialized ID token.
 //
 // See https://developers.google.com/identity/protocols/OpenIDConnect.
 type IDToken struct {

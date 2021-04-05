@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package openid
+package deprecated
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/tokens"
 )
 
@@ -45,12 +46,12 @@ var openIDStateToken = tokens.TokenKind{
 // called (via user's browser) with `state` and authorization code passed to it,
 // eventually resulting in a call to 'handle_authorization_code'.
 func authenticationURI(c context.Context, cfg *Settings, state map[string]string) (string, error) {
-	if cfg.ClientID == "" || cfg.RedirectURI == "" {
+	if cfg.ClientID == "" || cfg.RedirectURI == "" || cfg.DiscoveryURL == "" {
 		return "", ErrNotConfigured
 	}
 
 	// Grab authorization URL from discovery doc.
-	discovery, err := fetchDiscoveryDoc(c, cfg.DiscoveryURL)
+	discovery, err := openid.FetchDiscoveryDoc(c, cfg.DiscoveryURL)
 	if err != nil {
 		return "", err
 	}
@@ -88,7 +89,7 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 	}
 
 	// Validate the discover doc has necessary fields to proceed.
-	discovery, err := fetchDiscoveryDoc(c, cfg.DiscoveryURL)
+	discovery, err := openid.FetchDiscoveryDoc(c, cfg.DiscoveryURL)
 	switch {
 	case err != nil:
 		return "", nil, err
@@ -124,7 +125,7 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 	}
 
 	// Unpack the ID token to grab the user information from it.
-	tok, user, err := userFromIDToken(c, token.IDToken, discovery)
+	tok, user, err := openid.UserFromIDToken(c, token.IDToken, discovery)
 	if err != nil {
 		return "", nil, err
 	}

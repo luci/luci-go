@@ -24,9 +24,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// googleDiscoveryURL is URL of Google OpenID Connect discovery document.
-const googleDiscoveryURL = "https://accounts.google.com/.well-known/openid-configuration"
-
 // GoogleIDTokenAuthMethod implements auth.Method by checking `Authorization`
 // header which is expected to have an OpenID Connect ID token signed by Google.
 //
@@ -52,7 +49,7 @@ type GoogleIDTokenAuthMethod struct {
 	// used only for tokens that identify service accounts.
 	AudienceCheck func(ctx context.Context, r *http.Request, aud string) (valid bool, err error)
 
-	// discoveryURL is used in tests to override googleDiscoveryURL.
+	// discoveryURL is used in tests to override GoogleDiscoveryURL.
 	discoveryURL string
 }
 
@@ -91,7 +88,7 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Requ
 	}
 
 	// Validate token's signature and expiration. Extract user info from it.
-	tok, user, err := userFromIDToken(ctx, token, doc)
+	tok, user, err := UserFromIDToken(ctx, token, doc)
 	if err != nil {
 		return nil, err
 	}
@@ -133,10 +130,10 @@ func (m *GoogleIDTokenAuthMethod) Warmup(ctx context.Context) error {
 }
 
 // discoveryDoc fetches (and caches) the discovery document.
-func (m *GoogleIDTokenAuthMethod) discoveryDoc(ctx context.Context) (*discoveryDoc, error) {
-	url := googleDiscoveryURL
+func (m *GoogleIDTokenAuthMethod) discoveryDoc(ctx context.Context) (*DiscoveryDoc, error) {
+	url := GoogleDiscoveryURL
 	if m.discoveryURL != "" {
 		url = m.discoveryURL
 	}
-	return fetchDiscoveryDoc(ctx, url)
+	return FetchDiscoveryDoc(ctx, url)
 }
