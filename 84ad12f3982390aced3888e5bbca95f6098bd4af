@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "205a67f1_fa8405f0",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_column_header.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-05T22:32:35Z",
+      "side": 1,
+      "message": "I found the name \"tryResizeTo\" not self-explanatory, but I couldn\u0027t find a better name. Perhaps we can put a comment here to distinguish it with the resizeTo func below?",
+      "range": {
+        "startLine": 32,
+        "startChar": 18,
+        "endLine": 32,
+        "endChar": 29
+      },
+      "revId": "84ad12f3982390aced3888e5bbca95f6098bd4af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

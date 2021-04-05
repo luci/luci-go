@@ -98,6 +98,30 @@
       },
       "revId": "732f193efa70b4f0efa28069fd5b8df0ccde82af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f8379451_3e27902b",
+        "filename": "milo/frontend/resultui/src/components/drag_tracker.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-05T22:32:35Z",
+      "side": 1,
+      "message": "Yes, somehow I missed this.",
+      "parentUuid": "8e1be962_27199a92",
+      "range": {
+        "startLine": 49,
+        "startChar": 13,
+        "endLine": 49,
+        "endChar": 29
+      },
+      "revId": "732f193efa70b4f0efa28069fd5b8df0ccde82af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
