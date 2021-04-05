@@ -273,7 +273,7 @@ func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRev
 		return nil, status.Errorf(codes.NotFound, "revision %s not found", rev)
 	}
 	if rev != ch.Info.GetCurrentRevision() {
-		return nil, status.Errorf(codes.Internal, "revision %s is not current revision", rev)
+		return nil, status.Errorf(codes.FailedPrecondition, "revision %s is not current revision", rev)
 	}
 
 	switch ch.Info.GetStatus() {
@@ -285,9 +285,9 @@ func (client *Client) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRev
 		ch.Info.Updated = calcUpdatedTime(ctx, ch.Info.Updated)
 		return &gerritpb.SubmitInfo{Status: gerritpb.ChangeStatus_MERGED}, nil
 	case gerritpb.ChangeStatus_MERGED:
-		return nil, status.Errorf(codes.Internal, "change is merged")
+		return nil, status.Errorf(codes.FailedPrecondition, "change is merged")
 	case gerritpb.ChangeStatus_ABANDONED:
-		return nil, status.Errorf(codes.Internal, "change is abandoned")
+		return nil, status.Errorf(codes.FailedPrecondition, "change is abandoned")
 	default:
 		panic(fmt.Errorf("unrecognized status %s", ch.Info.GetStatus()))
 	}
