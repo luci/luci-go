@@ -83,6 +83,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f703ba04_f49037fd",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-05T22:16:13Z",
+      "side": 1,
+      "message": "yeah, we don\u0027t need to fix it on bqexporter. If it\u0027s a visible problem then a fix could be made on test frameworks to limit the maximum line length, (if possible).",
+      "parentUuid": "50d39547_fa61b734",
+      "range": {
+        "startLine": 145,
+        "startChar": 4,
+        "endLine": 145,
+        "endChar": 52
+      },
+      "revId": "8c645c47ef7ba4e3f7a831be60b24bda3ee24f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "294d7425_ff07c76c",
