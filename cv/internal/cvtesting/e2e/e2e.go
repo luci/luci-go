@@ -16,12 +16,20 @@ package e2e
 
 import (
 	"context"
+	"errors"
+	"flag"
 	"fmt"
+	"math"
+	"math/rand"
 	"strings"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -44,6 +52,10 @@ import (
 	_ "go.chromium.org/luci/cv/internal/run/impl"
 )
 
+const dsFlakinessFlagName = "cv.dsflakiness"
+
+var dsFlakinessFlag = flag.Float64(dsFlakinessFlagName, 0, "DS flakiness probability between 0(default) and 1.0 (always fails)")
+
 // Test encapsulates e2e setup for a CV test.
 //
 // Embeds cvtesting.Test, which sets CV's dependencies and some simple CV
@@ -63,6 +75,10 @@ type Test struct {
 	DiagnosticServer diagnosticpb.DiagnosticServer
 	MigrationServer  migrationpb.MigrationServer
 	// TODO(tandrii): add CQD fake.
+
+	// dsFlakiness enables ds flakiness for "RunUntil".
+	dsFlakiness    float64
+	dsFlakinesRand rand.Source
 }
 
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
@@ -81,6 +97,15 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 
 	// Delegate most setup to cvtesting.Test.
 	ctx, cancel := t.Test.SetUp()
+
+	if (*dsFlakinessFlag) != 0 {
+		t.dsFlakiness = *dsFlakinessFlag
+		if t.dsFlakiness < 0 || t.dsFlakiness > 1 {
+			panic(fmt.Errorf("invalid %s %f: must be between 0.0 and 1.0", dsFlakinessFlagName, t.dsFlakiness))
+		}
+		logging.Warningf(ctx, "Using %.4f flaky Datastore", t.dsFlakiness)
+		t.dsFlakinesRand = rand.NewSource(0)
+	}
 
 	t.MigrationServer = &migration.MigrationServer{}
 	t.DiagnosticServer = &diagnostic.DiagnosticServer{}
@@ -109,27 +134,67 @@ func (t *Test) RunAtLeastOncePoller(ctx context.Context) {
 }
 
 // RunUntil runs TQ tasks, while stopIf returns false.
+//
+// If `dsFlakinessFlag` is set, uses flaky datastore for running TQ tasks.
 func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
-	// TODO(tandrii): adjust based on concurrent/serial execution and flakiness of
-	// Datastore.
-	const maxTasks = 1000
+	maxTasks := 1000.0
+	taskCtx := ctx
+	if t.dsFlakiness > 0 {
+		maxTasks *= math.Max(1.0, math.Round(100*t.dsFlakiness))
+		taskCtx = t.flakifyDS(ctx)
+	}
 	i := 0
-	// Use StopBefore such that first check is before running any task.
-	t.TQ.Run(ctx, tqtesting.StopBefore(func(t *tqtesting.Task) bool {
-		switch {
-		case stopIf():
-			return true
-		case i == maxTasks:
-			return true
-		default:
-			i++
+	tooLong := false
+
+	t.sweepTTQ(ctx)
+	var finished []string
+	t.TQ.Run(
+		taskCtx,
+		// StopAfter must be first and also always return false s.t. we correctly
+		// record all finished tasks.
+		tqtesting.StopAfter(func(task *tqtesting.Task) bool {
+			finished = append(finished, fmt.Sprintf("%30s (attempt# %d)", task.Class, task.Attempts))
+			t.sweepTTQ(ctx)
 			return false
-		}
-	}))
+		}),
+		// StopBefore is actually used to for conditional stopping.
+		// Note that it can `return true` (meaning stop) before any task was run at
+		// all.
+		tqtesting.StopBefore(func(t *tqtesting.Task) bool {
+			switch {
+			case stopIf():
+				return true
+			case float64(i) >= maxTasks:
+				tooLong = true
+				return true
+			default:
+				i++
+				if i%1000 == 0 {
+					logging.Debugf(ctx, "RunUntil is running %d task", i)
+				}
+				return false
+			}
+		}),
+	)
+
 	// Log only here after all tasks-in-progress are completed.
-	logging.Debugf(ctx, "RunUntil ran %d iterations", i)
-	if i == maxTasks {
-		panic("RunUntil ran for too long!")
+	outstanding := make([]string, len(t.TQ.Tasks().Pending()))
+	for i, task := range t.TQ.Tasks().Pending() {
+		outstanding[i] = task.Class
+	}
+	logging.Debugf(ctx, "RunUntil ran %d iterations, finished %d tasks, left %d tasks", i, len(finished), len(outstanding))
+	for i, v := range finished {
+		logging.Debugf(ctx, "    finished #%d task: %s", i, v)
+	}
+	if len(outstanding) > 0 {
+		logging.Debugf(ctx, "  outstanding: %s", outstanding)
+	}
+
+	if tooLong {
+		panic(errors.New("RunUntil ran for too long!"))
+	}
+	if err := ctx.Err(); err != nil {
+		panic(err)
 	}
 }
 
@@ -235,4 +300,54 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 			},
 		},
 	}
+}
+
+// implementation detail
+
+// flakifyDS returns context with flaky Datastore.
+func (t *Test) flakifyDS(ctx context.Context) context.Context {
+	ctx, fb := featureBreaker.FilterRDS(ctx, nil)
+	fb.BreakFeaturesWithCallback(
+		flaky.Errors(flaky.Params{
+			Rand:                             t.dsFlakinesRand,
+			DeadlineProbability:              t.dsFlakiness,
+			ConcurrentTransactionProbability: t.dsFlakiness,
+		}),
+		featureBreaker.DatastoreFeatures...,
+	)
+	return ctx
+}
+
+// sweepTTQ ensures all previously transactionally created tasks are actually
+// added to TQ.
+//
+// This is critical when datastore is flaky, as this may result in transaction
+// succeeding, but client receiving a transient error.
+//
+// Context passed must not have flaky datastore.
+func (t *Test) sweepTTQ(ctx context.Context) {
+	if t.dsFlakiness > 0 {
+		// TODO(tandrii): find a way to instantiate && launch Sweeper per test with
+		// a controlled lifetime.
+		// Currently, tq.Default.Sweeper is global AND allows at most 1 concurrent
+		// sweep, regardless of what `ctx` is passed to Sweep.
+		// Furthermore, Sweep must be ran outside of
+		// tqtesting.StopAfter/tqtesting.StopBefore callbacks to avoid deadlock.
+		go func() {
+			tqDefaultSweeperLock.Lock()
+			defer tqDefaultSweeperLock.Unlock()
+			if err := tq.Sweep(ctx); err != nil && err != ctx.Err() {
+				logging.Errorf(ctx, "sweep failed: %s", err)
+			}
+		}()
+	}
+}
+
+var tqDefaultSweeperLock sync.Mutex
+
+func init() {
+	tq.Default.Sweeper = tq.NewInProcSweeper(tq.InProcSweeperOptions{
+		SweepShards:     1,
+		SubmitBatchSize: 1,
+	})
 }
