@@ -16,6 +16,7 @@ package bqexporter
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -28,6 +29,7 @@ import (
 	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
@@ -40,8 +42,6 @@ import (
 )
 
 var textArtifactRowSchema bigquery.Schema
-
-var lineBreak = []byte("\n")
 
 const (
 	artifactRowMessage = "luci.resultdb.bq.TextArtifactRow"
@@ -119,12 +119,27 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		}
 	}
 
-	return ac.DownloadRBECASContent(ctx, b.rbecasClient, func(pr io.Reader) error {
+	err := ac.DownloadRBECASContent(ctx, b.rbecasClient, func(ctx context.Context, pr io.Reader) error {
 		sc := bufio.NewScanner(pr)
+		//var buf []byte
+		sc.Buffer(nil, b.maxTokenSize)
+
+		// Return one line at a time, unless the line exceeds the buffer, then return
+		// data as it is.
+		sc.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+			if len(data) == 0 {
+				return 0, nil, nil
+			}
+			if i := bytes.IndexByte(data, '\n'); i >= 0 {
+				// We have a full newline-terminated line.
+				return i + 1, data[:i+1], nil
+			}
+			// A partial line occupies the entire buffer, return it as is.
+			return len(data), data, nil
+		})
+
 		for sc.Scan() {
-			// TODO(crbug.com/1149736): handle the case that a single line is 5MB+.
-			// If such case happens, we should split the line.
-			if str.Len()+len(sc.Bytes())+len(lineBreak) > contentShardSize {
+			if str.Len()+len(sc.Bytes()) > contentShardSize {
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
@@ -134,8 +149,11 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 				str.Reset()
 			}
 			str.Write(sc.Bytes())
-			str.Write(lineBreak)
 		}
+		if err := sc.Err(); err != nil {
+			return err
+		}
+
 		if str.Len() > 0 {
 			select {
 			case <-ctx.Done():
@@ -145,6 +163,7 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		}
 		return nil
 	})
+	return errors.Annotate(err, "read artifact content").Err()
 }
 
 type artifact struct {

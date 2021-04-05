@@ -16,6 +16,7 @@ package artifactcontent
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"strings"
 	"testing"
@@ -37,7 +38,7 @@ func TestDownloadRBECASContent(t *testing.T) {
 		}
 
 		var str strings.Builder
-		err := ac.DownloadRBECASContent(ctx, &artifactcontenttest.FakeByteStreamClient{[]byte("contentspart2\n")}, func(pr io.Reader) error {
+		err := ac.DownloadRBECASContent(ctx, &artifactcontenttest.FakeByteStreamClient{[]byte("contentspart2\n")}, func(_ context.Context, pr io.Reader) error {
 			sc := bufio.NewScanner(pr)
 			for sc.Scan() {
 				str.Write(sc.Bytes())
