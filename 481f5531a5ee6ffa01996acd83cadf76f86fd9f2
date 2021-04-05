@@ -16,6 +16,23 @@
       "message": "PTAL.\n\nJust code moves.",
       "revId": "481f5531a5ee6ffa01996acd83cadf76f86fd9f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5dcd96f4_cb066673",
+        "filename": "server/auth/deprecated/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-05T19:48:01Z",
+      "side": 1,
+      "message": "btw, have you seen https://stackoverflow.com/a/36360323 ? Is it worth adding dedicated \"Deprecated blah\" block here and for structs below s.t. linters warn potential new users?",
+      "revId": "481f5531a5ee6ffa01996acd83cadf76f86fd9f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
