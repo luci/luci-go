@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "04f35884_f89cabe0",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-05T23:59:59Z",
+      "side": 1,
+      "message": "Done (ish 😊)",
+      "parentUuid": "fc464167_0d2238fe",
+      "range": {
+        "startLine": 94,
+        "startChar": 4,
+        "endLine": 94,
+        "endChar": 18
+      },
+      "revId": "0acc2f78b61d35c186bbceca5f85c156518562e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "05843e98_35550d80",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-04-05T23:56:06Z",
       "side": 1,
       "message": "nit: I find `switch` more readable and concise than `if`. Your call!",
+      "revId": "0acc2f78b61d35c186bbceca5f85c156518562e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63badf60_88a38ba6",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-05T23:59:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05843e98_35550d80",
       "revId": "0acc2f78b61d35c186bbceca5f85c156518562e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
