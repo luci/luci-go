@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package authtest
+package deprecated
 
 import (
 	"context"
@@ -24,10 +24,10 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// MemorySessionStore implement auth.SessionStore.
+// MemorySessionStore implement SessionStore.
 type MemorySessionStore struct {
 	lock    sync.Mutex
-	store   map[string]auth.Session
+	store   map[string]Session
 	counter int
 }
 
@@ -38,10 +38,10 @@ func (s *MemorySessionStore) OpenSession(ctx context.Context, userID string, u *
 	defer s.lock.Unlock()
 	s.counter++
 	if s.store == nil {
-		s.store = make(map[string]auth.Session, 1)
+		s.store = make(map[string]Session, 1)
 	}
 	sid := fmt.Sprintf("%s/%d", userID, s.counter)
-	s.store[sid] = auth.Session{
+	s.store[sid] = Session{
 		SessionID: sid,
 		UserID:    userID,
 		User:      *u,
@@ -61,7 +61,7 @@ func (s *MemorySessionStore) CloseSession(ctx context.Context, sessionID string)
 
 // GetSession returns existing non-expired session given its ID. Returns nil
 // if session doesn't exist, closed or expired. Returns only transient errors.
-func (s *MemorySessionStore) GetSession(ctx context.Context, sessionID string) (*auth.Session, error) {
+func (s *MemorySessionStore) GetSession(ctx context.Context, sessionID string) (*Session, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if session, ok := s.store[sessionID]; ok && clock.Now(ctx).Before(session.Exp) {

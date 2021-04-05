@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package authtest
+package deprecated
 
 import (
 	"context"
@@ -41,7 +41,7 @@ func TestSession(t *testing.T) {
 
 		ss, err = s.GetSession(ctx, "uid/1")
 		So(err, ShouldBeNil)
-		So(ss, ShouldResemble, &auth.Session{
+		So(ss, ShouldResemble, &Session{
 			SessionID: "uid/1",
 			UserID:    "uid",
 			User:      auth.User{Name: "dude"},

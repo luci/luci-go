@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/deprecated"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -45,7 +46,7 @@ func TestWorks(t *testing.T) {
 
 		session, err := s.GetSession(c, sid)
 		So(err, ShouldBeNil)
-		So(session, ShouldResemble, &auth.Session{
+		So(session, ShouldResemble, &deprecated.Session{
 			SessionID: "ns/uid/1",
 			UserID:    "uid",
 			User:      u,

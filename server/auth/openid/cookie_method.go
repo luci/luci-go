@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/deprecated"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -56,7 +57,7 @@ var errBadDestinationURL = errors.New("openid: dest URL in LoginURL or LogoutURL
 type CookieAuthMethod struct {
 	// SessionStore keeps user sessions in some permanent storage. Must be set,
 	// otherwise all methods return ErrNotConfigured.
-	SessionStore auth.SessionStore
+	SessionStore deprecated.SessionStore
 
 	// Insecure is true to allow http:// URLs and non-https cookies. Useful for
 	// local development.
