@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "88f804d4_9875a3e8",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-05T05:28:33Z",
+      "side": 1,
+      "message": "better to separate to Start and Wait for deteailed error.\nand annotate that too.",
+      "range": {
+        "startLine": 90,
+        "startChar": 12,
+        "endLine": 90,
+        "endChar": 15
+      },
+      "revId": "320fd75b87fb70d7089c19059bafe35966414ef3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "408a21b5_1faa631e",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 6
