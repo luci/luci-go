@@ -15,6 +15,7 @@
 package bqexporter
 
 import (
+	"bufio"
 	"context"
 	"crypto/sha512"
 	"encoding/hex"
@@ -111,6 +112,9 @@ type bqExporter struct {
 
 	// Client to read from RBE-CAS.
 	rbecasClient bytestream.ByteStreamClient
+
+	// Max size of a token the scanner can buffer when reading artifact content.
+	maxTokenSize int
 }
 
 // Tasks describes how to route bq export tasks.
@@ -137,6 +141,7 @@ func InitServer(srv *server.Server, opts Options) error {
 		putLimiter:   rate.NewLimiter(opts.RateLimit, 1),
 		batchSem:     semaphore.NewWeighted(int64(opts.MaxBatchTotalSizeApprox / opts.MaxBatchSizeApprox)),
 		rbecasClient: bytestream.NewByteStreamClient(conn),
+		maxTokenSize: bufio.MaxScanTokenSize,
 	}
 	Tasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationToBQ)
