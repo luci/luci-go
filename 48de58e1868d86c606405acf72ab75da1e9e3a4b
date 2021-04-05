@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e48692ac_19a1a487",
+        "filename": "milo/frontend/resultui/src/context/user_configs.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-05T22:39:56Z",
+      "side": 1,
+      "message": "Maybe testResults?",
+      "range": {
+        "startLine": 31,
+        "startChar": 2,
+        "endLine": 31,
+        "endChar": 9
+      },
+      "revId": "48de58e1868d86c606405acf72ab75da1e9e3a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c124512f_5536b1b1",
+        "filename": "milo/frontend/resultui/src/context/user_configs.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-05T22:39:56Z",
+      "side": 1,
+      "message": "Is it in pixel? It\u0027s good to be explicit here.",
+      "range": {
+        "startLine": 35,
+        "startChar": 23,
+        "endLine": 35,
+        "endChar": 28
+      },
+      "revId": "48de58e1868d86c606405acf72ab75da1e9e3a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
