@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -370,8 +369,6 @@ func (t *Test) setUpTestClock(ctx context.Context) context.Context {
 	moveIf := stringset.NewFromSlice(
 		// Used by tqtesting to wait until ETA of the next task.
 		tqtesting.ClockTag,
-		// Used by tq sweeper.
-		dispatcher.ClockTag,
 	)
 	ignoreIf := stringset.NewFromSlice(
 		// Used in clock.WithTimeout(ctx) | clock.WithDeadline(ctx).

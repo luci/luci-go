@@ -22,9 +22,6 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
 
-// ClockTag tags the clock used in Channel's sleep.
-const ClockTag = "sync-dispatcher-sleep"
-
 // Channel holds a chan which you can push individual work items to.
 type Channel struct {
 	// C is an unbuffered channel which you can push single work items into.
@@ -137,7 +134,7 @@ func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error
 
 		resultCh: make(chan workerResult),
 
-		timer: clock.NewTimer(clock.Tag(ctx, ClockTag)),
+		timer: clock.NewTimer(clock.Tag(ctx, "coordinator")),
 	}
 
 	go cstate.run(ctx, send)
