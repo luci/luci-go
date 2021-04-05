@@ -14,6 +14,8 @@
 
 package buildbucket
 
+import "go.chromium.org/luci/common/data/stringset"
+
 // This file contains helper functions for pb package.
 // TODO(nodir): move existing helpers from pb to this file.
 
@@ -36,6 +38,6 @@ const (
 )
 
 // WellKnownExperiments is the list of all well-known experiments.
-var WellKnownExperiments = []string{
+var WellKnownExperiments = stringset.NewFromSlice(
 	ExperimentBBCanarySoftware, ExperimentNonProduction, ExperimentBBAgent, ExperimentUseRealms,
-}
+)

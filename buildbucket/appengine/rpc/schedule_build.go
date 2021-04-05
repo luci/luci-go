@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -80,7 +81,27 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 		return errors.Reason("priority must be in [0, 255]").Err()
 	}
 
+	for expName := range req.Experiments {
+		if err := validateExperimentName(expName); err != nil {
+			return errors.Annotate(err, "experiment %q", expName).Err()
+		}
+	}
+
 	// TODO(crbug/1042991): Validate Properties, Gerrit Changes, Dimensions, Notify.
+	return nil
+}
+
+var experimentName = regexp.MustCompile(`^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$`)
+
+func validateExperimentName(expName string) error {
+	if !experimentName.MatchString(expName) {
+		return errors.Reason("does not match %q", experimentName).Err()
+	}
+
+	if strings.HasPrefix(expName, "luci.") && !bb.WellKnownExperiments.Has(expName) {
+		return errors.New(`unknown experiment has reserved prefix "luci."`)
+	}
+
 	return nil
 }
 
@@ -227,7 +248,7 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 
 	// All well-known experiments need to show up in the model.Build, so
 	// initialize them all to false.
-	for _, wke := range bb.WellKnownExperiments {
+	for wke := range bb.WellKnownExperiments {
 		exps[wke] = false
 	}
 
