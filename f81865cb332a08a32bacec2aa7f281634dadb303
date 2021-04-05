@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5f33471c_e6e2423e",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-05T20:11:28Z",
+      "side": 1,
+      "message": "This is because `experimentsFlag` is embedded in `r`. `r.experiments` here is really `r.experimentsFlag.experiments`, which is the correct type here (map[string]bool)",
+      "parentUuid": "2c7d5da2_e788cb20",
+      "range": {
+        "startLine": 194,
+        "startChar": 17,
+        "endLine": 194,
+        "endChar": 28
+      },
+      "revId": "f81865cb332a08a32bacec2aa7f281634dadb303",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2d2cd988_43660c7b",
         "filename": "buildbucket/cli/experiments.go",
         "patchSetId": 1
