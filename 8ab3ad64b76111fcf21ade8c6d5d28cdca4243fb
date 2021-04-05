@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7204964_c357d286",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-05T19:27:43Z",
+      "side": 1,
+      "message": "this mutates the underlying buffer. But sure this is safe. FWIU the split func must only take a slice of the data it is given (and shouldn\u0027t allocate more data).",
+      "range": {
+        "startLine": 142,
+        "startChar": 20,
+        "endLine": 142,
+        "endChar": 47
+      },
+      "revId": "8ab3ad64b76111fcf21ade8c6d5d28cdca4243fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b49f529_65f60c7c",
+        "filename": "resultdb/internal/services/bqexporter/text_artifact_row.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-05T19:27:43Z",
+      "side": 1,
+      "message": "not relatd to this CL, but I am not sure why do we check this. We don\u0027t append lineBreak after L156",
+      "range": {
+        "startLine": 147,
+        "startChar": 31,
+        "endLine": 147,
+        "endChar": 46
+      },
+      "revId": "8ab3ad64b76111fcf21ade8c6d5d28cdca4243fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
