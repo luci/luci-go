@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4968f911_130fdf98",
+        "filename": "cv/internal/cvtesting/e2e/e2e.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-05T21:03:41Z",
+      "side": 1,
+      "message": "Is it due to the internal implementation of Sweep?\nAlso, it is actually used inside tqtesting.StopAfter on L155.",
+      "range": {
+        "startLine": 334,
+        "startChar": 0,
+        "endLine": 335,
+        "endChar": 74
+      },
+      "revId": "7b01488db96f94c35fa3702f3ddb995d16c17716",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
