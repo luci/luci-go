@@ -15,10 +15,13 @@
 package lib
 
 import (
+	"context"
 	"os"
+	"os/exec"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -32,7 +35,7 @@ func TestReproduceParse_NoArgs(t *testing.T) {
 	t.Parallel()
 	Convey(`Make sure Parse works with no arguments.`, t, func() {
 		c := reproduceRun{}
-		c.Init(&testAuthFlags{})
+		c.init(&testAuthFlags{})
 
 		err := c.parse([]string(nil))
 		So(err, ShouldErrLike, "must provide -server")
@@ -43,11 +46,36 @@ func TestReproduceParse_NoTaskID(t *testing.T) {
 	t.Parallel()
 	Convey(`Make sure Parse works with with no task ID.`, t, func() {
 		c := reproduceRun{}
-		c.Init(&testAuthFlags{})
+		c.init(&testAuthFlags{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 
 		err = c.parse([]string(nil))
 		So(err, ShouldErrLike, "must specify exactly one task id.")
+	})
+}
+
+func TestExecuteRequest(t *testing.T) {
+	t.Parallel()
+	Convey(`Make sure we can create the correct Cmd from a fetched task.`, t, func() {
+		c := reproduceRun{}
+		c.init(&testAuthFlags{})
+		c.work = "work"
+		ctx := context.Background()
+		service := &testService{
+			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
+				return &swarming.SwarmingRpcsTaskRequest{
+					Properties: &swarming.SwarmingRpcsTaskProperties{
+						Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+					},
+				}, nil
+			},
+		}
+
+		cmd, err := c.createTaskRequestCommand(ctx, "task-123", service)
+		expected := exec.Command("rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
+		expected.Dir = "work"
+		So(err, ShouldBeNil)
+		So(cmd, ShouldResemble, expected)
 	})
 }
