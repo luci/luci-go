@@ -17,6 +17,7 @@ package gaemiddleware
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
@@ -49,6 +50,10 @@ type gaeSettings struct {
 	//
 	// Useful to verify apps can survive a memcache outage.
 	SimulateMemcacheOutage portal.YesOrNo `json:"simulate_memcache_outage"`
+
+	// EncryptionKey is a "sm://<project>/<secret>" path to a AEAD encryption key
+	// used to encrypt cookies and other sensitive things.
+	EncryptionKey string `json:"encryption_key"`
 }
 
 // fetchCachedSettings fetches gaeSettings from the settings store or panics.
@@ -136,6 +141,26 @@ applications.</b> When Yes, all memcache calls will fail, as if the memcache
 service is unavailable. This is useful to test how application behaves when a
 real memcache outage happens.`,
 		}),
+		{
+			ID:    "EncryptionKey",
+			Title: "Encryption key URI",
+			Type:  portal.FieldText,
+			Validator: func(v string) error {
+				switch {
+				case v == "":
+					return nil
+				case !strings.HasPrefix(v, "sm://"):
+					return fmt.Errorf("expecting an sm://... URI")
+				case strings.Count(strings.TrimPrefix(v, "sm://"), "/") != 1:
+					return fmt.Errorf("sm://... URI should have form sm://[project]/[secret]")
+				}
+				return nil
+			},
+			Help: `An <code>sm://[project]/[secret]</code> URI pointing to an existing
+secret in Google Secret Manager to use as an encryption key for encrypting
+cookies and other sensitive strings. The key can be created via tink-aead-key
+tool.`,
+		},
 	}, nil
 }
 
@@ -149,6 +174,7 @@ func (settingsPage) ReadSettings(ctx context.Context) (map[string]string, error)
 		"LoggingLevel":           s.LoggingLevel.String(),
 		"DisableDSCache":         s.DisableDSCache.String(),
 		"SimulateMemcacheOutage": s.SimulateMemcacheOutage.String(),
+		"EncryptionKey":          s.EncryptionKey,
 	}, nil
 }
 
@@ -163,6 +189,7 @@ func (settingsPage) WriteSettings(ctx context.Context, values map[string]string,
 	if err := modified.SimulateMemcacheOutage.Set(values["SimulateMemcacheOutage"]); err != nil {
 		return err
 	}
+	modified.EncryptionKey = values["EncryptionKey"]
 
 	// When switching dscache back on, wipe memcache.
 	existing := gaeSettings{}

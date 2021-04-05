@@ -58,6 +58,7 @@ var (
 	globalAuthConfig = auth.Config{
 		DBProvider:          authdb.NewDBCache(gaeauth.GetAuthDB),
 		Signer:              gaesigner.Signer{},
+		AEADProvider:        gaemiddleware.AEADProvider,
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport: func(ctx context.Context) http.RoundTripper {
 			return &contextAwareURLFetch{ctx}

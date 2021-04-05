@@ -68,6 +68,7 @@ var (
 	globalAuthConfig = auth.Config{
 		DBProvider:          authdb.NewDBCache(gaeauth.GetAuthDB),
 		Signer:              gaesigner.Signer{},
+		AEADProvider:        gaemiddleware.AEADProvider,
 		AccessTokenProvider: authClient.GetAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
 		IsDevMode:           !metadata.OnGCE(),
