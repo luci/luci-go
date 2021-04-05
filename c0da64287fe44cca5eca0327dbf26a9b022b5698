@@ -16,6 +16,23 @@
       "message": "I had this initially but I suspected that in external tests using a Channel it would be better to just set the limit to \"infinite\" so that clock handling within dispatcher won\u0027t be necessary.\n\nIn particular, I worry that if dispatcher\u0027s use of the clock changes, these other tests will break or hang in weird ways.",
       "revId": "c0da64287fe44cca5eca0327dbf26a9b022b5698",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3d9742d_d767a1d7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-05T16:24:50Z",
+      "side": 1,
+      "message": "reviewing the actual tests in the CL... my feeling is that setting the rate to infinite would, in fact, be a better way.",
+      "revId": "c0da64287fe44cca5eca0327dbf26a9b022b5698",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
