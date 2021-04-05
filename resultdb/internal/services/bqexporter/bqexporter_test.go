@@ -164,7 +164,8 @@ func TestExportToBigQuery(t *testing.T) {
 			Options:      &opts,
 			putLimiter:   rate.NewLimiter(100, 1),
 			batchSem:     semaphore.NewWeighted(100),
-			rbecasClient: &artifactcontenttest.FakeByteStreamClient{bytes.Repeat([]byte("contentspart2\n"), 500000)},
+			rbecasClient: &artifactcontenttest.FakeByteStreamClient{bytes.Repeat([]byte("short\ncontentspart2\n"), 200000)},
+			maxTokenSize: 10,
 		}
 
 		Convey(`success`, func() {
