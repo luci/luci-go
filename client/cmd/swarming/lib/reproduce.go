@@ -1,0 +1,117 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package lib
+
+import (
+	"context"
+	"os"
+	"os/exec"
+
+	"github.com/maruel/subcommands"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/signals"
+)
+
+// CmdReproduce returns an object fo the `reproduce` subcommand.
+func CmdReproduce(authFlags AuthFlags) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "reproduce -S <server> <task ID> ",
+		ShortDesc: "reproduces a task locally",
+		LongDesc:  "Fetches a TaskRequest and runs the same commands that were run on the bot.",
+		CommandRun: func() subcommands.CommandRun {
+			r := &reproduceRun{}
+			r.init(authFlags)
+			return r
+		},
+	}
+}
+
+type reproduceRun struct {
+	commonFlags
+	work string
+}
+
+func (c *reproduceRun) init(authFlags AuthFlags) {
+	c.commonFlags.Init(authFlags)
+
+	c.Flags.StringVar(&c.work, "work", "work", "Directory to map the task input files into and execute the task.")
+	// TODO(crbug.com/1188473): support cache and output directories.
+}
+
+func (c *reproduceRun) parse(args []string) error {
+	if err := c.commonFlags.Parse(); err != nil {
+		return err
+	}
+	if len(args) != 1 {
+		return errors.Reason("must specify exactly one task id.").Err()
+	}
+	return nil
+}
+
+func (c *reproduceRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if err := c.parse(args); err != nil {
+		printError(a, err)
+		return 1
+	}
+	if err := c.main(a, args, env); err != nil {
+		printError(a, err)
+		return 1
+	}
+	return 0
+}
+
+func (c *reproduceRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
+	service, err := c.createSwarmingClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	tr, err := service.GetTaskRequest(ctx, args[0])
+	if err != nil {
+		return err
+	}
+
+	properties := tr.Properties
+
+	workdir := c.work
+	if err := prepareDir(workdir); err != nil {
+		return err
+	}
+	// TODO(crbug.com/1188473): Support relative cwd in task request.
+	// TODO(crbug.com/1188473): Set environment variables in task request.
+	// TODO(crbug.com/1188473): Set env prefix in task request
+	// TODO(crbug.com/1188473): Support isolated input in task request.
+	// TODO(crbug.com/1188473): Support RBE-Cas input in task request.
+	// TODO(crbug.com/1188473): Support CIPD package download in task request
+
+	// execute Command in task request
+	cmd := exec.Command(properties.Command[0], properties.Command[1:]...)
+	// TODO(crbug.com/1188473): Set `cmd.Env`
+	cmd.Dir = workdir
+	return cmd.Run()
+}
+
+func prepareDir(dir string) error {
+	if err := os.RemoveAll(dir); err != nil {
+		return errors.Annotate(err, "failed to remove directory: %s", dir).Err()
+	}
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return errors.Annotate(err, "failed to create directory: %s", dir).Err()
+	}
+	return nil
+}
