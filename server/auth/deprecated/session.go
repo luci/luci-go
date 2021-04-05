@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth
+package deprecated
 
 import (
 	"context"
 	"time"
+
+	"go.chromium.org/luci/server/auth"
 )
 
 // SessionStore keeps user sessions in some permanent storage. SessionStore is
@@ -24,7 +26,7 @@ import (
 type SessionStore interface {
 	// OpenSession create a new session for a user with given expiration time.
 	// It returns unique session ID.
-	OpenSession(c context.Context, userID string, u *User, exp time.Time) (string, error)
+	OpenSession(c context.Context, userID string, u *auth.User, exp time.Time) (string, error)
 
 	// CloseSession closes a session given its ID. Does nothing if session is
 	// already closed or doesn't exist. Returns only transient errors.
@@ -39,6 +41,6 @@ type SessionStore interface {
 type Session struct {
 	SessionID string    // same as `sessionID` passed to GetSession()
 	UserID    string    // authentication provider specific user id
-	User      User      // user profile, including identity string
+	User      auth.User // user profile, including identity string
 	Exp       time.Time // when the session expires
 }
