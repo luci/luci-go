@@ -396,13 +396,14 @@ message BuildPredicate {
   // Both boundaries are optional.
   TimeRange create_time = 7;
 
-  // DEPRECATED
-  //
   // If false (the default), equivalent to filtering by experiment
   // "-luci.non_production".
   //
   // If true, has no effect (both production and non_production builds will be
   // returned).
+  //
+  // NOTE: If you explicitly search for non_production builds with the experiment
+  // filter "+luci.non_production", this is implied to be true.
   //
   // See `Builder.experiments` for well-known experiments.
   bool include_experimental = 8;

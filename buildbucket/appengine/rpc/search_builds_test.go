@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -116,6 +117,62 @@ func TestValidateSearchBuilds(t *testing.T) {
 				}
 				err := validatePredicate(pr)
 				So(err, ShouldErrLike, "builder: bucket is required")
+			})
+		})
+
+		Convey("experiments", func() {
+			Convey("empty", func() {
+				pr := &pb.BuildPredicate{
+					Experiments: []string{""},
+				}
+				err := validatePredicate(pr)
+				So(err, ShouldErrLike, `too short (expected [+-]$experiment_name)`)
+			})
+			Convey("bang", func() {
+				pr := &pb.BuildPredicate{
+					Experiments: []string{"!something"},
+				}
+				err := validatePredicate(pr)
+				So(err, ShouldErrLike, `first character must be + or -`)
+			})
+			Convey("canary conflict", func() {
+				pr := &pb.BuildPredicate{
+					Experiments: []string{"+" + bb.ExperimentBBCanarySoftware},
+					Canary:      pb.Trinary_YES,
+				}
+				err := validatePredicate(pr)
+				So(err, ShouldErrLike,
+					`cannot specify "luci.buildbucket.canary_software" and canary in the same predicate`)
+			})
+			Convey("duplicate (bad)", func() {
+				pr := &pb.BuildPredicate{
+					Experiments: []string{
+						"+" + bb.ExperimentBBCanarySoftware,
+						"-" + bb.ExperimentBBCanarySoftware,
+					},
+				}
+				err := validatePredicate(pr)
+				So(err, ShouldErrLike,
+					`"luci.buildbucket.canary_software" has both inclusive and exclusive filter`)
+			})
+
+			Convey("ok", func() {
+				pr := &pb.BuildPredicate{
+					Experiments: []string{
+						"+" + bb.ExperimentBBCanarySoftware,
+						"+" + bb.ExperimentNonProduction,
+					},
+				}
+				So(validatePredicate(pr), ShouldBeNil)
+			})
+			Convey("duplicate (ok)", func() {
+				pr := &pb.BuildPredicate{
+					Experiments: []string{
+						"+" + bb.ExperimentBBCanarySoftware,
+						"+" + bb.ExperimentBBCanarySoftware,
+					},
+				}
+				So(validatePredicate(pr), ShouldBeNil)
 			})
 		})
 	})

@@ -43,24 +43,24 @@ func validateChange(ch *pb.GerritChange) error {
 }
 
 // validateExperiment validates a single experiment directive
-func validateExperiment(exp string, canary pb.Trinary, includeExperimental bool) error {
+func validateExperiment(exp string, canary pb.Trinary, includeExperimental bool) (plusMinus byte, expName string, err error) {
 	if len(exp) < 2 {
-		return errors.New("too short (expected [+-]$experiment_name)")
+		err = errors.New("too short (expected [+-]$experiment_name)")
+		return
 	}
-	switch exp[0] {
-	case '+', '-':
-	default:
-		return errors.New("first character must be + or -")
-	}
-
-	if exp[1:] == bb.ExperimentBBCanarySoftware && canary != pb.Trinary_UNSET {
-		return errors.Reason("cannot specify %q and canary in the same predicate", exp[1:]).Err()
-	}
-	if exp == "+"+bb.ExperimentNonProduction && !includeExperimental {
-		return errors.Reason("cannot specify %q and includeExperimental == false in the same predicate", exp).Err()
+	plusMinus = exp[0]
+	if !(plusMinus == '+' || plusMinus == '-') {
+		err = errors.New("first character must be + or -")
+		return
 	}
 
-	return nil
+	expName = exp[1:]
+	if expName == bb.ExperimentBBCanarySoftware && canary != pb.Trinary_UNSET {
+		err = errors.Reason("cannot specify %q and canary in the same predicate", exp[1:]).Err()
+		return
+	}
+
+	return
 }
 
 // validatePredicate validates the given build predicate.
@@ -86,10 +86,19 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 	if pr.GetBuild() != nil && pr.CreateTime != nil {
 		return errors.Reason("build is mutually exclusive with create_time").Err()
 	}
+	expMap := make(map[string]bool, len(pr.GetExperiments()))
 	for i, exp := range pr.GetExperiments() {
-		if err := validateExperiment(exp, pr.GetCanary(), pr.GetIncludeExperimental()); err != nil {
-			return errors.Annotate(err, "experiments %d", i).Err()
+		plusMinus, expName, err := validateExperiment(exp, pr.GetCanary(), pr.GetIncludeExperimental())
+		if err != nil {
+			return errors.Annotate(err, "experiments[%d]", i).Err()
 		}
+		enabled := plusMinus == '+'
+		if cur, has := expMap[expName]; has && cur != enabled {
+			return errors.Reason(
+				"experiments %d: experiment %q has both inclusive and exclusive filter", i, expName,
+			).Err()
+		}
+		expMap[expName] = enabled
 	}
 	// TODO(crbug/1053813): Disallow empty predicate.
 	return nil
