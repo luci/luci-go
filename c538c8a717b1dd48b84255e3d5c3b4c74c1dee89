@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69e974a7_4998d447",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-06T19:13:54Z",
+      "side": 1,
+      "message": "maybe hint what the user should do instead, e.g. caches must be configured in cr-buildbucket.cfg or something like that\n\nsame with pool",
+      "range": {
+        "startLine": 74,
+        "startChar": 67,
+        "endLine": 74,
+        "endChar": 68
+      },
+      "revId": "c538c8a717b1dd48b84255e3d5c3b4c74c1dee89",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
