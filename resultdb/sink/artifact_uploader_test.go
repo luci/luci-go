@@ -23,6 +23,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 type mockTransport func(*http.Request) (*http.Response, error)
@@ -53,14 +54,15 @@ func TestArtifactUploader(t *testing.T) {
 			Host:   "example.org",
 		}
 
-		Convey("UploadFromFile", func() {
+		Convey("Upload w/ file", func() {
 			Convey("works", func() {
 				art := testArtifactWithFile(func(f *os.File) {
 					_, err := f.Write([]byte(content))
 					So(err, ShouldBeNil)
 				})
+				art.ContentType = contentType
 				defer os.Remove(art.GetFilePath())
-				err := uploader.UploadFromFile(ctx, name, contentType, art.GetFilePath(), token)
+				err := uploader.StreamUpload(ctx, &uploadTask{name, art}, token)
 				So(err, ShouldBeNil)
 
 				// validate the request
@@ -73,13 +75,19 @@ func TestArtifactUploader(t *testing.T) {
 			})
 
 			Convey("fails if file doesn't exist", func() {
-				err := uploader.UploadFromFile(ctx, name, contentType, "never_exist", token)
-				So(err, ShouldErrLike, "failed to query the file status")
+				art := &sinkpb.Artifact{
+					Body:        &sinkpb.Artifact_FilePath{FilePath: "never_exist"},
+					ContentType: "text/plain",
+				}
+				err := uploader.StreamUpload(ctx, &uploadTask{name, art}, token)
+				So(err, ShouldErrLike, "open never_exist: ") // no such file or directory
 			})
 		})
 
-		Convey("Upload works", func() {
-			err := uploader.Upload(ctx, name, contentType, []byte(content), token)
+		Convey("Upload w/ contents", func() {
+			art := testArtifactWithContents([]byte(content))
+			art.ContentType = contentType
+			err := uploader.StreamUpload(ctx, &uploadTask{name, art}, token)
 			So(err, ShouldBeNil)
 
 			// validate the request
