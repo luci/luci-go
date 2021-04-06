@@ -2367,5 +2367,38 @@ func TestScheduleBuild(t *testing.T) {
 				So(err, ShouldErrLike, "priority must be in")
 			})
 		})
+
+		Convey("experiments", func() {
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+					Experiments: map[string]bool{
+						"luci.use_realms":       true,
+						"cool.experiment_thing": true,
+					},
+				}
+				So(validateSchedule(req), ShouldBeNil)
+			})
+
+			Convey("bad name", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+					Experiments: map[string]bool{
+						"bad name": true,
+					},
+				}
+				So(validateSchedule(req), ShouldErrLike, "does not match")
+			})
+
+			Convey("bad reserved", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+					Experiments: map[string]bool{
+						"luci.use_ralms": true,
+					},
+				}
+				So(validateSchedule(req), ShouldErrLike, "unknown experiment has reserved prefix")
+			})
+		})
 	})
 }
