@@ -282,6 +282,9 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		logging.Debugf(ctx, "Received a BatchCreateArtifactsRequest with 0 requests; returning")
 		return nil, nil
 	}
+	if err := pbutil.ValidateBatchRequestCount(len(in.Requests)); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
 	invID, arts, err := parseBatchCreateArtifactsRequest(in)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)

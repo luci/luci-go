@@ -294,5 +294,11 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different hash")
 			})
 		})
+
+		Convey("Too many requests", func() {
+			bReq.Requests = make([]*pb.CreateArtifactRequest, 1000)
+			_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, "the number of requests in the batch exceeds 500")
+		})
 	})
 }
