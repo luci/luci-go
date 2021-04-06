@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4dddb4b3_2e1da2d5",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-06T18:57:13Z",
+      "side": 1,
+      "message": "this is to 2 MB. With batch size 500 in L83, this means we might send 1GB in a single request. This seems like a lot?",
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5afc3fc1_1cd96d1b",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-06T18:57:13Z",
+      "side": 1,
+      "message": "nit: this assumes that body variable will not be replaced with something below by a future programmer. It would be more robust to have\n\n  f, err :\u003d os.Open(...)\n  ...\n  defer f.Close()\n  body \u003d f",
+      "range": {
+        "startLine": 53,
+        "startChar": 8,
+        "endLine": 53,
+        "endChar": 23
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e7e1d87_e6e6658a",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-06T18:57:13Z",
+      "side": 1,
+      "message": "broken sentence?",
+      "range": {
+        "startLine": 63,
+        "startChar": 59,
+        "endLine": 64,
+        "endChar": 15
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cbcbc9d1_7166664e",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-06T18:57:13Z",
+      "side": 1,
+      "message": "nit: seems like this variable is needed only to do Stat(). Consider using it only there, while the rest of code (L66, L71) uses less-specific `body`.\n\nIt would also make L68-71 easier to read: it calls Seek() on one variable, but then uses another.\n\n--\n\nbut stepping back, it would be simpler if this code was less conditional. Did you consider a simple rule that if someone passes content in t.art.Content, then use Batch upload? The client shouldn\u0027t pass content there if the artifact is large; and if it isn\u0027t large, then we should use Batch.\n\nMaybe not in this CL since we don\u0027t have batch upload yet.",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 6
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b1cf113_6c261bf2",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-06T18:57:13Z",
+      "side": 1,
+      "message": "is this code needed? seems like http package will always call GetBody which always seeks to the beginning.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
