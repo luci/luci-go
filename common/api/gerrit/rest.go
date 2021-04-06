@@ -552,6 +552,10 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 	case http.StatusNotFound:
 		return res.StatusCode, body, status.Errorf(codes.NotFound, "not found")
 
+	case http.StatusConflict:
+		// Gerrit returns error message in the response body.
+		return res.StatusCode, body, status.Errorf(codes.FailedPrecondition, string(body))
+
 	default:
 		logging.Errorf(ctx, "gerrit: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s",
 			res.StatusCode,

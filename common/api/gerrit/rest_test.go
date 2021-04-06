@@ -26,10 +26,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -61,17 +61,6 @@ func TestListChanges(t *testing.T) {
 			Query: "label:Code-Review",
 			Limit: 1,
 		}
-
-		Convey("With a HTTP 404 response", func() {
-			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(404)
-			})
-			defer srv.Close()
-			_, err := c.ListChanges(ctx, req)
-			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.NotFound)
-		})
 
 		Convey("OK case with one change, _more_changes set in response", func() {
 			expectedResponse := &gerritpb.ListChangesResponse{
@@ -154,19 +143,7 @@ func TestGetChange(t *testing.T) {
 
 		req := &gerritpb.GetChangeRequest{Number: 1}
 
-		Convey("HTTP 404", func() {
-			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(404)
-			})
-			defer srv.Close()
-
-			_, err := c.GetChange(ctx, req)
-			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.NotFound)
-		})
-
-		Convey("HTTP 200", func() {
+		Convey("OK", func() {
 			expectedChange := &gerritpb.ChangeInfo{
 				Number: 1,
 				Owner: &gerritpb.AccountInfo{
@@ -1263,6 +1240,52 @@ func TestGetPureRevert(t *testing.T) {
 		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/pure_revert")
 		So(res, ShouldResemble, &gerritpb.PureRevertInfo{
 			IsPureRevert: false,
+		})
+	})
+}
+
+func TestGerritError(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Gerrit returns", t, func() {
+		// All APIs share the same error handling code path, so use SubmitChange as
+		// an example.
+		req := &gerritpb.SubmitChangeRequest{Number: 1}
+		Convey("HTTP 403", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(403)
+			})
+			defer srv.Close()
+			_, err := c.SubmitChange(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+		Convey("HTTP 404 ", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(404)
+			})
+			defer srv.Close()
+			_, err := c.SubmitChange(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+		Convey("HTTP 409 ", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(409)
+				w.Header().Set("Content-Type", "text/plain")
+				w.Write([]byte("block by Verified"))
+			})
+			defer srv.Close()
+			_, err := c.SubmitChange(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(err, ShouldErrLike, "block by Verified")
+		})
+		Convey("HTTP 429 ", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(429)
+			})
+			defer srv.Close()
+			_, err := c.SubmitChange(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.ResourceExhausted)
 		})
 	})
 }
