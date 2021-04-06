@@ -2278,6 +2278,190 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldErrLike, "project must match")
 		})
 
+		Convey("dimensions", func() {
+			Convey("empty", func() {
+				req := &pb.ScheduleBuildRequest{
+					Dimensions: []*pb.RequestedDimension{
+						{},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "dimensions")
+			})
+
+			Convey("expiration", func() {
+				Convey("empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						Dimensions: []*pb.RequestedDimension{
+							{
+								Expiration: &durationpb.Duration{},
+								Key:        "key",
+								Value:      "value",
+							},
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldBeNil)
+				})
+
+				Convey("nanos", func() {
+					req := &pb.ScheduleBuildRequest{
+						Dimensions: []*pb.RequestedDimension{
+							{
+								Expiration: &durationpb.Duration{
+									Nanos: 1,
+								},
+								Key:   "key",
+								Value: "value",
+							},
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldErrLike, "nanos must not be specified")
+				})
+
+				Convey("seconds", func() {
+					Convey("negative", func() {
+						req := &pb.ScheduleBuildRequest{
+							Dimensions: []*pb.RequestedDimension{
+								{
+									Expiration: &durationpb.Duration{
+										Seconds: -60,
+									},
+									Key:   "key",
+									Value: "value",
+								},
+							},
+							TemplateBuildId: 1,
+						}
+						err := validateSchedule(req)
+						So(err, ShouldErrLike, "seconds must not be negative")
+					})
+
+					Convey("whole minute", func() {
+						req := &pb.ScheduleBuildRequest{
+							Dimensions: []*pb.RequestedDimension{
+								{
+									Expiration: &durationpb.Duration{
+										Seconds: 1,
+									},
+									Key:   "key",
+									Value: "value",
+								},
+							},
+							TemplateBuildId: 1,
+						}
+						err := validateSchedule(req)
+						So(err, ShouldErrLike, "seconds must be a multiple of 60")
+					})
+				})
+
+				Convey("ok", func() {
+					req := &pb.ScheduleBuildRequest{
+						Dimensions: []*pb.RequestedDimension{
+							{
+								Expiration: &durationpb.Duration{
+									Seconds: 60,
+								},
+								Key:   "key",
+								Value: "value",
+							},
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldBeNil)
+				})
+			})
+
+			Convey("key", func() {
+				Convey("empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						Dimensions: []*pb.RequestedDimension{
+							{
+								Value: "value",
+							},
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldErrLike, "key must be specified")
+				})
+
+				Convey("caches", func() {
+					req := &pb.ScheduleBuildRequest{
+						Dimensions: []*pb.RequestedDimension{
+							{
+								Key:   "caches",
+								Value: "value",
+							},
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldErrLike, "caches may only be specified in builder configs")
+				})
+
+				Convey("pool", func() {
+					req := &pb.ScheduleBuildRequest{
+						Dimensions: []*pb.RequestedDimension{
+							{
+								Key:   "pool",
+								Value: "value",
+							},
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldErrLike, "pool may only be specified in builder configs")
+				})
+
+				Convey("ok", func() {
+					req := &pb.ScheduleBuildRequest{
+						Dimensions: []*pb.RequestedDimension{
+							{
+								Key:   "key",
+								Value: "value",
+							},
+						},
+						TemplateBuildId: 1,
+					}
+					err := validateSchedule(req)
+					So(err, ShouldBeNil)
+				})
+			})
+
+			Convey("value", func() {
+				req := &pb.ScheduleBuildRequest{
+					Dimensions: []*pb.RequestedDimension{
+						{
+							Key: "key",
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "value must be specified")
+			})
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					Dimensions: []*pb.RequestedDimension{
+						{
+							Key:   "key",
+							Value: "value",
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldBeNil)
+			})
+		})
+
 		Convey("exe", func() {
 			Convey("empty", func() {
 				req := &pb.ScheduleBuildRequest{
@@ -2324,6 +2508,104 @@ func TestScheduleBuild(t *testing.T) {
 			})
 		})
 
+		Convey("gerrit changes", func() {
+			Convey("empty", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges:   []*pb.GerritChange{},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("unspecified", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "gerrit_changes")
+			})
+
+			Convey("change", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{
+							Host:     "host",
+							Patchset: 1,
+							Project:  "project",
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "change must be specified")
+			})
+
+			Convey("host", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{
+							Change:   1,
+							Patchset: 1,
+							Project:  "project",
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "host must be specified")
+			})
+
+			Convey("patchset", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{
+							Change:  1,
+							Host:    "host",
+							Project: "project",
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "patchset must be specified")
+			})
+
+			Convey("project", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{
+							Change:   1,
+							Host:     "host",
+							Patchset: 1,
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "project must be specified")
+			})
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{
+							Change:   1,
+							Host:     "host",
+							Patchset: 1,
+							Project:  "project",
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldBeNil)
+			})
+		})
+
 		Convey("gitiles commit", func() {
 			req := &pb.ScheduleBuildRequest{
 				GitilesCommit: &pb.GitilesCommit{
@@ -2335,17 +2617,50 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldErrLike, "gitiles_commit")
 		})
 
-		Convey("tags", func() {
-			req := &pb.ScheduleBuildRequest{
-				Tags: []*pb.StringPair{
-					{
-						Key: "key:value",
+		Convey("notify", func() {
+			Convey("empty", func() {
+				req := &pb.ScheduleBuildRequest{
+					Notify:          &pb.NotificationConfig{},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "notify")
+			})
+
+			Convey("pubsub topic", func() {
+				req := &pb.ScheduleBuildRequest{
+					Notify: &pb.NotificationConfig{
+						UserData: []byte("user data"),
 					},
-				},
-				TemplateBuildId: 1,
-			}
-			err := validateSchedule(req)
-			So(err, ShouldErrLike, "tags")
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "pubsub_topic")
+			})
+
+			Convey("user data", func() {
+				req := &pb.ScheduleBuildRequest{
+					Notify: &pb.NotificationConfig{
+						PubsubTopic: "topic",
+						UserData:    make([]byte, 4097),
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "user_data")
+			})
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					Notify: &pb.NotificationConfig{
+						PubsubTopic: "topic",
+						UserData:    []byte("user data"),
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldBeNil)
+			})
 		})
 
 		Convey("priority", func() {
@@ -2366,6 +2681,19 @@ func TestScheduleBuild(t *testing.T) {
 				err := validateSchedule(req)
 				So(err, ShouldErrLike, "priority must be in")
 			})
+		})
+
+		Convey("tags", func() {
+			req := &pb.ScheduleBuildRequest{
+				Tags: []*pb.StringPair{
+					{
+						Key: "key:value",
+					},
+				},
+				TemplateBuildId: 1,
+			}
+			err := validateSchedule(req)
+			So(err, ShouldErrLike, "tags")
 		})
 
 		Convey("experiments", func() {
