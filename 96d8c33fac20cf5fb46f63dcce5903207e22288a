@@ -20,6 +20,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8f8abb8b_6c389625",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-06T19:06:05Z",
+      "side": 1,
+      "message": "How\u0027s this number determined?",
+      "range": {
+        "startLine": 85,
+        "startChar": 49,
+        "endLine": 85,
+        "endChar": 53
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18e7403b_5aca39b5",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-06T19:06:05Z",
+      "side": 1,
+      "message": "Why not make u.Upload and u.UploadFromFile private and call them here?\n\nWhat\u0027s the benefit of merging them into one func?",
+      "range": {
+        "startLine": 43,
+        "startChar": 27,
+        "endLine": 43,
+        "endChar": 39
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5afc3fc1_1cd96d1b",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 5
@@ -59,6 +105,29 @@
         "startChar": 59,
         "endLine": 64,
         "endChar": 15
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a23578e2_da772eef",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-06T19:06:05Z",
+      "side": 1,
+      "message": "I don\u0027t understand this comment...",
+      "range": {
+        "startLine": 63,
+        "startChar": 54,
+        "endLine": 64,
+        "endChar": 61
       },
       "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
