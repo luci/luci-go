@@ -112,6 +112,11 @@ message SubmissionCompleted {
   SubmissionResult result = 1;
   // Attempt count.
   int32 attempt = 2;
+  // Reason for permanent failure to be sent to CV user.
+  //
+  // only set when result == FAILED_PERMANENT
+  string fatal_message = 3;
+  bool submit_queue_not_released = 4;
 }
 
 enum SubmissionResult {

@@ -550,10 +550,10 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 		return res.StatusCode, body, status.Errorf(codes.PermissionDenied, "permission denied")
 
 	case http.StatusNotFound:
+		// Gerrit will return 409 and error message in the response body.
 		return res.StatusCode, body, status.Errorf(codes.NotFound, "not found")
 
 	case http.StatusConflict:
-		// Gerrit will return 409 and error message in the response body.
 		return res.StatusCode, body, status.Errorf(codes.FailedPrecondition, string(body))
 
 	default:
