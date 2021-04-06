@@ -63,9 +63,16 @@ func TestCreatesSingularRun(t *testing.T) {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil && r.Status == run.Status_RUNNING
 		})
-		So(ct.LoadProject(ctx, lProject).State.GetComponents(), ShouldHaveLength, 1)
-		So(ct.LoadProject(ctx, lProject).State.GetComponents()[0].GetPruns(), ShouldHaveLength, 1)
 		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeTrue)
+
+		// Under normal conditions, this would be done by the same TQ handler that
+		// creates the Run, but with flaky Datastore this may come late.
+		ct.LogPhase(ctx, "PM incorporates Run into component")
+		ct.RunUntil(ctx, func() bool {
+			cs := ct.LoadProject(ctx, lProject).State.GetComponents()
+			return len(cs) == 1 && len(cs[0].GetPruns()) == 1
+		})
+		So(ct.LoadProject(ctx, lProject).State.GetComponents()[0].GetPruns()[0].GetId(), ShouldResemble, string(r.ID))
 
 		ct.LogPhase(ctx, "User cancels the Run")
 		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
