@@ -48,6 +48,49 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+// validateExpirationDuration validates the given expiration duration.
+func validateExpirationDuration(d *durationpb.Duration) error {
+	switch {
+	case d.GetNanos() != 0:
+		return errors.Reason("nanos must not be specified").Err()
+	case d.GetSeconds() < 0:
+		return errors.Reason("seconds must not be negative").Err()
+	case d.GetSeconds()%60 != 0:
+		return errors.Reason("seconds must be a multiple of 60").Err()
+	default:
+		return nil
+	}
+}
+
+// validateRequestedDimension validates the requested dimension.
+func validateRequestedDimension(dim *pb.RequestedDimension) error {
+	var err error
+	switch {
+	case teeErr(validateExpirationDuration(dim.GetExpiration()), &err) != nil:
+		return errors.Annotate(err, "expiration").Err()
+	case dim.GetKey() == "":
+		return errors.Reason("key must be specified").Err()
+	case dim.Key == "caches":
+		return errors.Annotate(errors.Reason("caches may only be specified in builder configs (cr-buildbucket.cfg)").Err(), "key").Err()
+	case dim.Key == "pool":
+		return errors.Annotate(errors.Reason("pool may only be specified in builder configs (cr-buildbucket.cfg)").Err(), "key").Err()
+	case dim.Value == "":
+		return errors.Reason("value must be specified").Err()
+	default:
+		return nil
+	}
+}
+
+// validateRequestedDimensions validates the requested dimensions.
+func validateRequestedDimensions(dims []*pb.RequestedDimension) error {
+	for i, dim := range dims {
+		if err := validateRequestedDimension(dim); err != nil {
+			return errors.Annotate(err, "[%d]", i).Err()
+		}
+	}
+	return nil
+}
+
 // validateExecutable validates the given executable.
 func validateExecutable(exe *pb.Executable) error {
 	var err error
@@ -56,6 +99,44 @@ func validateExecutable(exe *pb.Executable) error {
 		return errors.Reason("cipd_package must not be specified").Err()
 	case exe.GetCipdVersion() != "" && teeErr(common.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
 		return errors.Annotate(err, "cipd_version").Err()
+	default:
+		return nil
+	}
+}
+
+// validateGerritChange validates a given gerrit change.
+func validateGerritChange(ch *pb.GerritChange) error {
+	switch {
+	case ch.GetChange() == 0:
+		return errors.Reason("change must be specified").Err()
+	case ch.Host == "":
+		return errors.Reason("host must be specified").Err()
+	case ch.Patchset == 0:
+		return errors.Reason("patchset must be specified").Err()
+	case ch.Project == "":
+		return errors.Reason("project must be specified").Err()
+	default:
+		return nil
+	}
+}
+
+// validateGerritChanges validates the given gerrit changes.
+func validateGerritChanges(changes []*pb.GerritChange) error {
+	for i, ch := range changes {
+		if err := validateGerritChange(ch); err != nil {
+			return errors.Annotate(err, "[%d]", i).Err()
+		}
+	}
+	return nil
+}
+
+// validateNotificationConfig validates the given notification config.
+func validateNotificationConfig(n *pb.NotificationConfig) error {
+	switch {
+	case n.GetPubsubTopic() == "":
+		return errors.Reason("pubsub_topic must be specified").Err()
+	case len(n.UserData) > 4096:
+		return errors.Reason("user_data cannot exceed 4096 bytes").Err()
 	default:
 		return nil
 	}
@@ -71,14 +152,20 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 		return errors.Reason("builder or template_build_id is required").Err()
 	case req.Builder != nil && teeErr(protoutil.ValidateRequiredBuilderID(req.Builder), &err) != nil:
 		return errors.Annotate(err, "builder").Err()
+	case teeErr(validateRequestedDimensions(req.Dimensions), &err) != nil:
+		return errors.Annotate(err, "dimensions").Err()
 	case teeErr(validateExecutable(req.Exe), &err) != nil:
 		return errors.Annotate(err, "exe").Err()
+	case teeErr(validateGerritChanges(req.GerritChanges), &err) != nil:
+		return errors.Annotate(err, "gerrit_changes").Err()
 	case req.GitilesCommit != nil && teeErr(validateCommitWithRef(req.GitilesCommit), &err) != nil:
 		return errors.Annotate(err, "gitiles_commit").Err()
-	case teeErr(validateTags(req.Tags, TagNew), &err) != nil:
-		return errors.Annotate(err, "tags").Err()
+	case req.Notify != nil && teeErr(validateNotificationConfig(req.Notify), &err) != nil:
+		return errors.Annotate(err, "notify").Err()
 	case req.Priority < 0 || req.Priority > 255:
 		return errors.Reason("priority must be in [0, 255]").Err()
+	case teeErr(validateTags(req.Tags, TagNew), &err) != nil:
+		return errors.Annotate(err, "tags").Err()
 	}
 
 	for expName := range req.Experiments {
@@ -87,7 +174,7 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 		}
 	}
 
-	// TODO(crbug/1042991): Validate Properties, Gerrit Changes, Dimensions, Notify.
+	// TODO(crbug/1042991): Validate Properties.
 	return nil
 }
 
