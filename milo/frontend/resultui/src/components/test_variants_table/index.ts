@@ -25,9 +25,9 @@ import './tvt_column_header';
 import '../dot_spinner';
 import './test_variant_entry';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
-import { TestVariantEntryElement } from './test_variant_entry';
 
 function getPropKeyLabel(key: string) {
   // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
@@ -39,7 +39,9 @@ function getPropKeyLabel(key: string) {
  */
 @customElement('milo-test-variants-table')
 @consumeInvocationState
+@consumeConfigsStore
 export class TestVariantsTableElement extends MobxLitElement {
+  @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
 
   private disposers: Array<() => void> = [];
@@ -232,8 +234,9 @@ export class TestVariantsTableElement extends MobxLitElement {
               this.tableHeaderEle?.style.setProperty('--columns', newColWidths.map((w) => w + 'px').join(' '));
             }}
             .resizeTo=${(newWidth: number) => {
-              this.invocationState.customColumnWidths[col] = newWidth;
               this.tableHeaderEle?.style.removeProperty('--columns');
+              this.configsStore.userConfigs.results.columnWidths[col] = newWidth;
+              this.configsStore.save();
             }}
             .propKey=${col}
             .label=${getPropKeyLabel(col)}
