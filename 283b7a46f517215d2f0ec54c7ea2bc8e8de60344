@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "493affb8_c4dfa0ef",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-06T12:51:07Z",
+      "side": 1,
+      "message": "+Vadim for ideas on best way to sweep in tests.\n\nThis CL hacks it via CV codebase, however I think it\u0027d cleaner to do it via tqtesting package itself.\nWhat I\u0027m not sure about is how yet. Any thoughts?",
+      "revId": "283b7a46f517215d2f0ec54c7ea2bc8e8de60344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

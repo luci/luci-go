@@ -16,6 +16,24 @@
       "message": "Is this necessary if we have L157 which should always be executed?",
       "revId": "d638cd62f5a0a50c44a786f4971a78a4631b5d10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74d61577_833f5f16",
+        "filename": "cv/internal/cvtesting/e2e/e2e.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-06T12:51:07Z",
+      "side": 1,
+      "message": "Case when this is necessary:\n\nIF there is 1+ transactional task that requires sweeping AND empty TQ scheduler,\nTHEN tq.Run will just hang and never call tqtesting.StopAfter.\nHENCE, Yes.\n\nHowever,\nIF *only* RunUntil is used to run with flaky datastore,\nTHEN indeed `tqtesting.StopAfter` will be executed,\nTHEN indeed sweep will get eventually called strictly *after* a task that might have left something to sweep\nTHEN indeed sweep here isn\u0027t necessary.\n\nI choose to sweep here because sweeping is safer wrt future modifications.",
+      "parentUuid": "6e207547_afb2a236",
+      "revId": "d638cd62f5a0a50c44a786f4971a78a4631b5d10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
