@@ -16,15 +16,18 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/insecurecleartextkeyset"
 	"github.com/google/tink/go/keyset"
 	"github.com/google/tink/go/tink"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/encryptedcookies/internal/encryptedcookiespb"
 	"go.chromium.org/luci/server/encryptedcookies/session"
@@ -46,6 +49,30 @@ const (
 	// pointing to an expired session is ignored and opportunistically gets
 	// removed.
 	sessionCookieMaxAge = 60 * 60 * 24 * 365 * 20 // 20 years ~= infinity
+
+	// sessionRefreshMin defines how soon before the actual session staleness
+	// we can start trying to refresh it.
+	//
+	// Passing this threshold enables the probabilistic early expiration check.
+	// See ShouldRefreshSession().
+	//
+	// We assume the typical session refresh period to be 1h.
+	sessionRefreshMin = 20 * time.Minute
+
+	// sessionRefreshMax defines how soon before the actual session staleness
+	// we must be refreshing it.
+	//
+	// E.g. if the session *really* expires in 1h, we MUST try to refresh it
+	// after >50 min. This is needed to make sure short-lived tokens are usable
+	// within the request handler as long as it runs <10 min.
+	//
+	// The session is also probabilistically refreshed sooner, to avoid stampede
+	// when the actual deadline comes.
+	sessionRefreshMax = 10 * time.Minute
+
+	// sessionRefreshExpMean is a parameters of the exponential distribution
+	// for the probabilistic early expiration check.
+	sessionRefreshExpMean = time.Minute
 )
 
 // NewSessionCookie generates a new session cookie (in a clear text form).
@@ -121,4 +148,20 @@ func PerSessionAEAD(c *encryptedcookiespb.SessionCookie) (tink.AEAD, error) {
 		return nil, err
 	}
 	return aead.New(kh)
+}
+
+// ShouldRefreshSession returns true if we should refresh the session now.
+//
+// Based on `ttl` which is a duration till the hard deadline when the session
+// goes stale. We attempt to refresh the session before it is reached.
+func ShouldRefreshSession(ctx context.Context, ttl time.Duration) bool {
+	switch {
+	case ttl > sessionRefreshMin:
+		return false // too soon to refresh
+	case ttl < sessionRefreshMax:
+		return true // definitely need to refresh
+	default:
+		threshold := time.Duration(mathrand.ExpFloat64(ctx) * float64(sessionRefreshExpMean))
+		return ttl-sessionRefreshMax < threshold
+	}
 }
