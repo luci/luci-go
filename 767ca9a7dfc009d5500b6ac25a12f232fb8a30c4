@@ -34,6 +34,24 @@
       "parentUuid": "e7adf17f_527a0866",
       "revId": "767ca9a7dfc009d5500b6ac25a12f232fb8a30c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7bca5f6b_c7a4477a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T00:42:13Z",
+      "side": 1,
+      "message": "You can. But that would set the cookie to use the old version.\nThe next time you open the build page via a link (e.g. from gerrit), you will see the old build page because the cookie is set.\n\nWe have about 200 users using both versions at the same time. I think this change may encourage them to stay on the new build page if they only needs to use the old build page occasionally.\nAt the very least, it will be useful for me for debugging purpose.",
+      "parentUuid": "26886541_ced90acb",
+      "revId": "767ca9a7dfc009d5500b6ac25a12f232fb8a30c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
