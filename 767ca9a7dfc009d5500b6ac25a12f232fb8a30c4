@@ -16,6 +16,24 @@
       "message": "Demo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6835/overview\n",
       "revId": "767ca9a7dfc009d5500b6ac25a12f232fb8a30c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26886541_ced90acb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-07T00:34:36Z",
+      "side": 1,
+      "message": "I don\u0027t really understand the necessity of this CL. I mean I can just open two build pages and change one to the old version, right?",
+      "parentUuid": "e7adf17f_527a0866",
+      "revId": "767ca9a7dfc009d5500b6ac25a12f232fb8a30c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
