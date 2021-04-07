@@ -20,7 +20,7 @@ import { cached } from './libs/cached_fn';
 import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
 import { timeout } from './libs/utils';
-import { BuildsService, GetBuildRequest } from './services/buildbucket';
+import { BUILD_FIELD_MASK, BuildsService, GetBuildRequest } from './services/buildbucket';
 
 importScripts('/configs.js');
 
@@ -112,8 +112,8 @@ async function prefetchResources(reqUrl: URL) {
   }
   const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
   const req: GetBuildRequest = buildIdOrNum.startsWith('b')
-    ? { id: buildIdOrNum.slice(1), fields: '*' }
-    : { builder: { project, bucket, builder }, buildNumber: Number(buildIdOrNum), fields: '*' };
+    ? { id: buildIdOrNum.slice(1), fields: BUILD_FIELD_MASK }
+    : { builder: { project, bucket, builder }, buildNumber: Number(buildIdOrNum), fields: BUILD_FIELD_MASK };
 
   const authState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
   const prefetchBuildsService = new BuildsService(

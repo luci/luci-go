@@ -25,6 +25,10 @@ import { timeout } from '../libs/utils';
  */
 /* eslint-enable max-len */
 
+export const BUILD_FIELD_MASK =
+  'id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,' +
+  'infra.swarming,infra.resultdb,tags,exe';
+
 export const enum Trinary {
   Unset = 'UNSET',
   Yes = 'YES',
@@ -80,12 +84,10 @@ export interface Build {
   readonly id: string;
   readonly builder: BuilderID;
   readonly number?: number;
-  readonly createdBy: string;
   readonly canceledBy?: string;
   readonly createTime: string;
   readonly startTime?: string;
   readonly endTime?: string;
-  readonly updateTime: string;
   readonly status: BuildStatus;
   readonly summaryMarkdown?: string;
   readonly input: BuildInput;
@@ -183,10 +185,7 @@ export interface Step {
 }
 
 export interface BuildInfra {
-  readonly buildbucket: BuildInfraBuildbucket;
   readonly swarming: BuildInfraSwarming;
-  readonly logdog: BuildInfraLogDog;
-  readonly recipe: BuildInfraRecipe;
   readonly resultdb?: BuildInfraResultdb;
 }
 

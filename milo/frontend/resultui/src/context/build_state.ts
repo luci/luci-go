@@ -19,7 +19,14 @@ import { getGitilesRepoURL } from '../libs/build_utils';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { BuildExt } from '../models/build_ext';
-import { Build, BuilderID, BuilderItem, GetBuildRequest, GitilesCommit } from '../services/buildbucket';
+import {
+  Build,
+  BUILD_FIELD_MASK,
+  BuilderID,
+  BuilderItem,
+  GetBuildRequest,
+  GitilesCommit,
+} from '../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
 import { AppState } from './app_state';
@@ -120,8 +127,8 @@ export class BuildState {
     this.buildQueryTime = this.timestamp;
 
     const req: GetBuildRequest = this.buildId
-      ? { id: this.buildId, fields: '*' }
-      : { builder: this.builderIdParam, buildNumber: this.buildNum!, fields: '*' };
+      ? { id: this.buildId, fields: BUILD_FIELD_MASK }
+      : { builder: this.builderIdParam, buildNumber: this.buildNum!, fields: BUILD_FIELD_MASK };
 
     return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt));
   }
@@ -149,7 +156,7 @@ export class BuildState {
         this.appState
           .buildsService!.searchBuilds({
             predicate: { tags: [{ key: 'buildset', value: b }] },
-            fields: '*',
+            fields: BUILD_FIELD_MASK,
             pageSize: 1000,
           })
           .then((res) => res.builds)
