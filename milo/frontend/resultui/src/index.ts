@@ -22,6 +22,7 @@ window.SW_PROMISE = new Promise((resolve) => {
   if (ENABLE_UI_SW && 'serviceWorker' in navigator) {
     const wb = new Workbox('/ui/service-worker.js');
     wb.register({ immediate: true }).then((registration) => {
+      // eslint-disable-next-line no-console
       console.log('UI SW registered: ', registration);
       resolve(wb);
     });
@@ -34,6 +35,7 @@ if ('serviceWorker' in navigator) {
       'load',
       async () => {
         const registration = await navigator.serviceWorker.register('/redirect-sw.js');
+        // eslint-disable-next-line no-console
         console.log('Redirect SW registered: ', registration);
       },
       { once: true }
