@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48705bc7_749860ca",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T06:37:35Z",
+      "side": 1,
+      "message": "nits: Gets, Returns",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 47,
+        "endChar": 8
+      },
+      "revId": "41d9e33080ad0a8b6bb7caa954545afdf73a0725",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f006cf85_aaa55113",
+        "filename": "milo/backend/get_project_cfg.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T06:37:35Z",
+      "side": 1,
+      "message": "nits: 2021",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "41d9e33080ad0a8b6bb7caa954545afdf73a0725",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
