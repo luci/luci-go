@@ -108,6 +108,9 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest) (invoc
 	var tSize int64
 	var invID invocations.ID
 
+	if err := pbutil.ValidateBatchRequestCount(len(in.Requests)); err != nil {
+		return "", nil, err
+	}
 	arts := make([]*artifactCreationRequest, len(in.Requests))
 	for i, req := range in.Requests {
 		inv, art, err := parseCreateArtifactRequest(req)
