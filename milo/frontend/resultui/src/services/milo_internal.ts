@@ -73,6 +73,22 @@ export interface QueryBlamelistResponse {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface GetCurrentUserRequest {}
 
+export interface GetProjectCfgRequest {
+  readonly project: string;
+}
+
+export interface Project {
+  readonly buildBugTemplate?: BugTemplate;
+  readonly logoUrl?: string;
+}
+
+export interface BugTemplate {
+  readonly summary?: string;
+  readonly description?: string;
+  readonly monorailProject?: string;
+  readonly components?: readonly string[];
+}
+
 export class MiloInternal {
   private static SERVICE = 'luci.milo.v1.MiloInternal';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
@@ -88,5 +104,9 @@ export class MiloInternal {
 
   async queryBlamelist(req: QueryBlamelistRequest, cacheOpt = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryBlamelist', req)) as QueryBlamelistResponse;
+  }
+
+  async getProjectCfg(req: GetProjectCfgRequest, cacheOpt = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'GetProjectCfg', req)) as Project;
   }
 }
