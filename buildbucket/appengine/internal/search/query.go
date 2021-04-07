@@ -319,6 +319,9 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 	inconsistentEntries := 0
 	var entriesToFetch []*model.TagIndexEntry
 	tags := q.Tags.Format()
+	expFilter := q.ExperimentFilters.Dup()
+	dropExperimental := expFilter.Del("-" + bb.ExperimentNonProduction)
+
 	for len(results) < int(q.PageSize) {
 		toFetchCount := int(q.PageSize) - len(results)
 		entriesToFetch = entriesToFetch[:0]
@@ -364,7 +367,8 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 				(q.CreatedBy != "" && q.CreatedBy != b.CreatedBy) ||
 				(q.Builder.GetBuilder() != "" && b.Proto.Builder.Builder != q.Builder.Builder) ||
 				(q.Builder.GetProject() != "" && b.Proto.Builder.Project != q.Builder.Project) ||
-				!stringset.NewFromSlice(b.Experiments...).Contains(q.ExperimentFilters) {
+				!stringset.NewFromSlice(b.Experiments...).Contains(q.ExperimentFilters) ||
+				(dropExperimental && b.ExperimentStatus(bb.ExperimentNonProduction) == pb.Trinary_YES) {
 				continue
 			}
 			results = append(results, b.ToSimpleBuildProto(ctx))
