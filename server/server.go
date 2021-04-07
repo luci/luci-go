@@ -15,24 +15,49 @@
 // Package server implements an environment for running LUCI servers.
 //
 // It interprets command line flags and initializes the serving environment with
-// the following base services available via context.Context:
-//   * go.chromium.org/luci/common/logging: Logging.
-//   * go.chromium.org/luci/common/trace: Tracing.
-//   * go.chromium.org/luci/server/caching: Process cache.
-//   * go.chromium.org/luci/server/auth: Making authenticated calls.
+// the following core services:
+//
+// • go.chromium.org/luci/common/logging: logging via Google Cloud Logging and
+// error reporting via Google Cloud Error Reporting.
+//
+// • go.chromium.org/luci/common/trace: Tracing via Google Cloud Trace and
+// profiling Google Cloud Profiler.
+//
+// • go.chromium.org/luci/server/tsmon: monitoring metrics via ProdX.
+//
+// • go.chromium.org/luci/server/auth: sending and receiving RPCs authenticated
+// with Google OAuth2 or OpenID tokens. Support for authorization via LUCI
+// groups and LUCI realms.
+//
+// • go.chromium.org/luci/server/caching: in-process caching.
+//
+// • go.chromium.org/luci/server/experiments: simple feature flags support.
+//
+// • go.chromium.org/luci/grpc/prpc: pRPC server and RPC Explorer UI.
 //
 // Other functionality is optional and provided by modules (objects implementing
-// module.Module interface). They should be passed to the server when it starts.
+// module.Module interface). They should be passed to the server when it starts
+// (see the example below). Modules usually expose their configuration via
+// command line flags, and provide functionality by injecting state into
+// the server's global context.Context or by exposing pRPC endpoints.
 //
 // Usage example:
 //
+//   import (
+//     ...
+//
+//     "go.chromium.org/luci/server"
+//     "go.chromium.org/luci/server/gaeemulation"
+//     "go.chromium.org/luci/server/module"
+//     "go.chromium.org/luci/server/redisconn"
+//     "go.chromium.org/luci/server/warmup"
+//   )
+//
 //   func main() {
-//     // When copying, please pick only modules you need.
 //     modules := []module.Module{
 //       gaeemulation.NewModuleFromFlags(),
-//       limiter.NewModuleFromFlags(),
 //       redisconn.NewModuleFromFlags(),
-//       secrets.NewModuleFromFlags(),
+//       warmup.NewModuleFromFlags(),
 //     }
 //     server.Main(nil, modules, func(srv *server.Server) error {
 //       // Initialize global state, change root context (if necessary).
@@ -51,6 +76,86 @@
 //       return nil
 //     })
 //   }
+//
+// More examples can be found in the code search: https://source.chromium.org/search?q=%22server.Main(nil,%20modules,%22
+//
+// Known modules
+//
+// The following modules (in alphabetical order) are a part of the LUCI
+// repository and can be used in any server binary:
+//
+// • go.chromium.org/luci/config/server/cfgmodule: provides LUCI Config client,
+// exposes config validation endpoints used by LUCI Config service.
+//
+// • go.chromium.org/luci/server/gaeemulation: implements
+// go.chromium.org/luci/gae Datastore interface via Google Cloud Datastore API.
+// Named so because because it enables migration of GAEv1 apps to GAEv2 without
+// touching datastore-related code.
+//
+// • go.chromium.org/luci/server/limiter: a simple load shedding mechanism that
+// puts a limit on a number of concurrent gRPC/pRPC requests the server is
+// handling.
+//
+// • go.chromium.org/luci/server/redisconn: a Redis client. Also enables Redis
+// as a caching backend for go.chromium.org/luci/server/caching and for
+// go.chromium.org/luci/gae/filter/dscache.
+//
+// • go.chromium.org/luci/server/secrets: enables generation and validation of
+// HMAC-tagged tokens via go.chromium.org/luci/server/tokens.
+//
+// • go.chromium.org/luci/server/span: a Cloud Spanner client. Wraps Spanner API
+// a bit to improve interoperability with other modules (in particular the TQ
+// module).
+//
+// • go.chromium.org/luci/server/tq: implements a task queue mechanism on top of
+// Cloud Tasks and Cloud PubSub. Also implements transactional task enqueuing
+// when submitting tasks in a Cloud Datastore or a Cloud Spanner transaction.
+//
+// • go.chromium.org/luci/server/warmup: allows other server components to
+// register warmup callback that run before the server starts handling requests.
+//
+// Most of them need to be configured via corresponding CLI flags to be useful.
+// See implementation of individual modules for details.
+//
+// An up-to-date list of all known module implementations can be found here:
+// https://source.chromium.org/search?q=%22NewModuleFromFlags()%20module.Module%22
+//
+// pRPC services
+//
+// The server.PRPC field is the primary grpc.ServiceRegistrar that should be
+// used to expose server's public gRPC/pRPC APIs. It is pre-configured with a
+// set of gRPC interceptors that collect performance metrics, catch panics and
+// authenticate requests using OAuth2 access tokens. Modules can add more
+// interceptors to the default interceptor chain.
+//
+// Security considerations
+//
+// The expected deployment environments are Kubernetes, Google App Engine and
+// Google Cloud Run. In all cases the server is expected to be behind a load
+// balancer (or a series of load balancers) that terminates TLS and sets
+// X-Forwarded-For header as:
+//
+//   [<untrusted part>,]<IP that connected to the LB>,<unimportant>[,<more>].
+//
+// Where <untrusted part> may be present if the original request from the
+// Internet comes with X-Forwarded-For header. The IP specified there is not
+// trusted, but the server assumes the load balancer at least sanitizes the
+// format of this field.
+//
+// <IP that connected to the LB> is the end-client IP that can be used by the
+// server for logs and for IP-allowlist checks.
+//
+// <unimportant> is "global forwarding rule external IP" for GKE or
+// the constant "169.254.1.1" for GAE. It is unused. See
+// https://cloud.google.com/load-balancing/docs/https for more info.
+//
+// <more> may be present if the request was proxied through more layers of
+// load balancers while already inside the cluster. The server currently assumes
+// this is not happening (i.e. <more> is absent, or, in other words, the client
+// IP is second to last in the X-Forwarded-For list). If you need to recognize
+// more layers of load balancing, please file a feature request to add a CLI
+// flag specifying how many layers of load balancers to skip to get to the
+// original IP.
 package server
 
 import (
@@ -373,7 +478,6 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.ContainerImageID,
 		"ID of the container image with this binary, for logs (optional)",
 	)
-
 	f.BoolVar(
 		&o.CloudErrorReporting,
 		"cloud-error-reporting",
