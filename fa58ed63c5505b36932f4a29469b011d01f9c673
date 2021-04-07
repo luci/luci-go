@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "679216c0_2a838c83",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-07T21:36:56Z",
+      "side": 1,
+      "message": "looking at this code -- i have no idea what it does 😞\nis this checking whether ExperimentNonProduction filter was speciifed earlier?",
+      "range": {
+        "startLine": 322,
+        "startChar": 0,
+        "endLine": 323,
+        "endChar": 68
+      },
+      "revId": "fa58ed63c5505b36932f4a29469b011d01f9c673",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
