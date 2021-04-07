@@ -22,6 +22,30 @@
       },
       "revId": "a22baa554cbec63ffe627a8758b025cf96f21dea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c74559c_60ac3b60",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T23:16:24Z",
+      "side": 1,
+      "message": "Right, currently (in py) we do add it. However since this string appears in 99%+ of the builds, and we don\u0027t actually need it in datastore, I\u0027d like to remove it from Py.\n\nAs a nice bonus, this also makes includeExperimental work for historical builds which were missing -luci.non_production.",
+      "parentUuid": "d559581e_0552d681",
+      "range": {
+        "startLine": 323,
+        "startChar": 4,
+        "endLine": 323,
+        "endChar": 57
+      },
+      "revId": "a22baa554cbec63ffe627a8758b025cf96f21dea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
