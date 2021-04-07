@@ -28,6 +28,14 @@ export interface UserConfigs {
       [key: string]: number;
     };
   };
+  testResults: {
+    newLayout: boolean;
+    columnWidths: {
+      // the key is the property key.
+      // the value is the width in px.
+      [key: string]: number;
+    };
+  };
   inputPropLineFoldTime: {
     // the key is the folded line.
     // the value is the last accessed time.
@@ -40,7 +48,6 @@ export interface UserConfigs {
   };
   askForFeedback: boolean;
   defaultBuildPageTabName: string;
-  newTestResultsTab: boolean;
 }
 
 export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
@@ -49,11 +56,16 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
     showDebugLogs: false,
     stepPinTime: Object.freeze({}),
   }),
+  testResults: {
+    newLayout: false,
+    columnWidths: {
+      'v.test_suite': 350,
+    },
+  },
   inputPropLineFoldTime: Object.freeze({}),
   outputPropLineFoldTime: Object.freeze({}),
   askForFeedback: true,
   defaultBuildPageTabName: 'build-overview',
-  newTestResultsTab: false,
 });
 
 export class UserConfigsStore {

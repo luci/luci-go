@@ -26,10 +26,6 @@ export class QueryInvocationError {
   constructor(readonly invId: string, readonly inner: unknown) {}
 }
 
-const DEFAULT_COLUMN_WIDTH = Object.freeze<{ [key: string]: number }>({
-  'v.test_suite': 350,
-});
-
 /**
  * Records state of an invocation.
  */
@@ -63,9 +59,9 @@ export class InvocationState {
     return this.displayedColumns.map((col) => createTVPropGetter(col));
   }
 
-  @observable customColumnWidths: { [key: string]: number } = {};
+  @observable customColumnWidths: { readonly [key: string]: number } = {};
   @computed get columnWidths() {
-    return this.displayedColumns.map((col) => this.customColumnWidths[col] ?? DEFAULT_COLUMN_WIDTH[col] ?? 100);
+    return this.displayedColumns.map((col) => this.customColumnWidths[col] ?? 100);
   }
 
   @observable.ref sortingKeysParam?: string[];

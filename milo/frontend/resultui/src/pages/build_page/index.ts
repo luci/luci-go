@@ -389,7 +389,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
               id: 'test-results',
               label: 'Test Results',
               href: router.urlForName(
-                this.configsStore.userConfigs.newTestResultsTab ? 'build-test-results-new' : 'build-test-results',
+                this.configsStore.userConfigs.testResults.newLayout ? 'build-test-results-new' : 'build-test-results',
                 params
               ),
             },
@@ -494,9 +494,9 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
             <td style="padding-left: 5px;">
               <input
                 type="checkbox"
-                ?checked=${this.uncommittedConfigs.newTestResultsTab}
+                ?checked=${this.uncommittedConfigs.testResults.newLayout}
                 @change=${() =>
-                  (this.uncommittedConfigs.newTestResultsTab = !this.uncommittedConfigs.newTestResultsTab)}
+                  (this.uncommittedConfigs.testResults.newLayout = !this.uncommittedConfigs.testResults.newLayout)}
               />
             </td>
           </tr>

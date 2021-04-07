@@ -103,6 +103,14 @@ export class TestResultsTabElement extends MobxLitElement {
         { fireImmediately: true }
       )
     );
+
+    this.disposers.push(
+      reaction(
+        () => this.configsStore.userConfigs.testResults.columnWidths,
+        (columnWidths) => (this.invocationState.customColumnWidths = columnWidths),
+        { fireImmediately: true }
+      )
+    );
   }
   disconnectedCallback() {
     super.disconnectedCallback();
