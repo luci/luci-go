@@ -25,7 +25,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/trace"
 	"sync"
+	"time"
 
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
@@ -238,6 +240,9 @@ func (d *Cache) Add(ctx context.Context, digest isolated.HexDigest, src io.Reade
 //
 // TODO(tikuta): make one function and control the behavior by option?
 func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest isolated.HexDigest, src string) error {
+	ctx, task := trace.NewTask(ctx, "AddFileWithoutValidation")
+	defer task.End()
+
 	fi, err := os.Stat(src)
 	if err != nil {
 		return errors.Annotate(err, "failed to get stat").Err()
@@ -245,6 +250,7 @@ func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest isolated.He
 
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	start := time.Now()
 	dest := d.itemPath(digest)
 	if err := os.Link(src, dest); err != nil && !os.IsExist(err) {
 		terr := func() error {
@@ -263,6 +269,8 @@ func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest isolated.He
 			return terr
 		}
 	}
+
+	trace.Logf(ctx, "", "os.Link took %s", time.Since(start))
 
 	d.lru.pushFront(digest, units.Size(fi.Size()))
 	if err := d.respectPolicies(ctx); err != nil {
@@ -446,6 +454,9 @@ func (d *Cache) statePath() string {
 }
 
 func (d *Cache) respectPolicies(ctx context.Context) error {
+	ctx, task := trace.NewTask(ctx, "respectPolicies")
+	defer task.End()
+
 	minFreeSpaceWanted := uint64(d.policies.MinFreeSpace)
 	for {
 		freeSpace, err := filesystem.GetFreeSpace(d.path)
