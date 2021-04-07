@@ -546,7 +546,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           : html`
               <div class="delimiter"></div>
               <a
-                @click=${(e: Event) => {
+                @click=${(e: MouseEvent) => {
+                  if (e.metaKey || e.shiftKey || e.ctrlKey || e.altKey) {
+                    return;
+                  }
+
                   trackEvent(GA_CATEGORIES.LEGACY_BUILD_PAGE, GA_ACTIONS.SWITCH_VERSION, window.location.href);
                   const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
                   document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
