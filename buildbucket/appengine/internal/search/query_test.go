@@ -1155,12 +1155,12 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 				Status: pb.Status_CANCELED,
 			},
-			Status:      pb.Status_CANCELED,
-			Project:     "project",
-			BucketID:    "project/bucket",
-			BuilderID:   "project/bucket/builder2",
-			Tags:        []string{"buildset:commit/git/abcd"},
-			Experiments: experiments(false, false),
+			Status:    pb.Status_CANCELED,
+			Project:   "project",
+			BucketID:  "project/bucket",
+			BuilderID: "project/bucket/builder2",
+			Tags:      []string{"buildset:commit/git/abcd"},
+			// legacy; no Experiments, assumed to be prod
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 300,
