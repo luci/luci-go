@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9321d869_144cfdc5",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T07:12:25Z",
+      "side": 1,
+      "message": "in go/tsstyle, $ suffix can be used to signal that the variable is observable.\nIn this codebase, regular observables won\u0027t have $ suffix (you don\u0027t need to treat them differently when writing code anyway) but PromiseBasedObservable will have the $ suffix.\nThis makes naming properties a lot easier as we have a lot of similar patterns like this.",
+      "parentUuid": "7adbd56d_b9319c90",
+      "range": {
+        "startLine": 291,
+        "startChar": 24,
+        "endLine": 291,
+        "endChar": 25
+      },
+      "revId": "ddf0913952fb16fd500a7f864743cc4de8491040",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5bba7563_410ce203",
         "filename": "milo/frontend/resultui/src/context/build_state.ts",
         "patchSetId": 4
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-07T07:03:29Z",
       "side": 1,
       "message": "Nits: Establishes",
+      "range": {
+        "startLine": 298,
+        "startChar": 7,
+        "endLine": 298,
+        "endChar": 16
+      },
+      "revId": "ddf0913952fb16fd500a7f864743cc4de8491040",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a66bba5a_a482875a",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T07:12:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5bba7563_410ce203",
       "range": {
         "startLine": 298,
         "startChar": 7,
@@ -60,6 +108,30 @@
       "writtenOn": "2021-04-07T07:03:29Z",
       "side": 1,
       "message": "Should we return GetProjectCfgResponse (i.e. wrap Project in a Response)?",
+      "range": {
+        "startLine": 110,
+        "startChar": 72,
+        "endLine": 110,
+        "endChar": 79
+      },
+      "revId": "ddf0913952fb16fd500a7f864743cc4de8491040",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a056cd5d_2ea531a0",
+        "filename": "milo/frontend/resultui/src/services/milo_internal.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T07:12:25Z",
+      "side": 1,
+      "message": "Because this function is async, the returned object is automatically a promise.\nThe only difference here is whether we prefer \n\nreturn (await this.cachedCallFn(cacheOpt, \u0027GetProjectCfg\u0027, req)) as Project;\n\nor \n\nreturn this.cachedCallFn(cacheOpt, \u0027GetProjectCfg\u0027, req) as Promise\u003cProject\u003e;\n\nI don\u0027t mind either but the former is already used in L100.",
+      "parentUuid": "09bb84a9_d0240394",
       "range": {
         "startLine": 110,
         "startChar": 72,
