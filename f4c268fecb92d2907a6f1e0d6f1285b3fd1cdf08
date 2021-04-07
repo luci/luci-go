@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab7428be_9ccd7394",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T00:52:32Z",
+      "side": 1,
+      "message": "Overall, I am ok with the change. I just wonder if it will confuse the users because we have 2 different behaviors (when opening in the same tab vs opening in another tab).\n\nAlso, I am not 100% convinced it will encourage users to stay in the new page more (unless we have more data to support this). We may also argue that this will allow users to open the new page in a new tab and stay with the legacy page.",
+      "revId": "f4c268fecb92d2907a6f1e0d6f1285b3fd1cdf08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -52,6 +52,40 @@
       "parentUuid": "26886541_ced90acb",
       "revId": "767ca9a7dfc009d5500b6ac25a12f232fb8a30c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "19a59abf_64b112cc",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 550,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T00:52:32Z",
+      "side": 1,
+      "message": "Is it helpful to track cases when users temporarily switch to the other build page? Or do you think the pageview is enough?\n\nAlso, as we are not collecting feedback here, I guess it may be hard to tell why the user want to switch.",
+      "revId": "767ca9a7dfc009d5500b6ac25a12f232fb8a30c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f19176e3_a81e526a",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T00:52:32Z",
+      "side": 1,
+      "message": "Let\u0027s put a comment here that this is for temporarily switching to old build page, and is supposed to be removed later.",
+      "revId": "767ca9a7dfc009d5500b6ac25a12f232fb8a30c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
