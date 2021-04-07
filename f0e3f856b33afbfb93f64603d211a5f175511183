@@ -16,6 +16,29 @@
       "message": "Demo: https://weiweilin-1-dot-luci-milo.appspot.com/ui/p/chromeos/builders/staging/staging-sign-image/b8896417274530190816/overview\n",
       "revId": "f0e3f856b33afbfb93f64603d211a5f175511183",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb170adb_ef10e6d9",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T06:54:09Z",
+      "side": 1,
+      "message": "We only have 2 projects with custom bug template at the moment and this function works for them. An alternative solution is to call the RPC to render the bug template on the server side.\n\nIt\u0027s a bit unfortunate that we use the go template syntax rather than a generic one. Moving forward, I think a better approach is to migrate to a more generic/language agonistic template syntax.",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 125,
+        "endChar": 62
+      },
+      "revId": "f0e3f856b33afbfb93f64603d211a5f175511183",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
