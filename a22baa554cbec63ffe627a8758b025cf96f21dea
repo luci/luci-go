@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d559581e_0552d681",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-07T23:06:06Z",
+      "side": 1,
+      "message": "To clarify, it\u0027s just the old builds that may don\u0027t have \"-luci.non_production\"? Because in current Py code, it does add either \"+\" or \"-\" for all those well-known experiments here - https://chromium.googlesource.com/infra/infra/+/190929ec7f0525672f880a8c40529e78cafd88ab/appengine/cr-buildbucket/creation.py#279. \n\nIt means the code in this CL is temporary. And in future, we\u0027re able to get rid of it?",
+      "range": {
+        "startLine": 323,
+        "startChar": 4,
+        "endLine": 323,
+        "endChar": 57
+      },
+      "revId": "a22baa554cbec63ffe627a8758b025cf96f21dea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
