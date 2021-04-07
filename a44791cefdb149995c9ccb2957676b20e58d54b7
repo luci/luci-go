@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "170144c3_88432143",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T18:38:15Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d863543_432231b6",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T18:38:15Z",
+      "side": 1,
+      "message": "Tracing",
+      "range": {
+        "startLine": 23,
+        "startChar": 40,
+        "endLine": 23,
+        "endChar": 47
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c8fdebd2_3bd5c8ab",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T18:38:15Z",
+      "side": 1,
+      "message": "worth including import lines in the example so they know where `warmup` comes from?",
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8ebaae3_2a6e24bc",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T18:38:15Z",
+      "side": 1,
+      "message": "maybe move to the bottom of \"known modules\" section?\n\nedit: looks like this IS at the end of the section already",
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae287709_f823e1d2",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T18:38:15Z",
+      "side": 1,
+      "message": "submitting tasks in a X or Y transaction",
+      "range": {
+        "startLine": 102,
+        "startChar": 24,
+        "endLine": 102,
+        "endChar": 26
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8270fcf7_2b344246",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T18:38:15Z",
+      "side": 1,
+      "message": "server.PRPC field",
+      "range": {
+        "startLine": 115,
+        "startChar": 19,
+        "endLine": 115,
+        "endChar": 21
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a5161606_2a5f6e68",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T18:38:15Z",
+      "side": 1,
+      "message": "but",
+      "range": {
+        "startLine": 132,
+        "startChar": 12,
+        "endLine": 132,
+        "endChar": 14
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f5bb48e2_5163e9fe",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-07T18:38:15Z",
+      "side": 1,
+      "message": "specifying",
+      "range": {
+        "startLine": 147,
+        "startChar": 8,
+        "endLine": 147,
+        "endChar": 17
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
