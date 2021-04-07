@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5984f276_6b927f58",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T06:45:18Z",
+      "side": 1,
+      "message": "I will explain it in the next CL.",
+      "parentUuid": "4dddb4b3_2e1da2d5",
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8f8abb8b_6c389625",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-04-06T19:06:05Z",
       "side": 1,
       "message": "How\u0027s this number determined?",
+      "range": {
+        "startLine": 85,
+        "startChar": 49,
+        "endLine": 85,
+        "endChar": 53
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d0554631_c03c58d4",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T06:45:18Z",
+      "side": 1,
+      "message": "It\u0027s a random number, and I haven\u0027t been able to find a good way of finding the number yet.\n\nI haven\u0027t measured how much memory each upload task consumes, but it\u0027s the total memory cost of pb.Artifact{} + uploadTask{} + the internal storage inside the dispatcher. The size of pb.Artifact{} could be as high as a few KB, if it contains Artifact_Contents{}.\n\nLet\u0027s assume that each task consumes 256 bytes of memory, holding 8000 of tasks in memory costs around 2MB of memory. Maybe, that\u0027s too small to block the clients and slow down the test frameworks? WDYT?",
+      "parentUuid": "8f8abb8b_6c389625",
       "range": {
         "startLine": 85,
         "startChar": 49,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e66d041f_a512d629",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T06:45:18Z",
+      "side": 1,
+      "message": "It\u0027s mainly because I didn\u0027t find benefits of keeping them separately.\n\n1) none of u.Upload(), u.UploadFromFile(), and u.newRequest() would be used anywhere else. They would exist primarily for readability.\n2) I found that they similar enough to be merged to one function, after removal of lines from L106 to L117 in u.UploadFromFile().\n3) They would have be renamed to u.newHTTPRequest(), u.streamUploadFromFile(), u.streamUploadWithContents() to clearly distinguish them from u.batchUpload() and its helper functions, but I feel the names are too verbose.\n\nOverall, I felt that it\u0027d be easy to look through artifact_uploader.go if I merge them when u.batchUpload() is implemented in artifact_uploader.go. Maybe, I\u0027m biased. LMK if you have different opinions.",
+      "parentUuid": "18e7403b_5aca39b5",
+      "range": {
+        "startLine": 43,
+        "startChar": 27,
+        "endLine": 43,
+        "endChar": 39
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5afc3fc1_1cd96d1b",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-04-06T18:57:13Z",
       "side": 1,
       "message": "nit: this assumes that body variable will not be replaced with something below by a future programmer. It would be more robust to have\n\n  f, err :\u003d os.Open(...)\n  ...\n  defer f.Close()\n  body \u003d f",
+      "range": {
+        "startLine": 53,
+        "startChar": 8,
+        "endLine": 53,
+        "endChar": 23
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c67b2de_6259709f",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T06:45:18Z",
+      "side": 1,
+      "message": "Good point. done",
+      "parentUuid": "5afc3fc1_1cd96d1b",
       "range": {
         "startLine": 53,
         "startChar": 8,
@@ -133,6 +223,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "622658af_2d465700",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T06:45:18Z",
+      "side": 1,
+      "message": "fixed.",
+      "parentUuid": "5e7e1d87_e6e6658a",
+      "range": {
+        "startLine": 63,
+        "startChar": 59,
+        "endLine": 64,
+        "endChar": 15
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d08b5d35_0ea177a0",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T06:45:18Z",
+      "side": 1,
+      "message": "updated with more information. PTAL",
+      "parentUuid": "a23578e2_da772eef",
+      "range": {
+        "startLine": 63,
+        "startChar": 54,
+        "endLine": 64,
+        "endChar": 61
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cbcbc9d1_7166664e",
@@ -158,6 +296,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7204ca4d_abe113d4",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T06:45:18Z",
+      "side": 1,
+      "message": "\u003e\u003e Consider using it only there, while the rest of code (L66, L71) uses less-specific `body`.\nGood point. Thanks. Done.\n\n\u003e\u003e Did you consider a simple rule that if someone passes content in t.art.Content, then use Batch upload?\nIt\u0027s still possible that a test framework uploads an Artifact with Content \u003e 10MB, which has to be uploaded with this function, StreamUpload().\n\nWe can (and probably should) put a limit on the maximum size of art.Content in the proto doc, but I\u0027d still prefer to keep streamUpload() capable of handling both artifact_Content{} and artifact_File{}. Otherwise, I\u0027d have to put the following panic().\n\n```\nfunc StreamUpload(...) {\n  if t.art.GetFilePath() \u003d\u003d \"\" {\n     panic(\"StreamUpload() only accepts artifacts with files. Please fix\")\n  }\n}\n```\n\nI will also have to add inline comments for the panic somewhere. I think the current code is better?",
+      "parentUuid": "cbcbc9d1_7166664e",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 6
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2b1cf113_6c261bf2",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 5
@@ -169,6 +331,30 @@
       "writtenOn": "2021-04-06T18:57:13Z",
       "side": 1,
       "message": "is this code needed? seems like http package will always call GetBody which always seeks to the beginning.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a58d5936_8ac618dd",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T06:45:18Z",
+      "side": 1,
+      "message": "Yes, we need to reset the cursor. AFAIK, http.Client doesn\u0027t call GetBody(), unless it received 3xx responses.\n: https://golang.org/src/net/http/client.go",
+      "parentUuid": "2b1cf113_6c261bf2",
       "range": {
         "startLine": 89,
         "startChar": 0,
