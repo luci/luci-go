@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5ac367b_f26c9fb1",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T05:54:40Z",
+      "side": 1,
+      "message": "We probably will use a new component there because this progressive loading implementation won\u0027t work if we add this component to the overview tab.\n\nI\u0027ll move the component to pages/ to a separate CL.",
+      "parentUuid": "d50d9698_18365625",
+      "revId": "5e892cfa01fb8921beecf2e4cd86886c2ace44e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a8accc03_77b106db",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-04-07T05:03:28Z",
       "side": 1,
       "message": "nits: remove this",
+      "range": {
+        "startLine": 35,
+        "startChar": 58,
+        "endLine": 35,
+        "endChar": 61
+      },
+      "revId": "5e892cfa01fb8921beecf2e4cd86886c2ace44e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bff035fa_7cf0b9d2",
+        "filename": "milo/frontend/resultui/src/context/app_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T05:54:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8accc03_77b106db",
       "range": {
         "startLine": 35,
         "startChar": 58,
