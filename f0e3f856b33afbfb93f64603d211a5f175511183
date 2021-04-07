@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e3cbbd5_732607ff",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T06:48:39Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-1-dot-luci-milo.appspot.com/ui/p/chromeos/builders/staging/staging-sign-image/b8896417274530190816/overview\n",
+      "revId": "f0e3f856b33afbfb93f64603d211a5f175511183",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
