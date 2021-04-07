@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c8fec76_a556111b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-07T23:55:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88f804d4_9875a3e8",
+      "range": {
+        "startLine": 90,
+        "startChar": 12,
+        "endLine": 90,
+        "endChar": 15
+      },
+      "revId": "320fd75b87fb70d7089c19059bafe35966414ef3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "408a21b5_1faa631e",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f51c616_4e4379ac",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-07T23:55:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "408a21b5_1faa631e",
+      "range": {
+        "startLine": 113,
+        "startChar": 13,
+        "endLine": 113,
+        "endChar": 20
+      },
+      "revId": "320fd75b87fb70d7089c19059bafe35966414ef3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "163f03fe_90a753c8",
@@ -60,6 +108,24 @@
       "writtenOn": "2021-04-05T04:01:35Z",
       "side": 1,
       "message": "better to cover cmd.Run in test.",
+      "revId": "320fd75b87fb70d7089c19059bafe35966414ef3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ba4572a_0cf0eccb",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-07T23:55:13Z",
+      "side": 1,
+      "message": "ptal",
+      "parentUuid": "163f03fe_90a753c8",
       "revId": "320fd75b87fb70d7089c19059bafe35966414ef3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
