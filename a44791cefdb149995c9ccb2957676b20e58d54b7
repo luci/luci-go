@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bbe68ded_bf63c7cf",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-07T18:45:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d863543_432231b6",
+      "range": {
+        "startLine": 23,
+        "startChar": 40,
+        "endLine": 23,
+        "endChar": 47
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c8fdebd2_3bd5c8ab",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-04-07T18:38:15Z",
       "side": 1,
       "message": "worth including import lines in the example so they know where `warmup` comes from?",
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e818abf_f90f14da",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-07T18:45:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c8fdebd2_3bd5c8ab",
       "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -75,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbedb704_87b19459",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-07T18:45:30Z",
+      "side": 1,
+      "message": "This is a link to various main.go entry points. The link in the modules session is a link to module implementations.",
+      "parentUuid": "e8ebaae3_2a6e24bc",
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ae287709_f823e1d2",
@@ -88,6 +148,30 @@
       "writtenOn": "2021-04-07T18:38:15Z",
       "side": 1,
       "message": "submitting tasks in a X or Y transaction",
+      "range": {
+        "startLine": 102,
+        "startChar": 24,
+        "endLine": 102,
+        "endChar": 26
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97b8c1d7_b9b36db2",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-07T18:45:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae287709_f823e1d2",
       "range": {
         "startLine": 102,
         "startChar": 24,
@@ -121,6 +205,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7771fe2e_001c2ecb",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-07T18:45:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8270fcf7_2b344246",
+      "range": {
+        "startLine": 115,
+        "startChar": 19,
+        "endLine": 115,
+        "endChar": 21
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a5161606_2a5f6e68",
@@ -144,6 +252,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "15dd90f5_d6a22b87",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-07T18:45:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5161606_2a5f6e68",
+      "range": {
+        "startLine": 132,
+        "startChar": 12,
+        "endLine": 132,
+        "endChar": 14
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f5bb48e2_5163e9fe",
@@ -157,6 +289,30 @@
       "writtenOn": "2021-04-07T18:38:15Z",
       "side": 1,
       "message": "specifying",
+      "range": {
+        "startLine": 147,
+        "startChar": 8,
+        "endLine": 147,
+        "endChar": 17
+      },
+      "revId": "a44791cefdb149995c9ccb2957676b20e58d54b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15e4fe3b_a5d399f0",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-07T18:45:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5bb48e2_5163e9fe",
       "range": {
         "startLine": 147,
         "startChar": 8,
