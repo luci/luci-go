@@ -319,6 +319,20 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 	inconsistentEntries := 0
 	var entriesToFetch []*model.TagIndexEntry
 	tags := q.Tags.Format()
+
+	// We don't record "-luci.non_production" on every build, so when the user
+	// asked for this filter, we replace it with a negated filter for the opposite
+	// experiment (i.e. `"+luci.non_production" not in b.experiments`).
+	//
+	// We could use b.ExperimentStatus here, but since we have to convert
+	// b.Experiments to a stringset anyway, we avoid looping twice by checking
+	// if nonProdFilter is in that stringset.
+	expFilter := q.ExperimentFilters.Dup()
+	nonProdFilter := ""
+	if expFilter.Del("-" + bb.ExperimentNonProduction) {
+		nonProdFilter = "+" + bb.ExperimentNonProduction
+	}
+
 	for len(results) < int(q.PageSize) {
 		toFetchCount := int(q.PageSize) - len(results)
 		entriesToFetch = entriesToFetch[:0]
@@ -363,10 +377,18 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 				(q.Status != pb.Status_STATUS_UNSPECIFIED && q.Status != pb.Status_ENDED_MASK && q.Status != b.Status) ||
 				(q.CreatedBy != "" && q.CreatedBy != b.CreatedBy) ||
 				(q.Builder.GetBuilder() != "" && b.Proto.Builder.Builder != q.Builder.Builder) ||
-				(q.Builder.GetProject() != "" && b.Proto.Builder.Project != q.Builder.Project) ||
-				!stringset.NewFromSlice(b.Experiments...).Contains(q.ExperimentFilters) {
+				(q.Builder.GetProject() != "" && b.Proto.Builder.Project != q.Builder.Project) {
 				continue
 			}
+
+			bExps := stringset.NewFromSlice(b.Experiments...)
+			if !bExps.Contains(expFilter) {
+				continue
+			}
+			if nonProdFilter != "" && bExps.Has(nonProdFilter) {
+				continue
+			}
+
 			results = append(results, b.ToSimpleBuildProto(ctx))
 		}
 	}
