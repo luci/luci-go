@@ -93,6 +93,7 @@ func Run(templatePath string) {
 		}
 	}).ExtendFrom(optionalProjectMW)
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", buildPageMW, handleError(handleLUCIBuild))
+	r.GET("/old/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
