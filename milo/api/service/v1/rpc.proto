@@ -19,6 +19,7 @@ package luci.milo.v1;
 import "go.chromium.org/luci/common/proto/git/commit.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/milo/api/config/project.proto";
 
 option go_package = "go.chromium.org/luci/milo/api/service/v1;milopb";
 
@@ -37,11 +38,16 @@ service MiloInternal {
   // is from the same builder and is not expired, cancelled, or infra-failed.
   rpc QueryBlamelist(QueryBlamelistRequest) returns (QueryBlamelistResponse) {};
 
-  // Get the current user.
+  // Gets the current user.
   //
   // Return the current user if user is logged in. Otherwise, return an
   // anonymous user.
   rpc GetCurrentUser(GetCurrentUserRequest) returns (User) {};
+
+  // Gets the project config.
+  //
+  // Return the config of the project.
+  rpc GetProjectCfg(GetProjectCfgRequest) returns (.milo.Project) {};
 }
 
 // A request message for `GetCurrentUser` RPC.
@@ -123,4 +129,9 @@ message QueryBlamelistResponse {
 message QueryBlamelistPageToken {
   // The first commit in the next page.
   string next_commit_id = 2;
+}
+
+message GetProjectCfgRequest {
+  // The project name.
+  string project = 1;
 }
