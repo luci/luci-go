@@ -318,6 +318,9 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
 					ExecutionTimeout: &durationpb.Duration{
 						Seconds: 10800,
 					},
@@ -399,6 +402,9 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
 					ExecutionTimeout: &durationpb.Duration{
 						Seconds: 10800,
 					},
@@ -420,7 +426,10 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Critical:   pb.Trinary_YES,
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					Critical: pb.Trinary_YES,
 					ExecutionTimeout: &durationpb.Duration{
 						Seconds: 10800,
 					},
@@ -442,7 +451,10 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					CreatedBy:  "anonymous:anonymous",
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Critical:   pb.Trinary_NO,
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					Critical: pb.Trinary_NO,
 					ExecutionTimeout: &durationpb.Duration{
 						Seconds: 10800,
 					},
@@ -1390,6 +1402,169 @@ func TestScheduleBuild(t *testing.T) {
 				Canary:       pb.Trinary_NO,
 				Experimental: pb.Trinary_NO,
 				Properties:   &structpb.Struct{},
+			})
+		})
+	})
+
+	Convey("setExecutable", t, func() {
+		Convey("nil", func() {
+			ent := &model.Build{}
+
+			setExecutable(nil, nil, ent)
+			So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				Cmd: []string{"recipes"},
+			})
+		})
+
+		Convey("command", func() {
+			Convey("recipes", func() {
+				ent := &model.Build{}
+
+				setExecutable(nil, nil, ent)
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					Cmd: []string{"recipes"},
+				})
+			})
+
+			Convey("luciexe", func() {
+				ent := &model.Build{
+					Experiments: []string{
+						"+" + bb.ExperimentBBAgent,
+					},
+				}
+
+				setExecutable(nil, nil, ent)
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					Cmd: []string{"luciexe"},
+				})
+			})
+		})
+
+		Convey("request only", func() {
+			req := &pb.ScheduleBuildRequest{
+				Exe: &pb.Executable{
+					CipdPackage: "package",
+					CipdVersion: "version",
+					Cmd:         []string{"command"},
+				},
+			}
+			ent := &model.Build{}
+
+			setExecutable(req, nil, ent)
+			So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				CipdVersion: "version",
+				Cmd:         []string{"recipes"},
+			})
+		})
+
+		Convey("config only", func() {
+			Convey("exe", func() {
+				cfg := &pb.Builder{
+					Exe: &pb.Executable{
+						CipdPackage: "package",
+						CipdVersion: "version",
+						Cmd:         []string{"command"},
+					},
+				}
+				ent := &model.Build{}
+
+				setExecutable(nil, cfg, ent)
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					CipdPackage: "package",
+					CipdVersion: "version",
+					Cmd:         []string{"command"},
+				})
+			})
+
+			Convey("recipe", func() {
+				cfg := &pb.Builder{
+					Exe: &pb.Executable{
+						CipdPackage: "package 1",
+						CipdVersion: "version 1",
+						Cmd:         []string{"command"},
+					},
+					Recipe: &pb.Builder_Recipe{
+						CipdPackage: "package 2",
+						CipdVersion: "version 2",
+					},
+				}
+				ent := &model.Build{}
+
+				setExecutable(nil, cfg, ent)
+				So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+					CipdPackage: "package 2",
+					CipdVersion: "version 2",
+					Cmd:         []string{"command"},
+				})
+			})
+
+			Convey("command", func() {
+				Convey("recipes", func() {
+					cfg := &pb.Builder{
+						Exe: &pb.Executable{
+							CipdPackage: "package",
+							CipdVersion: "version",
+						},
+					}
+					ent := &model.Build{
+						Experiments: []string{
+							"-" + bb.ExperimentBBAgent,
+						},
+					}
+
+					setExecutable(nil, cfg, ent)
+					So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+						CipdPackage: "package",
+						CipdVersion: "version",
+						Cmd:         []string{"recipes"},
+					})
+				})
+
+				Convey("luciexe", func() {
+					cfg := &pb.Builder{
+						Exe: &pb.Executable{
+							CipdPackage: "package",
+							CipdVersion: "version",
+						},
+					}
+					ent := &model.Build{
+						Experiments: []string{
+							"+" + bb.ExperimentBBAgent,
+						},
+					}
+
+					setExecutable(nil, cfg, ent)
+					So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+						CipdPackage: "package",
+						CipdVersion: "version",
+						Cmd:         []string{"luciexe"},
+					})
+				})
+			})
+		})
+
+		Convey("request > config", func() {
+			req := &pb.ScheduleBuildRequest{
+				Exe: &pb.Executable{
+					CipdPackage: "package 1",
+					CipdVersion: "version 1",
+					Cmd:         []string{"command 1"},
+				},
+			}
+			cfg := &pb.Builder{
+				Exe: &pb.Executable{
+					CipdPackage: "package 2",
+					CipdVersion: "version 2",
+					Cmd:         []string{"command 2"},
+				},
+			}
+			ent := &model.Build{}
+
+			setExecutable(req, cfg, ent)
+			So(ent.Proto.Exe, ShouldResembleProto, &pb.Executable{
+				CipdPackage: "package 2",
+				CipdVersion: "version 1",
+				Cmd:         []string{"command 2"},
 			})
 		})
 	})
