@@ -40,8 +40,6 @@ var (
 // Query is a builder-object for building a datastore query. It may represent
 // an invalid query, but the error will only be observable when you call
 // Finalize.
-//
-// A Query is, for the most part, not goroutine-safe. However, it is
 type Query struct {
 	queryFields
 
