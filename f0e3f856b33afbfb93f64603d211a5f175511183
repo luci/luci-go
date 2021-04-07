@@ -20,6 +20,40 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "672c7722_19475440",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T07:14:30Z",
+      "side": 1,
+      "message": "Remove this?",
+      "revId": "f0e3f856b33afbfb93f64603d211a5f175511183",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23657976_cc6f2471",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T07:14:30Z",
+      "side": 1,
+      "message": "I just wonder if it is possible to just get the template name for the project, so we can just have a link like https://bugs.chromium.org/p/chromium/issues/entry?template\u003dLacros+isssues, instead of populating every fields.\n\nA template may have more that summary, description and components. E.g. the template above have the default OS.",
+      "revId": "f0e3f856b33afbfb93f64603d211a5f175511183",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cb170adb_ef10e6d9",
         "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
         "patchSetId": 2
