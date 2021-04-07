@@ -297,6 +297,8 @@ message BatchCreateArtifactsRequest {
   // Requests to create Artifacts.
   // The sum of the content lengths MUST be <= 10MiB.
   // The parents of all the requests must be derived from the same invocation.
+  //
+  // Up to 500 requests.
   repeated CreateArtifactRequest requests = 2;
 }
 
