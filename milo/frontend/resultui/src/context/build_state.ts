@@ -27,7 +27,7 @@ import {
   GetBuildRequest,
   GitilesCommit,
 } from '../services/buildbucket';
-import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
+import { Project, QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
 import { AppState } from './app_state';
 
@@ -285,6 +285,29 @@ export class BuildState {
         ? this.permittedActions$.value.permitted[this.bucketResourceId!].actions
         : undefined;
     return new Set(actions || []);
+  }
+
+  @computed
+  private get projectCfg$() {
+    if (!this.appState.milo || !this.builderId?.project) {
+      // Returns a promise that never resolves when the dependencies aren't
+      // ready.
+      return fromPromise(Promise.race([]));
+    }
+
+    // Establishes a dependency on the timestamp.
+    this.timestamp;
+
+    return fromPromise(
+      this.appState.milo.getProjectCfg({
+        project: this.builderId.project,
+      })
+    );
+  }
+
+  @computed
+  get projectCfg(): Project | null {
+    return this.projectCfg$.state === FULFILLED ? this.projectCfg$.value : null;
   }
 
   // Refresh all data that depends on the timestamp.
