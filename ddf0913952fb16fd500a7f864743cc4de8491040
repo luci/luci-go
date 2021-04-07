@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7adbd56d_b9319c90",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T07:03:29Z",
+      "side": 1,
+      "message": "Is there a special meaning for this dollar sign, or it is just to make it different from the public one?",
+      "range": {
+        "startLine": 291,
+        "startChar": 24,
+        "endLine": 291,
+        "endChar": 25
+      },
+      "revId": "ddf0913952fb16fd500a7f864743cc4de8491040",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5bba7563_410ce203",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T07:03:29Z",
+      "side": 1,
+      "message": "Nits: Establishes",
+      "range": {
+        "startLine": 298,
+        "startChar": 7,
+        "endLine": 298,
+        "endChar": 16
+      },
+      "revId": "ddf0913952fb16fd500a7f864743cc4de8491040",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "09bb84a9_d0240394",
+        "filename": "milo/frontend/resultui/src/services/milo_internal.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-07T07:03:29Z",
+      "side": 1,
+      "message": "Should we return GetProjectCfgResponse (i.e. wrap Project in a Response)?",
+      "range": {
+        "startLine": 110,
+        "startChar": 72,
+        "endLine": 110,
+        "endChar": 79
+      },
+      "revId": "ddf0913952fb16fd500a7f864743cc4de8491040",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
