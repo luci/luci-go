@@ -93,6 +93,8 @@ func Run(templatePath string) {
 		}
 	}).ExtendFrom(optionalProjectMW)
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", buildPageMW, handleError(handleLUCIBuild))
+	// TODO(crbug/1108198): remvoe this route once we turned down the old build page.
+	r.GET("/old/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
