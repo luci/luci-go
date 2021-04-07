@@ -34,7 +34,7 @@ export function getURLForProject(proj: string): string {
 }
 
 export function getLegacyURLForBuild(builder: BuilderID, buildNumOrId: string) {
-  return `${getURLForBuilder(builder)}/${buildNumOrId}`;
+  return `/old${getURLForBuilder(builder)}/${buildNumOrId}`;
 }
 
 export function getGitilesRepoURL(commit: Pick<GitilesCommit, 'host' | 'project'>) {

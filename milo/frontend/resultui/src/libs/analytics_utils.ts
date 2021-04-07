@@ -26,6 +26,7 @@ export enum GA_CATEGORIES {
 
 export enum GA_ACTIONS {
   SWITCH_VERSION = 'Switch Version',
+  SWITCH_VERSION_TEMP = 'Switch Version Temporarily',
   PAGE_VISITED = 'Page Visited',
   TAB_VISITED = 'Tab Visited',
   CLICK = 'Click',

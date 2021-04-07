@@ -63,14 +63,19 @@ $(document).ready(function() {
     setCookie('stepDisplayPref', selectedOption);
   }
 
-  $('#new-build-page-link').on('click', () => {
+  const newBuildPageLink = $('#new-build-page-link');
+  newBuildPageLink.on('click', (e) => {
+    if (e.metaKey || e.shiftKey || e.ctrlKey || e.altKey) {
+      return true;
+    }
+
     setCookie('showNewBuildPage', true);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/redirect-sw.js')
         .then((registration) => {
           console.log('SW registered: ', registration);
-          location.reload();
+          window.open(newBuildPageLink.attr('href'), newBuildPageLink.attr('target') || '_self');
         });
       return false;
     }
