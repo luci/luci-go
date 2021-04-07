@@ -512,10 +512,10 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	}
 
 	// TODO(crbug/1150607): Create ResultDB invocations.
-	// TODO(crbug/1042991): Update Builders in the datastore to point to the latest build.
 
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
+		work <- func() error { return model.UpdateBuilderStat(ctx, blds, now) }
 	})
 	if err != nil {
 		return nil, err
