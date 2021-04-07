@@ -179,6 +179,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "934f29d6_dc5b7e1b",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-07T17:43:41Z",
+      "side": 1,
+      "message": "not done?",
+      "parentUuid": "4c67b2de_6259709f",
+      "range": {
+        "startLine": 53,
+        "startChar": 8,
+        "endLine": 53,
+        "endChar": 23
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5e7e1d87_e6e6658a",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 5
@@ -308,6 +332,30 @@
       "side": 1,
       "message": "\u003e\u003e Consider using it only there, while the rest of code (L66, L71) uses less-specific `body`.\nGood point. Thanks. Done.\n\n\u003e\u003e Did you consider a simple rule that if someone passes content in t.art.Content, then use Batch upload?\nIt\u0027s still possible that a test framework uploads an Artifact with Content \u003e 10MB, which has to be uploaded with this function, StreamUpload().\n\nWe can (and probably should) put a limit on the maximum size of art.Content in the proto doc, but I\u0027d still prefer to keep streamUpload() capable of handling both artifact_Content{} and artifact_File{}. Otherwise, I\u0027d have to put the following panic().\n\n```\nfunc StreamUpload(...) {\n  if t.art.GetFilePath() \u003d\u003d \"\" {\n     panic(\"StreamUpload() only accepts artifacts with files. Please fix\")\n  }\n}\n```\n\nI will also have to add inline comments for the panic somewhere. I think the current code is better?",
       "parentUuid": "cbcbc9d1_7166664e",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 6
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82c9bd44_6c2af2f2",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-07T17:43:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7204ca4d_abe113d4",
       "range": {
         "startLine": 65,
         "startChar": 4,
