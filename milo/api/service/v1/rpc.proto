@@ -46,7 +46,7 @@ service MiloInternal {
 
   // Get the project config.
   //
-  // Return the config of the project.
+  // Return the config of projects.
   rpc GetProjectCfg(GetProjectCfgRequest) returns (.milo.Project) {};
 }
 

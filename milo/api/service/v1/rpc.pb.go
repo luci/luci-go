@@ -680,7 +680,7 @@ type MiloInternalClient interface {
 	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*User, error)
 	// Get the project config.
 	//
-	// Return the config of the project.
+	// Return the config of projects.
 	GetProjectCfg(ctx context.Context, in *GetProjectCfgRequest, opts ...grpc.CallOption) (*config.Project, error)
 }
 type miloInternalPRPCClient struct {
@@ -770,7 +770,7 @@ type MiloInternalServer interface {
 	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*User, error)
 	// Get the project config.
 	//
-	// Return the config of the project.
+	// Return the config of projects.
 	GetProjectCfg(context.Context, *GetProjectCfgRequest) (*config.Project, error)
 }
 
