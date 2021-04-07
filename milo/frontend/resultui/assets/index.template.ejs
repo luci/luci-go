@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <head>
+  <script>
+    // Fallback to Date.now() if timeOrigin is not supported.
+    var TIME_ORIGIN = window.performance.timeOrigin || Date.now();
+  </script>
+
   <meta charset="utf-8">
   <title>LUCI Milo</title>
   <link id="favicon" href="/static/common/favicon/milo-32.png" rel="icon">
