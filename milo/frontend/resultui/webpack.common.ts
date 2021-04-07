@@ -18,7 +18,6 @@ import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import path from 'path';
 import { Configuration, DefinePlugin } from 'webpack';
-import Workbox from 'workbox-webpack-plugin';
 
 const config: Configuration = {
   entry: {
@@ -74,6 +73,12 @@ const config: Configuration = {
       },
     },
   },
+  performance: {
+    // Set to 1 MB.
+    // This is fine as files should be cached by the service worker anyway.
+    maxEntrypointSize: 1048576,
+    maxAssetSize: 1048576,
+  },
   plugins: [
     new CleanWebpackPlugin(),
     new CopyWebpackPlugin({
@@ -88,17 +93,6 @@ const config: Configuration = {
       chunks: ['index'],
     }),
     new HtmlWebpackHarddiskPlugin(),
-    new Workbox.GenerateSW({
-      // Without this, new release will not take effect until users close
-      // all build page tabs.
-      skipWaiting: true,
-      navigateFallback: '/ui/index.html',
-      // Workbox source map changes every build.
-      // This causes noise in the auto-roller.
-      // https://github.com/GoogleChrome/workbox/issues/2784
-      sourcemap: process.env.DEBUG_SW === 'true',
-      importScriptsViaChunks: ['service-worker-ext'],
-    }),
     new DefinePlugin({ ENABLE_GA: JSON.stringify(process.env.ENABLE_GA === 'true') }),
   ],
 };
