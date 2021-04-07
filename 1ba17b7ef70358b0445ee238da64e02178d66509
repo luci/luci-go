@@ -16,6 +16,24 @@
       "message": "validation is partially here and partially inside parseBatchCreateArtifactsRequest.\nWhy not keep it entirely in parseBatchCreateArtifactsRequest?\nAll other RPCs have ValidateXXX methods which have the entire validation logic",
       "revId": "1ba17b7ef70358b0445ee238da64e02178d66509",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cea7a50_f2664cf0",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-07T04:49:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ddcd3f6c_b4f547dd",
+      "revId": "1ba17b7ef70358b0445ee238da64e02178d66509",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
