@@ -321,6 +321,39 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 	})
 }
 
+// setExecutable computes the executable from the given request and builder
+// config, setting it in the model. Mutates the given *model.Build.
+// model.Build.Experiments must be set (see setExperiments).
+func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+	build.Proto.Exe = cfg.GetExe()
+	if build.Proto.Exe == nil {
+		build.Proto.Exe = &pb.Executable{}
+	}
+
+	if cfg.GetRecipe() != nil {
+		build.Proto.Exe.CipdPackage = cfg.Recipe.CipdPackage
+		build.Proto.Exe.CipdVersion = cfg.Recipe.CipdVersion
+		if build.Proto.Exe.CipdVersion == "" {
+			build.Proto.Exe.CipdVersion = "refs/heads/master"
+		}
+	}
+
+	if len(build.Proto.Exe.Cmd) == 0 {
+		build.Proto.Exe.Cmd = []string{"recipes"}
+		for _, exp := range build.Experiments {
+			if exp == "+"+bb.ExperimentBBAgent {
+				build.Proto.Exe.Cmd = []string{"luciexe"}
+			}
+		}
+		// TODO(crbug/1042991): Additionally check settings for bbagent-enabled builders.
+	}
+
+	// The request has highest precedence, but may only override CIPD version.
+	if req.GetExe().GetCipdVersion() != "" {
+		build.Proto.Exe.CipdVersion = req.Exe.CipdVersion
+	}
+}
+
 // setExperiments computes the experiments from the given request and builder
 // config, setting them in the model and proto. Mutates the given *model.Build.
 // model.Build.Proto.Input must not be nil.
@@ -475,12 +508,13 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			CreatedBy:  user,
 			CreateTime: now,
 			Proto: pb.Build{
-				Builder:    reqs[i].Builder,
-				CreatedBy:  string(user),
-				CreateTime: timestamppb.New(now),
-				Id:         ids[i],
-				Input:      &pb.Build_Input{},
-				Status:     pb.Status_SCHEDULED,
+				Builder:         reqs[i].Builder,
+				CreatedBy:       string(user),
+				CreateTime:      timestamppb.New(now),
+				Id:              ids[i],
+				Input:           &pb.Build_Input{},
+				Status:          pb.Status_SCHEDULED,
+				WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
 			},
 		}
 
@@ -490,10 +524,11 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		}
 
 		setExperiments(ctx, reqs[i], cfg, blds[i])
+		setExecutable(reqs[i], cfg, blds[i]) // Requires setExperiments.
 		setTags(reqs[i], blds[i])
 		setTimeouts(reqs[i], cfg, blds[i])
 
-		// TODO(crbug/1042991): Fill in experimental priority, Exe.CipdVersion, Input, Infra, timeouts.
+		// TODO(crbug/1042991): Fill in Input, Infra, experimental priority, caches.
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
