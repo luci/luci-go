@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3dbc20af_62b30502",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-07T17:38:49Z",
+      "side": 1,
+      "message": "I assume the compiler is smart enough not to concetenate this string each time (in a loop, for each build)",
+      "range": {
+        "startLine": 344,
+        "startChar": 13,
+        "endLine": 344,
+        "endChar": 38
+      },
+      "revId": "058d44441bb784e7ed0efba68c391cfdf20fb746",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
