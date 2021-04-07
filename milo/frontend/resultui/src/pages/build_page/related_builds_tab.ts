@@ -21,7 +21,7 @@ import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { getURLForBuild, getURLForBuilder } from '../../libs/build_utils';
+import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
@@ -97,7 +97,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       <tr>
         <td>${build.builder.project}</td>
         <td>${build.builder.bucket}</td>
-        <td><a href=${getURLForBuilder(build.builder)}>${build.builder.builder}</a></td>
+        <td><a href=${getURLPathForBuilder(build.builder)}>${build.builder.builder}</a></td>
         <td>${this.renderBuildLink(build)}</td>
         <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">
           ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown'}
@@ -112,7 +112,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   private renderBuildLink(build: BuildExt) {
     const display = build.number ? build.number : build.id;
-    return html`<a href=${getURLForBuild(build)}>${display}</a>`;
+    return html`<a href=${getURLPathForBuild(build)}>${display}</a>`;
   }
 
   static styles = css`

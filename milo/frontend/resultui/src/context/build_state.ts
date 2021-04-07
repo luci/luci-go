@@ -15,7 +15,7 @@
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
-import { getGitilesRepoURL } from '../libs/build_utils';
+import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
 import { BuildExt } from '../models/build_ext';
@@ -308,6 +308,21 @@ export class BuildState {
   @computed
   get projectCfg(): Project | null {
     return this.projectCfg$.state === FULFILLED ? this.projectCfg$.value : null;
+  }
+
+  @computed
+  get customBugLink(): string | null {
+    const bugTemplate = this.projectCfg?.buildBugTemplate;
+    if (!bugTemplate?.monorailProject || !this.build) {
+      return null;
+    }
+    const components = bugTemplate.components?.join(',');
+    const searchParam = new URLSearchParams({
+      summary: renderBuildBugTemplate(bugTemplate.summary || '', this.build),
+      description: renderBuildBugTemplate(bugTemplate.description || '', this.build),
+      ...(components ? { components } : {}),
+    });
+    return `https://bugs.chromium.org/p/${bugTemplate.monorailProject}/issues/entry?${searchParam}`;
   }
 
   // Refresh all data that depends on the timestamp.
