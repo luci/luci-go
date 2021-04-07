@@ -31,7 +31,12 @@ import { BuildState, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
 import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { getGitilesRepoURL, getLegacyURLForBuild, getURLForBuilder, getURLForProject } from '../../libs/build_utils';
+import {
+  getGitilesRepoURL,
+  getLegacyURLPathForBuild,
+  getURLPathForBuilder,
+  getURLPathForProject,
+} from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { genFeedbackUrl } from '../../libs/utils';
@@ -95,7 +100,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   private buildNumOrIdParam = '';
 
   private get legacyUrl() {
-    return getLegacyURLForBuild(this.builderIdParam!, this.buildNumOrIdParam);
+    return getLegacyURLPathForBuild(this.builderIdParam!, this.buildNumOrIdParam);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -534,14 +539,20 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build </span>
-          <a href=${getURLForProject(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
+          <a href=${getURLPathForProject(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
           <span>/</span>
           <span>${this.builderIdParam!.bucket}</span>
           <span>/</span>
-          <a href=${getURLForBuilder(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
+          <a href=${getURLPathForBuilder(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
           <span>/</span>
           <span>${this.buildNumOrIdParam}</span>
         </div>
+        ${this.buildState.customBugLink === null
+          ? html``
+          : html`
+              <div class="delimiter"></div>
+              <a href=${this.buildState.customBugLink} target="_blank">File a bug</a>
+            `}
         ${this.appState.redirectSw === null
           ? html``
           : html`

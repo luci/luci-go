@@ -34,10 +34,10 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import {
   getBotLink,
   getBuildbucketLink,
-  getURLForBuild,
   getURLForGerritChange,
   getURLForGitilesCommit,
   getURLForSwarmingTask,
+  getURLPathForBuild,
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { renderMarkdown } from '../../libs/markdown_utils';
@@ -119,7 +119,7 @@ export class OverviewTabElement extends MobxLitElement {
     const build = await this.appState.buildsService!.scheduleBuild({
       templateBuildId: this.buildState.build!.id,
     });
-    Router.go(getURLForBuild(build));
+    Router.go(getURLPathForBuild(build));
   }
 
   private renderSummary() {
