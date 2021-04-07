@@ -68,3 +68,8 @@ declare const CACHED_AUTH_STATE: AuthState | null;
  * A cached user ID loaded from the service worker.
  */
 declare const CACHED_USER_ID: string | null;
+
+/**
+ * The start time of the page visit.
+ */
+declare const TIME_ORIGIN: number;
