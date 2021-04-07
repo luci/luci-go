@@ -82,6 +82,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   @observable.ref prerender = false;
 
   @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);
+  @observable.ref private switchTemporarily = false;
   @observable.ref private showFeedbackDialog = false;
 
   // The page is visited via a short link.
@@ -515,7 +516,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
             this.configsStore.save();
           }
           this.showFeedbackDialog = false;
-          window.open(this.legacyUrl, '_self');
+          window.open(this.legacyUrl, this.switchTemporarily ? '_blank' : '_self');
         }}
       >
         <div>
@@ -546,16 +547,22 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           : html`
               <div class="delimiter"></div>
               <a
-                @click=${(e: Event) => {
+                @click=${(e: MouseEvent) => {
                   trackEvent(GA_CATEGORIES.LEGACY_BUILD_PAGE, GA_ACTIONS.SWITCH_VERSION, window.location.href);
-                  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
-                  document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
-                  this.appState.redirectSw?.unregister();
+                  this.switchTemporarily = e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
 
                   if (this.configsStore.userConfigs.askForFeedback) {
                     this.showFeedbackDialog = true;
                     e.preventDefault();
                   }
+
+                  if (this.switchTemporarily) {
+                    return;
+                  }
+
+                  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+                  document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
+                  this.appState.redirectSw?.unregister();
                 }}
                 href=${this.legacyUrl}
               >
