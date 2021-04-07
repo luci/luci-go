@@ -22,6 +22,30 @@
       },
       "revId": "84ad12f3982390aced3888e5bbca95f6098bd4af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "456ab05a_42dc9c60",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_column_header.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T00:05:04Z",
+      "side": 1,
+      "message": "combined tryResizeTo with resizeTo and added `finalized` param.",
+      "parentUuid": "205a67f1_fa8405f0",
+      "range": {
+        "startLine": 32,
+        "startChar": 18,
+        "endLine": 32,
+        "endChar": 29
+      },
+      "revId": "84ad12f3982390aced3888e5bbca95f6098bd4af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
