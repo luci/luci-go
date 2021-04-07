@@ -81,6 +81,7 @@ module.exports = (config: Config) => {
           ENABLE_GA: JSON.stringify(false),
           VISIT_ID: JSON.stringify('0'),
           CACHED_AUTH_STATE: JSON.stringify(null),
+          TIME_ORIGIN: JSON.stringify(0),
         }),
         new ProvidePlugin({
           process: 'process/browser',

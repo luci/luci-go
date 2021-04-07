@@ -39,7 +39,8 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 export class TestVariantEntryElement extends MobxLitElement implements OnEnterList {
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
-  @observable.ref expandedCallback: Function | null = null;
+  @observable.ref expandedCallback = () => {};
+  @observable.ref renderedCallback = () => {};
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -52,7 +53,7 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
     this.shouldRenderContent = this.shouldRenderContent || newVal;
 
     if (newVal) {
-      this.expandedCallback?.();
+      this.expandedCallback();
     }
   }
 
@@ -215,6 +216,12 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
         <div id="body" slot="content">${this.renderBody()}</div>
       </milo-expandable-entry>
     `;
+  }
+
+  protected updated() {
+    if (!this.prerender) {
+      this.renderedCallback();
+    }
   }
 
   static styles = css`

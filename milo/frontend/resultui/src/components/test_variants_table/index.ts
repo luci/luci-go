@@ -21,12 +21,13 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
-import './tvt_column_header';
 import '../dot_spinner';
+import './tvt_column_header';
 import './test_variant_entry';
+import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
+import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
 import { TestVariantEntryElement } from './test_variant_entry';
 
@@ -41,10 +42,13 @@ function getPropKeyLabel(key: string) {
 @customElement('milo-test-variants-table')
 @consumeInvocationState
 @consumeConfigsStore
+@consumeAppState
 export class TestVariantsTableElement extends MobxLitElement {
+  @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
 
+  private sentLoadingTimeToGA = false;
   private disposers: Array<() => void> = [];
 
   toggleAllVariants(expand: boolean) {
@@ -55,6 +59,13 @@ export class TestVariantsTableElement extends MobxLitElement {
 
   connectedCallback() {
     super.connectedCallback();
+
+    // If first page of test results has already been loaded when connected
+    // (happens when users switch tabs), we don't want to track the loading
+    // time (only a few ms in this case)
+    if (this.invocationState.testLoader?.firstPageLoaded) {
+      this.sentLoadingTimeToGA = true;
+    }
 
     // When a new test loader is received, load the first page and reset the
     // selected node.
@@ -128,6 +139,19 @@ export class TestVariantsTableElement extends MobxLitElement {
     `;
   }
 
+  private sendLoadingTimeToGA = () => {
+    if (this.sentLoadingTimeToGA) {
+      return;
+    }
+    this.sentLoadingTimeToGA = true;
+    trackEvent(
+      GA_CATEGORIES.TEST_RESULTS_TAB,
+      GA_ACTIONS.LOADING_TIME,
+      generateRandomLabel(this.gaLabelPrefix),
+      Date.now() - this.appState.tabSelectionTime
+    );
+  };
+
   @computed private get gaLabelPrefix() {
     return 'testresults_' + this.invocationState.invocationId;
   }
@@ -173,6 +197,7 @@ export class TestVariantsTableElement extends MobxLitElement {
             .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
             .prerender=${true}
             .expandedCallback=${this.variantExpandedCallback}
+            .renderedCallback=${this.sendLoadingTimeToGA}
           ></milo-test-variant-entry>
         `
       )}

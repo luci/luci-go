@@ -15,7 +15,6 @@
 import '@material/mwc-button';
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { BeforeEnterObserver } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
@@ -47,11 +46,10 @@ import { TestVariant, TestVariantStatus } from '../services/resultdb';
 @consumeInvocationState
 @consumeConfigsStore
 @consumeAppState
-export class TestResultsTabElement extends MobxLitElement implements BeforeEnterObserver {
+export class TestResultsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
-  private enterTimestamp = 0;
   private sentLoadingTimeToGA = false;
 
   private disposers: Array<() => void> = [];
@@ -69,10 +67,6 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
         })
       );
     }
-  }
-
-  onBeforeEnter() {
-    this.enterTimestamp = Date.now();
   }
 
   @observable.ref private allVariantsWereExpanded = false;
@@ -213,7 +207,7 @@ export class TestResultsTabElement extends MobxLitElement implements BeforeEnter
       GA_CATEGORIES.TEST_RESULTS_TAB,
       GA_ACTIONS.LOADING_TIME,
       generateRandomLabel(this.gaLabelPrefix),
-      Date.now() - this.enterTimestamp
+      Date.now() - this.appState.tabSelectionTime
     );
   }
 
