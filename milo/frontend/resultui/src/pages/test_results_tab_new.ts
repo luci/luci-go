@@ -15,7 +15,7 @@
 import '@material/mwc-button';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable, reaction } from 'mobx';
+import { observable, reaction } from 'mobx';
 
 import '../components/dot_spinner';
 import '../components/hotkey';
@@ -27,10 +27,6 @@ import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
-
-const DEFAULT_COLUMN_WIDTH = Object.freeze<{ [key: string]: string }>({
-  'v.test_suite': '350px',
-});
 
 /**
  * Display a list of test results.
@@ -47,10 +43,6 @@ export class TestResultsTabElement extends MobxLitElement {
   @observable.ref invocationState!: InvocationState;
 
   private disposers: Array<() => void> = [];
-
-  @computed private get columnWidthConfig() {
-    return this.invocationState.displayedColumns.map((col) => DEFAULT_COLUMN_WIDTH[col] || '100px').join(' ');
-  }
 
   private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
@@ -133,7 +125,11 @@ export class TestResultsTabElement extends MobxLitElement {
       `;
     }
 
-    return html`<milo-test-variants-table style="--columns: ${this.columnWidthConfig}"></milo-test-variants-table>`;
+    return html`
+      <milo-test-variants-table
+        style="--columns: ${this.invocationState.columnWidths.map((width) => width + 'px')}"
+      ></milo-test-variants-table>
+    `;
   }
 
   protected render() {

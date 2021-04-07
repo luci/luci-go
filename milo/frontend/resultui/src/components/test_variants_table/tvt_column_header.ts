@@ -18,12 +18,19 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
+import '../drag_tracker';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import { DragEvent } from '../drag_tracker';
 
 @customElement('milo-tvt-column-header')
 @consumeInvocationState
 export class TestVariantsTableColumnHeader extends MobxLitElement {
   @observable.ref invocationState!: InvocationState;
+
+  // Setting the colIndex also makes the column resizable.
+  @observable.ref colIndex?: number;
+  // finalized is set to true when the user stopped dragging.
+  @observable.ref resizeTo = (_newWidth: number, _finalized: boolean) => {};
 
   @observable.ref propKey!: string;
   @observable.ref label!: string;
@@ -59,15 +66,31 @@ export class TestVariantsTableColumnHeader extends MobxLitElement {
     this.invocationState.columnsParam = newColumnKeys;
   }
 
+  private renderResizer() {
+    if (this.colIndex === undefined) {
+      return html``;
+    }
+    const startWidth = this.invocationState.columnWidths[this.colIndex];
+    let currentWidth = startWidth;
+    return html`
+      <milo-drag-tracker
+        id="resizer"
+        @drag=${(e: DragEvent) => {
+          currentWidth = Math.max(startWidth + e.detail.dx, 24);
+          this.resizeTo(currentWidth, false);
+        }}
+        @dragend=${() => this.resizeTo(currentWidth, true)}
+      ></milo-drag-tracker>
+    `;
+  }
+
   protected render() {
     return html`
-      <div
-        @click=${() => (this.menuIsOpen = !this.menuIsOpen)}
-        @selected=${() => (this.menuIsOpen = false)}
-        title=${this.propKey}
-      >
+      <div id="prop-label" title=${this.propKey} @click=${() => (this.menuIsOpen = !this.menuIsOpen)}>
         ${this.label}
       </div>
+      <div id="padding"></div>
+      ${this.renderResizer()}
       <mwc-menu absolute x="0" y="10" ?open=${this.menuIsOpen} @closed=${() => (this.menuIsOpen = false)}>
         <mwc-list-item @click=${() => this.sortColumn(true)}>Sort in ascending order</mwc-list-item>
         <mwc-list-item @click=${() => this.sortColumn(false)}>Sort in descending order</mwc-list-item>
@@ -83,14 +106,25 @@ export class TestVariantsTableColumnHeader extends MobxLitElement {
 
   static styles = css`
     :host {
-      display: block;
+      display: flex;
       position: relative;
     }
 
-    div {
-      display: inline-block;
+    #prop-label {
+      flex: 0 1 auto;
       cursor: pointer;
       color: var(--active-text-color);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #padding {
+      flex: 1 1 auto;
+    }
+    #resizer {
+      flex: 0 0 auto;
+      background: linear-gradient(var(--divider-color), var(--divider-color)) 2px 0/1px 100% no-repeat;
+      width: 5px;
+      cursor: col-resize;
     }
   `;
 }
