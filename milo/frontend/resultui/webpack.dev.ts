@@ -17,19 +17,40 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
 import { DefinePlugin } from 'webpack';
 import merge from 'webpack-merge';
+import Workbox from 'workbox-webpack-plugin';
 
 import common from './webpack.common';
+
+const DEBUG_SW = process.env.DEBUG_SW === 'true';
 
 export default merge(common, {
   mode: 'development',
   devtool: 'eval-source-map',
-  plugins: [new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(process.env.DEBUG_SW === 'true') })],
+  // Service workers makes live/hot reload harder, so it should be disabled by
+  // default in dev mode.
+  plugins: DEBUG_SW
+    ? [
+        new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(true) }),
+
+        new Workbox.GenerateSW({
+          // Without this, new release will not take effect until users close
+          // all build page tabs.
+          skipWaiting: true,
+          navigateFallback: '/ui/index.html',
+          sourcemap: true,
+          importScriptsViaChunks: ['service-worker-ext'],
+          // Set to 5 MB to suppress the warning in dev mode.
+          // Dev bundles are naturally larger as they have inline source maps.
+          maximumFileSizeToCacheInBytes: 5242880,
+        }),
+      ]
+    : [new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(false) })],
 
   devServer: {
     // In inline mode, webpack-dev-server injects code to service worker
     // scripts, making them unable to bootstrap.
     // Disabling inline will break hot module replacement.
-    inline: process.env.DEBUG_SW !== 'true',
+    inline: !DEBUG_SW,
     contentBase: path.join(__dirname, './out/'),
     historyApiFallback: {
       index: '/ui/index.html',

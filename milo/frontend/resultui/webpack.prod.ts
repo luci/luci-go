@@ -14,11 +14,25 @@
 
 import { DefinePlugin } from 'webpack';
 import merge from 'webpack-merge';
+import Workbox from 'workbox-webpack-plugin';
 
 import common from './webpack.common';
 
 export default merge(common, {
   devtool: 'source-map',
   mode: 'production',
-  plugins: [new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(true) })],
+  plugins: [
+    new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(true) }),
+    new Workbox.GenerateSW({
+      // Without this, new release will not take effect until users close
+      // all build page tabs.
+      skipWaiting: true,
+      navigateFallback: '/ui/index.html',
+      // Workbox source map changes every build.
+      // This causes noise in the auto-roller.
+      // https://github.com/GoogleChrome/workbox/issues/2784
+      sourcemap: false,
+      importScriptsViaChunks: ['service-worker-ext'],
+    }),
+  ],
 });
