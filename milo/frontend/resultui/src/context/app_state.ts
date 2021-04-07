@@ -31,7 +31,22 @@ export class AppState {
   // the user is logged in or not).
   // '' means the user is not logged in.
   @observable.ref userId: string | null = null;
-  @observable.ref selectedTabId = '';
+
+  // The timestamp when the user selected the current tab.
+  tabSelectionTime = TIME_ORIGIN;
+  @observable.ref _selectedTabId: string | null = null;
+  get selectedTabId() {
+    return this._selectedTabId || '';
+  }
+  set selectedTabId(newTabId: string) {
+    // Don't update the tab selection time when selected tab is being
+    // initialized. The page load time should be used in that case.
+    if (this._selectedTabId !== null) {
+      this.tabSelectionTime = Date.now();
+    }
+    this._selectedTabId = newTabId;
+  }
+
   @observable.ref selectedBlamelistPinIndex = 0;
 
   // Use number instead of boolean because previousPage.disconnectedCallback
