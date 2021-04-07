@@ -401,14 +401,13 @@ export class OverviewTabElement extends MobxLitElement {
         <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
       </mwc-dialog>
       <div id="main">
-        ${this.renderCanaryWarning()} ${this.renderSummary()} ${this.renderBuilderDescription()}
         <div class="first-column">
+          ${this.renderCanaryWarning()} ${this.renderSummary()} ${this.renderSteps()}
           <!-- TODO(crbug/1116824): render failed tests -->
-          ${this.renderSteps()}
         </div>
         <div class="second-column">
-          ${this.renderInput()} ${this.renderTiming()} ${this.renderInfra()} ${this.renderBuildLogs()}
-          ${this.renderActionButtons()} ${this.renderTags()} ${this.renderExperiments()}
+          ${this.renderBuilderDescription()} ${this.renderInput()} ${this.renderTiming()} ${this.renderInfra()}
+          ${this.renderBuildLogs()} ${this.renderActionButtons()} ${this.renderTags()} ${this.renderExperiments()}
           <h3>Input Properties</h3>
           <milo-property-viewer
             .properties=${build.input.properties}
@@ -435,6 +434,9 @@ export class OverviewTabElement extends MobxLitElement {
         display: grid;
         grid-template-columns: auto 20px auto;
       }
+      .second-column > h3:first-child {
+        margin-block: 5px 10px;
+      }
     }
     .first-column {
       overflow: hidden;
@@ -448,7 +450,7 @@ export class OverviewTabElement extends MobxLitElement {
     }
 
     h3 {
-      margin-block: 20px 10px;
+      margin-block: 15px 10px;
     }
 
     .wide {
