@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "147eb5e6_659b470c",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T07:20:38Z",
+      "side": 1,
+      "message": "Oops. Removed.",
+      "parentUuid": "672c7722_19475440",
+      "revId": "f0e3f856b33afbfb93f64603d211a5f175511183",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "23657976_cc6f2471",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-04-07T07:14:30Z",
       "side": 1,
       "message": "I just wonder if it is possible to just get the template name for the project, so we can just have a link like https://bugs.chromium.org/p/chromium/issues/entry?template\u003dLacros+isssues, instead of populating every fields.\n\nA template may have more that summary, description and components. E.g. the template above have the default OS.",
+      "revId": "f0e3f856b33afbfb93f64603d211a5f175511183",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "11f2c74a_d3078d33",
+        "filename": "milo/frontend/resultui/src/context/build_state.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-07T07:20:38Z",
+      "side": 1,
+      "message": "Monorail templates won\u0027t be able to support variable interpolation though. So populating the templates on Milo still has its value.\nBut we can definitely support populating the template param in the future.",
+      "parentUuid": "23657976_cc6f2471",
       "revId": "f0e3f856b33afbfb93f64603d211a5f175511183",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
