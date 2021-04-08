@@ -98,8 +98,8 @@ export interface TestExoneration {
 export interface Artifact {
   readonly name: string;
   readonly artifactId: string;
-  readonly fetchUrl?: string;
-  readonly fetchUrlExpiration?: string;
+  readonly fetchUrl: string;
+  readonly fetchUrlExpiration: string;
   readonly contentType: string;
   readonly sizeBytes: number;
 }

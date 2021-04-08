@@ -222,6 +222,17 @@ router.setRoutes({
             return cmd.component('milo-image-diff-artifact-page');
           },
         },
+        {
+          path: '/raw/:artifact_name',
+          name: 'raw-artifact',
+          action: async (_ctx, cmd) => {
+            await import(
+              /* webpackChunkName: "raw_artifact_page" */
+              './pages/artifact/raw_artifact_page'
+            );
+            return cmd.component('milo-raw-artifact-page');
+          },
+        },
       ],
     },
     {
