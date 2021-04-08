@@ -32,6 +32,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -494,4 +495,32 @@ func GetTestBuild(relDir, name string) (*buildbucketpb.Build, error) {
 	defer f.Close()
 	result := &buildbucketpb.Build{}
 	return result, jsonpb.Unmarshal(f, result)
+}
+
+func TestCreateInterpolator(t *testing.T) {
+	Convey("Test createInterpolator", t, func() {
+		Convey("Should encode params", func() {
+			params := httprouter.Params{httprouter.Param{Key: "component2", Value: ":? +"}}
+			interpolator := createInterpolator("/component1/:component2")
+
+			path := interpolator(params)
+			So(path, ShouldEqual, "/component1/"+url.PathEscape(":? +"))
+		})
+
+		Convey("Should support catching path segments with *", func() {
+			params := httprouter.Params{httprouter.Param{Key: "component2", Value: "/:?/ +"}}
+			interpolator := createInterpolator("/component1/*component2")
+
+			path := interpolator(params)
+			So(path, ShouldEqual, "/component1/"+url.PathEscape(":?")+"/"+url.PathEscape(" +"))
+		})
+
+		Convey("Should support encoding / with *_", func() {
+			params := httprouter.Params{httprouter.Param{Key: "_component2", Value: "/:?/ +"}}
+			interpolator := createInterpolator("/component1/*_component2")
+
+			path := interpolator(params)
+			So(path, ShouldEqual, "/component1/"+url.PathEscape(":?/ +"))
+		})
+	})
 }
