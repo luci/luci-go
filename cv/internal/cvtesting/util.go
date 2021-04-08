@@ -48,6 +48,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/config"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/servicecfg"
@@ -72,6 +73,8 @@ type Test struct {
 	GFake *gf.Fake
 	// TreeFake is a fake Tree. Defaults to an open Tree.
 	TreeFake *treetest.Fake
+	// BQFake is a fake BQ client. Defaults to storing rows that would be sent.
+	BQFake *bq.Fake
 	// TQ allows to run TQ tasks.
 	TQ *tqtesting.Scheduler
 	// Clock allows to move time forward.
@@ -111,6 +114,12 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		}
 		t.MaxDuration = time.Duration(v) * time.Second
 	}
+	if t.GFake == nil {
+		t.GFake = &gf.Fake{}
+	}
+	if t.BQFake == nil {
+		t.BQFake = &bq.Fake{}
+	}
 
 	ctx = context.Background()
 	// TODO(tandrii): make this logger emit testclock-based timestamps.
@@ -139,6 +148,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	ctx = txndefer.FilterRDS(ctx)
 	ctx = t.GFake.Install(ctx)
 	ctx = t.TreeFake.Install(ctx)
+	ctx = t.BQFake.Install(ctx)
 	ctx, t.TQ = tq.TestingContext(ctx, nil)
 	return ctx, t.cleanup
 }
