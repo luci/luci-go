@@ -61,7 +61,29 @@ func HitTokenEndpoint(ctx context.Context, doc *openid.DiscoveryDoc, params map[
 	}, exp, nil
 }
 
+// HitRevocationEndpoint sends a request to the OpenID provider's revocation
+// endpoint.
+//
+// Returns nil if the token was successfully revoked or it is already invalid.
+func HitRevocationEndpoint(ctx context.Context, doc *openid.DiscoveryDoc, params map[string]string) error {
+	blob, err := hitEndpoint(ctx, doc.RevocationEndpoint, params)
+	if err == nil || transient.Tag.In(err) {
+		return err
+	}
+	var resp struct {
+		Error string `json:"error"`
+	}
+	if json.Unmarshal(blob, &resp) == nil && resp.Error == "invalid_token" {
+		return nil // was already revoked, it is OK
+	}
+	return err // some unexpected fatal error
+}
+
 // hitEndpoint sends a request to an OpenID provider's token endpoint.
+//
+// Returns the raw body of the response (even on non-200 HTTP codes) and an
+// error (transient for >=500 HTTP status codes and non-transient for other
+// non-200 codes).
 func hitEndpoint(ctx context.Context, endpoint string, params map[string]string) ([]byte, error) {
 	form := make(url.Values, len(params))
 	for k, v := range params {
@@ -96,7 +118,7 @@ func hitEndpoint(ctx context.Context, endpoint string, params map[string]string)
 		if resp.StatusCode >= 500 {
 			err = err.Tag(transient.Tag)
 		}
-		return nil, err.Err()
+		return blob, err.Err()
 	}
 
 	return blob, nil
