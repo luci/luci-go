@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8a7e808a_149a9680",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-08T02:27:56Z",
+      "side": 1,
+      "message": "I did it this way because @tikuta mentioned it would be nice to have an \"e2e\" that includes the cmd.Run().\n\nimo, if we break this into createCmd and executeCmd, executeCmd alone is not worth testing?\n\nIs the recommendation to test both in one test? like:\n```\nfunc TestReproduceCommand(t *testing.T) {\n\n        cmd, err :\u003d c.createTaskRequestCommand(ctx, \"task-123\", service)\n        So(...\n\n        err :\u003d c.executeTaskRequestCommand(cmd, \u0026stdBuffer)\n        So(...\n}\n\n```",
+      "parentUuid": "49304398_20b32811",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "da3e502d_37732386",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 9
