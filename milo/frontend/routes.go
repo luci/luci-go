@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -78,6 +80,12 @@ func Run(templatePath string) {
 	// Cron endpoints
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
+
+	// Artifacts.
+	r.GET("/artifact/:view_type/*_artifact_name", baseMW, redirect("/ui/artifact/:view_type/*_artifact_name", http.StatusFound))
+
+	// Invocations.
+	r.GET("/inv/*path", baseMW, redirect("/ui/inv/*path", http.StatusFound))
 
 	// Builds.
 	r.GET("/b/:id", htmlMW, handleError(redirectLUCIBuild))
@@ -189,16 +197,60 @@ func redirect(pathTemplate string, status int) router.Handler {
 		panic("pathTemplate must start with /")
 	}
 
+	interpolator := createInterpolator(pathTemplate)
 	return func(c *router.Context) {
-		parts := strings.Split(pathTemplate, "/")
+		path := interpolator(c.Params)
+		http.Redirect(c.Writer, c.Request, path, status)
+	}
+}
+
+// createInterpolator returns a function that can replace the variables in the
+// pathTemplate with the provided params.
+func createInterpolator(pathTemplate string) func(params httprouter.Params) string {
+	parts := strings.Split(pathTemplate, "/")
+
+	return func(params httprouter.Params) string {
 		for i, p := range parts {
 			if strings.HasPrefix(p, ":") {
-				parts[i] = c.Params.ByName(p[1:])
+				// url.URL.String() escapes everything automatically except '/'.
+				// It's impossible to have %2F (encoded '/') in a path component
+				// because '%2F' will be double encoded to '%252F' while '/'
+				// won't be encoded at all.
+				// As a workaround, escape the path components ourselves and
+				// don't use url.URL.String().
+				parts[i] = url.PathEscape(params.ByName(p[1:]))
+			} else if strings.HasPrefix(p, "*_") {
+				component := params.ByName(p[1:])
+				component = strings.TrimPrefix(component, "/")
+
+				// httprouter uses the decoded URL path to perform routing
+				// (which defeats the whole purpose of encoding), so we have to
+				// use '*' to capture a path component containing %2F.
+				// "*_" is a special syntax to signal that although we are
+				// capturing all characters till the end of the path, the
+				// captured value should be treated as a single path component,
+				// therefore '/' should also be encoded.
+				// Because '*' is used, this method only works for the last path
+				// component.
+				// https://github.com/julienschmidt/httprouter/issues/284
+				parts[i] = url.PathEscape(component)
+			} else if strings.HasPrefix(p, "*") {
+				path := params.ByName(p[1:])
+				path = strings.TrimPrefix(path, "/")
+
+				// Escapes the path.
+				// We can't use url.PathEscape directly here because it escapes
+				// all non-safe characters in a path
+				// component (it really should be renamed to
+				// url.PathComponentEscape).
+				components := strings.Split(path, "/")
+				for j, c := range components {
+					components[j] = url.PathEscape(c)
+				}
+				parts[i] = strings.Join(components, "/")
 			}
 		}
-		u := *c.Request.URL
-		u.Path = strings.Join(parts, "/")
-		http.Redirect(c.Writer, c.Request, u.String(), status)
+		return strings.Join(parts, "/")
 	}
 }
 
