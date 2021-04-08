@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "51f24331_ec94cee8",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-08T03:36:01Z",
+      "side": 1,
+      "message": "A bit of rant. This CL just reminds me how painful it is to code in golang (personal opinion).\n\nDue to seemingly low quality libraries (including std) and lack of generics, doing trivial things like redirecting http requests can take a lot of coding time.",
+      "range": {
+        "startLine": 209,
+        "startChar": 0,
+        "endLine": 209,
+        "endChar": 84
+      },
+      "revId": "74f878d707421ad8a4d45f35dbeb29aff85dba42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
