@@ -20,6 +20,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -27,8 +28,27 @@ import (
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
+// MaxBatchableArtifactSize is the maximum size of an artifact that can be added to
+// batchChannel.
+const MaxBatchableArtifactSize = 2 * 1024 * 1024
+
 type artifactChannel struct {
-	ch  dispatcher.Channel
+	// batchChannel uploads artifacts via pb.BatchCreateArtifacts().
+	//
+	// This batches input artifacts and uploads them all at once.
+	// This is suitable for uploading a large number of small artifacts.
+	//
+	// The downside of this channel is that there is a limit on the maximum size of
+	// an artifact that can be included in a batch. Use streamChannel for artifacts
+	// bigger than MaxBatchableArtifactSize.
+	batchChannel dispatcher.Channel
+
+	// streamChannel uploads artifacts in a streaming manner via HTTP.
+	//
+	// This is suitable for uploading large files, but with limited parallelism.
+	// Use batchChannel, if possible.
+	streamChannel dispatcher.Channel
+
 	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
@@ -51,39 +71,65 @@ type uploadTask struct {
 func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
 	var err error
 	c := &artifactChannel{cfg: cfg}
-	opts := &dispatcher.Options{
+	au := c.cfg.ArtifactUploader
+	token := c.cfg.UpdateToken
+
+	// batchChannel
+	bcOpts := &dispatcher.Options{
 		Buffer: buffer.Options{
-			// BatchSize MUST be 1, or the processing logic needs to be updated.
-			//
-			// The dispatcher uploads only the first item in each Batch.
+			// BatchRequest can include up to 500 requests. KEEP BatchSize <= 500
+			// For more details, visit
+			// https://godoc.org/go.chromium.org/luci/resultdb/proto/v1#BatchCreateArtifactsRequest
+			BatchSize:    500,
+			MaxLeases:    int(cfg.ArtChannelMaxLeases),
+			FullBehavior: &buffer.BlockNewItems{MaxItems: 8000},
+		},
+	}
+	c.batchChannel, err = dispatcher.NewChannel(ctx, bcOpts, func(b *buffer.Batch) error {
+		// TODO(ddoman): implement me
+		return nil
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to create batch channel for artifacts: %s", err))
+	}
+
+	// streamChannel
+	stOpts := &dispatcher.Options{
+		Buffer: buffer.Options{
+			// BatchSize MUST be 1.
 			BatchSize:    1,
 			MaxLeases:    int(cfg.ArtChannelMaxLeases),
 			FullBehavior: &buffer.BlockNewItems{MaxItems: 4000},
 		},
 	}
-	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
-		task := b.Data[0].(*uploadTask)
-		if task.art.GetFilePath() != "" {
-			return c.cfg.ArtifactUploader.UploadFromFile(
-				ctx, task.artName, task.art.ContentType, task.art.GetFilePath(), c.cfg.UpdateToken)
-		}
-		return c.cfg.ArtifactUploader.Upload(
-			ctx, task.artName, task.art.ContentType, task.art.GetContents(), c.cfg.UpdateToken)
+	c.streamChannel, err = dispatcher.NewChannel(ctx, stOpts, func(b *buffer.Batch) error {
+		return errors.Annotate(au.StreamUpload(ctx, b.Data[0].(*uploadTask), token), "StreamUpload").Err()
 	})
 	if err != nil {
-		panic(fmt.Sprintf("failed to create a channel for artifact uploads: %s", err))
+		panic(fmt.Sprintf("failed to create stream channel for artifacts: %s", err))
 	}
 	return c
 }
 
 func (c *artifactChannel) closeAndDrain(ctx context.Context) {
-	// annonuce that it is in the process of closeAndDrain.
+	// mark the channel as closed, so that schedule() won't accept new tasks.
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
 	}
 	// wait for all the active sessions to finish enquing tests results to the channel
 	c.wgActive.Wait()
-	c.ch.CloseAndDrain(ctx)
+
+	var draining sync.WaitGroup
+	draining.Add(2)
+	go func() {
+		defer draining.Done()
+		c.batchChannel.CloseAndDrain(ctx)
+	}()
+	go func() {
+		defer draining.Done()
+		c.streamChannel.CloseAndDrain(ctx)
+	}()
+	draining.Wait()
 }
 
 func (c *artifactChannel) schedule(tasks []*uploadTask) {
@@ -95,7 +141,8 @@ func (c *artifactChannel) schedule(tasks []*uploadTask) {
 	}
 
 	for _, task := range tasks {
-		c.ch.C <- task
+		// TODO(ddoman): send small artifacts to batchChannel
+		c.streamChannel.C <- task
 	}
 }
 
