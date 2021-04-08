@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4ca53ef5_f37fa3bf",
+        "filename": "milo/frontend/resultui/src/pages/artifact/raw_artifact_page.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-08T05:20:31Z",
+      "side": 1,
+      "message": "Will do this in a separate CL.",
+      "parentUuid": "df70bab6_0c82eea5",
+      "revId": "4068c0eedb99628f0af3ebe0416c5a55807988c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "fafaf744_74667be6",
         "filename": "milo/frontend/resultui/src/pages/artifact/raw_artifact_page.ts",
         "patchSetId": 5
