@@ -1,0 +1,147 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6214d63_8b6eee78",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-08T00:19:11Z",
+      "side": 1,
+      "message": "please run CQ everytime",
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da3e502d_37732386",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-08T00:19:11Z",
+      "side": 1,
+      "message": "better to comment that this is only for test?",
+      "range": {
+        "startLine": 95,
+        "startChar": 0,
+        "endLine": 98,
+        "endChar": 2
+      },
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89abefc0_e5c3eb18",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-08T00:19:11Z",
+      "side": 1,
+      "message": "I prefer to use \u0027:\u003d\u0027 where possible.",
+      "range": {
+        "startLine": 99,
+        "startChar": 8,
+        "endLine": 99,
+        "endChar": 9
+      },
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4781c1b7_d6402e64",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-08T00:19:11Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 102,
+        "startChar": 8,
+        "endLine": 102,
+        "endChar": 9
+      },
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7ed607a_33bc7cb3",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-08T00:19:11Z",
+      "side": 1,
+      "message": "check task slice too",
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6a62ed83_c289cd2a",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-08T00:19:11Z",
+      "side": 1,
+      "message": "add empty line above",
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7793a952_d0de4073",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-08T00:19:11Z",
+      "side": 1,
+      "message": "does this work on Windows?",
+      "range": {
+        "startLine": 92,
+        "startChar": 25,
+        "endLine": 92,
+        "endChar": 31
+      },
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
