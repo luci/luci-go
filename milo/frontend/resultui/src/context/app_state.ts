@@ -68,52 +68,71 @@ export class AppState {
   // undefined means there's no such service worker.
   @observable.ref redirectSw: ServiceWorkerRegistration | null | undefined = null;
 
-  @computed
+  @observable.ref private isDisposed = false;
+
+  @computed({ keepAlive: true })
   get resultDb(): ResultDb | null {
-    if (this.userId === null) {
+    if (this.isDisposed || this.userId === null) {
       return null;
     }
     return new ResultDb(this.makeClient(CONFIGS.RESULT_DB.HOST));
   }
 
-  @computed
+  @computed({ keepAlive: true })
   get uiSpecificService(): UISpecificService | null {
-    if (this.userId === null) {
+    if (this.isDisposed || this.userId === null) {
       return null;
     }
     return new UISpecificService(this.makeClient(CONFIGS.RESULT_DB.HOST));
   }
 
-  @computed
+  @computed({ keepAlive: true })
   get milo(): MiloInternal | null {
-    if (this.userId === null) {
+    if (this.isDisposed || this.userId === null) {
       return null;
     }
     return new MiloInternal(this.makeClient(''));
   }
 
-  @computed
+  @computed({ keepAlive: true })
   get buildsService(): BuildsService | null {
-    if (this.userId === null) {
+    if (this.isDisposed || this.userId === null) {
       return null;
     }
     return new BuildsService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
   }
 
-  @computed
+  @computed({ keepAlive: true })
   get buildersService(): BuildersService | null {
-    if (this.userId === null) {
+    if (this.isDisposed || this.userId === null) {
       return null;
     }
     return new BuildersService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
   }
 
-  @computed
+  @computed({ keepAlive: true })
   get accessService(): AccessService | null {
-    if (this.userId === null) {
+    if (this.isDisposed || this.userId === null) {
       return null;
     }
     return new AccessService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
+  }
+
+  /**
+   * Perform cleanup.
+   * Must be called before the object is GCed.
+   */
+  dispose() {
+    this.isDisposed = true;
+
+    // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
+    // is set to true so they no longer subscribes to any external observable.
+    this.resultDb;
+    this.uiSpecificService;
+    this.milo;
+    this.buildsService;
+    this.buildersService;
+    this.accessService;
   }
 
   private makeClient(host: string) {

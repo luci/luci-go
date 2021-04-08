@@ -86,6 +86,7 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
 
   disconnectedCallback() {
     this.removeEventListener('error', this.errorHandler);
+    this.appState.dispose();
     super.disconnectedCallback();
   }
 
