@@ -28,10 +28,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
-
-// DefaultMaxInMemoryFileSize is the default value for ArtifactUploader.MaxInMemoryFileSize.
-const DefaultMaxInMemoryFileSize = 64 * 1024
 
 // ArtifactUploader provides functions for uploading artifacts to ResultDB.
 type ArtifactUploader struct {
@@ -39,108 +37,77 @@ type ArtifactUploader struct {
 	Client *http.Client
 	// Host is the host of a ResultDB instance to upload artifacts to.
 	Host string
-
-	// MaxInMemoryFileSize is the maximum size of an artifact file that can be loaded into
-	// memory.
-	//
-	// ArtifactUploader reads the entire contents of a file twice; one read for calculating
-	// the hash and another read for transmitting the contents over network. If the size
-	// is equal to or smaller than MaxInMemoryFileSize, ArtifactUploader loads the entire
-	// contents into a memory buffer to minimize disk I/O.
-	//
-	// If this field is set with 0, DefaultMaxInMemoryFileSize is used.
-	MaxInMemoryFileSize int64
 }
 
-func (u *ArtifactUploader) newRequest(ctx context.Context, name, contentType string, input io.ReadSeeker, updateToken string) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("https://%s/%s", u.Host, name), input)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to create a request").Err()
-	}
-	hash, err := calculateHash(input)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to calcualte hash").Err()
-	}
-	// rewind the current position back to the beginning so that the request body can be
-	// re-read by HTTPClient.Do.
-	if _, err := input.Seek(0, io.SeekStart); err != nil {
-		return nil, errors.Annotate(err, "failed to reset the stream cursor").Err()
+// StreamUpload uploads the artifact in a streaming manner via HTTP..
+func (u *ArtifactUploader) StreamUpload(ctx context.Context, t *uploadTask, updateToken string) error {
+	var body io.ReadSeeker
+	var err error
+	if fp := t.art.GetFilePath(); fp == "" {
+		body = bytes.NewReader(t.art.GetContents())
+	} else {
+		fh, err := os.Open(t.art.GetFilePath())
+		if err != nil {
+			return err
+		}
+		defer fh.Close()
+		body = fh
 	}
 
+	req, err := http.NewRequestWithContext(
+		ctx, "PUT", fmt.Sprintf("https://%s/%s", u.Host, t.artName), body)
+	if err != nil {
+		return errors.Annotate(err, "newHTTPRequest").Err()
+	}
+
+	// Client.Do always closes the Body on exit, whether there was an error or not.
+	// It also closes the Body on 3xx responses, which requires re-sending the request.
+	// If req.GetBody != nil, it calls GetBody to get a new copy of the body, and resend
+	// the request on 3xx responses.
+	//
+	// http.NewRequestWithContext() returns an HTTP request with
+	// - custom GetBody and ContentLength set, if the given body is of type buffer.Reader,
+	// - nil GetBody and ContentLength unset, if the given body is os.File.
+	//
+	// Therefore, if the body is os.File, the caller is responsible for setting GetBody
+	// and ContentLength, as necessary.
+	if fh, ok := body.(*os.File); ok {
+		// Prevent the file handler from being closed by Client.Do. The file handler, body,
+		// will be closed by the defer function above. With NopCloser(), GetBody() can
+		// simply reset the cursor and return the handler w/o reopening the file.
+		req.Body = ioutil.NopCloser(body)
+		req.GetBody = func() (io.ReadCloser, error) {
+			if _, err := body.Seek(0, io.SeekStart); err != nil {
+				return nil, err
+			}
+			return ioutil.NopCloser(body), nil
+		}
+
+		st, err := fh.Stat()
+		if err != nil {
+			return err
+		}
+		req.ContentLength = st.Size()
+	}
+
+	// calculates the hash and rewind the position back to the beginning so that
+	// the request body can be re-read by HTTPClient.Do.
+	hash, err := calculateHash(body)
+	if err != nil {
+		return errors.Annotate(err, "artifact-hash").Err()
+	}
+	if _, err := body.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
 	req.Header.Add("Content-Hash", hash)
-	if contentType != "" {
-		req.Header.Add("Content-Type", contentType)
+	if t.art.ContentType != "" {
+		req.Header.Add("Content-Type", t.art.ContentType)
 	}
 	req.Header.Add("Update-Token", updateToken)
-	return req, nil
+	return u.sendHTTP(req)
 }
 
-// Upload uploads an artifact from a given slice of bytes.
-//
-// `name` is the artifact name, which uniquely identifies the artifact globally. It must
-// conform to the format described in the name property of message Artifact at
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/resultdb/proto/v1/artifact.proto
-//
-// go.chromium.org/luci/resultdb/pbutil package provides utility functions to generate
-// an Artifact name for test-result-level and invocation-level artifacts.
-// - https://pkg.go.dev/go.chromium.org/luci/resultdb/pbutil?tab=doc#InvocationArtifactName
-// - https://pkg.go.dev/go.chromium.org/luci/resultdb/pbutil?tab=doc#TestResultArtifactName
-func (u *ArtifactUploader) Upload(ctx context.Context, name, contentType string, contents []byte, updateToken string) error {
-	req, err := u.newRequest(ctx, name, contentType, bytes.NewReader(contents), updateToken)
-	if err != nil {
-		return err
-	}
-	return u.send(req)
-}
-
-// UploadFromFile uploads an artifact from a given file path.
-//
-// `name` is the artifact name, which uniquely identifies the artifact globally. It must
-// conform to the format described in the name property of message Artifact at
-// https://chromium.googlesource.com/infra/luci/luci-go/+/master/resultdb/proto/v1/artifact.proto
-func (u *ArtifactUploader) UploadFromFile(ctx context.Context, name, contentType, path, updateToken string) error {
-	st, err := os.Stat(path)
-	if err != nil {
-		return errors.Annotate(err, "failed to query the file status").Err()
-	}
-	// small file?
-	smallFS := u.MaxInMemoryFileSize
-	if smallFS == 0 {
-		smallFS = DefaultMaxInMemoryFileSize
-	}
-	if st.Size() <= smallFS {
-		contents, err := ioutil.ReadFile(path)
-		if err != nil {
-			return errors.Annotate(err, "failed to read file contents").Err()
-		}
-		return u.Upload(ctx, name, contentType, contents, updateToken)
-	}
-
-	input, err := os.Open(path)
-	if err != nil {
-		return errors.Annotate(err, "failed to open file").Err()
-	}
-	defer input.Close()
-	req, err := u.newRequest(ctx, name, contentType, input, updateToken)
-	if err != nil {
-		return err
-	}
-	// Client.Do closes the body on 3xx responses and GetBody needs to reopen the file.
-	// This function wraps the file object with NopCloser and closes the body on return, so
-	// that GetBody can simply move the stream cursor to the beginning without reopening
-	// the file object.
-	req.Body = ioutil.NopCloser(req.Body)
-	req.GetBody = func() (io.ReadCloser, error) {
-		if _, err := input.Seek(0, io.SeekStart); err != nil {
-			return nil, errors.Annotate(err, "failed to reset the stream cursor").Err()
-		}
-		return ioutil.NopCloser(input), nil
-	}
-	req.ContentLength = st.Size()
-	return u.send(req)
-}
-
-func (u *ArtifactUploader) send(req *http.Request) error {
+func (u *ArtifactUploader) sendHTTP(req *http.Request) error {
 	return retry.Retry(req.Context(), transient.Only(retry.Default), func() error {
 		resp, err := u.Client.Do(req)
 		if err != nil {
@@ -168,4 +135,9 @@ func calculateHash(input io.Reader) (string, error) {
 		return "", err
 	}
 	return "sha256:" + hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func (u *ArtifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {
+	// TODO(ddoman): implement me
+	return nil
 }
