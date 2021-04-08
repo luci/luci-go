@@ -14,7 +14,7 @@
 
 /**
  * @fileoverview
- * This service worker redirects old build page links to the new build page.
+ * This service worker redirects milo links to ResultUI links.
  * This is 200-400ms faster than redirecting on the server side.
  */
 
@@ -25,12 +25,18 @@
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  const isOldBuildPage =
+
+  const isResultUI =
     // Short build link.
     url.pathname.match(/^\/b\//) ||
     // Long build link.
-    url.pathname.match(/^\/p\/[^/]+\/builders\/[^/]+\/[^/]+\//);
-  if (isOldBuildPage) {
+    url.pathname.match(/^\/p\/[^/]+\/builders\/[^/]+\/[^/]+\//) ||
+    // Invocation link.
+    url.pathname.match(/^\/inv\//) ||
+    // Artifact link.
+    url.pathname.match(/^\/artifact\//);
+
+  if (isResultUI) {
     url.pathname = '/ui' + url.pathname;
     event.respondWith(Response.redirect(url.toString()));
     return;
