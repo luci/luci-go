@@ -118,6 +118,8 @@ func TestMethod(t *testing.T) {
 		}
 
 		Convey("Full flow", func() {
+			So(method.Warmup(ctx), ShouldBeNil)
+
 			loginURL, err := method.LoginURL(ctx, "/some/dest")
 			So(err, ShouldBeNil)
 			So(loginURL, ShouldEqual, "/auth/openid/login?r=%2Fsome%2Fdest")
