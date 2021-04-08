@@ -52,7 +52,6 @@ export class RawArtifactPageElement extends MobxLitElement implements BeforeEnte
   connectedCallback() {
     super.connectedCallback();
 
-    // TODO(weiweilin): add integration tests to ensure redirection works properly.
     this.disposers.push(
       autorun(() => {
         if (this.artifact$.state === PENDING) {
