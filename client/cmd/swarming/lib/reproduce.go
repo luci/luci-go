@@ -15,9 +15,14 @@
 package lib
 
 import (
+	"context"
+	"os"
+	"os/exec"
+
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 // CmdReproduce returns an object fo the `reproduce` subcommand.
@@ -69,6 +74,65 @@ func (c *reproduceRun) Run(a subcommands.Application, args []string, env subcomm
 }
 
 func (c *reproduceRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
-	// TODO(crbug.com/1188473): set up environment and execute commands.
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
+
+	service, err := c.createSwarmingClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// TODO(crbug.com/1188473): Create a pass an rbeclient.Client
+	cmd, err := c.createTaskRequestCommand(ctx, args[0], service)
+	if err != nil {
+		return errors.Annotate(err, "failed to create command from task request").Err()
+	}
+
+	return c.executeTaskRequestCommand(cmd)
+}
+
+func (c *reproduceRun) executeTaskRequestCommand(cmd *exec.Cmd) error {
+	if err := cmd.Start(); err != nil {
+		return errors.Annotate(err, "failed to start command: %v", cmd).Err()
+	}
+	if err := cmd.Wait(); err != nil {
+		return errors.Annotate(err, "failed to complete command: %v", cmd).Err()
+	}
+	return nil
+}
+
+func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID string, service swarmingService) (*exec.Cmd, error) {
+	tr, err := service.GetTaskRequest(ctx, taskID)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get task request: %s", taskID).Err()
+	}
+	// In practice, later slices are less likely to assume that there is a named cache
+	// that is not available locally.
+	properties := tr.TaskSlices[len(tr.TaskSlices)-1].Properties
+
+	workdir := c.work
+	if err := prepareDir(workdir); err != nil {
+		return nil, err
+	}
+	// TODO(crbug.com/1188473): Support relative cwd in task request.
+	// TODO(crbug.com/1188473): Set environment variables in task request.
+	// TODO(crbug.com/1188473): Set env prefix in task request
+	// TODO(crbug.com/1188473): Support isolated input in task request.
+	// TODO(crbug.com/1188473): Support RBE-CAS input in task request.
+	// TODO(crbug.com/1188473): Support CIPD package download in task request
+
+	cmd := exec.CommandContext(ctx, properties.Command[0], properties.Command[1:]...)
+	// TODO(crbug.com/1188473): Set `cmd.Env`
+	cmd.Dir = workdir
+	return cmd, nil
+}
+
+func prepareDir(dir string) error {
+	if err := os.RemoveAll(dir); err != nil {
+		return errors.Annotate(err, "failed to remove directory: %s", dir).Err()
+	}
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return errors.Annotate(err, "failed to create directory: %s", dir).Err()
+	}
 	return nil
 }
