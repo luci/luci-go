@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "558e23e6_20795cbf",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-08T05:56:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53a79105_5cc93fa5",
+      "revId": "7119ec8cf51c430a6b323df242b2dd4eda2ed683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a422ab2_41ae55fa",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c875e388_52a49932",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-08T05:56:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a422ab2_41ae55fa",
+      "revId": "7119ec8cf51c430a6b323df242b2dd4eda2ed683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5b33c8bf_5d73f466",
@@ -48,6 +84,30 @@
       "writtenOn": "2021-04-08T04:56:46Z",
       "side": 1,
       "message": "nit: if you decide to move L211 before L210 and introduce a new variable for resulting path (e.g. `ret`), then this block could be simply \n\n  ret \u003d append(ret, strings.Split(path, \u0027/\u0027)...)",
+      "range": {
+        "startLine": 244,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 44
+      },
+      "revId": "7119ec8cf51c430a6b323df242b2dd4eda2ed683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9b809f0_fe6c6383",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-08T05:56:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b33c8bf_5d73f466",
       "range": {
         "startLine": 244,
         "startChar": 0,
