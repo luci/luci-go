@@ -33,7 +33,7 @@ export class TextArtifactElement extends MobxLitElement {
   @observable.ref artifacts!: Map<string, Artifact>;
 
   @computed
-  private get fetchUrl(): string | undefined {
+  private get fetchUrl(): string {
     const artifact = this.artifacts.get((this.isInvLevelArtifact ? 'inv-level/' : '') + this.artifactID);
     return artifact ? artifact.fetchUrl : '';
   }

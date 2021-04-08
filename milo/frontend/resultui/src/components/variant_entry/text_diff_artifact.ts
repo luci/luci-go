@@ -34,7 +34,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
   @computed
   private get content$(): IPromiseBasedObservable<string> {
     // TODO(weiweilin): handle refresh.
-    return fromPromise(fetch(this.artifact.fetchUrl!).then((res) => res.text()));
+    return fromPromise(fetch(this.artifact.fetchUrl).then((res) => res.text()));
   }
 
   @computed
