@@ -225,6 +225,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f1a7411_c20ab2d6",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-08T08:39:01Z",
+      "side": 1,
+      "message": "oops.done. :)",
+      "parentUuid": "934f29d6_dc5b7e1b",
+      "range": {
+        "startLine": 53,
+        "startChar": 8,
+        "endLine": 53,
+        "endChar": 23
+      },
+      "revId": "96d8c33fac20cf5fb46f63dcce5903207e22288a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5e7e1d87_e6e6658a",
