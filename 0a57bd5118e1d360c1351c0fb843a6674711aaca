@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "189a8887_87614c4d",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-08T03:39:02Z",
+      "side": 1,
+      "message": "I just read the discussion and the reason behind it.\n\nI still think it would be better to separate them for testability. \nWhen you add tests for `executeTaskRequestCommand`, you may just give a `cmd` without needing to prepare service, taskID.\n\nBut, this is a nit for my preference.\nYou can refactor that way as you implement more features.",
+      "parentUuid": "8a7e808a_149a9680",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "da3e502d_37732386",
