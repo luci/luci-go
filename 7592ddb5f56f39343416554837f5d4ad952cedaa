@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "509699f1_3c6c2002",
+        "filename": "milo/frontend/resultui/src/pages/artifact/raw_artifact_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-08T02:23:36Z",
+      "side": 1,
+      "message": "I\u0027ll extract this to a standalone component after landing this CL.",
+      "range": {
+        "startLine": 104,
+        "startChar": 6,
+        "endLine": 104,
+        "endChar": 32
+      },
+      "revId": "7592ddb5f56f39343416554837f5d4ad952cedaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
