@@ -340,12 +340,9 @@ func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.B
 
 	if len(build.Proto.Exe.Cmd) == 0 {
 		build.Proto.Exe.Cmd = []string{"recipes"}
-		for _, exp := range build.Experiments {
-			if exp == "+"+bb.ExperimentBBAgent {
-				build.Proto.Exe.Cmd = []string{"luciexe"}
-			}
+		if build.ExperimentStatus(bb.ExperimentBBAgent) == pb.Trinary_YES {
+			build.Proto.Exe.Cmd = []string{"luciexe"}
 		}
-		// TODO(crbug/1042991): Additionally check settings for bbagent-enabled builders.
 	}
 
 	// The request has highest precedence, but may only override CIPD version.
