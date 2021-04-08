@@ -13,25 +13,25 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
-import * as Diff2Html from 'diff2html';
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED } from 'mobx-utils';
+import { autorun, computed, observable } from 'mobx';
+import { fromPromise, PENDING, REJECTED } from 'mobx-utils';
 
+import '../../components/dot_spinner';
 import '../../components/status_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { sanitizeHTML } from '../../libs/sanitize_html';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
 
 /**
- * Renders a text diff artifact.
+ * Renders a raw artifact.
  */
 // TODO(weiweilin): improve error handling.
-@customElement('milo-text-diff-artifact-page')
+@customElement('milo-raw-artifact-page')
 @consumeAppState
-export class TextDiffArtifactPageElement extends MobxLitElement implements BeforeEnterObserver {
+export class RawArtifactPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref private artifactName!: string;
 
@@ -46,20 +46,48 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     }
     return fromPromise(this.appState.resultDb.getArtifact({ name: this.artifactName }));
   }
-  @computed private get artifact() {
-    return this.artifact$.state === FULFILLED ? this.artifact$.value : null;
+
+  private disposers: Array<() => void> = [];
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    // TODO(weiweilin): add integration tests to ensure redirection works properly.
+    this.disposers.push(
+      autorun(() => {
+        if (this.artifact$.state === PENDING) {
+          return;
+        }
+
+        if (this.artifact$.state === REJECTED) {
+          const err = this.artifact$.value as GrpcError;
+          const mayRequireSignin = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(
+            err.code
+          );
+          if (mayRequireSignin && this.appState.userId === '') {
+            Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
+            return;
+          }
+          this.dispatchEvent(
+            new ErrorEvent('error', {
+              message: err.message,
+              composed: true,
+              bubbles: true,
+            })
+          );
+          return;
+        }
+
+        window.open(this.artifact$.value.fetchUrl, '_self');
+      })
+    );
   }
 
-  @computed
-  private get content$() {
-    if (!this.appState.resultDb || !this.artifact) {
-      return fromPromise(Promise.race([]));
+  disconnectedCallback() {
+    for (const disposer of this.disposers) {
+      disposer();
     }
-    // TODO(weiweilin): handle refresh.
-    return fromPromise(fetch(this.artifact.fetchUrl).then((res) => res.text()));
-  }
-  @computed private get content() {
-    return this.content$.state === FULFILLED ? this.content$.value : null;
+    super.disconnectedCallback();
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -109,17 +137,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
         .components=${[{ color: 'var(--active-color)', weight: 1 }]}
         .loading=${this.artifact$.state === 'pending'}
       ></milo-status-bar>
-      <div id="details">
-        ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
-      </div>
-      <div id="content">
-        <link
-          rel="stylesheet"
-          type="text/css"
-          href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
-        />
-        ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
-      </div>
+      <div id="content">Loading artifact <milo-dot-spinner></milo-dot-spinner></div>
     `;
   }
 
@@ -130,23 +148,10 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
       font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
       font-size: 14px;
     }
-    .id-component-label {
-      color: var(--light-text-color);
-    }
 
-    #details {
-      margin: 20px;
-    }
     #content {
-      position: relative;
       margin: 20px;
-    }
-
-    .d2h-code-linenumber {
-      cursor: default;
-    }
-    .d2h-moved-tag {
-      display: none;
+      color: var(--active-color);
     }
   `;
 }
