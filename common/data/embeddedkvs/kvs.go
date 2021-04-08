@@ -61,9 +61,9 @@ func (k *KVS) Set(key string, value []byte) error {
 }
 
 // GetMulti calls |fn| in parallel for cached entries.
-func (k *KVS) GetMulti(keys []string, fn func(key string, value []byte) error) error {
+func (k *KVS) GetMulti(ctx context.Context, keys []string, fn func(key string, value []byte) error) error {
 	if err := k.db.View(func(txn *badger.Txn) error {
-		var eg errgroup.Group
+		eg, _ := errgroup.WithContext(ctx)
 		for _, key := range keys {
 			key := key
 			eg.Go(func() error {

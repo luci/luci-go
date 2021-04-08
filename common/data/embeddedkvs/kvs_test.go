@@ -44,7 +44,7 @@ func TestCache(t *testing.T) {
 		var keys []string
 		var values []string
 
-		So(k.GetMulti([]string{"key1", "key2", "key4"}, func(key string, value []byte) error {
+		So(k.GetMulti(context.Background(), []string{"key1", "key2", "key4"}, func(key string, value []byte) error {
 			mu.Lock()
 			keys = append(keys, key)
 			values = append(values, string(value))
