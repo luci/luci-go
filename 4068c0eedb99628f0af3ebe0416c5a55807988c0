@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df70bab6_0c82eea5",
+        "filename": "milo/frontend/resultui/src/pages/artifact/raw_artifact_page.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-08T05:00:52Z",
+      "side": 1,
+      "message": "seems like we could have MiloPageBase with this and disconnectedCallback()",
+      "revId": "4068c0eedb99628f0af3ebe0416c5a55807988c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fafaf744_74667be6",
+        "filename": "milo/frontend/resultui/src/pages/artifact/raw_artifact_page.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-08T05:00:52Z",
+      "side": 1,
+      "message": "i love the simplicity",
+      "revId": "4068c0eedb99628f0af3ebe0416c5a55807988c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
