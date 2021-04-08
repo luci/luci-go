@@ -20,6 +20,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "49304398_20b32811",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-08T00:19:52Z",
+      "side": 1,
+      "message": "As the command execution doesn\u0027t need swarmingService and taskID, we should move this to main(), renaming this to executeCmd or something?\n\nThe main would look like\n\n```\n...\ncmd, err :\u003d c.createTaskRequestCommand(ctx, taskID, service)\nif err !\u003d nil {\n  ...\n}\n...\nif err :\u003d executeCmd(cmd, w); err !\u003d nil {\n  ...\n}\n```",
+      "range": {
+        "startLine": 91,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "0a57bd5118e1d360c1351c0fb843a6674711aaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "da3e502d_37732386",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 9
