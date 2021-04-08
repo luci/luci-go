@@ -179,7 +179,7 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 	return eg.Wait()
 }
 
-func copySmallFilesFromCache(kvs *embeddedkvs.KVS, smallFiles map[string][]*client.TreeOutput) error {
+func copySmallFilesFromCache(ctx context.Context, kvs *embeddedkvs.KVS, smallFiles map[string][]*client.TreeOutput) error {
 	smallFileHashes := make([]string, 0, len(smallFiles))
 	for smallFile := range smallFiles {
 		smallFileHashes = append(smallFileHashes, smallFile)
@@ -198,7 +198,7 @@ func copySmallFilesFromCache(kvs *embeddedkvs.KVS, smallFiles map[string][]*clie
 	})
 
 	// Extract small files from kvs.
-	return kvs.GetMulti(smallFileHashes, func(key string, value []byte) error {
+	return kvs.GetMulti(ctx, smallFileHashes, func(key string, value []byte) error {
 		ch <- struct{}{}
 		defer func() { <-ch }()
 
@@ -221,8 +221,8 @@ func copySmallFilesFromCache(kvs *embeddedkvs.KVS, smallFiles map[string][]*clie
 	})
 }
 
-func cacheSmallFiles(kvs *embeddedkvs.KVS, outputs []*client.TreeOutput) error {
-	var eg errgroup.Group
+func cacheSmallFiles(ctx context.Context, kvs *embeddedkvs.KVS, outputs []*client.TreeOutput) error {
+	eg, ctx := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent I/O operations.
 	ch := make(chan struct{}, runtime.NumCPU())
@@ -273,7 +273,7 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs *embedded
 
 	if kvs != nil {
 		start := time.Now()
-		if err := cacheSmallFiles(kvs, smallOutputs); err != nil {
+		if err := cacheSmallFiles(ctx, kvs, smallOutputs); err != nil {
 			return err
 		}
 		logger.Infof("finished cacheSmallFiles %d, took %s", len(smallOutputs), time.Since(start))
@@ -406,7 +406,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 	if kvs != nil {
 		start := time.Now()
 
-		if err := copySmallFilesFromCache(kvs, smallFiles); err != nil {
+		if err := copySmallFilesFromCache(ctx, kvs, smallFiles); err != nil {
 			return err
 		}
 
