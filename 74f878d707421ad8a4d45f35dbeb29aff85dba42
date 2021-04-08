@@ -22,6 +22,30 @@
       },
       "revId": "74f878d707421ad8a4d45f35dbeb29aff85dba42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe01b105_ad4b2597",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-08T04:56:46Z",
+      "side": 1,
+      "message": "i think this problem is specific to httprouter and the escaping difficulties of url package. True that.\n\nGo 2.0 is adding generics.",
+      "parentUuid": "51f24331_ec94cee8",
+      "range": {
+        "startLine": 209,
+        "startChar": 0,
+        "endLine": 209,
+        "endChar": 84
+      },
+      "revId": "74f878d707421ad8a4d45f35dbeb29aff85dba42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
