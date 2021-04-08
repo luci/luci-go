@@ -75,7 +75,7 @@ func Archive(ctx context.Context, arch *archiver.Archiver, opts *ArchiveOptions)
 func ArchiveFiles(ctx context.Context, arch *archiver.Archiver, baseDir string, files []string) ([]*archiver.PendingItem, error) {
 	items := make([]*archiver.PendingItem, len(files))
 
-	var g errgroup.Group
+	g, ctx := errgroup.WithContext(ctx)
 	for i, file := range files {
 		i, file := i, file
 		g.Go(func() error {
