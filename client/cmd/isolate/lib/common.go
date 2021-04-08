@@ -324,7 +324,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 	rootDgs := make([]digest.Digest, len(opts))
 	var entries []*uploadinfo.Entry
 
-	var eg errgroup.Group
+	eg, _ := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent hash calculations and I/O operations.
 	ch := make(chan struct{}, runtime.NumCPU())
