@@ -160,7 +160,7 @@ func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req
 }
 
 func (s *swarmingServiceImpl) GetTaskRequest(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskRequest, err error) {
-	err = retryGoogleRPC(ctx, "GetTaskResult", func() (ierr error) {
+	err = retryGoogleRPC(ctx, "GetTaskRequest", func() (ierr error) {
 		res, ierr = s.service.Task.Request(taskID).Context(ctx).Do()
 		return
 	})
