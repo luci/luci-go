@@ -61,6 +61,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2f581379_73eddb33",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-09T19:04:36Z",
+      "side": 1,
+      "message": "Hm, this is tricky; if someone does actually look and fix configs quickly, then this is OK, but otherwise it would cause logs to bounce around inside of logdog\u0027s state for a while.\n\nI think I\u0027d prefer to loudly log the error along with the project name so that we can then fix the configs; I don\u0027t think clients should expect us to keep their data with invalid configuration?",
+      "parentUuid": "b7cb0315_a651d543",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f863cef6_86ed7ae1",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 5
