@@ -159,6 +159,24 @@
       "parentUuid": "3617bae4_d818686c",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8dceda07_11f50fd5",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-09T23:30:10Z",
+      "side": 1,
+      "message": "here is a very simple algorithm that doesn\u0027t require any protos changes:\n1. Compute longest common prefix among all test results in the request\n2. Read the current prefix in spanner\n3. If the current prefix is NULL, then update set to common prefix and exit.\n4. Otherwise, compute common prefix between (1) and (2). Update Spanner if it is different from (2).",
+      "parentUuid": "850149b5_d0e4be2b",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
