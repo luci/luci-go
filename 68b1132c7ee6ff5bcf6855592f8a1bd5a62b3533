@@ -16,6 +16,29 @@
       "message": "Demo: https://luci-milo-dev.appspot.com/artifact/raw/invocations%2Ftask-chromium-swarm-dev.appspot.com-52bc6f2d24d76511%2Ftests%2Fninja%3A%252F%252Fcontent%252Ftest%3Acontent_unittests%252FHostVarTrackerTest.ReuseVar%2Fresults%2Fad58821a-02818%2Fartifacts%2Fstack_trace\n",
       "revId": "68b1132c7ee6ff5bcf6855592f8a1bd5a62b3533",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "16682992_a6015c31",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-09T05:28:51Z",
+      "side": 1,
+      "message": "Do we need the word \"Resources\"? Or \"prefetchArtifact\" is clear enough?",
+      "range": {
+        "startLine": 112,
+        "startChar": 2,
+        "endLine": 112,
+        "endChar": 27
+      },
+      "revId": "68b1132c7ee6ff5bcf6855592f8a1bd5a62b3533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
