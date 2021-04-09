@@ -109,6 +109,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8ad3ea07_58f61a62",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T19:13:35Z",
+      "side": 1,
+      "message": "correction for bad sentence 😞\n\"If the archival task is dropped, and the[n] nobody notices of the problem, ....\"",
+      "parentUuid": "0e7d7007_958d3d73",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f863cef6_86ed7ae1",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 5
