@@ -98,7 +98,8 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			req, err := http.NewRequest("GET", "http://fake", nil)
 			So(err, ShouldBeNil)
 			req.Header.Set("Authorization", header)
-			return m.Authenticate(ctx, req)
+			u, _, err := m.Authenticate(ctx, req)
+			return u, err
 		}
 
 		Convey("Works", func() {
