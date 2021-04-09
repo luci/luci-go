@@ -71,6 +71,9 @@ func GetUID(ctx context.Context, authenticator *auth.Authenticator) (string, err
 	info, err := googleoauth.GetTokenInfo(ctx, googleoauth.TokenInfoParams{
 		AccessToken: tok.AccessToken,
 	})
+	if err != nil {
+		return "", errors.Annotate(err, "getting access token info").Err()
+	}
 	if info.Email != "" {
 		return info.Email, nil
 	}
