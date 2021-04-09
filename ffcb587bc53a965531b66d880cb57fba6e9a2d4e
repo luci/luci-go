@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "223e74c8_a57ca354",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:40:43Z",
+      "side": 1,
+      "message": "Robbie, I\u0027ve changed this CL so that it removes other things besides just the tricium project config, could you review to confirm that indeed this branch isn\u0027t needed anymore?",
+      "revId": "ffcb587bc53a965531b66d880cb57fba6e9a2d4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
