@@ -33,6 +33,7 @@ import (
 	"github.com/google/tink/go/keyset"
 	"github.com/google/tink/go/tink"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -55,7 +56,7 @@ func TestMethod(t *testing.T) {
 		// Instantiate ID provider with mocked time only. It doesn't need other
 		// context features.
 		ctx := context.Background()
-		ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
+		ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
 		provider := openIDProviderFake{
 			ExpectedClientID:     "client_id",
 			ExpectedClientSecret: "client_secret",
@@ -146,20 +147,89 @@ func TestMethod(t *testing.T) {
 			So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
 
 			// And we've got some session cookie!
-			cookie := resp.Header.Get("Set-Cookie")
-			So(cookie, ShouldNotBeNil)
+			setCookie := resp.Header.Get("Set-Cookie")
+			So(setCookie, ShouldNotEqual, "")
+			cookie := strings.Split(setCookie, ";")[0]
 
-			// Trying to use the authorization code again fails.
-			resp = call(method.callbackHandler, "dest.example.com", &url.URL{
-				RawQuery: callbackRawQuery,
+			Convey("Code reuse is forbidden", func() {
+				// Trying to use the authorization code again fails.
+				resp := call(method.callbackHandler, "dest.example.com", &url.URL{
+					RawQuery: callbackRawQuery,
+				})
+				So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
 			})
-			So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
 
-			// The session cookie can be used to authenticate requests.
-			// TODO: check once implemented.
+			Convey("Session cookies", func() {
+				phonyRequest := func(cookie string) *http.Request {
+					req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
+					if cookie != "" {
+						req.Header.Add("Cookie", cookie)
+					}
+					return req
+				}
 
-			// Logout clears the cookie and invalidates the session.
-			// TODO: check once implemented.
+				Convey("No cookies => method is skipped", func() {
+					user, session, err := method.Authenticate(ctx, phonyRequest(""))
+					So(err, ShouldBeNil)
+					So(user, ShouldBeNil)
+					So(session, ShouldBeNil)
+				})
+
+				Convey("Good cookie works", func() {
+					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+					So(err, ShouldBeNil)
+					So(user, ShouldResemble, &auth.User{
+						Identity: identity.Identity("user:" + provider.UserEmail),
+						Email:    provider.UserEmail,
+						Name:     provider.UserName,
+						Picture:  provider.UserPicture,
+					})
+					So(session, ShouldBeNil)
+				})
+
+				Convey("Malformed cookie is ignored", func() {
+					user, session, err := method.Authenticate(ctx, phonyRequest(cookie[:20]+"aaaaaa"+cookie[26:]))
+					So(err, ShouldBeNil)
+					So(user, ShouldBeNil)
+					So(session, ShouldBeNil)
+				})
+
+				Convey("Missing datastore session", func() {
+					method.Sessions.(*datastore.Store).Namespace = "another"
+					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+					So(err, ShouldBeNil)
+					So(user, ShouldBeNil)
+					So(session, ShouldBeNil)
+				})
+			})
+
+			Convey("After short-lived tokens expire", func() {
+				tc.Add(2 * time.Hour)
+
+				Convey("Session refresh OK", func() {
+					// The session is still valid.
+					req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
+					req.Header.Add("Cookie", cookie)
+					_, _, err := method.Authenticate(ctx, req)
+					So(err, ShouldBeNil)
+
+					// Tokens have been refreshed.
+					// TODO: check
+				})
+
+				Convey("Session refresh transient fail", func() {
+					// TODO
+				})
+
+				Convey("Session refresh fatal fail", func() {
+					// TODO
+				})
+			})
+
+			Convey("Logout works", func() {
+				// Logout clears the cookie and invalidates the session.
+				// TODO: check once implemented.
+			})
 		})
 	})
 }
