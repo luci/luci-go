@@ -30,7 +30,12 @@ import (
 // The resulting settings object will be verified by the Archivist.
 func GetSettingsLoader(serviceID string, acfg *svcconfig.Archivist) archivist.SettingsLoader {
 	return func(c context.Context, project string) (*archivist.Settings, error) {
-		// Fold in our project-specific configuration, if valid.
+		// If the project config of a task no longer exists, this function is expected
+		// to return return config.ErrNoConfig. Then, the archivist task handler discards
+		// the task w/o returning an error.
+		//
+		// Please ensure that this function calls config.ProjectConfig() first to prevent
+		// other errors from hidding config.ErrNoConfig.
 		pcfg, err := config.ProjectConfig(c, project)
 		if err != nil {
 			log.Fields{
