@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d38baab3_663a8685",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T23:37:32Z",
+      "side": 1,
+      "message": "use environ.System()?",
+      "range": {
+        "startLine": 81,
+        "startChar": 19,
+        "endLine": 81,
+        "endChar": 22
+      },
+      "revId": "928c31f4ebb2899062ced5f8136236029829b012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dfadaa45_f2bc8c65",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T23:37:32Z",
+      "side": 1,
+      "message": "no need to have this if this is used only once?",
+      "revId": "928c31f4ebb2899062ced5f8136236029829b012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "12a36068_074923f6",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T23:37:32Z",
+      "side": 1,
+      "message": "use https://pkg.go.dev/go.chromium.org/luci/common/system/environ#Env.Sorted ?",
+      "range": {
+        "startLine": 143,
+        "startChar": 5,
+        "endLine": 143,
+        "endChar": 8
+      },
+      "revId": "928c31f4ebb2899062ced5f8136236029829b012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3c81f38_f854fdcc",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T23:37:32Z",
+      "side": 1,
+      "message": "use https://pkg.go.dev/go.chromium.org/luci/common/system/environ#Env.Sorted ?",
+      "revId": "928c31f4ebb2899062ced5f8136236029829b012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88918cd8_5e5e8599",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T23:37:32Z",
+      "side": 1,
+      "message": "this can be removed",
+      "revId": "928c31f4ebb2899062ced5f8136236029829b012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

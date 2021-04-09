@@ -152,6 +152,24 @@
       "parentUuid": "4baec048_dba38c22",
       "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8811edb5_79630fef",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T23:37:32Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "0dfdb254_add576ea",
+      "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
