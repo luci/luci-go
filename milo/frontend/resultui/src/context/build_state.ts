@@ -83,8 +83,6 @@ export class BuildState {
     return this.invocationId$.state === FULFILLED ? this.invocationId$.value : null;
   }
 
-  @observable.ref private timestamp = Date.now();
-
   constructor(private appState: AppState) {}
 
   @observable.ref private isDisposed = false;
@@ -102,7 +100,7 @@ export class BuildState {
     this.queryBlamelistResIterFns;
   }
 
-  private buildQueryTime = 0;
+  private buildQueryTime = this.appState.timestamp;
   @computed
   get build$(): IPromiseBasedObservable<Build> {
     if (!this.appState.buildsService || (!this.buildId && (!this.builderIdParam || !this.buildNum))) {
@@ -122,9 +120,9 @@ export class BuildState {
     // If we record the query time instead, no other code will need to read
     // or update the query time.
     const cacheOpt = {
-      acceptCache: this.buildQueryTime < this.timestamp,
+      acceptCache: this.buildQueryTime >= this.appState.timestamp,
     };
-    this.buildQueryTime = this.timestamp;
+    this.buildQueryTime = this.appState.timestamp;
 
     const req: GetBuildRequest = this.buildId
       ? { id: this.buildId, fields: BUILD_FIELD_MASK }
@@ -268,7 +266,7 @@ export class BuildState {
     }
 
     // Establish a dependency on the timestamp.
-    this.timestamp;
+    this.appState.timestamp;
 
     return fromPromise(
       this.appState.accessService?.permittedActions({
@@ -296,7 +294,7 @@ export class BuildState {
     }
 
     // Establishes a dependency on the timestamp.
-    this.timestamp;
+    this.appState.timestamp;
 
     return fromPromise(
       this.appState.milo.getProjectCfg({
@@ -323,11 +321,6 @@ export class BuildState {
       ...(components ? { components } : {}),
     });
     return `https://bugs.chromium.org/p/${bugTemplate.monorailProject}/issues/entry?${searchParam}`;
-  }
-
-  // Refresh all data that depends on the timestamp.
-  refresh() {
-    this.timestamp = Date.now();
   }
 }
 
