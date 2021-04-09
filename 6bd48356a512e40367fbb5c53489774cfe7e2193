@@ -20,6 +20,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4f9a0012_289ff76d",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:34:18Z",
+      "side": 1,
+      "message": "nit -- ideal order would be:\n\nClient\nInstall\nInstallProd\n\ninserter\n...",
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "28175ea1_fcd3f0cd",
         "filename": "cv/internal/bq/bq.go",
         "patchSetId": 13
@@ -31,6 +48,30 @@
       "writtenOn": "2021-04-09T19:23:22Z",
       "side": 1,
       "message": "why not just\n\n```\nrow :\u003d \u0026lucibq.Row{\n\tMessage: protov1.MessageV1(msg),\n\tInsertID: operationID,\n}\n```\nsince the empty value for InsertID is \"\".",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 2
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3bdf1ff0_8fb86055",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:34:18Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "28175ea1_fcd3f0cd",
       "range": {
         "startLine": 74,
         "startChar": 0,
@@ -66,6 +107,70 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "36d0f243_1e54415b",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:34:18Z",
+      "side": 1,
+      "message": "good idea.",
+      "parentUuid": "9f9e17de_43d11628",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 21
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b953632_f9c2eb4d",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:34:18Z",
+      "side": 1,
+      "message": "nit-nit: we typically put mutex above the fields that it protects.",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 16
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1b897ec_03d91774",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:34:18Z",
+      "side": 1,
+      "message": "1. Protect by lock (otherwise, why bother with RW mutex?)\n2. Copy to new slice before returning.",
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e6e54dfe_f1505396",
         "filename": "cv/internal/bq/fake.go",
         "patchSetId": 13
@@ -82,6 +187,29 @@
         "startChar": 9,
         "endLine": 50,
         "endChar": 22
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4b223b3a_d5c67ac2",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:34:18Z",
+      "side": 1,
+      "message": "not useful. It doesn\u0027t have any other mode today anyway, so \"defaults\" is misleading.",
+      "range": {
+        "startLine": 76,
+        "startChar": 32,
+        "endLine": 76,
+        "endChar": 76
       },
       "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"

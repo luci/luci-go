@@ -254,6 +254,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "580cd9ca_cbb809f8",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:34:18Z",
+      "side": 1,
+      "message": "Yeah, oauth scopes are fine -- the more general scope allows to re-use cached token, but BQ scope would re-use only BQ-scoped tokens.",
+      "parentUuid": "fa2fb229_01d318bb",
+      "range": {
+        "startLine": 51,
+        "startChar": 71,
+        "endLine": 51,
+        "endChar": 87
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "07d0f266_a9a47c9e",
