@@ -29,6 +29,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
@@ -52,23 +53,26 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
-type commonFlags struct {
+type baseCommandRun struct {
 	subcommands.CommandRunBase
 	defaultFlags common.Flags
 	logConfig    logging.Config // for -log-level, used by ModifyContext
 	profiler     profiling.Profiler
+
+	// Overriden in tests.
+	casClientFactory func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error)
 }
 
-var _ cli.ContextModificator = (*commonFlags)(nil)
+var _ cli.ContextModificator = (*baseCommandRun)(nil)
 
-func (c *commonFlags) Init() {
+func (c *baseCommandRun) Init() {
 	c.defaultFlags.Init(&c.Flags)
 	c.logConfig.Level = logging.Warning
 	c.logConfig.AddFlags(&c.Flags)
 	c.profiler.AddFlags(&c.Flags)
 }
 
-func (c *commonFlags) Parse() error {
+func (c *baseCommandRun) Parse() error {
 	if c.logConfig.Level == logging.Debug {
 		// extract glog flag used in remote-apis-sdks
 		logtostderr := flag.Lookup("logtostderr")
@@ -89,12 +93,20 @@ func (c *commonFlags) Parse() error {
 }
 
 // ModifyContext implements cli.ContextModificator.
-func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
+func (c *baseCommandRun) ModifyContext(ctx context.Context) context.Context {
 	return c.logConfig.Set(ctx)
 }
 
+func (c *baseCommandRun) newCASClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
+	factory := c.casClientFactory
+	if factory == nil {
+		factory = cas.NewClient
+	}
+	return factory(ctx, instance, opts, readOnly)
+}
+
 type commonServerFlags struct {
-	commonFlags
+	baseCommandRun
 	isolatedFlags isolatedclient.Flags
 	authFlags     authcli.Flags
 
@@ -102,14 +114,14 @@ type commonServerFlags struct {
 }
 
 func (c *commonServerFlags) Init(authOpts auth.Options) {
-	c.commonFlags.Init()
+	c.baseCommandRun.Init()
 	c.isolatedFlags.Init(&c.Flags)
 	c.authFlags.Register(&c.Flags, authOpts)
 }
 
 func (c *commonServerFlags) Parse() error {
 	var err error
-	if err = c.commonFlags.Parse(); err != nil {
+	if err = c.baseCommandRun.Parse(); err != nil {
 		return err
 	}
 	if err = c.isolatedFlags.Parse(); err != nil {
@@ -310,12 +322,12 @@ func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec
 	return execRoot, inputSpec, nil
 }
 
-func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *cas.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *cas.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
 	// To cancel |uploadEg| when there is error in |digestEg|.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	cl, err := newCasClient(ctx, fl.Instance, authOpts, false)
+	cl, err := r.newCASClient(ctx, fl.Instance, authOpts, false)
 	if err != nil {
 		return nil, err
 	}
@@ -450,6 +462,3 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 	}
 	return rootDgs, json.NewEncoder(f).Encode(m)
 }
-
-// This is overwritten in test.
-var newCasClient = cas.NewClient

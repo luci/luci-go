@@ -40,7 +40,7 @@ func CmdRun() *subcommands.Command {
 For example, use: isolate run -isolated foo.isolate -- --gtest_filter=Foo.Bar`,
 		CommandRun: func() subcommands.CommandRun {
 			r := runRun{}
-			r.commonFlags.Init()
+			r.baseCommandRun.Init()
 			r.isolateFlags.Init(&r.Flags)
 			r.Flags.StringVar(&r.relativeCwd, "relative-cwd", ".", "Relative cwd when running isolated.")
 			return &r
@@ -49,13 +49,13 @@ For example, use: isolate run -isolated foo.isolate -- --gtest_filter=Foo.Bar`,
 }
 
 type runRun struct {
-	commonFlags
+	baseCommandRun
 	isolateFlags
 	relativeCwd string
 }
 
 func (r *runRun) Parse(a subcommands.Application, args []string) error {
-	if err := r.commonFlags.Parse(); err != nil {
+	if err := r.baseCommandRun.Parse(); err != nil {
 		return err
 	}
 	cwd, err := os.Getwd()

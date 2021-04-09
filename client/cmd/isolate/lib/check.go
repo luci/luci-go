@@ -31,7 +31,7 @@ func CmdCheck() *subcommands.Command {
 		LongDesc:  "",
 		CommandRun: func() subcommands.CommandRun {
 			c := checkRun{}
-			c.commonFlags.Init()
+			c.baseCommandRun.Init()
 			c.isolateFlags.Init(&c.Flags)
 			return &c
 		},
@@ -39,12 +39,12 @@ func CmdCheck() *subcommands.Command {
 }
 
 type checkRun struct {
-	commonFlags
+	baseCommandRun
 	isolateFlags
 }
 
 func (c *checkRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
+	if err := c.baseCommandRun.Parse(); err != nil {
 		return err
 	}
 	cwd, err := os.Getwd()

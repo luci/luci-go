@@ -162,7 +162,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		if err != nil {
 			return err
 		}
-		_, err = uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, opts...)
+		_, err = c.uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, opts...)
 		return err
 	}
 
