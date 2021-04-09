@@ -69,6 +69,24 @@
       "parentUuid": "f42a842c_39597a70",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "952b1611_1187c841",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-09T21:34:06Z",
+      "side": 1,
+      "message": "there may be multiple resultSink uploading results to the same invocation. How would one know about others?\n\nbesides, doing it in the result sink seems more complicated? we need to call new RPC, our database can become inconsistent if someone uploads results bypassing resultSink (CreateTestResult is an open API. It should work without result sink).\n\nif you are thinking of a different design, perhaps we need a design doc.",
+      "parentUuid": "6149c06c_b69c1814",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
