@@ -375,6 +375,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "66ef51ee_c1e6c53e",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T20:49:45Z",
+      "side": 1,
+      "message": "As I tried to say `code_verifier` and `nonce` are two completely unrelated mechanisms. I explained what `nonce` is for already. \n\nVerifier prevents an attack when:\n1. The attacker intercepts `code` from the redirect URL.\n2. The attacker *knows* client_secret already. This is not hard for public clients, like our CLI binaries (and a bit harder for Web apps, since the client_secret will have to leak first).\n3. Having both `code` and `client_secret`, the attack can just send the request to OpenID token endpoint and get tokens to impersonate the end user. \n4. Note that LUCI service is not involve in this in any way. `state` is not interpreter by OpenID in any way, it just round-tripped through the protocol. Thus in this scenario attack doesn\u0027t need to know what\u0027s inside `state`, it\u0027s unused.\n\nExistence of code_challenge requires the attack to also \"guess\" the code_challenge random string generated at the start of the sign in flow by the server. `code` is bound to this challenge (or rather its S256 hash), without it the ID provider will reject producing tokens.\n\nIn our particular case we store `code_challenge` inside the `state`. It is safe, since it is encrypted and the attacker doesn\u0027t have the encryption key.\n\nAgain, this has nothing to do with `nonce`, except they both happen to be passed through the protocol as part of encrypted `state` (since it is the only way to transfer information).",
+      "parentUuid": "a112d39e_5edb3699",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "16065e46_e471f029",
@@ -435,6 +453,30 @@
       "writtenOn": "2021-04-09T20:22:10Z",
       "side": 1,
       "message": "actually",
+      "range": {
+        "startLine": 281,
+        "startChar": 65,
+        "endLine": 281,
+        "endChar": 71
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0eb78bc2_a23f6dfe",
+        "filename": "server/encryptedcookies/method_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T20:49:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1f1d919_478105f5",
       "range": {
         "startLine": 281,
         "startChar": 65,
