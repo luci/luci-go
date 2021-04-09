@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38601e5a_6b8fba76",
+        "filename": "appengine/gaeauth/server/default.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T00:15:33Z",
+      "side": 1,
+      "message": "Somehow my mind wondered:\n\nignored  (cookies remain valid, so rollback will re-login)\n or\ndiscarded (if user visits, old cookie is deleted)\n  or\ninvalidated (old cookies will never be valid, rollback is useless)\n\n\nbut then I re-thought and I think you intentionally don\u0027t want to discuss details: if developer uses this func, users will suffer. Right?",
+      "range": {
+        "startLine": 51,
+        "startChar": 39,
+        "endLine": 51,
+        "endChar": 46
+      },
+      "revId": "4d324506c1addbf03a35f03f918a5db37bb2c104",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff721d7e_2ece36ab",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T00:15:33Z",
+      "side": 1,
+      "message": "👍 I didn\u0027t realize this can be so nicely combined",
+      "range": {
+        "startLine": 84,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 22
+      },
+      "revId": "4d324506c1addbf03a35f03f918a5db37bb2c104",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
