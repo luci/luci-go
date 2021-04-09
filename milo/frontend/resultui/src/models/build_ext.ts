@@ -87,6 +87,11 @@ export class BuildExt {
   }
 
   @computed
+  get buildNumOrId(): string {
+    return this.number?.toString() || 'b' + this.id;
+  }
+
+  @computed
   get isCanary(): boolean {
     return Boolean(this.input.experiments?.includes('luci.buildbucket.canary_software'));
   }
