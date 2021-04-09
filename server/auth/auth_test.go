@@ -296,9 +296,9 @@ type fakeAuthMethod struct {
 	email    string
 }
 
-func (m fakeAuthMethod) Authenticate(context.Context, *http.Request) (*User, error) {
+func (m fakeAuthMethod) Authenticate(context.Context, *http.Request) (*User, Session, error) {
 	if m.err != nil {
-		return nil, m.err
+		return nil, nil, m.err
 	}
 	email := m.email
 	if email == "" {
@@ -308,7 +308,7 @@ func (m fakeAuthMethod) Authenticate(context.Context, *http.Request) (*User, err
 		Identity: identity.Identity("user:" + email),
 		Email:    email,
 		ClientID: m.clientID,
-	}, nil
+	}, nil, nil
 }
 
 func (m fakeAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
