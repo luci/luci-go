@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f9207ddd_8b26d24c",
+        "filename": "server/encryptedcookies/internal/session.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T23:19:48Z",
+      "side": 1,
+      "message": "is this a tech term with plural? Or do you mean \"session\u0027s TTL\"?",
+      "range": {
+        "startLine": 56,
+        "startChar": 9,
+        "endLine": 56,
+        "endChar": 21
+      },
+      "revId": "9e0291a7a6400cbdac8f68b4307d961d33e7a18b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2fdf136c_d12b8516",
+        "filename": "server/encryptedcookies/internal/session.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T23:19:48Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 78,
+        "startChar": 33,
+        "endLine": 78,
+        "endChar": 34
+      },
+      "revId": "9e0291a7a6400cbdac8f68b4307d961d33e7a18b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
