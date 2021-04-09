@@ -65,6 +65,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d04c2f4c_e2745f78",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-09T08:39:36Z",
+      "side": 1,
+      "message": "\u003e Otherwise, you would need to lock when touching it.\nThis comment was wrong for the same reason below.\n\nAnd now accessing `uploaded` isn\u0027t a problem in this patch.",
+      "parentUuid": "16316280_a917c6ae",
+      "range": {
+        "startLine": 375,
+        "startChar": 0,
+        "endLine": 378,
+        "endChar": 35
+      },
+      "revId": "f6ba21123b4b5f3412c3e4958f6ba02ab08ec0af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e9c46ce7_25ade05c",
@@ -102,6 +126,30 @@
       "side": 1,
       "message": "No, this is not accessed in parallel.\nGuarded by done channel and uploadEg.",
       "parentUuid": "e9c46ce7_25ade05c",
+      "range": {
+        "startLine": 381,
+        "startChar": 0,
+        "endLine": 381,
+        "endChar": 38
+      },
+      "revId": "f6ba21123b4b5f3412c3e4958f6ba02ab08ec0af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f4a39fe_9ca8f6c3",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-09T08:39:36Z",
+      "side": 1,
+      "message": "Ah, now I understand this patch. Thanks.",
+      "parentUuid": "5572a032_8cfa03f1",
       "range": {
         "startLine": 381,
         "startChar": 0,
