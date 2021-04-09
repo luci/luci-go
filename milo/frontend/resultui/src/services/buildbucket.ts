@@ -290,6 +290,8 @@ export interface ScheduleBuildRequest {
 export class BuildsService {
   private static SERVICE = 'buildbucket.v2.Builds';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+  private cachedBuildReq: GetBuildRequest | null = null;
+  private cachedBuild: Build | null = null;
 
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
@@ -301,7 +303,30 @@ export class BuildsService {
   }
 
   async getBuild(req: GetBuildRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'GetBuild', req)) as Build;
+    if ((cacheOpt.acceptCache ?? true) && this.cachedBuild) {
+      const build = this.cachedBuild;
+      const sameBuild = req.id
+        ? req.id === this.cachedBuild.id
+        : JSON.stringify([req.buildNumber, req.builder]) === JSON.stringify([build.number, build.builder]);
+      const sameField = req.fields === this.cachedBuildReq!.fields;
+
+      if (sameBuild && sameField) {
+        if (cacheOpt.invalidateCache) {
+          this.cachedBuildReq = null;
+          this.cachedBuild = null;
+        }
+        return build;
+      }
+    }
+
+    const build = (await this.cachedCallFn(cacheOpt, 'GetBuild', req)) as Build;
+
+    if (!cacheOpt.skipUpdate) {
+      this.cachedBuildReq = req;
+      this.cachedBuild = build;
+    }
+
+    return build;
   }
 
   async searchBuilds(req: SearchBuildsRequest, cacheOpt: CacheOption = {}) {
