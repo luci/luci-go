@@ -218,6 +218,24 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 		return nil
 	}
 
+	// Load archival settings for this project.
+	settings, err := a.loadSettings(c, task.Project)
+	switch {
+	case err == config.ErrNoConfig:
+		log.WithError(err).Errorf(c, "The project config doesn't exist; discarding the task.")
+		return nil
+	case transient.Tag.In(err):
+		// If this is a transient error, exit immediately and do not delete the
+		// archival task.
+		log.WithError(err).Warningf(c, "TRANSIENT error during loading the project config.")
+		return err
+	case err != nil:
+		// This project has bad or no archival settings, this is non-transient,
+		// discard the task.
+		log.WithError(err).Errorf(c, "Failed to load settings for project.")
+		return nil
+	}
+
 	// Load the log stream's current state. If it is already archived, we will
 	// return an immediate success.
 	ls, err := a.Service.LoadStream(c, &logdog.LoadStreamRequest{
@@ -254,17 +272,6 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 	case ls.Desc == nil:
 		log.Errorf(c, "Log stream did not include a descriptor.")
 		return errors.New("log stream did not include a descriptor")
-	}
-
-	// Load archival settings for this project.
-	settings, err := a.loadSettings(c, task.Project)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    task.Project,
-		}.Errorf(c, "Failed to load settings for project.")
-		// This project has bad or no archival settings, this is non-transient, discard the task.
-		return nil
 	}
 
 	ar := logdog.ArchiveStreamRequest{
