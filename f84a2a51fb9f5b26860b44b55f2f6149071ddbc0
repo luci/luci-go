@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fff99278_2351cf27",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2021-04-09T03:44:20Z",
+      "side": 1,
+      "message": "To be honest, I had difficulty on understanding how what you say here and the code match.  I finally understood \"all\" is what you wanted to say.\n\nFrom the code, you still have the flow like cl.ComputeMerkleTree and upload after the full markletree calcuration.  From what you have written, I imagined stream calculation upload combination like  digests are passed via channel, and uploader thread continuously uploads files with digests.  However, it looks not.\nIn addition to what you explain here, I guess deduplication may work positively if there are lots of duplications by skipping unnecessary digest checks.",
+      "range": {
+        "startLine": 7,
+        "startChar": 21,
+        "endLine": 7,
+        "endChar": 25
+      },
+      "revId": "f84a2a51fb9f5b26860b44b55f2f6149071ddbc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e7cbfa5_f7084209",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2021-04-09T03:44:20Z",
+      "side": 1,
+      "message": "I feel the code and description complexed.  I prefer pipline pattern (https://blog.golang.org/pipelines) if possible, though.",
+      "revId": "f84a2a51fb9f5b26860b44b55f2f6149071ddbc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
