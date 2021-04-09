@@ -133,6 +133,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7eb4cf86_1d5c276e",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-09T20:10:00Z",
+      "side": 1,
+      "message": "I guess what I\u0027m getting at is that it\u0027s the user\u0027s responsibility not to feed bad config to us; If they do, then I think it\u0027s OK to drop their data.\n\nPractically speaking, for the data to be at this stage the config had to be valid at some point prior... if it\u0027s now invalid then they must have done something? I think it\u0027s similarly OK if they have valid configuration which points to a google storage bucket we cannot write to.\n\nThat said, if we can\u0027t distinguish between datastore being busted and the config being invalid, then that\u0027s another matter.",
+      "parentUuid": "8ad3ea07_58f61a62",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f863cef6_86ed7ae1",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 5
