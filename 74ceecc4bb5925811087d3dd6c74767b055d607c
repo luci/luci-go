@@ -34,6 +34,23 @@
       "parentUuid": "8b0a84ee_dc84c221",
       "revId": "74ceecc4bb5925811087d3dd6c74767b055d607c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d4bcc72_ca57388e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T21:28:36Z",
+      "side": 1,
+      "message": "lgtm\n\nI think you can land this now to let it soak on luci-logdog-dev for a while. Ideally you can also try \"deleting\" infra project -dev and see what happens. \n\nNothing is deploying stuff automatically to logdog prod and it is very unlikely we\u0027ll be doing a manual deploy.",
+      "revId": "74ceecc4bb5925811087d3dd6c74767b055d607c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
