@@ -127,6 +127,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "88a19451_6342c77b",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T18:56:36Z",
+      "side": 1,
+      "message": "\u003e what is gained by not doing it.\n\nAvoiding busywork, since there\u0027s only one user of this API and it already knows errors are transient. But fine.",
+      "parentUuid": "445c4c3f_d1f66bc0",
+      "range": {
+        "startLine": 46,
+        "startChar": 14,
+        "endLine": 46,
+        "endChar": 17
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "23b66851_84069bed",
         "filename": "server/encryptedcookies/session/datastore/impl.go",
         "patchSetId": 7
