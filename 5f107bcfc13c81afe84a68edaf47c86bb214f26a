@@ -232,6 +232,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fa2fb229_01d318bb",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-09T19:23:22Z",
+      "side": 1,
+      "message": "from my naive understanding, `scope` limits what kind of operations you can do in BigQuery once authenticated. From [1], I think it should be `https://www.googleapis.com/auth/bigquery.insertdata`. But `auth.CloudOAuthScopes` might be a much larger scope which allow us to insert data.\n\n[1]: https://screenshot.googleplex.com/3UmGShZG2dyMmk7",
+      "parentUuid": "fb1a6bb9_6e208e86",
+      "range": {
+        "startLine": 51,
+        "startChar": 71,
+        "endLine": 51,
+        "endChar": 87
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "07d0f266_a9a47c9e",
         "filename": "cv/internal/bq/bq.go",
         "patchSetId": 10

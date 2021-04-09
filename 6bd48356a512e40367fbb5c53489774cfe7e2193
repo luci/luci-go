@@ -16,6 +16,75 @@
       "message": "(Late response to all comments).\n\nNow there are no tests at this time for this module; although I wasn\u0027t sure what tests if any should be added at this tie.",
       "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28175ea1_fcd3f0cd",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-09T19:23:22Z",
+      "side": 1,
+      "message": "why not just\n\n```\nrow :\u003d \u0026lucibq.Row{\n\tMessage: protov1.MessageV1(msg),\n\tInsertID: operationID,\n}\n```\nsince the empty value for InsertID is \"\".",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 2
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f9e17de_43d11628",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-09T19:23:22Z",
+      "side": 1,
+      "message": "I think it would be useful if we also have the dataset and table information. Maybe it should be `map[string]map[string][]proto.Message` to mimic the dataset -\u003e table -\u003e rows hierarchy",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 21
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6e54dfe_f1505396",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-09T19:23:22Z",
+      "side": 1,
+      "message": "nil bq fake",
+      "range": {
+        "startLine": 50,
+        "startChar": 9,
+        "endLine": 50,
+        "endChar": 22
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
