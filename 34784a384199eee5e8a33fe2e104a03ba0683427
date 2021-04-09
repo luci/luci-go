@@ -393,6 +393,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "090f5a11_0eb7b298",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T21:19:15Z",
+      "side": 1,
+      "message": "sorry for time waste \u0026\u0026 thanks for bearing with me. I was lost, and all cleared in personal IM.",
+      "parentUuid": "66ef51ee_c1e6c53e",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "16065e46_e471f029",
