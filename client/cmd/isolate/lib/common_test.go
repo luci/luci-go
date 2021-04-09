@@ -102,7 +102,7 @@ func TestElideNestedPaths(t *testing.T) {
 }
 
 func TestUploadToCAS(t *testing.T) {
-	Convey(`Top-level Setup`, t, func() {
+	FocusConvey(`Top-level Setup`, t, func() {
 		// We need a top-level Convey so that the fake env is reset for each test cases.
 		// See https://github.com/smartystreets/goconvey/wiki/Execution-order
 		tmpDir := t.TempDir()
@@ -177,7 +177,7 @@ func TestUploadToCAS(t *testing.T) {
 			So(cas.BlobWrites(bazDg), ShouldEqual, 1)
 		})
 
-		Convey(`No upload if already on the server`, func() {
+		FocusConvey(`No upload if already on the server`, func() {
 			isol1Content := `{
 			  'variables': {
 			    'files': [
