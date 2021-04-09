@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5225d93_e2ef6728",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T01:11:27Z",
+      "side": 1,
+      "message": "PTAL. Will push tomorrow, and the alert has been silenced for project `wasm`.",
+      "revId": "ba04ea605bb1bdbea40cad70c72da2e682744444",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5370f5c1_709f2306",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T01:11:27Z",
+      "side": 1,
+      "message": "loadSettings() could return the same error, and I could move this up instead of adding a new check with ProjectConfig() at L222.\n\nHowever, at this level of abstraction, it\u0027s not obvious that loadSettings() would first check the project config and return config.ErrNoConfig. Therefore, I just added a check at L222.",
+      "range": {
+        "startLine": 272,
+        "startChar": 2,
+        "endLine": 272,
+        "endChar": 91
+      },
+      "revId": "ba04ea605bb1bdbea40cad70c72da2e682744444",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
