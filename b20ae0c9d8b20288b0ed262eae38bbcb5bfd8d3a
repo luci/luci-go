@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea736aa9_ff1da635",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 9
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-09T16:08:51Z",
+      "side": 1,
+      "message": "is JSON.stringify guaranteed to be deterministic? e.g. doesn\u0027t depend on the order in which hash properties were added?\n\nconsider spelling equalities out. It would be faster too",
+      "revId": "b20ae0c9d8b20288b0ed262eae38bbcb5bfd8d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
