@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -36,6 +37,8 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -65,6 +68,7 @@ func TestMethod(t *testing.T) {
 			UserEmail:            "someone@example.com",
 			UserName:             "Someone Example",
 			UserPicture:          "https://example.com/picture",
+			RefreshToken:         "good_refresh_token",
 		}
 		provider.Init(ctx, c)
 		defer provider.Close()
@@ -77,6 +81,7 @@ func TestMethod(t *testing.T) {
 
 		// Install the rest of the context stuff used by AuthMethod.
 		ctx = memory.Use(ctx)
+		ctx = gologger.StdConfig.Use(ctx)
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = authtest.MockAuthConfig(ctx)
 		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
@@ -151,6 +156,9 @@ func TestMethod(t *testing.T) {
 			So(setCookie, ShouldNotEqual, "")
 			cookie := strings.Split(setCookie, ";")[0]
 
+			// Handed out 1 access token thus far.
+			So(provider.AccessTokensMinted(), ShouldEqual, 1)
+
 			Convey("Code reuse is forbidden", func() {
 				// Trying to use the authorization code again fails.
 				resp := call(method.callbackHandler, "dest.example.com", &url.URL{
@@ -159,48 +167,46 @@ func TestMethod(t *testing.T) {
 				So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
 			})
 
-			Convey("Session cookies", func() {
-				phonyRequest := func(cookie string) *http.Request {
-					req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
-					if cookie != "" {
-						req.Header.Add("Cookie", cookie)
-					}
-					return req
+			phonyRequest := func(cookie string) *http.Request {
+				req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
+				if cookie != "" {
+					req.Header.Add("Cookie", cookie)
 				}
+				return req
+			}
 
-				Convey("No cookies => method is skipped", func() {
-					user, session, err := method.Authenticate(ctx, phonyRequest(""))
-					So(err, ShouldBeNil)
-					So(user, ShouldBeNil)
-					So(session, ShouldBeNil)
-				})
+			Convey("No cookies => method is skipped", func() {
+				user, session, err := method.Authenticate(ctx, phonyRequest(""))
+				So(err, ShouldBeNil)
+				So(user, ShouldBeNil)
+				So(session, ShouldBeNil)
+			})
 
-				Convey("Good cookie works", func() {
-					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
-					So(err, ShouldBeNil)
-					So(user, ShouldResemble, &auth.User{
-						Identity: identity.Identity("user:" + provider.UserEmail),
-						Email:    provider.UserEmail,
-						Name:     provider.UserName,
-						Picture:  provider.UserPicture,
-					})
-					So(session, ShouldBeNil)
+			Convey("Good cookie works", func() {
+				user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+				So(err, ShouldBeNil)
+				So(user, ShouldResemble, &auth.User{
+					Identity: identity.Identity("user:" + provider.UserEmail),
+					Email:    provider.UserEmail,
+					Name:     provider.UserName,
+					Picture:  provider.UserPicture,
 				})
+				So(session, ShouldBeNil)
+			})
 
-				Convey("Malformed cookie is ignored", func() {
-					user, session, err := method.Authenticate(ctx, phonyRequest(cookie[:20]+"aaaaaa"+cookie[26:]))
-					So(err, ShouldBeNil)
-					So(user, ShouldBeNil)
-					So(session, ShouldBeNil)
-				})
+			Convey("Malformed cookie is ignored", func() {
+				user, session, err := method.Authenticate(ctx, phonyRequest(cookie[:20]+"aaaaaa"+cookie[26:]))
+				So(err, ShouldBeNil)
+				So(user, ShouldBeNil)
+				So(session, ShouldBeNil)
+			})
 
-				Convey("Missing datastore session", func() {
-					method.Sessions.(*datastore.Store).Namespace = "another"
-					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
-					So(err, ShouldBeNil)
-					So(user, ShouldBeNil)
-					So(session, ShouldBeNil)
-				})
+			Convey("Missing datastore session", func() {
+				method.Sessions.(*datastore.Store).Namespace = "another"
+				user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+				So(err, ShouldBeNil)
+				So(user, ShouldBeNil)
+				So(session, ShouldBeNil)
 			})
 
 			Convey("After short-lived tokens expire", func() {
@@ -208,21 +214,44 @@ func TestMethod(t *testing.T) {
 
 				Convey("Session refresh OK", func() {
 					// The session is still valid.
-					req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
-					req.Header.Add("Cookie", cookie)
-					_, _, err := method.Authenticate(ctx, req)
+					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
 					So(err, ShouldBeNil)
+					So(user, ShouldNotBeNil)
+					So(session, ShouldBeNil)
 
 					// Tokens have been refreshed.
-					// TODO: check
+					So(provider.AccessTokensMinted(), ShouldEqual, 2)
+
+					// No need to refresh anymore.
+					user, session, err = method.Authenticate(ctx, phonyRequest(cookie))
+					So(err, ShouldBeNil)
+					So(user, ShouldNotBeNil)
+					So(session, ShouldBeNil)
+					So(provider.AccessTokensMinted(), ShouldEqual, 2)
 				})
 
 				Convey("Session refresh transient fail", func() {
-					// TODO
+					provider.TransientErr = errors.New("boom")
+
+					_, _, err := method.Authenticate(ctx, phonyRequest(cookie))
+					So(err, ShouldNotBeNil)
+					So(transient.Tag.In(err), ShouldBeTrue)
 				})
 
 				Convey("Session refresh fatal fail", func() {
-					// TODO
+					provider.RefreshToken = "another-token"
+
+					// Refresh fails and closes the session.
+					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+					So(err, ShouldBeNil)
+					So(user, ShouldBeNil)
+					So(session, ShouldBeNil)
+
+					// Using the closed session is unsuccessful.
+					user, session, err = method.Authenticate(ctx, phonyRequest(cookie))
+					So(err, ShouldBeNil)
+					So(user, ShouldBeNil)
+					So(session, ShouldBeNil)
 				})
 			})
 
@@ -285,7 +314,6 @@ func TestNormalizeURL(t *testing.T) {
 const (
 	fakeSigningKeyID = "signing-key"
 	fakeIssuer       = "https://issuer.example.com"
-	fakeRefreshToken = "secret-refresh-token"
 )
 
 type openIDProviderFake struct {
@@ -297,6 +325,10 @@ type openIDProviderFake struct {
 	UserEmail   string
 	UserName    string
 	UserPicture string
+
+	RefreshToken string
+
+	TransientErr error
 
 	c             C
 	srv           *httptest.Server
@@ -345,6 +377,10 @@ func (f *openIDProviderFake) CallbackRawQuery(q url.Values) string {
 	return fmt.Sprintf("code=%s&state=%s", authCode, q.Get("state"))
 }
 
+func (f *openIDProviderFake) AccessTokensMinted() int64 {
+	return atomic.LoadInt64(&f.nextAccessTok)
+}
+
 func (f *openIDProviderFake) discoveryHandler(ctx *router.Context) {
 	json.NewEncoder(ctx.Writer).Encode(map[string]string{
 		"issuer":                 fakeIssuer,
@@ -360,6 +396,11 @@ func (f *openIDProviderFake) jwksHandler(ctx *router.Context) {
 }
 
 func (f *openIDProviderFake) tokenHandler(ctx *router.Context) {
+	if f.TransientErr != nil {
+		http.Error(ctx.Writer, f.TransientErr.Error(), 500)
+		return
+	}
+
 	clientID := ctx.Request.FormValue("client_id")
 	if clientID != f.ExpectedClientID {
 		http.Error(ctx.Writer, "bad client ID", 400)
@@ -402,29 +443,25 @@ func (f *openIDProviderFake) tokenHandler(ctx *router.Context) {
 			return
 		}
 
-		now := clock.Now(ctx.Context)
-
 		// All is good! Generate tokens.
 		json.NewEncoder(ctx.Writer).Encode(map[string]interface{}{
 			"expires_in":    3600,
-			"refresh_token": fakeRefreshToken,
+			"refresh_token": f.RefreshToken,
 			"access_token":  f.genAccessToken(),
-			"id_token": f.signedToken(ctx.Context, openid.IDToken{
-				Iss:           fakeIssuer,
-				EmailVerified: true,
-				Sub:           f.UserSub,
-				Email:         f.UserEmail,
-				Name:          f.UserName,
-				Picture:       f.UserPicture,
-				Aud:           clientID,
-				Iat:           now.Unix(),
-				Exp:           now.Add(time.Hour).Unix(),
-				Nonce:         encodedParams.Nonce,
-			}),
+			"id_token":      f.genIDToken(ctx.Context, encodedParams.Nonce),
 		})
 
 	case "refresh_token":
-		// TODO: implement to test the token refresh flow once it exists.
+		refreshToken := ctx.Request.FormValue("refresh_token")
+		if refreshToken != f.RefreshToken {
+			http.Error(ctx.Writer, "bad refresh token", 400)
+			return
+		}
+		json.NewEncoder(ctx.Writer).Encode(map[string]interface{}{
+			"expires_in":   3600,
+			"access_token": f.genAccessToken(),
+			"id_token":     f.genIDToken(ctx.Context, ""),
+		})
 
 	default:
 		http.Error(ctx.Writer, "unknown grant_type", 400)
@@ -436,8 +473,19 @@ func (f *openIDProviderFake) genAccessToken() string {
 	return fmt.Sprintf("access_token_%d", count)
 }
 
-func (f *openIDProviderFake) signedToken(ctx context.Context, tok openid.IDToken) string {
-	body, err := json.Marshal(tok)
+func (f *openIDProviderFake) genIDToken(ctx context.Context, nonce string) string {
+	body, err := json.Marshal(openid.IDToken{
+		Iss:           fakeIssuer,
+		EmailVerified: true,
+		Sub:           f.UserSub,
+		Email:         f.UserEmail,
+		Name:          f.UserName,
+		Picture:       f.UserPicture,
+		Aud:           f.ExpectedClientID,
+		Iat:           clock.Now(ctx).Unix(),
+		Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
+		Nonce:         nonce,
+	})
 	if err != nil {
 		panic(err)
 	}
