@@ -142,6 +142,19 @@ message Invocation {
 
   // Specifies if/how to index the contents of this invocation.
   HistoryOptions history_options = 13;
+
+  // The common test id prefix for all test results directly included by the
+  // invocation.
+  // At the moment the value is the same as the test_id_prefix passed to ResultSink.
+  // TODO(crbug.com/1107678): In a pre-computation task find the longest common
+  // test id prefix.
+  string common_test_id_prefix = 14;
+
+  // Union of all variants of test results directly included by the invocation.
+  // At the moment the values are the same as the base variant passed to ResultSink.
+  // TODO(crbug.com/1107678): In a pre-computation task find all the variant and
+  // add them to the union.
+  repeated string test_result_variant_union = 15;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported
