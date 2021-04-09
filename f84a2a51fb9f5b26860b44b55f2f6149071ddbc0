@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f6e8819_4811b681",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T08:04:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c12bbbe_4242360d",
+      "range": {
+        "startLine": 7,
+        "startChar": 21,
+        "endLine": 7,
+        "endChar": 25
+      },
+      "revId": "f84a2a51fb9f5b26860b44b55f2f6149071ddbc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bc57c963_2508fc3e",
@@ -61,6 +85,30 @@
       "writtenOn": "2021-04-09T04:21:11Z",
       "side": 1,
       "message": "`more concurrent like isolate server batcharchive`?",
+      "range": {
+        "startLine": 9,
+        "startChar": 62,
+        "endLine": 10,
+        "endChar": 46
+      },
+      "revId": "f84a2a51fb9f5b26860b44b55f2f6149071ddbc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db75609f_9bc6ad9e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T08:04:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc57c963_2508fc3e",
       "range": {
         "startLine": 9,
         "startChar": 62,
@@ -88,6 +136,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ab43ea8_2db541b0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T08:04:45Z",
+      "side": 1,
+      "message": "I changed to use pipelines pattern.\nBut not sure if this has less complexity.",
+      "parentUuid": "9e7cbfa5_f7084209",
+      "revId": "f84a2a51fb9f5b26860b44b55f2f6149071ddbc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7c54efff_be48a273",
@@ -101,6 +167,30 @@
       "writtenOn": "2021-04-09T04:12:13Z",
       "side": 1,
       "message": "I think this lock is shared with other goutiness, which is necessary to update global `entries`. But `uploadEntries` can be accessed independently from each goroutine?\n\n----\n\nAfter I wrote this, I realized that `uploaded` is shared with other goroutines. \nCan that dependency be removed, as `UploadIfMissing` check file existence? (If that improves the overall speed)",
+      "range": {
+        "startLine": 358,
+        "startChar": 0,
+        "endLine": 358,
+        "endChar": 12
+      },
+      "revId": "f84a2a51fb9f5b26860b44b55f2f6149071ddbc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f396bd7c_94f967ce",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T08:04:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c54efff_be48a273",
       "range": {
         "startLine": 358,
         "startChar": 0,
