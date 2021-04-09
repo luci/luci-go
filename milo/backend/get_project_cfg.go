@@ -18,29 +18,35 @@ import (
 	"context"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/appstatus"
 	milo "go.chromium.org/luci/milo/api/config"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
+	"google.golang.org/grpc/codes"
 )
 
 // GetProjectCfg implements milopb.MiloInternal service
-func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.GetProjectCfgRequest) (*milo.Project, error) {
-	allowed, err := common.IsAllowed(ctx, req.GetProject())
+func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.GetProjectCfgRequest) (_ *milo.Project, err error) {
+	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
+
+	projectName := req.GetProject()
+	if projectName == "" {
+		return nil, appstatus.Error(codes.InvalidArgument, "project must be specified")
+	}
+
+	allowed, err := common.IsAllowed(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}
 	if !allowed {
 		if auth.CurrentIdentity(ctx) == identity.AnonymousIdentity {
-			return nil, errors.New("not logged in", grpcutil.UnauthenticatedTag)
-		} else {
-			return nil, errors.New("no access to project", grpcutil.PermissionDeniedTag)
+			return nil, appstatus.Error(codes.Unauthenticated, "not logged in ")
 		}
+		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
 	}
 
-	project, err := common.GetProject(ctx, req.GetProject())
+	project, err := common.GetProject(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}
