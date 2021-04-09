@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"sort"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -67,6 +68,13 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		// that createTaskRequestCommand() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
 		ctx := context.Background()
+
+		expectedBaseEnv := os.Environ()
+		os.Setenv("removeKey", "removeValue")
+		defer os.Unsetenv("removeKey")
+		os.Setenv("replaceKey", "oldValue")
+		defer os.Unsetenv("replaceKey")
+
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
 				return &swarming.SwarmingRpcsTaskRequest{
@@ -79,6 +87,20 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 						&swarming.SwarmingRpcsTaskSlice{
 							Properties: &swarming.SwarmingRpcsTaskProperties{
 								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+								Env: []*swarming.SwarmingRpcsStringPair{
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "key",
+										Value: "value1",
+									},
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "replaceKey",
+										Value: "value2",
+									},
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "removeKey",
+										Value: "",
+									},
+								},
 							},
 						},
 					},
@@ -89,6 +111,10 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
 		expected.Dir = c.work
+
+		expected.Env = append(expectedBaseEnv, []string{"key=value1", "replaceKey=value2", "SWARMING_BOT_ID=reproduce", "SWARMING_TASK_ID=reproduce"}...)
+		sort.Strings(cmd.Env)
+		sort.Strings(expected.Env)
 		So(cmd, ShouldResemble, expected)
 	})
 }
