@@ -290,6 +290,8 @@ export interface ScheduleBuildRequest {
 export class BuildsService {
   private static SERVICE = 'buildbucket.v2.Builds';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+  private cachedBuildReq: GetBuildRequest | null = null;
+  private cachedBuild: Build | null = null;
 
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
@@ -301,7 +303,37 @@ export class BuildsService {
   }
 
   async getBuild(req: GetBuildRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'GetBuild', req)) as Build;
+    if ((cacheOpt.acceptCache ?? true) && this.cachedBuild) {
+      const build = this.cachedBuild;
+
+      // This allows us to hit the cache even when the builds were queried with
+      // a different request object (requesting build with build ID vs
+      // with build num).
+      // We are not using cached_fn here because the cache key can't be derived
+      // synchronously. Supporting async cache key generation in cached_fn is
+      // difficult.
+      const sameBuild = req.id
+        ? req.id === this.cachedBuild.id
+        : JSON.stringify([req.buildNumber, req.builder]) === JSON.stringify([build.number, build.builder]);
+      const sameField = req.fields === this.cachedBuildReq!.fields;
+
+      if (sameBuild && sameField) {
+        if (cacheOpt.invalidateCache) {
+          this.cachedBuildReq = null;
+          this.cachedBuild = null;
+        }
+        return build;
+      }
+    }
+
+    const build = (await this.cachedCallFn(cacheOpt, 'GetBuild', req)) as Build;
+
+    if (!cacheOpt.skipUpdate) {
+      this.cachedBuildReq = req;
+      this.cachedBuild = build;
+    }
+
+    return build;
   }
 
   async searchBuilds(req: SearchBuildsRequest, cacheOpt: CacheOption = {}) {
