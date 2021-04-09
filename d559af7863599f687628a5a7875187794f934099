@@ -203,6 +203,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "66d476e3_5fe75921",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T21:04:16Z",
+      "side": 1,
+      "message": "I see. I won\u0027t add a TODO, then. The idea of adopting subspace is mentioned other places.\n\nI updated the logic to discard the task, if loadSettings() fails w/ such errors, which is the same as the existing behaviour.",
+      "parentUuid": "5b12add1_c50a6b4c",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f863cef6_86ed7ae1",
