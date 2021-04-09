@@ -66,7 +66,7 @@ var templateBundle = &templates.Bundle{
 func pageBase() router.MiddlewareChain {
 	return standard.Base().Extend(
 		templates.WithTemplates(templateBundle),
-		auth.Authenticate(server.UsersAPIAuthMethod{}),
+		auth.Authenticate(server.CookieAuth),
 	)
 }
 
@@ -102,6 +102,8 @@ func checkAPIAccess(c context.Context, methodName string, req proto.Message) (co
 }
 
 func init() {
+	server.SwitchToEncryptedCookies()
+
 	r := router.New()
 	standard.InstallHandlers(r)
 	r.GET("/", pageBase(), indexPage)

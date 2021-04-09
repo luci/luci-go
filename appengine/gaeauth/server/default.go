@@ -21,11 +21,15 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/deprecated"
+	"go.chromium.org/luci/server/encryptedcookies"
+	"go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
 )
+
+var handlersInstalled = false
 
 // CookieAuth is default cookie-based auth method to use on GAE.
 //
@@ -37,8 +41,42 @@ import (
 // InstallHandlers.
 //
 // It is allowed to assign to CookieAuth (e.g. to install a tweaked auth method)
-// before InstallHandlers is called.
+// before InstallHandlers is called. In particular, use SwitchToEncryptedCookies
+// to update to a better (but incompatible) method.
 var CookieAuth auth.Method
+
+// SwitchToEncryptedCookies opts-in CookieAuth to use a better implementation.
+//
+// The "better implementation" is not backward compatible with the previous one,
+// i.e. all existing user sessions are ignored. Calling this function is an
+// acknowledgment that it is OK to relogin all users when making the switch.
+//
+// Must be called before InstallHandlers.
+func SwitchToEncryptedCookies() {
+	if handlersInstalled {
+		panic("SwitchToEncryptedCookies must be called before InstallHandlers")
+	}
+	if method, ok := CookieAuth.(*deprecated.CookieAuthMethod); ok {
+		// Upgrade! Reuse OpenID config in the settings.
+		CookieAuth = &encryptedcookies.AuthMethod{
+			OpenIDConfig: func(ctx context.Context) (*encryptedcookies.OpenIDConfig, error) {
+				s, err := deprecated.FetchOpenIDSettings(ctx)
+				if err != nil {
+					return nil, err
+				}
+				return &encryptedcookies.OpenIDConfig{
+					DiscoveryURL: s.DiscoveryURL,
+					ClientID:     s.ClientID,
+					ClientSecret: s.ClientSecret,
+					RedirectURI:  s.RedirectURI,
+				}, nil
+			},
+			Sessions:            &datastore.Store{},
+			Insecure:            method.Insecure,
+			IncompatibleCookies: method.IncompatibleCookies,
+		}
+	}
+}
 
 // InstallHandlers installs HTTP handlers for various default routes related
 // to authentication system.
@@ -50,6 +88,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	}
 	auth.InstallHandlers(r, base)
 	authdbimpl.InstallHandlers(r, base)
+	handlersInstalled = true
 }
 
 func init() {
