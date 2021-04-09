@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "05042659_f04d9050",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T18:39:47Z",
+      "side": 1,
+      "message": "I\u0027m not sure datastore client is correctly configured inside archivist process and that it has permissions to access datastore. `archivist` runs on GKE, by design it is communicating with the main Logdog brain (on GAE, called `services`) via RPCs. IIRC, it never touches datastore directly.",
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b7cb0315_a651d543",
