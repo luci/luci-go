@@ -322,6 +322,9 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 
 	var mu sync.Mutex
 	rootDgs := make([]digest.Digest, len(opts))
+	uploaded := make(map[digest.Digest]struct{})
+	var uploadedDgs []digest.Digest
+	var uploadedBytes int64
 	var entries []*uploadinfo.Entry
 
 	eg, _ := errgroup.WithContext(ctx)
@@ -348,10 +351,32 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 			}
 			logger.Infof("ComputeMerkleTree returns %d entries with total size %d for %s, took %s",
 				len(entrs), stats.TotalInputBytes, o.Isolate, time.Since(start))
-
 			rootDgs[i] = rootDg
+
+			var uploadEntries []*uploadinfo.Entry
+
 			mu.Lock()
+			for _, e := range entrs {
+				if _, ok := uploaded[e.Digest]; ok {
+					continue
+				}
+				uploaded[e.Digest] = struct{}{}
+				uploadEntries = append(uploadEntries, e)
+			}
 			entries = append(entries, entrs...)
+			mu.Unlock()
+
+			start = time.Now()
+			dgs, bytes, err := cl.UploadIfMissing(ctx, uploadEntries...)
+			if err != nil {
+				return errors.Annotate(err, "failed to upload").Err()
+			}
+			logger.Infof("finished upload for %d entries (%d uploaded, %d bytes) for %s, took %s",
+				len(uploadEntries), len(dgs), bytes, o.Isolate, time.Since(start))
+
+			mu.Lock()
+			uploadedDgs = append(uploadedDgs, dgs...)
+			uploadedBytes += bytes
 			mu.Unlock()
 
 			return nil
@@ -362,14 +387,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 		return nil, err
 	}
 
-	logger.Infof("finished %d ComputeMerkleTree calls, took %s", len(opts), time.Since(start))
-
-	start = time.Now()
-	uploadedDgs, uploadedBytes, err := cl.UploadIfMissing(ctx, entries...)
-	if err != nil {
-		return nil, err
-	}
-	logger.Infof("finished UploadIfMissing for %d entries (%d uploaded, %d bytes), took %s",
+	logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
 		len(entries), len(uploadedDgs), uploadedBytes, time.Since(start))
 
 	if al != nil {
