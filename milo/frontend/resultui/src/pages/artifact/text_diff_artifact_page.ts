@@ -17,12 +17,13 @@ import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from 
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED } from 'mobx-utils';
+import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
 
 import '../../components/status_bar';
+import './artifact_page_layout';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { NOT_FOUND_URL, router } from '../../routes';
+import { NOT_FOUND_URL } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
 
 /**
@@ -73,67 +74,23 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
 
   protected render() {
     return html`
-      <div id="artifact-header">
-        <table>
-          <tr>
-            <td class="id-component-label">Invocation</td>
-            <td>
-              <a href=${router.urlForName('invocation', { invocation_id: this.artifactIdent.invocationId })}
-                >${this.artifactIdent.invocationId}</a
-              >
-            </td>
-          </tr>
-          ${this.artifactIdent.testId &&
-          html`
-            <!-- TODO(weiweilin): add view test link -->
-            <tr>
-              <td class="id-component-label">Test</td>
-              <td>${this.artifactIdent.testId}</td>
-            </tr>
-          `}
-          ${this.artifactIdent.resultId &&
-          html`
-            <!-- TODO(weiweilin): add view result link -->
-            <tr>
-              <td class="id-component-label">Result</td>
-              <td>${this.artifactIdent.resultId}</td>
-            </tr>
-          `}
-          <tr>
-            <td class="id-component-label">Artifact</td>
-            <td>${this.artifactIdent.artifactId}</td>
-          </tr>
-        </table>
-      </div>
-      <milo-status-bar
-        .components=${[{ color: 'var(--active-color)', weight: 1 }]}
-        .loading=${this.artifact$.state === 'pending'}
-      ></milo-status-bar>
-      <div id="details">
-        ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
-      </div>
-      <div id="content">
-        <link
-          rel="stylesheet"
-          type="text/css"
-          href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
-        />
-        ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
-      </div>
+      <milo-artifact-page-layout .ident=${this.artifactIdent} .isLoading=${this.artifact$.state === PENDING}>
+        <div id="details">
+          ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
+        </div>
+        <div id="content">
+          <link
+            rel="stylesheet"
+            type="text/css"
+            href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
+          />
+          ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
+        </div>
+      </milo-artifact-page-layout>
     `;
   }
 
   static styles = css`
-    #artifact-header {
-      background-color: var(--block-background-color);
-      padding: 6px 16px;
-      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-      font-size: 14px;
-    }
-    .id-component-label {
-      color: var(--light-text-color);
-    }
-
     #details {
       margin: 20px;
     }

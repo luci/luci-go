@@ -20,8 +20,9 @@ import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
 
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
+import './artifact_page_layout';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { NOT_FOUND_URL, router } from '../../routes';
+import { NOT_FOUND_URL } from '../../routes';
 import { constructArtifactName, parseArtifactName } from '../../services/resultdb';
 
 /**
@@ -36,19 +37,19 @@ export class ImageDiffArtifactPage extends MobxLitElement {
   @observable.ref diffArtifactName!: string;
 
   @computed private get expectedArtifactName() {
-    return constructArtifactName({ ...this.parsedDiffArtifactName, artifactId: this.expectedArtifactId });
+    return constructArtifactName({ ...this.diffArtifactIdent, artifactId: this.expectedArtifactId });
   }
   @computed private get actualArtifactName() {
-    return constructArtifactName({ ...this.parsedDiffArtifactName, artifactId: this.actualArtifactId });
+    return constructArtifactName({ ...this.diffArtifactIdent, artifactId: this.actualArtifactId });
   }
 
   @computed private get diffArtifactId() {
-    return this.parsedDiffArtifactName.artifactId;
+    return this.diffArtifactIdent.artifactId;
   }
   @observable.ref private expectedArtifactId!: string;
   @observable.ref private actualArtifactId!: string;
 
-  @computed private get parsedDiffArtifactName() {
+  @computed private get diffArtifactIdent() {
     return parseArtifactName(this.diffArtifactName);
   }
 
@@ -106,46 +107,12 @@ export class ImageDiffArtifactPage extends MobxLitElement {
 
   protected render() {
     return html`
-      <div id="artifact-header">
-        <table>
-          <tr>
-            <td class="id-component-label">Invocation</td>
-            <td><a href=${router.urlForName('invocation', {
-              invocation_id: this.parsedDiffArtifactName.invocationId,
-            })}>${this.parsedDiffArtifactName.invocationId}</a></td>
-          </tr>
-          ${
-            this.parsedDiffArtifactName.testId &&
-            html`
-              <!-- TODO(weiweilin): add view test link -->
-              <tr>
-                <td class="id-component-label">Test</td>
-                <td>${this.parsedDiffArtifactName.testId}</td>
-              </tr>
-            `
-          }
-          ${
-            this.parsedDiffArtifactName.resultId &&
-            html`
-              <!-- TODO(weiweilin): add view result link -->
-              <tr>
-                <td class="id-component-label">Result</td>
-                <td>${this.parsedDiffArtifactName.resultId}</td>
-              </tr>
-            `
-          }
-          <tr>
-            <td class="id-component-label">Artifacts</td>
-            <td>${this.expectedArtifactId}, ${this.actualArtifactId}, ${this.diffArtifactId}</td>
-          </tr>
-        </table>
-      </div>
-      <milo-status-bar
-        .components=${[{ color: 'var(--active-color)', weight: 1 }]}
-        .loading=${this.isLoading}
-      ></milo-status-bar>
-      ${
-        this.isLoading
+      <milo-artifact-page-layout
+        .ident=${this.diffArtifactIdent}
+        .artifactIds=${[this.expectedArtifactId, this.actualArtifactId, this.diffArtifactId]}
+        .isLoading=${this.isLoading}
+      >
+        ${this.isLoading
           ? ''
           : html`
               <milo-image-diff-viewer
@@ -154,25 +121,14 @@ export class ImageDiffArtifactPage extends MobxLitElement {
                 .diff=${this.diffArtifact}
               >
               </milo-image-diff-viewer>
-            `
-      }
-      </milo-image-diff-viewer>
+            `}
+      </milo-artifact-page-layout>
     `;
   }
 
   static styles = css`
     :host {
       display: block;
-    }
-
-    #artifact-header {
-      background-color: var(--block-background-color);
-      padding: 6px 16px;
-      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-      font-size: 14px;
-    }
-    .id-component-label {
-      color: var(--light-text-color);
     }
   `;
 }
