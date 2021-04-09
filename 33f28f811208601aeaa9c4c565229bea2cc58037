@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "52b156c2_be1540b0",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T01:55:51Z",
+      "side": 1,
+      "message": "I see. OK.",
+      "parentUuid": "a20353a6_1a315a98",
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "db15c062_6e817efe",
@@ -73,6 +91,30 @@
       "side": 1,
       "message": "I didn\u0027t want to put any requirements on format of errors in base Store interface. Its UpdateSession says \"errors produced by the callback are returned as is\". It makes applying tags in UpdateSession kind of dodgy. So I removed it.\n\nUsers of Store are expected to understand that errors are transient. E.g. same way we do not wrap datastore.Get(...) errors as transient in the datastore library (except better, because Store is a mostly internal interface that will have ~\u003d2 implementations and only one user).",
       "parentUuid": "db15c062_6e817efe",
+      "range": {
+        "startLine": 46,
+        "startChar": 14,
+        "endLine": 46,
+        "endChar": 17
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "445c4c3f_d1f66bc0",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T01:55:51Z",
+      "side": 1,
+      "message": "tbh, I\u0027d rather have Datastore tag its errors as transient. In other words, I don\u0027t see what is gained by not doing it.\n\nwrt callback:\nin this case, I buy that there is 1 user, so fine/whatever.\nBut, in general case, why can\u0027t *callback* errors be returned as is, while datastore errors tagged with transient? Asking for a friend 😊 This is what we do in CV, though admittedly within a transaction it becomes tricky.",
+      "parentUuid": "5ed48fe3_963a2bdc",
       "range": {
         "startLine": 46,
         "startChar": 14,
@@ -155,6 +197,30 @@
       "side": 1,
       "message": "I don\u0027t really care... I can make it set time.Time{} instead if you think it is better. I don\u0027t know how to omit a timestamp-valued field though. Maybe making it a pointer would work better?",
       "parentUuid": "ae7b4495_c5de4e65",
+      "range": {
+        "startLine": 109,
+        "startChar": 15,
+        "endLine": 109,
+        "endChar": 33
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45d73ec2_03bc0baf",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T01:55:51Z",
+      "side": 1,
+      "message": "I checked the library. Pointer time.Time is not allowed:\n\n// field \"F\" has invalid type: *time.Time\u0027\ntype T struct {\n  F * time.Time\n}\n\nAnd zero time.Time really becomes 0000-01-01 😞 I still like this more, so thanks 😊",
+      "parentUuid": "58c34158_cf831899",
       "range": {
         "startLine": 109,
         "startChar": 15,
