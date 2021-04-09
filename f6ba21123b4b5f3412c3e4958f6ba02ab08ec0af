@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7d8b4dd_b5df8301",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-09T08:24:54Z",
+      "side": 1,
+      "message": "I may misunderstand goroutine behavior. Please let me know if my comment isn\u0027t valid.",
+      "revId": "f6ba21123b4b5f3412c3e4958f6ba02ab08ec0af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49679324_949636a3",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-09T08:24:54Z",
+      "side": 1,
+      "message": "I was suggesting to remove `uploaded`, relying on UploadIfMissing to avoid uploading same files. Otherwise, you would need to lock when touching it.",
+      "range": {
+        "startLine": 375,
+        "startChar": 0,
+        "endLine": 378,
+        "endChar": 35
+      },
+      "revId": "f6ba21123b4b5f3412c3e4958f6ba02ab08ec0af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e9c46ce7_25ade05c",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-09T08:24:54Z",
+      "side": 1,
+      "message": "You still need to lock when touching `entries`?",
+      "range": {
+        "startLine": 381,
+        "startChar": 0,
+        "endLine": 381,
+        "endChar": 38
+      },
+      "revId": "f6ba21123b4b5f3412c3e4958f6ba02ab08ec0af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
