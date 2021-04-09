@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -29,9 +30,9 @@ import (
 	"go.chromium.org/luci/common/runtime/profiling"
 )
 
-var _ cli.ContextModificator = (*commonFlags)(nil)
+var _ cli.ContextModificator = (*commandBase)(nil)
 
-type commonFlags struct {
+type commandBase struct {
 	subcommands.CommandRunBase
 	casFlags  cas.Flags
 	logConfig logging.Config // for -log-level, used by ModifyContext
@@ -39,9 +40,11 @@ type commonFlags struct {
 	authFlags authcli.Flags
 
 	parsedAuthOpts auth.Options
+
+	casClientFactory func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error)
 }
 
-func (c *commonFlags) Init(authOpts auth.Options) {
+func (c *commandBase) Init(authOpts auth.Options) {
 	c.casFlags.Init(&c.Flags)
 
 	c.logConfig.Level = logging.Warning
@@ -50,7 +53,7 @@ func (c *commonFlags) Init(authOpts auth.Options) {
 	c.authFlags.Register(&c.Flags, authOpts)
 }
 
-func (c *commonFlags) Parse() error {
+func (c *commandBase) Parse() error {
 	// extract glog flag used in remote-apis-sdks
 	logtostderr := flag.Lookup("logtostderr")
 	if logtostderr == nil {
@@ -79,9 +82,14 @@ func (c *commonFlags) Parse() error {
 }
 
 // ModifyContext implements cli.ContextModificator.
-func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
+func (c *commandBase) ModifyContext(ctx context.Context) context.Context {
 	return c.logConfig.Set(ctx)
 }
 
-// This is overwritten in test.
-var newCasClient = cas.NewClient
+func (c *commandBase) newCASClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
+	factory := c.casClientFactory
+	if factory == nil {
+		factory = cas.NewClient
+	}
+	return factory(ctx, instance, opts, readOnly)
+}

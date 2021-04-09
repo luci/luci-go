@@ -66,14 +66,14 @@ working directory, '-paths :foo' is sufficient.`,
 }
 
 type archiveRun struct {
-	commonFlags
+	commandBase
 	paths         isolated.ScatterGather
 	dumpDigest    string
 	dumpStatsJSON string
 }
 
 func (c *archiveRun) parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
+	if err := c.commandBase.Parse(); err != nil {
 		return err
 	}
 	if len(args) != 0 {
@@ -128,7 +128,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	}
 	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
 
-	client, err := newCasClient(ctx, c.casFlags.Instance, c.parsedAuthOpts, false)
+	client, err := c.newCASClient(ctx, c.casFlags.Instance, c.parsedAuthOpts, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to create cas client").Err()
 	}

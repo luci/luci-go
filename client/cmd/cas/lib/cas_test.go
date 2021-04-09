@@ -35,7 +35,8 @@ func TestArchiveDownload(t *testing.T) {
 		fakeEnv, cleanup := fakes.NewTestEnv(t)
 		t.Cleanup(cleanup)
 
-		newCasClient = func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
+		var ar archiveRun
+		ar.casClientFactory = func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
 			return fakeEnv.Server.NewTestClient(ctx)
 		}
 
@@ -47,7 +48,6 @@ func TestArchiveDownload(t *testing.T) {
 		}
 		So(testfs.Build(uploaded, layout), ShouldBeNil)
 
-		var ar archiveRun
 		ar.dumpDigest = filepath.Join(t.TempDir(), "digest")
 		So(ar.paths.Set(uploaded+":."), ShouldBeNil)
 		So(ar.doArchive(ctx), ShouldBeNil)

@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -62,6 +63,7 @@ isolate. Format of files is:
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
 			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maximum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 8, "The maximum number of in-flight uploads.")
+			c.Flags.StringVar(&c.cpuProfile, "cpuprofile", "", "write cpu profile to `file`")
 			return &c
 		},
 	}
@@ -74,6 +76,8 @@ type batchArchiveRun struct {
 	dumpJSON             string
 	maxConcurrentChecks  int
 	maxConcurrentUploads int
+
+	cpuProfile string
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
@@ -293,6 +297,18 @@ func processGenJSONData(r io.Reader) (*isolate.ArchiveOptions, error) {
 }
 
 func (c *batchArchiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+	if c.cpuProfile != "" {
+		f, err := os.Create(c.cpuProfile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

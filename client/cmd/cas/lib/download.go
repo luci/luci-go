@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
-	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
@@ -63,7 +62,7 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 }
 
 type downloadRun struct {
-	commonFlags
+	commandBase
 	digest        string
 	dir           string
 	dumpStatsJSON string
@@ -73,7 +72,7 @@ type downloadRun struct {
 }
 
 func (r *downloadRun) parse(a subcommands.Application, args []string) error {
-	if err := r.commonFlags.Parse(); err != nil {
+	if err := r.commandBase.Parse(); err != nil {
 		return err
 	}
 	if len(args) != 0 {
@@ -97,7 +96,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
 	}
 
-	c, err := newCasClient(ctx, r.casFlags.Instance, r.parsedAuthOpts, true)
+	c, err := r.newCASClient(ctx, r.casFlags.Instance, r.parsedAuthOpts, true)
 	if err != nil {
 		return err
 	}
@@ -257,7 +256,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 			}
 		}
 
-		if err := isol.WriteStats(dsj, hot, cold); err != nil {
+		if err := isolated.WriteStats(dsj, hot, cold); err != nil {
 			return errors.Annotate(err, "failed to write stats json").Err()
 		}
 	}
