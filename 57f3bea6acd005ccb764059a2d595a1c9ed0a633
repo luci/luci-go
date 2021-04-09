@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a63950d_7cf0f840",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T07:30:53Z",
+      "side": 1,
+      "message": "is this necessary?",
+      "range": {
+        "startLine": 144,
+        "startChar": 5,
+        "endLine": 144,
+        "endChar": 12
+      },
+      "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4baec048_dba38c22",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T07:30:53Z",
+      "side": 1,
+      "message": "I think it is better to use context to avoid changing global state.\nhttps://pkg.go.dev/go.chromium.org/luci/common/system/environ#Env.SetInCtx",
+      "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
