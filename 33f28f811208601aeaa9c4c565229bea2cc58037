@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3fc66a9_2e47ae34",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T00:57:07Z",
+      "side": 1,
+      "message": "is this for logdog?",
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db15c062_6e817efe",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T00:57:07Z",
+      "side": 1,
+      "message": "why not tag it with transient tag here? (also same question for ds transaction below)",
+      "range": {
+        "startLine": 46,
+        "startChar": 14,
+        "endLine": 46,
+        "endChar": 17
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23b66851_84069bed",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T00:57:07Z",
+      "side": 1,
+      "message": "curious: what\u0027s the use case?\njust in case we need to analyze something where Datstore Query Lanaguge is better than having to iterate all entities?",
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae7b4495_c5de4e65",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T00:57:07Z",
+      "side": 1,
+      "message": "is a bunch of 1970-01-01 intentionally acceptable here?\n\n(that said, I don\u0027t recall what value is stored by our datastore for zero time.Time, maybe it\u0027s also weird 0000-01-01?)",
+      "range": {
+        "startLine": 109,
+        "startChar": 15,
+        "endLine": 109,
+        "endChar": 33
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "580ceed7_72ae3dad",
+        "filename": "server/encryptedcookies/session/sessionpb/sessions.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T00:57:07Z",
+      "side": 1,
+      "message": "nit: valid and can be used\nor \nvalid; can be used",
+      "range": {
+        "startLine": 25,
+        "startChar": 46,
+        "endLine": 25,
+        "endChar": 47
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2bb74bd2_594861be",
+        "filename": "server/encryptedcookies/session/sessionpb/sessions.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T00:57:07Z",
+      "side": 1,
+      "message": "are each of these *always* set?",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 62
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
