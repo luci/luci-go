@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -132,13 +133,48 @@ func (m *AuthMethod) Warmup(ctx context.Context) error {
 //
 // Implements auth.Method.
 func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
-	cfg, err := m.checkConfigured(ctx)
-	if err != nil {
-		return nil, nil, err
+	encryptedCookie, _ := r.Cookie(internal.SessionCookieName)
+	if encryptedCookie == nil {
+		return nil, nil, nil // the method is not applicable, skip it
 	}
-	// TODO
-	_ = cfg
-	return nil, nil, fmt.Errorf("not implemented")
+
+	// Decrypt the cookie to get the session ID. Ignore undecryptable cookies.
+	// This may happen if we no longer have the encryption key due to rotations
+	// or we changed the cookie format. We just assume such cookies are expired.
+	aead := auth.GetAEAD(ctx)
+	if aead == nil {
+		return nil, nil, errors.Reason("the encryption key is not configured").Err()
+	}
+	cookie, err := internal.DecryptSessionCookie(aead, encryptedCookie)
+	if err != nil {
+		logging.Warningf(ctx, "Failed to decrypt the session cookie, ignoring it: %s", err)
+		return nil, nil, nil
+	}
+	sid := session.ID(cookie.SessionId)
+
+	// Load the session to verify it still exists.
+	session, err := m.Sessions.FetchSession(ctx, sid)
+	switch {
+	case err != nil:
+		logging.Warningf(ctx, "Failed to fetch session %q: %s", sid, err)
+		return nil, nil, errors.Reason("failed to fetch the session").Tag(transient.Tag).Err()
+	case session == nil:
+		logging.Warningf(ctx, "No session %q in the store, ignoring the session cookie", sid)
+		return nil, nil, nil
+	case session.State != sessionpb.State_STATE_OPEN:
+		logging.Warningf(ctx, "Session %q is in state %q, ignoring the session cookie", sid, session.State)
+		return nil, nil, nil
+	}
+
+	// TODO: Periodically refresh access and ID tokens to be able to use them and
+	// to make sure the refresh token is still valid.
+
+	return &auth.User{
+		Identity: identity.Identity("user:" + session.Email),
+		Email:    session.Email,
+		Name:     session.Name,
+		Picture:  session.Picture,
+	}, nil, nil
 }
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
