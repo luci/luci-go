@@ -23,6 +23,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -119,13 +120,32 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 		return nil, err
 	}
 
-	// TODO(crbug.com/1188473): Set environment variables in task request.
+	// Set environment variables.
+	cmdEnvMap := environ.New(os.Environ())
+	cmdEnvMap.Set("SWARMING_BOT_ID", "reproduce")
+	cmdEnvMap.Set("SWARMING_TASK_ID", "reproduce")
+	for _, env := range properties.Env {
+		key := env.Key
+		if env.Value == "" {
+			cmdEnvMap.Remove(key)
+		} else {
+			cmdEnvMap.Set(env.Key, env.Value)
+		}
+	}
+
 	// TODO(crbug.com/1188473): Set env prefix in task request
 	// TODO(crbug.com/1188473): Support isolated input in task request.
 	// TODO(crbug.com/1188473): Support RBE-CAS input in task request.
 	// TODO(crbug.com/1188473): Support CIPD package download in task request
 
 	cmd := exec.CommandContext(ctx, properties.Command[0], properties.Command[1:]...)
+	//cmd.Env = make([]string, 0, len(cmdEnvMap))
+	cmd.Env = make([]string, 0, len(cmdEnvMap))
+	for _, v := range cmdEnvMap {
+		if v != "" {
+			cmd.Env = append(cmd.Env, v)
+		}
+	}
 	// TODO(crbug.com/1188473): Set `cmd.Env`
 	cmd.Dir = workdir
 	return cmd, nil
