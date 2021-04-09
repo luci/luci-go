@@ -614,20 +614,22 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary: false,
+					},
+					Experiments: []string{
+						"-" + bb.ExperimentBBCanarySoftware,
 					},
 				}), ShouldBeNil)
 
 				Convey("merge", func() {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
-						Canary:          pb.Trinary_YES,
+						Experiments:     map[string]bool{bb.ExperimentBBCanarySoftware: true},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
 					So(err, ShouldBeNil)
 					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
-						Canary:          pb.Trinary_YES,
+						Experiments:     map[string]bool{bb.ExperimentBBCanarySoftware: true},
 					})
 					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
@@ -635,9 +637,11 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_YES,
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: true,
+							bb.ExperimentNonProduction:    false,
+						},
+						Properties: &structpb.Struct{},
 					})
 				})
 
@@ -656,9 +660,11 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -672,20 +678,26 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary: true,
+					},
+					Experiments: []string{
+						"+" + bb.ExperimentBBCanarySoftware,
 					},
 				}), ShouldBeNil)
 
 				Convey("merge", func() {
 					req := &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
-						Canary:          pb.Trinary_NO,
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+						},
 					}
 					ret, err := scheduleRequestFromTemplate(ctx, req)
 					So(err, ShouldBeNil)
 					So(req, ShouldResembleProto, &pb.ScheduleBuildRequest{
 						TemplateBuildId: 1,
-						Canary:          pb.Trinary_NO,
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+						},
 					})
 					So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{
@@ -693,9 +705,11 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Properties: &structpb.Struct{},
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
 					})
 				})
 
@@ -714,9 +728,11 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_YES,
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: true,
+							bb.ExperimentNonProduction:    false,
+						},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -733,6 +749,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Critical: pb.Trinary_YES,
 				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
 			}), ShouldBeNil)
 
 			Convey("merge", func() {
@@ -752,10 +769,12 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Canary:       pb.Trinary_NO,
-					Critical:     pb.Trinary_NO,
-					Experimental: pb.Trinary_NO,
-					Properties:   &structpb.Struct{},
+					Critical: pb.Trinary_NO,
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
+					Properties: &structpb.Struct{},
 				})
 			})
 
@@ -774,10 +793,12 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Canary:       pb.Trinary_NO,
-					Critical:     pb.Trinary_YES,
-					Experimental: pb.Trinary_NO,
-					Properties:   &structpb.Struct{},
+					Critical: pb.Trinary_YES,
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
+					Properties: &structpb.Struct{},
 				})
 			})
 		})
@@ -796,6 +817,7 @@ func TestScheduleBuild(t *testing.T) {
 						CipdVersion: "version",
 					},
 				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
 			}), ShouldBeNil)
 
 			Convey("merge", func() {
@@ -816,10 +838,12 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Exe:          &pb.Executable{},
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Exe: &pb.Executable{},
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
+						Properties: &structpb.Struct{},
 					})
 				})
 
@@ -846,13 +870,15 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary: pb.Trinary_NO,
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
 						Exe: &pb.Executable{
 							CipdPackage: "package",
 							CipdVersion: "new",
 						},
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -872,13 +898,15 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Canary: pb.Trinary_NO,
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
 					Exe: &pb.Executable{
 						CipdPackage: "package",
 						CipdVersion: "version",
 					},
-					Experimental: pb.Trinary_NO,
-					Properties:   &structpb.Struct{},
+					Properties: &structpb.Struct{},
 				})
 			})
 		})
@@ -903,6 +931,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
 			}), ShouldBeNil)
 
 			Convey("merge", func() {
@@ -923,8 +952,10 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
 						GerritChanges: []*pb.GerritChange{
 							{
 								Host:     "example.com",
@@ -968,8 +999,10 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
 						GerritChanges: []*pb.GerritChange{
 							{
 								Host:     "example.com",
@@ -998,8 +1031,10 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Canary:       pb.Trinary_NO,
-					Experimental: pb.Trinary_NO,
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
 					GerritChanges: []*pb.GerritChange{
 						{
 							Host:     "example.com",
@@ -1030,6 +1065,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
 			}), ShouldBeNil)
 			req := &pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
@@ -1045,8 +1081,10 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Canary:       pb.Trinary_NO,
-				Experimental: pb.Trinary_NO,
+				Experiments: map[string]bool{
+					bb.ExperimentBBCanarySoftware: false,
+					bb.ExperimentNonProduction:    false,
+				},
 				GitilesCommit: &pb.GitilesCommit{
 					Host:    "example.com",
 					Project: "project",
@@ -1066,6 +1104,7 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
 			}), ShouldBeNil)
 
 			Convey("empty", func() {
@@ -1106,8 +1145,10 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"input": {
@@ -1135,9 +1176,11 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -1176,9 +1219,11 @@ func TestScheduleBuild(t *testing.T) {
 								Bucket:  "bucket",
 								Builder: "builder",
 							},
-							Canary:       pb.Trinary_NO,
-							Experimental: pb.Trinary_NO,
-							Properties:   &structpb.Struct{},
+							Experiments: map[string]bool{
+								bb.ExperimentBBCanarySoftware: false,
+								bb.ExperimentNonProduction:    false,
+							},
+							Properties: &structpb.Struct{},
 						})
 					})
 
@@ -1215,8 +1260,10 @@ func TestScheduleBuild(t *testing.T) {
 								Bucket:  "bucket",
 								Builder: "builder",
 							},
-							Canary:       pb.Trinary_NO,
-							Experimental: pb.Trinary_NO,
+							Experiments: map[string]bool{
+								bb.ExperimentBBCanarySoftware: false,
+								bb.ExperimentNonProduction:    false,
+							},
 							Properties: &structpb.Struct{
 								Fields: map[string]*structpb.Value{
 									"other": {
@@ -1245,8 +1292,10 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"input": {
@@ -1274,6 +1323,7 @@ func TestScheduleBuild(t *testing.T) {
 				Tags: []string{
 					"key:value",
 				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
 			}), ShouldBeNil)
 
 			Convey("merge", func() {
@@ -1294,9 +1344,11 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
+						Properties: &structpb.Struct{},
 						Tags: []*pb.StringPair{
 							{
 								Key:   "key",
@@ -1333,9 +1385,11 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Canary:       pb.Trinary_NO,
-						Experimental: pb.Trinary_NO,
-						Properties:   &structpb.Struct{},
+						Experiments: map[string]bool{
+							bb.ExperimentBBCanarySoftware: false,
+							bb.ExperimentNonProduction:    false,
+						},
+						Properties: &structpb.Struct{},
 						Tags: []*pb.StringPair{
 							{
 								Key:   "other",
@@ -1361,9 +1415,11 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Canary:       pb.Trinary_NO,
-					Experimental: pb.Trinary_NO,
-					Properties:   &structpb.Struct{},
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
+					Properties: &structpb.Struct{},
 					Tags: []*pb.StringPair{
 						{
 							Key:   "key",
@@ -1384,6 +1440,7 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
 			}), ShouldBeNil)
 			req := &pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
@@ -1399,9 +1456,11 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Canary:       pb.Trinary_NO,
-				Experimental: pb.Trinary_NO,
-				Properties:   &structpb.Struct{},
+				Experiments: map[string]bool{
+					bb.ExperimentBBCanarySoftware: false,
+					bb.ExperimentNonProduction:    false,
+				},
+				Properties: &structpb.Struct{},
 			})
 		})
 	})
@@ -1627,6 +1686,7 @@ func TestScheduleBuild(t *testing.T) {
 				Canary:       pb.Trinary_YES,
 				Experimental: pb.Trinary_NO,
 			}
+			normalizeSchedule(req)
 			ent := &model.Build{
 				Proto: pb.Build{
 					Input: &pb.Build_Input{},
@@ -1696,6 +1756,7 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentNonProduction:    true,
 					},
 				}
+				normalizeSchedule(req)
 				ent := &model.Build{
 					Proto: pb.Build{
 						Input: &pb.Build_Input{},
@@ -1727,6 +1788,7 @@ func TestScheduleBuild(t *testing.T) {
 					Canary:       pb.Trinary_YES,
 					Experimental: pb.Trinary_NO,
 				}
+				normalizeSchedule(req)
 				cfg := &pb.Builder{
 					Experiments: map[string]int32{
 						bb.ExperimentBBCanarySoftware: 0,
@@ -1766,6 +1828,7 @@ func TestScheduleBuild(t *testing.T) {
 						"experiment2": false,
 					},
 				}
+				normalizeSchedule(req)
 				cfg := &pb.Builder{
 					Experiments: map[string]int32{
 						"experiment1": 0,
@@ -1809,6 +1872,7 @@ func TestScheduleBuild(t *testing.T) {
 						"experiment2":                 false,
 					},
 				}
+				normalizeSchedule(req)
 				cfg := &pb.Builder{
 					Experiments: map[string]int32{
 						bb.ExperimentBBCanarySoftware: 100,
@@ -1870,6 +1934,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
+			normalizeSchedule(req)
 			ent := &model.Build{}
 
 			setTags(req, ent)
@@ -1888,6 +1953,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder",
 				},
 			}
+			normalizeSchedule(req)
 			ent := &model.Build{}
 
 			setTags(req, ent)
@@ -1906,6 +1972,7 @@ func TestScheduleBuild(t *testing.T) {
 					Ref:     "ref",
 				},
 			}
+			normalizeSchedule(req)
 			ent := &model.Build{}
 
 			setTags(req, ent)
@@ -1927,6 +1994,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				}
+				normalizeSchedule(req)
 				ent := &model.Build{}
 
 				setTags(req, ent)
@@ -1951,6 +2019,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				}
+				normalizeSchedule(req)
 				ent := &model.Build{}
 
 				setTags(req, ent)
@@ -1998,6 +2067,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
+			normalizeSchedule(req)
 			ent := &model.Build{}
 
 			setTags(req, ent)
@@ -2042,6 +2112,7 @@ func TestScheduleBuild(t *testing.T) {
 					Seconds: 3,
 				},
 			}
+			normalizeSchedule(req)
 			ent := &model.Build{}
 
 			setTimeouts(req, nil, ent)
@@ -2090,6 +2161,7 @@ func TestScheduleBuild(t *testing.T) {
 					Seconds: 3,
 				},
 			}
+			normalizeSchedule(req)
 			cfg := &pb.Builder{
 				ExecutionTimeoutSecs: 4,
 				ExpirationSecs:       6,

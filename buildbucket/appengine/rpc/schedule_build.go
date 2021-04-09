@@ -195,7 +195,6 @@ func validateExperimentName(expName string) error {
 var templateBuildMask = mask.MustFromReadMask(
 	&pb.Build{},
 	"builder",
-	"canary",
 	"critical",
 	"exe",
 	"input.experimental",
@@ -236,15 +235,11 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 		Tags:          b.Tags,
 	}
 
-	// Convert bool to the corresponding pb.Trinary values.
-	ret.Canary = pb.Trinary_NO
-	ret.Experimental = pb.Trinary_NO
-	if b.Canary {
-		ret.Canary = pb.Trinary_YES
-	}
-	if b.Input.Experimental {
-		ret.Experimental = pb.Trinary_YES
-	}
+	ret.Experiments = make(map[string]bool, len(bld.Experiments))
+	bld.IterExperiments(func(enabled bool, exp string) bool {
+		ret.Experiments[exp] = enabled
+		return true
+	})
 
 	// proto.Merge concatenates repeated fields. Here the desired behavior is replacement,
 	// so clear slices from the return value before merging, if specified in the request.
@@ -262,6 +257,7 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 	}
 	proto.Merge(ret, req)
 	ret.TemplateBuildId = 0
+
 	return ret, nil
 }
 
@@ -372,13 +368,8 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 		exps[exp] = mathrand.Int31n(ctx, 100) < pct
 	}
 
-	// Then override with legacy fields.
-	if req.GetCanary() != pb.Trinary_UNSET {
-		exps[bb.ExperimentBBCanarySoftware] = req.Canary == pb.Trinary_YES
-	}
-	if req.GetExperimental() != pb.Trinary_UNSET {
-		exps[bb.ExperimentNonProduction] = req.Experimental == pb.Trinary_YES
-	}
+	// note that legacy Canary/Experimental req fields were incorporated via
+	// normalizeSchedule already.
 
 	// Finally override with explicitly requested experiments.
 	for exp, en := range req.GetExperiments() {
@@ -395,7 +386,7 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 		}
 	}
 
-	// Finally, set legacy field values from the experiments.
+	// For now, continue to set legacy field values from the experiments.
 	if en := exps[bb.ExperimentBBCanarySoftware]; en {
 		build.Canary = true
 		build.Proto.Canary = true
@@ -634,12 +625,43 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	return blds, nil
 }
 
+// normalizeSchedule converts deprecated fields to non-deprecated ones.
+//
+// In particular, this currently converts the Canary and Experimental fields to
+// the non-deprecated Experiments field.
+func normalizeSchedule(req *pb.ScheduleBuildRequest) {
+	if req.Experiments == nil {
+		req.Experiments = map[string]bool{}
+	}
+
+	if _, has := req.Experiments[bb.ExperimentBBCanarySoftware]; !has {
+		if req.Canary == pb.Trinary_YES {
+			req.Experiments[bb.ExperimentBBCanarySoftware] = true
+		} else if req.Canary == pb.Trinary_NO {
+			req.Experiments[bb.ExperimentBBCanarySoftware] = false
+		}
+		req.Canary = pb.Trinary_UNSET
+	}
+
+	if _, has := req.Experiments[bb.ExperimentNonProduction]; !has {
+		if req.Experimental == pb.Trinary_YES {
+			req.Experiments[bb.ExperimentNonProduction] = true
+		} else if req.Experimental == pb.Trinary_NO {
+			req.Experiments[bb.ExperimentNonProduction] = false
+		}
+		req.Experimental = pb.Trinary_UNSET
+	}
+}
+
 // ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
 func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
 	var err error
 	if err = validateSchedule(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
+
+	normalizeSchedule(req)
+
 	m, err := getFieldMask(req.Fields)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())

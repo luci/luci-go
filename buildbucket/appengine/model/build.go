@@ -133,21 +133,49 @@ func (b *Build) Realm() string {
 //   * UNSET - The experiment was unknown at schedule time.
 //
 // Malformed Experiment filters are treated as UNSET.
-func (b *Build) ExperimentStatus(expname string) pb.Trinary {
+func (b *Build) ExperimentStatus(expname string) (ret pb.Trinary) {
+	b.IterExperiments(func(enabled bool, exp string) bool {
+		if exp == expname {
+			if enabled {
+				ret = pb.Trinary_YES
+			} else {
+				ret = pb.Trinary_NO
+			}
+			return false
+		}
+		return true
+	})
+	return
+}
+
+// IterExperiments parses all experiments and calls `cb` for each.
+//
+// This will always include a call with bb.ExperimentNonProduction, even
+// if '-'+bb.ExperimentNonProduction isn't recorded in the underlying
+// Experiments field.
+func (b *Build) IterExperiments(cb func(enabled bool, exp string) bool) {
+	var hadNonProd bool
+
 	for _, expFilter := range b.Experiments {
 		if len(expFilter) == 0 {
 			continue
 		}
-		if plusMinus, exp := expFilter[0], expFilter[1:]; exp == expname {
-			if plusMinus == '+' {
-				return pb.Trinary_YES
-			} else if plusMinus == '-' {
-				return pb.Trinary_NO
-			}
-			break
+		plusMinus, exp := expFilter[0], expFilter[1:]
+		hadNonProd = hadNonProd || exp == bb.ExperimentNonProduction
+
+		keepGoing := true
+		if plusMinus == '+' {
+			keepGoing = cb(true, exp)
+		} else if plusMinus == '-' {
+			keepGoing = cb(false, exp)
+		}
+		if !keepGoing {
+			return
 		}
 	}
-	return pb.Trinary_UNSET
+	if !hadNonProd {
+		cb(false, bb.ExperimentNonProduction)
+	}
 }
 
 // Load overwrites this representation of a build by reading the given
