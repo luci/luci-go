@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "947404cb_42500ca2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:36:54Z",
+      "side": 1,
+      "message": "Totally fine. We\u0027ll test it on -dev and that\u0027d be good enough. The amount of logic is too small to care.",
+      "parentUuid": "9e9e4ca4_01a16377",
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4f9a0012_289ff76d",
@@ -31,6 +49,29 @@
       "writtenOn": "2021-04-09T19:34:18Z",
       "side": 1,
       "message": "nit -- ideal order would be:\n\nClient\nInstall\nInstallProd\n\ninserter\n...",
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47c4e74b_e416b287",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T19:36:54Z",
+      "side": 1,
+      "message": "is typically",
+      "range": {
+        "startLine": 52,
+        "startChar": 8,
+        "endLine": 52,
+        "endChar": 15
+      },
       "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
