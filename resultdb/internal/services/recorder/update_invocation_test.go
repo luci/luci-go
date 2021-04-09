@@ -82,6 +82,32 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
+		Convey(`invalid common_test_id_prefix`, func() {
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:               "invocations/inv",
+					CommonTestIdPrefix: "",
+				},
+				UpdateMask: &field_mask.FieldMask{
+					Paths: []string{"common_test_id_prefix"},
+				},
+			}, now)
+			So(err, ShouldErrLike, `invocation: common_test_id_prefix: unspecified`)
+		})
+
+		Convey(`invalid test_result_variant_union`, func() {
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:                   "invocations/inv",
+					TestResultVariantUnion: []*pb.StringPair{pbutil.StringPair("", "")},
+				},
+				UpdateMask: &field_mask.FieldMask{
+					Paths: []string{"test_result_variant_union"},
+				},
+			}, now)
+			So(err, ShouldErrLike, `invocation: test_result_variant_union: "":"": key: unspecified`)
+		})
+
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
@@ -108,9 +134,6 @@ func TestUpdateInvocation(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		validDeadline := pbutil.MustTimestampProto(start.Add(day))
-		updateMask := &field_mask.FieldMask{
-			Paths: []string{"deadline"},
-		}
 
 		Convey(`invalid request`, func() {
 			req := &pb.UpdateInvocationRequest{}
@@ -124,7 +147,9 @@ func TestUpdateInvocation(t *testing.T) {
 					Name:     "invocations/inv",
 					Deadline: validDeadline,
 				},
-				UpdateMask: updateMask,
+				UpdateMask: &field_mask.FieldMask{
+					Paths: []string{"deadline"},
+				},
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
@@ -135,12 +160,19 @@ func TestUpdateInvocation(t *testing.T) {
 
 		Convey("e2e", func() {
 			expected := &pb.Invocation{
-				Name:     "invocations/inv",
-				Deadline: validDeadline,
+				Name:               "invocations/inv",
+				Deadline:           validDeadline,
+				CommonTestIdPrefix: "ninja://chrome/test:browser_tests/",
+				TestResultVariantUnion: []*pb.StringPair{
+					pbutil.StringPair("k1", "v1"),
+					pbutil.StringPair("k2", "v2"),
+				},
 			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: expected,
-				UpdateMask: updateMask,
+				UpdateMask: &field_mask.FieldMask{
+					Paths: []string{"deadline", "common_test_id_prefix", "test_result_variant_union"},
+				},
 			}
 			inv, err := recorder.UpdateInvocation(ctx, req)
 			So(err, ShouldBeNil)
@@ -154,7 +186,9 @@ func TestUpdateInvocation(t *testing.T) {
 			}
 			invID := invocations.ID("inv")
 			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
-				"Deadline": &actual.Deadline,
+				"Deadline":               &actual.Deadline,
+				"CommonTestIDPrefix":     &actual.CommonTestIdPrefix,
+				"TestResultVariantUnion": &actual.TestResultVariantUnion,
 			})
 			So(actual, ShouldResembleProto, expected)
 		})

@@ -49,6 +49,16 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 				return errors.Annotate(err, "invocation: deadline").Err()
 			}
 
+		case "common_test_id_prefix":
+			if err := pbutil.ValidateTestID(req.Invocation.CommonTestIdPrefix); err != nil {
+				return errors.Annotate(err, "invocation: common_test_id_prefix").Err()
+			}
+
+		case "test_result_variant_union":
+			if err := pbutil.ValidateStringPairs(req.Invocation.TestResultVariantUnion); err != nil {
+				return errors.Annotate(err, "invocation: test_result_variant_union").Err()
+			}
+
 		default:
 			return errors.Reason("update_mask: unsupported path %q", path).Err()
 		}
@@ -84,6 +94,14 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "deadline":
 				values["Deadline"] = in.Invocation.Deadline
 				ret.Deadline = in.Invocation.Deadline
+
+			case "common_test_id_prefix":
+				values["CommonTestIDPrefix"] = in.Invocation.CommonTestIdPrefix
+				ret.CommonTestIdPrefix = in.Invocation.CommonTestIdPrefix
+
+			case "test_result_variant_union":
+				values["TestResultVariantUnion"] = in.Invocation.TestResultVariantUnion
+				ret.TestResultVariantUnion = in.Invocation.TestResultVariantUnion
 
 			default:
 				panic("impossible")
