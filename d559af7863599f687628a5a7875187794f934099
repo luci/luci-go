@@ -85,6 +85,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0e7d7007_958d3d73",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T19:10:37Z",
+      "side": 1,
+      "message": "Do you mean that this should drop the task, but alert the trooper visibly by logging the error loudly?\n\nIf we the archival task is dropped, and the nobody notices of the problem, then the log data will be lost when the streams get GC-ed out from BT. That\u0027s why we have a page alert for retry failures, and we need to ensure that the life of a log stream in BT is longer than our page response SLO (including the delays from weekends) before it gets GC-ed out.\n\nIf it\u0027s ok to lose the log stream at the worst case, I\u0027m ok with returning nil. LMK if I misunderstood your comment.",
+      "parentUuid": "2f581379_73eddb33",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f863cef6_86ed7ae1",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 5
