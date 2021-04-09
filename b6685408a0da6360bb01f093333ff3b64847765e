@@ -22,6 +22,30 @@
       },
       "revId": "b6685408a0da6360bb01f093333ff3b64847765e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c418be35_49800727",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T22:07:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9b6b615_6dc91b0b",
+      "range": {
+        "startLine": 43,
+        "startChar": 6,
+        "endLine": 43,
+        "endChar": 7
+      },
+      "revId": "b6685408a0da6360bb01f093333ff3b64847765e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
