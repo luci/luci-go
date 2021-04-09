@@ -105,6 +105,24 @@
       "parentUuid": "952b1611_1187c841",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3617bae4_d818686c",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-09T23:23:26Z",
+      "side": 1,
+      "message": "The idea is that, we pass test_id_prefix and base variants to ResultSink already, so I want ResultSink to pass along those info directly to Invocation. And if those information is good enough for improving the test result history API performance, maybe we don\u0027t even need the pre-computation.\n\n\u003e our database can become inconsistent if someone uploads results bypassing resultSink \n\nGood point. This is a case to prove that we cannot entirely avoid pre-computation...\n\nBut I still think it\u0027s double work for ResultSink to prepend test_id_prefix to all test results it uploads and then in BatchCreateTestResults we iterate all test results to find the common test_id_prefix... (test_result_variant_union OTH is fine since it\u0027s a union.)\n\nHow about this, I don\u0027t touch UpdateInvocation anymore, instead:\n\n1. add common_test_id_prefix to BatchCreateTestResultsRequest,\n2. In BatchCreateTestResults, \n  a. if common_test_id_prefix is specified, Update the invocation\u0027s CommonTestIdPrefix using the longest common prefix of common_test_id_prefix from the request and the invocation\u0027s CommonTestIdPrefix\n  b. if not specified, iterate through test ids to find the new longest common prefix\n3. In CreateTestResults, using the test id and the \nthe invocation\u0027s CommonTestIdPrefix to find the new longest common prefix",
+      "parentUuid": "52a47328_8197acb2",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
