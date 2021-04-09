@@ -157,6 +157,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fa8bc643_618f7579",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T20:29:09Z",
+      "side": 1,
+      "message": "Logging loudly practically means no one is going to take a look unless\n1) the customer noticed some logs are missing or\n2) Stackdriver magically sends *us* an email alert.\n\nIf (1) happened, the past log data were permanently lost already.\nIf (2) happened, we will have to do the initial mitigation at least, and the SD\u0027s auto alerting pipeline may not always and reliably send us alerts due to complex reasons.  (threshold, remind interval, wasn\u0027t sent to the trooper, etc)\n\nI agree with your point that it\u0027s customer\u0027s responsibility to maintain ACLs and configs properly tuned. However, it\u0027s our problem that we don\u0027t provide good mechanism to notify customers for occurrences of such incidents.\n\nThis is what actually subspace came out for, and the problem addressed in go/chops-subspace-alerts. How about me\na) updating this CL to return nil, as the original code did, and then\nb) filing a bug and adding a TODO with it here?\n\n- Summary: \"project owners get notified when logdog archive tasks failing due to bad ACL and configs\",\n- Priority: P3\n\n(It\u0027s P3 because I don\u0027t know how many and frequently our customers are suffering from this issue)",
+      "parentUuid": "7eb4cf86_1d5c276e",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f863cef6_86ed7ae1",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 5
