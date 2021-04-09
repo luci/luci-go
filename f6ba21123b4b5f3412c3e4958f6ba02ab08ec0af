@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "16316280_a917c6ae",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T08:29:06Z",
+      "side": 1,
+      "message": "I think we need this, otherwise, a large file from different isolate can be uploaded twice if first upload is still in progress.",
+      "parentUuid": "49679324_949636a3",
+      "range": {
+        "startLine": 375,
+        "startChar": 0,
+        "endLine": 378,
+        "endChar": 35
+      },
+      "revId": "f6ba21123b4b5f3412c3e4958f6ba02ab08ec0af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e9c46ce7_25ade05c",
         "filename": "client/cmd/isolate/lib/common.go",
         "patchSetId": 10
@@ -54,6 +78,30 @@
       "writtenOn": "2021-04-09T08:24:54Z",
       "side": 1,
       "message": "You still need to lock when touching `entries`?",
+      "range": {
+        "startLine": 381,
+        "startChar": 0,
+        "endLine": 381,
+        "endChar": 38
+      },
+      "revId": "f6ba21123b4b5f3412c3e4958f6ba02ab08ec0af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5572a032_8cfa03f1",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T08:29:06Z",
+      "side": 1,
+      "message": "No, this is not accessed in parallel.\nGuarded by done channel and uploadEg.",
+      "parentUuid": "e9c46ce7_25ade05c",
       "range": {
         "startLine": 381,
         "startChar": 0,
