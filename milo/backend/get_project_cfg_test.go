@@ -21,10 +21,12 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 )
 
 func TestGetProjectCfg(t *testing.T) {
@@ -49,6 +51,7 @@ func TestGetProjectCfg(t *testing.T) {
 
 			_, err := srv.GetProjectCfg(c, req)
 			So(err, ShouldNotBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
 		Convey(`accept users access`, func() {
@@ -60,6 +63,15 @@ func TestGetProjectCfg(t *testing.T) {
 			cfg, err := srv.GetProjectCfg(c, req)
 			So(err, ShouldBeNil)
 			So(cfg.GetLogoUrl(), ShouldEqual, "https://logo.com")
+		})
+
+		Convey(`reject invalid request`, func() {
+			c = auth.WithState(c, &authtest.FakeState{Identity: "user_with_access"})
+			req := &milopb.GetProjectCfgRequest{}
+
+			_, err := srv.GetProjectCfg(c, req)
+			So(err, ShouldNotBeNil)
+			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 		})
 	})
 }
