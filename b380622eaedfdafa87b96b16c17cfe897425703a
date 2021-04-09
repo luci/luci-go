@@ -62,6 +62,24 @@
       "message": "(opinion)\ngiven top-level `errSessionClosed`, I expected it returned here, too, which make me suspect a bug. After more checking, i see that you must return nil from callback here to update DS and in L608 you want to return *some* err s.t. DS write is avoided.\n\nSo, what\u0027s the advantage of top level errSessionClosed instead of locally defined errSessionClosed like\n\n...\nvar refreshedSession *sessionpb.Session\n// used to avoid redundant DS write.\nerrAlreadyClosed :\u003d errors.New(\"..\")\nerr \u003d m.Sessions.UpdateSession(..., func(...) error {\n  if s.State !\u003d sessionpb.State_STATE_OPEN {\n    return errAlreadyClosed\n  }\n  ...\n}\nif err !\u003d nil {\n  if err \u003d\u003d errAlreadyClosed {\n    ...",
       "revId": "b380622eaedfdafa87b96b16c17cfe897425703a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04d10874_d701fe23",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 632,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T23:40:52Z",
+      "side": 1,
+      "message": "Ah, I see this error is also used in another method in next CL (https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2816098/4)\n\nSo, then this is all fine, except maybe name it errSessionAlreadyClosed?",
+      "parentUuid": "2d00bc21_c011f541",
+      "revId": "b380622eaedfdafa87b96b16c17cfe897425703a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
