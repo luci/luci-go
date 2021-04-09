@@ -311,6 +311,10 @@ func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec
 }
 
 func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *cas.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
+	// To cancel |uploadEg| when there is error in |digestEg|.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	cl, err := newCasClient(ctx, fl.Instance, authOpts, false)
 	if err != nil {
 		return nil, err
@@ -320,11 +324,10 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 	start := time.Now()
 	fmCache := filemetadata.NewSingleFlightCache()
 
-	var mu sync.Mutex
 	rootDgs := make([]digest.Digest, len(opts))
-	var entries []*uploadinfo.Entry
+	entriesC := make(chan []*uploadinfo.Entry)
 
-	eg, _ := errgroup.WithContext(ctx)
+	digestEg, _ := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent hash calculations and I/O operations.
 	ch := make(chan struct{}, runtime.NumCPU())
@@ -332,7 +335,7 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 
 	for i, o := range opts {
 		i, o := i, o
-		eg.Go(func() error {
+		digestEg.Go(func() error {
 			ch <- struct{}{}
 			defer func() { <-ch }()
 
@@ -348,28 +351,68 @@ func uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl
 			}
 			logger.Infof("ComputeMerkleTree returns %d entries with total size %d for %s, took %s",
 				len(entrs), stats.TotalInputBytes, o.Isolate, time.Since(start))
-
 			rootDgs[i] = rootDg
-			mu.Lock()
-			entries = append(entries, entrs...)
-			mu.Unlock()
+			entriesC <- entrs
 
 			return nil
 		})
 	}
 
-	if err := eg.Wait(); err != nil {
+	var mu sync.Mutex
+	var uploadedDgs []digest.Digest
+	var uploadedBytes int64
+
+	var entries []*uploadinfo.Entry
+	uploadEg, uctx := errgroup.WithContext(ctx)
+
+	done := make(chan struct{})
+	go func() {
+		uploaded := make(map[digest.Digest]struct{})
+		for entrs := range entriesC {
+			var uploadEntries []*uploadinfo.Entry
+
+			for _, e := range entrs {
+				if _, ok := uploaded[e.Digest]; ok {
+					continue
+				}
+				uploaded[e.Digest] = struct{}{}
+				uploadEntries = append(uploadEntries, e)
+			}
+			entries = append(entries, entrs...)
+
+			uploadEg.Go(func() error {
+				start := time.Now()
+				dgs, bytes, err := cl.UploadIfMissing(uctx, uploadEntries...)
+				if err != nil {
+					return errors.Annotate(err, "failed to upload").Err()
+				}
+
+				logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
+					len(uploadEntries), len(dgs), bytes, time.Since(start))
+
+				mu.Lock()
+				uploadedDgs = append(uploadedDgs, dgs...)
+				uploadedBytes += bytes
+				mu.Unlock()
+				return nil
+			})
+		}
+		close(done)
+	}()
+
+	if err := digestEg.Wait(); err != nil {
+		close(entriesC)
 		return nil, err
 	}
 
-	logger.Infof("finished %d ComputeMerkleTree calls, took %s", len(opts), time.Since(start))
+	close(entriesC)
+	<-done
 
-	start = time.Now()
-	uploadedDgs, uploadedBytes, err := cl.UploadIfMissing(ctx, entries...)
-	if err != nil {
+	if err := uploadEg.Wait(); err != nil {
 		return nil, err
 	}
-	logger.Infof("finished UploadIfMissing for %d entries (%d uploaded, %d bytes), took %s",
+
+	logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
 		len(entries), len(uploadedDgs), uploadedBytes, time.Since(start))
 
 	if al != nil {
