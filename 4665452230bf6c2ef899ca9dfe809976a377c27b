@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "4665452230bf6c2ef899ca9dfe809976a377c27b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d8d304c_80dfbdce",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-09T21:41:05Z",
+      "side": 1,
+      "message": "I don\u0027t think this is the right approach. We shouldn\u0027t be asking for info that we already have. This increases API surface/complexity for no good reason.",
+      "revId": "4665452230bf6c2ef899ca9dfe809976a377c27b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
