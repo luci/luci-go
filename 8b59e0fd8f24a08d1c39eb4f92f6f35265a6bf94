@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7547f582_5417cc4c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T23:42:02Z",
+      "side": 1,
+      "message": "lgtm % question",
+      "revId": "8b59e0fd8f24a08d1c39eb4f92f6f35265a6bf94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3583c17d_24d35a9b",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 706,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T23:42:02Z",
+      "side": 1,
+      "message": "why must revocation succeed?\n\n  as opposed to \n\nlog.warn + proceed invalidating the session?",
+      "range": {
+        "startLine": 706,
+        "startChar": 3,
+        "endLine": 706,
+        "endChar": 13
+      },
+      "revId": "8b59e0fd8f24a08d1c39eb4f92f6f35265a6bf94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7215d543_135c18a5",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 714,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T23:42:02Z",
+      "side": 1,
+      "message": "oh, i see! Will update comment in prior CL https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2806662/7/server/encryptedcookies/method.go#632",
+      "revId": "8b59e0fd8f24a08d1c39eb4f92f6f35265a6bf94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
