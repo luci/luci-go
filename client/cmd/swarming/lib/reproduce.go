@@ -18,10 +18,12 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -111,10 +113,27 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 	properties := tr.TaskSlices[len(tr.TaskSlices)-1].Properties
 
 	workdir := c.work
+	if properties.RelativeCwd != "" {
+		workdir = path.Join(workdir, properties.RelativeCwd)
+	}
 	if err := prepareDir(workdir); err != nil {
 		return nil, err
 	}
-	// TODO(crbug.com/1188473): Support relative cwd in task request.
+
+	cmdEnvMap := environ.New(os.Environ())
+
+	// Set environment variabls
+	cmdEnvMap.Set("SWARMING_BOT_ID", "reproduce")
+	cmdEnvMap.Set("SWARMING_TASK_ID", "reproduce")
+	for _, env := range properties.Env {
+		key := env.Key
+		if env.Value == "" {
+			cmdEnvMap.Remove(key)
+		} else {
+			cmdEnvMap.Set(env.Key, env.Value)
+		}
+	}
+
 	// TODO(crbug.com/1188473): Set environment variables in task request.
 	// TODO(crbug.com/1188473): Set env prefix in task request
 	// TODO(crbug.com/1188473): Support isolated input in task request.
@@ -122,8 +141,12 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 	// TODO(crbug.com/1188473): Support CIPD package download in task request
 
 	cmd := exec.CommandContext(ctx, properties.Command[0], properties.Command[1:]...)
-	// TODO(crbug.com/1188473): Set `cmd.Env`
+	cmd.Env = make([]string, len(cmdEnvMap))
+	for _, v := range cmdEnvMap {
+		cmd.Env = append(cmd.Env, v)
+	}
 	cmd.Dir = workdir
+
 	return cmd, nil
 }
 

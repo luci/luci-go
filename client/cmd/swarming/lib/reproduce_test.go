@@ -19,6 +19,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"testing"
 
@@ -63,9 +64,14 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 	Convey(`Make sure we can create the correct Cmd from a fetched task's properties.`, t, func() {
 		c := reproduceRun{}
 		c.init(&testAuthFlags{})
-		// Use TempDir, which creates a temp directory, to return a unique directory name
-		// that createTaskRequestCommand() will remove and recreate (via prepareDir()).
-		c.work = t.TempDir()
+		c.work = "test-create-task-request-command-work"
+		relativeCwd := "farm"
+		t.Cleanup(func() {
+			if err := os.RemoveAll(path.Join(c.work, relativeCwd)); err != nil {
+				t.Errorf("RemoveAll cleanup: %v", err)
+			}
+		})
+
 		ctx := context.Background()
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
@@ -79,6 +85,17 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 						&swarming.SwarmingRpcsTaskSlice{
 							Properties: &swarming.SwarmingRpcsTaskProperties{
 								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+								Env: []*swarming.SwarmingRpcsStringPair{
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "key1",
+										Value: "value1",
+									},
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "key2",
+										Value: "value2",
+									},
+								},
+								RelativeCwd: relativeCwd,
 							},
 						},
 					},
@@ -88,7 +105,8 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		cmd, err := c.createTaskRequestCommand(ctx, "task-123", service)
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
-		expected.Dir = c.work
+		expected.Dir = path.Join(c.work, relativeCwd)
+		expected.Env = []string{"key1-value1", "key2-value2"}
 		So(cmd, ShouldResemble, expected)
 	})
 }
