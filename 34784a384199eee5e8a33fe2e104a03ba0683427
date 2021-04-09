@@ -1,0 +1,227 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aea1b993_24ce1667",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "sorry for long time. I actually spent 2.5 hours reviewing this, because I had to lookup a bunch of crypto things in the process and yet I doubt I had enough 😞\nI am certain I grasp the main idea now, but ~3 things still bother me (see comments).",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "588209c8_a27dd4e4",
+        "filename": "server/encryptedcookies/internal/crypto.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 49,
+        "startChar": 61,
+        "endLine": 49,
+        "endChar": 67
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e113ed5b_5e01317e",
+        "filename": "server/encryptedcookies/internal/endpoint.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "why is disrespecting `ctx` justified?",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51e68ecb_281968fa",
+        "filename": "server/encryptedcookies/internal/pkce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "are",
+      "range": {
+        "startLine": 33,
+        "startChar": 16,
+        "endLine": 33,
+        "endChar": 18
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7b244166_4e72b4fc",
+        "filename": "server/encryptedcookies/internal/pkce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "nit-imo: since you say 64 above, (64-1) is more readable and just as fast.",
+      "range": {
+        "startLine": 38,
+        "startChar": 29,
+        "endLine": 38,
+        "endChar": 33
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08481f9c_ef6178c2",
+        "filename": "server/encryptedcookies/internal/pkce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "what\u0027s the point of this?",
+      "range": {
+        "startLine": 46,
+        "startChar": 61,
+        "endLine": 46,
+        "endChar": 64
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0de978f5_1dfe4071",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "if",
+      "range": {
+        "startLine": 168,
+        "startChar": 29,
+        "endLine": 168,
+        "endChar": 31
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "509ef79e_1c3f7829",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "518a21f9_e39446f9",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "i finally grokked how sha2 hash was useful!",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60821870_64bfb01d",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "what exactly can happen if this nonce check isn\u0027t done? After 10 minutes of thought, I am still unable to grasp this.",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "16065e46_e471f029",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T16:33:34Z",
+      "side": 1,
+      "message": "The callback here can be called many times due to trans retries.\nA prior try could actually have been successful, in which case *this* very session would have been written.\n\u003d\u003e errCodeReuse looks not quite correct to me in this case, though correct in most others cases.\n\n\u003d\u003e\nIF you think it\u0027s OK to ~ignore the case above,\n  then please document.\nELSE \n  IIUC checking that s.Generation \u003d\u003d 1 and encryptedPrivate match should suffice to assert that prior try wrote it. Right?",
+      "range": {
+        "startLine": 417,
+        "startChar": 17,
+        "endLine": 418,
+        "endChar": 23
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
