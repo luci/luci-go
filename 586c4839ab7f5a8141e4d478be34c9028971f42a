@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76ca389c_c7e84224",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T01:08:41Z",
+      "side": 1,
+      "message": "doesn\u0027t this leave an empty dir after test?",
+      "revId": "586c4839ab7f5a8141e4d478be34c9028971f42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0075f234_bd4a1145",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T01:08:41Z",
+      "side": 1,
+      "message": "t.Parallel?",
+      "revId": "586c4839ab7f5a8141e4d478be34c9028971f42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
