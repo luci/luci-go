@@ -88,7 +88,7 @@ const RecipeDirectory = "kitchen-checkout"
 // It isolates the recipes from the repository in the given working directory
 // into the UserPayload under the directory "kitchen-checkout/". If there's an
 // existing directory in the UserPayload at that location, it will be removed.
-func EditRecipeBundle(ctx context.Context, authClient *http.Client,  authOpts auth.Options, jd *job.Definition, opts *EditRecipeBundleOpts) error {
+func EditRecipeBundle(ctx context.Context, authClient *http.Client, authOpts auth.Options, jd *job.Definition, opts *EditRecipeBundleOpts) error {
 	if jd.GetSwarming() != nil {
 		return errors.New("ledcmd.EditRecipeBundle is only available for Buildbucket tasks")
 	}
@@ -176,16 +176,18 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 		return
 	}
 	if opts.DebugSleep != 0 {
-		fname := filepath.Join(toDirectory, "recipes")
-		seconds := opts.DebugSleep / time.Second
-		msg := "echo ENTERING DEBUG SLEEP. SSH to the bot to debug."
+		for _, basename := range []string{"recipes", "luciexe"} {
+			fname := filepath.Join(toDirectory, basename)
+			seconds := opts.DebugSleep / time.Second
+			msg := "echo ENTERING DEBUG SLEEP. SSH to the bot to debug."
 
-		if err = appendText(fname, "\n%s\nsleep %d\n", msg, seconds); err != nil {
-			return
-		}
-		// Wait for a bogus event that won't occur... Windows sucks, amirite?
-		if err = appendText(fname+".bat", "\r\n%s\r\nwaitfor /t %d DebugSessionEnd\r\n", msg, seconds); err != nil {
-			return
+			if err = appendText(fname, "\n%s\nsleep %d\n", msg, seconds); err != nil {
+				return
+			}
+			// Wait for a bogus event that won't occur... Windows sucks, amirite?
+			if err = appendText(fname+".bat", "\r\n%s\r\nwaitfor /t %d DebugSessionEnd\r\n", msg, seconds); err != nil {
+				return
+			}
 		}
 	}
 
