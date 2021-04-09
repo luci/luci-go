@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import '@material/mwc-button';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
@@ -22,6 +21,7 @@ import '../../components/commit_entry';
 import '../../components/dot_spinner';
 import '../../components/hotkey';
 import { CommitEntryElement } from '../../components/commit_entry';
+import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
@@ -31,7 +31,7 @@ import { GitCommit } from '../../services/milo_internal';
 @customElement('milo-blamelist-tab')
 @consumeBuildState
 @consumeAppState
-export class BlamelistTabElement extends MobxLitElement {
+export class BlamelistTabElement extends MiloBaseElement {
   @observable.ref appState!: AppState;
   @observable.ref buildState!: BuildState;
 
@@ -96,23 +96,20 @@ export class BlamelistTabElement extends MobxLitElement {
     return '';
   }
 
-  private disposer = () => {};
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'blamelist';
     trackEvent(GA_CATEGORIES.BLAMELIST_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
-    this.disposer = reaction(
-      () => this.queryBlamelistResIter,
-      () => {
-        this.commits = [];
-        this.loadNextPage();
-      },
-      { fireImmediately: true }
+    this.addDisposer(
+      reaction(
+        () => this.queryBlamelistResIter,
+        () => {
+          this.commits = [];
+          this.loadNextPage();
+        },
+        { fireImmediately: true }
+      )
     );
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this.disposer();
   }
 
   private loadNextPage = async () => {

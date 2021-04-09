@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import '@material/mwc-button';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { observable, reaction } from 'mobx';
 
@@ -22,6 +21,7 @@ import '../components/hotkey';
 import '../components/test_search_filter';
 import '../components/test_variants_table';
 import '../components/test_variants_table/tvt_config_widget';
+import { MiloBaseElement } from '../components/milo_base';
 import { TestVariantsTableElement } from '../components/test_variants_table';
 import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
@@ -37,12 +37,10 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 @consumeInvocationState
 @consumeConfigsStore
 @consumeAppState
-export class TestResultsTabElement extends MobxLitElement {
+export class TestResultsTabElement extends MiloBaseElement {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
-
-  private disposers: Array<() => void> = [];
 
   private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
@@ -76,7 +74,7 @@ export class TestResultsTabElement extends MobxLitElement {
     }
 
     // Update the querystring when filters are updated.
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => {
           const displayedCols = this.invocationState.displayedColumns.join(',');
@@ -104,19 +102,13 @@ export class TestResultsTabElement extends MobxLitElement {
       )
     );
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => this.configsStore.userConfigs.testResults.columnWidths,
         (columnWidths) => (this.invocationState.customColumnWidths = columnWidths),
         { fireImmediately: true }
       )
     );
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    for (const disposer of this.disposers) {
-      disposer();
-    }
   }
 
   private renderBody() {

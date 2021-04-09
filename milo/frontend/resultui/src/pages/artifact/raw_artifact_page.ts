@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
@@ -21,6 +20,7 @@ import { fromPromise, PENDING, REJECTED } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
+import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
@@ -31,7 +31,7 @@ import { parseArtifactName } from '../../services/resultdb';
 // TODO(weiweilin): improve error handling.
 @customElement('milo-raw-artifact-page')
 @consumeAppState
-export class RawArtifactPageElement extends MobxLitElement implements BeforeEnterObserver {
+export class RawArtifactPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref private artifactName!: string;
 
@@ -47,13 +47,11 @@ export class RawArtifactPageElement extends MobxLitElement implements BeforeEnte
     return fromPromise(this.appState.resultDb.getArtifact({ name: this.artifactName }));
   }
 
-  private disposers: Array<() => void> = [];
-
   connectedCallback() {
     super.connectedCallback();
 
     // TODO(weiweilin): add integration tests to ensure redirection works properly.
-    this.disposers.push(
+    this.addDisposer(
       autorun(() => {
         if (this.artifact$.state === PENDING) {
           return;
@@ -81,13 +79,6 @@ export class RawArtifactPageElement extends MobxLitElement implements BeforeEnte
         window.open(this.artifact$.value.fetchUrl, '_self');
       })
     );
-  }
-
-  disconnectedCallback() {
-    for (const disposer of this.disposers) {
-      disposer();
-    }
-    super.disconnectedCallback();
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {

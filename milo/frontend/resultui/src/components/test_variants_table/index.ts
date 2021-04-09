@@ -14,7 +14,6 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
@@ -29,6 +28,7 @@ import { consumeInvocationState, InvocationState } from '../../context/invocatio
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
+import { MiloBaseElement } from '../milo_base';
 import { TestVariantEntryElement } from './test_variant_entry';
 
 function getPropKeyLabel(key: string) {
@@ -43,13 +43,12 @@ function getPropKeyLabel(key: string) {
 @consumeInvocationState
 @consumeConfigsStore
 @consumeAppState
-export class TestVariantsTableElement extends MobxLitElement {
+export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
 
   private sentLoadingTimeToGA = false;
-  private disposers: Array<() => void> = [];
 
   toggleAllVariants(expand: boolean) {
     this.shadowRoot!.querySelectorAll<TestVariantEntryElement>('milo-test-variant-entry').forEach(
@@ -69,7 +68,7 @@ export class TestVariantsTableElement extends MobxLitElement {
 
     // When a new test loader is received, load the first page and reset the
     // selected node.
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => this.invocationState.testLoader,
         (testLoader) => {
@@ -86,13 +85,6 @@ export class TestVariantsTableElement extends MobxLitElement {
         { fireImmediately: true }
       )
     );
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    for (const disposer of this.disposers) {
-      disposer();
-    }
   }
 
   private async loadMore(untilStatus?: TestVariantStatus) {

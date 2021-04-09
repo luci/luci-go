@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { render } from 'lit-html';
 import escape from 'lodash-es/escape';
@@ -20,6 +19,7 @@ import { autorun, observable } from 'mobx';
 import { DataSet } from 'vis-data/peer';
 import { Timeline } from 'vis-timeline/peer';
 
+import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
@@ -31,25 +31,17 @@ const timelineStyle = require('vis-timeline/styles/vis-timeline-graph2d.min.css'
 @customElement('milo-timeline-tab')
 @consumeBuildState
 @consumeAppState
-export class TimelineTabElement extends MobxLitElement {
+export class TimelineTabElement extends MiloBaseElement {
   @observable.ref appState!: AppState;
   @observable.ref buildState!: BuildState;
   @observable.ref rendered = false;
-  private disposers: Array<() => void> = [];
 
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'timeline';
     trackEvent(GA_CATEGORIES.TIMELINE_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
     this.rendered = false;
-    this.disposers.push(autorun(() => this.renderTimeline()));
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    for (const disposer of this.disposers) {
-      disposer();
-    }
+    this.addDisposer(autorun(() => this.renderTimeline()));
   }
 
   private renderTimeline() {

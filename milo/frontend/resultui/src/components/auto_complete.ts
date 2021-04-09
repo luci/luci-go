@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html, TemplateResult } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
+
+import { MiloBaseElement } from './milo_base';
 
 export type Suggestion = SuggestionEntry | SuggestionHeader;
 
@@ -39,7 +40,7 @@ export interface SuggestionHeader {
  * An input box that supports auto-complete dropdown.
  */
 @customElement('milo-auto-complete')
-export class AutoCompleteElement extends MobxLitElement {
+export class AutoCompleteElement extends MiloBaseElement {
   @observable.ref value = '';
   @observable.ref placeHolder = '';
   @observable.ref suggestions: readonly Suggestion[] = [];
@@ -77,19 +78,20 @@ export class AutoCompleteElement extends MobxLitElement {
     this.shadowRoot!.querySelector('.dropdown-item.selected')?.scrollIntoView({ block: 'nearest' });
   }
 
-  private disposer = () => {};
   connectedCallback() {
     super.connectedCallback();
 
     // Reset suggestion state when suggestions are updated.
-    this.disposer = reaction(
-      () => this.suggestions,
-      () => {
-        this.selectedIndex = -1;
-        if (this.value !== '') {
-          this.showSuggestions = true;
+    this.addDisposer(
+      reaction(
+        () => this.suggestions,
+        () => {
+          this.selectedIndex = -1;
+          if (this.value !== '') {
+            this.showSuggestions = true;
+          }
         }
-      }
+      )
     );
 
     document.addEventListener('click', this.externalClickHandler);
@@ -97,7 +99,6 @@ export class AutoCompleteElement extends MobxLitElement {
 
   disconnectedCallback() {
     document.removeEventListener('click', this.externalClickHandler);
-    this.disposer();
     super.disconnectedCallback();
   }
 
