@@ -39,6 +39,29 @@
       "message": "I feel the code and description complexed.  I prefer pipline pattern (https://blog.golang.org/pipelines) if possible, though.",
       "revId": "f84a2a51fb9f5b26860b44b55f2f6149071ddbc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c54efff_be48a273",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-09T04:12:13Z",
+      "side": 1,
+      "message": "I think this lock is shared with other goutiness, which is necessary to update global `entries`. But `uploadEntries` can be accessed independently from each goroutine?\n\n----\n\nAfter I wrote this, I realized that `uploaded` is shared with other goroutines. \nCan that dependency be removed, as `UploadIfMissing` check file existence? (If that improves the overall speed)",
+      "range": {
+        "startLine": 358,
+        "startChar": 0,
+        "endLine": 358,
+        "endChar": 12
+      },
+      "revId": "f84a2a51fb9f5b26860b44b55f2f6149071ddbc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
