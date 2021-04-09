@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { BuildExt } from '../models/build_ext';
 import { Link } from '../models/link';
 import { router } from '../routes';
 import { Build, BuilderID, BuildInfraSwarming, GerritChange, GitilesCommit } from '../services/buildbucket';
 
-export function getURLForBuild(build: Pick<Build, 'builder' | 'number' | 'id'>): string {
+export function getURLPathForBuild(build: Pick<Build, 'builder' | 'number' | 'id'>): string {
   return router.urlForName('build', {
     project: build.builder.project,
     bucket: build.builder.bucket,
@@ -25,16 +26,16 @@ export function getURLForBuild(build: Pick<Build, 'builder' | 'number' | 'id'>):
   });
 }
 
-export function getURLForBuilder(builder: BuilderID): string {
+export function getURLPathForBuilder(builder: BuilderID): string {
   return `/p/${builder.project}/builders/${builder.bucket}/${builder.builder}`;
 }
 
-export function getURLForProject(proj: string): string {
+export function getURLPathForProject(proj: string): string {
   return `/p/${proj}`;
 }
 
-export function getLegacyURLForBuild(builder: BuilderID, buildNumOrId: string) {
-  return `/old${getURLForBuilder(builder)}/${buildNumOrId}`;
+export function getLegacyURLPathForBuild(builder: BuilderID, buildNumOrId: string) {
+  return `/old${getURLPathForBuilder(builder)}/${buildNumOrId}`;
 }
 
 export function getGitilesRepoURL(commit: Pick<GitilesCommit, 'host' | 'project'>) {
@@ -109,4 +110,24 @@ export function getSafeUrlFromBuildset(buildset: string): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Renders build bug template.
+ *
+ * The following patterns will be replaced with the actual values:
+ *  * {{.Build.Builder.Project}}
+ *  * {{.Build.Builder.Bucket}}
+ *  * {{.Build.Builder.Builder}}
+ *  * {{.MiloBuildUrl}}
+ *  * {{.MiloBuilderUrl}}
+ */
+// TODO(weiweilin): support more go template syntax if needed.
+export function renderBuildBugTemplate(template: string, build: BuildExt): string {
+  return template
+    .replace('{{.Build.Builder.Project}}', build.builder.project)
+    .replace('{{.Build.Builder.Bucket}}', build.builder.bucket)
+    .replace('{{.Build.Builder.Builder}}', build.builder.builder)
+    .replace('{{.MiloBuildUrl}}', window.location.origin + getURLPathForBuild(build))
+    .replace('{{.MiloBuilderUrl}}', window.location.origin + getURLPathForBuilder(build.builder));
 }
