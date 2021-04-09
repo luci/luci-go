@@ -18,6 +18,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path"
 
 	"github.com/maruel/subcommands"
 
@@ -111,10 +112,13 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 	properties := tr.TaskSlices[len(tr.TaskSlices)-1].Properties
 
 	workdir := c.work
+	if properties.RelativeCwd != "" {
+		workdir = path.Join(workdir, properties.RelativeCwd)
+	}
 	if err := prepareDir(workdir); err != nil {
 		return nil, err
 	}
-	// TODO(crbug.com/1188473): Support relative cwd in task request.
+
 	// TODO(crbug.com/1188473): Set environment variables in task request.
 	// TODO(crbug.com/1188473): Set env prefix in task request
 	// TODO(crbug.com/1188473): Support isolated input in task request.
@@ -122,8 +126,8 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 	// TODO(crbug.com/1188473): Support CIPD package download in task request
 
 	cmd := exec.CommandContext(ctx, properties.Command[0], properties.Command[1:]...)
-	// TODO(crbug.com/1188473): Set `cmd.Env`
 	cmd.Dir = workdir
+
 	return cmd, nil
 }
 
