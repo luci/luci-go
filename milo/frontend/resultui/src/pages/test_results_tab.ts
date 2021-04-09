@@ -14,7 +14,6 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
@@ -25,6 +24,7 @@ import '../components/dot_spinner';
 import '../components/hotkey';
 import '../components/test_search_filter';
 import '../components/variant_entry';
+import { MiloBaseElement } from '../components/milo_base';
 import { VariantEntryElement } from '../components/variant_entry';
 import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
@@ -46,13 +46,11 @@ import { TestVariant, TestVariantStatus } from '../services/resultdb';
 @consumeInvocationState
 @consumeConfigsStore
 @consumeAppState
-export class TestResultsTabElement extends MobxLitElement {
+export class TestResultsTabElement extends MiloBaseElement {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
   private sentLoadingTimeToGA = false;
-
-  private disposers: Array<() => void> = [];
 
   async loadMore(untilStatus?: TestVariantStatus) {
     try {
@@ -90,7 +88,7 @@ export class TestResultsTabElement extends MobxLitElement {
 
     // When a new test loader is received, load the first page and reset the
     // selected node.
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => this.invocationState.testLoader,
         (testLoader) => {
@@ -118,7 +116,7 @@ export class TestResultsTabElement extends MobxLitElement {
     }
 
     // Update the querystring when filters are updated.
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => {
           const newSearchParams = new URLSearchParams({
@@ -135,12 +133,6 @@ export class TestResultsTabElement extends MobxLitElement {
         { fireImmediately: true }
       )
     );
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    for (const disposer of this.disposers) {
-      disposer();
-    }
   }
 
   private renderAllVariants() {
