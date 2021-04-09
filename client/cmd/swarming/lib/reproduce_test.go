@@ -19,6 +19,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"testing"
 
@@ -66,6 +67,8 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		// Use TempDir, which creates a temp directory, to return a unique directory name
 		// that createTaskRequestCommand() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
+		relativeCwd := "farm"
+
 		ctx := context.Background()
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
@@ -78,7 +81,8 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 						},
 						&swarming.SwarmingRpcsTaskSlice{
 							Properties: &swarming.SwarmingRpcsTaskProperties{
-								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+								Command:     []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+								RelativeCwd: relativeCwd,
 							},
 						},
 					},
@@ -88,7 +92,7 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		cmd, err := c.createTaskRequestCommand(ctx, "task-123", service)
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
-		expected.Dir = c.work
+		expected.Dir = path.Join(c.work, relativeCwd)
 		So(cmd, ShouldResemble, expected)
 	})
 }
