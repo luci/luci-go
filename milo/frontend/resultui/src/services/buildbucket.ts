@@ -300,11 +300,11 @@ export class BuildsService {
     );
   }
 
-  async getBuild(req: GetBuildRequest, cacheOpt = {}) {
+  async getBuild(req: GetBuildRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetBuild', req)) as Build;
   }
 
-  async searchBuilds(req: SearchBuildsRequest, cacheOpt = {}) {
+  async searchBuilds(req: SearchBuildsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'SearchBuilds', req)) as SearchBuildsResponse;
   }
 
@@ -342,7 +342,7 @@ export class BuildersService {
     );
   }
 
-  async getBuilder(req: GetBuilderRequest, cacheOpt = {}) {
+  async getBuilder(req: GetBuilderRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetBuilder', req)) as BuilderItem;
   }
 }
@@ -373,7 +373,7 @@ export class AccessService {
     );
   }
 
-  async permittedActions(req: PermittedActionsRequest, cacheOpt = {}) {
+  async permittedActions(req: PermittedActionsRequest, cacheOpt: CacheOption = {}) {
     return this.cachedPermittedActionsFn(cacheOpt, req);
   }
 }
