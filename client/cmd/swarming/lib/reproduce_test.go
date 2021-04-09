@@ -21,11 +21,13 @@ import (
 	"os/exec"
 	"path"
 	"runtime"
+	"sort"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -70,6 +72,24 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		relativeCwd := "farm"
 
 		ctx := context.Background()
+
+		// Replace env values copied over from the test env.
+		expectedBaseEnvMap := environ.New(os.Environ())
+		expectedBaseEnvMap.Set("SWARMING_BOT_ID", "reproduce")
+		expectedBaseEnvMap.Set("SWARMING_TASK_ID", "reproduce")
+		expectedBaseEnv := make([]string, 0, len(expectedBaseEnvMap))
+		for _, v := range expectedBaseEnvMap {
+			if v != "" {
+				expectedBaseEnv = append(expectedBaseEnv, v)
+			}
+		}
+
+		// Set env values to be removed or replaced in createTaskRequestCommand().
+		os.Setenv("removeKey", "removeValue")
+		defer os.Unsetenv("removeKey")
+		os.Setenv("replaceKey", "oldValue")
+		defer os.Unsetenv("replaceKey")
+
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
 				return &swarming.SwarmingRpcsTaskRequest{
@@ -83,6 +103,20 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 							Properties: &swarming.SwarmingRpcsTaskProperties{
 								Command:     []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
 								RelativeCwd: relativeCwd,
+								Env: []*swarming.SwarmingRpcsStringPair{
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "key",
+										Value: "value1",
+									},
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "replaceKey",
+										Value: "value2",
+									},
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "removeKey",
+										Value: "",
+									},
+								},
 							},
 						},
 					},
@@ -93,6 +127,10 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
 		expected.Dir = path.Join(c.work, relativeCwd)
+
+		expected.Env = append(expectedBaseEnv, []string{"key=value1", "replaceKey=value2"}...)
+		sort.Strings(cmd.Env)
+		sort.Strings(expected.Env)
 		So(cmd, ShouldResemble, expected)
 	})
 }
