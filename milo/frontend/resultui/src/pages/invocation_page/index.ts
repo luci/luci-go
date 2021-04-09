@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { autorun, computed, observable, reaction } from 'mobx';
@@ -22,6 +21,7 @@ import { REJECTED } from 'mobx-utils';
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import './invocation_details_tab';
+import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
@@ -40,7 +40,7 @@ import { NOT_FOUND_URL, router } from '../../routes';
 @provideInvocationState
 @consumeConfigsStore
 @consumeAppState
-export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
+export class InvocationPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref invocationState!: InvocationState;
@@ -55,12 +55,10 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     return;
   }
 
-  private disposers: Array<() => void> = [];
-
   connectedCallback() {
     super.connectedCallback();
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => [this.appState],
         ([appState]) => {
@@ -74,9 +72,9 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         { fireImmediately: true }
       )
     );
-    this.disposers.push(() => this.invocationState.dispose());
+    this.addDisposer(() => this.invocationState.dispose());
 
-    this.disposers.push(
+    this.addDisposer(
       autorun(() => {
         if (this.invocationState.invocation$.state !== REJECTED) {
           return;
@@ -91,13 +89,6 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       })
     );
     document.title = `inv: ${this.invocationId}`;
-  }
-
-  disconnectedCallback() {
-    for (const disposer of this.disposers) {
-      disposer();
-    }
-    super.disconnectedCallback();
   }
 
   private renderInvocationState() {

@@ -15,7 +15,6 @@
 import '@material/mwc-button';
 import '@material/mwc-dialog';
 import '@material/mwc-icon';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
@@ -25,6 +24,7 @@ import { FULFILLED, PENDING, REJECTED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
+import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, provideBuildState } from '../../context/build_state';
@@ -75,7 +75,7 @@ const TAB_NAME_LABEL_TUPLES = Object.freeze([
 @provideBuildState
 @consumeConfigsStore
 @consumeAppState
-export class BuildPageElement extends MobxLitElement implements BeforeEnterObserver {
+export class BuildPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref buildState!: BuildState;
@@ -135,8 +135,6 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     return;
   }
 
-  private disposers: Array<() => void> = [];
-
   @computed private get faviconUrl() {
     if (this.buildState.build) {
       return `/static/common/favicon/${STATUS_FAVICON_MAP[this.buildState.build.status]}-32.png`;
@@ -176,7 +174,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
     this.addEventListener('error', this.errorHandler);
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => [this.appState],
         () => {
@@ -191,9 +189,9 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         { fireImmediately: true }
       )
     );
-    this.disposers.push(() => this.buildState.dispose());
+    this.addDisposer(() => this.buildState.dispose());
 
-    this.disposers.push(
+    this.addDisposer(
       autorun(() => {
         if (this.buildState.build$.state !== REJECTED) {
           return;
@@ -215,7 +213,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       })
     );
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => this.appState,
         (appState) => {
@@ -233,9 +231,9 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
         { fireImmediately: true }
       )
     );
-    this.disposers.push(() => this.invocationState.dispose());
+    this.addDisposer(() => this.invocationState.dispose());
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => this.buildState.invocationId,
         (invId) => (this.invocationState.invocationId = invId),
@@ -243,7 +241,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       )
     );
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () =>
           this.buildState.build?.output.properties.test_presentation_config ||
@@ -254,7 +252,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       )
     );
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => this.invocationState.invocation$.state,
         () => {
@@ -285,7 +283,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 
     if (this.isShortLink) {
       // Redirect to the long link after the build is fetched.
-      this.disposers.push(
+      this.addDisposer(
         when(
           () => this.buildState.build$.state === FULFILLED,
           () => {
@@ -305,7 +303,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       return;
     }
 
-    this.disposers.push(
+    this.addDisposer(
       autorun(() => {
         const build = this.buildState.build;
         if (!build) {
@@ -332,7 +330,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       })
     );
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => this.faviconUrl,
         (faviconUrl) => document.getElementById('favicon')?.setAttribute('href', faviconUrl),
@@ -340,7 +338,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       )
     );
 
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => this.documentTitle,
         (title) => (document.title = title),
@@ -349,7 +347,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
     );
 
     // Sync uncommitted configs with committed configs.
-    this.disposers.push(
+    this.addDisposer(
       reaction(
         () => merge({}, this.configsStore.userConfigs),
         (committedConfig) => merge(this.uncommittedConfigs, committedConfig),
@@ -359,12 +357,9 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   }
 
   disconnectedCallback() {
-    super.disconnectedCallback();
-    for (const disposer of this.disposers) {
-      disposer();
-    }
     this.removeEventListener('error', this.errorHandler);
     this.appState.hasSettingsDialog--;
+    super.disconnectedCallback();
   }
 
   @computed get hasInvocation() {

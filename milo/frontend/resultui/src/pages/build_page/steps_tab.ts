@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import '@material/mwc-button';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
@@ -23,6 +22,7 @@ import '../../components/dot_spinner';
 import '../../components/hotkey';
 import '../../components/lazy_list';
 import { BuildStepEntryElement } from '../../components/build_step_entry';
+import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -33,12 +33,11 @@ import { BuildStatus } from '../../services/buildbucket';
 @consumeBuildState
 @consumeConfigsStore
 @consumeAppState
-export class StepsTabElement extends MobxLitElement {
+export class StepsTabElement extends MiloBaseElement {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref buildState!: BuildState;
 
-  private disposer = () => {};
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'steps';
@@ -54,24 +53,23 @@ export class StepsTabElement extends MobxLitElement {
     }
 
     // Update the querystring when filters are updated.
-    this.disposer = reaction(
-      () => {
-        const newSearchParams = new URLSearchParams({
-          succeeded: String(this.stepsConfig.showSucceededSteps),
-          debug: String(this.stepsConfig.showDebugLogs),
-        });
-        return newSearchParams.toString();
-      },
-      (newQueryStr) => {
-        const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?${newQueryStr}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
-      },
-      { fireImmediately: true }
+    this.addDisposer(
+      reaction(
+        () => {
+          const newSearchParams = new URLSearchParams({
+            succeeded: String(this.stepsConfig.showSucceededSteps),
+            debug: String(this.stepsConfig.showDebugLogs),
+          });
+          return newSearchParams.toString();
+        },
+        (newQueryStr) => {
+          const newUrl =
+            `${window.location.protocol}//${window.location.host}${window.location.pathname}` + `?${newQueryStr}`;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
+        },
+        { fireImmediately: true }
+      )
     );
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this.disposer();
   }
 
   @computed private get stepsConfig() {
