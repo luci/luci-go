@@ -96,11 +96,15 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   private urlSuffix = '';
 
   // builderParam is only set when the page visited via a full link.
-  private builderIdParam?: BuilderID;
-  private buildNumOrIdParam = '';
+  @observable.ref private builderIdParam?: BuilderID;
+  @observable.ref private buildNumOrIdParam = '';
 
-  private get legacyUrl() {
-    return getLegacyURLPathForBuild(this.builderIdParam!, this.buildNumOrIdParam);
+  @computed private get buildNumOrId() {
+    return this.buildState.build?.buildNumOrId || this.buildNumOrIdParam;
+  }
+
+  @computed private get legacyUrl() {
+    return getLegacyURLPathForBuild(this.builderIdParam!, this.buildNumOrId);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -143,7 +147,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   @computed private get documentTitle() {
     const status = this.buildState.build?.status;
     const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
-    return `${statusDisplay} - ${this.builderIdParam?.builder || ''} ${this.buildNumOrIdParam}`;
+    return `${statusDisplay} - ${this.builderIdParam?.builder || ''} ${this.buildNumOrId}`;
   }
 
   private errorHandler = (e: ErrorEvent) => {
@@ -545,7 +549,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           <span>/</span>
           <a href=${getURLPathForBuilder(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
           <span>/</span>
-          <span>${this.buildNumOrIdParam}</span>
+          <span>${this.buildNumOrId}</span>
         </div>
         ${this.buildState.customBugLink === null
           ? html``
