@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c2ed225_03596af1",
+        "filename": "server/encryptedcookies/internal/crypto.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T19:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "588209c8_a27dd4e4",
+      "range": {
+        "startLine": 49,
+        "startChar": 61,
+        "endLine": 49,
+        "endChar": 67
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e113ed5b_5e01317e",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea4dc6b0_36e076cb",
+        "filename": "server/encryptedcookies/internal/endpoint.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T19:46:48Z",
+      "side": 1,
+      "message": "Eh, I was lazy and used client.Post instead of NewRequest and client.Do. I\u0027ll changed it to NewRequest+WithContext+Do.",
+      "parentUuid": "e113ed5b_5e01317e",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "51e68ecb_281968fa",
@@ -71,6 +113,30 @@
       "writtenOn": "2021-04-09T16:33:34Z",
       "side": 1,
       "message": "are",
+      "range": {
+        "startLine": 33,
+        "startChar": 16,
+        "endLine": 33,
+        "endChar": 18
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bdc90a35_e7879dff",
+        "filename": "server/encryptedcookies/internal/pkce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T19:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51e68ecb_281968fa",
       "range": {
         "startLine": 33,
         "startChar": 16,
@@ -104,6 +170,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1178b924_1242b9cb",
+        "filename": "server/encryptedcookies/internal/pkce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T19:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b244166_4e72b4fc",
+      "range": {
+        "startLine": 38,
+        "startChar": 29,
+        "endLine": 38,
+        "endChar": 33
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "08481f9c_ef6178c2",
@@ -127,6 +217,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "35a27d63_5ba0839e",
+        "filename": "server/encryptedcookies/internal/pkce.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T19:46:48Z",
+      "side": 1,
+      "message": "sha256.Sum256 returns an array [32]byte. EncodeToString needs a slice []byte. [:] converts array to a slice, there\u0027s no automatic cast.",
+      "parentUuid": "08481f9c_ef6178c2",
+      "range": {
+        "startLine": 46,
+        "startChar": 61,
+        "endLine": 46,
+        "endChar": 64
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0de978f5_1dfe4071",
@@ -140,6 +254,30 @@
       "writtenOn": "2021-04-09T16:33:34Z",
       "side": 1,
       "message": "if",
+      "range": {
+        "startLine": 168,
+        "startChar": 29,
+        "endLine": 168,
+        "endChar": 31
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a37bdd0_a068093a",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T19:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0de978f5_1dfe4071",
       "range": {
         "startLine": 168,
         "startChar": 29,
@@ -203,6 +341,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "59df004a_767f59ef",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T19:46:48Z",
+      "side": 1,
+      "message": "There are two questions here:\n1. Why nonce check is necessary?\n2. How nonce check is done?\n\nFor (1), imagine I managed to intercept your callback URI (including its `code` and `state`). Then I can call the LUCI server\u0027s callback endpoint myself, and get back a session cookie that identifies me as you. A nonce makes sure that this would fail if I do it after you have already finished the sign in flow. \n\nAt the start of the flow the server gives the ID provider some `nonce`, and at the end of the flow, the provider gives it back to the server (as part of ID token). It is server\u0027s responsibility at this point to make sure the nonce wasn\u0027t already used before.\n\nThis leads me to question (2). We essentially use session_id as nonce, by creating sessions transactionally. But we don\u0027t want to expose session_id in plain text anywhere (like in the final ID token). There\u0027s no good reason why, but also no good reason why not. So instead we use a random string, and then cryptographically bind it to `session_id` by signing them together as part of `state`.\n\nNow you might be wondering, why `m.Sessions.FetchSession` call above is not enough, why do we need to check the nonce in inside the ID token? The prevented attack scenario is:\n1. An attacker starts a sign-in flow of their own, getting some `state`.\n2. They their intercept victim\u0027s redirect URI and grab `code` from there.\n3. They take their own `state`, victim\u0027s `code`, and pass them to the LUCI server.\n\nThe server will:\n1. Decode `state`, check the session doesn\u0027t exist (it really doesn\u0027t).\n2. Proceed to exchange `code` for `id_token`, it will succeed and return victim\u0027s token.\n3. But the id_token would contain `nonce` from victim\u0027s login session, it will not match attacker\u0027s nonce in `state`!\n\nThis relation between `code` and `nonce` is what I meant by \"`code` is bound to `nonce` per OpenID Connect protocol contract\".\n\nThis is briefly discussed in the design doc and in the security review bug. I\u0027m not sure dumping it into the code makes sense.",
+      "parentUuid": "60821870_64bfb01d",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "16065e46_e471f029",
         "filename": "server/encryptedcookies/method.go",
         "patchSetId": 9
@@ -214,6 +370,30 @@
       "writtenOn": "2021-04-09T16:33:34Z",
       "side": 1,
       "message": "The callback here can be called many times due to trans retries.\nA prior try could actually have been successful, in which case *this* very session would have been written.\n\u003d\u003e errCodeReuse looks not quite correct to me in this case, though correct in most others cases.\n\n\u003d\u003e\nIF you think it\u0027s OK to ~ignore the case above,\n  then please document.\nELSE \n  IIUC checking that s.Generation \u003d\u003d 1 and encryptedPrivate match should suffice to assert that prior try wrote it. Right?",
+      "range": {
+        "startLine": 417,
+        "startChar": 17,
+        "endLine": 418,
+        "endChar": 23
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0263f3a8_d45cdd2a",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T19:46:48Z",
+      "side": 1,
+      "message": "Good catch, I haven\u0027t thought about that. Done.",
+      "parentUuid": "16065e46_e471f029",
       "range": {
         "startLine": 417,
         "startChar": 17,
