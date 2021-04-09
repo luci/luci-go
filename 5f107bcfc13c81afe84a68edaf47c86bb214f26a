@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4150a13f_d32da892",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "223ba501_134661b6",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 74
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6fbebf4e_f19d7cfb",
@@ -94,6 +118,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "01459c52_b45870a5",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76880692_16b40e8a",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2f4faf30_e82adac7",
@@ -107,6 +149,30 @@
       "writtenOn": "2021-03-16T23:59:59Z",
       "side": 1,
       "message": "nit: i\u0027d name it cloudProject (to avoid any confusion with luciProject or gerritProject)",
+      "range": {
+        "startLine": 50,
+        "startChar": 38,
+        "endLine": 50,
+        "endChar": 47
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a25b3f04_17a6578f",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f4faf30_e82adac7",
       "range": {
         "startLine": 50,
         "startChar": 38,
@@ -142,6 +208,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fb1a6bb9_6e208e86",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Yep, I just copied this from token server; I don\u0027t currently actually understand the implications of different scopes here.",
+      "parentUuid": "33cac294_6cd36045",
+      "range": {
+        "startLine": 51,
+        "startChar": 71,
+        "endLine": 51,
+        "endChar": 87
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "07d0f266_a9a47c9e",
         "filename": "cv/internal/bq/bq.go",
         "patchSetId": 10
@@ -153,6 +243,24 @@
       "writtenOn": "2021-03-16T23:59:59Z",
       "side": 1,
       "message": "move doc to the interface. Leave here just \"implements Client interface\" or nothing at all.",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "21565777_ad60e8b9",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "07d0f266_a9a47c9e",
       "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -180,6 +288,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "32654438_e69b95de",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Agree, removed.",
+      "parentUuid": "48ee7a40_ca5ef044",
+      "range": {
+        "startLine": 80,
+        "startChar": 3,
+        "endLine": 80,
+        "endChar": 72
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4bc2dff5_2b1c4c82",
@@ -193,6 +325,30 @@
       "writtenOn": "2021-03-16T23:59:59Z",
       "side": 1,
       "message": "definitely redundant",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 51
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "856058c3_101a8287",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": ":-P Yep",
+      "parentUuid": "4bc2dff5_2b1c4c82",
       "range": {
         "startLine": 81,
         "startChar": 3,
@@ -256,6 +412,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6de32d9_38b1ef5d",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df97e053_4529e42a",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8a0849e7_135715a5",
@@ -305,6 +479,24 @@
       "side": 1,
       "message": "Well, we\u0027ll need it eventually, might as well be now if it\u0027s an easy copy-pasta.",
       "parentUuid": "8a0849e7_135715a5",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f9102b10_08bb1355",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "I\u0027ll omit it from this CL and it can be added later.",
+      "parentUuid": "2f3c1b27_6d181e40",
       "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -385,6 +577,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c6850eb3_afd76dab",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84b04a55_ad81d6cc",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 31,
+        "endChar": 69
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dd4ae9ef_716593dd",
@@ -398,6 +614,30 @@
       "writtenOn": "2021-03-16T23:59:59Z",
       "side": 1,
       "message": "make it private. Protect my mutex. Expose via \"func (f* Fake) Rows()\"\nand yes, now it\u0027s a full featured Fake, not Mock \u003d\u003d please rename.",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 21
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ada7001_b476e16a",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd4ae9ef_716593dd",
       "range": {
         "startLine": 33,
         "startChar": 1,
@@ -461,6 +701,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d6d57e8_b9d24af6",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Ack, comment updated.",
+      "parentUuid": "910061ac_fd6cdffd",
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3ebdd247_05eb9e97",
@@ -484,6 +742,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e5e3f4e_b2ed17da",
+        "filename": "cv/internal/bq/mock.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ebdd247_05eb9e97",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 11
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "88d82415_85a03ec5",
@@ -497,6 +779,30 @@
       "writtenOn": "2021-03-16T23:59:59Z",
       "side": 1,
       "message": "bq.Fake\n\nTreeClient is a bad example, it should be fixed, too (can you please do it?). It should be a specific fake impl, not a client (sorry!). Good example is GFake \u0026 Clock, which both expose mutation/getting of state beyond what Production API would allow.",
+      "range": {
+        "startLine": 78,
+        "startChar": 10,
+        "endLine": 78,
+        "endChar": 19
+      },
+      "revId": "5f107bcfc13c81afe84a68edaf47c86bb214f26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68dc8f8d_9a449f03",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T18:51:31Z",
+      "side": 1,
+      "message": "Got it; Yiwei already changed TreeClient.",
+      "parentUuid": "88d82415_85a03ec5",
       "range": {
         "startLine": 78,
         "startChar": 10,
