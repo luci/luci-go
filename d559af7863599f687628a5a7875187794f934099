@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "52d1ecd4_aa4c7c3c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T18:45:34Z",
+      "side": 1,
+      "message": "I remembered wrong, archivist already loads settings in another place.",
+      "parentUuid": "05042659_f04d9050",
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b7cb0315_a651d543",
@@ -36,6 +54,29 @@
         "startChar": 2,
         "endLine": 234,
         "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f863cef6_86ed7ae1",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T18:45:34Z",
+      "side": 1,
+      "message": "Setting are already loaded here (there\u0027s ProjectConfig call inside https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/server/cmd/logdog_archivist/settings_loader.go;l\u003d31?q\u003dSettingsLoader%20lang:go\u0026ss\u003dchromium). \n\nIt would be better to make this call earlier and check the result instead of loading settings twice.",
+      "range": {
+        "startLine": 278,
+        "startChar": 20,
+        "endLine": 278,
+        "endChar": 32
       },
       "revId": "d559af7863599f687628a5a7875187794f934099",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
