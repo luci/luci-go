@@ -195,6 +195,24 @@
       "parentUuid": "850149b5_d0e4be2b",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2503478_1d4b6ba7",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-09T23:54:57Z",
+      "side": 1,
+      "message": "(a) wouldn\u0027t work because we can have multiple resultSinks streaming results to the same invocation",
+      "parentUuid": "34681ca7_9d20d8ad",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
