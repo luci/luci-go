@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b97761a1_9f767705",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-09T07:40:25Z",
+      "side": 1,
+      "message": "I see that the Python\u0027s implementation does this.\nBut do we need to set the dummy variables?",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 47
+      },
+      "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7a63950d_7cf0f840",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 6
