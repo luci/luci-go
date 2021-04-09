@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/logdog/common/archive"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
+	srvcfg "go.chromium.org/luci/logdog/server/config"
 )
 
 const (
@@ -215,6 +216,11 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 	// Validate the project name.
 	if err := config.ValidateProjectName(task.Project); err != nil {
 		log.WithError(err).Errorf(c, "invalid project name %q: %s", task.Project)
+		return nil
+	}
+	// Does the project config still exist?
+	if _, err := srvcfg.ProjectConfig(c, task.Project); err == config.ErrNoConfig {
+		log.WithError(err).Errorf(c, "The project config doesn't exist; discarding the task")
 		return nil
 	}
 
