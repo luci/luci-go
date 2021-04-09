@@ -21,8 +21,14 @@ import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
 import { timeout } from './libs/utils';
 import { BUILD_FIELD_MASK, BuildsService, GetBuildRequest } from './services/buildbucket';
+import { ResultDb } from './services/resultdb';
 
 importScripts('/configs.js');
+
+const CACHED_PRPC_URLS = [
+  `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
+  `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
+];
 
 // TSC isn't able to determine the scope properly.
 // Perform manual casting to fix typing.
@@ -81,10 +87,7 @@ _self.addEventListener('fetch', async (e) => {
   }
 
   prefetchResources(url);
-
-  // Response to build request from cache.
-  const shouldUseCache = e.request.url === `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`;
-  if (shouldUseCache) {
+  if (CACHED_PRPC_URLS.includes(e.request.url)) {
     e.respondWith(
       (async () => {
         const res = await cachedFetch(
@@ -102,10 +105,17 @@ _self.addEventListener('fetch', async (e) => {
 });
 
 /**
- * Prefetches some resources if the url matches certain condition.
+ * Prefetches resources if the url matches certain pattern.
  */
-async function prefetchResources(reqUrl: URL) {
-  // Prefetch the build.
+function prefetchResources(reqUrl: URL) {
+  prefetchBuild(reqUrl);
+  prefetchArtifact(reqUrl);
+}
+
+/**
+ * Prefetches the build if the url matches certain pattern.
+ */
+async function prefetchBuild(reqUrl: URL) {
   const match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
   if (!match) {
     return;
@@ -139,9 +149,53 @@ async function prefetchResources(reqUrl: URL) {
     )
   );
 
-  // Bypass the service cache but trigger the cachedFetch cache.
   prefetchBuildsService
+    // Bypass the service cache but trigger the cachedFetch cache.
     .getBuild(req, { acceptCache: false, skipUpdate: true })
+    // Ignore any error, let the consumer of the cache deal with it.
+    .catch((_e) => {});
+}
+
+/**
+ * Prefetches the artifact if the url matches certain pattern.
+ */
+async function prefetchArtifact(reqUrl: URL) {
+  const match = reqUrl.pathname.match(/^\/ui\/artifact\/([^/]+)\/([^/]+)\/?/i);
+  if (!match) {
+    return;
+  }
+  const artifactName = decodeURIComponent(match[2]);
+
+  const authState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
+  const prefetchResultDBService = new ResultDb(
+    new PrpcClientExt(
+      {
+        host: CONFIGS.RESULT_DB.HOST,
+        fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
+          const req = new Request(info, init);
+          await cachedFetch(
+            {},
+            req,
+            undefined,
+            await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
+            // We could cache this until the fetchUrl expires, but that means
+            // we need to clone the response. A short expire time should work
+            // just fine as the browser should fetch and invalidate the cache
+            // momentarily.
+            5000
+          );
+
+          // Abort the function to prevent the response from being consumed.
+          throw 0;
+        },
+      },
+      () => authState?.accessToken || ''
+    )
+  );
+
+  prefetchResultDBService
+    // Bypass the service cache but trigger the cachedFetch cache.
+    .getArtifact({ name: artifactName }, { acceptCache: false, skipUpdate: true })
     // Ignore any error, let the consumer of the cache deal with it.
     .catch((_e) => {});
 }
