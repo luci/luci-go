@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "860990de_78f4c126",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-09T18:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c1c23add_49d9ff33",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 47
+      },
+      "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7a63950d_7cf0f840",
@@ -71,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5d0fe3a_795c8828",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-09T18:01:52Z",
+      "side": 1,
+      "message": "removed",
+      "parentUuid": "7a63950d_7cf0f840",
+      "range": {
+        "startLine": 144,
+        "startChar": 5,
+        "endLine": 144,
+        "endChar": 12
+      },
+      "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4baec048_dba38c22",
@@ -84,6 +132,24 @@
       "writtenOn": "2021-04-09T07:30:53Z",
       "side": 1,
       "message": "I think it is better to use context to avoid changing global state.\nhttps://pkg.go.dev/go.chromium.org/luci/common/system/environ#Env.SetInCtx",
+      "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0dfdb254_add576ea",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-09T18:01:52Z",
+      "side": 1,
+      "message": "It was not clear to me what you meant.\nmy best guess is you mean calling Env.SetInCtx() both in the test and in main() before createTaskRequestCommand() is called,\n\nand in createTaskRequestCommand() getting \u0027base\u0027 env variables with FromCtx()\n\nI updated to do this, lmk if i misunderstood.",
+      "parentUuid": "4baec048_dba38c22",
       "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
