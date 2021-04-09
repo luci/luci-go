@@ -112,7 +112,7 @@ export class OverviewTabElement extends MobxLitElement {
       id: this.buildState.build!.id,
       summaryMarkdown: reason,
     });
-    this.buildState.refresh();
+    this.appState.refresh();
   }
 
   private async retryBuild() {
