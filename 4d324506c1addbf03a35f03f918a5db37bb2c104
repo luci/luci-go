@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "f9575541_6f731483",
+        "filename": "appengine/gaeauth/server/default.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T00:59:16Z",
+      "side": 1,
+      "message": "Right. By \"ignored\" I meant they won\u0027t be used, they won\u0027t be deleted. I want a rollback to be able to \"restore\" previous sessions. Once this change sticks for real, I\u0027ll make a change to start removing old cookie.",
+      "parentUuid": "38601e5a_6b8fba76",
+      "range": {
+        "startLine": 51,
+        "startChar": 39,
+        "endLine": 51,
+        "endChar": 46
+      },
+      "revId": "4d324506c1addbf03a35f03f918a5db37bb2c104",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ff721d7e_2ece36ab",
         "filename": "server/encryptedcookies/method.go",
         "patchSetId": 5
