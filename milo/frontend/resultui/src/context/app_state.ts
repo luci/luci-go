@@ -24,6 +24,8 @@ import { ResultDb, UISpecificService } from '../services/resultdb';
  * Records the app-level state.
  */
 export class AppState {
+  @observable.ref timestamp = Date.now();
+
   // Don't make this an observable so services won't be refreshed after updating
   // the access token.
   accessToken = '';
@@ -137,6 +139,11 @@ export class AppState {
 
   private makeClient(host: string) {
     return new PrpcClientExt({ host }, () => this.accessToken);
+  }
+
+  // Refresh all data that depends on the timestamp.
+  refresh() {
+    this.timestamp = Date.now();
   }
 }
 
