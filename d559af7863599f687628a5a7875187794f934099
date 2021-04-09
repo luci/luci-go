@@ -181,6 +181,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5b12add1_c50a6b4c",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-09T20:54:34Z",
+      "side": 1,
+      "message": "That sounds fine, except that, practically speaking, I assume we won\u0027t resolve this before we port logdog to resultdb :) (unless you think this is easy enough to fix as part of e.g. 4B/Q?)",
+      "parentUuid": "fa8bc643_618f7579",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f863cef6_86ed7ae1",
         "filename": "logdog/server/archivist/archivist.go",
         "patchSetId": 5
