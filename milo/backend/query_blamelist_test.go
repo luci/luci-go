@@ -22,6 +22,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -30,6 +31,8 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestPrepareQueryBlamelistRequest(t *testing.T) {
@@ -120,6 +123,7 @@ func TestQueryBlamelist(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		gitMock := git.NewMockClient(ctrl)
 		c = git.Use(c, gitMock)
+		c = auth.WithState(c, &authtest.FakeState{Identity: "user"})
 
 		builder1 := &buildbucketpb.BuilderID{
 			Project: "fake_project",
@@ -179,6 +183,36 @@ func TestQueryBlamelist(t *testing.T) {
 
 		err := datastore.Put(c, builds)
 		So(err, ShouldBeNil)
+
+		err = datastore.Put(c, &common.Project{
+			ID:      "fake_project",
+			ACL:     common.ACL{Identities: []identity.Identity{"user"}},
+			LogoURL: "https://logo.com",
+		})
+		So(err, ShouldBeNil)
+
+		Convey(`reject users with no access`, func() {
+			req := &milopb.QueryBlamelistRequest{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    "fake_gitiles_host",
+					Project: "fake_gitiles_project",
+					Id:      "commit1",
+				},
+				Builder: &buildbucketpb.BuilderID{
+					Project: "secret_fake_project",
+					Bucket:  "secret_fake_bucket",
+					Builder: "secret_fake_builder",
+				},
+				PageSize: 2000,
+			}
+			gitMock.
+				EXPECT().
+				Log(c, req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 1001, WithFiles: true}).
+				Return(commits, nil)
+
+			_, err := srv.QueryBlamelist(c, req)
+			So(err, ShouldNotBeNil)
+		})
 
 		Convey(`coerce page_size`, func() {
 			Convey(`to 1000 if it's greater than 1000`, func() {

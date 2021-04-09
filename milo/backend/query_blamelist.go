@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"sync"
 
+	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
@@ -30,12 +31,25 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/server/auth"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
 
 // QueryBlamelist implements milopb.MiloInternal service
 func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.QueryBlamelistRequest) (_ *milopb.QueryBlamelistResponse, err error) {
 	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
+
+	allowed, err := common.IsAllowed(ctx, req.GetBuilder().GetProject())
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		if auth.CurrentIdentity(ctx) == identity.AnonymousIdentity {
+			return nil, appstatus.Error(codes.Unauthenticated, "not logged in ")
+		}
+		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
+	}
 
 	startCommitID, err := prepareQueryBlamelistRequest(req)
 	if err != nil {
