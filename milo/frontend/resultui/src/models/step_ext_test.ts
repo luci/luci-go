@@ -27,7 +27,7 @@ describe('StepExt', () => {
     });
   }
 
-  describe('should compute parent/child names correctly', async () => {
+  describe('should compute parent/child names correctly', () => {
     it('for root step', () => {
       const step = createStep('child');
       assert.strictEqual(step.parentName, null);
