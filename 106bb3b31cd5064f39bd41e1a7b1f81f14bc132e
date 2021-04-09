@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6affd61b_c911d9e7",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T21:11:02Z",
+      "side": 1,
+      "message": "nit:\n\nswitch {\n  case err \u003d\u003d config.ErrNoConfig:\n     ...\n  case transient...:\n  case err !\u003d nil:\n    // This project has bad ...\n    ...\n}\n\n...\n\nThat way:\n1. Less lines of code.\n2. People used to C are not horrified by \n\n\tcase err \u003d\u003d nil:\n\tcase err \u003d\u003d config.ErrNoConfig:\n\n(I was for a moment before I remembered Go symantics)",
+      "range": {
+        "startLine": 222,
+        "startChar": 0,
+        "endLine": 238,
+        "endChar": 2
+      },
+      "revId": "106bb3b31cd5064f39bd41e1a7b1f81f14bc132e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ff853ef_78d5d664",
+        "filename": "logdog/server/cmd/logdog_archivist/settings_loader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T21:11:02Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 34,
+        "startChar": 8,
+        "endLine": 34,
+        "endChar": 14
+      },
+      "revId": "106bb3b31cd5064f39bd41e1a7b1f81f14bc132e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0432b6ef_836b04fc",
+        "filename": "logdog/server/cmd/logdog_archivist/settings_loader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T21:11:02Z",
+      "side": 1,
+      "message": "what function? I read this \"please ensure config.ProjectConfig calls config.ProjectConfig first ...\"?",
+      "range": {
+        "startLine": 37,
+        "startChar": 3,
+        "endLine": 38,
+        "endChar": 50
+      },
+      "revId": "106bb3b31cd5064f39bd41e1a7b1f81f14bc132e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
