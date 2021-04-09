@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c1c23add_49d9ff33",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-09T07:43:18Z",
+      "side": 1,
+      "message": "I think it is fine to defer until when this env is requested.",
+      "parentUuid": "b97761a1_9f767705",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 47
+      },
+      "revId": "57f3bea6acd005ccb764059a2d595a1c9ed0a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7a63950d_7cf0f840",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 6
