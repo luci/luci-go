@@ -28,14 +28,14 @@ import (
 type InboundAppIDAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m InboundAppIDAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+func (m InboundAppIDAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	appID := r.Header.Get("X-Appengine-Inbound-Appid")
 	if appID == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 	id, err := identity.MakeIdentity("service:" + appID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return &auth.User{Identity: id}, nil
+	return &auth.User{Identity: id}, nil, nil
 }

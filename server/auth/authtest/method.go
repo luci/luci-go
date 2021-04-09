@@ -27,17 +27,18 @@ import (
 var ErrAuthenticationError = errors.New("authtest: fake Authenticate error")
 
 // FakeAuth implements auth.Method's Authenticate by returning predefined
-// user.
+// user and session.
 type FakeAuth struct {
-	User *auth.User // user to return in Authenticate or nil for error
+	User    *auth.User   // the user to return in Authenticate or nil for error
+	Session auth.Session // the session to return
 }
 
 // Authenticate returns predefined User object (if it is not nil) or error.
-func (m FakeAuth) Authenticate(context.Context, *http.Request) (*auth.User, error) {
+func (m FakeAuth) Authenticate(context.Context, *http.Request) (*auth.User, auth.Session, error) {
 	if m.User == nil {
-		return nil, ErrAuthenticationError
+		return nil, nil, ErrAuthenticationError
 	}
-	return m.User, nil
+	return m.User, m.Session, nil
 }
 
 // LoginURL returns fake login URL.

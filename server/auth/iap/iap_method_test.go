@@ -35,8 +35,9 @@ func TestIAPAuthenticator(t *testing.T) {
 		Convey("missing iap jwt assertion header", func() {
 			a := &IAPAuthMethod{}
 			r := makeGetRequest()
-			user, err := a.Authenticate(c, r)
+			user, session, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
+			So(session, ShouldBeNil)
 			So(err, ShouldBeNil)
 		})
 
@@ -45,8 +46,9 @@ func TestIAPAuthenticator(t *testing.T) {
 			r := makeGetRequest()
 			r.Header[iapJWTAssertionHeader] = []string{"some invalid header bytes"}
 
-			user, err := a.Authenticate(c, r)
+			user, session, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
+			So(session, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -55,8 +57,9 @@ func TestIAPAuthenticator(t *testing.T) {
 			r := makeGetRequest()
 			r.Header[iapJWTAssertionHeader] = []string{"only", "expect", "one", "header", "value"}
 
-			user, err := a.Authenticate(c, r)
+			user, session, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
+			So(session, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -74,8 +77,9 @@ func TestIAPAuthenticator(t *testing.T) {
 			r := makeGetRequest()
 			r.Header[iapJWTAssertionHeader] = []string{"just needs to be non-empty for testing"}
 
-			user, err := a.Authenticate(c, r)
+			user, session, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
+			So(session, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -97,10 +101,11 @@ func TestIAPAuthenticator(t *testing.T) {
 			r := makeGetRequest()
 			r.Header[iapJWTAssertionHeader] = []string{string("just needs to be non-empty for testing")}
 
-			user, err := a.Authenticate(c, r)
+			user, session, err := a.Authenticate(c, r)
 			So(err, ShouldBeNil)
 			So(user, ShouldNotBeNil)
 			So(user.Email, ShouldEqual, "someemail@somedomain.com")
+			So(session, ShouldBeNil)
 		})
 
 	})

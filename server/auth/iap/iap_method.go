@@ -62,11 +62,11 @@ type IAPAuthMethod struct {
 
 // Authenticate returns nil if no IAP assertion header is present, a User if authentication
 // is successful, or an error if unable to validate and identify a user from the assertion header.
-func (a *IAPAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+func (a *IAPAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	iapJwt, ok := r.Header[iapJWTAssertionHeader]
 	if !ok {
 		logging.Errorf(ctx, "iap: missing assertion header")
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	validateFunc := a.validator
@@ -75,21 +75,21 @@ func (a *IAPAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*aut
 	}
 
 	if len(iapJwt) != 1 {
-		return nil, fmt.Errorf("iap: expected 1 value for assertion header, but found %d", len(iapJwt))
+		return nil, nil, fmt.Errorf("iap: expected 1 value for assertion header, but found %d", len(iapJwt))
 	}
 
 	jwtPayload, err := validateFunc(ctx, iapJwt[0], a.Aud)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't validate jwt payload").Err()
+		return nil, nil, errors.Annotate(err, "couldn't validate jwt payload").Err()
 	}
 
 	email, ok := jwtPayload.Claims["email"].(string)
 	if !ok {
-		return nil, fmt.Errorf("iap: no email claim")
+		return nil, nil, fmt.Errorf("iap: no email claim")
 	}
 
 	return &auth.User{
 		Identity: identity.Identity("user:" + email),
 		Email:    email,
-	}, nil
+	}, nil, nil
 }

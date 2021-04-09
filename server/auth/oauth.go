@@ -112,15 +112,15 @@ type GoogleOAuth2Method struct {
 var _ UserCredentialsGetter = (*GoogleOAuth2Method)(nil)
 
 // Authenticate implements Method.
-func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*User, error) {
+func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*User, Session, error) {
 	// Extract the access token from the Authorization header.
 	header := r.Header.Get("Authorization")
 	if header == "" || len(m.Scopes) == 0 {
-		return nil, nil // this method is not applicable
+		return nil, nil, nil // this method is not applicable
 	}
 	accessToken, err := accessTokenFromHeader(header)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Store only the token hash in the cache, so that if a memory or cache dump
@@ -147,7 +147,7 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r *http.Request) 
 		return outcome, 10*time.Minute + expiresIn, nil
 	})
 	if err != nil {
-		return nil, err // the check itself failed
+		return nil, nil, err // the check itself failed
 	}
 
 	outcome := cached.(*tokenValidationOutcome)
@@ -155,14 +155,14 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r *http.Request) 
 	// Fail if the token was never valid.
 	if outcome.Error != "" {
 		logging.Warningf(ctx, "oauth: access token SHA256=%q: %s", cacheKey, outcome.Error)
-		return nil, ErrBadOAuthToken
+		return nil, nil, ErrBadOAuthToken
 	}
 
 	// Fail if the token was once valid but has expired since.
 	if expired := clock.Now(ctx).Unix() - outcome.Expiry; expired > 0 {
 		logging.Warningf(ctx, "oauth: access token SHA256=%q from %s expired %d sec ago",
 			cacheKey, outcome.Email, expired)
-		return nil, ErrBadOAuthToken
+		return nil, nil, ErrBadOAuthToken
 	}
 
 	// Fail if the token doesn't have all required scopes.
@@ -176,14 +176,14 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r *http.Request) 
 	if len(missingScopes) != 0 {
 		logging.Warningf(ctx, "oauth: access token SHA256=%q from %s doesn't have scopes %q, it has %q",
 			cacheKey, outcome.Email, missingScopes, outcome.Scopes)
-		return nil, ErrBadOAuthToken
+		return nil, nil, ErrBadOAuthToken
 	}
 
 	return &User{
 		Identity: identity.Identity("user:" + outcome.Email),
 		Email:    outcome.Email,
 		ClientID: outcome.ClientID,
-	}, nil
+	}, nil, nil
 }
 
 // GetUserCredentials implements UserCredentialsGetter.

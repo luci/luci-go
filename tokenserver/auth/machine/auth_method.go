@@ -77,17 +77,17 @@ type MachineTokenAuthMethod struct {
 //
 // It logs detailed errors in log, but returns only generic "bad credential"
 // error to the caller, to avoid leaking unnecessary information.
-func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
+func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	token := r.Header.Get(MachineTokenHeader)
 	if token == "" {
-		return nil, nil // no token -> the auth method is not applicable
+		return nil, nil, nil // no token -> the auth method is not applicable
 	}
 
 	// Deserialize both envelope and the body.
 	envelope, body, err := deserialize(token)
 	if err != nil {
 		logTokenError(c, r, body, err, "Failed to deserialize the token")
-		return nil, ErrBadToken
+		return nil, nil, ErrBadToken
 	}
 
 	// Construct an identity of a token server that signed the token to check that
@@ -95,45 +95,45 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 	signerServiceAccount, err := identity.MakeIdentity("user:" + body.IssuedBy)
 	if err != nil {
 		logTokenError(c, r, body, err, "Bad issued_by field - %q", body.IssuedBy)
-		return nil, ErrBadToken
+		return nil, nil, ErrBadToken
 	}
 
 	// Reject tokens from unknown token servers right away.
 	db, err := auth.GetDB(c)
 	if err != nil {
-		return nil, transient.Tag.Apply(err)
+		return nil, nil, transient.Tag.Apply(err)
 	}
 	ok, err := db.IsMember(c, signerServiceAccount, []string{TokenServersGroup})
 	if err != nil {
-		return nil, transient.Tag.Apply(err)
+		return nil, nil, transient.Tag.Apply(err)
 	}
 	if !ok {
 		logTokenError(c, r, body, nil, "Unknown token issuer - %q", body.IssuedBy)
-		return nil, ErrBadToken
+		return nil, nil, ErrBadToken
 	}
 
 	// Check the expiration time before doing any heavier checks.
 	if err = checkExpiration(body, clock.Now(c)); err != nil {
 		logTokenError(c, r, body, err, "Token has expired or not yet valid")
-		return nil, ErrBadToken
+		return nil, nil, ErrBadToken
 	}
 
 	// Check the token was actually signed by the server.
 	if err = m.checkSignature(c, body.IssuedBy, envelope); err != nil {
 		if transient.Tag.In(err) {
-			return nil, err
+			return nil, nil, err
 		}
 		logTokenError(c, r, body, err, "Bad signature")
-		return nil, ErrBadToken
+		return nil, nil, ErrBadToken
 	}
 
 	// The token is valid. Construct the bot identity.
 	botIdent, err := identity.MakeIdentity("bot:" + body.MachineFqdn)
 	if err != nil {
 		logTokenError(c, r, body, err, "Bad machine_fqdn - %q", body.MachineFqdn)
-		return nil, ErrBadToken
+		return nil, nil, ErrBadToken
 	}
-	return &auth.User{Identity: botIdent}, nil
+	return &auth.User{Identity: botIdent}, nil, nil
 }
 
 // logTokenError adds a warning-level log entry with details about the request.

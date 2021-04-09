@@ -88,7 +88,7 @@ const (
 	InternalServicesGroup = "auth-luci-services"
 )
 
-// Method implements a particular kind of low-level authentication mechanism.
+// Method implements a particular low-level authentication mechanism.
 //
 // It may also optionally implement a bunch of other interfaces:
 //   UsersAPI: if the method supports login and logout URLs.
@@ -101,15 +101,15 @@ type Method interface {
 	// Authenticate extracts user information from the incoming request.
 	//
 	// It returns:
-	//   * (*User, nil) on success.
-	//   * (nil, nil) if the method is not applicable.
-	//   * (nil, error) if the method is applicable, but credentials are invalid.
+	//   * (*User, Session or nil, nil) on success.
+	//   * (nil, nil, nil) if the method is not applicable.
+	//   * (nil, nil, error) if the method is applicable, but credentials are bad.
 	//
 	// The returned error may be tagged with an grpcutil error tag. Its code will
 	// be used to derive the response status code. Internal error messages (e.g.
 	// ones tagged with grpcutil.InternalTag or similar) are logged, but not sent
 	// to clients. All other errors are sent to clients as is.
-	Authenticate(context.Context, *http.Request) (*User, error)
+	Authenticate(context.Context, *http.Request) (*User, Session, error)
 }
 
 // UsersAPI may be additionally implemented by Method if it supports login and
@@ -152,6 +152,13 @@ type UserCredentialsGetter interface {
 	// Guaranteed to be called only after the successful authentication, so it
 	// doesn't have to recheck the validity of the token.
 	GetUserCredentials(context.Context, *http.Request) (*oauth2.Token, error)
+}
+
+// Session holds some extra information pertaining to the request.
+//
+// It is stored in the context as part of State.
+type Session interface {
+	// TODO: add methods
 }
 
 // User represents identity and profile of a user.
@@ -277,7 +284,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 	stage = "AUTH"
 	for _, m := range a.Methods {
 		var err error
-		if s.user, err = m.Authenticate(tracedCtx, r); err != nil {
+		if s.user, s.session, err = m.Authenticate(tracedCtx, r); err != nil {
 			return nil, err
 		}
 		if s.user != nil {
@@ -293,6 +300,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 	// If no authentication method is applicable, default to anonymous identity.
 	if s.method == nil {
 		s.user = &User{Identity: identity.AnonymousIdentity}
+		s.session = nil
 	}
 
 	// peerIdent always matches the identity of a remote peer. It may end up being

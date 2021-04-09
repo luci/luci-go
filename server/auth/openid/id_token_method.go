@@ -74,23 +74,23 @@ func AudienceMatchesHost(ctx context.Context, r *http.Request, aud string) (vali
 //   * (*User, nil) on success.
 //   * (nil, nil) if the method is not applicable.
 //   * (nil, error) if the method is applicable, but credentials are invalid.
-func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	header := r.Header.Get("Authorization")
 	if !strings.HasPrefix(header, "Bearer ") {
-		return nil, nil // this auth method is not applicable
+		return nil, nil, nil // this auth method is not applicable
 	}
 	token := strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
 
 	// Grab (usually already cached) discovery document.
 	doc, err := m.discoveryDoc(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "openid: failed to fetch the OpenID discovery doc").Err()
+		return nil, nil, errors.Annotate(err, "openid: failed to fetch the OpenID discovery doc").Err()
 	}
 
 	// Validate token's signature and expiration. Extract user info from it.
 	tok, user, err := UserFromIDToken(ctx, token, doc)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// For tokens identifying end users, populate user.ClientID to let the LUCI
@@ -98,27 +98,27 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Requ
 	// OAuth2 access tokens).
 	if !strings.HasSuffix(user.Email, ".gserviceaccount.com") {
 		user.ClientID = tok.Aud
-		return user, nil
+		return user, nil, nil
 	}
 
 	// For service accounts we want to check `aud` right here, since it is
 	// generally not an OAuth Client ID and can be anything at all.
 	for _, aud := range m.Audience {
 		if tok.Aud == aud {
-			return user, nil
+			return user, nil, nil
 		}
 	}
 	if m.AudienceCheck != nil {
 		switch valid, err := m.AudienceCheck(ctx, r, tok.Aud); {
 		case err != nil:
-			return nil, err
+			return nil, nil, err
 		case valid:
-			return user, nil
+			return user, nil, nil
 		}
 	}
 
 	logging.Errorf(ctx, "openid: token from %s has unrecognized audience %q", user.Email, tok.Aud)
-	return nil, auth.ErrBadAudience
+	return nil, nil, auth.ErrBadAudience
 }
 
 // Warmup prepares local caches. It's optional.

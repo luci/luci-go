@@ -58,10 +58,11 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 		discoveryURL:  provider.discoveryURL,
 	}
 	call := func(authHeader string) (*auth.User, error) {
-		return method.Authenticate(ctx, &http.Request{
+		u, _, err := method.Authenticate(ctx, &http.Request{
 			Host:   fakeHost,
 			Header: http.Header{"Authorization": {authHeader}},
 		})
+		return u, err
 	}
 
 	Convey("Skipped if no header", t, func() {

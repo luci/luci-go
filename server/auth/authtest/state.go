@@ -80,6 +80,11 @@ type FakeState struct {
 	// PeerIPWhitelists and Error.
 	FakeDB authdb.DB
 
+	// SessionOverride may be set for Session() to return custom value.
+	//
+	// By default Session() returns nil.
+	SessionOverride auth.Session
+
 	// PeerIdentityOverride may be set for PeerIdentity() to return custom value.
 	//
 	// By default PeerIdentity() returns Identity (i.e. no delegation is
@@ -156,6 +161,11 @@ func (s *FakeState) User() *auth.User {
 		Identity: ident,
 		Email:    ident.Email(),
 	}
+}
+
+// Session is part of State interface.
+func (s *FakeState) Session() auth.Session {
+	return s.SessionOverride
 }
 
 // PeerIdentity is part of State interface.

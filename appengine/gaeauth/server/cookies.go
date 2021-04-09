@@ -31,20 +31,20 @@ import (
 type UsersAPIAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m UsersAPIAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+func (m UsersAPIAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	u := user.Current(ctx)
 	if u == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 	id, err := identity.MakeIdentity("user:" + u.Email)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return &auth.User{
 		Identity:  id,
 		Superuser: u.Admin,
 		Email:     u.Email,
-	}, nil
+	}, nil, nil
 }
 
 const (

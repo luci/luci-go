@@ -105,34 +105,34 @@ func (m *CookieAuthMethod) Warmup(c context.Context) (err error) {
 
 // Authenticate extracts peer's identity from the incoming request. It is part
 // of auth.Method interface.
-func (m *CookieAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
+func (m *CookieAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	if m.SessionStore == nil {
-		return nil, ErrNotConfigured
+		return nil, nil, ErrNotConfigured
 	}
 
 	// Grab session ID from the cookie.
 	sid, err := decodeSessionCookie(c, r)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if sid == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// Grab session (with user information) from the store.
 	session, err := m.SessionStore.GetSession(c, sid)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if session == nil {
 		(logging.Fields{"sid": sid}).Warningf(c, "The session cookie references unknown session")
-		return nil, nil
+		return nil, nil, nil
 	}
 	(logging.Fields{
 		"sid":   sid,
 		"email": session.User.Email,
 	}).Debugf(c, "Fetched the session")
-	return &session.User, nil
+	return &session.User, nil, nil
 }
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,

@@ -177,7 +177,7 @@ func TestFullFlow(t *testing.T) {
 			req, err = http.NewRequest("GET", "http://fake/something", nil)
 			So(err, ShouldBeNil)
 			req.Header.Add("Cookie", expectedCookie)
-			user, err := method.Authenticate(ctx, req)
+			user, session, err := method.Authenticate(ctx, req)
 			So(err, ShouldBeNil)
 			So(user, ShouldResemble, &auth.User{
 				Identity: "user:user@example.com",
@@ -185,6 +185,7 @@ func TestFullFlow(t *testing.T) {
 				Name:     "Some Dude",
 				Picture:  "https://picture/url/s64/photo.jpg",
 			})
+			So(session, ShouldBeNil)
 
 			// Now generate URL to and visit logout page.
 			logoutURL, err := method.LogoutURL(ctx, "/another_destination")
@@ -289,7 +290,7 @@ func TestNotConfigured(t *testing.T) {
 		_, err = method.LogoutURL(ctx, "/")
 		So(err, ShouldEqual, ErrNotConfigured)
 
-		_, err = method.Authenticate(ctx, &http.Request{})
+		_, _, err = method.Authenticate(ctx, &http.Request{})
 		So(err, ShouldEqual, ErrNotConfigured)
 	})
 }

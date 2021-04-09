@@ -112,14 +112,14 @@ func (m *AuthMethod) Warmup(ctx context.Context) error {
 // Authenticate authenticates the request.
 //
 // Implements auth.Method.
-func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	cfg, err := m.checkConfigured(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// TODO
 	_ = cfg
-	return nil, fmt.Errorf("not implemented")
+	return nil, nil, fmt.Errorf("not implemented")
 }
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,

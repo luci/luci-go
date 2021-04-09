@@ -48,7 +48,7 @@ type OAuth2Method struct {
 var _ auth.UserCredentialsGetter = (*OAuth2Method)(nil)
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	if info.IsDevAppServer(ctx) {
 		// On "dev_appserver", we verify OAuth2 tokens using Google's OAuth2
 		// verification endpoint.
@@ -63,7 +63,7 @@ func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth
 
 	header := r.Header.Get("Authorization")
 	if header == "" || len(m.Scopes) == 0 {
-		return nil, nil // this method is not applicable
+		return nil, nil, nil // this method is not applicable
 	}
 
 	// GetOAuthUser RPC is notoriously flaky. Do a bunch of retries on errors.
@@ -73,26 +73,26 @@ func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth
 		u, err = user.CurrentOAuth(ctx, m.Scopes...)
 		if err != nil {
 			if isFatalOAuthErr(err) {
-				return nil, err
+				return nil, nil, err
 			}
 			logging.Warningf(ctx, "oauth: failed to execute GetOAuthUser - %s", err)
 			continue
 		}
 		if u.ClientID == "" {
-			return nil, fmt.Errorf("oauth: ClientID is unexpectedly empty")
+			return nil, nil, fmt.Errorf("oauth: ClientID is unexpectedly empty")
 		}
 		id, idErr := identity.MakeIdentity("user:" + u.Email)
 		if idErr != nil {
-			return nil, idErr
+			return nil, nil, idErr
 		}
 		return &auth.User{
 			Identity:  id,
 			Superuser: u.Admin,
 			Email:     u.Email,
 			ClientID:  u.ClientID,
-		}, nil
+		}, nil, nil
 	}
-	return nil, transient.Tag.Apply(err)
+	return nil, nil, transient.Tag.Apply(err)
 }
 
 // isFatalOAuthErr examines the error message to figure out whether the error
