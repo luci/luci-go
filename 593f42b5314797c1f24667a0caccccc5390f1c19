@@ -33,6 +33,24 @@
       "message": "why do we need it in the proto? Are you imaging buildbucket build creation could would know that and specify in CreateInvocation? I don\u0027t think it has this info.\n\nin the test history design doc, I meant that these values are populated/updated in CreateTestResult/BatchCreateTestResults.",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f42a842c_39597a70",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-09T21:03:48Z",
+      "side": 1,
+      "message": "implementation of this will be more sophisticated than simply asking the users to provide this data, that\u0027s why I was suggesting to separate testPrefix and variantUnion in separate CLs",
+      "parentUuid": "17ef0f5a_64c15662",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
