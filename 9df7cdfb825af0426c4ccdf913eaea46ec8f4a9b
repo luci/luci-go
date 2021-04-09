@@ -16,6 +16,24 @@
       "message": "Nits: you don\u0027t need the \"else\" here, just return directly",
       "revId": "9df7cdfb825af0426c4ccdf913eaea46ec8f4a9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "46d9fbce_13ab2f02",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-09T05:06:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14314d9a_92e8dc4b",
+      "revId": "9df7cdfb825af0426c4ccdf913eaea46ec8f4a9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
