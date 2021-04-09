@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff7dea63_4ab0d755",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:15:22Z",
+      "side": 1,
+      "message": "Thanks, done",
+      "parentUuid": "4f9a0012_289ff76d",
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "47c4e74b_e416b287",
@@ -66,6 +84,30 @@
       "writtenOn": "2021-04-09T19:36:54Z",
       "side": 1,
       "message": "is typically",
+      "range": {
+        "startLine": 52,
+        "startChar": 8,
+        "endLine": 52,
+        "endChar": 15
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aae97ffb_f46ca6d0",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:15:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "47c4e74b_e416b287",
       "range": {
         "startLine": 52,
         "startChar": 8,
@@ -113,6 +155,30 @@
       "side": 1,
       "message": "+1",
       "parentUuid": "28175ea1_fcd3f0cd",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 2
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a715ccd_8551f9eb",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:15:22Z",
+      "side": 1,
+      "message": "Of course :-P",
+      "parentUuid": "3bdf1ff0_8fb86055",
       "range": {
         "startLine": 74,
         "startChar": 0,
@@ -172,6 +238,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8af0231c_49d71e4e",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:15:22Z",
+      "side": 1,
+      "message": "That\u0027s true; typically there are not many different datasets with different tables, so one possible alternative that seems simpler to me would be to just map a \"dataset.table\" string to lists of rows. This would keep rows from different tables separate, while keeping only one level of mapping.\n\nThoughts?",
+      "parentUuid": "36d0f243_1e54415b",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 21
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5b953632_f9c2eb4d",
         "filename": "cv/internal/bq/fake.go",
         "patchSetId": 13
@@ -183,6 +273,30 @@
       "writtenOn": "2021-04-09T19:34:18Z",
       "side": 1,
       "message": "nit-nit: we typically put mutex above the fields that it protects.",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 16
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ef1c64d_84474b1d",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:15:22Z",
+      "side": 1,
+      "message": "Done; also fixed the comment",
+      "parentUuid": "5b953632_f9c2eb4d",
       "range": {
         "startLine": 28,
         "startChar": 0,
@@ -210,6 +324,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "41926d0a_246ae1f8",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:15:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d1b897ec_03d91774",
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e6e54dfe_f1505396",
@@ -233,6 +365,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e912430_63fa3bd3",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:15:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6e54dfe_f1505396",
+      "range": {
+        "startLine": 50,
+        "startChar": 9,
+        "endLine": 50,
+        "endChar": 22
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4b223b3a_d5c67ac2",
@@ -246,6 +402,30 @@
       "writtenOn": "2021-04-09T19:34:18Z",
       "side": 1,
       "message": "not useful. It doesn\u0027t have any other mode today anyway, so \"defaults\" is misleading.",
+      "range": {
+        "startLine": 76,
+        "startChar": 32,
+        "endLine": 76,
+        "endChar": 76
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5baf9c1_3d23267b",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-09T21:15:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b223b3a_d5c67ac2",
       "range": {
         "startLine": 76,
         "startChar": 32,
