@@ -141,6 +141,24 @@
       "parentUuid": "3617bae4_d818686c",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "850149b5_d0e4be2b",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-09T23:27:01Z",
+      "side": 1,
+      "message": "\u003e   a. if common_test_id_prefix is specified, Update the invocation\u0027s CommonTestIdPrefix using the longest common prefix of common_test_id_prefix from the request and the invocation\u0027s CommonTestIdPrefix\n\nIn this case the CommonTestIdPrefix may not be the longest, but I think it should be good enough to improve test history api performance",
+      "parentUuid": "3617bae4_d818686c",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
