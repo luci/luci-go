@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "575a3065_9c19249e",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-09T23:56:48Z",
+      "side": 0,
+      "message": "this is the point of this CL",
+      "revId": "58b734a587ef56b43ecff4250cda6c740013b66b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
