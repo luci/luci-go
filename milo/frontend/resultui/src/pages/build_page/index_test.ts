@@ -135,7 +135,7 @@ describe('Invocation Page', () => {
     getBuildMock.onCall(0).resolves({
       builder,
       number: 123,
-      id: '1234',
+      id: '4567',
       input: { properties: {} },
       output: { properties: {} },
     } as Build);
@@ -157,7 +157,7 @@ describe('Invocation Page', () => {
 
     const location = ({
       params: {
-        build_id: '1234',
+        build_id: '4567',
         path: ['test-results'],
       },
       search: '?q=a',
@@ -169,7 +169,7 @@ describe('Invocation Page', () => {
     page.connectedCallback();
     await aTimeout(0);
     assert.isTrue(
-      window.location.href.endsWith('/ui/p/project/builders/bucket/builder/b1234/test-results?q=a#an-element')
+      window.location.href.endsWith('/ui/p/project/builders/bucket/builder/123/test-results?q=a#an-element')
     );
     page.disconnectedCallback();
   });
