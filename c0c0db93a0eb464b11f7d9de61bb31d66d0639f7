@@ -16,6 +16,29 @@
       "message": "PTAL\n\nJust slightly modifying an interface implemented in lots of places.",
       "revId": "c0c0db93a0eb464b11f7d9de61bb31d66d0639f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a32d4fd_584d1193",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T01:05:59Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 91,
+        "startChar": 21,
+        "endLine": 91,
+        "endChar": 25
+      },
+      "revId": "c0c0db93a0eb464b11f7d9de61bb31d66d0639f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
