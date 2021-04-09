@@ -102,11 +102,11 @@ export class MiloInternal {
     );
   }
 
-  async queryBlamelist(req: QueryBlamelistRequest, cacheOpt = {}) {
+  async queryBlamelist(req: QueryBlamelistRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryBlamelist', req)) as QueryBlamelistResponse;
   }
 
-  async getProjectCfg(req: GetProjectCfgRequest, cacheOpt = {}) {
+  async getProjectCfg(req: GetProjectCfgRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetProjectCfg', req)) as Project;
   }
 }

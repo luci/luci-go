@@ -255,27 +255,27 @@ export class ResultDb {
     });
   }
 
-  async getInvocation(req: GetInvocationRequest, cacheOpt = {}): Promise<Invocation> {
+  async getInvocation(req: GetInvocationRequest, cacheOpt: CacheOption = {}): Promise<Invocation> {
     return (await this.cachedCallFn(cacheOpt, 'GetInvocation', req)) as Invocation;
   }
 
-  async queryTestResults(req: QueryTestResultsRequest, cacheOpt = {}) {
+  async queryTestResults(req: QueryTestResultsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryTestResults', req)) as QueryTestResultsResponse;
   }
 
-  async queryTestExonerations(req: QueryTestExonerationsRequest, cacheOpt = {}) {
+  async queryTestExonerations(req: QueryTestExonerationsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryTestExonerations', req)) as QueryTestExonerationsResponse;
   }
 
-  async listArtifacts(req: ListArtifactsRequest, cacheOpt = {}) {
+  async listArtifacts(req: ListArtifactsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'ListArtifacts', req)) as ListArtifactsResponse;
   }
 
-  async queryArtifacts(req: QueryArtifactsRequest, cacheOpt = {}) {
+  async queryArtifacts(req: QueryArtifactsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryArtifacts', req)) as QueryArtifactsResponse;
   }
 
-  async getArtifact(req: GetArtifactRequest, cacheOpt = {}) {
+  async getArtifact(req: GetArtifactRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetArtifact', req)) as Artifact;
   }
 }
@@ -292,7 +292,7 @@ export class UISpecificService {
     );
   }
 
-  async queryTestVariants(req: QueryTestVariantsRequest, cacheOpt = {}) {
+  async queryTestVariants(req: QueryTestVariantsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryTestVariants', req)) as QueryTestVariantsResponse;
   }
 }
