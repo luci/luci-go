@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/logdog/common/archive"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
+	srvcfg "go.chromium.org/luci/logdog/server/config"
 )
 
 const (
@@ -216,6 +217,23 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 	if err := config.ValidateProjectName(task.Project); err != nil {
 		log.WithError(err).Errorf(c, "invalid project name %q: %s", task.Project)
 		return nil
+	}
+	// Does the project config still exist?
+	switch _, err := srvcfg.ProjectConfig(c, task.Project); {
+	case err == config.ErrNoConfig:
+		log.WithError(err).Errorf(c, "The project config doesn't exist; discarding the task.")
+		return nil
+	case transient.Tag.In(err):
+		// If this is a transient error, exit immediately and do not delete the
+		// archival task.
+		log.WithError(err).Warningf(c, "TRANSIENT error during loading the project config.")
+		return err
+	case err == nil:
+	default:
+		// The project config is likely invalid. Return the error so that the task will
+		// continue failing on retries to trigger alerts.
+		log.WithError(err).Errorf(c, "Failed to load project config.")
+		return err
 	}
 
 	// Load the log stream's current state. If it is already archived, we will

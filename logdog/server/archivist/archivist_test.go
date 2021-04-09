@@ -28,11 +28,17 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
+	cfgmem "go.chromium.org/luci/config/impl/memory"
+	gaemem "go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/memory"
 	"go.chromium.org/luci/logdog/common/types"
+	srvcfg "go.chromium.org/luci/logdog/server/config"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -224,6 +230,8 @@ func TestHandleArchive(t *testing.T) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		c, _ = tsmon.WithDummyInMemory(c)
 		ms := tsmon.Store(c)
+		c = gaemem.Use(c)
+		c = srvcfg.WithStore(c, &srvcfg.Store{})
 
 		st := memory.Storage{}
 		gsc := testGSClient{}
@@ -249,6 +257,19 @@ func TestHandleArchive(t *testing.T) {
 			Prefix: "testing",
 			Name:   "foo",
 		}
+
+		// mock project config
+		lucicfg := map[config.Set]cfgmem.Files{
+			"services/${appid}": {
+				"services.cfg": `coordinator { admin_auth_group: "a" }`,
+			},
+			config.Set("projects/" + project): {
+				"${appid}.cfg": `archive_gs_bucket: "a"`,
+			},
+		}
+		c = cfgclient.Use(c, cfgmem.New(lucicfg))
+		So(srvcfg.Sync(c), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
 
 		// Utility function to add a log entry for "ls".
 		addTestEntry := func(p string, idxs ...int) {
@@ -574,6 +595,15 @@ func TestHandleArchive(t *testing.T) {
 		Convey(`With an empty project name, will fail and consume the task.`, func() {
 			task.Project = ""
 
+			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+		})
+
+		Convey(`With a project name, of which config doesn't exist, will fail and consume the task`, func() {
+			task.Project = "valid-project-but-cfg-not-exist"
+
+			_, ok := lucicfg[config.Set("projects/"+task.Project)]
+			So(ok, ShouldBeFalse)
+			So(config.ValidateProjectName(task.Project), ShouldBeNil)
 			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 		})
 
