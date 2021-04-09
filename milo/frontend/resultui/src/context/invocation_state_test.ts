@@ -61,7 +61,7 @@ const variant5: TestVariant = {
 };
 
 describe('InvocationState', () => {
-  describe('filterVariant', async () => {
+  describe('filterVariant', () => {
     const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3, variant4, variant5] });
 
@@ -74,7 +74,7 @@ describe('InvocationState', () => {
 
     const invocationState = new InvocationState(appState);
     invocationState.invocationId = 'invocation-id';
-    await invocationState.testLoader!.loadNextTestVariants();
+    before(async () => await invocationState.testLoader!.loadNextTestVariants());
     after(() => invocationState.dispose());
 
     it('should not filter out anything when search text is empty', () => {
