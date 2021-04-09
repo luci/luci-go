@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7cb0315_a651d543",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T17:57:12Z",
+      "side": 1,
+      "message": "This can happen either datastore returned a non-transient error or proto.Unmarshal() with the loaded failed. L285 would drop the task, if such an error occurred.\n\nHowever, I think someone should take a look at the error details and fix configs, instead of dropping the task. Hence, this returns the err. WDYT?",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
