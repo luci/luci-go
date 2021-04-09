@@ -39,6 +39,30 @@
       },
       "revId": "ba04ea605bb1bdbea40cad70c72da2e682744444",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac41d31d_f103f2cf",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T18:49:10Z",
+      "side": 1,
+      "message": "To follow Vadim\u0027s comment posted on a different patchset,\n\nI will move loadSettings() to the top of this function, and then add a comment to archivist.SeetingsLoader() to ensure that config.ProjectConfig() is called first before performing any other operations.",
+      "parentUuid": "5370f5c1_709f2306",
+      "range": {
+        "startLine": 272,
+        "startChar": 2,
+        "endLine": 272,
+        "endChar": 91
+      },
+      "revId": "ba04ea605bb1bdbea40cad70c72da2e682744444",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

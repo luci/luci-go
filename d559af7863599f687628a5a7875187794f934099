@@ -80,6 +80,30 @@
       },
       "revId": "d559af7863599f687628a5a7875187794f934099",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9a8a58e_129f27a5",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T18:49:10Z",
+      "side": 1,
+      "message": "Thanks for bringing this. It makes sense to avoid unnecessary ds fetch. I will update it as answered in a different comment.",
+      "parentUuid": "f863cef6_86ed7ae1",
+      "range": {
+        "startLine": 278,
+        "startChar": 20,
+        "endLine": 278,
+        "endChar": 32
+      },
+      "revId": "d559af7863599f687628a5a7875187794f934099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
