@@ -16,6 +16,23 @@
       "message": "nice, I like this",
       "revId": "4cd0eaa2b6b45b818f86a2a350ea9626099b7154",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7422d008_e60c2f2b",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-09T05:27:51Z",
+      "side": 1,
+      "message": "Actually, I\u0027m not sure if the archivist will have permission to do this; Can you log non-nil errors here, too, in case the 403 is informative?",
+      "revId": "4cd0eaa2b6b45b818f86a2a350ea9626099b7154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
