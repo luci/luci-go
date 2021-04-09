@@ -87,6 +87,24 @@
       "parentUuid": "6149c06c_b69c1814",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52a47328_8197acb2",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-09T22:26:17Z",
+      "side": 1,
+      "message": "I\u0027m sorry that I don\u0027t have enough context, but I hope I have understood the topic here.\n\nIf the intent of asking Sink to compute and report the most common test ID prefix and var-unions is to reduce the load from server? ResultSink could voluntarily compute provide the most common test ID prefix and variant unions among the test results included, but it means that server won\u0027t verify the correctness the common test ID prefix and var unions.\n\nIf the server has to verify the correctness by computing the common prefix and var unions by itself, then I guess BatchCreateTestResults() wouldn\u0027t have to take the computed values from ResultSink.\n\nOut of curiosity, why couldn\u0027t finalizer iterates all the included tests to compute the most common test id prefix and variant unions? If CreateTestResults() and BatchCreateTestResult() compute the common prefix and var unions, does it mean that the APIs need to update the fields in invocation each time called? Then, we will have to shard the computed values to a separate table, like we do with TestResultcounts.",
+      "parentUuid": "952b1611_1187c841",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
