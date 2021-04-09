@@ -123,6 +123,24 @@
       "parentUuid": "52a47328_8197acb2",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2824027_db6b6978",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-09T23:26:05Z",
+      "side": 1,
+      "message": "why do we need to do (a) if we can do (b)? The common prefix is computable from test ids in the request.\n\nthe whole thing can be done without changing API.",
+      "parentUuid": "3617bae4_d818686c",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
