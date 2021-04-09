@@ -177,6 +177,24 @@
       "parentUuid": "850149b5_d0e4be2b",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34681ca7_9d20d8ad",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-09T23:41:32Z",
+      "side": 1,
+      "message": "\u003e why do we need to do (a) if we can do (b)? The common prefix is computable from test ids in the request.\n\nAs I mentioned, I think it\u0027s double work for ResultSink to prepend test_id_prefix to all test results it uploads and then in BatchCreateTestResults we iterate all test results to find the common test_id_prefix. So I think it\u0027s a good idea to save the hassle that ResultSink just directly tell ResultDB what\u0027s the prefix is.\n\nAnd based on the usage of the RPCs, I think ResultDB would most definitely always do (a). So maybe we don\u0027t even need to change BatchCreateTestResults to cover (b).\n\nBut on the other hand, (b) is easy to implement and the computation should be quick. So maybe (a) wouldn\u0027t bring a huge benefit... \n\nOh well, so after all this discussion, it gravitates to pre-computation again...",
+      "parentUuid": "850149b5_d0e4be2b",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
