@@ -72,7 +72,8 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 			if tok != "" {
 				r.Header.Set(MachineTokenHeader, tok)
 			}
-			return method.Authenticate(ctx, r)
+			u, _, err := method.Authenticate(ctx, r)
+			return u, err
 		}
 
 		hasLog := func(msg string) bool {

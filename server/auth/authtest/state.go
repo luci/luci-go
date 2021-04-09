@@ -158,6 +158,11 @@ func (s *FakeState) User() *auth.User {
 	}
 }
 
+// Session is part of State interface.
+func (s *FakeState) Session() auth.Session {
+	return nil
+}
+
 // PeerIdentity is part of State interface.
 func (s *FakeState) PeerIdentity() identity.Identity {
 	if s.PeerIdentityOverride == "" {

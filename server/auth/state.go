@@ -53,6 +53,11 @@ type State interface {
 	// AnonymousIdentity. Do not modify it.
 	User() *User
 
+	// Session is the session object returned by Authenticate, if any.
+	//
+	// It may hold some extra information pertaining to the request.
+	Session() Session
+
 	// PeerIdentity identifies whoever is making the request. It's an identity
 	// directly extracted from user credentials (ignoring delegation tokens).
 	PeerIdentity() identity.Identity
@@ -288,6 +293,7 @@ type state struct {
 	db            authdb.DB
 	method        Method
 	user          *User
+	session       Session
 	peerIdent     identity.Identity
 	peerIP        net.IP
 
@@ -302,6 +308,7 @@ func (s *state) Authenticator() *Authenticator   { return s.authenticator }
 func (s *state) DB() authdb.DB                   { return s.db }
 func (s *state) Method() Method                  { return s.method }
 func (s *state) User() *User                     { return s.user }
+func (s *state) Session() Session                { return s.session }
 func (s *state) PeerIdentity() identity.Identity { return s.peerIdent }
 func (s *state) PeerIP() net.IP                  { return s.peerIP }
 func (s *state) UserCredentials() (*oauth2.Token, map[string]string, error) {
@@ -332,6 +339,7 @@ func (s backgroundState) DB() authdb.DB {
 func (s backgroundState) Authenticator() *Authenticator   { return nil }
 func (s backgroundState) Method() Method                  { return nil }
 func (s backgroundState) User() *User                     { return &User{Identity: identity.AnonymousIdentity} }
+func (s backgroundState) Session() Session                { return nil }
 func (s backgroundState) PeerIdentity() identity.Identity { return identity.AnonymousIdentity }
 func (s backgroundState) PeerIP() net.IP                  { return nil }
 func (s backgroundState) UserCredentials() (*oauth2.Token, map[string]string, error) {
