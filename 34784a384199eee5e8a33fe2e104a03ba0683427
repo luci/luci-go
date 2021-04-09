@@ -357,6 +357,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a112d39e_5edb3699",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T20:22:10Z",
+      "side": 1,
+      "message": "Oh, I actually considered the prevented attack scenario, but I had thought that the \"unrelated\" `code_verifier` check would nevertheless fail on OpenIDProvider side when we request refresh token: the verifier bytes we provide would produce different SHA2 than what OpenIDPRovider should have associated with the access code. And since the verifier bytes are essentially a high entropy nonce, this should equivalent to nonce.\n\nNow, while I\u0027d appreciate learning what I missed, I don\u0027t see any problem with what is implemented.",
+      "parentUuid": "59df004a_767f59ef",
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "16065e46_e471f029",
@@ -399,6 +417,29 @@
         "startChar": 17,
         "endLine": 418,
         "endChar": 23
+      },
+      "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1f1d919_478105f5",
+        "filename": "server/encryptedcookies/method_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T20:22:10Z",
+      "side": 1,
+      "message": "actually",
+      "range": {
+        "startLine": 281,
+        "startChar": 65,
+        "endLine": 281,
+        "endChar": 71
       },
       "revId": "34784a384199eee5e8a33fe2e104a03ba0683427",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
