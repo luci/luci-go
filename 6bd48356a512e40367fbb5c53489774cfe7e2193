@@ -262,6 +262,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "6ce459ec_ac3d62c6",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-09T21:38:53Z",
+      "side": 1,
+      "message": "one level map sgtME.",
+      "parentUuid": "8af0231c_49d71e4e",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 21
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5b953632_f9c2eb4d",
         "filename": "cv/internal/bq/fake.go",
         "patchSetId": 13
