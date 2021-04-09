@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "530f5762_17077280",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-09T04:53:45Z",
+      "side": 0,
+      "message": "Why did you decide not to use temp dir?",
+      "range": {
+        "startLine": 68,
+        "startChar": 11,
+        "endLine": 68,
+        "endChar": 22
+      },
+      "revId": "79f88ea9edd887e876b90ca819ee83e133d55129",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
