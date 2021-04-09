@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a20353a6_1a315a98",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T01:15:20Z",
+      "side": 1,
+      "message": "No. For a case if multiple copies of a service all use the same datastore. For example, we run multiple isolated deployments on ResultDB. If we imagine ResultDB uses Cloud Datastore, then each deployment needs its own namespace.",
+      "parentUuid": "f3fc66a9_2e47ae34",
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "db15c062_6e817efe",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-04-09T00:57:07Z",
       "side": 1,
       "message": "why not tag it with transient tag here? (also same question for ds transaction below)",
+      "range": {
+        "startLine": 46,
+        "startChar": 14,
+        "endLine": 46,
+        "endChar": 17
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ed48fe3_963a2bdc",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T01:15:20Z",
+      "side": 1,
+      "message": "I didn\u0027t want to put any requirements on format of errors in base Store interface. Its UpdateSession says \"errors produced by the callback are returned as is\". It makes applying tags in UpdateSession kind of dodgy. So I removed it.\n\nUsers of Store are expected to understand that errors are transient. E.g. same way we do not wrap datastore.Get(...) errors as transient in the datastore library (except better, because Store is a mostly internal interface that will have ~\u003d2 implementations and only one user).",
+      "parentUuid": "db15c062_6e817efe",
       "range": {
         "startLine": 46,
         "startChar": 14,
@@ -58,6 +100,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "028bfb2c_c6652544",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T01:15:20Z",
+      "side": 1,
+      "message": "Yes. Also at some point we\u0027ll need to implement a cron that deletes old sessions.",
+      "parentUuid": "23b66851_84069bed",
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ae7b4495_c5de4e65",
@@ -71,6 +131,30 @@
       "writtenOn": "2021-04-09T00:57:07Z",
       "side": 1,
       "message": "is a bunch of 1970-01-01 intentionally acceptable here?\n\n(that said, I don\u0027t recall what value is stored by our datastore for zero time.Time, maybe it\u0027s also weird 0000-01-01?)",
+      "range": {
+        "startLine": 109,
+        "startChar": 15,
+        "endLine": 109,
+        "endChar": 33
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58c34158_cf831899",
+        "filename": "server/encryptedcookies/session/datastore/impl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T01:15:20Z",
+      "side": 1,
+      "message": "I don\u0027t really care... I can make it set time.Time{} instead if you think it is better. I don\u0027t know how to omit a timestamp-valued field though. Maybe making it a pointer would work better?",
+      "parentUuid": "ae7b4495_c5de4e65",
       "range": {
         "startLine": 109,
         "startChar": 15,
@@ -104,6 +188,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dca7e60b_26032343",
+        "filename": "server/encryptedcookies/session/sessionpb/sessions.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T01:15:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "580ceed7_72ae3dad",
+      "range": {
+        "startLine": 25,
+        "startChar": 46,
+        "endLine": 25,
+        "endChar": 47
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2bb74bd2_594861be",
@@ -117,6 +225,30 @@
       "writtenOn": "2021-04-09T00:57:07Z",
       "side": 1,
       "message": "are each of these *always* set?",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 62
+      },
+      "revId": "33f28f811208601aeaa9c4c565229bea2cc58037",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d70d6f8_acd0db9b",
+        "filename": "server/encryptedcookies/session/sessionpb/sessions.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-09T01:15:20Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "2bb74bd2_594861be",
       "range": {
         "startLine": 39,
         "startChar": 0,
