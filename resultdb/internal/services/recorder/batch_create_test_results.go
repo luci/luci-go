@@ -17,6 +17,7 @@ package recorder
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -98,8 +99,9 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		TestResults: make([]*pb.TestResult, len(in.Requests)),
 	}
 	ms := make([]*spanner.Mutation, len(in.Requests))
+	commonPrefix := ""
 	for i, r := range in.Requests {
-		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+		ret.TestResults[i], ms[i], commonPrefix = insertTestResult(ctx, invID, in.RequestId, r.TestResult, commonPrefix)
 	}
 
 	var realm string
@@ -107,7 +109,21 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		span.BufferWrite(ctx, ms...)
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {
-			realm, err = invocations.ReadRealm(ctx, invID)
+			var invCommonTestIdPrefix string
+			if err = invocations.ReadColumns(ctx, invID, map[string]interface{}{"Realm": &realm, "CommonTestIDPrefix": &invCommonTestIdPrefix}); err != nil {
+				return
+			}
+
+			newPrefix := commonPrefix
+			if invCommonTestIdPrefix != "" {
+				newPrefix = longestCommonPrefix(invCommonTestIdPrefix, commonPrefix)
+			}
+			if invCommonTestIdPrefix != newPrefix {
+				span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+					"InvocationId":       invID,
+					"CommonTestIDPrefix": newPrefix,
+				}))
+			}
 			return
 		})
 		eg.Go(func() error {
@@ -122,7 +138,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	return ret, nil
 }
 
-func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation) {
+func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult, commonPrefix string) (*pb.TestResult, *spanner.Mutation, string) {
 	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
@@ -157,5 +173,31 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		}
 	}
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
-	return ret, mutation
+
+	switch {
+	case commonPrefix == "":
+		return ret, mutation, ret.TestId
+	case strings.HasPrefix(ret.TestId, commonPrefix):
+		return ret, mutation, commonPrefix
+	default:
+		return ret, mutation, longestCommonPrefix(commonPrefix, ret.TestId)
+	}
+}
+
+func longestCommonPrefix(str1, str2 string) string {
+	switch {
+	case str1 == str2:
+		return str1
+	case str1 == invocations.NoCommonPrefix || str2 == invocations.NoCommonPrefix:
+		return invocations.NoCommonPrefix
+	}
+
+	prefix := str1
+	for !strings.HasPrefix(str2, prefix) {
+		prefix = prefix[:len(prefix)-1]
+		if len(prefix) == 0 {
+			return invocations.NoCommonPrefix
+		}
+	}
+	return prefix
 }

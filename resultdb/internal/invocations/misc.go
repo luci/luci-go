@@ -30,6 +30,10 @@ import (
 // Column Invocations.ShardId is a value in range [0, Shards).
 const Shards = 100
 
+// If the test results in one invocation don't have a common prefix, use this
+// as the value of Invocations.CommonTestIDPrefix.
+const NoCommonPrefix = "no common prefix"
+
 // CurrentMaxShard reads the highest shard id in the Invocations table.
 // This may differ from the constant above when it has changed recently.
 func CurrentMaxShard(ctx context.Context) (int, error) {
