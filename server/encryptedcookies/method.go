@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -166,8 +167,25 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 		return nil, nil, nil
 	}
 
-	// TODO: Periodically refresh access and ID tokens to be able to use them and
-	// to make sure the refresh token is still valid.
+	// Check if we need to refresh the short-lived tokens stored in the session.
+	ttl := session.NextRefresh.AsTime().Sub(clock.Now(ctx))
+	if internal.ShouldRefreshSession(ctx, ttl) {
+		ctx := logging.SetField(ctx, "sid", sid.String())
+		if ttl > 0 {
+			logging.Infof(ctx, "Refreshing the session, goes stale in %s", ttl)
+		} else {
+			logging.Infof(ctx, "Refreshing the session, went stale %s ago", -ttl)
+		}
+		switch session, err = m.refreshSession(ctx, cookie, session); {
+		case err != nil:
+			logging.Warningf(ctx, "Failed to refresh the session: %s", err)
+			return nil, nil, errors.Reason("failed to refresh the session, see server logs").Tag(transient.Tag).Err()
+		case session == nil:
+			return nil, nil, nil // the session is no longer valid, just ignore it
+		default:
+			logging.Infof(ctx, "The session was refreshed")
+		}
+	}
 
 	return &auth.User{
 		Identity: identity.Identity("user:" + session.Email),
@@ -205,7 +223,9 @@ var (
 	// errCodeReuse is returned if the authorization code is reused.
 	errCodeReuse = errors.Reason("the authorization code has already been used").Err()
 	// errBadIDToken is returned if the produced ID token is not valid.
-	errBadIDToken = errors.Reason("bad ID token").Err()
+	errBadIDToken = errors.Reason("ID token validation error").Err()
+	// errSessionClosed is used internally to signal the session is closed.
+	errSessionClosed = errors.Reason("the session is already closed").Err()
 )
 
 // handler is one of .../login, .../logout or .../callback handlers.
@@ -509,6 +529,117 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		http.Redirect(rw, r, statepb.DestPath, http.StatusFound)
 		return nil
 	})
+}
+
+// refreshSession refreshes the short-lived tokens stored in the session, thus
+// checking that the refresh token (also stored there) is still valid.
+//
+// Returns:
+//   (new session, nil) - if the session was successfully refreshed.
+//   (nil, nil) - if the refresh token was revoked and/or the session is closed.
+//   (nil, err) - if there was some unexpected error refreshing the session.
+//
+// Note that returned errors may contain sensitive details and should not be
+// returned to the caller as it.
+func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookiespb.SessionCookie, session *sessionpb.Session) (*sessionpb.Session, error) {
+	// Need the discovery doc to hit the OpenID provider's endpoint.
+	cfg, err := m.checkConfigured(ctx)
+	if err != nil {
+		return nil, err
+	}
+	discovery, err := cfg.discoveryDoc(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unseal the private part of the session to get the refresh token.
+	private, sessionAEAD, err := internal.UnsealPrivate(cookie, session)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to unseal the session").Err()
+	}
+
+	// Use the refresh token to get the new access and ID tokens. A fatal error
+	// here means the refresh token is no longer valid.
+	tokens, exp, err := internal.HitTokenEndpoint(ctx, discovery, map[string]string{
+		"client_id":     cfg.ClientID,
+		"client_secret": cfg.ClientSecret,
+		"redirect_uri":  cfg.RedirectURI,
+		"grant_type":    "refresh_token",
+		"refresh_token": private.RefreshToken,
+	})
+	if err != nil {
+		if transient.Tag.In(err) {
+			return nil, errors.Annotate(err, "transient error when fetching new tokens").Err()
+		}
+		logging.Warningf(ctx, "Refresh failed, closing the session: %s", err)
+	}
+	stillGood := err == nil
+
+	var tok *openid.IDToken
+	var encryptedPrivate []byte
+	if stillGood {
+		// Grab the updated user info from the ID token.
+		if tok, _, err = openid.UserFromIDToken(ctx, tokens.IdToken, discovery); err != nil {
+			return nil, errors.Annotate(err, "failed to check the ID token").Err()
+		}
+		// Make sure we've also got the access token
+		if tokens.AccessToken == "" {
+			return nil, errors.Reason("the ID provider didn't produce an access token").Err()
+		}
+		// Reencrypt new tokens using the per-session key. The refresh token stays
+		// the same.
+		tokens.RefreshToken = private.RefreshToken
+		if encryptedPrivate, err = internal.EncryptPrivate(sessionAEAD, tokens); err != nil {
+			return nil, errors.Annotate(err, "failed to encrypt the private part of the session").Err()
+		}
+	}
+
+	// Here we either successfully refreshed the session or the ID provider
+	// rejected the refresh token. Either way, update the session state in
+	// the storage.
+	var refreshedSession *sessionpb.Session
+	err = m.Sessions.UpdateSession(ctx, cookie.SessionId, func(s *sessionpb.Session) error {
+		if s.State != sessionpb.State_STATE_OPEN {
+			return errSessionClosed
+		}
+		s.LastRefresh = timestamppb.New(clock.Now(ctx))
+
+		// Bump the counter used to detect race conditions. They should presumably
+		// be harmless, but some logging won't hurt.
+		if s.Generation != session.Generation {
+			logging.Warningf(ctx,
+				"The session was already updated by another handler (gen %d != gen %d). Overwriting...",
+				s.Generation, session.Generation)
+		}
+		s.Generation++
+
+		if stillGood {
+			s.NextRefresh = timestamppb.New(exp)
+			s.Sub = tok.Sub
+			s.Email = tok.Email
+			s.Name = tok.Name
+			s.Picture = tok.Picture
+			s.EncryptedPrivate = encryptedPrivate
+		} else {
+			s.State = sessionpb.State_STATE_REVOKED
+			s.NextRefresh = nil
+			s.Closed = timestamppb.New(clock.Now(ctx))
+			s.EncryptedPrivate = nil
+		}
+		refreshedSession = s
+		return nil
+	})
+	if err != nil {
+		if err == errSessionClosed {
+			return nil, nil
+		}
+		return nil, errors.Annotate(err, "failed to update the session in the storage").Err()
+	}
+
+	if stillGood {
+		return refreshedSession, nil
+	}
+	return nil, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
