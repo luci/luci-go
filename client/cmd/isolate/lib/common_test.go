@@ -119,8 +119,10 @@ func TestUploadToCAS(t *testing.T) {
 
 		e, cleanup := fakes.NewTestEnv(t)
 		defer cleanup()
-		newCasClient = func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
-			return e.Server.NewTestClient(ctx)
+		run := baseCommandRun{
+			casClientFactory: func(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
+				return e.Server.NewTestClient(ctx)
+			},
 		}
 		cas := e.Server.CAS
 
@@ -149,7 +151,7 @@ func TestUploadToCAS(t *testing.T) {
 			isol1Path := writeFile(tmpDir, "isol1.isolate", []byte(isol1Content))
 			isol2Path := writeFile(tmpDir, "isol2.isolate", []byte(isol2Content))
 
-			dgs, err := uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
+			dgs, err := run.uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate: isol1Path,
 			}, &isolate.ArchiveOptions{
 				Isolate: isol2Path,
@@ -197,7 +199,7 @@ func TestUploadToCAS(t *testing.T) {
 			cas.Put(fooContent)
 			cas.Put(barContent)
 
-			dgs, err := uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
+			dgs, err := run.uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate: isol1Path,
 			})
 			So(err, ShouldBeNil)
@@ -240,7 +242,7 @@ func TestUploadToCAS(t *testing.T) {
 				// Need to escape `\` on Windows
 				filteredRe = `filtered\\foo`
 			}
-			dgs, err := uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
+			dgs, err := run.uploadToCAS(context.Background(), "", opts, &fakeFlags, nil, &isolate.ArchiveOptions{
 				Isolate:             isol1Path,
 				IgnoredPathFilterRe: filteredRe,
 			})

@@ -99,7 +99,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		if err != nil {
 			return err
 		}
-		roots, err := uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, &c.ArchiveOptions)
+		roots, err := c.uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, &c.ArchiveOptions)
 		if err != nil {
 			return err
 		}

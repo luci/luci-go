@@ -34,7 +34,7 @@ func CmdRemap() *subcommands.Command {
 Useful to test manually why a test is failing. The target executable is not run.`,
 		CommandRun: func() subcommands.CommandRun {
 			r := remapRun{}
-			r.commonFlags.Init()
+			r.baseCommandRun.Init()
 			r.isolateFlags.Init(&r.Flags)
 			r.Flags.StringVar(&r.outdir, "outdir", "", "Directory used to recreate the tree.")
 			return &r
@@ -43,14 +43,14 @@ Useful to test manually why a test is failing. The target executable is not run.
 }
 
 type remapRun struct {
-	commonFlags
+	baseCommandRun
 	isolateFlags
 
 	outdir string
 }
 
 func (r *remapRun) Parse(a subcommands.Application, args []string) error {
-	if err := r.commonFlags.Parse(); err != nil {
+	if err := r.baseCommandRun.Parse(); err != nil {
 		return err
 	}
 	cwd, err := os.Getwd()
