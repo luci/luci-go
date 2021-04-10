@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/tink/go/tink"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -331,7 +332,41 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 // logoutHandler closes the session.
 func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 	m.handler(ctx, func(ctx context.Context, r *http.Request, rw http.ResponseWriter, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
-		return fmt.Errorf("not implemented")
+		dest, err := normalizeURL(r.URL.Query().Get("r"))
+		if err != nil {
+			return errors.Annotate(err, "bad redirect URI").Err()
+		}
+
+		// If we have a cookie, revoke the refresh token and mark the session
+		// as closed.
+		if encryptedCookie, _ := r.Cookie(internal.SessionCookieName); encryptedCookie != nil {
+			aead := auth.GetAEAD(ctx)
+			if aead == nil {
+				return errors.Reason("the encryption key is not configured").Err()
+			}
+			if err := m.closeSession(ctx, aead, encryptedCookie, cfg, discovery); err != nil {
+				// Refresh tokens are usually observable through ID provider UI. There's
+				// a list of "Such and such services have your profile information". The
+				// expectation is that if the user finishes the logout flow, the service
+				// will disappear from the list of authorized services. To do that, we
+				// must successfully revoke the token.
+				//
+				// Since the logout is used *specifically* to achieve this, it is better
+				// to fail it if the revocation fails, unlike the best-effort revocation
+				// in /login (where the primary purpose is to get a new refresh token,
+				// not to revoke the previous one).
+				logging.Errorf(ctx, "An error closing the session: %s", err)
+				return errors.Reason("transient error when closing the session").Tag(transient.Tag).Err()
+			}
+		}
+
+		// Nuke all session cookies to get to a completely clean state.
+		removeCookie(rw, r, internal.SessionCookieName)
+		for _, name := range m.IncompatibleCookies {
+			removeCookie(rw, r, name)
+		}
+		http.Redirect(rw, r, dest, http.StatusFound)
+		return nil
 	})
 }
 
@@ -510,8 +545,14 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 			return errors.Reason("failed to store the session").Tag(transient.Tag).Err()
 		}
 
-		// Best effort at properly closing the previous session.
-		// TODO: implement once logoutHandler is implemented.
+		// Best effort at properly closing the previous session. We are going to
+		// override the cookie anyway.
+		if existingCookie, _ := r.Cookie(internal.SessionCookieName); existingCookie != nil {
+			logging.Infof(ctx, "Closing the previous session")
+			if err := m.closeSession(ctx, aead, existingCookie, cfg, discovery); err != nil {
+				logging.Warningf(ctx, "An error closing the previous session, ignoring: %s", err)
+			}
+		}
 
 		// Encrypt the session cookie with the *global* AEAD key and set it.
 		httpCookie, err := internal.EncryptSessionCookie(aead, cookie)
@@ -539,8 +580,8 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 //   (nil, nil) - if the refresh token was revoked and/or the session is closed.
 //   (nil, err) - if there was some unexpected error refreshing the session.
 //
-// Note that returned errors may contain sensitive details and should not be
-// returned to the caller as it.
+// Note that errors may contain sensitive details and should not be returned to
+// the caller as is.
 func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookiespb.SessionCookie, session *sessionpb.Session) (*sessionpb.Session, error) {
 	// Need the discovery doc to hit the OpenID provider's endpoint.
 	cfg, err := m.checkConfigured(ctx)
@@ -599,20 +640,11 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	// the storage.
 	var refreshedSession *sessionpb.Session
 	err = m.Sessions.UpdateSession(ctx, cookie.SessionId, func(s *sessionpb.Session) error {
+		bumpGeneration(ctx, s, session.Generation)
 		if s.State != sessionpb.State_STATE_OPEN {
 			return errSessionClosed
 		}
 		s.LastRefresh = timestamppb.New(clock.Now(ctx))
-
-		// Bump the counter used to detect race conditions. They should presumably
-		// be harmless, but some logging won't hurt.
-		if s.Generation != session.Generation {
-			logging.Warningf(ctx,
-				"The session was already updated by another handler (gen %d != gen %d). Overwriting...",
-				s.Generation, session.Generation)
-		}
-		s.Generation++
-
 		if stillGood {
 			s.NextRefresh = timestamppb.New(exp)
 			s.Sub = tok.Sub
@@ -642,7 +674,91 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	return nil, nil
 }
 
+// closeSession closes the session and revokes the refresh token.
+//
+// Does nothing if the session is already closed or the cookie can't be
+// decrypted.
+//
+// Note that errors may contain sensitive details and should not be returned to
+// the caller as is.
+func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encryptedCookie *http.Cookie, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
+	cookie, err := internal.DecryptSessionCookie(aead, encryptedCookie)
+	if err != nil {
+		logging.Warningf(ctx, "Failed to decrypt the session cookie, ignoring it: %s", err)
+		return nil
+	}
+	sid := session.ID(cookie.SessionId)
+
+	session, err := m.Sessions.FetchSession(ctx, sid)
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch the session").Tag(transient.Tag).Err()
+	case session == nil || session.State != sessionpb.State_STATE_OPEN:
+		logging.Infof(ctx, "The session is already closed")
+		return nil
+	}
+
+	// Unseal the private part of the session to get the refresh token to revoke
+	// it. Ignore encryption errors (they may happen if keys were replaced or
+	// there was a bug in the code). We should delete the session even if we can't
+	// get to its refresh token. Old refresh tokens are naturally evicted when
+	// new tokens are minted.
+	private, _, err := internal.UnsealPrivate(cookie, session)
+	if err != nil {
+		logging.Warningf(ctx, "Failed to unseal the private part of the session, ignoring the refresh token: %s", err)
+	} else {
+		if err := m.revokeRefreshToken(ctx, private.RefreshToken, cfg, discovery); err != nil {
+			return err
+		}
+	}
+
+	// Mark the session as closed in the storage.
+	err = m.Sessions.UpdateSession(ctx, sid, func(s *sessionpb.Session) error {
+		bumpGeneration(ctx, s, session.Generation)
+		if s.State != sessionpb.State_STATE_OPEN {
+			return errSessionClosed
+		}
+		s.State = sessionpb.State_STATE_CLOSED
+		s.NextRefresh = nil
+		s.Closed = timestamppb.New(clock.Now(ctx))
+		s.EncryptedPrivate = nil
+		return nil
+	})
+	if err != nil {
+		if err == errSessionClosed {
+			logging.Infof(ctx, "The session is already closed")
+			return nil
+		}
+		return errors.Annotate(err, "failed to update the session in the storage").Err()
+	}
+
+	return nil
+}
+
+// revokeRefreshToken sends a request to the provider's revocation endpoint.
+func (m *AuthMethod) revokeRefreshToken(ctx context.Context, token string, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
+	return internal.HitRevocationEndpoint(ctx, discovery, map[string]string{
+		"client_id":       cfg.ClientID,
+		"client_secret":   cfg.ClientSecret,
+		"token":           token,
+		"token_type_hint": "refresh_token",
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
+
+// bumpGeneration bumps Generation counter in the session.
+//
+// It is used to detect race conditions between session update transactions.
+// They should presumably be harmless, but some logging won't hurt.
+func bumpGeneration(ctx context.Context, s *sessionpb.Session, expected int32) {
+	if s.Generation != expected {
+		logging.Warningf(ctx,
+			"The session was already updated by another handler (gen %d != gen %d). Overwriting...",
+			s.Generation, expected)
+	}
+	s.Generation++
+}
 
 // normalizeURL verifies URL is parsable and that it is relative.
 func normalizeURL(dest string) (string, error) {
