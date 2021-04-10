@@ -103,13 +103,14 @@ func TestMethod(t *testing.T) {
 			Sessions: &datastore.Store{},
 		}
 
-		call := func(h router.Handler, host string, url *url.URL) *http.Response {
+		call := func(h router.Handler, host string, url *url.URL, header http.Header) *http.Response {
 			rw := httptest.NewRecorder()
 			h(&router.Context{
 				Context: ctx,
 				Request: &http.Request{
-					URL:  url,
-					Host: host,
+					URL:    url,
+					Host:   host,
+					Header: header,
 				},
 				Writer: rw,
 			})
@@ -123,7 +124,7 @@ func TestMethod(t *testing.T) {
 			parsed, _ := url.Parse(loginURL)
 
 			// Hitting the generated login URL generates a redirect to the provider.
-			resp := call(method.loginHandler, "dest.example.com", parsed)
+			resp := call(method.loginHandler, "dest.example.com", parsed, nil)
 			So(resp.StatusCode, ShouldEqual, http.StatusFound)
 			authURL, _ := url.Parse(resp.Header.Get("Location"))
 			So(authURL.Host, ShouldEqual, provider.Host())
@@ -136,7 +137,7 @@ func TestMethod(t *testing.T) {
 			// Provider calls us back on our primary host (not "dest.example.com").
 			resp = call(method.callbackHandler, "primary.example.com", &url.URL{
 				RawQuery: callbackRawQuery,
-			})
+			}, nil)
 
 			// We got a redirect to "dest.example.com".
 			So(resp.StatusCode, ShouldEqual, http.StatusFound)
@@ -145,7 +146,7 @@ func TestMethod(t *testing.T) {
 			// Now hitting the same callback on "dest.example.com".
 			resp = call(method.callbackHandler, "dest.example.com", &url.URL{
 				RawQuery: callbackRawQuery,
-			})
+			}, nil)
 
 			// Got a redirect to the final destination URL.
 			So(resp.StatusCode, ShouldEqual, http.StatusFound)
@@ -163,7 +164,7 @@ func TestMethod(t *testing.T) {
 				// Trying to use the authorization code again fails.
 				resp := call(method.callbackHandler, "dest.example.com", &url.URL{
 					RawQuery: callbackRawQuery,
-				})
+				}, nil)
 				So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
 			})
 
@@ -256,8 +257,39 @@ func TestMethod(t *testing.T) {
 			})
 
 			Convey("Logout works", func() {
-				// Logout clears the cookie and invalidates the session.
-				// TODO: check once implemented.
+				logoutURL, err := method.LogoutURL(ctx, "/some/dest")
+				So(err, ShouldBeNil)
+				So(logoutURL, ShouldEqual, "/auth/openid/logout?r=%2Fsome%2Fdest")
+				parsed, _ := url.Parse(logoutURL)
+
+				resp := call(method.logoutHandler, "primary.example.com", parsed, http.Header{
+					"Cookie": {cookie},
+				})
+
+				// Got a redirect to the final destination URL.
+				So(resp.StatusCode, ShouldEqual, http.StatusFound)
+				So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
+
+				// The cookie is removed.
+				So(resp.Header.Get("Set-Cookie"), ShouldStartWith, "LUCISID=deleted")
+
+				// It also no longer works.
+				user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+				So(err, ShouldBeNil)
+				So(user, ShouldBeNil)
+				So(session, ShouldBeNil)
+
+				// The refresh token was revoked.
+				So(provider.Revoked, ShouldResemble, []string{provider.RefreshToken})
+
+				// Hitting logout again (resending the cookie) succeeds, but doesn't
+				// revoke the token (it has already been revoked).
+				resp = call(method.logoutHandler, "primary.example.com", parsed, http.Header{
+					"Cookie": {cookie},
+				})
+				So(resp.StatusCode, ShouldEqual, http.StatusFound)
+				So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
+				So(provider.Revoked, ShouldResemble, []string{provider.RefreshToken})
 			})
 		})
 	})
@@ -327,6 +359,7 @@ type openIDProviderFake struct {
 	UserPicture string
 
 	RefreshToken string
+	Revoked      []string
 
 	TransientErr error
 
@@ -341,6 +374,7 @@ func (f *openIDProviderFake) Init(ctx context.Context, c C) {
 	r.GET("/discovery", router.MiddlewareChain{}, f.discoveryHandler)
 	r.GET("/jwks", router.MiddlewareChain{}, f.jwksHandler)
 	r.POST("/token", router.MiddlewareChain{}, f.tokenHandler)
+	r.POST("/revocation", router.MiddlewareChain{}, f.revocationHandler)
 	f.c = c
 	f.srv = httptest.NewServer(r)
 	f.signer = signingtest.NewSigner(nil)
@@ -386,6 +420,7 @@ func (f *openIDProviderFake) discoveryHandler(ctx *router.Context) {
 		"issuer":                 fakeIssuer,
 		"authorization_endpoint": f.srv.URL + "/authorization", // not actually called in test
 		"token_endpoint":         f.srv.URL + "/token",
+		"revocation_endpoint":    f.srv.URL + "/revocation",
 		"jwks_uri":               f.srv.URL + "/jwks",
 	})
 }
@@ -400,19 +435,10 @@ func (f *openIDProviderFake) tokenHandler(ctx *router.Context) {
 		http.Error(ctx.Writer, f.TransientErr.Error(), 500)
 		return
 	}
-
-	clientID := ctx.Request.FormValue("client_id")
-	if clientID != f.ExpectedClientID {
-		http.Error(ctx.Writer, "bad client ID", 400)
+	if !f.checkClient(ctx) {
 		return
 	}
-	clientSecret := ctx.Request.FormValue("client_secret")
-	if clientSecret != f.ExpectedClientSecret {
-		http.Error(ctx.Writer, "bad client secret", 400)
-		return
-	}
-	redirectURI := ctx.Request.FormValue("redirect_uri")
-	if redirectURI != f.ExpectedRedirectURI {
+	if ctx.Request.FormValue("redirect_uri") != f.ExpectedRedirectURI {
 		http.Error(ctx.Writer, "bad redirect URI", 400)
 		return
 	}
@@ -466,6 +492,25 @@ func (f *openIDProviderFake) tokenHandler(ctx *router.Context) {
 	default:
 		http.Error(ctx.Writer, "unknown grant_type", 400)
 	}
+}
+
+func (f *openIDProviderFake) revocationHandler(ctx *router.Context) {
+	if !f.checkClient(ctx) {
+		return
+	}
+	f.Revoked = append(f.Revoked, ctx.Request.FormValue("token"))
+}
+
+func (f *openIDProviderFake) checkClient(ctx *router.Context) bool {
+	if ctx.Request.FormValue("client_id") != f.ExpectedClientID {
+		http.Error(ctx.Writer, "bad client ID", 400)
+		return false
+	}
+	if ctx.Request.FormValue("client_secret") != f.ExpectedClientSecret {
+		http.Error(ctx.Writer, "bad client secret", 400)
+		return false
+	}
+	return true
 }
 
 func (f *openIDProviderFake) genAccessToken() string {
