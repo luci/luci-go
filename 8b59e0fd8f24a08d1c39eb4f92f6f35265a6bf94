@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "742e78d5_ae5529c1",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 706,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-10T00:07:03Z",
+      "side": 1,
+      "message": "Issued non-revoked refresh tokens are observable through Google Accounts page. There\u0027s a list of \"Such and such services have information about your profile\". The expectation is that if you click Logout in Milo, Milo will disappear from this list. To do that, we must revoke the token.\n\nSince you hit /logout *specifically* to do this, I think it is acceptable to fail the request if it doesn\u0027t work (unlike in \"/login\" where your primary intention is to create a new session).",
+      "parentUuid": "3583c17d_24d35a9b",
+      "range": {
+        "startLine": 706,
+        "startChar": 3,
+        "endLine": 706,
+        "endChar": 13
+      },
+      "revId": "8b59e0fd8f24a08d1c39eb4f92f6f35265a6bf94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "7215d543_135c18a5",
         "filename": "server/encryptedcookies/method.go",
         "patchSetId": 4
