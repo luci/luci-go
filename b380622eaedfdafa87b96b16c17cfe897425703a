@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7b7b4758_5be97c22",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-10T00:02:39Z",
+      "side": 1,
+      "message": "I\u0027m actually considering just to ignore this, it\u0027s not a big deal. Passing http.ResponseWriter to a \"pure\" function like Authentication seems weird...",
+      "parentUuid": "93857425_6e51e3d0",
+      "range": {
+        "startLine": 158,
+        "startChar": 9,
+        "endLine": 158,
+        "endChar": 16
+      },
+      "revId": "b380622eaedfdafa87b96b16c17cfe897425703a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "64c4a073_baffcdf6",
         "filename": "server/encryptedcookies/method.go",
         "patchSetId": 7
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-09T23:19:48Z",
       "side": 1,
       "message": "nit-nit-pedantic: strictly speaking, the same caveat with transaction retry applies. I\u0027m ok leaving \"another\"",
+      "range": {
+        "startLine": 616,
+        "startChar": 40,
+        "endLine": 616,
+        "endChar": 47
+      },
+      "revId": "b380622eaedfdafa87b96b16c17cfe897425703a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a500678_b0e6e1f6",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 616,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-10T00:02:39Z",
+      "side": 1,
+      "message": "yeah, it\u0027s not a big deal here",
+      "parentUuid": "64c4a073_baffcdf6",
       "range": {
         "startLine": 616,
         "startChar": 40,
@@ -78,6 +126,24 @@
       "side": 1,
       "message": "Ah, I see this error is also used in another method in next CL (https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2816098/4)\n\nSo, then this is all fine, except maybe name it errSessionAlreadyClosed?",
       "parentUuid": "2d00bc21_c011f541",
+      "revId": "b380622eaedfdafa87b96b16c17cfe897425703a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d25f027a_f150e8cb",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 632,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-10T00:02:39Z",
+      "side": 1,
+      "message": "I see no value in renaming it to errSessionAlreadyClosed: it is just more to type, and doesn\u0027t convey much more (especially considering it is an internal error).",
+      "parentUuid": "04d10874_d701fe23",
       "revId": "b380622eaedfdafa87b96b16c17cfe897425703a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
