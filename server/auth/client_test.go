@@ -351,6 +351,57 @@ func TestGetRPCTransport(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 
+		Convey("in AsSessionUser mode without session", func(c C) {
+			_, err := GetRPCTransport(ctx, AsSessionUser)
+			So(err, ShouldEqual, ErrNotConfigured)
+		})
+
+		Convey("in AsSessionUser mode", func(c C) {
+			ctx := WithState(ctx, &state{
+				user: &User{Identity: "user:abc@example.com"},
+				session: &fakeSession{
+					accessToken: &oauth2.Token{
+						TokenType:   "Bearer",
+						AccessToken: "access_token",
+					},
+					idToken: &oauth2.Token{
+						TokenType:   "Bearer",
+						AccessToken: "id_token",
+					},
+				},
+			})
+
+			Convey("OAuth2 token", func() {
+				t, err := GetRPCTransport(ctx, AsSessionUser)
+				So(err, ShouldBeNil)
+				_, err = t.RoundTrip(makeReq("https://example.com"))
+				So(err, ShouldBeNil)
+				So(mock.reqs[0].Header, ShouldResemble, http.Header{
+					"Authorization": {"Bearer access_token"},
+				})
+			})
+
+			Convey("ID token", func() {
+				t, err := GetRPCTransport(ctx, AsSessionUser, WithIDToken())
+				So(err, ShouldBeNil)
+				_, err = t.RoundTrip(makeReq("https://example.com"))
+				So(err, ShouldBeNil)
+				So(mock.reqs[0].Header, ShouldResemble, http.Header{
+					"Authorization": {"Bearer id_token"},
+				})
+			})
+
+			Convey("Trying to override scopes", func() {
+				_, err := GetRPCTransport(ctx, AsSessionUser, WithScopes("a"))
+				So(err, ShouldNotBeNil)
+			})
+
+			Convey("Trying to override aud", func() {
+				_, err := GetRPCTransport(ctx, AsSessionUser, WithIDTokenAudience("aud"))
+				So(err, ShouldNotBeNil)
+			})
+		})
+
 		Convey("when headers are needed, Request context is used", func() {
 			root := ctx
 
@@ -537,6 +588,19 @@ func makeReq(url string) *http.Request {
 		panic(err)
 	}
 	return req
+}
+
+type fakeSession struct {
+	accessToken *oauth2.Token
+	idToken     *oauth2.Token
+}
+
+func (s *fakeSession) AccessToken(ctx context.Context) (*oauth2.Token, error) {
+	return s.accessToken, nil
+}
+
+func (s *fakeSession) IDToken(ctx context.Context) (*oauth2.Token, error) {
+	return s.idToken, nil
 }
 
 type clientRPCTransportMock struct {
