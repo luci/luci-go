@@ -213,6 +213,24 @@
       "parentUuid": "34681ca7_9d20d8ad",
       "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd2be4b0_4d201da0",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-10T00:02:48Z",
+      "side": 1,
+      "message": "- The maximum number of test results in a batch request is 500.\n- recorder.BatchCreateTestResults() will have to iterate all the test results with validating each of the test IDs anyways.\n\nI don\u0027t think calculating the most common test prefix among the received test results will add much of extra CPU and memory load to recorder, if it\u0027s done during the request validation process.",
+      "parentUuid": "34681ca7_9d20d8ad",
+      "revId": "593f42b5314797c1f24667a0caccccc5390f1c19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
