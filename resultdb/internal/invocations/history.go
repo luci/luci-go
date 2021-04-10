@@ -15,7 +15,10 @@
 package invocations
 
 import (
+	"bytes"
 	"context"
+	"regexp"
+	"text/template"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -44,6 +47,7 @@ const (
 type HistoryQuery struct {
 	Realm     string
 	TimeRange *pb.TimeRange
+	Predicate *pb.TestResultPredicate
 }
 
 // ByTimestamp queries indexed invocations in a given time range.
@@ -70,19 +74,30 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 		}
 	}
 
-	st := spanner.NewStatement(`
-		SELECT
-			i.InvocationId,
-			i.HistoryTime,
-		FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp, spanner_emulator.disable_query_null_filtered_index_check=true} i
-		WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
-		ORDER BY i.HistoryTime DESC
-	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"realm":   q.Realm,
-		"minTime": minTime,
-		"maxTime": maxTime,
-	})
+	testIdRegexp := ""
+	if re := q.Predicate.GetTestIdRegexp(); re != "" && re != ".*" {
+		r := regexp.MustCompile(re)
+		if _, literalPrefix := r.LiteralPrefix(); literalPrefix == true {
+			// We're trying to match the invocation's CommonTestIDPrefix with the testIdRegexp,
+			// so testIdRegexp should have a literal prefix, otherwise the match likely
+			// fails.
+			// For example if an invocation's CommonTestIDPrefix is "ninja://" and
+			// re is ".*browser_tests.*", we wouldn't know if that invocation contains
+			// any test results with matching test ids.
+			testIdRegexp = re
+		}
+	}
+
+	sql := &bytes.Buffer{}
+	if err = queryTmpl.Execute(sql, map[string]interface{}{"MatchTestIdPrefix": testIdRegexp != ""}); err != nil {
+		return err
+	}
+	st := spanner.NewStatement(sql.String())
+	st.Params["realm"] = q.Realm
+	st.Params["minTime"] = minTime
+	st.Params["maxTime"] = maxTime
+	st.Params["noCommonPrefix"] = NoCommonPrefix
+	st.Params["testIdRegexp"] = testIdRegexp
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -94,3 +109,18 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 		return callback(inv, ts)
 	})
 }
+
+var queryTmpl = template.Must(template.New("").Parse(`
+	SELECT
+		i.InvocationId,
+		i.HistoryTime,
+	FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp, spanner_emulator.disable_query_null_filtered_index_check=true} i
+	WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
+	{{if .MatchTestIdPrefix}}
+		AND (
+			STARTS_WITH(@testIdRegexp, i.CommonTestIDPrefix)) OR
+			REGEXP_CONTAINS(i.CommonTestIDPrefix, @testIdRegexp) OR
+			i.CommonTestIDPrefix = @noCommonPrefix
+	{{end}}
+	ORDER BY i.HistoryTime DESC
+`))

@@ -375,6 +375,10 @@ message GetTestResultHistoryRequest {
   string realm = 1;
 
   // Specify the subset of test ids to request history for.
+  //
+  // Performance tip: to speed up the query, please use the regexp with a literal
+  // prefix. For example, please use "ninja://chrome/test:browser_tests.*" instead of
+  // ".*browser_tests.*".
   string test_id_regexp = 2;
 
   // Specify the subset of test variants to request history for.
