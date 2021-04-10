@@ -41,6 +41,7 @@ func main() {
 	r := router.New()
 
 	// Install auth, config and tsmon handlers.
+	server.SwitchToEncryptedCookies()
 	standard.InstallHandlers(r)
 
 	// RPC Explorer UI.

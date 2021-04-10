@@ -42,7 +42,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, templatesPat
 		next(c)
 	}).Extend(
 		templates.WithTemplates(prepareTemplates(templatesPath)),
-		auth.Authenticate(server.UsersAPIAuthMethod{}),
+		auth.Authenticate(server.CookieAuth),
 	)
 
 	r.GET("/", m, renderErr(routeToPage))
