@@ -67,6 +67,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "028e1344_96457721",
+        "filename": "server/encryptedcookies/method.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 706,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-10T00:11:44Z",
+      "side": 1,
+      "message": "imo, worth copy-pasting what you wrote to me as a comment above `return err`",
+      "parentUuid": "742e78d5_ae5529c1",
+      "range": {
+        "startLine": 706,
+        "startChar": 3,
+        "endLine": 706,
+        "endChar": 13
+      },
+      "revId": "8b59e0fd8f24a08d1c39eb4f92f6f35265a6bf94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "7215d543_135c18a5",
         "filename": "server/encryptedcookies/method.go",
         "patchSetId": 4
