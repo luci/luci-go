@@ -97,9 +97,14 @@ func TestByTimestamp(t *testing.T) {
 		afterPB, _ := ptypes.TimestampProto(end.Add(time.Hour))
 		muchLaterPB, _ := ptypes.TimestampProto(end.Add(24 * time.Hour))
 
+		q := &HistoryQuery{
+			Realm: realm,
+		}
+
 		Convey(`all but the most recent`, func() {
 			ac := newHistoryAccumulator(2)
-			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: startPB, Latest: middlePB}, ac.accumulate)
+			q.TimeRange = &pb.TimeRange{Earliest: startPB, Latest: middlePB}
+			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
 			So(ac.invs, ShouldHaveLength, 2)
 			So(string(ac.invs[0]), ShouldEndWith, "second")
@@ -108,7 +113,8 @@ func TestByTimestamp(t *testing.T) {
 
 		Convey(`all but the oldest`, func() {
 			ac := newHistoryAccumulator(2)
-			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: middlePB, Latest: afterPB}, ac.accumulate)
+			q.TimeRange = &pb.TimeRange{Earliest: middlePB, Latest: afterPB}
+			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
 			So(ac.invs, ShouldHaveLength, 2)
 			So(string(ac.invs[0]), ShouldEndWith, "third")
@@ -117,7 +123,8 @@ func TestByTimestamp(t *testing.T) {
 
 		Convey(`all results`, func() {
 			ac := newHistoryAccumulator(2)
-			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: startPB, Latest: afterPB}, ac.accumulate)
+			q.TimeRange = &pb.TimeRange{Earliest: startPB, Latest: afterPB}
+			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
 			So(ac.invs, ShouldHaveLength, 3)
 			So(string(ac.invs[0]), ShouldEndWith, "third")
@@ -127,14 +134,16 @@ func TestByTimestamp(t *testing.T) {
 
 		Convey(`before first result`, func() {
 			ac := newHistoryAccumulator(1)
-			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: beforePB, Latest: justBeforePB}, ac.accumulate)
+			q.TimeRange = &pb.TimeRange{Earliest: beforePB, Latest: justBeforePB}
+			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
 			So(ac.invs, ShouldHaveLength, 0)
 		})
 
 		Convey(`after last result`, func() {
 			ac := newHistoryAccumulator(1)
-			err := ByTimestamp(ctx, realm, &pb.TimeRange{Earliest: afterPB, Latest: muchLaterPB}, ac.accumulate)
+			q.TimeRange = &pb.TimeRange{Earliest: afterPB, Latest: muchLaterPB}
+			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
 			So(ac.invs, ShouldHaveLength, 0)
 		})
