@@ -26,6 +26,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -70,6 +71,16 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		relativeCwd := "farm"
 
 		ctx := context.Background()
+
+		expectedBaseEnv := environ.System().Sorted()
+
+		// Set env values to be removed or replaced in createTaskRequestCommand().
+		ctxBaseEnvMap := environ.System()
+		ctxBaseEnvMap.Set("removeKey", "removeValue")
+		ctxBaseEnvMap.Set("replaceKey", "oldValue")
+		ctxBaseEnvMap.Set("noChangeKey", "noChangeValue")
+		ctx = ctxBaseEnvMap.SetInCtx(ctx)
+
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
 				return &swarming.SwarmingRpcsTaskRequest{
@@ -83,6 +94,20 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 							Properties: &swarming.SwarmingRpcsTaskProperties{
 								Command:     []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
 								RelativeCwd: relativeCwd,
+								Env: []*swarming.SwarmingRpcsStringPair{
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "key",
+										Value: "value1",
+									},
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "replaceKey",
+										Value: "value2",
+									},
+									&swarming.SwarmingRpcsStringPair{
+										Key:   "removeKey",
+										Value: "",
+									},
+								},
 							},
 						},
 					},
@@ -93,6 +118,8 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
 		expected.Dir = path.Join(c.work, relativeCwd)
+
+		expected.Env = append(expectedBaseEnv, []string{"key=value1", "noChangeKey=noChangeValue", "replaceKey=value2"}...)
 		So(cmd, ShouldResemble, expected)
 	})
 }
