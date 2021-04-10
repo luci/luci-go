@@ -17,7 +17,6 @@ package encryptedcookies
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -128,7 +127,19 @@ func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareCha
 //
 // Implements auth.Warmable.
 func (m *AuthMethod) Warmup(ctx context.Context) error {
-	return fmt.Errorf("not implemented")
+	cfg, err := m.checkConfigured(ctx)
+	if err != nil {
+		return err
+	}
+	doc, err := cfg.discoveryDoc(ctx)
+	if err != nil {
+		return err
+	}
+	if _, err := doc.SigningKeys(ctx); err != nil {
+		return err
+	}
+	_ = auth.GetAEAD(ctx)
+	return nil
 }
 
 // Authenticate authenticates the request.
