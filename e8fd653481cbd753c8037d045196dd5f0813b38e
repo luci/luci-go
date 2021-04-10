@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "16f15a77_22ff633f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-10T01:50:20Z",
+      "side": 1,
+      "message": "PTAL\n\nIt is just an interface, it is not hooked up to an implementation yet. It will be done in the next CL.",
+      "revId": "e8fd653481cbd753c8037d045196dd5f0813b38e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
