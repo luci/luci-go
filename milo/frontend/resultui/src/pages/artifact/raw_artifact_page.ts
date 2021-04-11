@@ -20,6 +20,7 @@ import { fromPromise, PENDING, REJECTED } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
+import './artifact_page_layout';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { NOT_FOUND_URL, router } from '../../routes';
@@ -92,54 +93,13 @@ export class RawArtifactPageElement extends MiloBaseElement implements BeforeEnt
 
   protected render() {
     return html`
-      <div id="artifact-header">
-        <table>
-          <tr>
-            <td class="id-component-label">Invocation</td>
-            <td>
-              <a href=${router.urlForName('invocation', { invocation_id: this.artifactIdent.invocationId })}
-                >${this.artifactIdent.invocationId}</a
-              >
-            </td>
-          </tr>
-          ${this.artifactIdent.testId &&
-          html`
-            <!-- TODO(weiweilin): add view test link -->
-            <tr>
-              <td class="id-component-label">Test</td>
-              <td>${this.artifactIdent.testId}</td>
-            </tr>
-          `}
-          ${this.artifactIdent.resultId &&
-          html`
-            <!-- TODO(weiweilin): add view result link -->
-            <tr>
-              <td class="id-component-label">Result</td>
-              <td>${this.artifactIdent.resultId}</td>
-            </tr>
-          `}
-          <tr>
-            <td class="id-component-label">Artifact</td>
-            <td>${this.artifactIdent.artifactId}</td>
-          </tr>
-        </table>
-      </div>
-      <milo-status-bar
-        .components=${[{ color: 'var(--active-color)', weight: 1 }]}
-        .loading=${this.artifact$.state === 'pending'}
-      ></milo-status-bar>
-      <div id="content">Loading artifact <milo-dot-spinner></milo-dot-spinner></div>
+      <milo-artifact-page-layout .ident=${this.artifactIdent} .isLoading=${this.artifact$.state === PENDING}>
+        <div id="content">Loading artifact <milo-dot-spinner></milo-dot-spinner></div>
+      </milo-artifact-page-layout>
     `;
   }
 
   static styles = css`
-    #artifact-header {
-      background-color: var(--block-background-color);
-      padding: 6px 16px;
-      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-      font-size: 14px;
-    }
-
     #content {
       margin: 20px;
       color: var(--active-color);
