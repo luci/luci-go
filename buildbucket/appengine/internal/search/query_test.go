@@ -202,8 +202,6 @@ func experiments(canary, experimental bool) (ret []string) {
 
 	if experimental {
 		ret = append(ret, "+"+bb.ExperimentNonProduction)
-	} else {
-		ret = append(ret, "-"+bb.ExperimentNonProduction)
 	}
 	return
 }

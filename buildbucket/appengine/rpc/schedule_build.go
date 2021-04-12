@@ -382,6 +382,11 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 			build.Experiments = append(build.Experiments, fmt.Sprintf("+%s", exp))
 			build.Proto.Input.Experiments = append(build.Proto.Input.Experiments, exp)
 		} else {
+			// The "-luci.non_production" case is specifically exempt from the
+			// datastore index. See `model.Build.Experiments`.
+			if exp == bb.ExperimentNonProduction {
+				continue
+			}
 			build.Experiments = append(build.Experiments, fmt.Sprintf("-%s", exp))
 		}
 	}
