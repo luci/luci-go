@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ecdbda5_b7f74cac",
+        "filename": "milo/frontend/resultui/src/libs/cached_fn_test.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T19:21:01Z",
+      "side": 1,
+      "message": "thanks. I was wondering about determinism JSON.stringify when I was reviewing the original code",
+      "range": {
+        "startLine": 30,
+        "startChar": 51,
+        "endLine": 30,
+        "endChar": 66
+      },
+      "revId": "e01c24980917509af6455e46407457b29501981b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec92528e_8181f55f",
+        "filename": "milo/frontend/resultui/src/libs/prpc_utils.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T19:21:01Z",
+      "side": 1,
+      "message": "does this code run if req was unsuccessful? \nthose responses are not JSON",
+      "revId": "e01c24980917509af6455e46407457b29501981b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
