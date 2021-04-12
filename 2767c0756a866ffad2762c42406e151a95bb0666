@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a4243059_02f4f4e0",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T21:18:49Z",
+      "side": 1,
+      "message": "the second boolean is not \"ok\". It is \"complete\".\nWhy not just\n\n  literalPrefix, _ \u003d regexp.MustCompile(re).LiteralPrefix()",
+      "range": {
+        "startLine": 81,
+        "startChar": 20,
+        "endLine": 81,
+        "endChar": 22
+      },
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc9f6288_b27363be",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T21:18:49Z",
+      "side": 1,
+      "message": "\"^foo$\" does not start with \"foo\".\nWhy not pass the literal prefix that we computed into the query and compare to that instead?",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 127,
+        "endChar": 55
+      },
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b4b61f4_34d5789c",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T21:18:49Z",
+      "side": 1,
+      "message": "in other comment I suggest to not have \u0027noCommonPrefix\u0027 because \nno common prefix is prefix \"\".\nThen we don\u0027t need this line.",
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97dd2eae_083446e8",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T21:18:49Z",
+      "side": 1,
+      "message": "it can also be NULL",
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
