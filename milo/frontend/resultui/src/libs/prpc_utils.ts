@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import stableStringify from 'fast-json-stable-stringify';
+
 export const CRITICAL_HEADERS = Object.freeze(['accept', 'content-type', 'authorization']);
 
 /**
@@ -30,13 +32,13 @@ export async function genCacheKeyForPrpcRequest(
 ) {
   return (
     prefix +
-    JSON.stringify([
+    stableStringify([
       req.url,
       CRITICAL_HEADERS.map((k) => req.headers.get(k)),
       additionalCriticalHeaderKeys.map((k) => req.headers.get(k)),
       // We don't clone the req here so the caller can avoid cloning if they
       // don't need to reuse the request body.
-      await req.text(),
+      await req.json(),
     ])
   );
 }
