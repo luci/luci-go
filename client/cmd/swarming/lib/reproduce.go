@@ -77,7 +77,8 @@ func (c *reproduceRun) Run(a subcommands.Application, args []string, env subcomm
 
 func (c *reproduceRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 
 	service, err := c.createSwarmingClient(ctx)
 	if err != nil {

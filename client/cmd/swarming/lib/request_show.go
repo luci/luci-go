@@ -56,8 +56,9 @@ func (c *requestShowRun) Parse(_ subcommands.Application, args []string) error {
 
 func (c *requestShowRun) main(_ subcommands.Application, taskID string) error {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 
-	signals.HandleInterrupt(cancel)
 	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err

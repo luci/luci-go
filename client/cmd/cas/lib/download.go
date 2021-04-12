@@ -293,7 +293,8 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs *embedded
 // doDownload downloads directory tree from the CAS server.
 func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 	ctx, err := cas.ContextWithMetadata(ctx, "cas")
 	if err != nil {
 		return err

@@ -89,7 +89,8 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 // Does the archive by uploading to isolate-server, then return the archive stats and error.
 func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats *archiver.Stats, err error) {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 
 	isolatedClient, isolErr := c.createIsolatedClient(ctx, c.CommandOptions)
 	if isolErr != nil {

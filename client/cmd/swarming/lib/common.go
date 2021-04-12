@@ -194,7 +194,8 @@ func (s *swarmingServiceImpl) GetFilesFromIsolate(ctx context.Context, outdir st
 	var filesMu sync.Mutex
 	var files []string
 	ctx, cancel := context.WithCancel(ctx)
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 	opts := &downloader.Options{
 		MaxConcurrentJobs: s.worker,
 		FileCallback: func(name string, _ *isolated.File) {
