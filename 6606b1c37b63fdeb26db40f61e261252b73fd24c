@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8672b1a9_8d1ba047",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-12T23:54:52Z",
+      "side": 1,
+      "message": "I just remembered that cmdrunner already implements some common logics like getCommandEnv().\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cmdrunner/command.go;l\u003d107?q\u003df:cmdrunner.\u0026ss\u003dchromium\n\nShall we (should we) reused it?",
+      "revId": "6606b1c37b63fdeb26db40f61e261252b73fd24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
