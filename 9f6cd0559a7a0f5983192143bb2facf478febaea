@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08fbc1cf_24cfaab9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T19:18:22Z",
+      "side": 1,
+      "message": "reduces",
+      "range": {
+        "startLine": 9,
+        "startChar": 8,
+        "endLine": 9,
+        "endChar": 14
+      },
+      "revId": "9f6cd0559a7a0f5983192143bb2facf478febaea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "befc676a_009ec4bc",
+        "filename": "milo/frontend/resultui/src/models/step_ext.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T19:18:22Z",
+      "side": 1,
+      "message": "consider\n\n  const firstParagraph \u003d bodyContainer.firstElementChild;\n  if (![\u0027P\u0027, \u0027DIV\u0027].includes(firstParagraph.tagName)) {\n    return [null, bodyContainer];\n  }\n\nthis way it is more obvious from reading the code that firstParagraph variable is guaranteed to be P or DIV",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 59
+      },
+      "revId": "9f6cd0559a7a0f5983192143bb2facf478febaea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
