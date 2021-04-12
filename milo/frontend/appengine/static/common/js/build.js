@@ -66,8 +66,24 @@ $(document).ready(function() {
   const newBuildPageLink = $('#new-build-page-link');
   newBuildPageLink.on('click', (e) => {
     if (e.metaKey || e.shiftKey || e.ctrlKey || e.altKey) {
+      ga('send', {
+        hitType: 'event',
+        eventCategory: 'New Build Page',
+        eventAction: 'Switch Version Temporarily',
+        eventLabel: window.location.href,
+        transport: 'beacon',
+      });
+
       return true;
     }
+
+    ga('send', {
+      hitType: 'event',
+      eventCategory: 'New Build Page',
+      eventAction: 'Switch Version',
+      eventLabel: window.location.href,
+      transport: 'beacon',
+    });
 
     setCookie('showNewBuildPage', true);
 
