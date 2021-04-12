@@ -45,6 +45,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 						Host:    "host",
 						Project: "project/src",
 						Id:      "commit-id",
+						Ref:     "commit-ref",
 					},
 					Builder: &buildbucketpb.BuilderID{
 						Project: "project",
@@ -53,7 +54,25 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
+				// commit ID should take priority.
 				So(startCommitID, ShouldEqual, "commit-id")
+			})
+
+			Convey(`when there's no page token or commit ID`, func() {
+				startCommitID, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Host:    "host",
+						Project: "project/src",
+						Ref:     "commit-ref",
+					},
+					Builder: &buildbucketpb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				})
+				So(err, ShouldBeNil)
+				So(startCommitID, ShouldEqual, "commit-ref")
 			})
 
 			Convey(`when there's a page token`, func() {
