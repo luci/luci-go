@@ -16,6 +16,24 @@
       "message": "maybe add a link to the docs",
       "revId": "ff92e6ac0ecc9c962af98da2dcb2e5a28baaa8eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3427bfa5_93ac616e",
+        "filename": "milo/frontend/resultui/src/@types/lit_css_loader.d.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-12T23:53:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b04c9d0_c15baa0e",
+      "revId": "ff92e6ac0ecc9c962af98da2dcb2e5a28baaa8eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
