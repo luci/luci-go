@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cded826c_5fddb3ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-12T01:23:00Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/rpcexplorer/services/luci.milo.v1.MiloInternal/QueryBlamelist?request\u003d{%20%20%20%20%22gitilesCommit%22:%20{%20%20%20%20%20%20%20%20%22host%22:%20%22chromium.googlesource.com%22,%20%20%20%20%20%20%20%20%22project%22:%20%22chromium/src%22,%20%20%20%20%20%20%20%20%22ref%22:%20%22refs/heads/master%22%20%20%20%20},%20%20%20%20%22builder%22:%20{%20%20%20%20%20%20%20%20%22project%22:%20%22chromium%22,%20%20%20%20%20%20%20%20%22bucket%22:%20%22ci%22,%20%20%20%20%20%20%20%20%22builder%22:%20%22win-rel-swarming%22%20%20%20%20},%20%20%20%20%22multiProjectSupport%22:%20false}",
+      "revId": "9e90bf00b1cc5c81082905d7c39a5b5bc097a633",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
