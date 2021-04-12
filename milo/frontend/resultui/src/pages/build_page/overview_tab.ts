@@ -45,7 +45,7 @@ import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
 import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
-import { BuildStatus } from '../../services/buildbucket';
+import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
 
 @customElement('milo-overview-tab')
 @consumeBuildState
@@ -150,25 +150,27 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderRevision(gitilesCommit: GitilesCommit) {
+    return html`
+      <tr>
+        <td>Revision:</td>
+        <td>
+          <a href=${getURLForGitilesCommit(gitilesCommit)} target="_blank">${gitilesCommit.id}</a>
+          ${gitilesCommit.position ? `CP #${gitilesCommit.position}` : ''}
+        </td>
+      </tr>
+    `;
+  }
+
   private renderInput() {
     const input = this.buildState.build?.input;
-    if (!input) {
+    if (!input?.gitilesCommit && !input?.gerritChanges) {
       return html``;
     }
     return html`
       <h3>Input</h3>
       <table>
-        ${input.gitilesCommit
-          ? html`
-              <tr>
-                <td>Revision:</td>
-                <td>
-                  <a href=${getURLForGitilesCommit(input.gitilesCommit)} target="_blank">${input.gitilesCommit.id}</a>
-                  ${input.gitilesCommit.position ? `CP #${input.gitilesCommit.position}` : ''}
-                </td>
-              </tr>
-            `
-          : ''}
+        ${input.gitilesCommit ? this.renderRevision(input.gitilesCommit) : ''}
         ${(input.gerritChanges || []).map(
           (gc) => html`
             <tr>
@@ -179,6 +181,19 @@ export class OverviewTabElement extends MobxLitElement {
             </tr>
           `
         )}
+      </table>
+    `;
+  }
+
+  private renderOutput() {
+    const output = this.buildState.build?.output;
+    if (!output?.gitilesCommit) {
+      return html``;
+    }
+    return html`
+      <h3>Output</h3>
+      <table>
+        ${this.renderRevision(output.gitilesCommit)}
       </table>
     `;
   }
@@ -416,8 +431,9 @@ export class OverviewTabElement extends MobxLitElement {
           <!-- TODO(crbug/1116824): render failed tests -->
         </div>
         <div class="second-column">
-          ${this.renderBuilderDescription()} ${this.renderInput()} ${this.renderTiming()} ${this.renderInfra()}
-          ${this.renderBuildLogs()} ${this.renderActionButtons()} ${this.renderTags()} ${this.renderExperiments()}
+          ${this.renderBuilderDescription()} ${this.renderInput()} ${this.renderOutput()} ${this.renderTiming()}
+          ${this.renderInfra()} ${this.renderBuildLogs()} ${this.renderActionButtons()} ${this.renderTags()}
+          ${this.renderExperiments()}
           <h3>Input Properties</h3>
           <milo-property-viewer
             .properties=${build.input.properties}
