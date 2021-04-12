@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e7a0250_472db1a5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-12T06:34:41Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-1-dot-luci-milo.appspot.com/ui/p/chromium/builders/ci/Linux%20Builder%20(dbg)(32)/159488/overview\n",
+      "revId": "bbf85c5bc786bde5b04df6ee3398976375ee4845",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
