@@ -29,6 +29,7 @@ import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { Artifact, ListArtifactsResponse, TestResult } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders an expandable entry of the given test result.
@@ -257,6 +258,7 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   static styles = [
+    commonStyle,
     colorClasses,
     css`
       :host {

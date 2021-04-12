@@ -20,6 +20,7 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-tvt-config-widget')
 @consumeInvocationState
@@ -132,48 +133,51 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
 `;
   }
 
-  static styles = css`
-    #configure-table {
-      cursor: pointer;
-      line-height: 24px;
-      color: var(--active-text-color);
-    }
+  static styles = [
+    commonStyle,
+    css`
+      #configure-table {
+        cursor: pointer;
+        line-height: 24px;
+        color: var(--active-text-color);
+      }
 
-    #table-config-dialog {
-      --mdc-dialog-min-width: 700px;
-    }
-    #table-config-dialog table {
-      width: 100%;
-    }
-    #table-config-dialog table td:first-child {
-      width: 160px;
-    }
-    #table-config-dialog p {
-      margin-block-start: 0.5em;
-      margin-block-end: 0.5em;
-      margin-inline-start: 4px;
-    }
-    #table-config-dialog ol {
-      margin-block-start: 0.5em;
-      margin-block-end: 0.5em;
-    }
+      #table-config-dialog {
+        --mdc-dialog-min-width: 700px;
+      }
+      #table-config-dialog table {
+        width: 100%;
+      }
+      #table-config-dialog table td:first-child {
+        width: 160px;
+      }
+      #table-config-dialog p {
+        margin-block-start: 0.5em;
+        margin-block-end: 0.5em;
+        margin-inline-start: 4px;
+      }
+      #table-config-dialog ol {
+        margin-block-start: 0.5em;
+        margin-block-end: 0.5em;
+      }
 
-    input {
-      display: inline-block;
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.3rem 0.5rem;
-      font-size: 1rem;
-      color: var(--light-text-color);
-      background-clip: padding-box;
-      border: 1px solid var(--divider-color);
-      border-radius: 0.25rem;
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-      text-overflow: ellipsis;
-    }
+      input {
+        display: inline-block;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.3rem 0.5rem;
+        font-size: 1rem;
+        color: var(--light-text-color);
+        background-clip: padding-box;
+        border: 1px solid var(--divider-color);
+        border-radius: 0.25rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        text-overflow: ellipsis;
+      }
 
-    .inline-icon {
-      vertical-align: bottom;
-    }
-  `;
+      .inline-icon {
+        vertical-align: bottom;
+      }
+    `,
+  ];
 }

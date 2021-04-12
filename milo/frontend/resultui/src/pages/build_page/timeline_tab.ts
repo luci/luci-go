@@ -26,6 +26,7 @@ import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { displayDuration } from '../../libs/time_utils';
+import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-timeline-tab')
 @consumeBuildState
@@ -112,6 +113,7 @@ export class TimelineTabElement extends MiloBaseElement {
   }
 
   static styles = [
+    commonStyle,
     timelineStyle,
     css`
       .vis-range {
