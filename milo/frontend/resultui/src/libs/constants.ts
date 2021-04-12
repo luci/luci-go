@@ -89,7 +89,7 @@ export const BUILD_STATUS_CLASS_MAP = Object.freeze({
 export const BUILD_STATUS_ICON_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'schedule',
   [BuildStatus.Started]: 'pending',
-  [BuildStatus.Success]: 'check',
+  [BuildStatus.Success]: 'check_circle',
   [BuildStatus.Failure]: 'error',
   [BuildStatus.InfraFailure]: 'report',
   [BuildStatus.Canceled]: 'cancel',
