@@ -29,6 +29,7 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP
 import { renderMarkdown } from '../libs/markdown_utils';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { StepExt } from '../models/step_ext';
+import colorClasses from '../styles/color_classes.css';
 import { OnEnterList } from './lazy_list';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
@@ -238,99 +239,87 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     `;
   }
 
-  static styles = css`
-    :host {
-      display: block;
-    }
+  static styles = [
+    colorClasses,
+    css`
+      :host {
+        display: block;
+      }
 
-    #place-holder {
-      height: 24px;
-    }
+      #place-holder {
+        height: 24px;
+      }
 
-    #header {
-      display: inline-block;
-      width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .hidden-icon {
-      visibility: hidden;
-    }
-    #header:hover .hidden-icon {
-      visibility: visible;
-    }
+      #header {
+        display: inline-block;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .hidden-icon {
+        visibility: hidden;
+      }
+      #header:hover .hidden-icon {
+        visibility: visible;
+      }
 
-    #status-indicator {
-      vertical-align: bottom;
-    }
-    #status-indicator.started {
-      color: var(--started-color);
-    }
-    #status-indicator.success {
-      color: var(--success-color);
-    }
-    #status-indicator.failure {
-      color: var(--failure-color);
-    }
-    #status-indicator.infra-failure {
-      color: var(--critical-failure-color);
-    }
-    #status-indicator.canceled {
-      color: var(--canceled-color);
-    }
+      #status-indicator {
+        vertical-align: bottom;
+      }
 
-    #header-markdown * {
-      display: inline;
-    }
+      #header-markdown * {
+        display: inline;
+      }
 
-    #duration {
-      color: white;
-      background-color: var(--active-color);
-      display: inline-block;
-      padding: 0.25em 0.4em;
-      font-size: 75%;
-      font-weight: 700;
-      line-height: 13px;
-      text-align: center;
-      white-space: nowrap;
-      vertical-align: bottom;
-      border-radius: 0.25rem;
-      margin-bottom: 3px;
-      width: 35px;
-    }
+      #duration {
+        color: white;
+        background-color: var(--active-color);
+        display: inline-block;
+        padding: 0.25em 0.4em;
+        font-size: 75%;
+        font-weight: 700;
+        line-height: 13px;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: bottom;
+        border-radius: 0.25rem;
+        margin-bottom: 3px;
+        width: 35px;
+      }
 
-    #summary {
-      background-color: var(--block-background-color);
-      padding: 5px;
-      clear: both;
-      overflow-wrap: break-word;
-    }
+      #summary {
+        background-color: var(--block-background-color);
+        padding: 5px;
+        clear: both;
+        overflow-wrap: break-word;
+      }
 
-    #summary > p:first-child {
-      margin-block-start: 0px;
-    }
+      #summary > p:first-child {
+        margin-block-start: 0px;
+      }
 
-    #summary > :last-child {
-      margin-block-end: 0px;
-    }
+      #summary > :last-child {
+        margin-block-end: 0px;
+      }
 
-    #summary a {
-      color: var(--default-text-color);
-    }
+      #summary a {
+        color: var(--default-text-color);
+      }
 
-    #log-links {
-      margin: 3px 0;
-      padding-inline-start: 28px;
-      clear: both;
-      overflow-wrap: break-word;
-    }
+      #log-links {
+        margin: 3px 0;
+        padding-inline-start: 28px;
+        clear: both;
+        overflow-wrap: break-word;
+      }
 
-    #log-links > li {
-      list-style-type: circle;
-    }
+      #log-links > li {
+        list-style-type: circle;
+      }
 
-    milo-build-step-entry {
-      margin-bottom: 2px;
-    }
-  `;
+      milo-build-step-entry {
+        margin-bottom: 2px;
+      }
+    `,
+  ];
 }
