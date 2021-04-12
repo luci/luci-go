@@ -57,7 +57,7 @@ export class TestVariantsTableColumnHeader extends MobxLitElement {
   groupRows() {
     this.hideColumn();
     const newGroupingKeys = this.removeKey(this.invocationState.groupingKeys);
-    newGroupingKeys.unshift(this.propKey);
+    newGroupingKeys.push(this.propKey);
     this.invocationState.groupingKeysParam = newGroupingKeys;
   }
 

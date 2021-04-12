@@ -53,8 +53,8 @@ describe('tvt_column_header', () => {
 
     // The grouping key should be removed from displayedColumns.
     assert.deepEqual(invState.displayedColumns, []);
-    // The new grouping key should prepended to the existing grouping keys.
-    assert.deepEqual(invState.groupingKeys, ['v.propKey', 'status']);
+    // The new grouping key should append to the existing grouping keys.
+    assert.deepEqual(invState.groupingKeys, ['status', 'v.propKey']);
   });
 
   it('should not group by the same column multiple times', async () => {
@@ -64,9 +64,9 @@ describe('tvt_column_header', () => {
 
     columnHeaderEle.groupRows();
 
-    // The new grouping key should prepended to the existing grouping keys.
+    // The new grouping key should append to the existing grouping keys.
     // Duplicated grouping keys should be removed.
-    assert.deepEqual(invState.groupingKeys, ['v.propKey', 'status']);
+    assert.deepEqual(invState.groupingKeys, ['status', 'v.propKey']);
   });
 
   it('can sort rows', async () => {
