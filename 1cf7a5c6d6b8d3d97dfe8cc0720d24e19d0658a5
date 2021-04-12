@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c827e4ed_a51fda3e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-12T22:59:30Z",
+      "side": 1,
+      "message": "I think that this function may not be complete. As far as I recall, before sending an Attempt proto to BQ we have to fill in the submit status depending on whether submit actually succeeds.\n\nI *think* that VerifiedCQDRun is stored before CV would try to submit; so maybe what we want to do in this package is to have a SendRun function that takes both the run ID and the submit status (to be filled in) before sending. This SendRun would likely be called in cv/internal/run/impl/handler/submit.go. Does that sound right? If that\u0027s the case, I\u0027m thinking of adding that SendRun function in a separate CL.",
+      "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
