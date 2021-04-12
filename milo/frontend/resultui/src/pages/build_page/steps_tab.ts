@@ -28,6 +28,7 @@ import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BuildStatus } from '../../services/buildbucket';
+import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-steps-tab')
 @consumeBuildState
@@ -177,63 +178,66 @@ export class StepsTabElement extends MiloBaseElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      overflow-y: hidden;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        overflow-y: hidden;
+      }
 
-    #header {
-      display: grid;
-      grid-template-columns: auto auto auto 1fr auto;
-      grid-gap: 5px;
-      height: 30px;
-      padding: 5px 10px 3px 10px;
-    }
+      #header {
+        display: grid;
+        grid-template-columns: auto auto auto 1fr auto;
+        grid-gap: 5px;
+        height: 30px;
+        padding: 5px 10px 3px 10px;
+      }
 
-    input[type='checkbox'] {
-      transform: translateY(1px);
-      margin-right: 3px;
-    }
+      input[type='checkbox'] {
+        transform: translateY(1px);
+        margin-right: 3px;
+      }
 
-    mwc-button {
-      margin-top: 1px;
-    }
+      mwc-button {
+        margin-top: 1px;
+      }
 
-    .filters-container {
-      display: inline-block;
-      padding: 4px 5px 0;
-    }
-    .filter {
-      display: inline-block;
-      margin: 0 5px;
-    }
-    .filter:last-child {
-      margin-right: 0px;
-    }
-    .filters-container-delimiter {
-      border-left: 1px solid var(--divider-color);
-      width: 0px;
-      height: 100%;
-    }
+      .filters-container {
+        display: inline-block;
+        padding: 4px 5px 0;
+      }
+      .filter {
+        display: inline-block;
+        margin: 0 5px;
+      }
+      .filter:last-child {
+        margin-right: 0px;
+      }
+      .filters-container-delimiter {
+        border-left: 1px solid var(--divider-color);
+        width: 0px;
+        height: 100%;
+      }
 
-    #main {
-      padding-top: 5px;
-      padding-left: 10px;
-      border-top: 1px solid var(--divider-color);
-      outline: none;
-    }
-    milo-build-step-entry {
-      margin-bottom: 2px;
-    }
+      #main {
+        padding-top: 5px;
+        padding-left: 10px;
+        border-top: 1px solid var(--divider-color);
+        outline: none;
+      }
+      milo-build-step-entry {
+        margin-bottom: 2px;
+      }
 
-    .list-entry {
-      margin-top: 5px;
-    }
+      .list-entry {
+        margin-top: 5px;
+      }
 
-    #load {
-      color: var(--active-text-color);
-    }
-  `;
+      #load {
+        color: var(--active-text-color);
+      }
+    `,
+  ];
 }

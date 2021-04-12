@@ -37,6 +37,7 @@ import {
 } from '../libs/constants';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 import colorClasses from '../styles/color_classes.css';
+import commonStyle from '../styles/common_style.css';
 
 /**
  * Display a list of test results.
@@ -351,6 +352,7 @@ export class TestResultsTabElement extends MiloBaseElement {
   }
 
   static styles = [
+    commonStyle,
     colorClasses,
     css`
       :host {
@@ -444,12 +446,6 @@ export class TestResultsTabElement extends MiloBaseElement {
         border-bottom: 1px solid var(--divider-color);
       }
 
-      .active-text {
-        color: var(--active-text-color);
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: normal;
-      }
       .inline-icon {
         --mdc-icon-size: 1.2em;
         vertical-align: bottom;
