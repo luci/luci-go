@@ -443,7 +443,9 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           case BuildStatus.Started:
             return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
           case BuildStatus.Canceled:
-            return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${build.canceledBy}`;
+            return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${
+              build.canceledBy || 'unknown'
+            }`;
           case BuildStatus.Failure:
           case BuildStatus.InfraFailure:
           case BuildStatus.Success:
