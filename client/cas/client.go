@@ -17,6 +17,7 @@ package cas
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"strings"
 
@@ -40,8 +41,8 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 	}
 
 	// Construct auth.Options.
-	opts.ActAsServiceAccount = role + "@" + project + ".iam.gserviceaccount.com"
-	opts.ActViaLUCIRealm = "@internal:" + project + "/" + role
+	opts.ActAsServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", role, project)
+	opts.ActViaLUCIRealm = fmt.Sprintf("@internal:%s/%s", project, role)
 	opts.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform"}
 
 	if strings.HasSuffix(project, "-dev") || strings.HasSuffix(project, "-staging") {
@@ -49,21 +50,19 @@ func NewClient(ctx context.Context, instance string, opts auth.Options, readOnly
 		opts.TokenServerHost = chromeinfra.TokenServerDevHost
 	}
 
-	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
-	creds, err := a.PerRPCCredentials()
+	creds, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts).PerRPCCredentials()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 	}
+	dialParams := client.DialParams{
+		Service:            "remotebuildexecution.googleapis.com:443",
+		TransportCredsOnly: true,
+	}
 
-	cl, err := client.NewClient(ctx, instance,
-		client.DialParams{
-			Service:            "remotebuildexecution.googleapis.com:443",
-			TransportCredsOnly: true,
-		}, ClientOptions(creds)...)
+	cl, err := client.NewClient(ctx, instance, dialParams, ClientOptions(creds)...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create client").Err()
 	}
-
 	return cl, nil
 }
 
