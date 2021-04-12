@@ -24,6 +24,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
+import { commonStyle } from '../../styles/common_style';
 
 /**
  * Renders a raw artifact.
@@ -132,17 +133,20 @@ export class RawArtifactPageElement extends MiloBaseElement implements BeforeEnt
     `;
   }
 
-  static styles = css`
-    #artifact-header {
-      background-color: var(--block-background-color);
-      padding: 6px 16px;
-      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-      font-size: 14px;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      #artifact-header {
+        background-color: var(--block-background-color);
+        padding: 6px 16px;
+        font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+        font-size: 14px;
+      }
 
-    #content {
-      margin: 20px;
-      color: var(--active-color);
-    }
-  `;
+      #content {
+        margin: 20px;
+        color: var(--active-color);
+      }
+    `,
+  ];
 }

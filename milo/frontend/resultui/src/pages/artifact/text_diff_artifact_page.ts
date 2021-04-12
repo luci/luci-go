@@ -24,6 +24,7 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
+import { commonStyle } from '../../styles/common_style';
 
 /**
  * Renders a text diff artifact.
@@ -123,30 +124,33 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     `;
   }
 
-  static styles = css`
-    #artifact-header {
-      background-color: var(--block-background-color);
-      padding: 6px 16px;
-      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-      font-size: 14px;
-    }
-    .id-component-label {
-      color: var(--light-text-color);
-    }
+  static styles = [
+    commonStyle,
+    css`
+      #artifact-header {
+        background-color: var(--block-background-color);
+        padding: 6px 16px;
+        font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+        font-size: 14px;
+      }
+      .id-component-label {
+        color: var(--light-text-color);
+      }
 
-    #details {
-      margin: 20px;
-    }
-    #content {
-      position: relative;
-      margin: 20px;
-    }
+      #details {
+        margin: 20px;
+      }
+      #content {
+        position: relative;
+        margin: 20px;
+      }
 
-    .d2h-code-linenumber {
-      cursor: default;
-    }
-    .d2h-moved-tag {
-      display: none;
-    }
-  `;
+      .d2h-code-linenumber {
+        cursor: default;
+      }
+      .d2h-moved-tag {
+        display: none;
+      }
+    `,
+  ];
 }
