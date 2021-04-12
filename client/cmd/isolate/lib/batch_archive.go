@@ -171,13 +171,13 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 }
 
 func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) {
-	opts := make([]*isolate.ArchiveOptions, 0, len(genJSONPaths))
-	for _, genJSONPath := range genJSONPaths {
+	opts := make([]*isolate.ArchiveOptions, len(genJSONPaths))
+	for i, genJSONPath := range genJSONPaths {
 		o, err := processGenJSON(genJSONPath)
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, o)
+		opts[i] = o
 	}
 	return opts, nil
 }
@@ -247,9 +247,9 @@ func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, al *archive
 
 // digests extracts the digests from the supplied IsolatedSummarys.
 func digests(summaries []archiver.IsolatedSummary) []string {
-	var result []string
-	for _, summary := range summaries {
-		result = append(result, string(summary.Digest))
+	result := make([]string, len(summaries))
+	for i, summary := range summaries {
+		result[i] = string(summary.Digest)
 	}
 	return result
 }
