@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import stableStringify from 'fast-json-stable-stringify';
+
 import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { sha256 } from '../libs/utils';
@@ -251,7 +253,7 @@ export class ResultDb {
 
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached((method: string, message: object) => client.call(ResultDb.SERVICE, method, message), {
-      key: (method, message) => `${method}-${JSON.stringify(message)}`,
+      key: (method, message) => `${method}-${stableStringify(message)}`,
     });
   }
 
@@ -288,7 +290,7 @@ export class UISpecificService {
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(UISpecificService.SERVICE, method, message),
-      { key: (method, message) => `${method}-${JSON.stringify(message)}` }
+      { key: (method, message) => `${method}-${stableStringify(message)}` }
     );
   }
 
