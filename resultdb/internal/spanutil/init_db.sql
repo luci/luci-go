@@ -92,6 +92,13 @@ CREATE TABLE Invocations (
   -- Nullable to skip indexing some invocations.
   HistoryTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
 
+  -- The common test id prefix for all test results directly included by the
+  -- invocation.
+  CommonTestIDPrefix STRING(MAX),
+
+  -- Union of all variants of test results directly included by the invocation.
+  TestResultVariantUnion ARRAY<STRING(MAX)>,
+
 ) PRIMARY KEY (InvocationId);
 
 -- Used by test results history to find a history of test results ordered by
