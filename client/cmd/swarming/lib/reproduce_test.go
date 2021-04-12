@@ -23,6 +23,7 @@ import (
 	"runtime"
 	"testing"
 
+	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -113,6 +114,12 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 						},
 					},
 				}, nil
+			},
+			getFilesFromIsolate: func(_ context.Context, _ string, _ *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+				return []string{}, nil
+			},
+			getFilesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarming.SwarmingRpcsCASReference) ([]string, error) {
+				return []string{}, nil
 			},
 		}
 		cmd, err := c.createTaskRequestCommand(ctx, "task-123", service)
