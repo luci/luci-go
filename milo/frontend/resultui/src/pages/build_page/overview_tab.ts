@@ -249,6 +249,7 @@ export class OverviewTabElement extends MobxLitElement {
         </h3>
         <div class="step-summary-line">
           ${this.renderStepSummary(
+            allSteps.length,
             failedSteps.length,
             canceledSteps.length,
             scheduledSteps.length,
@@ -264,7 +265,16 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
-  private renderStepSummary(failedSteps: number, canceledSteps: number, scheduledSteps: number, runningSteps: number) {
+  private renderStepSummary(
+    allSteps: number,
+    failedSteps: number,
+    canceledSteps: number,
+    scheduledSteps: number,
+    runningSteps: number
+  ) {
+    if (allSteps === 0) {
+      return 'No steps.';
+    }
     if (failedSteps === 0 && scheduledSteps === 0 && runningSteps === 0) {
       return 'All steps succeeded.';
     }
