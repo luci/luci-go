@@ -18,6 +18,7 @@ import escape from 'lodash-es/escape';
 import { autorun, observable } from 'mobx';
 import { DataSet } from 'vis-data/peer';
 import { Timeline } from 'vis-timeline/peer';
+import timelineStyle from 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -25,8 +26,6 @@ import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { displayDuration } from '../../libs/time_utils';
-
-const timelineStyle = require('vis-timeline/styles/vis-timeline-graph2d.min.css').default;
 
 @customElement('milo-timeline-tab')
 @consumeBuildState
