@@ -23,6 +23,7 @@ import '../expandable_entry';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { router } from '../../routes';
 import { Artifact } from '../../services/resultdb';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders a text diff artifact.
@@ -64,16 +65,19 @@ export class TextDiffArtifactElement extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    #content {
-      padding-top: 5px;
-      position: relative;
-    }
-    .d2h-code-linenumber {
-      cursor: default;
-    }
-    .d2h-moved-tag {
-      display: none;
-    }
-  `;
+  static styles = [
+    commonStyle,
+    css`
+      #content {
+        padding-top: 5px;
+        position: relative;
+      }
+      .d2h-code-linenumber {
+        cursor: default;
+      }
+      .d2h-moved-tag {
+        display: none;
+      }
+    `,
+  ];
 }

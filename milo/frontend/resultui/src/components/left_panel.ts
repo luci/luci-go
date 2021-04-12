@@ -18,6 +18,8 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
+import commonStyle from '../styles/common_style.css';
+
 /**
  * An expandable panel.
  * With a clickable and draggable handle.
@@ -85,40 +87,43 @@ export class LeftPanelElement extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    #container {
-      display: flex;
-      height: 100%;
-    }
-    #panel {
-      overflow-y: hidden;
-      height: 100%;
-      min-width: var(--min-width, 400px);
-      width: var(--width, 400px);
-      border-right: 1px solid var(--divider-color);
-    }
-    #handle {
-      user-select: none;
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      border-left: 13px solid var(--divider-color);
-      border-top: 10px solid transparent;
-      border-bottom: 10px solid transparent;
-      height: 80px;
-      width: 0;
-      z-index: 1;
-    }
-    #expand-column {
-      height: 100%;
-      width: 10px;
-      position: relative;
-    }
-    #handle > mwc-icon {
-      position: absolute;
-      top: 50%;
-      color: grey;
-      transform: translateY(-50%) translateX(-19px) rotate(90deg);
-    }
-  `;
+  static styles = [
+    commonStyle,
+    css`
+      #container {
+        display: flex;
+        height: 100%;
+      }
+      #panel {
+        overflow-y: hidden;
+        height: 100%;
+        min-width: var(--min-width, 400px);
+        width: var(--width, 400px);
+        border-right: 1px solid var(--divider-color);
+      }
+      #handle {
+        user-select: none;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        border-left: 13px solid var(--divider-color);
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        height: 80px;
+        width: 0;
+        z-index: 1;
+      }
+      #expand-column {
+        height: 100%;
+        width: 10px;
+        position: relative;
+      }
+      #handle > mwc-icon {
+        position: absolute;
+        top: 50%;
+        color: grey;
+        transform: translateY(-50%) translateX(-19px) rotate(90deg);
+      }
+    `,
+  ];
 }
