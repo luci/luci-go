@@ -18,12 +18,11 @@ import 'codemirror/addon/fold/foldcode';
 import 'codemirror/addon/fold/foldgutter';
 import 'codemirror/mode/javascript/javascript';
 import * as CodeMirror from 'codemirror';
+import foldGutterStyle from 'codemirror/addon/fold/foldgutter.css';
+import codemirrorStyle from 'codemirror/lib/codemirror.css';
 import { css, customElement, LitElement } from 'lit-element';
 import { html } from 'lit-html';
 import { observable } from 'mobx';
-
-const foldGutterStyle = require('codemirror/addon/fold/foldgutter.css').default;
-const codemirrorStyle = require('codemirror/lib/codemirror.css').default;
 
 /**
  * A lit-element wrapper of codemirror
