@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6b17412_7e396262",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T19:00:43Z",
+      "side": 1,
+      "message": "of the",
+      "range": {
+        "startLine": 10,
+        "startChar": 34,
+        "endLine": 10,
+        "endChar": 35
+      },
+      "revId": "c217ceb60c66992f9640e152c77212128ee0d540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aad2bbf1_b64b9b03",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-12T19:00:43Z",
+      "side": 1,
+      "message": "nit: is there a reason why it is not in line above?\n\nsame below",
+      "range": {
+        "startLine": 182,
+        "startChar": 16,
+        "endLine": 182,
+        "endChar": 17
+      },
+      "revId": "c217ceb60c66992f9640e152c77212128ee0d540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
