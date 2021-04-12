@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dfb74ac_101ec789",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-12T03:11:05Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-4-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/26257/test-results-new",
+      "revId": "02a36df48fc56834d797efb6858f52a4b028a4d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
