@@ -27,6 +27,7 @@ import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
+import commonStyle from '../styles/common_style.css';
 
 /**
  * Display a list of test results.
@@ -147,43 +148,39 @@ export class TestResultsTabElement extends MiloBaseElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      overflow-y: hidden;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        overflow-y: hidden;
+      }
 
-    #header {
-      display: grid;
-      grid-template-columns: auto auto 1fr auto;
-      border-bottom: 1px solid var(--divider-color);
-      grid-gap: 5px;
-      height: 30px;
-      padding: 5px 10px 3px 10px;
-    }
-    milo-test-search-filter {
-      max-width: 800px;
-    }
-    mwc-button {
-      margin-top: 1px;
-    }
+      #header {
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        border-bottom: 1px solid var(--divider-color);
+        grid-gap: 5px;
+        height: 30px;
+        padding: 5px 10px 3px 10px;
+      }
+      milo-test-search-filter {
+        max-width: 800px;
+      }
+      mwc-button {
+        margin-top: 1px;
+      }
 
-    .filters-container {
-      display: inline-block;
-      padding: 4px 5px 0;
-    }
-    .filters-container-delimiter {
-      border-left: 1px solid var(--divider-color);
-      width: 0px;
-      height: 100%;
-    }
-
-    .active-text {
-      color: var(--active-text-color);
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: normal;
-    }
-  `;
+      .filters-container {
+        display: inline-block;
+        padding: 4px 5px 0;
+      }
+      .filters-container-delimiter {
+        border-left: 1px solid var(--divider-color);
+        width: 0px;
+        height: 100%;
+      }
+    `,
+  ];
 }
