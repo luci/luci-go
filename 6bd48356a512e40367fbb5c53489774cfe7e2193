@@ -284,6 +284,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1c47ac2_2938f1a0",
+        "filename": "cv/internal/bq/fake.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-12T18:35:26Z",
+      "side": 1,
+      "message": "sgtm as well",
+      "parentUuid": "6ce459ec_ac3d62c6",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 21
+      },
+      "revId": "6bd48356a512e40367fbb5c53489774cfe7e2193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5b953632_f9c2eb4d",

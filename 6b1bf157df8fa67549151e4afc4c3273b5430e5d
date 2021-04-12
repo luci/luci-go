@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6b666aa_27d35f06",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-12T18:35:26Z",
+      "side": 1,
+      "message": "I think you can actually install the client within the CL in main function[1]. Follow up CL is also fine.\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/appengine/main.go;l\u003d64-68;drc\u003d86525d00397b5cc1d5878d873917a44de6055e55",
+      "revId": "6b1bf157df8fa67549151e4afc4c3273b5430e5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6bcdbee8_cdb1fb5d",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-12T18:35:26Z",
+      "side": 1,
+      "message": "Del. This is already done in L140.",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 2
+      },
+      "revId": "6b1bf157df8fa67549151e4afc4c3273b5430e5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9dc2466_c0ab75e4",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-12T18:35:26Z",
+      "side": 1,
+      "message": "nit: move it to L146 so that all the nil check for Fakes are close to each other?",
+      "range": {
+        "startLine": 120,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 2
+      },
+      "revId": "6b1bf157df8fa67549151e4afc4c3273b5430e5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
