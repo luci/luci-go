@@ -21,13 +21,17 @@
 $(document).ready(function() {
   'use strict';
 
-  ga('send', {
-    hitType: 'event',
-    eventCategory: 'Old Build Page',
-    eventAction: 'Page Visited',
-    eventLabel: window.location.href,
-    transport: 'beacon',
-  });
+  function trackEvent(category, action, label) {
+    ga('send', {
+      hitType: 'event',
+      eventCategory: category,
+      eventAction: action,
+      eventLabel: label,
+      transport: 'beacon',
+    });
+  }
+
+  trackEvent('Old Build Page', 'Page Visited', window.location.href);
 
   $('li.substeps').each(function() {
     const substep = $(this);
@@ -66,9 +70,15 @@ $(document).ready(function() {
   const newBuildPageLink = $('#new-build-page-link');
   newBuildPageLink.on('click', (e) => {
     if (e.metaKey || e.shiftKey || e.ctrlKey || e.altKey) {
+      trackEvent(
+        'New Build Page',
+        'Switch Version Temporarily',
+        window.location.href,
+      );
       return true;
     }
 
+    trackEvent('New Build Page', 'Switch Version', window.location.href);
     setCookie('showNewBuildPage', true);
 
     if ('serviceWorker' in navigator) {
