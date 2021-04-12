@@ -21,6 +21,7 @@ import (
 	"os/exec"
 	"path"
 	"runtime"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -69,6 +70,7 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		// that createTaskRequestCommand() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
 		relativeCwd := "farm"
+		expectedDir := path.Join(c.work, relativeCwd)
 
 		ctx := context.Background()
 
@@ -78,6 +80,7 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		ctxBaseEnvMap.Set("removeKey", "removeValue")
 		ctxBaseEnvMap.Set("replaceKey", "oldValue")
 		ctxBaseEnvMap.Set("noChangeKey", "noChangeValue")
+		ctxBaseEnvMap.Set("PATH", "existingPrefixValue")
 		ctx = ctxBaseEnvMap.SetInCtx(ctx)
 
 		expectedEnvMap := ctxBaseEnvMap.Clone()
@@ -109,6 +112,12 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 										Value: "",
 									},
 								},
+								EnvPrefixes: []*swarming.SwarmingRpcsStringListPair{
+									&swarming.SwarmingRpcsStringListPair{
+										Key:   "PATH",
+										Value: []string{".task_template_packages", ".task_temmplate_packages/zoo"},
+									},
+								},
 							},
 						},
 					},
@@ -123,6 +132,11 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		expectedEnvMap.Remove("removeKey")
 		expectedEnvMap.Set("key", "value1")
 		expectedEnvMap.Set("replaceKey", "value2")
+		expectedEnvMap.Set("PATH", strings.Join([]string{
+			path.Join(expectedDir, ".task_template_packages"),
+			path.Join(expectedDir, ".task_temmplate_packages/zoo"),
+			"existingPrefixValue"},
+			string(os.PathListSeparator)))
 
 		expected.Env = expectedEnvMap.Sorted()
 		So(cmd, ShouldResemble, expected)
