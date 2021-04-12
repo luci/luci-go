@@ -34,6 +34,7 @@ import (
 
 	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config/configcron"
 	"go.chromium.org/luci/cv/internal/diagnostic"
@@ -64,6 +65,9 @@ func main() {
 		srv.Context = gerrit.UseProd(srv.Context)
 		var err error
 		if srv.Context, err = tree.InstallProd(srv.Context); err != nil {
+			return err
+		}
+		if srv.Context, err = bq.InstallProd(srv.Context, srv.Options.CloudProject); err != nil {
 			return err
 		}
 

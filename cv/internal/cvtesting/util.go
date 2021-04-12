@@ -48,6 +48,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/bq"
 	"go.chromium.org/luci/cv/internal/config"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/servicecfg"
@@ -72,6 +73,8 @@ type Test struct {
 	GFake *gf.Fake
 	// TreeFake is a fake Tree. Defaults to an open Tree.
 	TreeFake *treetest.Fake
+	// BQFake is a fake BQ client.
+	BQFake *bq.Fake
 	// TQ allows to run TQ tasks.
 	TQ *tqtesting.Scheduler
 	// Clock allows to move time forward.
@@ -134,11 +137,15 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	if t.TreeFake == nil {
 		t.TreeFake = treetest.NewFake(ctx, tree.Open)
 	}
+	if t.BQFake == nil {
+		t.BQFake = &bq.Fake{}
+	}
 
 	ctx = t.installDS(ctx)
 	ctx = txndefer.FilterRDS(ctx)
 	ctx = t.GFake.Install(ctx)
 	ctx = t.TreeFake.Install(ctx)
+	ctx = t.BQFake.Install(ctx)
 	ctx, t.TQ = tq.TestingContext(ctx, nil)
 	return ctx, t.cleanup
 }
