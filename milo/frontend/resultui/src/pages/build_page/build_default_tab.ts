@@ -37,8 +37,10 @@ export class BuildDefaultTabElement extends LitElement {
     });
 
     // Prevent the router from pushing the history state.
-    window.history.replaceState({ path: newUrl }, '', newUrl);
-    Router.go(newUrl);
+    window.history.replaceState(null, '', newUrl);
+    // Trigger the new route after the component is connected, otherwise
+    // parent components will be mounted again.
+    window.setTimeout(() => Router.go(newUrl));
   }
 
   protected render() {
