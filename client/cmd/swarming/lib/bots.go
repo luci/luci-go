@@ -81,7 +81,7 @@ func (b *botsRun) main(_ subcommands.Application) error {
 		return err
 	}
 
-	var dims []string
+	dims := make([]string, 0, len(b.dimensions))
 	for k, v := range b.dimensions {
 		dims = append(dims, k+":"+v)
 	}

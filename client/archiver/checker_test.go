@@ -53,7 +53,6 @@ func (f *fakeIsolateService) Contains(ctx context.Context, digests []*service.Ha
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	var states []*isolatedclient.PushState
 	f.itemBatches = append(f.itemBatches, digests)
 	if f.batchc != nil {
 		f.batchc <- digests
@@ -61,10 +60,11 @@ func (f *fakeIsolateService) Contains(ctx context.Context, digests []*service.Ha
 	if f.pushStates == nil {
 		f.pushStates = make(map[string]*isolatedclient.PushState)
 	}
-	for _, d := range digests {
+	states := make([]*isolatedclient.PushState, len(digests))
+	for i, d := range digests {
 		ps := &isolatedclient.PushState{}
 		f.pushStates[d.Digest] = ps
-		states = append(states, ps)
+		states[i] = ps
 	}
 	if f.errc != nil {
 		return states, <-f.errc

@@ -232,13 +232,13 @@ func (c *BundlingChecker) partitionByExistence(items []checkerItem) (existing, n
 
 // contains calls isolateService.Contains on the supplied checkerItems.
 func (c *BundlingChecker) contains(items []checkerItem) ([]*isolatedclient.PushState, error) {
-	var digests []*service.HandlersEndpointsV1Digest
-	for _, item := range items {
-		digests = append(digests, &service.HandlersEndpointsV1Digest{
+	digests := make([]*service.HandlersEndpointsV1Digest, len(items))
+	for i, item := range items {
+		digests[i] = &service.HandlersEndpointsV1Digest{
 			Digest:     string(item.item.Digest),
 			Size:       item.item.Size,
 			IsIsolated: item.isolated,
-		})
+		}
 	}
 	pushStates, err := c.svc.Contains(c.ctx, digests)
 	if err != nil {
