@@ -16,6 +16,476 @@
       "message": "PTAL",
       "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba9e5aa0_789b8151",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "👍 % 2 major comments",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42e7b514_bfbb9a42",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "TODO: this look suspicious.",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 37
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "266ea518_485cdd8c",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "you can do this in L100..L105 iff you move LoadConfigGroup to L98",
+      "range": {
+        "startLine": 110,
+        "startChar": 2,
+        "endLine": 110,
+        "endChar": 64
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f409db4_b48b721d",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "consider for readability\nfunc (s *Submission) unsubmittedCLIDs() common.CLIDs{\n  ...\n}\n\ns :\u003d submitter {\n  ...\n  clids: submission.unsubmittedCLIDs()\n}",
+      "range": {
+        "startLine": 111,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 3
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6162e6a3_118a0f1c",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "afaik, everything before L248 is immutable, right? if so, maybe state this.",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "707ae17d_1991efea",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "why not MUST?\nTBH, i expected this:\n// clids contains ids of cls to be submitted in submission order.",
+      "range": {
+        "startLine": 245,
+        "startChar": 4,
+        "endLine": 245,
+        "endChar": 10
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8577d0d4_3f4eeb21",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "yeah, it\u0027s a shame we can\u0027t use Google owned one 😞",
+      "range": {
+        "startLine": 253,
+        "startChar": 55,
+        "endLine": 253,
+        "endChar": 77
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f8e6f67_2e0ee50a",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "IMO, this is premature optimization that adds complexity yet you still have to deal with case that all submits succeed but GAE instance crashes right before issuing completion event.\n(see also below simplification suggestion)",
+      "range": {
+        "startLine": 276,
+        "startChar": 57,
+        "endLine": 276,
+        "endChar": 74
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "616a9705_e45e74e0",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "case dctx.Err() \u003d\u003d err:\n\nthis is better because you\u0027ll also handle cancelled context.",
+      "range": {
+        "startLine": 283,
+        "startChar": 8,
+        "endLine": 283,
+        "endChar": 54
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8569bc18_1f66b138",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "Major: this will result in releasing SQ spot, so we may end up with partially submitted Run *which* isn\u0027t finalized.\n\nI think I forgot about this when reviewing prior CL, sorry.\nMy proposal:\nIF a Run has at least 1 CL already submitted \u0026\u0026 SQ spot has to be released,\nTHEN Run submission must be permanently failed.\n\nWDYT?",
+      "range": {
+        "startLine": 286,
+        "startChar": 13,
+        "endLine": 287,
+        "endChar": 41
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a660b52b_3226020b",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "Major: `reservedDuration` \u0026\u0026 SubmitQueueNotReleased extra state smells to me.\n\nI think you can avoid both entirely and just do this:\n  \nerr :\u003d datastore.RunInTransaction(ctx, func(ctx context.Context){\n  submit.Release(ctx, s.runID)\n  notifySubmissionCompleted(ctx, s.runID, sc) // don\u0027t dispatch\n})\n// TODO: optimization for happy path\nreturn eventspb.DispatchNow(ctx)",
+      "range": {
+        "startLine": 296,
+        "startChar": 1,
+        "endLine": 304,
+        "endChar": 51
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "807d81cb_97fd9386",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 311,
+        "startChar": 29,
+        "endLine": 312,
+        "endChar": 58
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7b83f54_e4356554",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "major: we should do retries.\n\nimo would be better to add fatal vs non-fatal consideration + notification into submitCL (or a new wrapper func). Then, we can do a retry on a CL level in case of transient errors.",
+      "range": {
+        "startLine": 319,
+        "startChar": 14,
+        "endLine": 319,
+        "endChar": 22
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54e887e7_9f3c5c0b",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "maybe just fatalGerritErr then?",
+      "range": {
+        "startLine": 320,
+        "startChar": 17,
+        "endLine": 320,
+        "endChar": 32
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18757ea4_483188eb",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "TBH, this is unfortunate: flaky Datastore can result in spurious messages to user even though CL was submitted. I wish we did some retries (see also L319 comment).\nMaybe add a TODO here for now?",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ab5d23d7_eaa23d0d",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "remove transient tag?",
+      "range": {
+        "startLine": 327,
+        "startChar": 27,
+        "endLine": 327,
+        "endChar": 30
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30fa035e_e3218439",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "nit: i at first confused \u0027current\u0027 with the Run for which submitter is running.\nhow about \"..., held by run %q\"?",
+      "range": {
+        "startLine": 338,
+        "startChar": 65,
+        "endLine": 338,
+        "endChar": 78
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d89c79c_a709c9d1",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "IMO, This caching belongs to cv/internal/gerrit/auth.go:factory.\nProposal: leave just this in this CL\n\ngc, err :\u003d gerrit.CurrentClient(ctx, host, s.runID.LUCIProject())\nif err !\u003d nil {\n  return err\n}\n\nand it\u0027ll make submitter{} immutable,\nand let\u0027s add 100-slot LRU cache by (host, LUCI_project) to Gerrit factory as a follow up.",
+      "range": {
+        "startLine": 365,
+        "startChar": 0,
+        "endLine": 375,
+        "endChar": 29
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b2a2206_46c603dc",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "nit: IMO, worth preserving CQD comment that we assume that CV submitted it, which is usually the case, but not guaranteed.",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "afad0d28_01533a7b",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "I don\u0027t want to derail this CL, so can you add a TODO to normalize messages with prjmanager/clpurger ?  (there is already a TODO there)",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3a3f469_336951ae",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "nit: Run entity",
+      "range": {
+        "startLine": 429,
+        "startChar": 62,
+        "endLine": 429,
+        "endChar": 64
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "796437ad_58f19500",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-12T19:06:48Z",
+      "side": 1,
+      "message": "note to self: didn\u0027t review.",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
