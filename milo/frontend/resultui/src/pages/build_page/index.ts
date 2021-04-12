@@ -287,12 +287,12 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         when(
           () => this.buildState.build$.state === FULFILLED,
           () => {
-            const builder = this.buildState.build!.builder;
+            const build = this.buildState.build!;
             const buildUrl = router.urlForName('build', {
-              project: builder.project,
-              bucket: builder.bucket,
-              builder: builder.builder,
-              build_num_or_id: this.buildNumOrIdParam,
+              project: build.builder.project,
+              bucket: build.builder.bucket,
+              builder: build.builder.builder,
+              build_num_or_id: build.buildNumOrId,
             });
             Router.go(buildUrl + this.urlSuffix);
           }
