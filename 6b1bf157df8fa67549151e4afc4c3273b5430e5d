@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "10a1a2b9_b80a3408",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-12T21:25:55Z",
+      "side": 1,
+      "message": "Done. (This should have no effect since no rows are sent yet.)",
+      "parentUuid": "e6b666aa_27d35f06",
+      "revId": "6b1bf157df8fa67549151e4afc4c3273b5430e5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6bcdbee8_cdb1fb5d",
         "filename": "cv/internal/cvtesting/util.go",
         "patchSetId": 15
@@ -54,6 +72,30 @@
       "writtenOn": "2021-04-12T18:35:26Z",
       "side": 1,
       "message": "nit: move it to L146 so that all the nil check for Fakes are close to each other?",
+      "range": {
+        "startLine": 120,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 2
+      },
+      "revId": "6b1bf157df8fa67549151e4afc4c3273b5430e5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6f5faae_08a8165e",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-12T21:25:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9dc2466_c0ab75e4",
       "range": {
         "startLine": 120,
         "startChar": 0,
