@@ -39,6 +39,30 @@
       },
       "revId": "2aca44d92a3ac763713a719780a9b917e6988148",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7277c407_4a28a5d7",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-12T18:42:50Z",
+      "side": 1,
+      "message": "I plan to stop recording this value in the Experiments field (since we already special-case it for searches)",
+      "parentUuid": "0c466dff_da31530b",
+      "range": {
+        "startLine": 152,
+        "startChar": 2,
+        "endLine": 155,
+        "endChar": 21
+      },
+      "revId": "2aca44d92a3ac763713a719780a9b917e6988148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
