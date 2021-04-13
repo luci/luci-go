@@ -145,7 +145,8 @@ func convertPyToGoArchiveCMDArgs(args []string) []string {
 func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 
 	opts, err := toArchiveOptions(args)
 	if err != nil {

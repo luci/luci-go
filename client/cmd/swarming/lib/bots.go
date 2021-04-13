@@ -74,7 +74,8 @@ func (b *botsRun) Parse() error {
 
 func (b *botsRun) main(_ subcommands.Application) error {
 	ctx, cancel := context.WithCancel(b.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 	service, err := b.createSwarmingClient(ctx)
 	if err != nil {
 		return err

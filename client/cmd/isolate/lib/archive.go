@@ -88,7 +88,8 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 
 	al := &archiveLogger{
 		start: start,

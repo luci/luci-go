@@ -85,7 +85,8 @@ func (c *spawnTasksRun) Run(a subcommands.Application, args []string, env subcom
 func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	start := time.Now()
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 
 	tasksFile, err := os.Open(c.jsonInput)
 	if err != nil {

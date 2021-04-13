@@ -107,7 +107,8 @@ func getRoot(paths isolated.ScatterGather) (string, error) {
 // Does the archive by uploading to isolate-server.
 func (c *archiveRun) doArchive(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
-	signals.HandleInterrupt(cancel)
+	defer cancel()
+	defer signals.HandleInterrupt(cancel)()
 	ctx, err := cas.ContextWithMetadata(ctx, "cas")
 	if err != nil {
 		return err
