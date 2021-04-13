@@ -97,6 +97,19 @@ type Build struct {
 	Experimental bool `gae:"experimental"`
 	// Experiments is a slice of experiments enabled or disabled on this build.
 	// Each element should look like "[-+]$experiment_name".
+	//
+	// Special case:
+	//   "-luci.non_production" is not kept here as a storage/index
+	//   optimization.
+	//
+	//   Notably, all search/query implementations on the Build model
+	//   apply this filter in post by checking that
+	//   `b.ExperimentStatus("luci.non_production") == pb.Trinary_YES`.
+	//
+	//   This is because directly including this value in the datastore query
+	//   results in bad performance due to excessive zig-zag join overhead
+	//   in the datastore, since 99%+ of the builds in Buildbucket are production
+	//   builds.
 	Experiments []string `gae:"experiments"`
 	Incomplete  bool     `gae:"incomplete"`
 
