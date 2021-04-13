@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "009b1222_cf3ec094",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T02:18:03Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-5-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming-staging/26262/test-results-new",
+      "revId": "02ab3b1a9b87fcba6713616ad4a2f370445b0039",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8290b72c_ecb51cce",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/result_entry.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T02:18:03Z",
+      "side": 1,
+      "message": "@nodir, @chanli, can the duration be empty?",
+      "range": {
+        "startLine": 64,
+        "startChar": 4,
+        "endLine": 66,
+        "endChar": 5
+      },
+      "revId": "02ab3b1a9b87fcba6713616ad4a2f370445b0039",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
