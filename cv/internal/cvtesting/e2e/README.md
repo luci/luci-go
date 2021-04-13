@@ -48,5 +48,6 @@ If test is flaky, try:
       * Corollary: moderate copy-pasta is fine.
   * Tests should be fast, finishing with 1s even on under-powered laptops.
 
-TODO(tandrii): document about running with fake datastore with injected
-failures.
+## Advanced: run with flaky Datastore:
+
+Use special `-cv.dsflakiness` flag, e.g. `go test ./... -cv.dsflakiness=0.05`
