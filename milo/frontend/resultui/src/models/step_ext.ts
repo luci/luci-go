@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { render } from 'lit-html';
 import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
-import { renderMarkdownUnsanitized } from '../libs/markdown_utils';
+import { renderMarkdown } from '../libs/markdown_utils';
 import { BuildStatus, Log, Step } from '../services/buildbucket';
 
 /**
@@ -82,83 +83,90 @@ export class StepExt {
   }
 
   /**
-   * canSplitSummaryHtmlCleanly checks if we can split summaryMarkdown into
-   * header and content cleanly by the first <br/> tag.
-   * For example:
-   * 'header<br/>content' -> should return true
-   * '<div>header<br/></div>content' should return false because after the
-   * split, header would become '<div>header' and content would become
-   * '</div>content'. They are invalid.
+   * summaryParts split summaryMarkdown into header and content.
    */
-  @computed private get canSplitSummaryHtmlCleanly(): boolean {
-    // We enclose summaryMarkdown in div tag to prevent Markdown-it from adding
-    // extra <p> tag to enclose everything.
-    const markdown = `<div id="markdown_start">${this.summaryMarkdown || ''}</div>`;
-    const summaryHtml = renderMarkdownUnsanitized(markdown);
-    const domParser = new DOMParser();
-    const parsed = domParser.parseFromString(summaryHtml, 'text/html');
-    const brElements = parsed.querySelectorAll('br');
-    // If parent of the first <br> element is not markdown_start, it means we cannot
-    // break header and content cleanly.
-    if (brElements.length > 0) {
-      return brElements[0].parentElement?.getAttribute('id') === 'markdown_start';
-    }
-    return true;
-  }
-
-  /**
-   * isHeaderValid checks if header contains invalid elements, in such cases it will
-   * return false
-   * Because header is shown in one line, it should not contain elements such as
-   * <li>.
-   */
-  private isHeaderValid(header: string): boolean {
-    const html = renderMarkdownUnsanitized(header);
-    const domParser = new DOMParser();
-    const parsed = domParser.parseFromString(html, 'text/html');
-    // Do not allow header to contain <li> elements
-    const eles = parsed.querySelectorAll('li');
-    return eles.length === 0;
-  }
-
-  /**
-   * summaryParts tries to split summaryMarkdown into header and content.
-   * If it cannot be split cleanly, for example, if the result is invalid
-   * html, or if the result header contains inappropriate elements, we
-   * do not split and treat everything as content.
-   */
+  // TODO(weiweilin): we should move this to build_step.ts because it contains
+  // rendering logic.
+  // TODO(weiweilin): this is a hack required to replicate the behavior of the
+  // old build page. eventually, we probably want users to define headers
+  // explicitly in another field.
   @computed get summaryParts() {
-    if (!this.canSplitSummaryHtmlCleanly) {
-      return ['', this.summaryMarkdown || ''];
+    const bodyContainer = document.createElement('div');
+
+    render(renderMarkdown(this.summaryMarkdown || ''), bodyContainer);
+
+    // The body has no content.
+    // We don't need to check bodyContainer.firstChild because text are
+    // automatically wrapped in <p>.
+    if (bodyContainer.firstElementChild === null) {
+      return [null, null];
     }
 
-    const parts = this.summaryMarkdown?.split(/<br\/?>/i) || [''];
-    const header = parts[0] || '';
-    if (!this.isHeaderValid(header)) {
-      return ['', this.summaryMarkdown || ''];
+    // We treat <div>s as paragraphs too because this is the behavior in the
+    // legacy build page.
+    const firstParagraph = bodyContainer.firstElementChild;
+    if (!['P', 'DIV'].includes(firstParagraph.tagName)) {
+      // The first element is not a paragraph, nothing is in the header.
+      return [null, bodyContainer];
     }
-    const content = parts.slice(1).join('<br>') || '';
-    return [header, content];
+
+    const headerContainer = document.createElement('span');
+
+    // Finds all the nodes belongs to the header.
+    while (firstParagraph.firstChild !== null) {
+      // Found some text, move them from the body to the header.
+      if (firstParagraph.firstChild !== firstParagraph.firstElementChild) {
+        headerContainer.appendChild(firstParagraph.removeChild(firstParagraph.firstChild));
+        continue;
+      }
+
+      // Found an inline element, move it from the body to the header.
+      if (['A', 'SPAN', 'I', 'B', 'STRONG'].includes(firstParagraph.firstElementChild.tagName)) {
+        headerContainer.appendChild(firstParagraph.removeChild(firstParagraph.firstElementChild));
+        continue;
+      }
+
+      // Found a line break, remove it from the body. The remaining nodes are
+      // not in the header. Stop processing nodes.
+      if (firstParagraph.firstElementChild.tagName === 'BR') {
+        firstParagraph.removeChild(firstParagraph.firstElementChild);
+        break;
+      }
+
+      // Found other (non-inline) elements. The remaining nodes are not in
+      // the header. Stop processing nodes.
+      break;
+    }
+
+    if (firstParagraph.firstChild === null) {
+      bodyContainer.removeChild(firstParagraph);
+    }
+
+    // If the container is empty, return null instead.
+    return [
+      headerContainer.firstChild ? headerContainer : null,
+      bodyContainer.firstElementChild ? bodyContainer : null,
+    ];
   }
 
   /**
-   * header of summaryMarkdown.
+   * Header of summaryMarkdown.
+   *
    * It means to provide an overview of summaryMarkdown, and is shown in the UI
    * even when the corresponding step is collapsed.
-   * Currently, it is the first line of the summaryMarkdown, if the first line
-   * can be extracted cleanly.
-   * For example, if summaryMarkdown is 'header<br/>content'
-   * header should be 'header'
+   * Currently, it is the first line of the summaryMarkdown. For example, if
+   * summaryMarkdown is 'header<br/>content' header should be 'header'.
    */
   @computed get header() {
     return this.summaryParts[0];
   }
 
   /**
-   * content of summaryMarkdown, aside from header.
+   * Content of summaryMarkdown, aside from header.
+   *
    * It is only shown in the UI if the corresponding step is expanded.
-   * For example, if summaryMarkdown is 'header<br/>content'
-   * summary should be 'content'
+   * For example, if summaryMarkdown is 'header<br/>content' summary should be
+   * 'content'.
    */
   @computed get summary() {
     return this.summaryParts[1];
