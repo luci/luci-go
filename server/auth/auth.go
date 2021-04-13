@@ -156,9 +156,13 @@ type UserCredentialsGetter interface {
 
 // Session holds some extra information pertaining to the request.
 //
-// It is stored in the context as part of State.
+// It is stored in the context as part of State. Used by AsSessionUser RPC
+// authority kind.
 type Session interface {
-	// TODO: add methods
+	// AccessToken returns an OAuth access token identifying the session user.
+	AccessToken(ctx context.Context) (*oauth2.Token, error)
+	// IDToken returns an ID token identifying the session user.
+	IDToken(ctx context.Context) (*oauth2.Token, error)
 }
 
 // User represents identity and profile of a user.

@@ -105,6 +105,34 @@ const (
 	// task use GetRPCTransport(ctx, AsUser, WithDelegationToken(token)).
 	AsUser
 
+	// AsSessionUser is used for outbound RPCs that inherit the authority of
+	// an end-user by using credentials stored in the current auth session.
+	//
+	// Works only if the method used to authenticate the incoming request supports
+	// this mechanism. Currently this is only go.chromium.org/luci/server/encryptedcookies.
+	//
+	// Unlike deprecated AsUser, which uses LUCI delegation tokens, AsSessionUser
+	// authenticates outbound RPCs using standard OAuth2 or ID tokens, making this
+	// mechanism more widely applicable.
+	//
+	// On a flip side, the implementation relies on OpenID Connect refresh tokens,
+	// which limits it only to real human accounts that can click buttons in the
+	// browser to go through the OpenID Connect sign in flow to get a refresh
+	// token and establish a session (i.e. service accounts are not supported).
+	// Thus this mechanism is primarily useful when implementing Web UIs that use
+	// session cookies for authentication and want to call other services on
+	// user's behalf from the backend side.
+	//
+	// By default RPCs performed with AsSessionUser use email-scoped OAuth2 access
+	// tokens with the client ID matching the current service OAuth2 client ID.
+	// There's no way to ask for more scopes (using WithScopes option would result
+	// in an error).
+	//
+	// If WithIDToken option is specified, RPCs use ID tokens with the audience
+	// matching the current service OAuth2 client ID. There's no way to customize
+	// the audience.
+	AsSessionUser
+
 	// AsCredentialsForwarder is used for outbound RPCs that just forward the
 	// user credentials, exactly as they were received by the service.
 	//
@@ -170,7 +198,20 @@ type rpcOption func(opts *rpcOptions)
 
 func (o rpcOption) apply(opts *rpcOptions) { o(opts) }
 
-// WithIDTokenAudience indicates to use ID tokens instead of OAuth2 tokens.
+// WithIDToken indicates to use ID tokens instead of OAuth2 tokens.
+//
+// If no audience is given via WithIDTokenAudience, uses "https://${host}"
+// by default.
+func WithIDToken() RPCOption {
+	return rpcOption(func(opts *rpcOptions) {
+		opts.idToken = true
+	})
+}
+
+// WithIDTokenAudience indicates to use ID tokens with a specific audience
+// instead of OAuth2 tokens.
+//
+// Implies WithIDToken.
 //
 // The token's `aud` claim will be set to the given value. It can be customized
 // per-request by using `${host}` which will be substituted with a host name of
@@ -191,6 +232,7 @@ func (o rpcOption) apply(opts *rpcOptions) { o(opts) }
 // Not compatible with WithScopes.
 func WithIDTokenAudience(aud string) RPCOption {
 	return rpcOption(func(opts *rpcOptions) {
+		opts.idToken = true
 		opts.idTokenAud = aud
 	})
 }
@@ -539,6 +581,7 @@ type audGenerator func(r *http.Request) (string, error)
 type rpcOptions struct {
 	kind             RPCAuthorityKind
 	project          string       // for AsProject
+	idToken          bool         // for AsSelf, AsProject, AsActor and AsSessionUser
 	idTokenAud       string       // for AsSelf, AsProject and AsActor
 	idTokenAudGen    audGenerator // non-nil iff idTokenAud is a pattern
 	scopes           []string     // for AsSelf, AsProject and AsActor
@@ -563,19 +606,26 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		options.kind == AsProject
 
 	// Set default scopes.
-	if asSelfOrActorOrProject && options.idTokenAud == "" && len(options.scopes) == 0 {
+	if asSelfOrActorOrProject && !options.idToken && len(options.scopes) == 0 {
 		options.scopes = defaultOAuthScopes
+	}
+	// Set the default audience.
+	if options.kind != AsSessionUser && options.idToken && options.idTokenAud == "" {
+		options.idTokenAud = "https://${host}"
 	}
 
 	// Validate options.
+	if !asSelfOrActorOrProject && options.kind != AsSessionUser && options.idToken {
+		return nil, errors.Reason("WithIDToken can only be used with AsSelf, AsActor, AsProject or AsSessionUser authority kind").Err()
+	}
 	if !asSelfOrActorOrProject && options.idTokenAud != "" {
 		return nil, errors.Reason("WithIDTokenAudience can only be used with AsSelf, AsActor or AsProject authority kind").Err()
 	}
 	if !asSelfOrActorOrProject && len(options.scopes) != 0 {
 		return nil, errors.Reason("WithScopes can only be used with AsSelf, AsActor or AsProject authority kind").Err()
 	}
-	if options.idTokenAud != "" && len(options.scopes) != 0 {
-		return nil, errors.Reason("WithIDTokenAudience and WithScopes cannot be used together").Err()
+	if options.idToken && len(options.scopes) != 0 {
+		return nil, errors.Reason("WithIDToken and WithScopes cannot be used together").Err()
 	}
 	if options.serviceAccount != "" && options.kind != AsActor {
 		return nil, errors.Reason("WithServiceAccount can only be used with AsActor authority kind").Err()
@@ -599,8 +649,8 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	// Temporarily not supported combinations of options.
 	//
 	// TODO(crbug.com/1081932): Support.
-	if options.idTokenAud != "" && (options.kind == AsActor || options.kind == AsProject) {
-		return nil, errors.Reason("WithIDTokenAudience is not supported here yet").Err()
+	if options.idToken && (options.kind == AsActor || options.kind == AsProject) {
+		return nil, errors.Reason("WithIDToken is not supported here yet").Err()
 	}
 
 	// Convert `idTokenAud` into a callback {http.Request => aud}. This is needed
@@ -625,6 +675,12 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		}
 	case AsUser:
 		options.getRPCHeaders = asUserHeaders
+	case AsSessionUser:
+		options.checkCtx = func(ctx context.Context) error {
+			_, err := currentSession(ctx)
+			return err
+		}
+		options.getRPCHeaders = asSessionUserHeaders
 	case AsCredentialsForwarder:
 		options.checkCtx = func(ctx context.Context) error {
 			_, _, err := forwardedCreds(ctx)
@@ -884,6 +940,33 @@ func asProjectHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) 
 		TokenType:   "Bearer",
 		Expiry:      tok.Expiry,
 	}, nil, nil
+}
+
+// currentSession either returns the current session or ErrNotConfigured.
+func currentSession(ctx context.Context) (Session, error) {
+	if state := GetState(ctx); state != nil {
+		if session := state.Session(); session != nil {
+			return session, nil
+		}
+	}
+	return nil, ErrNotConfigured
+}
+
+// asSessionUserHeaders returns a map of authentication headers to add to
+// outbound RPC requests done in AsSessionUser mode.
+//
+// This will be called by the transport layer on each request.
+func asSessionUserHeaders(ctx context.Context, opts *rpcOptions, _ *http.Request) (tok *oauth2.Token, _ map[string]string, err error) {
+	s, err := currentSession(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if opts.idToken {
+		tok, err = s.IDToken(ctx)
+	} else {
+		tok, err = s.AccessToken(ctx)
+	}
+	return
 }
 
 // isInternalURL returns true if the URL points to a LUCI microservice belonging
