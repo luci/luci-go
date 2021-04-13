@@ -16,6 +16,58 @@
       "message": "I think that this function may not be complete. As far as I recall, before sending an Attempt proto to BQ we have to fill in the submit status depending on whether submit actually succeeds.\n\nI *think* that VerifiedCQDRun is stored before CV would try to submit; so maybe what we want to do in this package is to have a SendRun function that takes both the run ID and the submit status (to be filled in) before sending. This SendRun would likely be called in cv/internal/run/impl/handler/submit.go. Does that sound right? If that\u0027s the case, I\u0027m thinking of adding that SendRun function in a separate CL.",
       "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "730ae51f_53a98c21",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T11:52:04Z",
+      "side": 1,
+      "message": "SendRun should take just a run ID. It should then load Run entity + VerifiedCQDRun entity. If necessary, it can then also load RunCL entities (not sure if it\u0027s necessary).\n\nI\u0027d rather see it all in this CL, since right now this CL actual useful part is 7 LOC of datastore loading boilerplate.",
+      "parentUuid": "c827e4ed_a51fda3e",
+      "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "095f72dc_567beb49",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T11:52:04Z",
+      "side": 1,
+      "message": "nit: plz follow godoc:\n\n// Package bq is responsible ..",
+      "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fd4291ef_19f0a9b3",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T11:52:04Z",
+      "side": 1,
+      "message": "IMO, this test is useless. I\u0027d rather see a test that shows that `migration.ReportVerifiedRun` call ultimately results in a finalized run \u0026\u0026 a sent BQ row, but if you really want to add a test to this package, then add a test covering not just DS load, but conversion to an attempt row.",
+      "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
