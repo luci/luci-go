@@ -130,7 +130,11 @@ func (q *Query) dispatchWorkItems(ctx context.Context) error {
 		TestIdRegexp: q.Request.TestIdRegexp,
 	}
 
-	return invocations.ByTimestamp(ctx, q.Request.Realm, q.Request.GetTimeRange(), func(inv invocations.ID, ts *timestamp.Timestamp) error {
+	invQ := &invocations.HistoryQuery{
+		Realm:     q.Request.Realm,
+		TimeRange: q.Request.GetTimeRange(),
+	}
+	return invQ.ByTimestamp(ctx, func(inv invocations.ID, ts *timestamp.Timestamp) error {
 		wi := &workItem{
 			inv:       inv,
 			ip:        (*tsIndexPoint)(ts),
