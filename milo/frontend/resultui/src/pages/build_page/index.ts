@@ -225,8 +225,8 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           this.invocationState = new InvocationState(appState);
           this.invocationState.invocationId = this.buildState.invocationId;
           this.invocationState.presentationConfig =
-            this.buildState.build?.output.properties.test_presentation_config ||
-            this.buildState.build?.input.properties.test_presentation_config ||
+            this.buildState.build?.output.properties['$recipe_engine/milo/test_presentation'] ||
+            this.buildState.build?.input.properties['$recipe_engine/milo/test_presentation'] ||
             {};
 
           // Emulate @property() update.
@@ -248,8 +248,8 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     this.addDisposer(
       reaction(
         () =>
-          this.buildState.build?.output.properties.test_presentation_config ||
-          this.buildState.build?.input.properties.test_presentation_config ||
+          this.buildState.build?.output.properties['$recipe_engine/milo/test_presentation'] ||
+          this.buildState.build?.input.properties['$recipe_engine/milo/test_presentation'] ||
           {},
         (config) => (this.invocationState.presentationConfig = config),
         { fireImmediately: true }
