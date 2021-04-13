@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3857707e_5107c1b4",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T18:23:11Z",
+      "side": 1,
+      "message": "these strings are repeated a few times. Maybe define constants for them, or introduce functions?",
+      "range": {
+        "startLine": 167,
+        "startChar": 0,
+        "endLine": 169,
+        "endChar": 27
+      },
+      "revId": "7cefe1031aca56806696c17037adabf0b4862e11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
