@@ -34,6 +34,64 @@
       "parentUuid": "8672b1a9_8d1ba047",
       "revId": "6606b1c37b63fdeb26db40f61e261252b73fd24c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa5d3bf0_20b798cb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-13T00:36:31Z",
+      "side": 1,
+      "message": "either seems fine for me.",
+      "parentUuid": "0d618dbc_0c65bcab",
+      "revId": "6606b1c37b63fdeb26db40f61e261252b73fd24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a06e98d9_4ee1692b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-13T00:36:31Z",
+      "side": 1,
+      "message": "sorry for late notice, but could you make a CL replacing path with filepath?",
+      "revId": "6606b1c37b63fdeb26db40f61e261252b73fd24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c78dadfb_cf33e905",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-13T00:36:31Z",
+      "side": 1,
+      "message": "use filepath.Join here and other places\nhttps://golang.org/pkg/path/filepath/#Join",
+      "range": {
+        "startLine": 138,
+        "startChar": 36,
+        "endLine": 138,
+        "endChar": 40
+      },
+      "revId": "6606b1c37b63fdeb26db40f61e261252b73fd24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
