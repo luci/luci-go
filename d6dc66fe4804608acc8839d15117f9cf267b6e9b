@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "df01e2c0_bef6a83d",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:26:30Z",
+      "side": 1,
+      "message": "Yeah I wanted to differentiate the case that there\u0027s no common prefix (\"\") and that the invocation has no test results yet (NULL).\n\nDone.",
+      "parentUuid": "d4e2aa7b_f9834201",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 50
+      },
+      "revId": "d6dc66fe4804608acc8839d15117f9cf267b6e9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "64ebdec3_76427c22",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0daf978c_8930307f",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:26:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64ebdec3_76427c22",
+      "revId": "d6dc66fe4804608acc8839d15117f9cf267b6e9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c2f5cd5_b77ef090",
@@ -71,6 +113,30 @@
       "writtenOn": "2021-04-12T20:53:47Z",
       "side": 1,
       "message": "with the correct impl of longestCommonPrefix, this can be just\n\n  newPrefix :\u003d longestCommonPrefix(invCommonTestIdPrefix, commonPrefix)",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 4
+      },
+      "revId": "d6dc66fe4804608acc8839d15117f9cf267b6e9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dcf84142_f1898a50",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:26:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c2f5cd5_b77ef090",
       "range": {
         "startLine": 117,
         "startChar": 0,
@@ -104,6 +170,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4bd45bd9_ee084e76",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:26:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f139e752_3e731bd0",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 184,
+        "endChar": 2
+      },
+      "revId": "d6dc66fe4804608acc8839d15117f9cf267b6e9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "06528440_93a3c28b",
@@ -117,6 +207,30 @@
       "writtenOn": "2021-04-12T20:53:47Z",
       "side": 1,
       "message": "not sure about this algorithm. \nL189 is already O(N+M), where N and M are lengths of the strings, which means we could simply iterate over runes and find the common prefix.\nThe L196 is quadratic because it is HasPrefix call in a loop,\n\nseems like all we need is\n\n  for i :\u003d 0; i \u003c len(str1) \u0026\u0026 i \u003c len(str2); i++ {\n    if str1[i] !\u003d str2[i] {\n      return str1[:i]\n  }\n  if len(str1) \u003c\u003d len(str2) {\n    return str1\n  }\n  return str2",
+      "range": {
+        "startLine": 188,
+        "startChar": 0,
+        "endLine": 202,
+        "endChar": 14
+      },
+      "revId": "d6dc66fe4804608acc8839d15117f9cf267b6e9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc06841a_3a712bd4",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:26:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06528440_93a3c28b",
       "range": {
         "startLine": 188,
         "startChar": 0,
