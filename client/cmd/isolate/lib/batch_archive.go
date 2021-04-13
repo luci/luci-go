@@ -117,7 +117,9 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 // Essentially converts "--X key value" into "--X key=value".
 func convertPyToGoArchiveCMDArgs(args []string) []string {
 	kvars := map[string]bool{
-		"--path-variable": true, "--config-variable": true}
+		"--path-variable":   true,
+		"--config-variable": true,
+	}
 	var newArgs []string
 	for i := 0; i < len(args); {
 		newArgs = append(newArgs, args[i])
@@ -175,7 +177,7 @@ func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) 
 	for i, genJSONPath := range genJSONPaths {
 		o, err := processGenJSON(genJSONPath)
 		if err != nil {
-			return nil, err
+			return nil, errors.Annotate(err, "%q", genJSONPath).Err()
 		}
 		opts[i] = o
 	}
@@ -258,34 +260,29 @@ func digests(summaries []archiver.IsolatedSummary) []string {
 func processGenJSON(genJSONPath string) (*isolate.ArchiveOptions, error) {
 	f, err := os.Open(genJSONPath)
 	if err != nil {
-		return nil, errors.Annotate(err, "opening %s", genJSONPath).Err()
+		return nil, err
 	}
 	defer f.Close()
-
-	opts, err := processGenJSONData(f)
-	if err != nil {
-		return nil, errors.Annotate(err, "processing %s", genJSONPath).Err()
-	}
-	return opts, nil
+	return processGenJSONData(f)
 }
 
-// processGenJSONData performs the function of processGenJSON, but operates on an io.Reader.
+// processGenJSONData implements processGenJSON, but operates on an io.Reader.
 func processGenJSONData(r io.Reader) (*isolate.ArchiveOptions, error) {
-	data := &struct {
+	var data struct {
 		Args    []string
 		Dir     string
 		Version int
-	}{}
-	if err := json.NewDecoder(r).Decode(data); err != nil {
+	}
+	if err := json.NewDecoder(r).Decode(&data); err != nil {
 		return nil, errors.Annotate(err, "failed to decode").Err()
 	}
 
 	if data.Version != isolate.IsolatedGenJSONVersion {
-		return nil, errors.Reason("invalid version %d", data.Version).Err()
+		return nil, errors.Reason("unsupported version %d", data.Version).Err()
 	}
 
 	if fileInfo, err := os.Stat(data.Dir); err != nil || !fileInfo.IsDir() {
-		return nil, errors.Reason("invalid dir %s", data.Dir).Err()
+		return nil, errors.Reason("invalid dir %q", data.Dir).Err()
 	}
 
 	opts, err := parseArchiveCMD(data.Args, data.Dir)
