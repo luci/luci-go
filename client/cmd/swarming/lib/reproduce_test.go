@@ -24,6 +24,7 @@ import (
 	"strings"
 	"testing"
 
+	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -61,13 +62,13 @@ func TestReproduceParse_NoTaskID(t *testing.T) {
 	})
 }
 
-func TestCreateTaskRequestCommand(t *testing.T) {
+func TestPrepareTaskRequestEnvironment(t *testing.T) {
 	t.Parallel()
 	Convey(`Make sure we can create the correct Cmd from a fetched task's properties.`, t, func() {
 		c := reproduceRun{}
 		c.init(&testAuthFlags{})
 		// Use TempDir, which creates a temp directory, to return a unique directory name
-		// that createTaskRequestCommand() will remove and recreate (via prepareDir()).
+		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
 		relativeCwd := "farm"
 		expectedDir := filepath.Join(c.work, relativeCwd)
@@ -76,7 +77,7 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 
 		ctxBaseEnvMap := environ.System()
 
-		// Set env values to be removed or replaced in createTaskRequestCommand().
+		// Set env values to be removed or replaced in prepareTaskRequestEnvironment().
 		ctxBaseEnvMap.Set("removeKey", "removeValue")
 		ctxBaseEnvMap.Set("replaceKey", "oldValue")
 		ctxBaseEnvMap.Set("noChangeKey", "noChangeValue")
@@ -84,6 +85,8 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		ctx = ctxBaseEnvMap.SetInCtx(ctx)
 
 		expectedEnvMap := ctxBaseEnvMap.Clone()
+
+		var fetchedCASFiles bool
 
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
@@ -115,20 +118,27 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 								EnvPrefixes: []*swarming.SwarmingRpcsStringListPair{
 									&swarming.SwarmingRpcsStringListPair{
 										Key:   "PATH",
-										Value: []string{".task_template_packages", ".task_temmplate_packages/zoo"},
+										Value: []string{".task_template_packages", ".task_template_packages/zoo"},
 									},
 									&swarming.SwarmingRpcsStringListPair{
 										Key:   "CHICKENS",
 										Value: []string{"egg", "rooster"},
 									},
 								},
+								CasInputRoot: &swarming.SwarmingRpcsCASReference{
+									CasInstance: "CAS-instance",
+								},
 							},
 						},
 					},
 				}, nil
 			},
+			getFilesFromCAS: func(_ context.Context, _ string, _ *rbeclient.Client, _ *swarming.SwarmingRpcsCASReference) ([]string, error) {
+				fetchedCASFiles = true
+				return []string{}, nil
+			},
 		}
-		cmd, err := c.createTaskRequestCommand(ctx, "task-123", service)
+		cmd, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
 		expected.Dir = filepath.Join(c.work, relativeCwd)
@@ -139,7 +149,7 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 
 		paths := []string{
 			filepath.Join(expectedDir, ".task_template_packages"),
-			filepath.Join(expectedDir, ".task_temmplate_packages/zoo"),
+			filepath.Join(expectedDir, ".task_template_packages/zoo"),
 			"existingPathValue"}
 		expectedEnvMap.Set("PATH", strings.Join(paths, string(os.PathListSeparator)))
 		chickens := []string{filepath.Join(expectedDir, "egg"), filepath.Join(expectedDir, "rooster")}
@@ -147,7 +157,93 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 
 		expected.Env = expectedEnvMap.Sorted()
 		So(cmd, ShouldResemble, expected)
+
+		So(fetchedCASFiles, ShouldBeTrue)
 	})
+}
+
+func TestPrepareTaskRequestEnvironment_Isolate(t *testing.T) {
+	t.Parallel()
+	Convey(`Make sure we can process InputsRef for Isolate`, t, func() {
+		c := reproduceRun{}
+		c.init(&testAuthFlags{})
+		// Use TempDir, which creates a temp directory, to return a unique directory namme
+		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir())
+		c.work = t.TempDir()
+
+		ctx := context.Background()
+
+		ctxBaseEnvMap := environ.System()
+		ctx = ctxBaseEnvMap.SetInCtx(ctx)
+
+		expectedEnvMap := ctxBaseEnvMap.Clone()
+
+		var fetchedIsolateFiles bool
+
+		service := &testService{
+			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
+				return &swarming.SwarmingRpcsTaskRequest{
+					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
+						&swarming.SwarmingRpcsTaskSlice{
+							Properties: &swarming.SwarmingRpcsTaskProperties{
+								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+								InputsRef: &swarming.SwarmingRpcsFilesRef{
+									Isolated: "isolated",
+								},
+							},
+						},
+					},
+				}, nil
+			},
+			getFilesFromIsolate: func(_ context.Context, _ string, _ *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+				fetchedIsolateFiles = true
+				return []string{}, nil
+			},
+		}
+		cmd, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
+		So(err, ShouldBeNil)
+		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
+		expected.Dir = c.work
+
+		expected.Env = expectedEnvMap.Sorted()
+		So(cmd, ShouldResemble, expected)
+
+		So(fetchedIsolateFiles, ShouldBeTrue)
+	})
+}
+
+func TestPrepareTaskRequestEnvironment_IsolateAndCAS(t *testing.T) {
+	t.Parallel()
+	Convey(`Make sure we do not process both Isolate and CAS`, t, func() {
+		c := reproduceRun{}
+		c.init(&testAuthFlags{})
+		// Use TempDir, which creates a temp directory, to return a unique directory namme
+		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir())
+		c.work = t.TempDir()
+
+		service := &testService{
+			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
+				return &swarming.SwarmingRpcsTaskRequest{
+					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
+						&swarming.SwarmingRpcsTaskSlice{
+							Properties: &swarming.SwarmingRpcsTaskProperties{
+								Command: []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+								InputsRef: &swarming.SwarmingRpcsFilesRef{
+									Isolated: "isolated",
+								},
+								CasInputRoot: &swarming.SwarmingRpcsCASReference{
+									CasInstance: "CAS-instance",
+								},
+							},
+						},
+					},
+				}, nil
+			},
+		}
+		_, err := c.prepareTaskRequestEnvironment(context.Background(), "task-123", service)
+		So(err, ShouldBeError, "fetched TaskRequest has files from Isolate and RBE-CAS")
+	})
+
 }
 
 func TestReproduceTaskRequestCommand(t *testing.T) {

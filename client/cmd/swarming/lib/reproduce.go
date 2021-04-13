@@ -87,7 +87,7 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 	}
 
 	// TODO(crbug.com/1188473): Create a pass an rbeclient.Client
-	cmd, err := c.createTaskRequestCommand(ctx, args[0], service)
+	cmd, err := c.prepareTaskRequestEnvironment(ctx, args[0], service)
 	if err != nil {
 		return errors.Annotate(err, "failed to create command from task request").Err()
 	}
@@ -105,7 +105,7 @@ func (c *reproduceRun) executeTaskRequestCommand(cmd *exec.Cmd) error {
 	return nil
 }
 
-func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID string, service swarmingService) (*exec.Cmd, error) {
+func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID string, service swarmingService) (*exec.Cmd, error) {
 	tr, err := service.GetTaskRequest(ctx, taskID)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get task request: %s", taskID).Err()
@@ -145,9 +145,29 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 		cmdEnvMap.Set(prefix.Key, strings.Join(paths, string(os.PathListSeparator)))
 	}
 
-	// TODO(crbug.com/1188473): Set env prefix in task request
-	// TODO(crbug.com/1188473): Support isolated input in task request.
-	// TODO(crbug.com/1188473): Support RBE-CAS input in task request.
+	// Download input files.
+	if properties.InputsRef != nil && properties.CasInputRoot != nil {
+		return nil, errors.Reason("fetched TaskRequest has files from Isolate and RBE-CAS").Err()
+	}
+
+	// Support isolated input in task request.
+	if properties.InputsRef != nil {
+		if _, err := service.GetFilesFromIsolate(ctx, workdir, properties.InputsRef); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch files fromm isolate").Err()
+		}
+	}
+
+	// Support RBE-CAS input in task request.
+	if properties.CasInputRoot != nil {
+		cascli, err := c.authFlags.NewCASClient(ctx, properties.CasInputRoot.CasInstance)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
+		}
+		if _, err := service.GetFilesFromCAS(ctx, workdir, cascli, properties.CasInputRoot); err != nil {
+			return nil, errors.Annotate(err, "failed to fetched friles from RBE-CAS").Err()
+		}
+	}
+
 	// TODO(crbug.com/1188473): Support CIPD package download in task request
 
 	cmd := exec.CommandContext(ctx, properties.Command[0], properties.Command[1:]...)
