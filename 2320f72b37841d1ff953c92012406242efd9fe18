@@ -16,6 +16,23 @@
       "message": "PTAL, please let me know how much you hate this.\n\nPlease note that the underlying library is written/maintained by a Googler and has very limited dependencies.",
       "revId": "2320f72b37841d1ff953c92012406242efd9fe18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d99784c2_2b28b8d2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-13T21:35:22Z",
+      "side": 1,
+      "message": "lgtm, but you\u0027ll need to land this manually and then make DEPS + deps.yaml + check_desp.whitelist CL in infra.git.",
+      "revId": "2320f72b37841d1ff953c92012406242efd9fe18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
