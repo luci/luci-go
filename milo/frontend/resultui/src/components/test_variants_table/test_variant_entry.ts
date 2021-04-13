@@ -26,6 +26,7 @@ import '../variant_entry/result_entry';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { TestVariant } from '../../services/resultdb';
+import colorClasses from '../../styles/color_classes.css';
 import { OnEnterList } from '../lazy_list';
 
 // This list defines the order in which variant def keys should be displayed.
@@ -224,97 +225,82 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
     }
   }
 
-  static styles = css`
-    :host {
-      display: block;
-    }
+  static styles = [
+    colorClasses,
+    css`
+      :host {
+        display: block;
+      }
 
-    #place-holder {
-      height: 24px;
-    }
+      #place-holder {
+        height: 24px;
+      }
 
-    #header {
-      display: grid;
-      grid-template-columns: 24px var(--columns) 1fr;
-      grid-gap: 5px;
-      user-select: none;
-      font-size: 16px;
-      line-height: 24px;
-    }
-    #header > * {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+      #header {
+        display: grid;
+        grid-template-columns: 24px var(--columns) 1fr;
+        grid-gap: 5px;
+        user-select: none;
+        font-size: 16px;
+        line-height: 24px;
+      }
+      #header > * {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    .unexpected {
-      color: var(--failure-color);
-    }
-    .unexpectedly-skipped {
-      color: var(--critical-failure-color);
-    }
-    .flaky {
-      color: var(--warning-color);
-    }
-    span.flaky {
-      color: var(--warning-text-color);
-    }
-    .exonerated {
-      color: var(--exonerated-color);
-    }
-    .expected {
-      color: var(--success-color);
-    }
-    #test-identifier {
-      display: flex;
-      font-size: 16px;
-      line-height: 24px;
-    }
-    #test-identifier > span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    milo-copy-to-clipboard {
-      flex: 0 0 16px;
-    }
+      #test-identifier {
+        display: flex;
+        font-size: 16px;
+        line-height: 24px;
+      }
+      #test-identifier > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      milo-copy-to-clipboard {
+        flex: 0 0 16px;
+      }
 
-    #body {
-      overflow: hidden;
-    }
+      #body {
+        overflow: hidden;
+      }
 
-    #variant-def {
-      font-weight: 500;
-      line-height: 24px;
-      margin-left: 5px;
-    }
-    .kv-key::after {
-      content: ':';
-    }
-    .kv-value::after {
-      content: ',';
-    }
-    .kv:last-child > .kv-value::after {
-      content: '';
-    }
-    #def-table {
-      margin-left: 29px;
-    }
+      #variant-def {
+        font-weight: 500;
+        line-height: 24px;
+        margin-left: 5px;
+      }
+      .kv-key::after {
+        content: ':';
+      }
+      .kv-value::after {
+        content: ',';
+      }
+      .kv:last-child > .kv-value::after {
+        content: '';
+      }
+      #def-table {
+        margin-left: 29px;
+      }
 
-    .greyed-out {
-      color: var(--greyed-out-text-color);
-    }
+      .greyed-out {
+        color: var(--greyed-out-text-color);
+      }
 
-    .explanation-html {
-      background-color: var(--block-background-color);
-      padding: 5px;
-    }
+      .explanation-html {
+        background-color: var(--block-background-color);
+        padding: 5px;
+      }
 
-    milo-copy-to-clipboard {
-      visibility: hidden;
-      margin-left: 5px;
-      margin-right: 5px;
-    }
-    #header:hover milo-copy-to-clipboard {
-      visibility: visible;
-    }
-  `;
+      milo-copy-to-clipboard {
+        visibility: hidden;
+        margin-left: 5px;
+        margin-right: 5px;
+      }
+      #header:hover milo-copy-to-clipboard {
+        visibility: visible;
+      }
+    `,
+  ];
 }
