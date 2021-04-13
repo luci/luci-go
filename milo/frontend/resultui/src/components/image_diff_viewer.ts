@@ -17,6 +17,7 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 import { Artifact } from '../services/resultdb';
+import commonStyle from '../styles/common_style.css';
 
 const enum ViewOption {
   Expected,
@@ -108,70 +109,73 @@ export class ImageDiffViewerElement extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: block;
-    }
-
-    #options {
-      margin: 10px;
-    }
-    #options > label {
-      margin-right: 5px;
-    }
-    .raw-link:not(:last-child):after {
-      content: ',';
-    }
-
-    #content {
-      white-space: nowrap;
-      overflow-x: auto;
-      padding: 20px;
-      position: relative;
-      top: 0;
-      left: 0;
-    }
-    .image {
-      display: none;
-    }
-
-    .expected #expected-image {
-      display: block;
-    }
-    .actual #actual-image {
-      display: block;
-    }
-    .diff #diff-image {
-      display: block;
-    }
-
-    .animated .image {
-      animation-name: blink;
-      animation-duration: 2s;
-      animation-timing-function: steps(1);
-      animation-iteration-count: infinite;
-    }
-    .animated #expected-image {
-      display: block;
-      position: absolute;
-      animation-delay: -1s;
-    }
-    .animated #actual-image {
-      display: block;
-      position: static;
-      animation-direction: normal;
-    }
-    @keyframes blink {
-      0% {
-        opacity: 1;
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        display: block;
       }
-      50% {
-        opacity: 0;
-      }
-    }
 
-    .side-by-side .image {
-      display: inline-block;
-    }
-  `;
+      #options {
+        margin: 10px;
+      }
+      #options > label {
+        margin-right: 5px;
+      }
+      .raw-link:not(:last-child):after {
+        content: ',';
+      }
+
+      #content {
+        white-space: nowrap;
+        overflow-x: auto;
+        padding: 20px;
+        position: relative;
+        top: 0;
+        left: 0;
+      }
+      .image {
+        display: none;
+      }
+
+      .expected #expected-image {
+        display: block;
+      }
+      .actual #actual-image {
+        display: block;
+      }
+      .diff #diff-image {
+        display: block;
+      }
+
+      .animated .image {
+        animation-name: blink;
+        animation-duration: 2s;
+        animation-timing-function: steps(1);
+        animation-iteration-count: infinite;
+      }
+      .animated #expected-image {
+        display: block;
+        position: absolute;
+        animation-delay: -1s;
+      }
+      .animated #actual-image {
+        display: block;
+        position: static;
+        animation-direction: normal;
+      }
+      @keyframes blink {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .side-by-side .image {
+        display: inline-block;
+      }
+    `,
+  ];
 }

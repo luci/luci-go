@@ -20,6 +20,7 @@ import { observable } from 'mobx';
 
 import '../drag_tracker';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
+import commonStyle from '../../styles/common_style.css';
 import { DragEvent } from '../drag_tracker';
 
 @customElement('milo-tvt-column-header')
@@ -104,27 +105,30 @@ export class TestVariantsTableColumnHeader extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: flex;
-      position: relative;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        display: flex;
+        position: relative;
+      }
 
-    #prop-label {
-      flex: 0 1 auto;
-      cursor: pointer;
-      color: var(--active-text-color);
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    #padding {
-      flex: 1 1 auto;
-    }
-    #resizer {
-      flex: 0 0 auto;
-      background: linear-gradient(var(--divider-color), var(--divider-color)) 2px 0/1px 100% no-repeat;
-      width: 5px;
-      cursor: col-resize;
-    }
-  `;
+      #prop-label {
+        flex: 0 1 auto;
+        cursor: pointer;
+        color: var(--active-text-color);
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #padding {
+        flex: 1 1 auto;
+      }
+      #resizer {
+        flex: 0 0 auto;
+        background: linear-gradient(var(--divider-color), var(--divider-color)) 2px 0/1px 100% no-repeat;
+        width: 5px;
+        cursor: col-resize;
+      }
+    `,
+  ];
 }
