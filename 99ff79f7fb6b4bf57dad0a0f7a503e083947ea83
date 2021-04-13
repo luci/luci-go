@@ -39,6 +39,30 @@
       },
       "revId": "99ff79f7fb6b4bf57dad0a0f7a503e083947ea83",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89bdd44b_47019fca",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T00:56:18Z",
+      "side": 1,
+      "message": "There\u0027s another regex for artifact URLs too.\nI\u0027ll do that in a separate CL.",
+      "parentUuid": "29366a38_31bd07fb",
+      "range": {
+        "startLine": 127,
+        "startChar": 37,
+        "endLine": 127,
+        "endChar": 40
+      },
+      "revId": "99ff79f7fb6b4bf57dad0a0f7a503e083947ea83",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
