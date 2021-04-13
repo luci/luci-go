@@ -1416,9 +1416,9 @@ func (t *tokenWithProvider) renewToken(ctx context.Context, prev, base *internal
 func retryParams() retry.Iterator {
 	return &retry.ExponentialBackoff{
 		Limited: retry.Limited{
-			Delay:    100 * time.Millisecond,
+			Delay:    10 * time.Millisecond,
 			Retries:  50,
-			MaxTotal: 30 * time.Second,
+			MaxTotal: 2 * time.Minute,
 		},
 		Multiplier: 2,
 	}
