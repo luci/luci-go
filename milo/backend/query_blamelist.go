@@ -51,7 +51,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
 	}
 
-	startCommitID, err := prepareQueryBlamelistRequest(req)
+	startRev, err := prepareQueryBlamelistRequest(req)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
@@ -61,7 +61,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	// Fetch one more commit to check whether there are more commits in the
 	// blamelist.
 	opts := &git.LogOptions{Limit: pageSize + 1, WithFiles: true}
-	commits, err := git.Get(ctx).Log(ctx, req.GitilesCommit.Host, req.GitilesCommit.Project, startCommitID, opts)
+	commits, err := git.Get(ctx).Log(ctx, req.GitilesCommit.Host, req.GitilesCommit.Project, startRev, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -150,8 +150,8 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 
 // prepareQueryBlamelistRequest
 //  * validates the request params.
-//  * extracts start commit ID from page token or gittles Commit ID.
-func prepareQueryBlamelistRequest(req *milopb.QueryBlamelistRequest) (startCommitID string, err error) {
+//  * extracts start startRev from page token or gittles commit.
+func prepareQueryBlamelistRequest(req *milopb.QueryBlamelistRequest) (startRev string, err error) {
 	switch {
 	case req.PageSize < 0:
 		return "", errors.Reason("page_size can not be negative").Err()
@@ -161,8 +161,8 @@ func prepareQueryBlamelistRequest(req *milopb.QueryBlamelistRequest) (startCommi
 		return "", errors.Reason("gitiles_commit.host is required").Err()
 	case req.GitilesCommit.Project == "":
 		return "", errors.Reason("gitiles_commit.project is required").Err()
-	case req.GitilesCommit.Id == "":
-		return "", errors.Reason("gitiles_commit.id is required").Err()
+	case req.GitilesCommit.Id == "" && req.GitilesCommit.Ref == "":
+		return "", errors.Reason("either gitiles_commit.id or gitiles_commit.ref needs to be specified").Err()
 	}
 
 	if req.PageToken != "" {
@@ -171,6 +171,10 @@ func prepareQueryBlamelistRequest(req *milopb.QueryBlamelistRequest) (startCommi
 			return "", errors.Annotate(err, "unable to parse page_token").Err()
 		}
 		return token.NextCommitId, nil
+	}
+
+	if req.GitilesCommit.Id == "" {
+		return req.GitilesCommit.Ref, nil
 	}
 
 	return req.GitilesCommit.Id, nil
