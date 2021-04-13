@@ -397,10 +397,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
             {
               id: 'test-results',
               label: 'Test Results',
-              href: router.urlForName(
-                this.configsStore.userConfigs.testResults.newLayout ? 'build-test-results-new' : 'build-test-results',
-                params
-              ),
+              href: router.urlForName('build-test-results', params),
             },
           ]),
       {
