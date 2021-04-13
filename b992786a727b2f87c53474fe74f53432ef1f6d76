@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66e8197a_dd612420",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 414,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T21:51:11Z",
+      "side": 1,
+      "message": "len(cfg.Recipe.Properties) + len(cfg.Recipe.PropertiesJ)\n\nstarlark uses only PropertiesJ",
+      "range": {
+        "startLine": 414,
+        "startChar": 73,
+        "endLine": 414,
+        "endChar": 100
+      },
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97d07693_a3eb4d7f",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 415,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T21:51:11Z",
+      "side": 1,
+      "message": "this is definitely will be reused in the config validation. Should this be in a more common code area?",
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5aed01e3_d436db41",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T21:51:11Z",
+      "side": 1,
+      "message": "is there a reason why this uses strpair.Parse while L415 uses strpair.ParseMap?\n\nFWIW I think strpair.Parse is better because we don\u0027t really need hashmap",
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f44baf2_a64c0536",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T21:51:11Z",
+      "side": 1,
+      "message": "there is no harm in assigning nil. Why not\n\n  GitilesCommit: req.GetGitilesCommit(),\n  GerritChanges: req.GetGerritChanges(),\n\nin L411",
+      "range": {
+        "startLine": 459,
+        "startChar": 0,
+        "endLine": 466,
+        "endChar": 2
+      },
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0614acb6_b8557436",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 637,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T21:51:11Z",
+      "side": 1,
+      "message": "now that it is not conditional, maybe do it in L623?",
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
