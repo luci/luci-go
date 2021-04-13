@@ -16,6 +16,7 @@ import { DateTime, Duration } from 'luxon';
 import { computed, IObservableValue, observable } from 'mobx';
 
 import {
+  BLAMELIST_PIN_KEY,
   Build,
   BuilderID,
   BuildInfra,
@@ -105,7 +106,7 @@ export class BuildExt {
   }
 
   @computed get blamelistPins(): GitilesCommit[] {
-    const blamelistPins = (this.output.properties['$recipe_engine/milo/blamelist_pins'] as GitilesCommit[]) || [];
+    const blamelistPins = this.output.properties[BLAMELIST_PIN_KEY] || [];
     if (blamelistPins.length === 0 && this.associatedGitilesCommit) {
       blamelistPins.push(this.associatedGitilesCommit);
     }

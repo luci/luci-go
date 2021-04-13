@@ -27,6 +27,9 @@ import { timeout } from '../libs/utils';
  */
 /* eslint-enable max-len */
 
+export const TEST_PRESENTATION_KEY = '$recipe_engine/milo/test_presentation';
+export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
+
 export const BUILD_FIELD_MASK =
   'id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,' +
   'infra.swarming,infra.resultdb,tags,exe';
@@ -112,6 +115,16 @@ export enum BuildStatus {
 
 export interface TestPresentationConfig {
   /**
+   * A list of keys that will be rendered as columns in the test results tab.
+   * status is always the first column and name is always the last column (you
+   * don't need to specify them).
+   *
+   * A key must be one of the following:
+   * 1. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
+   * v.gpu).
+   */
+  column_keys?: string[];
+  /**
    * A list of keys that will be used for grouping test variants in the test
    * results tab.
    *
@@ -121,25 +134,15 @@ export interface TestPresentationConfig {
    * 3. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
    * v.gpu).
    *
-   * Caveat: expected test variants are not affected by this setting and are
-   * always in their own group.
+   * Caveat: test variants with only expected results are not affected by this
+   * setting and are always in their own group.
    */
-  groupingKeys?: string[];
-  /**
-   * A list of keys that will be rendered as columns in the test results tab.
-   * status is always the first column and name is always the last column (you
-   * don't need to specify them).
-   *
-   * A key must be one of the following:
-   * 1. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
-   * v.gpu).
-   */
-  columns?: string[];
+  grouping_keys?: string[];
 }
 
 export interface BuildInput {
   readonly properties: {
-    test_presentation_config?: TestPresentationConfig;
+    [TEST_PRESENTATION_KEY]?: TestPresentationConfig;
     [key: string]: unknown;
   };
   readonly gitilesCommit?: GitilesCommit;
@@ -164,7 +167,8 @@ export interface GerritChange {
 
 export interface BuildOutput {
   readonly properties: {
-    test_presentation_config?: TestPresentationConfig;
+    [TEST_PRESENTATION_KEY]?: TestPresentationConfig;
+    [BLAMELIST_PIN_KEY]?: GitilesCommit[];
     [key: string]: unknown;
   };
   readonly gitilesCommit?: GitilesCommit;
