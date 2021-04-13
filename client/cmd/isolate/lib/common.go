@@ -270,11 +270,9 @@ type archiveLogger struct {
 }
 
 // LogSummary logs (to eventlog and stderr) a high-level summary of archive operations(s).
-func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int64, bytesHit, bytesPushed units.Size, digests []string) {
-	end := time.Now()
-
+func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int, bytesHit, bytesPushed units.Size) {
 	if !al.quiet {
-		duration := end.Sub(al.start)
+		duration := time.Since(al.start)
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", hits, bytesHit)
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", misses, bytesPushed)
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration.Round(time.Millisecond))
@@ -429,8 +427,8 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 		len(entries), len(uploadedDgs), uploadedBytes, time.Since(start))
 
 	if al != nil {
-		missing := int64(len(uploadedDgs))
-		hits := int64(len(entries)) - missing
+		missing := len(uploadedDgs)
+		hits := len(entries) - missing
 		bytesPushed := int64(0)
 		bytesTotal := int64(0)
 		for _, e := range entries {
@@ -440,11 +438,7 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 			bytesPushed += dg.Size
 		}
 
-		dgsStr := make([]string, len(rootDgs))
-		for i, dg := range rootDgs {
-			dgsStr[i] = dg.String()
-		}
-		al.LogSummary(ctx, hits, missing, units.Size(bytesTotal-bytesPushed), units.Size(bytesPushed), dgsStr)
+		al.LogSummary(ctx, hits, missing, units.Size(bytesTotal-bytesPushed), units.Size(bytesPushed))
 	}
 
 	if dumpJSON == "" {
