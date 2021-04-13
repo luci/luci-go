@@ -16,6 +16,46 @@
       "message": "Demo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/8108/overview\n",
       "revId": "9dcdc824857fb1d2bb7782c0b97dcf372f60549d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e64090f_ae6c3858",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-13T06:15:58Z",
+      "side": 1,
+      "message": "What is the purpose of this CL? Why do we need to make the \"ui/\" part optional now? Can we just remove the \"ui/\" part when we decide to switch everyone to the new build page?",
+      "revId": "9dcdc824857fb1d2bb7782c0b97dcf372f60549d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57d696cd_f14e5f12",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2021-04-13T06:15:58Z",
+      "side": 1,
+      "message": "nits: to remove",
+      "range": {
+        "startLine": 120,
+        "startChar": 43,
+        "endLine": 120,
+        "endChar": 51
+      },
+      "revId": "9dcdc824857fb1d2bb7782c0b97dcf372f60549d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
