@@ -133,6 +133,7 @@ func (q *Query) dispatchWorkItems(ctx context.Context) error {
 	invQ := &invocations.HistoryQuery{
 		Realm:     q.Request.Realm,
 		TimeRange: q.Request.GetTimeRange(),
+		Predicate: predicate,
 	}
 	return invQ.ByTimestamp(ctx, func(inv invocations.ID, ts *timestamp.Timestamp) error {
 		wi := &workItem{

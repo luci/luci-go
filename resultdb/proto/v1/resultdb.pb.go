@@ -1236,6 +1236,10 @@ type GetTestResultHistoryRequest struct {
 	// transitively by an invocation in this realm.
 	Realm string `protobuf:"bytes,1,opt,name=realm,proto3" json:"realm,omitempty"`
 	// Specify the subset of test ids to request history for.
+	//
+	// Performance tip: to speed up the query, please use the regexp with a literal
+	// prefix. For example, please use "ninja://chrome/test:browser_tests.*" instead of
+	// ".*browser_tests.*".
 	TestIdRegexp string `protobuf:"bytes,2,opt,name=test_id_regexp,json=testIdRegexp,proto3" json:"test_id_regexp,omitempty"`
 	// Specify the subset of test variants to request history for.
 	VariantPredicate *VariantPredicate `protobuf:"bytes,3,opt,name=variant_predicate,json=variantPredicate,proto3" json:"variant_predicate,omitempty"`
