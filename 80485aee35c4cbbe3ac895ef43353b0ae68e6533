@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69aff0e2_6d573899",
+        "filename": "milo/frontend/resultui/src/pages/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T06:44:45Z",
+      "side": 1,
+      "message": "The changes in this files are\n1. copy pasted from test_results_tab_new.ts\n2. rename the element from milo-test-results-tab-new to milo-test-results-tab.\n3. removed the TODO comment.",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 39
+      },
+      "revId": "80485aee35c4cbbe3ac895ef43353b0ae68e6533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
