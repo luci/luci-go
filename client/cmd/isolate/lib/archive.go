@@ -160,7 +160,7 @@ func (c *archiveRun) archiveToIsolate(ctx context.Context, al *archiveLogger) er
 		return err
 	}
 
-	al.LogSummary(ctx, int64(checker.Hit.Count()), int64(checker.Miss.Count()), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()), []string{string(isolSummary.Digest)})
+	al.LogSummary(ctx, checker.Hit.Count(), checker.Miss.Count(), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()))
 	return nil
 }
 
