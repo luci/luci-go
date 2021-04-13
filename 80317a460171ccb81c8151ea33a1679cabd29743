@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e6f4b3a6_3c94bd56",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-13T01:25:02Z",
+      "side": 1,
+      "message": "IIUC, GetFiles for CAS and Isolate both download the files into the given `workdir` and this code includes everything needed to support CAS and Isolate.\nlmk if i\u0027ve misunderstood.",
+      "revId": "80317a460171ccb81c8151ea33a1679cabd29743",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
