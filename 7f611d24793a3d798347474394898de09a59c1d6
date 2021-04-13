@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1df32f2_2bf25fc1",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T01:29:57Z",
+      "side": 1,
+      "message": "i am not sure I understand this logic. Suppose literal prefix is \"foo\", and there is a test called \"xfoo\". This will expression will return true.\n\nbesides, if it literal, why do we need to use a (heavy) regexp function.",
+      "range": {
+        "startLine": 125,
+        "startChar": 2,
+        "endLine": 125,
+        "endChar": 59
+      },
+      "revId": "7f611d24793a3d798347474394898de09a59c1d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f8296d5_0fbdb3a4",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T01:29:57Z",
+      "side": 1,
+      "message": "does this work? normally NULL isn\u0027t equal anything, even NULL itself.\nCheck for NULL is normally done like \"foo IS NULL\".\nSince you check for both NULL and \"\", consider\n\n  IFNULL(i.CommonTestIDPrefix, \"\") \u003d \"\"\n\nI believe we already do this in other places\n\n--\n\nstepping back, L126 is dead code. if it is empty, then L124 would return true.\nSo maybe just \n\n  AND STARTS_WITH(@literalPrefix, IFNULL(i.CommonTestIDPrefix, \"\"))\n\n?",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 127,
+        "endChar": 71
+      },
+      "revId": "7f611d24793a3d798347474394898de09a59c1d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

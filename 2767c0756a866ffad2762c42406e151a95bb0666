@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f087bdb_5f91711e",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T01:29:57Z",
+      "side": 1,
+      "message": "thanks. Yes, this is a much better name.",
+      "parentUuid": "a9f9864d_7a1adca3",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 127,
+        "endChar": 55
+      },
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0b4b61f4_34d5789c",
