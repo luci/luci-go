@@ -45,6 +45,30 @@
       },
       "revId": "c217ceb60c66992f9640e152c77212128ee0d540",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4a330eb_7571a9ec",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/index.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T00:01:07Z",
+      "side": 1,
+      "message": "This is formatted by eslint.\nThe reason is that we can\u0027t have space between the span tags, and we need to satisfy the 120 char limit.\n\nAnother way is to insert \u003c!----\u003e, but that\n1. adds more noise after formatting\n2. can\u0027t be minified away because it\u0027s in a string template not a HTML file.",
+      "parentUuid": "aad2bbf1_b64b9b03",
+      "range": {
+        "startLine": 182,
+        "startChar": 16,
+        "endLine": 182,
+        "endChar": 17
+      },
+      "revId": "c217ceb60c66992f9640e152c77212128ee0d540",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
