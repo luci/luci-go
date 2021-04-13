@@ -94,6 +94,30 @@
       },
       "revId": "80be0267c3d63428396e45c6cc41ea8b757a32d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2808a98a_3387b62d",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T23:59:34Z",
+      "side": 1,
+      "message": "I see. Just to double check, frontend js can still use pRPC and user access token to directly query BB right?",
+      "parentUuid": "5be6e098_92fe106b",
+      "range": {
+        "startLine": 136,
+        "startChar": 4,
+        "endLine": 136,
+        "endChar": 26
+      },
+      "revId": "80be0267c3d63428396e45c6cc41ea8b757a32d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
