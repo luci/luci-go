@@ -15,15 +15,20 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 
+import commonStyle from '../styles/common_style.css';
+
 @customElement('milo-not-found-page')
 export class NotFoundPageElement extends MobxLitElement {
   protected render() {
     return html` <div id="not-found-message">We couldn't find the page you were looking for.</div> `;
   }
 
-  static styles = css`
-    #not-found-message {
-      margin: 8px 16px;
-    }
-  `;
+  static styles = [
+    commonStyle,
+    css`
+      #not-found-message {
+        margin: 8px 16px;
+      }
+    `,
+  ];
 }

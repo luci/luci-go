@@ -20,6 +20,7 @@ import '../../components/image_diff_viewer';
 import '../../components/status_bar';
 import { router } from '../../routes';
 import { ArtifactIdentifier } from '../../services/resultdb';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders the header of an artifact page.
@@ -77,19 +78,22 @@ export class ArtifactPageLayoutElement extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: block;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        display: block;
+      }
 
-    #artifact-header {
-      background-color: var(--block-background-color);
-      padding: 6px 16px;
-      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-      font-size: 14px;
-    }
-    .id-component-label {
-      color: var(--light-text-color);
-    }
-  `;
+      #artifact-header {
+        background-color: var(--block-background-color);
+        padding: 6px 16px;
+        font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+        font-size: 14px;
+      }
+      .id-component-label {
+        color: var(--light-text-color);
+      }
+    `,
+  ];
 }

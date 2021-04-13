@@ -22,6 +22,7 @@ import { computed, observable } from 'mobx';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { router } from '../../routes';
+import commonStyle from '../../styles/common_style.css';
 
 function stripInvocationPrefix(invocationName: string): string {
   return invocationName.slice('invocations/'.length);
@@ -87,20 +88,23 @@ export class InvocationDetailsTabElement extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      padding: 5px 24px;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        padding: 5px 24px;
+      }
 
-    #included-invocations ul {
-      list-style-type: none;
-      margin-block-start: auto;
-      margin-block-end: auto;
-      padding-inline-start: 32px;
-    }
+      #included-invocations ul {
+        list-style-type: none;
+        margin-block-start: auto;
+        margin-block-end: auto;
+        padding-inline-start: 32px;
+      }
 
-    #tag-table {
-      margin-left: 29px;
-    }
-  `;
+      #tag-table {
+        margin-left: 29px;
+      }
+    `,
+  ];
 }

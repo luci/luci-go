@@ -25,6 +25,7 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { NOT_FOUND_URL } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders a text diff artifact.
@@ -90,20 +91,23 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     `;
   }
 
-  static styles = css`
-    #details {
-      margin: 20px;
-    }
-    #content {
-      position: relative;
-      margin: 20px;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      #details {
+        margin: 20px;
+      }
+      #content {
+        position: relative;
+        margin: 20px;
+      }
 
-    .d2h-code-linenumber {
-      cursor: default;
-    }
-    .d2h-moved-tag {
-      display: none;
-    }
-  `;
+      .d2h-code-linenumber {
+        cursor: default;
+      }
+      .d2h-moved-tag {
+        display: none;
+      }
+    `,
+  ];
 }

@@ -30,6 +30,7 @@ import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../.
 import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
+import commonStyle from '../../styles/common_style.css';
 import { MiloBaseElement } from '../milo_base';
 import { TestVariantEntryElement } from './test_variant_entry';
 
@@ -276,6 +277,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   static styles = [
+    commonStyle,
     colorClasses,
     css`
       :host {
@@ -349,12 +351,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
         font-style: italic;
       }
 
-      .active-text {
-        color: var(--active-text-color);
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: normal;
-      }
       .inline-icon {
         --mdc-icon-size: 1.2em;
         vertical-align: bottom;

@@ -25,6 +25,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders a raw artifact.
@@ -99,10 +100,13 @@ export class RawArtifactPageElement extends MiloBaseElement implements BeforeEnt
     `;
   }
 
-  static styles = css`
-    #content {
-      margin: 20px;
-      color: var(--active-color);
-    }
-  `;
+  static styles = [
+    commonStyle,
+    css`
+      #content {
+        margin: 20px;
+        color: var(--active-color);
+      }
+    `,
+  ];
 }

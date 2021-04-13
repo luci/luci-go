@@ -28,6 +28,7 @@ import { reviewerLine } from '../libs/markdown_it_plugins/reviewer_line';
 import { sanitizeHTML } from '../libs/sanitize_html';
 import { NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
+import commonStyle from '../styles/common_style.css';
 
 const md = MarkdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])
@@ -112,69 +113,72 @@ export class CommitEntryElement extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: block;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        display: block;
+      }
 
-    #entry-header {
-      display: flex;
-    }
+      #entry-header {
+        display: flex;
+      }
 
-    #header-number {
-      flex: 1;
-      max-width: 30px;
-      font-weight: bold;
-    }
+      #header-number {
+        flex: 1;
+        max-width: 30px;
+        font-weight: bold;
+      }
 
-    #header-revision {
-      flex: 1;
-      max-width: 110px;
-      font-weight: bold;
-    }
+      #header-revision {
+        flex: 1;
+        max-width: 110px;
+        font-weight: bold;
+      }
 
-    #header-author {
-      flex: 1;
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+      #header-author {
+        flex: 1;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    #header-time {
-      flex: 1;
-      max-width: 190px;
-      padding-left: 10px;
-    }
+      #header-time {
+        flex: 1;
+        max-width: 190px;
+        padding-left: 10px;
+      }
 
-    #header-description {
-      flex: 1;
-      padding-left: 10px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+      #header-description {
+        flex: 1;
+        padding-left: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    #entry-content {
-      padding: 10px 20px 20px;
-      border-bottom: 1px solid var(--divider-color);
-    }
+      #entry-content {
+        padding: 10px 20px 20px;
+        border-bottom: 1px solid var(--divider-color);
+      }
 
-    #summary {
-      margin-bottom: 15px;
-    }
-    #summary > p:first-child {
-      margin-block-start: 0;
-    }
-    #summary > p:last-child {
-      margin-block-end: 0;
-    }
+      #summary {
+        margin-bottom: 15px;
+      }
+      #summary > p:first-child {
+        margin-block-start: 0;
+      }
+      #summary > p:last-child {
+        margin-block-end: 0;
+      }
 
-    .greyed-out {
-      color: var(--greyed-out-text-color);
-    }
+      .greyed-out {
+        color: var(--greyed-out-text-color);
+      }
 
-    ul {
-      margin: 3px 0;
-      padding-inline-start: 28px;
-    }
-  `;
+      ul {
+        margin: 3px 0;
+        padding-inline-start: 28px;
+      }
+    `,
+  ];
 }

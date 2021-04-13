@@ -28,6 +28,7 @@ import { InvocationState, provideInvocationState } from '../../context/invocatio
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { NOT_FOUND_URL, router } from '../../routes';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Main test results page.
@@ -151,37 +152,40 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
     `;
   }
 
-  static styles = css`
-    :host {
-      height: calc(100vh - var(--header-height));
-      display: grid;
-      grid-template-rows: repeat(3, auto) 1fr;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        height: calc(100vh - var(--header-height));
+        display: grid;
+        grid-template-rows: repeat(3, auto) 1fr;
+      }
 
-    #test-invocation-summary {
-      background-color: var(--block-background-color));
-      padding: 6px 16px;
-      font-family: "Google Sans", "Helvetica Neue", sans-serif;
-      font-size: 14px;
-      display: flex;
-    }
+      #test-invocation-summary {
+        background-color: var(--block-background-color));
+        padding: 6px 16px;
+        font-family: "Google Sans", "Helvetica Neue", sans-serif;
+        font-size: 14px;
+        display: flex;
+      }
 
-    milo-tab-bar {
-      margin: 0 10px;
-      padding-top: 10px;
-    }
+      milo-tab-bar {
+        margin: 0 10px;
+        padding-top: 10px;
+      }
 
-    #test-invocation-id {
-      flex: 0 auto;
-    }
+      #test-invocation-id {
+        flex: 0 auto;
+      }
 
-    #test-invocation-id-label {
-      color: var(--light-text-color);
-    }
+      #test-invocation-id-label {
+        color: var(--light-text-color);
+      }
 
-    #test-invocation-state {
-      margin-left: auto;
-      flex: 0 auto;
-    }
-  `;
+      #test-invocation-state {
+        margin-left: auto;
+        flex: 0 auto;
+      }
+    `,
+  ];
 }

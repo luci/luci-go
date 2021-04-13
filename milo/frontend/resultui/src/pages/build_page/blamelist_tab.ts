@@ -27,6 +27,7 @@ import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getGitilesRepoURL } from '../../libs/build_utils';
 import { GitCommit } from '../../services/milo_internal';
+import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-blamelist-tab')
 @consumeBuildState
@@ -233,66 +234,69 @@ export class BlamelistTabElement extends MiloBaseElement {
     `;
   }
 
-  static styles = css`
-    #no-blamelist {
-      padding: 10px;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      #no-blamelist {
+        padding: 10px;
+      }
 
-    #header {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      grid-gap: 5px;
-      height: 30px;
-      padding: 5px 10px 3px 10px;
-    }
+      #header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-gap: 5px;
+        height: 30px;
+        padding: 5px 10px 3px 10px;
+      }
 
-    mwc-button {
-      margin-top: 1px;
-    }
+      mwc-button {
+        margin-top: 1px;
+      }
 
-    #repo-selector {
-      white-space: nowrap;
-      padding-left: 5px;
-    }
-    #repo-select {
-      display: inline-block;
-      width: 450px;
-      padding: 0.27rem 0.5rem;
-      font-size: 1rem;
-      color: var(--light-text-color);
-      background-clip: padding-box;
-      border: 1px solid var(--divider-color);
-      border-radius: 0.25rem;
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-      text-overflow: ellipsis;
-    }
+      #repo-selector {
+        white-space: nowrap;
+        padding-left: 5px;
+      }
+      #repo-select {
+        display: inline-block;
+        width: 450px;
+        padding: 0.27rem 0.5rem;
+        font-size: 1rem;
+        color: var(--light-text-color);
+        background-clip: padding-box;
+        border: 1px solid var(--divider-color);
+        border-radius: 0.25rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        text-overflow: ellipsis;
+      }
 
-    #blamelist-summary {
-      padding: 4px 0;
-    }
+      #blamelist-summary {
+        padding: 4px 0;
+      }
 
-    #main {
-      padding-top: 5px;
-      padding-left: 10px;
-      border-top: 1px solid var(--divider-color);
-    }
-    milo-commit-entry {
-      margin-bottom: 2px;
-    }
-    .list-entry {
-      margin-top: 5px;
-    }
+      #main {
+        padding-top: 5px;
+        padding-left: 10px;
+        border-top: 1px solid var(--divider-color);
+      }
+      milo-commit-entry {
+        margin-bottom: 2px;
+      }
+      .list-entry {
+        margin-top: 5px;
+      }
 
-    .divider {
-      border: none;
-      border-top: 1px solid var(--divider-color);
-    }
-    #load {
-      color: var(--active-text-color);
-    }
-    #load-more {
-      color: var(--active-text-color);
-      cursor: pointer;
-    }
-  `;
+      .divider {
+        border: none;
+        border-top: 1px solid var(--divider-color);
+      }
+      #load {
+        color: var(--active-text-color);
+      }
+      #load-more {
+        color: var(--active-text-color);
+        cursor: pointer;
+      }
+    `,
+  ];
 }

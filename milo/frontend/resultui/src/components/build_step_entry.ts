@@ -29,6 +29,7 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { StepExt } from '../models/step_ext';
 import colorClasses from '../styles/color_classes.css';
+import commonStyle from '../styles/common_style.css';
 import { OnEnterList } from './lazy_list';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
@@ -237,6 +238,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
   }
 
   static styles = [
+    commonStyle,
     colorClasses,
     css`
       :host {
