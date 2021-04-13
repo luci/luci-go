@@ -18,7 +18,8 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -115,7 +116,7 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 
 	workdir := c.work
 	if properties.RelativeCwd != "" {
-		workdir = path.Join(workdir, properties.RelativeCwd)
+		workdir = filepath.Join(workdir, properties.RelativeCwd)
 	}
 	if err := prepareDir(workdir); err != nil {
 		return nil, err
@@ -129,6 +130,19 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 		} else {
 			cmdEnvMap.Set(env.Key, env.Value)
 		}
+	}
+
+	// Set environment prefixes.
+	for _, prefix := range properties.EnvPrefixes {
+		paths := make([]string, 0, len(prefix.Value)+1)
+		for _, value := range prefix.Value {
+			paths = append(paths, filepath.Clean(filepath.Join(workdir, value)))
+		}
+		cur, ok := cmdEnvMap.Get(prefix.Key)
+		if ok {
+			paths = append(paths, cur)
+		}
+		cmdEnvMap.Set(prefix.Key, strings.Join(paths, string(os.PathListSeparator)))
 	}
 
 	// TODO(crbug.com/1188473): Set env prefix in task request
