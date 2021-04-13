@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -87,8 +88,25 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 		literalPrefix, _ = r.LiteralPrefix()
 	}
 
+	var variant []string
+	if q.Predicate.GetVariant() != nil {
+		switch p := q.Predicate.GetVariant().GetPredicate().(type) {
+		case *pb.VariantPredicate_Equals:
+			variant = pbutil.VariantToStrings(p.Equals)
+		case *pb.VariantPredicate_Contains:
+			variant = pbutil.VariantToStrings(p.Contains)
+		case nil:
+			// No filter.
+		default:
+			panic(errors.Reason("unexpected variant predicate %q", q.Predicate.GetVariant()).Err())
+		}
+	}
+
 	sql := &bytes.Buffer{}
-	if err = queryTmpl.Execute(sql, map[string]interface{}{"MatchTestIdPrefix": literalPrefix != ""}); err != nil {
+	if err = queryTmpl.Execute(sql, map[string]interface{}{
+		"MatchTestIdPrefix": literalPrefix != "",
+		"MatchVariant":      len(variant) != 0,
+	}); err != nil {
 		return err
 	}
 	st := spanner.NewStatement(sql.String())
@@ -101,6 +119,7 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 	// q.Predicate.GetTestIdRegexp() is "ninja://.*browser_tests.*", using literalPrefix
 	// would guarantee that this invocation will be included in the query results.
 	st.Params["literalPrefix"] = literalPrefix
+	st.Params["variant"] = variant
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -132,6 +151,12 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			-- This condition is not very useful to improve the performance of test
 			-- result history API, but without it will make the results incomplete.
 			STARTS_WITH(i.CommonTestIDPrefix, @literalPrefix)
+		)
+	{{end}}
+	{{if .MatchVariant}}
+		AND (
+			TestResultVariantUnion IS NULL OR
+			(SELECT LOGICAL_AND(kv IN UNNEST(TestResultVariantUnion)) FROM UNNEST(@variant) kv)
 		)
 	{{end}}
 	ORDER BY i.HistoryTime DESC
