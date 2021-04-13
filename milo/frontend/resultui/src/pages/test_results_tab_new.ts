@@ -128,7 +128,7 @@ export class TestResultsTabElement extends MiloBaseElement {
 
     return html`
       <milo-test-variants-table
-        style="--columns: ${this.invocationState.columnWidths.map((width) => width + 'px')}"
+        style="--columns: ${this.invocationState.columnWidths.map((width) => width + 'px').join(' ')}"
       ></milo-test-variants-table>
     `;
   }
