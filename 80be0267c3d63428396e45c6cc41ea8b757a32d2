@@ -46,6 +46,30 @@
       },
       "revId": "80be0267c3d63428396e45c6cc41ea8b757a32d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3aba97b0_29fd0395",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T23:35:41Z",
+      "side": 1,
+      "message": "\u003e AsSessionUser will be the short term replacement\nWhat\u0027s the long term replacement?",
+      "parentUuid": "a384a0f7_bdc3847c",
+      "range": {
+        "startLine": 136,
+        "startChar": 4,
+        "endLine": 136,
+        "endChar": 26
+      },
+      "revId": "80be0267c3d63428396e45c6cc41ea8b757a32d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
