@@ -66,13 +66,14 @@ export class BlamelistTabElement extends MiloBaseElement {
 
   @computed
   private get revisionRange() {
-    if (!this.endOfPage || !this.selectedBlamelistPin) {
+    const blamelistPin = this.selectedBlamelistPin;
+    if (!this.endOfPage || !blamelistPin) {
       return '';
     }
 
     return this.precedingCommit
-      ? `${this.precedingCommit.id.substring(0, 12)}..${this.selectedBlamelistPin.id.substring(0, 12)}`
-      : this.selectedBlamelistPin.id.substring(0, 12);
+      ? `${this.precedingCommit.id.substring(0, 12)}..${blamelistPin.id?.substring(0, 12) || blamelistPin.ref}`
+      : blamelistPin.id?.substring(0, 12) || blamelistPin.ref;
   }
 
   @computed
@@ -81,9 +82,9 @@ export class BlamelistTabElement extends MiloBaseElement {
       return `This build included ${this.commits.length} new revisions from ${this.revisionRange}`;
     }
     if (this.commits.length > 0) {
-      return `This build included over ${
-        this.commits.length
-      } new revisions up to ${this.selectedBlamelistPin!.id.substring(0, 12)}`;
+      return `This build included over ${this.commits.length} new revisions up to ${
+        this.selectedBlamelistPin!.id?.substring(0, 12) || this.selectedBlamelistPin!.ref
+      }`;
     }
     return '';
   }

@@ -148,8 +148,8 @@ export interface BuildInput {
 export interface GitilesCommit {
   readonly host: string;
   readonly project: string;
-  readonly id: string;
-  readonly ref: string;
+  readonly id?: string;
+  readonly ref?: string;
   readonly position: number;
 }
 
