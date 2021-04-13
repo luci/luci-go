@@ -16,6 +16,24 @@
       "message": "i assume there is no easy way to do this in the base class that you added recently",
       "revId": "bc0f93cafa7bcce0653462206b7bc645c0f24282",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "abad03b2_63a4b740",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/tvt_config_widget.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T00:49:38Z",
+      "side": 1,
+      "message": "This is a static property, so we can\u0027t call super directly.\n\nWe best we can do is\n```\nstatic styles \u003d [\n  ...MiloBaseComponent.styles,\n  css`\n    // other styles\n  `;\n];\n```\nwhich is not better than this implementation.\n\nIf we declare a static property in MiloBaseComponent, components that don\u0027t have their own style won\u0027t need to specify styles. But\n1. there are only a few of them. I prefer explicitness than saving a few key strokes.\n2. other components need to remember that they can\u0027t just override the style, they need to inject MiloBaseComponent.styles explicitly.",
+      "parentUuid": "bf0642c0_266a7f61",
+      "revId": "bc0f93cafa7bcce0653462206b7bc645c0f24282",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
