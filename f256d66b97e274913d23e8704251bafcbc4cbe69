@@ -16,6 +16,46 @@
       "message": "Nodir, I added you to reviewers because Scott is OOO. PTAL.",
       "revId": "f256d66b97e274913d23e8704251bafcbc4cbe69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2399bac_d830091f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T01:31:04Z",
+      "side": 1,
+      "message": "LGTM. Nice refactoring",
+      "revId": "f256d66b97e274913d23e8704251bafcbc4cbe69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dbe52cb6_1a9ce331",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T01:31:04Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 44,
+        "startChar": 16,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "f256d66b97e274913d23e8704251bafcbc4cbe69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
