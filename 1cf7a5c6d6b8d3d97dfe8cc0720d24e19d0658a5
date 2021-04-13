@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "89d2b89f_0ffea25b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-13T17:36:15Z",
+      "side": 1,
+      "message": "Ack, will do",
+      "parentUuid": "730ae51f_53a98c21",
+      "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "095f72dc_567beb49",
@@ -53,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e36ae6e_28cae90e",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-13T17:36:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "095f72dc_567beb49",
+      "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fd4291ef_19f0a9b3",
@@ -66,6 +102,24 @@
       "writtenOn": "2021-04-13T11:52:04Z",
       "side": 1,
       "message": "IMO, this test is useless. I\u0027d rather see a test that shows that `migration.ReportVerifiedRun` call ultimately results in a finalized run \u0026\u0026 a sent BQ row, but if you really want to add a test to this package, then add a test covering not just DS load, but conversion to an attempt row.",
+      "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c4c281e_43ae6fdc",
+        "filename": "cv/internal/run/bq/bq_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-13T17:36:15Z",
+      "side": 1,
+      "message": "Right, a higher level test would be better; this is the test that would have made sense to cover just the one function that was added initially.\n\n(Note that it does cover \"conversion\" to Attempt row, although actually so far it was just fetching the stored Attempt without modification).\n\nWill update test.",
+      "parentUuid": "fd4291ef_19f0a9b3",
       "revId": "1cf7a5c6d6b8d3d97dfe8cc0720d24e19d0658a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
