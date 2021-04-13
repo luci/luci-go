@@ -70,6 +70,30 @@
       },
       "revId": "3ca303f0785b135a4b4c30e47bbe1162c55df9b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "039737e5_6323f04e",
+        "filename": "client/cmd/isolate/lib/batch_archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T00:42:29Z",
+      "side": 0,
+      "message": "yeah, stack trace would be useful, but it is captured in L180? The only diff between capturing stack trace here and there is having \"processGenJSON\" in the stack trace. If the stack trace is captured in L180, it is obvious that processGenJSON failed.\n\nno strong opinion though, since this adds assumptions about the call site. WDYT?",
+      "parentUuid": "79c99ff7_b9116aae",
+      "range": {
+        "startLine": 261,
+        "startChar": 14,
+        "endLine": 261,
+        "endChar": 29
+      },
+      "revId": "3ca303f0785b135a4b4c30e47bbe1162c55df9b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
