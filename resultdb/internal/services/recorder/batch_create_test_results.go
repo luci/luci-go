@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -99,6 +100,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	}
 	ms := make([]*spanner.Mutation, len(in.Requests))
 	var commonPrefix string
+	varUnion := stringset.New(0)
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 		if i == 0 {
@@ -106,6 +108,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		} else {
 			commonPrefix = longestCommonPrefix(commonPrefix, r.TestResult.TestId)
 		}
+		varUnion.AddAll(pbutil.VariantToStrings(r.TestResult.GetVariant()))
 	}
 
 	var realm string
@@ -114,9 +117,11 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {
 			var invCommonTestIdPrefix spanner.NullString
+			var invVars []string
 			if err = invocations.ReadColumns(ctx, invID, map[string]interface{}{
-				"Realm":              &realm,
-				"CommonTestIDPrefix": &invCommonTestIdPrefix,
+				"Realm":                  &realm,
+				"CommonTestIDPrefix":     &invCommonTestIdPrefix,
+				"TestResultVariantUnion": &invVars,
 			}); err != nil {
 				return
 			}
@@ -125,11 +130,13 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 			if !invCommonTestIdPrefix.IsNull() {
 				newPrefix = longestCommonPrefix(invCommonTestIdPrefix.String(), commonPrefix)
 			}
+			varUnion.AddAll(invVars)
 
-			if invCommonTestIdPrefix.String() != newPrefix {
+			if invCommonTestIdPrefix.String() != newPrefix || varUnion.Len() > len(invVars) {
 				span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
-					"InvocationId":       invID,
-					"CommonTestIDPrefix": newPrefix,
+					"InvocationId":           invID,
+					"CommonTestIDPrefix":     newPrefix,
+					"TestResultVariantUnion": varUnion.ToSortedSlice(),
 				}))
 			}
 			return
