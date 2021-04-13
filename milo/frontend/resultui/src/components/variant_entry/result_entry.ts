@@ -16,6 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
+import { Duration } from 'luxon';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
@@ -27,6 +28,7 @@ import './text_diff_artifact';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
+import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
 import { Artifact, ListArtifactsResponse, TestResult } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
@@ -55,6 +57,15 @@ export class ResultEntryElement extends MobxLitElement {
   @observable.ref private shouldRenderContent = false;
 
   @observable.ref private tagExpanded = false;
+
+  @computed
+  private get duration() {
+    const durationStr = this.testResult.duration;
+    if (!durationStr) {
+      return null;
+    }
+    return Duration.fromMillis(parseProtoDuration(durationStr));
+  }
 
   @computed
   private get parentInvId() {
@@ -250,7 +261,7 @@ export class ResultEntryElement extends MobxLitElement {
           <span class="${this.testResult.expected ? 'expected' : 'unexpected'}">
             ${this.testResult.expected ? '' : html`unexpectedly`} ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
           </span>
-          ${this.testResult.duration ? `after ${this.testResult.duration}` : ''}
+          ${this.duration ? `after ${displayDuration(this.duration)}` : ''}
         </span>
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>

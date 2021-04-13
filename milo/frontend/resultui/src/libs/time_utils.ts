@@ -58,10 +58,14 @@ export function displayCompactDuration(duration: Duration) {
   return `${shifted.milliseconds}ms`;
 }
 
+/* eslint-disable max-len */
 /**
  * Parses the JSON encoding of google.protobuf.Duration (e.g. '4.5s').
- * Returns the number of seconds.
+ * https://github.com/protocolbuffers/protobuf/blob/68cb69ea68822d96eee6d6104463edf85e70d689/src/google/protobuf/duration.proto#L92
+ *
+ * Returns the number of milliseconds.
  */
+/* eslint-disable max-len */
 export function parseProtoDuration(duration: string): number {
-  return Number(duration.substring(0, duration.length - 1));
+  return Number(duration.substring(0, duration.length - 1)) * 1000;
 }
