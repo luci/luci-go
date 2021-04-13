@@ -22,6 +22,30 @@
       },
       "revId": "80be0267c3d63428396e45c6cc41ea8b757a32d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a384a0f7_bdc3847c",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-13T20:17:59Z",
+      "side": 1,
+      "message": "BB -\u003e SW uses AsProject.\nRight now Milo -\u003e BB uses AsUser, and AsSessionUser will be the short term replacement. It is possible it will use AsProject too (checking permissions itself).",
+      "parentUuid": "10f54e59_877b6160",
+      "range": {
+        "startLine": 136,
+        "startChar": 4,
+        "endLine": 136,
+        "endChar": 26
+      },
+      "revId": "80be0267c3d63428396e45c6cc41ea8b757a32d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
