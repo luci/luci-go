@@ -26,7 +26,6 @@ import './pin_toggle';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
-import { renderMarkdown } from '../libs/markdown_utils';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { StepExt } from '../models/step_ext';
 import colorClasses from '../styles/color_classes.css';
@@ -89,9 +88,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
       return html``;
     }
     return html`
-      <div id="summary" style=${styleMap({ display: this.step.summary ? '' : 'none' })}>
-        ${renderMarkdown(this.step.summary)}
-      </div>
+      <div id="summary" style=${styleMap({ display: this.step.summary ? '' : 'none' })}>${this.step.summary}</div>
       <ul id="log-links" style=${styleMap({ display: this.step.logs?.length ? '' : 'none' })}>
         ${this.logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
@@ -232,7 +229,7 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
             class="hidden-icon"
             @click=${(e: Event) => e.stopPropagation()}
           ></milo-copy-to-clipboard>
-          <span id="header-markdown">${renderMarkdown(this.step.header)}</span>
+          <span id="header-markdown">${this.step.header}</span>
         </span>
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
