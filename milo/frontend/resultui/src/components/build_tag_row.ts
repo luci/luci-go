@@ -16,6 +16,7 @@ import { css, customElement, LitElement, property } from 'lit-element';
 import { html } from 'lit-html';
 
 import { getSafeUrlFromBuildset } from '../libs/build_utils';
+import commonStyle from '../styles/common_style.css';
 
 /**
  * Renders a build tag row, include linkify support for some build tags.
@@ -42,14 +43,17 @@ export class BuildTagRowElement extends LitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: table-row;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        display: table-row;
+      }
 
-    td:nth-child(2) {
-      clear: both;
-      overflow-wrap: anywhere;
-    }
-  `;
+      td:nth-child(2) {
+        clear: both;
+        overflow-wrap: anywhere;
+      }
+    `,
+  ];
 }

@@ -24,6 +24,7 @@ import './tooltip';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { genFeedbackUrl } from '../libs/utils';
+import commonStyle from '../styles/common_style.css';
 import { UserUpdateEvent } from './signin';
 
 const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
@@ -146,68 +147,71 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
     `;
   }
 
-  static styles = css`
-    :host {
-      --header-height: 52px;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        --header-height: 52px;
+      }
 
-    #container {
-      box-sizing: border-box;
-      height: var(--header-height);
-      padding: 10px 0;
-      display: flex;
-    }
-    #title-container {
-      display: flex;
-      flex: 1 1 100%;
-      align-items: center;
-      margin-left: 14px;
-    }
-    #title-link {
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-    }
-    #chromium-icon {
-      display: inline-block;
-      width: 32px;
-      height: 32px;
-      margin-right: 8px;
-    }
-    #headline {
-      color: var(--light-text-color);
-      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-      font-size: 18px;
-      font-weight: 300;
-      letter-spacing: 0.25px;
-    }
-    #signin {
-      margin-right: 14px;
-      flex-shrink: 0;
-    }
-    .interactive-icon {
-      cursor: pointer;
-      height: 32px;
-      width: 32px;
-      --mdc-icon-size: 28px;
-      margin-top: 2px;
-      margin-right: 14px;
-      position: relative;
-      color: black;
-      opacity: 0.6;
-    }
-    .interactive-icon:hover {
-      opacity: 0.8;
-    }
+      #container {
+        box-sizing: border-box;
+        height: var(--header-height);
+        padding: 10px 0;
+        display: flex;
+      }
+      #title-container {
+        display: flex;
+        flex: 1 1 100%;
+        align-items: center;
+        margin-left: 14px;
+      }
+      #title-link {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+      }
+      #chromium-icon {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        margin-right: 8px;
+      }
+      #headline {
+        color: var(--light-text-color);
+        font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+        font-size: 18px;
+        font-weight: 300;
+        letter-spacing: 0.25px;
+      }
+      #signin {
+        margin-right: 14px;
+        flex-shrink: 0;
+      }
+      .interactive-icon {
+        cursor: pointer;
+        height: 32px;
+        width: 32px;
+        --mdc-icon-size: 28px;
+        margin-top: 2px;
+        margin-right: 14px;
+        position: relative;
+        color: black;
+        opacity: 0.6;
+      }
+      .interactive-icon:hover {
+        opacity: 0.8;
+      }
 
-    #error-label {
-      margin: 8px 16px;
-    }
+      #error-label {
+        margin: 8px 16px;
+      }
 
-    #error-message {
-      margin: 8px 16px;
-      background-color: var(--block-background-color);
-      padding: 5px;
-    }
-  `;
+      #error-message {
+        margin: 8px 16px;
+        background-color: var(--block-background-color);
+        padding: 5px;
+      }
+    `,
+  ];
 }

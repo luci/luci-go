@@ -18,6 +18,7 @@ import { css, customElement, html } from 'lit-element';
 import { observable, when } from 'mobx';
 
 import { AppState, consumeAppState } from '../context/app_state';
+import commonStyle from '../styles/common_style.css';
 
 /**
  * Prompts the user to login.
@@ -66,14 +67,17 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
     `;
   }
 
-  static styles = css`
-    #sign-in-message {
-      margin: 8px 16px;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      #sign-in-message {
+        margin: 8px 16px;
+      }
 
-    #sign-in-link {
-      cursor: pointer;
-      text-decoration: underline;
-    }
-  `;
+      #sign-in-link {
+        cursor: pointer;
+        text-decoration: underline;
+      }
+    `,
+  ];
 }

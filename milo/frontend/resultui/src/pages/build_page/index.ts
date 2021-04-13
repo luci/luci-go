@@ -44,6 +44,7 @@ import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
 import colorClasses from '../../styles/color_classes.css';
+import commonStyle from '../../styles/common_style.css';
 
 const STATUS_FAVICON_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'gray',
@@ -600,6 +601,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   static styles = [
+    commonStyle,
     colorClasses,
     css`
       :host {

@@ -16,6 +16,7 @@ import { customElement, LitElement, property } from 'lit-element';
 import { html } from 'lit-html';
 
 import { Link } from '../models/link';
+import commonStyle from '../styles/common_style.css';
 
 /**
  * Renders a Link object.
@@ -30,4 +31,6 @@ export class LinkElement extends LitElement {
       <a href=${this.link.url} aria-label=${this.link.ariaLabel} target=${this.target || ''}>${this.link.label}</a>
     `;
   }
+
+  static styles = [commonStyle];
 }
