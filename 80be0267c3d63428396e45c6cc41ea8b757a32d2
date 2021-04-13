@@ -70,6 +70,30 @@
       },
       "revId": "80be0267c3d63428396e45c6cc41ea8b757a32d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5be6e098_92fe106b",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-13T23:49:21Z",
+      "side": 1,
+      "message": "AsProject. It is related to switching to use Realms for authorization. Milo will authenticate the user, then check Milo *and* Buildbucket ACLs itself locally, then call Buildbucket using AsProject to actually fetch necessary data. This would allow to remove two complicated mechanisms: delegation tokens and https://cr-buildbucket.appspot.com/rpcexplorer/services/access.Access/ (and a caching layer around it).\n\n\"AsProject\" is a way to authorize calls between LUCI services (which mutually trust one another) done in a context of some LUCI project (but not a concrete user). It assumes LUCI services do ACL checks on the perimeter (and LUCI Realms provide a model where Milo can easily check Buildbucket ACLs if it needs to). \n\nThis is not final yet.",
+      "parentUuid": "3aba97b0_29fd0395",
+      "range": {
+        "startLine": 136,
+        "startChar": 4,
+        "endLine": 136,
+        "endChar": 26
+      },
+      "revId": "80be0267c3d63428396e45c6cc41ea8b757a32d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
