@@ -73,6 +73,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1b5e952c_34f99fe8",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-13T01:50:30Z",
+      "side": 1,
+      "message": "did you mean update this in other files?\nI\u0027ve just updated all `path`s to `filepath`s in this CL for reproduce and reproduce_test.",
+      "parentUuid": "a06e98d9_4ee1692b",
+      "revId": "6606b1c37b63fdeb26db40f61e261252b73fd24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c78dadfb_cf33e905",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 2
@@ -84,6 +102,30 @@
       "writtenOn": "2021-04-13T00:36:31Z",
       "side": 1,
       "message": "use filepath.Join here and other places\nhttps://golang.org/pkg/path/filepath/#Join",
+      "range": {
+        "startLine": 138,
+        "startChar": 36,
+        "endLine": 138,
+        "endChar": 40
+      },
+      "revId": "6606b1c37b63fdeb26db40f61e261252b73fd24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ccaf9688_b1ee4425",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-13T01:50:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c78dadfb_cf33e905",
       "range": {
         "startLine": 138,
         "startChar": 36,
