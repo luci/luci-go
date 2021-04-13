@@ -117,16 +117,18 @@ function prefetchResources(reqUrl: URL) {
  */
 async function prefetchBuild(reqUrl: URL) {
   let req: GetBuildRequest | null = null;
-  let match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
+  // TODO(crbug/1108198): update the regex removing the /ui prefix.
+  let match = reqUrl.pathname.match(/^(\/ui)?\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
   if (match) {
-    const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
+    const [project, bucket, builder, buildIdOrNum] = match.slice(2, 6).map((v) => decodeURIComponent(v));
     req = buildIdOrNum.startsWith('b')
       ? { id: buildIdOrNum.slice(1), fields: BUILD_FIELD_MASK }
       : { builder: { project, bucket, builder }, buildNumber: Number(buildIdOrNum), fields: BUILD_FIELD_MASK };
   } else {
-    match = reqUrl.pathname.match(/^\/ui\/b\/(\d+)\/?/i);
+    // TODO(crbug/1108198): update the regex removing the /ui prefix.
+    match = reqUrl.pathname.match(/^(\/ui)?\/b\/(\d+)\/?/i);
     if (match) {
-      req = { id: match[1], fields: BUILD_FIELD_MASK };
+      req = { id: match[2], fields: BUILD_FIELD_MASK };
     }
   }
 
@@ -169,11 +171,12 @@ async function prefetchBuild(reqUrl: URL) {
  * Prefetches the artifact if the url matches certain pattern.
  */
 async function prefetchArtifact(reqUrl: URL) {
-  const match = reqUrl.pathname.match(/^\/ui\/artifact\/([^/]+)\/([^/]+)\/?/i);
+  // TODO(crbug/1108198): update the regex removing the /ui prefix.
+  const match = reqUrl.pathname.match(/^(\/ui)?\/artifact\/([^/]+)\/([^/]+)\/?/i);
   if (!match) {
     return;
   }
-  const artifactName = decodeURIComponent(match[2]);
+  const artifactName = decodeURIComponent(match[3]);
 
   const authState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
   const prefetchResultDBService = new ResultDb(
