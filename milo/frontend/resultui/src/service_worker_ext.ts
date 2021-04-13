@@ -116,14 +116,23 @@ function prefetchResources(reqUrl: URL) {
  * Prefetches the build if the url matches certain pattern.
  */
 async function prefetchBuild(reqUrl: URL) {
-  const match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
-  if (!match) {
+  let req: GetBuildRequest | null = null;
+  let match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
+  if (match) {
+    const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
+    req = buildIdOrNum.startsWith('b')
+      ? { id: buildIdOrNum.slice(1), fields: BUILD_FIELD_MASK }
+      : { builder: { project, bucket, builder }, buildNumber: Number(buildIdOrNum), fields: BUILD_FIELD_MASK };
+  } else {
+    match = reqUrl.pathname.match(/^\/ui\/b\/(\d+)\/?/i);
+    if (match) {
+      req = { id: match[1], fields: BUILD_FIELD_MASK };
+    }
+  }
+
+  if (!req) {
     return;
   }
-  const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
-  const req: GetBuildRequest = buildIdOrNum.startsWith('b')
-    ? { id: buildIdOrNum.slice(1), fields: BUILD_FIELD_MASK }
-    : { builder: { project, bucket, builder }, buildNumber: Number(buildIdOrNum), fields: BUILD_FIELD_MASK };
 
   const authState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
   const prefetchBuildsService = new BuildsService(
