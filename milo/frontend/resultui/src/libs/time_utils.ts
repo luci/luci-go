@@ -60,8 +60,8 @@ export function displayCompactDuration(duration: Duration) {
 
 /**
  * Parses the JSON encoding of google.protobuf.Duration (e.g. '4.5s').
- * Returns the number of seconds.
+ * Returns the number of milliseconds.
  */
 export function parseProtoDuration(duration: string): number {
-  return Number(duration.substring(0, duration.length - 1));
+  return Number(duration.substring(0, duration.length - 1)) * 1000;
 }
