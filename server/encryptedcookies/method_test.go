@@ -194,7 +194,19 @@ func TestMethod(t *testing.T) {
 					Name:     provider.UserName,
 					Picture:  provider.UserPicture,
 				})
-				So(session, ShouldBeNil)
+				So(session, ShouldNotBeNil)
+
+				// Can grab the stored access token.
+				tok, err := session.AccessToken(ctx)
+				So(err, ShouldBeNil)
+				So(tok.AccessToken, ShouldEqual, "access_token_1")
+				So(tok.Expiry.Sub(testclock.TestTimeUTC), ShouldEqual, time.Hour)
+
+				// Can grab the stored ID token.
+				tok, err = session.IDToken(ctx)
+				So(err, ShouldBeNil)
+				So(tok.AccessToken, ShouldStartWith, "eyJhbG") // JWT header
+				So(tok.Expiry.Sub(testclock.TestTimeUTC), ShouldEqual, time.Hour)
 			})
 
 			Convey("Malformed cookie is ignored", func() {
@@ -220,16 +232,22 @@ func TestMethod(t *testing.T) {
 					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
 					So(err, ShouldBeNil)
 					So(user, ShouldNotBeNil)
-					So(session, ShouldBeNil)
+					So(session, ShouldNotBeNil)
 
 					// Tokens have been refreshed.
 					So(provider.AccessTokensMinted(), ShouldEqual, 2)
+
+					// auth.Session returns the refreshed token.
+					tok, err := session.AccessToken(ctx)
+					So(err, ShouldBeNil)
+					So(tok.AccessToken, ShouldEqual, "access_token_2")
+					So(tok.Expiry.Sub(testclock.TestTimeUTC), ShouldEqual, 3*time.Hour)
 
 					// No need to refresh anymore.
 					user, session, err = method.Authenticate(ctx, phonyRequest(cookie))
 					So(err, ShouldBeNil)
 					So(user, ShouldNotBeNil)
-					So(session, ShouldBeNil)
+					So(session, ShouldNotBeNil)
 					So(provider.AccessTokensMinted(), ShouldEqual, 2)
 				})
 
