@@ -124,7 +124,7 @@ func TestCreateTestResult(t *testing.T) {
 			clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id",
 		)
 
-		createTestResult := func(req *pb.CreateTestResultRequest) {
+		createTestResult := func(req *pb.CreateTestResultRequest, expectedCommonPrefix string) {
 			expected := proto.Clone(req.TestResult).(*pb.TestResult)
 			expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
 			res, err := recorder.CreateTestResult(ctx, req)
@@ -136,6 +136,11 @@ func TestCreateTestResult(t *testing.T) {
 			row, err := testresults.Read(span.Single(ctx), res.Name)
 			So(err, ShouldBeNil)
 			So(row, ShouldResembleProto, expected)
+
+			var invCommonTestIdPrefix string
+			err = invocations.ReadColumns(span.Single(ctx), invocations.ID("u-build-1"), map[string]interface{}{"CommonTestIDPrefix": &invCommonTestIdPrefix})
+			So(err, ShouldBeNil)
+			So(invCommonTestIdPrefix, ShouldEqual, expectedCommonPrefix)
 		}
 
 		// Insert a sample invocation
@@ -147,7 +152,7 @@ func TestCreateTestResult(t *testing.T) {
 
 		Convey("succeeds", func() {
 			Convey("with a request ID", func() {
-				createTestResult(req)
+				createTestResult(req, "test-id")
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
@@ -158,7 +163,7 @@ func TestCreateTestResult(t *testing.T) {
 
 			Convey("without a request ID", func() {
 				req.RequestId = ""
-				createTestResult(req)
+				createTestResult(req, "test-id")
 			})
 		})
 

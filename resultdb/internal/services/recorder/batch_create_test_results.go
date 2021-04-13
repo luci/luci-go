@@ -98,8 +98,14 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		TestResults: make([]*pb.TestResult, len(in.Requests)),
 	}
 	ms := make([]*spanner.Mutation, len(in.Requests))
+	var commonPrefix string
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+		if i == 0 {
+			commonPrefix = r.TestResult.TestId
+		} else {
+			commonPrefix = longestCommonPrefix(commonPrefix, r.TestResult.TestId)
+		}
 	}
 
 	var realm string
@@ -107,7 +113,25 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		span.BufferWrite(ctx, ms...)
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {
-			realm, err = invocations.ReadRealm(ctx, invID)
+			var invCommonTestIdPrefix spanner.NullString
+			if err = invocations.ReadColumns(ctx, invID, map[string]interface{}{
+				"Realm":              &realm,
+				"CommonTestIDPrefix": &invCommonTestIdPrefix,
+			}); err != nil {
+				return
+			}
+
+			newPrefix := commonPrefix
+			if !invCommonTestIdPrefix.IsNull() {
+				newPrefix = longestCommonPrefix(invCommonTestIdPrefix.String(), commonPrefix)
+			}
+
+			if invCommonTestIdPrefix.String() != newPrefix {
+				span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+					"InvocationId":       invID,
+					"CommonTestIDPrefix": newPrefix,
+				}))
+			}
 			return
 		})
 		eg.Go(func() error {
@@ -158,4 +182,16 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 	}
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
 	return ret, mutation
+}
+
+func longestCommonPrefix(str1, str2 string) string {
+	for i := 0; i < len(str1) && i < len(str2); i++ {
+		if str1[i] != str2[i] {
+			return str1[:i]
+		}
+	}
+	if len(str1) <= len(str2) {
+		return str1
+	}
+	return str2
 }

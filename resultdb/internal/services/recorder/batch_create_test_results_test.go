@@ -146,18 +146,19 @@ func TestBatchCreateTestResults(t *testing.T) {
 	Convey(`BatchCreateTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		recorder := newTestRecorderServer()
+		now := clock.Now(ctx).UTC()
+		invName := "invocations/u-build-1"
 		req := validBatchCreateTestResultRequest(
-			clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id",
+			now, invName, "test-id",
 		)
 
-		createTestResults := func(req *pb.BatchCreateTestResultsRequest) {
+		createTestResults := func(req *pb.BatchCreateTestResultsRequest, expectedCommonPrefix string) {
 			response, err := recorder.BatchCreateTestResults(ctx, req)
 			So(err, ShouldBeNil)
 
 			for i, r := range req.Requests {
-				resultID := fmt.Sprintf("result-id-%d", i)
 				expected := proto.Clone(r.TestResult).(*pb.TestResult)
-				expected.Name = "invocations/u-build-1/tests/test-id/results/" + resultID
+				expected.Name = fmt.Sprintf("invocations/u-build-1/tests/%s/results/result-id-%d", expected.TestId, i)
 				So(response.TestResults[i], ShouldResembleProto, expected)
 
 				// double-check it with the database
@@ -165,6 +166,11 @@ func TestBatchCreateTestResults(t *testing.T) {
 				row, err := testresults.Read(span.Single(ctx), expected.Name)
 				So(err, ShouldBeNil)
 				So(row, ShouldResembleProto, expected)
+
+				var invCommonTestIdPrefix string
+				err = invocations.ReadColumns(span.Single(ctx), invocations.ID("u-build-1"), map[string]interface{}{"CommonTestIDPrefix": &invCommonTestIdPrefix})
+				So(err, ShouldBeNil)
+				So(invCommonTestIdPrefix, ShouldEqual, expectedCommonPrefix)
 			}
 		}
 
@@ -177,7 +183,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 
 		Convey("succeeds", func() {
 			Convey("with a request ID", func() {
-				createTestResults(req)
+				createTestResults(req, "test-id")
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
@@ -190,7 +196,14 @@ func TestBatchCreateTestResults(t *testing.T) {
 				req.RequestId = ""
 				req.Requests[0].RequestId = ""
 				req.Requests[1].RequestId = ""
-				createTestResults(req)
+				createTestResults(req, "test-id")
+			})
+
+			Convey("with uncommon test id", func() {
+				newTr := validCreateTestResultRequest(now, invName, "some-other-test-id")
+				newTr.TestResult.ResultId = "result-id-2"
+				req.Requests = append(req.Requests, newTr)
+				createTestResults(req, "")
 			})
 		})
 
@@ -214,5 +227,20 @@ func TestBatchCreateTestResults(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv not found")
 			})
 		})
+	})
+}
+
+func TestLongestCommonPrefix(t *testing.T) {
+	t.Parallel()
+	Convey("empty", t, func() {
+		So(longestCommonPrefix("", "str"), ShouldEqual, "")
+	})
+
+	Convey("no common prefix", t, func() {
+		So(longestCommonPrefix("str", "other"), ShouldEqual, "")
+	})
+
+	Convey("common prefix", t, func() {
+		So(longestCommonPrefix("prefix_1", "prefix_2"), ShouldEqual, "prefix_")
 	})
 }
