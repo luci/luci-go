@@ -26,6 +26,7 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/con
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { BuildExt } from '../../models/build_ext';
+import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-related-builds-tab')
 @consumeBuildState
@@ -115,48 +116,51 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`<a href=${getURLPathForBuild(build)}>${display}</a>`;
   }
 
-  static styles = css`
-    tr:nth-child(even) {
-      background-color: var(--block-background-color);
-    }
-    #related-builds-table {
-      vertical-align: middle;
-      text-align: center;
-    }
-    #related-builds-table td {
-      padding: 0.1em 1em 0.1em 1em;
-    }
-    .status.success {
-      background-color: #8d4;
-      border-color: #4f8530;
-    }
-    .status.failure {
-      background-color: #e88;
-      border-color: #a77272;
-      border-style: solid;
-    }
-    .status.infra-failure {
-      background-color: #c6c;
-      border-color: #aca0b3;
-      color: #ffffff;
-    }
-    .status.started {
-      background-color: #fd3;
-      border-color: #c5c56d;
-    }
-    .status.canceled {
-      background-color: #8ef;
-      border-color: #00d8fc;
-    }
-    #load {
-      padding: 10px;
-      color: var(--active-text-color);
-    }
-    #no-related-builds {
-      padding: 10px;
-    }
-    :host {
-      padding-left: 10px;
-    }
-  `;
+  static styles = [
+    commonStyle,
+    css`
+      tr:nth-child(even) {
+        background-color: var(--block-background-color);
+      }
+      #related-builds-table {
+        vertical-align: middle;
+        text-align: center;
+      }
+      #related-builds-table td {
+        padding: 0.1em 1em 0.1em 1em;
+      }
+      .status.success {
+        background-color: #8d4;
+        border-color: #4f8530;
+      }
+      .status.failure {
+        background-color: #e88;
+        border-color: #a77272;
+        border-style: solid;
+      }
+      .status.infra-failure {
+        background-color: #c6c;
+        border-color: #aca0b3;
+        color: #ffffff;
+      }
+      .status.started {
+        background-color: #fd3;
+        border-color: #c5c56d;
+      }
+      .status.canceled {
+        background-color: #8ef;
+        border-color: #00d8fc;
+      }
+      #load {
+        padding: 10px;
+        color: var(--active-text-color);
+      }
+      #no-related-builds {
+        padding: 10px;
+      }
+      :host {
+        padding-left: 10px;
+      }
+    `,
+  ];
 }

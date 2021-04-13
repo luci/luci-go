@@ -24,6 +24,7 @@ import './artifact_page_layout';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { NOT_FOUND_URL } from '../../routes';
 import { constructArtifactName, parseArtifactName } from '../../services/resultdb';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders an image diff artifact set, including expected image, actual image
@@ -126,9 +127,12 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: block;
-    }
-  `;
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        display: block;
+      }
+    `,
+  ];
 }

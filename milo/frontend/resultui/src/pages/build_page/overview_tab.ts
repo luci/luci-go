@@ -46,6 +46,7 @@ import { displayDuration } from '../../libs/time_utils';
 import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
 import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
+import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-overview-tab')
 @consumeBuildState
@@ -451,105 +452,108 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    #main {
-      margin: 10px 16px;
-    }
-    @media screen and (min-width: 1300px) {
+  static styles = [
+    commonStyle,
+    css`
       #main {
-        display: grid;
-        grid-template-columns: auto 20px auto;
+        margin: 10px 16px;
       }
-      .second-column > h3:first-child {
-        margin-block: 5px 10px;
+      @media screen and (min-width: 1300px) {
+        #main {
+          display: grid;
+          grid-template-columns: auto 20px auto;
+        }
+        .second-column > h3:first-child {
+          margin-block: 5px 10px;
+        }
       }
-    }
-    .first-column {
-      overflow: hidden;
-      min-width: 50vw;
-      grid-column: 1;
-    }
-    .second-column {
-      overflow: hidden;
-      min-width: 30vw;
-      grid-column: 3;
-    }
+      .first-column {
+        overflow: hidden;
+        min-width: 50vw;
+        grid-column: 1;
+      }
+      .second-column {
+        overflow: hidden;
+        min-width: 30vw;
+        grid-column: 3;
+      }
 
-    h3 {
-      margin-block: 15px 10px;
-    }
+      h3 {
+        margin-block: 15px 10px;
+      }
 
-    .wide {
-      grid-column-end: span 3;
-    }
+      .wide {
+        grid-column-end: span 3;
+      }
 
-    #summary-html {
-      background-color: var(--block-background-color);
-      padding: 0 10px;
-      clear: both;
-      overflow-wrap: break-word;
-    }
-    #summary-html.scheduled {
-      border: 1px solid var(--scheduled-color);
-      background-color: var(--scheduled-bg-color);
-    }
-    #summary-html.started {
-      border: 1px solid var(--started-color);
-      background-color: var(--started-bg-color);
-    }
-    #summary-html.success {
-      border: 1px solid var(--success-color);
-      background-color: var(--success-bg-color);
-    }
-    #summary-html.failure {
-      border: 1px solid var(--failure-color);
-      background-color: var(--failure-bg-color);
-    }
-    #summary-html.infra-failure {
-      border: 1px solid var(--critical-failure-color);
-      background-color: var(--critical-failure-bg-color);
-    }
-    #summary-html.canceled {
-      border: 1px solid var(--canceled-color);
-      background-color: var(--canceled-bg-color);
-    }
-    #summary-html pre {
-      white-space: pre-wrap;
-      font-size: 12px;
-    }
-    #summary-html * {
-      margin-block: 10px;
-    }
-    #status {
-      font-weight: 500;
-    }
+      #summary-html {
+        background-color: var(--block-background-color);
+        padding: 0 10px;
+        clear: both;
+        overflow-wrap: break-word;
+      }
+      #summary-html.scheduled {
+        border: 1px solid var(--scheduled-color);
+        background-color: var(--scheduled-bg-color);
+      }
+      #summary-html.started {
+        border: 1px solid var(--started-color);
+        background-color: var(--started-bg-color);
+      }
+      #summary-html.success {
+        border: 1px solid var(--success-color);
+        background-color: var(--success-bg-color);
+      }
+      #summary-html.failure {
+        border: 1px solid var(--failure-color);
+        background-color: var(--failure-bg-color);
+      }
+      #summary-html.infra-failure {
+        border: 1px solid var(--critical-failure-color);
+        background-color: var(--critical-failure-bg-color);
+      }
+      #summary-html.canceled {
+        border: 1px solid var(--canceled-color);
+        background-color: var(--canceled-bg-color);
+      }
+      #summary-html pre {
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+      #summary-html * {
+        margin-block: 10px;
+      }
+      #status {
+        font-weight: 500;
+      }
 
-    :host > mwc-dialog {
-      margin: 0 0;
-    }
-    #cancel-reason {
-      width: 500px;
-      height: 200px;
-    }
+      :host > mwc-dialog {
+        margin: 0 0;
+      }
+      #cancel-reason {
+        width: 500px;
+        height: 200px;
+      }
 
-    #canary-warning {
-      background-color: var(--warning-color);
-      font-weight: 500;
-      padding: 5px;
-    }
+      #canary-warning {
+        background-color: var(--warning-color);
+        font-weight: 500;
+        padding: 5px;
+      }
 
-    td:nth-child(2) {
-      clear: both;
-      overflow-wrap: anywhere;
-    }
+      td:nth-child(2) {
+        clear: both;
+        overflow-wrap: anywhere;
+      }
 
-    .step-summary-line {
-      margin-bottom: 10px;
-    }
+      .step-summary-line {
+        margin-bottom: 10px;
+      }
 
-    milo-property-viewer {
-      min-width: 600px;
-      max-width: 1000px;
-    }
-  `;
+      milo-property-viewer {
+        min-width: 600px;
+        max-width: 1000px;
+      }
+    `,
+  ];
 }

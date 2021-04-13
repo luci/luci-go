@@ -28,6 +28,7 @@ import { consumeInvocationState, InvocationState } from '../../context/invocatio
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
+import commonStyle from '../../styles/common_style.css';
 import { MiloBaseElement } from '../milo_base';
 import { TestVariantEntryElement } from './test_variant_entry';
 
@@ -269,96 +270,93 @@ export class TestVariantsTableElement extends MiloBaseElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      overflow: hidden;
-      display: grid;
-      grid-template-rows: auto 1fr;
-    }
+  static styles = [
+    commonStyle,
+    css`
+      :host {
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
 
-    #table-header {
-      display: grid;
-      grid-template-columns: 24px 24px var(--columns) 1fr;
-      grid-gap: 5px;
-      line-height: 24px;
-      padding: 2px 2px 2px 10px;
-      font-weight: bold;
-      border-bottom: 1px solid var(--divider-color);
-      background-color: var(--block-background-color);
-    }
+      #table-header {
+        display: grid;
+        grid-template-columns: 24px 24px var(--columns) 1fr;
+        grid-gap: 5px;
+        line-height: 24px;
+        padding: 2px 2px 2px 10px;
+        font-weight: bold;
+        border-bottom: 1px solid var(--divider-color);
+        background-color: var(--block-background-color);
+      }
 
-    #table-body {
-      overflow-y: hidden;
-    }
-    milo-lazy-list > * {
-      padding-left: 10px;
-    }
-    #no-invocation {
-      padding: 10px;
-    }
-    #test-variant-list {
-      overflow-y: auto;
-      outline: none;
-    }
-    milo-test-variant-entry {
-      margin: 2px 0px;
-    }
+      #table-body {
+        overflow-y: hidden;
+      }
+      milo-lazy-list > * {
+        padding-left: 10px;
+      }
+      #no-invocation {
+        padding: 10px;
+      }
+      #test-variant-list {
+        overflow-y: auto;
+        outline: none;
+      }
+      milo-test-variant-entry {
+        margin: 2px 0px;
+      }
 
-    #integration-hint {
-      border-bottom: 1px solid var(--divider-color);
-      padding: 0 0 5px 15px;
-    }
+      #integration-hint {
+        border-bottom: 1px solid var(--divider-color);
+        padding: 0 0 5px 15px;
+      }
 
-    .group-header {
-      display: grid;
-      grid-template-columns: auto auto 1fr;
-      grid-gap: 5px;
-      padding: 2px 2px 2px 10px;
-      position: sticky;
-      font-size: 14px;
-      background-color: var(--block-background-color);
-      border-top: 1px solid var(--divider-color);
-      top: -1px;
-      cursor: pointer;
-      user-select: none;
-      line-height: 24px;
-    }
-    .group-header:first-child {
-      top: 0px;
-      border-top: none;
-    }
-    .group-header.expanded:not(.empty) {
-      border-bottom: 1px solid var(--divider-color);
-    }
-    .group-kv:not(:last-child)::after {
-      content: ', ';
-    }
-    .group-kv > span {
-      color: var(--light-text-color);
-    }
-    .group-kv > b {
-      font-style: italic;
-    }
+      .group-header {
+        display: grid;
+        grid-template-columns: auto auto 1fr;
+        grid-gap: 5px;
+        padding: 2px 2px 2px 10px;
+        position: sticky;
+        font-size: 14px;
+        background-color: var(--block-background-color);
+        border-top: 1px solid var(--divider-color);
+        top: -1px;
+        cursor: pointer;
+        user-select: none;
+        line-height: 24px;
+      }
+      .group-header:first-child {
+        top: 0px;
+        border-top: none;
+      }
+      .group-header.expanded:not(.empty) {
+        border-bottom: 1px solid var(--divider-color);
+      }
+      .group-kv:not(:last-child)::after {
+        content: ', ';
+      }
+      .group-kv > span {
+        color: var(--light-text-color);
+      }
+      .group-kv > b {
+        font-style: italic;
+      }
 
-    .active-text {
-      color: var(--active-text-color);
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: normal;
-    }
-    .inline-icon {
-      --mdc-icon-size: 1.2em;
-      vertical-align: bottom;
-    }
+      .inline-icon {
+        --mdc-icon-size: 1.2em;
+        vertical-align: bottom;
+      }
 
-    #variant-list-tail {
-      padding: 5px 0 5px 15px;
-    }
-    #variant-list-tail:not(:first-child) {
-      border-top: 1px solid var(--divider-color);
-    }
-    #load {
-      color: var(--active-text-color);
-    }
-  `;
+      #variant-list-tail {
+        padding: 5px 0 5px 15px;
+      }
+      #variant-list-tail:not(:first-child) {
+        border-top: 1px solid var(--divider-color);
+      }
+      #load {
+        color: var(--active-text-color);
+      }
+    `,
+  ];
 }
