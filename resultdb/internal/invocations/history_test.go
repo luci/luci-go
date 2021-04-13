@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -68,10 +69,11 @@ func TestByTimestamp(t *testing.T) {
 				"CommonTestIDPrefix": "ninja://browser_tests/",
 			}),
 			insertInvocation("second", map[string]interface{}{
-				"CreateTime":         middle,
-				"HistoryTime":        middle,
-				"Realm":              realm,
-				"CommonTestIDPrefix": "",
+				"CreateTime":             middle,
+				"HistoryTime":            middle,
+				"Realm":                  realm,
+				"CommonTestIDPrefix":     "",
+				"TestResultVariantUnion": []string{"k:v"},
 			}),
 			insertInvocation("secondWrongRealm", map[string]interface{}{
 				"CreateTime":  middle,
@@ -84,10 +86,11 @@ func TestByTimestamp(t *testing.T) {
 				"Realm": realm,
 			}),
 			insertInvocation("third", map[string]interface{}{
-				"CreateTime":         end,
-				"HistoryTime":        end,
-				"Realm":              realm,
-				"CommonTestIDPrefix": "ninja://",
+				"CreateTime":             end,
+				"HistoryTime":            end,
+				"Realm":                  realm,
+				"CommonTestIDPrefix":     "ninja://",
+				"TestResultVariantUnion": []string{"a:b", "k:v"},
 			}),
 		)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -186,5 +189,21 @@ func TestByTimestamp(t *testing.T) {
 			So(string(ac.invs[2]), ShouldEndWith, "first")
 		})
 
+		Convey(`matched variant`, func() {
+			ac := newHistoryAccumulator(2)
+			q.TimeRange = &pb.TimeRange{Earliest: startPB, Latest: afterPB}
+			q.Predicate = &pb.TestResultPredicate{
+				Variant: &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Equals{
+						Equals: pbutil.Variant("a", "b"),
+					},
+				},
+			}
+			err := q.ByTimestamp(ctx, ac.accumulate)
+			So(err, ShouldBeNil)
+			So(ac.invs, ShouldHaveLength, 2)
+			So(string(ac.invs[0]), ShouldEndWith, "third")
+			So(string(ac.invs[1]), ShouldEndWith, "first")
+		})
 	})
 }
