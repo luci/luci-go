@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f02020f_ca1068c4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-13T19:11:50Z",
+      "side": 1,
+      "message": "lgtm, though I feel like this probably won\u0027t do anything.",
+      "revId": "860f7e7f5f6ffb0ebba5fa0b0a8c114035983b94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
