@@ -158,19 +158,11 @@ describe('Test Results Tab', () => {
       fixtureCleanup();
     });
 
-    it('display setting should not cause more tests to be loaded', async () => {
-      invocationState.showUnexpectedVariants = false;
-      invocationState.showUnexpectedlySkippedVariants = false;
-      invocationState.showFlakyVariants = false;
-      invocationState.showExoneratedVariants = false;
-      invocationState.showExpectedVariants = false;
-
-      await tab.loadMore();
-      assert.isFalse(invocationState.testLoader?.isLoading);
-      assert.strictEqual(queryTestVariantsStub.callCount, 2);
-    });
-
     it('should trigger automatic loading when visiting the tab for the first time', async () => {
+      assert.isTrue(invocationState.testLoader?.isLoading);
+      assert.strictEqual(queryTestVariantsStub.callCount, 1);
+
+      await aTimeout(0);
       assert.isFalse(invocationState.testLoader?.isLoading);
       assert.strictEqual(queryTestVariantsStub.callCount, 1);
 
