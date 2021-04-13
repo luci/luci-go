@@ -16,6 +16,52 @@
       "message": "PTAL",
       "revId": "0d7fb749e8a447df0f05890ea9c94a3cd9de6ff1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "091ecde9_3dd5476d",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T04:34:58Z",
+      "side": 1,
+      "message": "VariantToStrings may return nil.\n\nI think this should be len(variant) \u003e 0\nNote that L150 doesn\u0027t really work for empty @variant",
+      "range": {
+        "startLine": 108,
+        "startChar": 23,
+        "endLine": 108,
+        "endChar": 37
+      },
+      "revId": "0d7fb749e8a447df0f05890ea9c94a3cd9de6ff1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2523a533_bad6247a",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T04:34:58Z",
+      "side": 1,
+      "message": "should this be \n\n  TestResultVariantUniont IS NULL\n\n?\n\nif it is empty, then it means all test results have empty variants, and L150 logic should run?",
+      "range": {
+        "startLine": 149,
+        "startChar": 3,
+        "endLine": 149,
+        "endChar": 55
+      },
+      "revId": "0d7fb749e8a447df0f05890ea9c94a3cd9de6ff1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
