@@ -19,16 +19,16 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
-import '../expandable_entry';
-import '../lazy_list';
-import '../copy_to_clipboard';
-import '../variant_entry/result_entry';
-import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../libs/constants';
-import { sanitizeHTML } from '../../libs/sanitize_html';
-import { TestVariant } from '../../services/resultdb';
-import colorClasses from '../../styles/color_classes.css';
-import commonStyle from '../../styles/common_style.css';
-import { OnEnterList } from '../lazy_list';
+import '../../expandable_entry';
+import '../../lazy_list';
+import '../../copy_to_clipboard';
+import './result_entry';
+import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
+import { sanitizeHTML } from '../../../libs/sanitize_html';
+import { TestVariant } from '../../../services/resultdb';
+import colorClasses from '../../../styles/color_classes.css';
+import commonStyle from '../../../styles/common_style.css';
+import { OnEnterList } from '../../lazy_list';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
