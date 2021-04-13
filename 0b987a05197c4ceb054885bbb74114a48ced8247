@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bbc7a1da_3e72124b",
+        "filename": "cv/internal/run/eventpb/events.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "42e7b514_bfbb9a42",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 37
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "266ea518_485cdd8c",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "you can do this in L100..L105 iff you move LoadConfigGroup to L98",
+      "range": {
+        "startLine": 110,
+        "startChar": 2,
+        "endLine": 110,
+        "endChar": 64
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf76cda0_d9dd8227",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "266ea518_485cdd8c",
       "range": {
         "startLine": 110,
         "startChar": 2,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b78e634b_b52b4e90",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f409db4_b48b721d",
+      "range": {
+        "startLine": 111,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 3
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6162e6a3_118a0f1c",
@@ -117,6 +189,24 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "afaik, everything before L248 is immutable, right? if so, maybe state this.",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3af0aac_8b586904",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Yes. Done",
+      "parentUuid": "6162e6a3_118a0f1c",
       "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -146,6 +236,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "6fd88c86_ca0f2fb2",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "I think I use SHOULD because we don\u0027t verify this again during the submission. Changed to what you\u0027ve proposed.",
+      "parentUuid": "707ae17d_1991efea",
+      "range": {
+        "startLine": 245,
+        "startChar": 4,
+        "endLine": 245,
+        "endChar": 10
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8577d0d4_3f4eeb21",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2
@@ -157,6 +271,30 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "yeah, it\u0027s a shame we can\u0027t use Google owned one 😞",
+      "range": {
+        "startLine": 253,
+        "startChar": 55,
+        "endLine": 253,
+        "endChar": 77
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff792bc3_1d59b872",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "yeah.. I mean theoretically we should migrate to https://firebase.googleblog.com/2018/03/transitioning-google-url-shortener-to.html but I haven\u0027t dig into this yet.",
+      "parentUuid": "8577d0d4_3f4eeb21",
       "range": {
         "startLine": 253,
         "startChar": 55,
@@ -213,6 +351,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "922a2ff3_b1c21511",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Good point. Done",
+      "parentUuid": "616a9705_e45e74e0",
+      "range": {
+        "startLine": 283,
+        "startChar": 8,
+        "endLine": 283,
+        "endChar": 54
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8569bc18_1f66b138",
@@ -238,6 +400,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f6304f0e_3187540e",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "In general, I like what you proposed and that should work without an issue since we have CL-level retries. However, I\u0027m not sure how things will play out for large CL stacks. imagine a CL stack of 100+ CLs, assuming each CL take 1s to submit(it is the P50 for Gerrit submit RPC if I get the metric correct), we would easily get DeadlineExceeded error here for the first attempt since GAE timeout is 60s. If we mark it as transient, it is possible for CV to submit everything upon second retry although it means there\u0027s a short window that a RUN is partially submitted and waiting for the acquiring the submit queue again.",
+      "parentUuid": "8569bc18_1f66b138",
+      "range": {
+        "startLine": 286,
+        "startChar": 13,
+        "endLine": 287,
+        "endChar": 41
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a660b52b_3226020b",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2
@@ -249,6 +435,30 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "Major: `reservedDuration` \u0026\u0026 SubmitQueueNotReleased extra state smells to me.\n\nI think you can avoid both entirely and just do this:\n  \nerr :\u003d datastore.RunInTransaction(ctx, func(ctx context.Context){\n  submit.Release(ctx, s.runID)\n  notifySubmissionCompleted(ctx, s.runID, sc) // don\u0027t dispatch\n})\n// TODO: optimization for happy path\nreturn eventspb.DispatchNow(ctx)",
+      "range": {
+        "startLine": 296,
+        "startChar": 1,
+        "endLine": 304,
+        "endChar": 51
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ca0f8c1_44d75e29",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "I think the intention of SubmitQueueNotReleased is to reduce the latency to notify RM when release failure occurs. Without this, it\u0027s likely that RM would have to wait for the submit deadline naturally expires before it figures out something went wrong during submission. However, if release fails, then mostly notifySubmissionCompeleted(without dispatch) will fail as well because they are mostly datastore operations. Therefore, I think what you\u0027ve proposed makes better sense and is indeed much simpler.",
+      "parentUuid": "a660b52b_3226020b",
       "range": {
         "startLine": 296,
         "startChar": 1,
@@ -305,6 +515,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8418794_67088f2a",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Yup. make sense.",
+      "parentUuid": "f7b83f54_e4356554",
+      "range": {
+        "startLine": 319,
+        "startChar": 14,
+        "endLine": 319,
+        "endChar": 22
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "54e887e7_9f3c5c0b",
@@ -318,6 +552,30 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "maybe just fatalGerritErr then?",
+      "range": {
+        "startLine": 320,
+        "startChar": 17,
+        "endLine": 320,
+        "endChar": 32
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "28b65bd2_c9c2bb73",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54e887e7_9f3c5c0b",
       "range": {
         "startLine": 320,
         "startChar": 17,
@@ -345,6 +603,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ed350ac_3ae86b89",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Implement CL level retries",
+      "parentUuid": "18757ea4_483188eb",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ab5d23d7_eaa23d0d",
@@ -358,6 +634,30 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "remove transient tag?",
+      "range": {
+        "startLine": 327,
+        "startChar": 27,
+        "endLine": 327,
+        "endChar": 30
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f7a9d42_dcda90c6",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ab5d23d7_eaa23d0d",
       "range": {
         "startLine": 327,
         "startChar": 27,
@@ -391,6 +691,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7fe0170_c48412d7",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30fa035e_e3218439",
+      "range": {
+        "startLine": 338,
+        "startChar": 65,
+        "endLine": 338,
+        "endChar": 78
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7d89c79c_a709c9d1",
@@ -404,6 +728,30 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "IMO, This caching belongs to cv/internal/gerrit/auth.go:factory.\nProposal: leave just this in this CL\n\ngc, err :\u003d gerrit.CurrentClient(ctx, host, s.runID.LUCIProject())\nif err !\u003d nil {\n  return err\n}\n\nand it\u0027ll make submitter{} immutable,\nand let\u0027s add 100-slot LRU cache by (host, LUCI_project) to Gerrit factory as a follow up.",
+      "range": {
+        "startLine": 365,
+        "startChar": 0,
+        "endLine": 375,
+        "endChar": 29
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc5e3d19_5f9a7bbb",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d89c79c_a709c9d1",
       "range": {
         "startLine": 365,
         "startChar": 0,
@@ -433,6 +781,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1239df2f_299299f0",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "why it is not guaranteed if we get back a `MERGED` status?",
+      "parentUuid": "0b2a2206_46c603dc",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "afad0d28_01533a7b",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2
@@ -450,6 +816,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c1f09a3c_9ef77f8c",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Can you explain more on wdym by `normalize`?",
+      "parentUuid": "afad0d28_01533a7b",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d3a3f469_336951ae",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2
@@ -461,6 +845,30 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "nit: Run entity",
+      "range": {
+        "startLine": 429,
+        "startChar": 62,
+        "endLine": 429,
+        "endChar": 64
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd73fd02_3a8e60b2",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-13T01:14:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3a3f469_336951ae",
       "range": {
         "startLine": 429,
         "startChar": 62,
