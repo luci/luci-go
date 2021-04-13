@@ -19,8 +19,9 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -69,6 +70,7 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		// that createTaskRequestCommand() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
 		relativeCwd := "farm"
+		expectedDir := filepath.Join(c.work, relativeCwd)
 
 		ctx := context.Background()
 
@@ -78,6 +80,7 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		ctxBaseEnvMap.Set("removeKey", "removeValue")
 		ctxBaseEnvMap.Set("replaceKey", "oldValue")
 		ctxBaseEnvMap.Set("noChangeKey", "noChangeValue")
+		ctxBaseEnvMap.Set("PATH", "existingPathValue")
 		ctx = ctxBaseEnvMap.SetInCtx(ctx)
 
 		expectedEnvMap := ctxBaseEnvMap.Clone()
@@ -109,6 +112,16 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 										Value: "",
 									},
 								},
+								EnvPrefixes: []*swarming.SwarmingRpcsStringListPair{
+									&swarming.SwarmingRpcsStringListPair{
+										Key:   "PATH",
+										Value: []string{".task_template_packages", ".task_temmplate_packages/zoo"},
+									},
+									&swarming.SwarmingRpcsStringListPair{
+										Key:   "CHICKENS",
+										Value: []string{"egg", "rooster"},
+									},
+								},
 							},
 						},
 					},
@@ -118,11 +131,19 @@ func TestCreateTaskRequestCommand(t *testing.T) {
 		cmd, err := c.createTaskRequestCommand(ctx, "task-123", service)
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
-		expected.Dir = path.Join(c.work, relativeCwd)
+		expected.Dir = filepath.Join(c.work, relativeCwd)
 
 		expectedEnvMap.Remove("removeKey")
 		expectedEnvMap.Set("key", "value1")
 		expectedEnvMap.Set("replaceKey", "value2")
+
+		paths := []string{
+			filepath.Join(expectedDir, ".task_template_packages"),
+			filepath.Join(expectedDir, ".task_temmplate_packages/zoo"),
+			"existingPathValue"}
+		expectedEnvMap.Set("PATH", strings.Join(paths, string(os.PathListSeparator)))
+		chickens := []string{filepath.Join(expectedDir, "egg"), filepath.Join(expectedDir, "rooster")}
+		expectedEnvMap.Set("CHICKENS", strings.Join(chickens, string(os.PathListSeparator)))
 
 		expected.Env = expectedEnvMap.Sorted()
 		So(cmd, ShouldResemble, expected)
