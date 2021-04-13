@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3df67425_124d67d4",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T05:40:04Z",
+      "side": 1,
+      "message": "Done.\n\nFYI, VariantToStrings never returns nil. https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/variant.go;l\u003d60",
+      "parentUuid": "091ecde9_3dd5476d",
+      "range": {
+        "startLine": 108,
+        "startChar": 23,
+        "endLine": 108,
+        "endChar": 37
+      },
+      "revId": "0d7fb749e8a447df0f05890ea9c94a3cd9de6ff1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2523a533_bad6247a",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-04-13T04:34:58Z",
       "side": 1,
       "message": "should this be \n\n  TestResultVariantUniont IS NULL\n\n?\n\nif it is empty, then it means all test results have empty variants, and L150 logic should run?",
+      "range": {
+        "startLine": 149,
+        "startChar": 3,
+        "endLine": 149,
+        "endChar": 55
+      },
+      "revId": "0d7fb749e8a447df0f05890ea9c94a3cd9de6ff1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "844a5f59_a328ec6d",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T05:40:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2523a533_bad6247a",
       "range": {
         "startLine": 149,
         "startChar": 3,
