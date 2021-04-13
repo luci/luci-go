@@ -28,6 +28,7 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { Artifact, ListArtifactsResponse, TestResult } from '../../services/resultdb';
+import colorClasses from '../../styles/color_classes.css';
 
 /**
  * Renders an expandable entry of the given test result.
@@ -245,7 +246,7 @@ export class ResultEntryElement extends MobxLitElement {
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <span id="header" slot="header">
           run #${this.id}
-          <span class="${this.testResult.expected ? 'expected' : 'unexpected'}-result">
+          <span class="${this.testResult.expected ? 'expected' : 'unexpected'}">
             ${this.testResult.expected ? '' : html`unexpectedly`} ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
           </span>
           ${this.testResult.duration ? `after ${this.testResult.duration}` : ''}
@@ -255,66 +256,62 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: block;
-    }
+  static styles = [
+    colorClasses,
+    css`
+      :host {
+        display: block;
+      }
 
-    #header {
-      font-size: 14px;
-      letter-spacing: 0.1px;
-      font-weight: 500;
-    }
+      #header {
+        font-size: 14px;
+        letter-spacing: 0.1px;
+        font-weight: 500;
+      }
 
-    [slot='header'] {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    [slot='content'] {
-      overflow: hidden;
-    }
+      [slot='header'] {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      [slot='content'] {
+        overflow: hidden;
+      }
 
-    .expected-result {
-      color: var(--success-color);
-    }
-    .unexpected-result {
-      color: var(--failure-color);
-    }
+      #summary-html {
+        background-color: var(--block-background-color);
+        padding: 5px;
+      }
+      #summary-html pre {
+        margin: 0;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
 
-    #summary-html {
-      background-color: var(--block-background-color);
-      padding: 5px;
-    }
-    #summary-html pre {
-      margin: 0;
-      font-size: 12px;
-      white-space: pre-wrap;
-    }
+      .kv-key::after {
+        content: ':';
+      }
+      .kv-value::after {
+        content: ',';
+      }
+      .kv-value:last-child::after {
+        content: '';
+      }
+      .greyed-out {
+        color: var(--greyed-out-text-color);
+      }
 
-    .kv-key::after {
-      content: ':';
-    }
-    .kv-value::after {
-      content: ',';
-    }
-    .kv-value:last-child::after {
-      content: '';
-    }
-    .greyed-out {
-      color: var(--greyed-out-text-color);
-    }
+      #swarming-task {
+        margin: 5px;
+      }
 
-    #swarming-task {
-      margin: 5px;
-    }
+      ul {
+        margin: 3px 0;
+        padding-inline-start: 28px;
+      }
 
-    ul {
-      margin: 3px 0;
-      padding-inline-start: 28px;
-    }
-
-    #inv-artifacts-header {
-      margin-top: 12px;
-    }
-  `;
+      #inv-artifacts-header {
+        margin-top: 12px;
+      }
+    `,
+  ];
 }

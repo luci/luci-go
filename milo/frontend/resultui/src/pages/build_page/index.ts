@@ -43,6 +43,7 @@ import { genFeedbackUrl } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
+import colorClasses from '../../styles/color_classes.css';
 
 const STATUS_FAVICON_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'gray',
@@ -598,85 +599,70 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     `;
   }
 
-  static styles = css`
-    :host {
-      height: calc(100vh - var(--header-height));
-      display: grid;
-      grid-template-rows: repeat(5, auto) 1fr;
-    }
+  static styles = [
+    colorClasses,
+    css`
+      :host {
+        height: calc(100vh - var(--header-height));
+        display: grid;
+        grid-template-rows: repeat(5, auto) 1fr;
+      }
 
-    #build-summary {
-      background-color: var(--block-background-color);
-      padding: 6px 16px;
-      font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-      font-size: 14px;
-      display: flex;
-    }
+      #build-summary {
+        background-color: var(--block-background-color);
+        padding: 6px 16px;
+        font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+        font-size: 14px;
+        display: flex;
+      }
 
-    #build-id {
-      flex: 0 auto;
-      font-size: 0px;
-    }
-    #build-id > * {
-      font-size: 14px;
-    }
+      #build-id {
+        flex: 0 auto;
+        font-size: 0px;
+      }
+      #build-id > * {
+        font-size: 14px;
+      }
 
-    #build-id-label {
-      color: var(--light-text-color);
-    }
+      #build-id-label {
+        color: var(--light-text-color);
+      }
 
-    #build-status {
-      margin-left: auto;
-      flex: 0 auto;
-    }
+      #build-status {
+        margin-left: auto;
+        flex: 0 auto;
+      }
 
-    .delimiter {
-      border-left: 1px solid var(--divider-color);
-      width: 1px;
-      margin-left: 10px;
-      margin-right: 10px;
-    }
+      .delimiter {
+        border-left: 1px solid var(--divider-color);
+        width: 1px;
+        margin-left: 10px;
+        margin-right: 10px;
+      }
 
-    #status {
-      font-weight: 500;
-    }
-    .status.scheduled {
-      color: var(--scheduled-color);
-    }
-    .status.started {
-      color: var(--started-color);
-    }
-    .status.success {
-      color: var(--success-color);
-    }
-    .status.failure {
-      color: var(--failure-color);
-    }
-    .status.infra-failure {
-      color: var(--critical-failure-color);
-    }
-    .status.canceled {
-      color: var(--canceled-color);
-    }
+      #status {
+        font-weight: 500;
+      }
 
-    milo-tab-bar {
-      margin: 0 10px;
-      padding-top: 10px;
-    }
+      milo-tab-bar {
+        margin: 0 10px;
+        padding-top: 10px;
+      }
 
-    #settings-dialog {
-      --mdc-dialog-min-width: 600px;
-    }
-    #default-tab-selector {
-      display: inline-block;
-      margin-left: 10px;
-      padding: 0.375rem 0.75rem;
-      font-size: 1rem;
-      line-height: 1.5;
-      background-clip: padding-box;
-      border: 1px solid var(--divider-color);
-      border-radius: 0.25rem;
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-  `;
+      #settings-dialog {
+        --mdc-dialog-min-width: 600px;
+      }
+      #default-tab-selector {
+        display: inline-block;
+        margin-left: 10px;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        background-clip: padding-box;
+        border: 1px solid var(--divider-color);
+        border-radius: 0.25rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+    `,
+  ];
 }

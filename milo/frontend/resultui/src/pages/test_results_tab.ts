@@ -36,6 +36,7 @@ import {
   VARIANT_STATUS_ICON_MAP,
 } from '../libs/constants';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
+import colorClasses from '../styles/color_classes.css';
 
 /**
  * Display a list of test results.
@@ -349,136 +350,120 @@ export class TestResultsTabElement extends MiloBaseElement {
     `;
   }
 
-  static styles = css`
-    :host {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      overflow-y: hidden;
-    }
+  static styles = [
+    colorClasses,
+    css`
+      :host {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        overflow-y: hidden;
+      }
 
-    #header {
-      display: grid;
-      grid-template-columns: auto auto auto 1fr auto;
-      grid-gap: 5px;
-      height: 30px;
-      padding: 5px 10px 3px 10px;
-    }
-    #search-label {
-      margin: auto;
-      padding-left: 5px;
-    }
-    milo-test-search-filter {
-      max-width: 800px;
-    }
-    mwc-button {
-      margin-top: 1px;
-    }
+      #header {
+        display: grid;
+        grid-template-columns: auto auto auto 1fr auto;
+        grid-gap: 5px;
+        height: 30px;
+        padding: 5px 10px 3px 10px;
+      }
+      #search-label {
+        margin: auto;
+        padding-left: 5px;
+      }
+      milo-test-search-filter {
+        max-width: 800px;
+      }
+      mwc-button {
+        margin-top: 1px;
+      }
 
-    input[type='checkbox'] {
-      transform: translateY(1px);
-      margin-right: 3px;
-    }
-    .filters-container {
-      display: inline-block;
-      padding: 4px 5px 0;
-    }
-    .filters-container-delimiter {
-      border-left: 1px solid var(--divider-color);
-      width: 0px;
-      height: 100%;
-    }
+      input[type='checkbox'] {
+        transform: translateY(1px);
+        margin-right: 3px;
+      }
+      .filters-container {
+        display: inline-block;
+        padding: 4px 5px 0;
+      }
+      .filters-container-delimiter {
+        border-left: 1px solid var(--divider-color);
+        width: 0px;
+        height: 100%;
+      }
 
-    #main {
-      display: flex;
-      border-top: 1px solid var(--divider-color);
-      overflow-y: hidden;
-    }
-    milo-lazy-list > * {
-      padding-left: 10px;
-    }
-    #no-invocation {
-      padding: 10px;
-    }
-    #test-result-view {
-      flex: 1;
-      overflow-y: auto;
-      outline: none;
-    }
-    milo-variant-entry {
-      margin: 2px 0px;
-    }
+      #main {
+        display: flex;
+        border-top: 1px solid var(--divider-color);
+        overflow-y: hidden;
+      }
+      milo-lazy-list > * {
+        padding-left: 10px;
+      }
+      #no-invocation {
+        padding: 10px;
+      }
+      #test-result-view {
+        flex: 1;
+        overflow-y: auto;
+        outline: none;
+      }
+      milo-variant-entry {
+        margin: 2px 0px;
+      }
 
-    #integration-hint {
-      border-bottom: 1px solid var(--divider-color);
-      padding: 0 0 5px 15px;
-    }
+      #integration-hint {
+        border-bottom: 1px solid var(--divider-color);
+        padding: 0 0 5px 15px;
+      }
 
-    .group-header {
-      display: grid;
-      grid-template-columns: auto auto 1fr;
-      grid-gap: 5px;
-      font-size: 16px;
-      font-weight: bold;
-      padding: 5px 5px 5px 10px;
-      position: sticky;
-      background-color: white;
-      border-top: 1px solid var(--divider-color);
-      top: -1px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .group-title {
-      line-height: 24px;
-    }
-    .group-header:first-child {
-      top: 0px;
-      border-top: none;
-    }
-    .group-header.expanded {
-      background-color: var(--block-background-color);
-    }
-    .group-header.expanded:not(.empty) {
-      border-bottom: 1px solid var(--divider-color);
-    }
+      .group-header {
+        display: grid;
+        grid-template-columns: auto auto 1fr;
+        grid-gap: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        padding: 5px 5px 5px 10px;
+        position: sticky;
+        background-color: white;
+        border-top: 1px solid var(--divider-color);
+        top: -1px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .group-title {
+        line-height: 24px;
+      }
+      .group-header:first-child {
+        top: 0px;
+        border-top: none;
+      }
+      .group-header.expanded {
+        background-color: var(--block-background-color);
+      }
+      .group-header.expanded:not(.empty) {
+        border-bottom: 1px solid var(--divider-color);
+      }
 
-    .unexpected {
-      color: var(--failure-color);
-    }
-    .unexpectedly-skipped {
-      color: var(--critical-failure-color);
-    }
-    .flaky {
-      color: var(--warning-color);
-    }
-    span.flaky {
-      color: var(--warning-text-color);
-    }
-    .exonerated {
-      color: var(--exonerated-color);
-    }
-    .expected {
-      color: var(--success-color);
-    }
+      .active-text {
+        color: var(--active-text-color);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: normal;
+      }
+      .inline-icon {
+        --mdc-icon-size: 1.2em;
+        vertical-align: bottom;
+      }
 
-    .active-text {
-      color: var(--active-text-color);
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: normal;
-    }
-    .inline-icon {
-      --mdc-icon-size: 1.2em;
-      vertical-align: bottom;
-    }
-
-    #variant-list-tail {
-      padding: 5px 0 5px 15px;
-    }
-    #variant-list-tail:not(:first-child) {
-      border-top: 1px solid var(--divider-color);
-    }
-    #load {
-      color: var(--active-text-color);
-    }
-  `;
+      #variant-list-tail {
+        padding: 5px 0 5px 15px;
+      }
+      #variant-list-tail:not(:first-child) {
+        border-top: 1px solid var(--divider-color);
+      }
+      #load {
+        color: var(--active-text-color);
+      }
+    `,
+  ];
 }
