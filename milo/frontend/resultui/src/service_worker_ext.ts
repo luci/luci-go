@@ -117,6 +117,7 @@ function prefetchResources(reqUrl: URL) {
  */
 async function prefetchBuild(reqUrl: URL) {
   let req: GetBuildRequest | null = null;
+  // TODO(crbug/1108198): remove the /ui prefix.
   let match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
   if (match) {
     const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
@@ -124,6 +125,7 @@ async function prefetchBuild(reqUrl: URL) {
       ? { id: buildIdOrNum.slice(1), fields: BUILD_FIELD_MASK }
       : { builder: { project, bucket, builder }, buildNumber: Number(buildIdOrNum), fields: BUILD_FIELD_MASK };
   } else {
+    // TODO(crbug/1108198): remove the /ui prefix.
     match = reqUrl.pathname.match(/^\/ui\/b\/(\d+)\/?/i);
     if (match) {
       req = { id: match[1], fields: BUILD_FIELD_MASK };
@@ -169,6 +171,7 @@ async function prefetchBuild(reqUrl: URL) {
  * Prefetches the artifact if the url matches certain pattern.
  */
 async function prefetchArtifact(reqUrl: URL) {
+  // TODO(crbug/1108198): remove the /ui prefix.
   const match = reqUrl.pathname.match(/^\/ui\/artifact\/([^/]+)\/([^/]+)\/?/i);
   if (!match) {
     return;
