@@ -22,6 +22,30 @@
       },
       "revId": "3ca303f0785b135a4b4c30e47bbe1162c55df9b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20637223_53dfb68e",
+        "filename": "client/cmd/isolate/lib/batch_archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-13T00:36:24Z",
+      "side": 0,
+      "message": "generally, a function should not annotate an error with information that the caller already knows (otherwise it is repeated in each error, and might be further annotated in the callsite), so that\u0027s why removed genJSONPath here and in L267.\n\nfurther, if os.Open fails, the error message will say something about opening - the error message would be clear enough to understand what went wrong",
+      "parentUuid": "729aa327_9c5c4ce8",
+      "range": {
+        "startLine": 261,
+        "startChar": 14,
+        "endLine": 261,
+        "endChar": 29
+      },
+      "revId": "3ca303f0785b135a4b4c30e47bbe1162c55df9b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
