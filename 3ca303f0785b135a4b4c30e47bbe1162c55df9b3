@@ -94,6 +94,30 @@
       },
       "revId": "3ca303f0785b135a4b4c30e47bbe1162c55df9b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b8a64ee_8d899b2b",
+        "filename": "client/cmd/isolate/lib/batch_archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-13T02:21:00Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "039737e5_6323f04e",
+      "range": {
+        "startLine": 261,
+        "startChar": 14,
+        "endLine": 261,
+        "endChar": 29
+      },
+      "revId": "3ca303f0785b135a4b4c30e47bbe1162c55df9b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
