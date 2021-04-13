@@ -243,7 +243,7 @@ func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, al *archive
 		return err
 	}
 
-	al.LogSummary(ctx, int64(checker.Hit.Count()), int64(checker.Miss.Count()), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()), digests(isolSummaries))
+	al.LogSummary(ctx, checker.Hit.Count(), checker.Miss.Count(), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()))
 	return nil
 }
 
