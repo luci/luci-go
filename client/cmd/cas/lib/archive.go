@@ -119,7 +119,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		return err
 	}
 
-	is := command.InputSpec{}
+	is := command.InputSpec{Inputs: make([]string, 0, len(c.paths))}
 	for path := range c.paths {
 		is.Inputs = append(is.Inputs, path)
 	}
@@ -154,10 +154,10 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	}
 
 	if dsj := c.dumpStatsJSON; dsj != "" {
-		uploaded := make([]int64, 0, len(uploadedDigests))
+		uploaded := make([]int64, len(uploadedDigests))
 		uploadedSet := make(map[digest.Digest]struct{})
-		for _, d := range uploadedDigests {
-			uploaded = append(uploaded, d.Size)
+		for i, d := range uploadedDigests {
+			uploaded[i] = d.Size
 			uploadedSet[d] = struct{}{}
 		}
 

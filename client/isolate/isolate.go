@@ -73,9 +73,9 @@ func genExtensionsRegex(exts ...string) string {
 	if len(exts) == 0 {
 		return ""
 	}
-	var res []string
-	for _, e := range exts {
-		res = append(res, `(\.`+e+`)`)
+	res := make([]string, len(exts))
+	for i, e := range exts {
+		res[i] = `(\.` + e + `)`
 	}
 	return "((" + strings.Join(res, "|") + ")$)"
 }
@@ -84,9 +84,9 @@ func genDirectoriesRegex(dirs ...string) string {
 	if len(dirs) == 0 {
 		return ""
 	}
-	var res []string
-	for _, d := range dirs {
-		res = append(res, "("+d+")")
+	res := make([]string, len(dirs))
+	for i, d := range dirs {
+		res[i] = "(" + d + ")"
 	}
 	// #Backslashes: https://stackoverflow.com/a/4025505/12003165
 	return `((^|[\\/])(` + strings.Join(res, "|") + `)([\\/]|$))`

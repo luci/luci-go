@@ -172,18 +172,22 @@ type shards struct {
 
 func runShardItems(sizes []int64, threshold int64) (*shards, error) {
 	// Construct the input items, generating path based on size.
-	var items []*Item
-	for _, size := range sizes {
-		items = append(items, &Item{
+	items := make([]*Item, len(sizes))
+	for i, size := range sizes {
+		items[i] = &Item{
 			RelPath: fmt.Sprintf("./%d", size),
 			Path:    fmt.Sprintf("/size/%d", size),
 			Size:    size,
-		})
+		}
 	}
-	r := &shards{}
 	namespace := isolatedclient.DefaultNamespace
 	h := isolated.GetHash(namespace)
 	bundles := shardItems(items, threshold)
+	r := &shards{
+		bundles: make([]int, len(bundles)),
+		sizes:   make([]int64, len(bundles)),
+		digests: make([]isolated.HexDigest, len(bundles)),
+	}
 	for i, b := range bundles {
 		digest, size, err := b.Digest(h)
 		if err != nil {
@@ -201,9 +205,9 @@ func runShardItems(sizes []int64, threshold int64) (*shards, error) {
 		if got := len(tar); int64(got) != size {
 			return nil, fmt.Errorf("bundle[%d] Contents size %d differs from Digest size %d", i, got, size)
 		}
-		r.bundles = append(r.bundles, len(b.items))
-		r.sizes = append(r.sizes, size)
-		r.digests = append(r.digests, digest)
+		r.bundles[i] = len(b.items)
+		r.sizes[i] = size
+		r.digests[i] = digest
 	}
 	return r, nil
 }

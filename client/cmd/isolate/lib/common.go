@@ -292,8 +292,9 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 	if al.quiet {
 		prefix = ""
 	}
-	args := []interface{}{prefix}
-	args = append(args, a...)
+	args := make([]interface{}, 1+len(a))
+	args[0] = prefix
+	copy(args[1:], a)
 	return fmt.Printf("%s"+format, args...)
 }
 
@@ -439,9 +440,9 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 			bytesPushed += dg.Size
 		}
 
-		var dgsStr []string
-		for _, dg := range rootDgs {
-			dgsStr = append(dgsStr, dg.String())
+		dgsStr := make([]string, len(rootDgs))
+		for i, dg := range rootDgs {
+			dgsStr[i] = dg.String()
 		}
 		al.LogSummary(ctx, hits, missing, units.Size(bytesTotal-bytesPushed), units.Size(bytesPushed), dgsStr)
 	}
