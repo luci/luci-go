@@ -403,7 +403,7 @@ export class AccessService {
         key: (req) => stableStringify(req),
         expire: async (_req, resPromise) => {
           const res = await resPromise;
-          await timeout(parseProtoDuration(res.validityDuration) * 1000);
+          await timeout(parseProtoDuration(res.validityDuration));
           return;
         },
       }
