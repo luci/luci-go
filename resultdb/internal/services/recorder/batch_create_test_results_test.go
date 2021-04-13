@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -168,9 +169,20 @@ func TestBatchCreateTestResults(t *testing.T) {
 				So(row, ShouldResembleProto, expected)
 
 				var invCommonTestIdPrefix string
-				err = invocations.ReadColumns(span.Single(ctx), invocations.ID("u-build-1"), map[string]interface{}{"CommonTestIDPrefix": &invCommonTestIdPrefix})
+				var invVars []string
+				err = invocations.ReadColumns(
+					span.Single(ctx), invocations.ID("u-build-1"),
+					map[string]interface{}{
+						"CommonTestIDPrefix":     &invCommonTestIdPrefix,
+						"TestResultVariantUnion": &invVars,
+					})
 				So(err, ShouldBeNil)
 				So(invCommonTestIdPrefix, ShouldEqual, expectedCommonPrefix)
+				sort.Strings(invVars)
+				So(invVars, ShouldResemble, []string{
+					"a/b:1",
+					"c:2",
+				})
 			}
 		}
 
