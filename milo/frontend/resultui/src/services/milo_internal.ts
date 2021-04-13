@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import stableStringify from 'fast-json-stable-stringify';
+
 import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { BuilderID, GitilesCommit } from './buildbucket';
@@ -97,7 +99,7 @@ export class MiloInternal {
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(MiloInternal.SERVICE, method, message),
       {
-        key: (method, message) => `${method}-${JSON.stringify(message)}`,
+        key: (method, message) => `${method}-${stableStringify(message)}`,
       }
     );
   }

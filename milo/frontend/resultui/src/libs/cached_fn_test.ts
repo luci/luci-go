@@ -14,6 +14,7 @@
 
 import { aTimeout } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
+import stableStringify from 'fast-json-stable-stringify';
 import Sinon, * as sinon from 'sinon';
 
 import { cached, CacheOption } from './cached_fn';
@@ -26,7 +27,7 @@ describe('cached_fn', () => {
     let callCount = 0;
     const fn = (param1: number, param2: string) => `${param1}-${param2}-${callCount++}`;
     fnSpy = sinon.spy(fn);
-    cachedFn = cached(fnSpy, { key: (...params) => JSON.stringify(params) });
+    cachedFn = cached(fnSpy, { key: (...params) => stableStringify(params) });
   });
 
   it('should return cached response when params are identical', async () => {
@@ -102,7 +103,7 @@ describe('cached_fn', () => {
   describe('when config.expire(...) returns a promise that resolves', () => {
     beforeEach(() => {
       cachedFn = cached(fnSpy, {
-        key: (...params) => JSON.stringify(params),
+        key: (...params) => stableStringify(params),
         expire: () => aTimeout(20),
       });
     });
@@ -140,7 +141,7 @@ describe('cached_fn', () => {
   describe('when config.expire() returns a promise that rejects', () => {
     beforeEach(() => {
       cachedFn = cached(fnSpy, {
-        key: (...params) => JSON.stringify(params),
+        key: (...params) => stableStringify(params),
         expire: async () => {
           await aTimeout(20);
           throw new Error();
@@ -181,7 +182,7 @@ describe('cached_fn', () => {
   describe('when config.expire() resolves immediately', () => {
     beforeEach(() => {
       cachedFn = cached(fnSpy, {
-        key: (...params) => JSON.stringify(params),
+        key: (...params) => stableStringify(params),
         expire: () => Promise.resolve(),
       });
     });
@@ -206,7 +207,7 @@ describe('cached_fn', () => {
     beforeEach(() => {
       let firstCall = true;
       cachedFn = cached(fnSpy, {
-        key: (...params) => JSON.stringify(params),
+        key: (...params) => stableStringify(params),
         expire: () => {
           if (firstCall) {
             firstCall = false;

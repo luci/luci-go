@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import stableStringify from 'fast-json-stable-stringify';
+
 import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { parseProtoDuration } from '../libs/time_utils';
@@ -297,7 +299,7 @@ export class BuildsService {
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(BuildsService.SERVICE, method, message),
       {
-        key: (method, message) => `${method}-${JSON.stringify(message)}`,
+        key: (method, message) => `${method}-${stableStringify(message)}`,
       }
     );
   }
@@ -314,7 +316,10 @@ export class BuildsService {
       // difficult.
       const sameBuild = req.id
         ? req.id === this.cachedBuild.id
-        : JSON.stringify([req.buildNumber, req.builder]) === JSON.stringify([build.number, build.builder]);
+        : req.buildNumber === build.number &&
+          req.builder?.project === build.builder.project &&
+          req.builder?.bucket === build.builder.bucket &&
+          req.builder?.builder === build.builder.builder;
       const sameField = req.fields === this.cachedBuildReq!.fields;
 
       if (sameBuild && sameField) {
@@ -370,7 +375,7 @@ export class BuildersService {
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
       (method: string, message: object) => client.call(BuildersService.SERVICE, method, message),
-      { key: (method, message) => `${method}-${JSON.stringify(message)}` }
+      { key: (method, message) => `${method}-${stableStringify(message)}` }
     );
   }
 
@@ -395,7 +400,7 @@ export class AccessService {
         return (await client.call(AccessService.SERVICE, 'PermittedActions', req)) as PermittedActionsResponse;
       },
       {
-        key: (req) => JSON.stringify(req),
+        key: (req) => stableStringify(req),
         expire: async (_req, resPromise) => {
           const res = await resPromise;
           await timeout(parseProtoDuration(res.validityDuration) * 1000);
