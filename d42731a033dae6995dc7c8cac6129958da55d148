@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb58e2c1_92729385",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T05:40:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0e7654c_9909c6ae",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 136,
+        "endChar": 0
+      },
+      "revId": "d42731a033dae6995dc7c8cac6129958da55d148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7cb2ba45_54e01786",
@@ -64,6 +88,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "72c0310a_ea374973",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T05:40:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7cb2ba45_54e01786",
+      "range": {
+        "startLine": 137,
+        "startChar": 53,
+        "endLine": 137,
+        "endChar": 94
+      },
+      "revId": "d42731a033dae6995dc7c8cac6129958da55d148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0a210645_6e0381d1",
@@ -77,6 +125,30 @@
       "writtenOn": "2021-04-13T01:54:50Z",
       "side": 1,
       "message": "consider ToSortedSlice. We store it - order might be useful in the future.",
+      "range": {
+        "startLine": 141,
+        "startChar": 40,
+        "endLine": 141,
+        "endChar": 47
+      },
+      "revId": "d42731a033dae6995dc7c8cac6129958da55d148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09fff122_eda4910c",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T05:40:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a210645_6e0381d1",
       "range": {
         "startLine": 141,
         "startChar": 40,
