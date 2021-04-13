@@ -41,17 +41,23 @@ const (
 	ClockDriftBuffer = 5 * time.Minute
 )
 
+// HistoryQuery specifies invocations to fetch to retrieve test result history.
+type HistoryQuery struct {
+	Realm     string
+	TimeRange *pb.TimeRange
+}
+
 // ByTimestamp queries indexed invocations in a given time range.
 // It executes the callback once for each row, starting with the most recent.
-func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange, callback func(inv ID, ts *timestamp.Timestamp) error) error {
+func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts *timestamp.Timestamp) error) error {
 	var err error
 	now := clock.Now(ctx)
 
 	// We keep results for up to ~2 years, use this lower bound if one is not
 	// given.
 	minTime := now.Add(-HistoryWindow)
-	if timeRange.GetEarliest() != nil {
-		if minTime, err = ptypes.Timestamp(timeRange.GetEarliest()); err != nil {
+	if q.TimeRange.GetEarliest() != nil {
+		if minTime, err = ptypes.Timestamp(q.TimeRange.GetEarliest()); err != nil {
 			return errors.Annotate(err, "timeRange.earliest").Err()
 		}
 	}
@@ -59,8 +65,8 @@ func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange, cal
 	// If unspecified, get results up to the present time.
 	// Plus a buffer to account for possible clock drift.
 	maxTime := now.Add(ClockDriftBuffer)
-	if timeRange.GetLatest() != nil {
-		if maxTime, err = ptypes.Timestamp(timeRange.GetLatest()); err != nil {
+	if q.TimeRange.GetLatest() != nil {
+		if maxTime, err = ptypes.Timestamp(q.TimeRange.GetLatest()); err != nil {
 			return errors.Annotate(err, "timeRange.latest").Err()
 		}
 	}
@@ -74,7 +80,7 @@ func ByTimestamp(ctx context.Context, realm string, timeRange *pb.TimeRange, cal
 		ORDER BY i.HistoryTime DESC
 	`)
 	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"realm":   realm,
+		"realm":   q.Realm,
 		"minTime": minTime,
 		"maxTime": maxTime,
 	})
