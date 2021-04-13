@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5511a875_08346db0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T07:08:48Z",
+      "side": 1,
+      "message": "You are right. We kind of want to update the regex in the future anyway.\nMaking it optional ensures that the prefetch will work if we forgot to update the SW, but then we also needs to remember to update the indices in match[i].\n\nReverted the changes to the regexes.\nRepurposed the CL to just add the comments instead.",
+      "parentUuid": "6e64090f_ae6c3858",
+      "revId": "9dcdc824857fb1d2bb7782c0b97dcf372f60549d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "57d696cd_f14e5f12",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-04-13T06:15:58Z",
       "side": 1,
       "message": "nits: to remove",
+      "range": {
+        "startLine": 120,
+        "startChar": 43,
+        "endLine": 120,
+        "endChar": 51
+      },
+      "revId": "9dcdc824857fb1d2bb7782c0b97dcf372f60549d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0badbe98_1cd38b36",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T07:08:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57d696cd_f14e5f12",
       "range": {
         "startLine": 120,
         "startChar": 43,
