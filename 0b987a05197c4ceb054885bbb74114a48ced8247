@@ -260,6 +260,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "994cc2ed_09c95f87",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T13:03:06Z",
+      "side": 1,
+      "message": "well, although all code has bugs, so few things are really certain.\nStill, at least when *I* use \"$x SHOULD be true\", I mean that code will still work even if $X is false.\nOTOH, \"$x MUST be true\" means \"code won\u0027t work, everything may explode, so don\u0027t even try\".\nIIUC, this is also how aip.dev uses it.",
+      "parentUuid": "6fd88c86_ca0f2fb2",
+      "range": {
+        "startLine": 245,
+        "startChar": 4,
+        "endLine": 245,
+        "endChar": 10
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8577d0d4_3f4eeb21",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2
@@ -412,6 +436,30 @@
       "side": 1,
       "message": "In general, I like what you proposed and that should work without an issue since we have CL-level retries. However, I\u0027m not sure how things will play out for large CL stacks. imagine a CL stack of 100+ CLs, assuming each CL take 1s to submit(it is the P50 for Gerrit submit RPC if I get the metric correct), we would easily get DeadlineExceeded error here for the first attempt since GAE timeout is 60s. If we mark it as transient, it is possible for CV to submit everything upon second retry although it means there\u0027s a short window that a RUN is partially submitted and waiting for the acquiring the submit queue again.",
       "parentUuid": "8569bc18_1f66b138",
+      "range": {
+        "startLine": 286,
+        "startChar": 13,
+        "endLine": 287,
+        "endChar": 41
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d146b95_c1319c04",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T13:03:06Z",
+      "side": 1,
+      "message": "1. CV TQ handler can take 10 minutes.\n  -\u003e I don\u0027t recall if it get it by default, so we may need to create a dedicated service for RM operations.\n\n2. Oh, I actually forgot to cap Run by 100 CLs -- will do so 😊\n\n\n\u003e If we mark it as transient, it is possible for CV to submit everything upon second retry although it means there\u0027s a short window that a RUN is partially submitted and waiting for the acquiring the submit queue again.\n\nIMO, the big problem is NOT the waiting for re-acquire (though ideally, there is no waiting). It is that another Run can be submitted in the mean time.\n\nHence, my proposal above, which combined with 10 minutes, should provide better service than CQD.\n\n\nAs a follow up, we can speed up re-acquisition by:\n  (a) add new \"taskID\" in Run.Submission\n  (b) Run.Submission.TaskID is set to value from X-CloudTasks-TaskName header (need to be exposed in server.tq.TaskExecutionInfo https://chromium.googlesource.com/infra/luci/luci-go/+/9d9b06541571/server/tq/dispatcher.go#430)\n  (c) on retry the X-CloudTasks-TaskName will match the one stored in the server.tq.TaskExecutionInfo, so there is no need to wait for the deadline.\n  (d) deadline now can be made larger, e.g. 20 minutes.",
+      "parentUuid": "f6304f0e_3187540e",
       "range": {
         "startLine": 286,
         "startChar": 13,
@@ -799,6 +847,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3116c15e_caced8ad",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T13:03:06Z",
+      "side": 1,
+      "message": "because Submit permission isn\u0027t limited to CV, e.g. a user (like myself 😄) may submit bypassing CV.",
+      "parentUuid": "1239df2f_299299f0",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "afad0d28_01533a7b",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2
@@ -828,6 +894,24 @@
       "side": 1,
       "message": "Can you explain more on wdym by `normalize`?",
       "parentUuid": "afad0d28_01533a7b",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7908cc08_d358df3b",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T13:03:06Z",
+      "side": 1,
+      "message": "I meant to re-use template functions that I defined in https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/prjmanager/clpurger/user_text.go;l\u003d114?q\u003dcv%20internal%20clpurger\u0026ss\u003dchromium\n\nThis will make it easier to improve messages in the future, e.g. by sourcing contact point for respective LUCI project maintainers from say `luci-config/projects.cfg` file.",
+      "parentUuid": "c1f09a3c_9ef77f8c",
       "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -892,6 +976,24 @@
       "writtenOn": "2021-04-12T19:06:48Z",
       "side": 1,
       "message": "note to self: didn\u0027t review.",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b58af15_f5f93428",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T13:03:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "796437ad_58f19500",
       "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
