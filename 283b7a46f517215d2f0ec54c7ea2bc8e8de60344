@@ -16,6 +16,23 @@
       "message": "+Vadim for ideas on best way to sweep in tests.\n\nThis CL hacks it via CV codebase, however I think it\u0027d cleaner to do it via tqtesting package itself.\nWhat I\u0027m not sure about is how yet. Any thoughts?",
       "revId": "283b7a46f517215d2f0ec54c7ea2bc8e8de60344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "44f26c5c_b347b719",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-13T11:35:24Z",
+      "side": 1,
+      "message": "discussed with Vadim offline last week.\n\nI conclude that the difficulties I\u0027m facing here are because we are sticking everything into context while server/tq strongly encourages not to do that. In e2e test we can create a new tq.Dispatcher,\nwhich can have its own sweeper, running a dedicated goroutine until the test is terminated.",
+      "revId": "283b7a46f517215d2f0ec54c7ea2bc8e8de60344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
