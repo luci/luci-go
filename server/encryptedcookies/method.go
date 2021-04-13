@@ -21,9 +21,11 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/tink/go/tink"
+	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -179,6 +181,9 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 		return nil, nil, nil
 	}
 
+	// authSessionImpl implements auth.Session.
+	authSession := &authSessionImpl{cookie: cookie, session: session}
+
 	// Check if we need to refresh the short-lived tokens stored in the session.
 	ttl := session.NextRefresh.AsTime().Sub(clock.Now(ctx))
 	if internal.ShouldRefreshSession(ctx, ttl) {
@@ -188,7 +193,8 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 		} else {
 			logging.Infof(ctx, "Refreshing the session, went stale %s ago", -ttl)
 		}
-		switch session, err = m.refreshSession(ctx, cookie, session); {
+		var private *sessionpb.Private
+		switch session, private, err = m.refreshSession(ctx, cookie, session); {
 		case err != nil:
 			logging.Warningf(ctx, "Failed to refresh the session: %s", err)
 			return nil, nil, errors.Reason("failed to refresh the session, see server logs").Tag(transient.Tag).Err()
@@ -196,6 +202,8 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 			return nil, nil, nil // the session is no longer valid, just ignore it
 		default:
 			logging.Infof(ctx, "The session was refreshed")
+			authSession.session = session
+			authSession.unsealed(private, nil) // have it decrypted already
 		}
 	}
 
@@ -204,7 +212,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 		Email:    session.Email,
 		Name:     session.Name,
 		Picture:  session.Picture,
-	}, nil, nil
+	}, authSession, nil
 }
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
@@ -587,27 +595,27 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 // checking that the refresh token (also stored there) is still valid.
 //
 // Returns:
-//   (new session, nil) - if the session was successfully refreshed.
-//   (nil, nil) - if the refresh token was revoked and/or the session is closed.
-//   (nil, err) - if there was some unexpected error refreshing the session.
+//   session, private, nil: if the session was successfully refreshed.
+//   nil, nil, nil: if the refresh token was revoked and the session is closed.
+//   nil, nil, err: if there was some unexpected error refreshing the session.
 //
 // Note that errors may contain sensitive details and should not be returned to
 // the caller as is.
-func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookiespb.SessionCookie, session *sessionpb.Session) (*sessionpb.Session, error) {
+func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookiespb.SessionCookie, session *sessionpb.Session) (*sessionpb.Session, *sessionpb.Private, error) {
 	// Need the discovery doc to hit the OpenID provider's endpoint.
 	cfg, err := m.checkConfigured(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	discovery, err := cfg.discoveryDoc(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Unseal the private part of the session to get the refresh token.
 	private, sessionAEAD, err := internal.UnsealPrivate(cookie, session)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to unseal the session").Err()
+		return nil, nil, errors.Annotate(err, "failed to unseal the session").Err()
 	}
 
 	// Use the refresh token to get the new access and ID tokens. A fatal error
@@ -621,7 +629,7 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	})
 	if err != nil {
 		if transient.Tag.In(err) {
-			return nil, errors.Annotate(err, "transient error when fetching new tokens").Err()
+			return nil, nil, errors.Annotate(err, "transient error when fetching new tokens").Err()
 		}
 		logging.Warningf(ctx, "Refresh failed, closing the session: %s", err)
 	}
@@ -632,17 +640,17 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	if stillGood {
 		// Grab the updated user info from the ID token.
 		if tok, _, err = openid.UserFromIDToken(ctx, tokens.IdToken, discovery); err != nil {
-			return nil, errors.Annotate(err, "failed to check the ID token").Err()
+			return nil, nil, errors.Annotate(err, "failed to check the ID token").Err()
 		}
 		// Make sure we've also got the access token
 		if tokens.AccessToken == "" {
-			return nil, errors.Reason("the ID provider didn't produce an access token").Err()
+			return nil, nil, errors.Reason("the ID provider didn't produce an access token").Err()
 		}
 		// Reencrypt new tokens using the per-session key. The refresh token stays
 		// the same.
 		tokens.RefreshToken = private.RefreshToken
 		if encryptedPrivate, err = internal.EncryptPrivate(sessionAEAD, tokens); err != nil {
-			return nil, errors.Annotate(err, "failed to encrypt the private part of the session").Err()
+			return nil, nil, errors.Annotate(err, "failed to encrypt the private part of the session").Err()
 		}
 	}
 
@@ -674,15 +682,15 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	})
 	if err != nil {
 		if err == errSessionClosed {
-			return nil, nil
+			return nil, nil, nil
 		}
-		return nil, errors.Annotate(err, "failed to update the session in the storage").Err()
+		return nil, nil, errors.Annotate(err, "failed to update the session in the storage").Err()
 	}
 
 	if stillGood {
-		return refreshedSession, nil
+		return refreshedSession, tokens, nil
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 // closeSession closes the session and revokes the refresh token.
@@ -823,4 +831,91 @@ func removeCookie(rw http.ResponseWriter, r *http.Request, cookie string) {
 		cpy.Expires = time.Unix(1, 0)
 		http.SetCookie(rw, &cpy)
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// authSessionImpl implements auth.Session by lazily decrypting tokens stored
+// in the session's private section using the keys from the cookie.
+//
+// It doesn't try to refresh tokens dynamically if they expire midway through
+// the request handler. AuthMethod.Authenticate makes sure tokens live for at
+// least 10 min. We assume it is enough to handle any request. If this is not
+// enough, we'll have to teach the authSessionImpl to refresh tokens on the fly
+// (and encrypt them and write them back into the datastore). This will be
+// messy.
+type authSessionImpl struct {
+	cookie  *encryptedcookiespb.SessionCookie
+	session *sessionpb.Session
+
+	once        sync.Once
+	done        bool
+	err         error
+	accessToken *oauth2.Token
+	idToken     *oauth2.Token
+}
+
+// unseal makes sure accessToken/idToken are decrypted.
+func (s *authSessionImpl) unseal() error {
+	s.once.Do(func() {
+		if !s.done {
+			private, _, err := internal.UnsealPrivate(s.cookie, s.session)
+			s.unsealed(private, errors.Annotate(err, "failed to unseal the session").Err())
+		}
+	})
+	return s.err
+}
+
+// unsealed is called to interpret result of sessionpb.Private decryption.
+func (s *authSessionImpl) unsealed(p *sessionpb.Private, err error) {
+	s.done = true
+	s.err = err
+	if err == nil {
+		s.accessToken = &oauth2.Token{
+			TokenType:   "Bearer",
+			AccessToken: p.AccessToken,
+			Expiry:      s.session.NextRefresh.AsTime(),
+		}
+		s.idToken = &oauth2.Token{
+			TokenType:   "Bearer",
+			AccessToken: p.IdToken,
+			Expiry:      s.session.NextRefresh.AsTime(),
+		}
+	} else {
+		s.accessToken = nil
+		s.idToken = nil
+	}
+}
+
+// AccessToken is a part of auth.Session interface.
+func (s *authSessionImpl) AccessToken(ctx context.Context) (*oauth2.Token, error) {
+	if err := s.unseal(); err != nil {
+		return nil, err
+	}
+	if err := checkStaleToken(ctx, s.accessToken); err != nil {
+		return nil, err
+	}
+	return s.accessToken, nil
+}
+
+// IDToken is a part of auth.Session interface.
+func (s *authSessionImpl) IDToken(ctx context.Context) (*oauth2.Token, error) {
+	if err := s.unseal(); err != nil {
+		return nil, err
+	}
+	if err := checkStaleToken(ctx, s.idToken); err != nil {
+		return nil, err
+	}
+	return s.idToken, nil
+}
+
+// checkStaleToken returns an error if the token is already stale.
+//
+// If you see this error, either make sure your request is shorter than 10 min,
+// or, if this is impossible, file a bug to implement the dynamic token refresh.
+func checkStaleToken(ctx context.Context, t *oauth2.Token) error {
+	if clock.Now(ctx).After(t.Expiry) {
+		return errors.Reason("encryptedcookies: the tokens stored in the session expired midway through the request handler").Err()
+	}
+	return nil
 }
