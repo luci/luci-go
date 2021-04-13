@@ -131,8 +131,29 @@ func (c *reproduceRun) createTaskRequestCommand(ctx context.Context, taskID stri
 	}
 
 	// TODO(crbug.com/1188473): Set env prefix in task request
-	// TODO(crbug.com/1188473): Support isolated input in task request.
-	// TODO(crbug.com/1188473): Support RBE-CAS input in task request.
+
+	if properties.InputsRef != nil && properties.CasInputRoot != nil {
+		return nil, errors.Reason("fetched TaskRequest has files from Isolate and RBE-CAS").Err()
+	}
+
+	// Support isolated input in task request.
+	if properties.InputsRef != nil {
+		if _, err := service.GetFilesFromIsolate(ctx, workdir, properties.InputsRef); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch files fromm isolate").Err()
+		}
+	}
+
+	// Support RBE-CAS input in task request.
+	if properties.CasInputRoot != nil {
+		cascli, err := c.authFlags.NewCASClient(ctx, properties.CasInputRoot.CasInstance)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
+		}
+		if _, err := service.GetFilesFromCAS(ctx, workdir, cascli, properties.CasInputRoot); err != nil {
+			return nil, errors.Annotate(err, "failed to fetched friles from RBE-CAS").Err()
+		}
+	}
+
 	// TODO(crbug.com/1188473): Support CIPD package download in task request
 
 	cmd := exec.CommandContext(ctx, properties.Command[0], properties.Command[1:]...)
