@@ -160,6 +160,43 @@ func AssertReceivedReadyForSubmission(ctx context.Context, runID common.RunID, e
 	AssertInEventbox(ctx, runID, target)
 }
 
+// AssertReceivedCLSubmitted asserts Run has received CLSubmitted event for
+// the provided CL.
+func AssertReceivedCLSubmitted(ctx context.Context, runID common.RunID, cl common.CLID) {
+	target := &eventpb.Event{
+		Event: &eventpb.Event_ClSubmitted{
+			ClSubmitted: &eventpb.CLSubmitted{
+				Clid: int64(cl),
+			},
+		},
+	}
+	AssertInEventbox(ctx, runID, target)
+}
+
+// AssertNotReceivedCLSubmitted asserts Run has NOT received CLSubmitted event
+// for the provided CL.
+func AssertNotReceivedCLSubmitted(ctx context.Context, runID common.RunID, cl common.CLID) {
+	target := &eventpb.Event{
+		Event: &eventpb.Event_ClSubmitted{
+			ClSubmitted: &eventpb.CLSubmitted{
+				Clid: int64(cl),
+			},
+		},
+	}
+	AssertNotInEventbox(ctx, runID, target)
+}
+
+// AssertReceivedSubmissionCompleted asserts Run has received the provided
+// SubmissionCompleted event.
+func AssertReceivedSubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted) {
+	target := &eventpb.Event{
+		Event: &eventpb.Event_SubmissionCompleted{
+			SubmissionCompleted: sc,
+		},
+	}
+	AssertInEventbox(ctx, runID, target)
+}
+
 // MockDispatch installs and returns MockDispatcher for Run Manager.
 func MockDispatch(ctx context.Context) (context.Context, MockDispatcher) {
 	m := MockDispatcher{&cvtesting.DispatchRecorder{}}
