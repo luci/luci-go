@@ -39,6 +39,24 @@
       "message": "does this code run if req was unsuccessful? \nthose responses are not JSON",
       "revId": "e01c24980917509af6455e46407457b29501981b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c43955be_a18fe4c8",
+        "filename": "milo/frontend/resultui/src/libs/prpc_utils.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-13T00:58:24Z",
+      "side": 1,
+      "message": "This is request not response.\nReq will always be JSON.",
+      "parentUuid": "ec92528e_8181f55f",
+      "revId": "e01c24980917509af6455e46407457b29501981b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
