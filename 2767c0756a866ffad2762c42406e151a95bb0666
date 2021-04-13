@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "20339703_4ef6b01d",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:56:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4243059_02f4f4e0",
+      "range": {
+        "startLine": 81,
+        "startChar": 20,
+        "endLine": 81,
+        "endChar": 22
+      },
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc9f6288_b27363be",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-12T21:18:49Z",
       "side": 1,
       "message": "\"^foo$\" does not start with \"foo\".\nWhy not pass the literal prefix that we computed into the query and compare to that instead?",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 127,
+        "endChar": 55
+      },
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9f9864d_7a1adca3",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:56:49Z",
+      "side": 1,
+      "message": "It is literalPrefix, see L106.\n\nChanged the parameter key from \"testIdRegexp\" to \"literalPrefix\" so it\u0027s not confusing.",
+      "parentUuid": "dc9f6288_b27363be",
       "range": {
         "startLine": 127,
         "startChar": 3,
@@ -64,6 +112,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "43c0711b_820117b9",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:56:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b4b61f4_34d5789c",
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "97dd2eae_083446e8",
@@ -77,6 +143,24 @@
       "writtenOn": "2021-04-12T21:18:49Z",
       "side": 1,
       "message": "it can also be NULL",
+      "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37dd373f_363681e9",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-13T00:56:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97dd2eae_083446e8",
       "revId": "2767c0756a866ffad2762c42406e151a95bb0666",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
