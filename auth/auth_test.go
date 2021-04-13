@@ -397,15 +397,15 @@ func TestRefreshToken(t *testing.T) {
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Attempting to use expired cached token triggers a refresh that constantly
-		// fails. Eventually we give up (on 17th attempt).
+		// fails. Eventually we give up.
 		before := clock.Now(ctx)
 		_, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldErrLike, "transient error")
 		after := clock.Now(ctx)
 
 		// It took reasonable amount of time and number of attempts.
-		So(after.Sub(before), ShouldBeLessThan, time.Minute)
-		So(5000-tokenProvider.transientRefreshErrors, ShouldEqual, 10)
+		So(after.Sub(before), ShouldBeLessThan, 4*time.Minute)
+		So(5000-tokenProvider.transientRefreshErrors, ShouldEqual, 15)
 	})
 }
 

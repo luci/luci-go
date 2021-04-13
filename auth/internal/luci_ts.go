@@ -23,8 +23,11 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -101,8 +104,8 @@ func (p *luciTSTokenProvider) MintToken(ctx context.Context, base *Token) (*Toke
 		},
 		Host: p.host,
 		Options: &prpc.Options{
-			Retry:         nil,             // the caller of MintToken retries itself
-			PerRPCTimeout: 5 * time.Second, // the call should be fast
+			Retry:         nil,              // the caller of MintToken retries itself
+			PerRPCTimeout: 30 * time.Second, // the call should be relatively fast
 		},
 	})
 
@@ -124,6 +127,11 @@ func (p *luciTSTokenProvider) MintToken(ctx context.Context, base *Token) (*Toke
 
 	resp, err := client.MintServiceAccountToken(ctx, req)
 	if err != nil {
+		// Want to retry on per-RPC deadlines.
+		if status.Code(err) == codes.DeadlineExceeded {
+			return nil, transient.Tag.Apply(err)
+		}
+		// And also on standard retriable errors like Unavailable.
 		return nil, grpcutil.WrapIfTransient(err)
 	}
 
