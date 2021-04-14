@@ -32,14 +32,22 @@ import (
 type Store struct {
 	sync.Mutex
 
-	Secrets        map[string]secrets.Secret // current map of all secrets
-	NoAutogenerate bool                      // if true, RandomSecret will NOT generate secrets
-	SecretLen      int                       // length of generated secret, 8 bytes default
-	Rand           *rand.Rand                // used to generate missing secrets
+	Secrets   map[string]secrets.Secret // current map of all secrets
+	SecretLen int                       // length of generated secret, 8 bytes default
+	Rand      *rand.Rand                // used to generate missing secrets
 }
 
 // RandomSecret is a part of Store interface.
 func (t *Store) RandomSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	return t.getSecret(ctx, k, true)
+}
+
+// StoredSecret is a part of Store interface.
+func (t *Store) StoredSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	return t.getSecret(ctx, k, false)
+}
+
+func (t *Store) getSecret(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -47,7 +55,7 @@ func (t *Store) RandomSecret(ctx context.Context, k string) (secrets.Secret, err
 		return s, nil
 	}
 
-	if t.NoAutogenerate {
+	if !autogen {
 		return secrets.Secret{}, secrets.ErrNoSuchSecret
 	}
 

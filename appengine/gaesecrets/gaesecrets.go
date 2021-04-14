@@ -44,10 +44,9 @@ const cacheExp = time.Minute * 5
 // Config can be used to tweak parameters of the store. It is fine to use
 // default values.
 type Config struct {
-	NoAutogenerate bool      // if true, RandomSecret will NOT generate secrets
-	SecretLen      int       // length of generated secrets, 32 bytes default
-	Prefix         string    // optional prefix for entity keys to namespace them
-	Entropy        io.Reader // source of random numbers, crypto rand by default
+	SecretLen int       // length of generated secrets, 32 bytes default
+	Prefix    string    // optional prefix for entity keys to namespace them
+	Entropy   io.Reader // source of random numbers, crypto rand by default
 }
 
 // Use injects the GAE implementation of secrets.Store into the context.
@@ -77,10 +76,19 @@ type storeImpl struct {
 	cfg Config
 }
 
-// RandomSecret returns a secret by its name.
+// RandomSecret returns a secret by its name, generating it if necessary.
 func (s *storeImpl) RandomSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	return s.getSecret(ctx, k, true)
+}
+
+// StoredSecret returns a secret by its name, fetching it from the storage.
+func (s *storeImpl) StoredSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	return s.getSecret(ctx, k, false)
+}
+
+func (s *storeImpl) getSecret(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
 	secret, err := secretsCache.LRU(ctx).GetOrCreate(ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
-		secret, err := s.getSecretFromDatastore(ctx, k)
+		secret, err := s.getSecretFromDatastore(ctx, k, autogen)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -92,8 +100,7 @@ func (s *storeImpl) RandomSecret(ctx context.Context, k string) (secrets.Secret,
 	return secret.(secrets.Secret), nil
 }
 
-// getSecretImpl uses non-transactional datastore to grab a secret.
-func (s *storeImpl) getSecretFromDatastore(ctx context.Context, k string) (secrets.Secret, error) {
+func (s *storeImpl) getSecretFromDatastore(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
 	// Switch to default namespace.
 	ctx, err := info.Namespace(ctx, "")
 	if err != nil {
@@ -110,7 +117,7 @@ func (s *storeImpl) getSecretFromDatastore(ctx context.Context, k string) (secre
 
 	// Autogenerate and put into the datastore.
 	if err == ds.ErrNoSuchEntity {
-		if s.cfg.NoAutogenerate {
+		if !autogen {
 			return secrets.Secret{}, secrets.ErrNoSuchSecret
 		}
 		ent.Created = clock.Now(ctx).UTC()
