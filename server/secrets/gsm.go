@@ -16,83 +16,186 @@ package secrets
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
-	"sync"
+	"time"
 
-	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
 	gax "github.com/googleapis/gax-go/v2"
-	"golang.org/x/oauth2"
-	"google.golang.org/api/option"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
-// SecretManagerSource is a Source that uses Google Secret Manager.
+// SecretManagerStore implements Store using Google Secret Manager.
 //
-// Construct it with NewSecretManagerSource.
-type SecretManagerSource struct {
-	client secretManagerClient // usually *secretmanager.Client
+// Stored secrets are fetched directly from Google Secret Manager. Random
+// secrets are derived from a root secret using HKDF via DerivedStore.
+type SecretManagerStore struct {
+	// CloudProject is used for loading secrets of the form "sm://<name>".
+	CloudProject string
+	// AccessSecretVersion is an RPC to fetch the secret from the Secret Manager.
+	AccessSecretVersion func(context.Context, *secretmanagerpb.AccessSecretVersionRequest, ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error)
 
-	secretURL string // e.g. "sm://<project>/<secret>""
-	project   string // parsed from secretURL
-	secret    string // parsed from secretURL
-
-	mu       sync.Mutex
-	versions [2]int64 // the latest and one previous (if enabled) version numbers
+	rootSecret    *trackedSecret // the secret loaded in LoadRootSecret
+	randomSecrets *DerivedStore  // the store used by RandomSecret
 }
 
-// secretManagerClient is subset of *secretmanager.Client we use.
+// LoadRootSecret loads the root secret used to generate random secrets.
 //
-// Mocked in tests.
-type secretManagerClient interface {
-	AccessSecretVersion(context.Context, *secretmanagerpb.AccessSecretVersionRequest, ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error)
-	Close() error
-}
-
-// NewSecretManagerSource parses "sm://<project>/<name>" and sets up the source
-// that fetches the latest two versions of this GSM secret as a single *Secret.
-//
-// Uses the given TokenSource for authentication.
-func NewSecretManagerSource(ctx context.Context, secretURL string, ts oauth2.TokenSource) (*SecretManagerSource, error) {
-	if !strings.HasPrefix(secretURL, "sm://") {
-		return nil, errors.Reason("not a sm://... URL").Err()
-	}
-	chunks := strings.Split(strings.TrimPrefix(secretURL, "sm://"), "/")
-	if len(chunks) != 2 {
-		return nil, errors.Reason("sm://... URL should have form sm://<project>/<secret>").Err()
-	}
-
-	client, err := secretmanager.NewClient(ctx, option.WithTokenSource(ts))
+// See StoredSecret for the format of the root secret. Must be called before
+// MaintenanceLoop.
+func (sm *SecretManagerStore) LoadRootSecret(ctx context.Context, rootSecret string) error {
+	secret, err := sm.readSecret(ctx, rootSecret, true)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to setup Secret Manager client").Err()
+		return errors.Annotate(err, "failed to read the initial value of the root secret").Err()
 	}
-
-	return &SecretManagerSource{
-		client:    client,
-		secretURL: secretURL,
-		project:   chunks[0],
-		secret:    chunks[1],
-	}, nil
+	secret.logActiveVersions(ctx)
+	secret.logNextReloadTime(ctx)
+	sm.rootSecret = secret
+	sm.randomSecrets = NewDerivedStore(secret.value)
+	return nil
 }
 
-// ReadSecret is part of Source interface.
-func (s *SecretManagerSource) ReadSecret(ctx context.Context) (*Secret, error) {
-	// Grab the latest version.
-	latest, err := s.client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
-		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", s.project, s.secret),
+// MaintenanceLoop runs a loop that periodically rereads secrets.
+//
+// It exits on context cancellation. Logs errors inside.
+func (sm *SecretManagerStore) MaintenanceLoop(ctx context.Context) {
+	rootSecret := sm.rootSecret
+	if rootSecret == nil || rootSecret.nextReload.IsZero() {
+		return // not using derived secrets at all or using a static one
+	}
+	for {
+		sleep := rootSecret.nextReload.Sub(clock.Now(ctx))
+		if r := <-clock.After(ctx, sleep); r.Err != nil {
+			return // the context is canceled
+		}
+		if sm.tryReloadSecret(ctx, rootSecret) {
+			sm.randomSecrets.SetRoot(rootSecret.value)
+		}
+	}
+}
+
+// RandomSecret returns a random secret given its name.
+func (sm *SecretManagerStore) RandomSecret(ctx context.Context, name string) (Secret, error) {
+	if sm.randomSecrets == nil {
+		return Secret{}, errors.New("the root secret of the secret store is not initialized")
+	}
+	return sm.randomSecrets.RandomSecret(ctx, name)
+}
+
+// StoredSecret returns a previously stored secret given its name.
+//
+// Value of `name` should have form:
+//   * `sm://<project>/<secret>`: a concrete secret in Google Secret Manager.
+//   * `sm://<secret>`: same as `sm://<CloudProject>/<secret>`.
+//   * `devsecret://<base64-encoded secret>`: return this concrete secret.
+//   * `devsecret-text://<string>`: return this concrete secret.
+func (sm *SecretManagerStore) StoredSecret(ctx context.Context, name string) (Secret, error) {
+	return Secret{}, errors.New("not implemented yet")
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+const (
+	// Randomized secret re-reading interval. It is pretty big, since secrets are
+	// assumed to be rotated infrequently. In rare emergencies a service can be
+	// restarted to pick new secrets faster.
+	reloadIntervalMin = 2 * time.Hour
+	reloadIntervalMax = 4 * time.Hour
+)
+
+// trackedSecret is a secret that is periodically reread in MaintenanceLoop.
+type trackedSecret struct {
+	name            string    // the name it was loaded under
+	withPrevVersion bool      // true to fetch the previous version
+	value           Secret    // the actual value
+	versions        [2]int64  // the latest and one previous (if enabled) version numbers
+	attempts        int       // how many consecutive times we failed to reload the secret
+	nextReload      time.Time // when we should reload the secret or zero if reloads are disabled
+}
+
+func (s *trackedSecret) logActiveVersions(ctx context.Context) {
+	if s.versions != [2]int64{0, 0} {
+		formatVer := func(v int64) string {
+			if v == 0 {
+				return "none"
+			}
+			return strconv.FormatInt(v, 10)
+		}
+		logging.Infof(ctx, "Loaded secret %s, active versions latest=%s, previous=%s",
+			s.name,
+			formatVer(s.versions[0]),
+			formatVer(s.versions[1]),
+		)
+	}
+}
+
+func (s *trackedSecret) logNextReloadTime(ctx context.Context) {
+	if !s.nextReload.IsZero() {
+		logging.Debugf(ctx, "Will attempt to reload the secret %s in %s", s.name, s.nextReload.Sub(clock.Now(ctx)))
+	}
+}
+
+func (sm *SecretManagerStore) readSecret(ctx context.Context, name string, withPrevVersion bool) (*trackedSecret, error) {
+	switch {
+	case strings.HasPrefix(name, "devsecret://"):
+		value, err := base64.RawStdEncoding.DecodeString(strings.TrimPrefix(name, "devsecret://"))
+		if err != nil {
+			return nil, errors.Annotate(err, "bad devsecret://, not base64 encoding").Err()
+		}
+		return &trackedSecret{
+			name:  name,
+			value: Secret{Current: value},
+		}, nil
+
+	case strings.HasPrefix(name, "devsecret-text://"):
+		return &trackedSecret{
+			name:  name,
+			value: Secret{Current: []byte(strings.TrimPrefix(name, "devsecret-text://"))},
+		}, nil
+
+	case strings.HasPrefix(name, "sm://"):
+		parts := strings.Split(strings.TrimPrefix(name, "sm://"), "/")
+		switch {
+		case len(parts) == 1:
+			if sm.CloudProject == "" {
+				return nil, errors.Reason("can't use secret reference %q when the Cloud Project name is not configured", name).Err()
+			}
+			parts = []string{sm.CloudProject, parts[0]}
+		case len(parts) != 2:
+			return nil, errors.Reason("sm:// secret reference should have form sm://<name> or sm://<project>/<name>").Err()
+		}
+		return sm.readSecretFromGSM(ctx, parts[0], parts[1], withPrevVersion)
+
+	default:
+		return nil, errors.Reason("not supported secret reference %q", name).Err()
+	}
+}
+
+func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, project, secret string, withPrevVersion bool) (*trackedSecret, error) {
+	name := fmt.Sprintf("sm://%s/%s", project, secret)
+	logging.Debugf(ctx, "Reading secret %s", name)
+
+	// The latest version is used as the primary active version.
+	latest, err := sm.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", project, secret),
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get the latest version of the secret").Err()
+		return nil, errors.Annotate(err, "failed to get the latest version of the secret %s", name).Err()
 	}
 
-	// The version name has format projects/.../secrets/.../versions/<number>.
+	// The version name has format "projects/.../secrets/.../versions/<number>".
 	// We want to grab the version number to peek at the previous one (if any).
+	// Note that GSM uses numeric project IDs in `latest.Name` instead of Cloud
+	// Project names, so we can't just trim the prefix.
 	idx := strings.LastIndex(latest.Name, "/")
 	if idx == -1 {
 		return nil, errors.Reason("unexpected version name format %q", latest.Name).Err()
@@ -102,58 +205,72 @@ func (s *SecretManagerSource) ReadSecret(ctx context.Context) (*Secret, error) {
 		return nil, errors.Reason("unexpected version name format %q", latest.Name).Err()
 	}
 
-	// If potentially have a previous version, try to grab it.
-	var previous *secretmanagerpb.AccessSecretVersionResponse
-	if version > 1 {
-		previous, err = s.client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
-			Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", s.project, s.secret, version-1),
-		})
-		switch status.Code(err) {
-		case codes.OK:
-			// Got it.
-		case codes.FailedPrecondition:
-			// The version is already disabled, this is fine.
-		case codes.NotFound:
-			// The version is already deleted, this is also fine.
-		default:
-			return nil, errors.Annotate(err, "failed to read the previous version of the secret").Err()
-		}
+	result := &trackedSecret{
+		name:            name,
+		withPrevVersion: withPrevVersion,
+		value:           Secret{Current: latest.Payload.Data},
+		versions:        [2]int64{version, 0}, // note: GSM versions start with 1
+		nextReload:      nextReloadTime(ctx),
+	}
+	if !withPrevVersion || version == 1 {
+		return result, nil
 	}
 
-	versions := [2]int64{version, 0}
-	if previous != nil {
-		versions[1] = version - 1
+	// Potentially have a previous version. Try to grab it.
+	prevVersion := version - 1
+	previous, err := sm.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", project, secret, prevVersion),
+	})
+	switch status.Code(err) {
+	case codes.OK:
+		result.value.Previous = [][]byte{previous.Payload.Data}
+		result.versions[1] = prevVersion
+		return result, nil
+	case codes.FailedPrecondition, codes.NotFound:
+		return result, nil // already disabled or deleted, this is fine
+	default:
+		return nil, errors.Annotate(err, "failed to read the previous version %d of the secret %s", prevVersion, name).Err()
 	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Log if any of the state has changed.
-	if versions != s.versions {
-		formatVer := func(v int64) string {
-			if v == 0 {
-				return "none"
-			}
-			return strconv.FormatInt(v, 10)
-		}
-		logging.Infof(ctx, "Active versions of the secret %s: latest=%s, previous=%s",
-			s.secretURL,
-			formatVer(versions[0]),
-			formatVer(versions[1]),
-		)
-		s.versions = versions
-	}
-
-	// Return both versions as a single *Secret so tokens created using older
-	// version still can be decoded.
-	secret := &Secret{Current: latest.Payload.Data}
-	if previous != nil {
-		secret.Previous = [][]byte{previous.Payload.Data}
-	}
-	return secret, nil
 }
 
-// Close is part of Source interface.
-func (s *SecretManagerSource) Close() error {
-	return s.client.Close()
+// tryReloadSecret attempts to reloads the secret, mutating it in-place.
+//
+// Returns true if the secret has a new value now or false if the value didn't
+// change (either we failed to fetch it or it really didn't change).
+//
+// Logs errors inside. Fields `secret.attempts` and `secret.nextReload` are
+// mutated even on failures.
+func (sm *SecretManagerStore) tryReloadSecret(ctx context.Context, secret *trackedSecret) bool {
+	fresh, err := sm.readSecret(ctx, secret.name, secret.withPrevVersion)
+	if err != nil {
+		secret.attempts += 1
+		sleep := reloadBackoffInterval(ctx, secret.attempts)
+		logging.Errorf(ctx, "Failed to reload the secret (attempt %d, next try in %s): %s", secret.attempts, sleep, err)
+		secret.nextReload = clock.Now(ctx).Add(sleep)
+		return false
+	}
+	updated := !fresh.value.Equal(secret.value)
+	*secret = *fresh
+	if updated {
+		secret.logActiveVersions(ctx)
+	}
+	secret.logNextReloadTime(ctx)
+	return updated
+}
+
+// nextReloadTime returns a time when we should try to reload the secret.
+func nextReloadTime(ctx context.Context) time.Time {
+	dt := reloadIntervalMin + time.Duration(mathrand.Int63n(ctx, int64(reloadIntervalMax-reloadIntervalMin)))
+	return clock.Now(ctx).Add(dt)
+}
+
+// reloadBackoffInterval tells how long to sleep after a failed reload attempt.
+func reloadBackoffInterval(ctx context.Context, attempt int) time.Duration {
+	factor := math.Pow(2.0, float64(attempt)) // 2, 4, 8, ...
+	factor += 10 * mathrand.Float64(ctx)
+	dur := time.Duration(float64(time.Second) * factor)
+	if dur > 30*time.Minute {
+		dur = 30 * time.Minute
+	}
+	return dur
 }
