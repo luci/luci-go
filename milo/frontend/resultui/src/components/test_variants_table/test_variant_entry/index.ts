@@ -296,12 +296,12 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
       }
 
       milo-copy-to-clipboard {
-        visibility: hidden;
+        display: none;
         margin-left: 5px;
         margin-right: 5px;
       }
       #header:hover milo-copy-to-clipboard {
-        visibility: visible;
+        display: initial;
       }
     `,
   ];
