@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "476078dc_979c4b1a",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-14T03:18:44Z",
+      "side": 1,
+      "message": "better to write this above the function",
+      "range": {
+        "startLine": 52,
+        "startChar": 84,
+        "endLine": 52,
+        "endChar": 136
+      },
+      "revId": "2ceed0a54c1e3bce19913503de78225c5bbff1ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "41d019ce_7a04614a",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-14T03:18:44Z",
+      "side": 1,
+      "message": "I feel comments in this function are redundant.",
+      "revId": "2ceed0a54c1e3bce19913503de78225c5bbff1ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
