@@ -16,6 +16,24 @@
       "message": "not having bug is intentional?",
       "revId": "595ac96f3bf1ce7e03102ee3e512894372e60cac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "831aad29_536436b0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-14T07:04:29Z",
+      "side": 1,
+      "message": "yeah. it doesn\u0027t improve performance. I am just learning the code and cleaning while at it.",
+      "parentUuid": "e2a04d47_85e85131",
+      "revId": "595ac96f3bf1ce7e03102ee3e512894372e60cac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
