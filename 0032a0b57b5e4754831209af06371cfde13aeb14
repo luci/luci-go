@@ -16,6 +16,23 @@
       "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/android-lollipop-arm-rel-swarming/6839/test-results",
       "revId": "0032a0b57b5e4754831209af06371cfde13aeb14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a17791f_31038c78",
+        "filename": "milo/frontend/resultui/src/components/test_variants_table/test_variant_entry/result_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-14T03:32:45Z",
+      "side": 1,
+      "message": "invalid URL. must be one of\n  https://chromium-swarm-dev.appspot.com/tasks/52e73ff8a61da410\n  https://chromium-swarm-dev.appspot.com/task?id\u003d52e73ff8a61da410",
+      "revId": "0032a0b57b5e4754831209af06371cfde13aeb14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
