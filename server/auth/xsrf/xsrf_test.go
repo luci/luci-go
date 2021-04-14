@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -89,7 +90,7 @@ func TestXsrf(t *testing.T) {
 }
 
 func makeContext() context.Context {
-	c := testsecrets.Use(context.Background())
+	c := secrets.Use(context.Background(), &testsecrets.Store{})
 	c, _ = testclock.UseTime(c, time.Unix(1442270520, 0))
 	return c
 }

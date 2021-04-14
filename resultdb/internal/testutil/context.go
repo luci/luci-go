@@ -36,7 +36,7 @@ func testingContext(mockClock bool) context.Context {
 	}
 
 	// Set test secrets store for token generation/validation.
-	ctx = secrets.Set(ctx, &testsecrets.Store{})
+	ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 	ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 

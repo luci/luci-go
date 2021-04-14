@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/tumble"
 
@@ -66,7 +67,7 @@ import (
 func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.Context, dist *Distributor) {
 	ttest = &tumble.Testing{}
 	c = ttest.Context()
-	c = testsecrets.Use(c)
+	c = secrets.Use(c, &testsecrets.Store{})
 
 	c = cfgclient.Use(c, config_mem.New(map[config.Set]config_mem.Files{
 		"services/${appid}": {

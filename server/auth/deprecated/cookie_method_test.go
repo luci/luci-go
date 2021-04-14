@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/settings"
 
@@ -48,7 +49,7 @@ func TestFullFlow(t *testing.T) {
 		ctx = authtest.MockAuthConfig(ctx)
 		ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))
-		ctx = testsecrets.Use(ctx)
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 		// Prepare the the signing keys and the ID token.
 		const signingKeyID = "signing-key"
@@ -215,7 +216,7 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 		ctx := context.Background()
 		ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))
-		ctx = testsecrets.Use(ctx)
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 		method := CookieAuthMethod{SessionStore: &MemorySessionStore{}}
 

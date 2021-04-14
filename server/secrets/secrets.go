@@ -16,17 +16,48 @@ package secrets
 
 import (
 	"bytes"
+	"context"
 	"errors"
 )
 
 var (
-	// ErrNoSuchSecret is returned by Store.GetSecret if it can't find a secret.
+	// ErrNoSuchSecret is returned by GetSecret if it can't find a secret.
 	ErrNoSuchSecret = errors.New("secret not found")
+	// ErrNoStoreConfigured is returned by GetSecret if the secret store is not in
+	// the context.
+	ErrNoStoreConfigured = errors.New("secrets.Store is not in the context")
 )
 
+var contextKey = "secrets.Store"
+
+// Use installs a Store implementation into the context.
+func Use(ctx context.Context, s Store) context.Context {
+	return context.WithValue(ctx, &contextKey, s)
+}
+
+// GetSecret returns a secret using Store in the context.
+//
+// If the context doesn't have Store set, returns ErrNoStoreConfigured.
+func GetSecret(ctx context.Context, key string) (Secret, error) {
+	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
+		return store.GetSecret(ctx, key)
+	}
+	return Secret{}, ErrNoStoreConfigured
+}
+
+// Store knows how to retrieve or autogenerate a secret given its key.
+type Store interface {
+	// GetSecret returns a secret given its key.
+	//
+	// Store may choose to autogenerate a secret if there's no existing one, or it
+	// may choose to treat it as an error and return ErrNoSuchSecret.
+	GetSecret(ctx context.Context, name string) (Secret, error)
+}
+
 // Secret represents a current value of a secret as well as a set of few
-// previous values. Previous values are important when key is being rotated:
-// there may be valid outstanding derivatives of previous values of the secret.
+// previous values. Previous values are important when the secret is being
+// rotated: there may be valid outstanding derivatives of previous values of
+// the secret.
 type Secret struct {
 	Current  []byte   `json:"current"`            // current value of the secret, always set
 	Previous [][]byte `json:"previous,omitempty"` // optional list of previous values, most recent first
@@ -57,27 +88,4 @@ func (s Secret) Equal(a Secret) bool {
 		}
 	}
 	return true
-}
-
-// Store knows how to retrieve (or autogenerate) a secret given its key.
-type Store interface {
-	// GetSecret returns a secret given its key.
-	//
-	// Store may choose to autogenerate a secret if there's no existing one, or it
-	// may choose to treat it as a error and return ErrNoSuchSecret.
-	GetSecret(name string) (Secret, error)
-}
-
-// StaticStore is Store with predefined secrets.
-type StaticStore map[string]Secret
-
-// GetSecret returns a secret given its key or ErrNoSuchSecret if no such
-// secret exists.
-//
-// The caller must not mutate the secret.
-func (s StaticStore) GetSecret(k string) (Secret, error) {
-	if secret, ok := s[k]; ok {
-		return secret, nil
-	}
-	return Secret{}, ErrNoSuchSecret
 }
