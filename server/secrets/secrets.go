@@ -55,6 +55,9 @@ func StoredSecret(ctx context.Context, name string) (Secret, error) {
 }
 
 // Store knows how to retrieve or autogenerate a secret given its name.
+//
+// See SecretManagerStore for a concrete implementation usually used in
+// production.
 type Store interface {
 	// RandomSecret returns a random secret given its name.
 	//
