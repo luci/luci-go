@@ -66,9 +66,7 @@ func Use(ctx context.Context, cfg *Config) context.Context {
 	if config.Entropy == nil {
 		config.Entropy = rand.Reader
 	}
-	return secrets.SetFactory(ctx, func(ctx context.Context) secrets.Store {
-		return &storeImpl{config, ctx}
-	})
+	return secrets.Use(ctx, &storeImpl{config})
 }
 
 // full secret key (including prefix) => secrets.Secret.
@@ -77,13 +75,12 @@ var secretsCache = caching.RegisterLRUCache(100)
 // storeImpl is implementation of secrets.Store bound to a GAE context.
 type storeImpl struct {
 	cfg Config
-	ctx context.Context
 }
 
 // GetSecret returns a secret by its key.
-func (s *storeImpl) GetSecret(k string) (secrets.Secret, error) {
-	secret, err := secretsCache.LRU(s.ctx).GetOrCreate(s.ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
-		secret, err := s.getSecretFromDatastore(k)
+func (s *storeImpl) GetSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	secret, err := secretsCache.LRU(ctx).GetOrCreate(ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
+		secret, err := s.getSecretFromDatastore(ctx, k)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -95,11 +92,10 @@ func (s *storeImpl) GetSecret(k string) (secrets.Secret, error) {
 	return secret.(secrets.Secret), nil
 }
 
-// getSecretImpl uses non-transactional datastore (txnBuf.GetNoTxn) to grab a
-// secret.
-func (s *storeImpl) getSecretFromDatastore(k string) (secrets.Secret, error) {
+// getSecretImpl uses non-transactional datastore to grab a secret.
+func (s *storeImpl) getSecretFromDatastore(ctx context.Context, k string) (secrets.Secret, error) {
 	// Switch to default namespace.
-	ctx, err := info.Namespace(s.ctx, "")
+	ctx, err := info.Namespace(ctx, "")
 	if err != nil {
 		panic(err) // should not happen, Namespace errors only on bad namespace name
 	}
@@ -117,7 +113,7 @@ func (s *storeImpl) getSecretFromDatastore(k string) (secrets.Secret, error) {
 		if s.cfg.NoAutogenerate {
 			return secrets.Secret{}, secrets.ErrNoSuchSecret
 		}
-		ent.Created = clock.Now(s.ctx).UTC()
+		ent.Created = clock.Now(ctx).UTC()
 		if ent.Secret, err = s.generateSecret(); err != nil {
 			return secrets.Secret{}, transient.Tag.Apply(err)
 		}

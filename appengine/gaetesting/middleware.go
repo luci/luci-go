@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 )
 
@@ -48,7 +49,7 @@ func TestingContextWithAppID(appID string) context.Context {
 }
 
 func commonTestingContext(ctx context.Context) context.Context {
-	ctx = testsecrets.Use(ctx)
+	ctx = secrets.Use(ctx, &testsecrets.Store{})
 	ctx = caching.WithEmptyProcessCache(ctx)
 
 	if *goLogger {

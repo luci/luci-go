@@ -171,7 +171,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		}
 	})
 
-	return Set(ctx, store), nil
+	return Use(ctx, store), nil
 }
 
 // initSource initializes a correct Source based on rootSecret.

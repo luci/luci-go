@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package testsecrets provides a dumb in-memory secret store to use in unit
-// tests. Use secrets.Set(c, &testsecrets.Store{...}) to inject it into
+// tests. Use secrets.Use(c, &testsecrets.Store{...}) to inject it into
 // the context.
 package testsecrets
 
@@ -39,7 +39,7 @@ type Store struct {
 }
 
 // GetSecret is a part of Store interface.
-func (t *Store) GetSecret(k string) (secrets.Secret, error) {
+func (t *Store) GetSecret(ctx context.Context, k string) (secrets.Secret, error) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -69,9 +69,4 @@ func (t *Store) GetSecret(k string) (secrets.Secret, error) {
 	}
 	t.Secrets[k] = secrets.Secret{Current: secret}
 	return t.Secrets[k], nil
-}
-
-// Use installs default testing store into the context.
-func Use(c context.Context) context.Context {
-	return secrets.Set(c, &Store{})
 }

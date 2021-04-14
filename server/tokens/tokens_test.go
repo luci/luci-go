@@ -40,7 +40,7 @@ func Example() {
 
 	ctx := context.Background()
 	ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
-	ctx = secrets.Set(ctx, &testsecrets.Store{})
+	ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 	// Make a token.
 	token, err := kind.Generate(ctx, []byte("state"), map[string]string{"k": "v"}, 0)
@@ -200,6 +200,6 @@ func TestValidate(t *testing.T) {
 func testContext() context.Context {
 	ctx := context.Background()
 	ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
-	ctx = secrets.Set(ctx, &testsecrets.Store{})
+	ctx = secrets.Use(ctx, &testsecrets.Store{})
 	return ctx
 }

@@ -1984,7 +1984,7 @@ func (s *Server) initAdminPort() error {
 	}
 	store := secrets.NewDerivedStore(secrets.Secret{Current: secret})
 	withAdminSecret := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-		c.Context = secrets.Set(c.Context, store)
+		c.Context = secrets.Use(c.Context, store)
 		next(c)
 	})
 

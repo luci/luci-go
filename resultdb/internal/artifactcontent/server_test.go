@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
@@ -49,7 +50,7 @@ func TestGenerateSignedURL(t *testing.T) {
 		ctx := testutil.TestingContext()
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		ctx = testsecrets.Use(ctx)
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
 		ctx = authtest.MockAuthConfig(ctx)
 
 		s := &Server{
@@ -84,7 +85,7 @@ func TestServeContent(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		ctx = testsecrets.Use(ctx)
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
 		ctx = authtest.MockAuthConfig(ctx)
 
 		casReader := &artifactcontenttest.FakeCASReader{
