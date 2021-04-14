@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c28131c8_842a2814",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 414,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-14T11:48:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66e8197a_dd612420",
+      "range": {
+        "startLine": 414,
+        "startChar": 73,
+        "endLine": 414,
+        "endChar": 100
+      },
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "97d07693_a3eb4d7f",
@@ -41,6 +65,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "919f2a94_170a186b",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 415,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-14T11:48:11Z",
+      "side": 1,
+      "message": "Added TODO since config validation isn\u0027t going to be done soon.",
+      "parentUuid": "97d07693_a3eb4d7f",
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5aed01e3_d436db41",
@@ -54,6 +96,24 @@
       "writtenOn": "2021-04-13T21:51:11Z",
       "side": 1,
       "message": "is there a reason why this uses strpair.Parse while L415 uses strpair.ParseMap?\n\nFWIW I think strpair.Parse is better because we don\u0027t really need hashmap",
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bea1e5f8_83ba475e",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-14T11:48:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5aed01e3_d436db41",
       "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -81,6 +141,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8496e43a_2523fcc6",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-14T11:48:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f44baf2_a64c0536",
+      "range": {
+        "startLine": 459,
+        "startChar": 0,
+        "endLine": 466,
+        "endChar": 2
+      },
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0614acb6_b8557436",
@@ -94,6 +178,24 @@
       "writtenOn": "2021-04-13T21:51:11Z",
       "side": 1,
       "message": "now that it is not conditional, maybe do it in L623?",
+      "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a8c2fe4_bd4e56d5",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 637,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-14T11:48:11Z",
+      "side": 1,
+      "message": "I\u0027ll do it when Infra is done so the order doesn\u0027t have to be switched (not that it matters, but I ordered the entity names alphabetically).",
+      "parentUuid": "0614acb6_b8557436",
       "revId": "b992786a727b2f87c53474fe74f53432ef1f6d76",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
