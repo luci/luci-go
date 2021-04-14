@@ -16,6 +16,40 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/artifact/raw/invocations/task-chromium-swarm-dev.appspot.com-52df700e2b07f611/tests/ninja:%2F%2Fchrome%2Ftest:browser_tests%2FSearchPrefetchServiceEnabledBrowserTest.OmniboxEditTriggersPrefetch%2FAll.1/results/0f581329-01602/artifacts/stack_trace",
       "revId": "2fc3f3aa9d94128232361d7f864aa2cb2084454f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b615591d_c117c237",
+        "filename": "milo/frontend/resultui/src/pages/artifact/artifact_page_layout.ts",
+        "patchSetId": 13
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-14T16:30:50Z",
+      "side": 1,
+      "message": "remove?",
+      "revId": "2fc3f3aa9d94128232361d7f864aa2cb2084454f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d4c67ab6_52432f5b",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 13
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-14T16:30:50Z",
+      "side": 1,
+      "message": "is this because of that ignored group? \nmaybe use non-capturing group instead?\nhttps://www.regular-expressions.info/brackets.html\n\n  ...(:?\\/tests/...",
+      "revId": "2fc3f3aa9d94128232361d7f864aa2cb2084454f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
