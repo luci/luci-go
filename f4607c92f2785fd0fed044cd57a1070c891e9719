@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c761a8d3_93683f2a",
+        "filename": "led/ledcmd/edit_recipe_bundle.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-14T22:26:16Z",
+      "side": 1,
+      "message": "nit: strings.Join(cmd.Args, \" \")\n\nI feel like `running \"recipes.py bundle\": ...` is more readable than `running [\"recipes.py\" \"bundle\"]`",
+      "range": {
+        "startLine": 144,
+        "startChar": 51,
+        "endLine": 144,
+        "endChar": 59
+      },
+      "revId": "f4607c92f2785fd0fed044cd57a1070c891e9719",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
