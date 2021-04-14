@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cvtesting reduces boilerplate in tests.
 package cvtesting
 
 import (
@@ -101,19 +100,7 @@ type Test struct {
 }
 
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
-	// Set defaults.
-	if t.MaxDuration == time.Duration(0) {
-		t.MaxDuration = 10 * time.Second
-	}
-	// Can't use Go's test timeout because it is per TestXYZ func,
-	// which typically instantiates & runs several `cvtesting.Test`s.
-	if s := os.Getenv("CV_TEST_TIMEOUT_SEC"); s != "" {
-		v, err := strconv.ParseInt(s, 10, 31)
-		if err != nil {
-			panic(err)
-		}
-		t.MaxDuration = time.Duration(v) * time.Second
-	}
+	t.setMaxDuration()
 
 	ctx = context.Background()
 	// TODO(tandrii): make this logger emit testclock-based timestamps.
@@ -188,6 +175,26 @@ func (t *Test) DisableCVRunManagement(ctx context.Context) {
 		UseCvRuns: &migrationpb.Settings_UseCVRuns{},
 	}
 	So(servicecfg.SetTestMigrationConfig(ctx, t.migrationSettings), ShouldBeNil)
+}
+
+func (t *Test) setMaxDuration() {
+	// Can't use Go's test timeout because it is per TestXYZ func,
+	// which typically instantiates & runs several `cvtesting.Test`s.
+	switch s := os.Getenv("CV_TEST_TIMEOUT_SEC"); {
+	case s != "":
+		v, err := strconv.ParseInt(s, 10, 31)
+		if err != nil {
+			panic(err)
+		}
+		t.MaxDuration = time.Duration(v) * time.Second
+	case t.MaxDuration != time.Duration(0):
+		// TODO(tandrii): remove the possibility to override this per test in favor
+		// of CV_TEST_TIMEOUT_SEC env var.
+	case raceDetectionEnabled:
+		t.MaxDuration = 60 * time.Second
+	default:
+		t.MaxDuration = 10 * time.Second
+	}
 }
 
 func (t *Test) installDS(ctx context.Context) context.Context {
