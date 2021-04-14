@@ -402,10 +402,13 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 				logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
 					len(toUpload), len(uploaded), bytes, time.Since(start))
 
-				atomic.AddInt64(&uploadEntryCount, int64(len(uploaded)))
-				for _, dg := range uploaded {
-					atomic.AddInt64(&uploadEntrySize, dg.Size)
+				uploadSizeSum := int64(0)
+				for _, d := range uploaded {
+					uploadSizeSum += d.Size
 				}
+				atomic.AddInt64(&uploadEntryCount, int64(len(uploaded)))
+				atomic.AddInt64(&uploadEntrySize, uploadSizeSum)
+				atomic.AddInt64(&uploadedBytes, bytes)
 				return nil
 			})
 		}
@@ -435,15 +438,14 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 		return rootDgs, nil
 	}
 
+	m := make(map[string]string, len(opts))
+	for i, o := range opts {
+		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
+	}
 	f, err := os.Create(dumpJSON)
 	if err != nil {
 		return rootDgs, err
 	}
 	defer f.Close()
-
-	m := make(map[string]string, len(opts))
-	for i, o := range opts {
-		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
-	}
 	return rootDgs, json.NewEncoder(f).Encode(m)
 }
