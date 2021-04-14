@@ -26,7 +26,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -369,42 +369,46 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 		})
 	}
 
-	var mu sync.Mutex
-	var uploadedDgs []digest.Digest
+	var entryCount int
+	var entrySize int64
+	var uploadEntryCount int64
+	var uploadEntrySize int64
 	var uploadedBytes int64
 
-	var entries []*uploadinfo.Entry
 	uploadEg, uctx := errgroup.WithContext(ctx)
 
 	done := make(chan struct{})
 	go func() {
 		uploaded := make(map[digest.Digest]struct{})
 		for entrs := range entriesC {
-			var uploadEntries []*uploadinfo.Entry
-
+			entryCount += len(entrs)
+			toUpload := make([]*uploadinfo.Entry, 0, len(entrs))
 			for _, e := range entrs {
+				entrySize += e.Digest.Size
 				if _, ok := uploaded[e.Digest]; ok {
 					continue
 				}
 				uploaded[e.Digest] = struct{}{}
-				uploadEntries = append(uploadEntries, e)
+				toUpload = append(toUpload, e)
 			}
-			entries = append(entries, entrs...)
 
 			uploadEg.Go(func() error {
 				start := time.Now()
-				dgs, bytes, err := cl.UploadIfMissing(uctx, uploadEntries...)
+				uploaded, bytes, err := cl.UploadIfMissing(uctx, toUpload...)
 				if err != nil {
 					return errors.Annotate(err, "failed to upload").Err()
 				}
 
 				logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
-					len(uploadEntries), len(dgs), bytes, time.Since(start))
+					len(toUpload), len(uploaded), bytes, time.Since(start))
 
-				mu.Lock()
-				uploadedDgs = append(uploadedDgs, dgs...)
-				uploadedBytes += bytes
-				mu.Unlock()
+				uploadSizeSum := int64(0)
+				for _, d := range uploaded {
+					uploadSizeSum += d.Size
+				}
+				atomic.AddInt64(&uploadEntryCount, int64(len(uploaded)))
+				atomic.AddInt64(&uploadEntrySize, uploadSizeSum)
+				atomic.AddInt64(&uploadedBytes, bytes)
 				return nil
 			})
 		}
@@ -424,21 +428,10 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 	}
 
 	logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
-		len(entries), len(uploadedDgs), uploadedBytes, time.Since(start))
+		entryCount, uploadEntryCount, uploadedBytes, time.Since(start))
 
 	if al != nil {
-		missing := len(uploadedDgs)
-		hits := len(entries) - missing
-		bytesPushed := int64(0)
-		bytesTotal := int64(0)
-		for _, e := range entries {
-			bytesTotal += e.Digest.Size
-		}
-		for _, dg := range uploadedDgs {
-			bytesPushed += dg.Size
-		}
-
-		al.LogSummary(ctx, hits, missing, units.Size(bytesTotal-bytesPushed), units.Size(bytesPushed))
+		al.LogSummary(ctx, entryCount-int(uploadEntryCount), int(uploadEntryCount), units.Size(entrySize-uploadEntrySize), units.Size(uploadEntrySize))
 	}
 
 	if dumpJSON == "" {
@@ -451,7 +444,7 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 	}
 	defer f.Close()
 
-	m := make(map[string]string)
+	m := make(map[string]string, len(opts))
 	for i, o := range opts {
 		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
 	}
