@@ -16,6 +16,24 @@
       "message": "i suspect you meant to publish it, so I reviewed it.",
       "revId": "e2c3bce439d2c48dfa098b252e317b214e3dc193",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e6c1ede_ac140dd6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-14T19:22:54Z",
+      "side": 1,
+      "message": "Thanks! :)",
+      "parentUuid": "558357c1_00a80522",
+      "revId": "e2c3bce439d2c48dfa098b252e317b214e3dc193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
