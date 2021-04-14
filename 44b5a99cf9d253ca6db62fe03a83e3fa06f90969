@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "46912f63_4e32a319",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-14T03:04:31Z",
+      "side": 1,
+      "message": "Yes, I verified this creates\n`work/.task_template_packages/` which contains the packages",
+      "parentUuid": "08bbca54_82d13166",
+      "revId": "44b5a99cf9d253ca6db62fe03a83e3fa06f90969",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9afeb028_cb5b863a",
@@ -31,6 +49,24 @@
       "writtenOn": "2021-04-14T02:17:01Z",
       "side": 1,
       "message": "Is this for testing? If so, please add comment.",
+      "revId": "44b5a99cf9d253ca6db62fe03a83e3fa06f90969",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "edeb81e8_01df303b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-14T03:04:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9afeb028_cb5b863a",
       "revId": "44b5a99cf9d253ca6db62fe03a83e3fa06f90969",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -60,6 +96,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2d07a669_5b2f433b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-14T03:04:31Z",
+      "side": 1,
+      "message": "I borrowed from:\nhttps://source.chromium.org/chromium/chromium/src/+/master:tools/swarming_client/swarming.py;l\u003d1856?q\u003df:swarming.py\u0026ss\u003dchromium",
+      "parentUuid": "7c4d8157_2403284f",
+      "range": {
+        "startLine": 182,
+        "startChar": 3,
+        "endLine": 184,
+        "endChar": 4
+      },
+      "revId": "44b5a99cf9d253ca6db62fe03a83e3fa06f90969",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "99c20653_ba938ebd",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 1
@@ -71,6 +131,30 @@
       "writtenOn": "2021-04-14T02:27:43Z",
       "side": 1,
       "message": "this doesn\u0027t fetch CIPD client?",
+      "range": {
+        "startLine": 204,
+        "startChar": 4,
+        "endLine": 204,
+        "endChar": 21
+      },
+      "revId": "44b5a99cf9d253ca6db62fe03a83e3fa06f90969",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd20319e_cc81bc15",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-14T03:04:31Z",
+      "side": 1,
+      "message": "\"Create CIPD client.\"?",
+      "parentUuid": "99c20653_ba938ebd",
       "range": {
         "startLine": 204,
         "startChar": 4,
