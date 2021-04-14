@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b6b1e4b_915fa5c6",
+        "filename": "cv/internal/cvtesting/race.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-14T23:27:45Z",
+      "side": 1,
+      "message": "TIL",
+      "revId": "fcc822b6ea7c8c10e6a0b938ee9f54f273954e29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
