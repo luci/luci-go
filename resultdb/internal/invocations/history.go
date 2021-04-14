@@ -155,8 +155,10 @@ var queryTmpl = template.Must(template.New("").Parse(`
 	{{end}}
 	{{if .MatchVariant}}
 		AND (
-			TestResultVariantUnion IS NULL OR
-			(SELECT LOGICAL_AND(kv IN UNNEST(TestResultVariantUnion)) FROM UNNEST(@variant) kv)
+			-- The invocation is created before we start to populate TestResultVariantUnion.
+			-- TODO(crbug.com/1107678): remove this condition after 2021-06-14.
+			(i.TestResultVariantUnion IS NULL AND i.CreateTime < TIMESTAMP(DATE "2021-04-14")) OR
+			(SELECT LOGICAL_AND(kv IN UNNEST(i.TestResultVariantUnion)) FROM UNNEST(@variant) kv)
 		)
 	{{end}}
 	ORDER BY i.HistoryTime DESC
