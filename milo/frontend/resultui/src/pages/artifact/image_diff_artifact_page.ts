@@ -13,17 +13,18 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
+import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
 
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
-import './artifact_page_layout';
+import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state';
+import { consumeContext } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
-import { constructArtifactName, parseArtifactName } from '../../services/resultdb';
+import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
 /**
@@ -33,26 +34,24 @@ import commonStyle from '../../styles/common_style.css';
 // TODO(weiweilin): improve error handling.
 @customElement('milo-image-diff-artifact-page')
 @consumeAppState
-export class ImageDiffArtifactPage extends MobxLitElement {
+@consumeContext('artifactIdent')
+export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
-  @observable.ref diffArtifactName!: string;
 
+  @observable.ref artifactIdent!: ArtifactIdentifier;
+
+  @computed private get diffArtifactName() {
+    return constructArtifactName({ ...this.artifactIdent });
+  }
   @computed private get expectedArtifactName() {
-    return constructArtifactName({ ...this.diffArtifactIdent, artifactId: this.expectedArtifactId });
+    return constructArtifactName({ ...this.artifactIdent, artifactId: this.expectedArtifactId });
   }
   @computed private get actualArtifactName() {
-    return constructArtifactName({ ...this.diffArtifactIdent, artifactId: this.actualArtifactId });
+    return constructArtifactName({ ...this.artifactIdent, artifactId: this.actualArtifactId });
   }
 
-  @computed private get diffArtifactId() {
-    return this.diffArtifactIdent.artifactId;
-  }
   @observable.ref private expectedArtifactId!: string;
   @observable.ref private actualArtifactId!: string;
-
-  @computed private get diffArtifactIdent() {
-    return parseArtifactName(this.diffArtifactName);
-  }
 
   @computed
   private get diffArtifact$() {
@@ -92,38 +91,31 @@ export class ImageDiffArtifactPage extends MobxLitElement {
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
-    const diffArtifactName = location.params['artifact_name'];
     const search = new URLSearchParams(location.search);
     const expectedArtifactId = search.get('expected_artifact_id');
     const actualArtifactId = search.get('actual_artifact_id');
-    if (typeof diffArtifactName !== 'string' || !expectedArtifactId || !actualArtifactId) {
+
+    if (!expectedArtifactId || !actualArtifactId) {
       return cmd.redirect(NOT_FOUND_URL);
     }
 
     this.expectedArtifactId = expectedArtifactId;
     this.actualArtifactId = actualArtifactId;
-    this.diffArtifactName = diffArtifactName;
     return;
   }
 
   protected render() {
+    if (this.isLoading) {
+      return html`<div id="loading-spinner" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
+    }
+
     return html`
-      <milo-artifact-page-layout
-        .ident=${this.diffArtifactIdent}
-        .artifactIds=${[this.expectedArtifactId, this.actualArtifactId, this.diffArtifactId]}
-        .isLoading=${this.isLoading}
+      <milo-image-diff-viewer
+        .expected=${this.expectedArtifact}
+        .actual=${this.actualArtifact}
+        .diff=${this.diffArtifact}
       >
-        ${this.isLoading
-          ? ''
-          : html`
-              <milo-image-diff-viewer
-                .expected=${this.expectedArtifact}
-                .actual=${this.actualArtifact}
-                .diff=${this.diffArtifact}
-              >
-              </milo-image-diff-viewer>
-            `}
-      </milo-artifact-page-layout>
+      </milo-image-diff-viewer>
     `;
   }
 
@@ -132,6 +124,10 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     css`
       :host {
         display: block;
+      }
+
+      #loading-spinner {
+        margin: 20px;
       }
     `,
   ];
