@@ -528,9 +528,7 @@ func (a *Archiver) stage1DedupeLoop(in <-chan *PendingItem, out chan<- *PendingI
 // stage2HashLoop hashes individual files.
 func (a *Archiver) stage2HashLoop(in <-chan *PendingItem, out chan<- *PendingItem, parallelism int) {
 	pool := common.NewGoroutinePriorityPool(a.ctx, parallelism)
-	defer func() {
-		_ = pool.Wait()
-	}()
+	defer pool.Wait()
 	for file := range in {
 		// This loop will implicitly buffer when stage1 is too fast by creating a
 		// lot of hung goroutines in pool. This permits reducing the contention on
@@ -565,9 +563,7 @@ func (a *Archiver) stage2HashLoop(in <-chan *PendingItem, out chan<- *PendingIte
 // It is the first stage where the client contacts the server.
 func (a *Archiver) stage3LookupLoop(in <-chan *PendingItem, out chan<- *PendingItem, parallelism int, batchingDelay time.Duration, batchSize int) {
 	pool := common.NewGoroutinePool(a.ctx, parallelism)
-	defer func() {
-		_ = pool.Wait()
-	}()
+	defer pool.Wait()
 	items := []*PendingItem{}
 	never := make(<-chan time.Time)
 	timer := never
@@ -606,9 +602,7 @@ func (a *Archiver) stage3LookupLoop(in <-chan *PendingItem, out chan<- *PendingI
 // stage4UploadLoop uploads the cache misses.
 func (a *Archiver) stage4UploadLoop(in <-chan *PendingItem, parallelism int) {
 	pool := common.NewGoroutinePriorityPool(a.ctx, parallelism)
-	defer func() {
-		_ = pool.Wait()
-	}()
+	defer pool.Wait()
 	for state := range in {
 		item := state
 		pool.Schedule(item.priority, func() { a.doUpload(item) }, nil)
