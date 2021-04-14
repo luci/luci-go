@@ -18,13 +18,16 @@ import (
 	"context"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestArtifactChannel(t *testing.T) {
 	t.Parallel()
+	name := "invocations/inv/artifacts/art1" // artifact name
 
 	Convey("schedule", t, func() {
 		ctx := context.Background()
@@ -36,10 +39,12 @@ func TestArtifactChannel(t *testing.T) {
 				return &http.Response{StatusCode: http.StatusNoContent}, nil
 			},
 		)
-		ac := newArtifactChannel(ctx, &cfg)
 
-		name := "invocations/inv/artifacts/art1"
-		ac.schedule(&uploadTask{name, testArtifactWithContents([]byte("content"))})
+		task, err := newUploadTask(name, testArtifactWithContents([]byte("content")))
+		So(err, ShouldBeNil)
+
+		ac := newArtifactChannel(ctx, &cfg)
+		ac.schedule(task)
 		ac.closeAndDrain(ctx)
 		req := <-reqCh
 		So(req, ShouldNotBeNil)
@@ -49,5 +54,25 @@ func TestArtifactChannel(t *testing.T) {
 		body, err := ioutil.ReadAll(req.Body)
 		So(err, ShouldBeNil)
 		So(body, ShouldResemble, []byte("content"))
+	})
+
+	Convey("newUploadTask", t, func() {
+		fArt := testArtifactWithFile(func(f *os.File) {
+			_, err := f.Write([]byte("content"))
+			So(err, ShouldBeNil)
+		})
+		fArt.ContentType = "plain/text"
+		defer os.Remove(fArt.GetFilePath())
+
+		Convey("works", func() {
+			_, err := newUploadTask(name, fArt)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("fails", func() {
+			So(os.Remove(fArt.GetFilePath()), ShouldBeNil)
+			_, err := newUploadTask(name, fArt)
+			So(err, ShouldErrLike, "stat "+fArt.GetFilePath()) // stat error
+		})
 	})
 }

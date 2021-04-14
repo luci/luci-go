@@ -55,7 +55,7 @@ func (u *ArtifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 	}
 
 	req, err := http.NewRequestWithContext(
-		ctx, "PUT", fmt.Sprintf("https://%s/%s", u.Host, t.artName), body)
+		ctx, "PUT", fmt.Sprintf("https://%s/%s", u.Host, t.name), body)
 	if err != nil {
 		return errors.Annotate(err, "newHTTPRequest").Err()
 	}

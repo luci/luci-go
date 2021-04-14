@@ -17,6 +17,7 @@ package sink
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -61,8 +62,26 @@ type artifactChannel struct {
 }
 
 type uploadTask struct {
-	artName string
-	art     *sinkpb.Artifact
+	art  *sinkpb.Artifact
+	name string // artifact name
+	size int64  // artifact content size
+}
+
+func newUploadTask(n string, a *sinkpb.Artifact) (*uploadTask, error) {
+	s := int64(len(a.GetContents()))
+	fp := a.GetFilePath()
+	if fp != "" {
+		st, err := os.Stat(fp)
+		if err != nil {
+			return nil, errors.Annotate(err, "newUploadTask").Err()
+		}
+		s = st.Size()
+	}
+	return &uploadTask{
+		art:  a,
+		name: n,
+		size: s,
+	}, nil
 }
 
 func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
