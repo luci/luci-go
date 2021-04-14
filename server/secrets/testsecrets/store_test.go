@@ -30,14 +30,14 @@ func TestStore(t *testing.T) {
 		store := Store{}
 
 		// Autogenerate one.
-		s1, err := store.GetSecret(ctx, "key1")
+		s1, err := store.RandomSecret(ctx, "key1")
 		So(err, ShouldBeNil)
 		So(s1, ShouldResemble, secrets.Secret{
 			Current: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
 		})
 
 		// Getting same one back.
-		s2, err := store.GetSecret(ctx, "key1")
+		s2, err := store.RandomSecret(ctx, "key1")
 		So(err, ShouldBeNil)
 		So(s2, ShouldResemble, secrets.Secret{
 			Current: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
@@ -46,7 +46,7 @@ func TestStore(t *testing.T) {
 
 	Convey("Autogeneration disabled", t, func() {
 		store := Store{NoAutogenerate: true}
-		_, err := store.GetSecret(ctx, "key1")
+		_, err := store.RandomSecret(ctx, "key1")
 		So(err, ShouldEqual, secrets.ErrNoSuchSecret)
 	})
 }
