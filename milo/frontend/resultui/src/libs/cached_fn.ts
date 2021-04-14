@@ -70,8 +70,10 @@ export function cached<T extends unknown[], V>(
     let updatedCache = false;
 
     if ((opt.acceptCache ?? true) && cache.has(key)) {
+      console.log('cache hit', key);
       value = cache.get(key)![0];
     } else {
+      console.log('cache miss', key);
       value = fn(...params);
       if (!opt.skipUpdate) {
         // Wraps in [] to create a unique reference.
