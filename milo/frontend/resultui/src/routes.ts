@@ -16,7 +16,7 @@ import { Router } from '@vaadin/router';
 
 import './components/page_layout';
 
-export const NOT_FOUND_URL = '/ui/not-found';
+export const NOT_FOUND_URL = '/not-found';
 
 const appRoot = document.getElementById('app-root');
 export const router = new Router(appRoot, { baseUrl: '/ui/' });
@@ -177,36 +177,43 @@ router.setRoutes({
     },
     {
       path: '/artifact',
+      action: async (_ctx, cmd) => {
+        await import(
+          /* webpackChunkName: "artifact_page" */
+          './pages/artifact_page'
+        );
+        return cmd.component('milo-artifact-page');
+      },
       children: [
         {
-          path: '/text-diff/:artifact_name',
+          path: '/text-diff/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
           name: 'text-diff-artifact',
           action: async (_ctx, cmd) => {
             await import(
               /* webpackChunkName: "text_diff_artifact_page" */
-              './pages/artifact/text_diff_artifact_page'
+              './pages/artifact_page/text_diff_artifact_page'
             );
             return cmd.component('milo-text-diff-artifact-page');
           },
         },
         {
-          path: '/image-diff/:artifact_name',
+          path: '/image-diff/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
           name: 'image-diff-artifact',
           action: async (_ctx, cmd) => {
             await import(
               /* webpackChunkName: "image_diff_artifact_page" */
-              './pages/artifact/image_diff_artifact_page'
+              './pages/artifact_page/image_diff_artifact_page'
             );
             return cmd.component('milo-image-diff-artifact-page');
           },
         },
         {
-          path: '/raw/:artifact_name',
+          path: '/raw/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
           name: 'raw-artifact',
           action: async (_ctx, cmd) => {
             await import(
               /* webpackChunkName: "raw_artifact_page" */
-              './pages/artifact/raw_artifact_page'
+              './pages/artifact_page/raw_artifact_page'
             );
             return cmd.component('milo-raw-artifact-page');
           },
