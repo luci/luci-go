@@ -27,6 +27,7 @@ import (
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -67,6 +68,11 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 	Convey(`Make sure we can create the correct Cmd from a fetched task's properties.`, t, func() {
 		c := reproduceRun{}
 		c.init(&testAuthFlags{})
+		var cipdSlicesByPath map[string]ensure.PackageSlice
+		c.cipdDownloader = func(ctx context.Context, workdir string, slicesByPath map[string]ensure.PackageSlice) error {
+			cipdSlicesByPath = slicesByPath
+			return nil
+		}
 		// Use TempDir, which creates a temp directory, to return a unique directory name
 		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
@@ -128,6 +134,25 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 								CasInputRoot: &swarming.SwarmingRpcsCASReference{
 									CasInstance: "CAS-instance",
 								},
+								CipdInput: &swarming.SwarmingRpcsCipdInput{
+									Packages: []*swarming.SwarmingRpcsCipdPackage{
+										&swarming.SwarmingRpcsCipdPackage{
+											PackageName: "infra/tools/luci-auth/${platform}",
+											Path:        ".task_template_packages",
+											Version:     "git_revision:41a7e9bcbf18718dcda83dd5c6188cfc44271e70",
+										},
+										&swarming.SwarmingRpcsCipdPackage{
+											PackageName: "infra/tools/luci/logdog/butler/${platform}",
+											Path:        ".",
+											Version:     "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
+										},
+										&swarming.SwarmingRpcsCipdPackage{
+											PackageName: "infra/tools/luci/logchicken/${platform}",
+											Path:        "",
+											Version:     "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867d",
+										},
+									},
+								},
 							},
 						},
 					},
@@ -159,6 +184,24 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		So(cmd, ShouldResemble, expected)
 
 		So(fetchedCASFiles, ShouldBeTrue)
+
+		So(cipdSlicesByPath, ShouldResemble, map[string]ensure.PackageSlice{
+			"": ensure.PackageSlice{
+				ensure.PackageDef{
+					PackageTemplate:   "infra/tools/luci/logdog/butler/${platform}",
+					UnresolvedVersion: "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
+				},
+				ensure.PackageDef{
+					PackageTemplate:   "infra/tools/luci/logchicken/${platform}",
+					UnresolvedVersion: "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867d",
+				},
+			},
+			".task_template_packages": ensure.PackageSlice{
+				ensure.PackageDef{
+					PackageTemplate:   "infra/tools/luci-auth/${platform}",
+					UnresolvedVersion: "git_revision:41a7e9bcbf18718dcda83dd5c6188cfc44271e70",
+				}},
+		})
 	})
 }
 
