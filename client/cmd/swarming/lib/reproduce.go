@@ -23,9 +23,13 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 // CmdReproduce returns an object fo the `reproduce` subcommand.
@@ -45,12 +49,15 @@ func CmdReproduce(authFlags AuthFlags) *subcommands.Command {
 type reproduceRun struct {
 	commonFlags
 	work string
+	// cipdDownloader is used in testing to insert a mock CIPD downloader.
+	cipdDownloader func(context.Context, string, map[string]ensure.PackageSlice) error
 }
 
 func (c *reproduceRun) init(authFlags AuthFlags) {
 	c.commonFlags.Init(authFlags)
 
 	c.Flags.StringVar(&c.work, "work", "work", "Directory to map the task input files into and execute the task.")
+	c.cipdDownloader = downloadCIPDPackages
 	// TODO(crbug.com/1188473): support cache and output directories.
 }
 
@@ -86,7 +93,6 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 		return err
 	}
 
-	// TODO(crbug.com/1188473): Create a pass an rbeclient.Client
 	cmd, err := c.prepareTaskRequestEnvironment(ctx, args[0], service)
 	if err != nil {
 		return errors.Annotate(err, "failed to create command from task request").Err()
@@ -153,7 +159,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 	// Support isolated input in task request.
 	if properties.InputsRef != nil {
 		if _, err := service.GetFilesFromIsolate(ctx, workdir, properties.InputsRef); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch files fromm isolate").Err()
+			return nil, errors.Annotate(err, "failed to fetch files from isolate").Err()
 		}
 	}
 
@@ -168,12 +174,60 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 		}
 	}
 
-	// TODO(crbug.com/1188473): Support CIPD package download in task request
+	// Support CIPD package download in task request.
+	if properties.CipdInput != nil {
+		packages := properties.CipdInput.Packages
+		slicesByPath := map[string]ensure.PackageSlice{}
+		for _, pkg := range packages {
+			path := pkg.Path
+			// CIPD deals with 'root' as ''.
+			if path == "." {
+				path = ""
+			}
+			if _, ok := slicesByPath[path]; !ok {
+				slicesByPath[path] = make(ensure.PackageSlice, 0, len(packages))
+			}
+			slicesByPath[path] = append(
+				slicesByPath[path], ensure.PackageDef{UnresolvedVersion: pkg.Version, PackageTemplate: pkg.PackageName})
+		}
+
+		if err := c.cipdDownloader(ctx, workdir, slicesByPath); err != nil {
+			return nil, err
+		}
+	}
 
 	cmd := exec.CommandContext(ctx, properties.Command[0], properties.Command[1:]...)
 	cmd.Env = cmdEnvMap.Sorted()
 	cmd.Dir = workdir
 	return cmd, nil
+}
+
+func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[string]ensure.PackageSlice) error {
+	// Create CIPD client.
+	opts := cipd.ClientOptions{
+		Root:       workdir,
+		ServiceURL: chromeinfra.CIPDServiceURL,
+	}
+	client, err := cipd.NewClient(opts)
+	if err != nil {
+		return errors.Annotate(err, "failed to create CIPD client").Err()
+	}
+	defer client.Close(ctx)
+
+	// Resolve versions.
+	resolver := cipd.Resolver{Client: client}
+	resolved, err := resolver.Resolve(
+		ctx, &ensure.File{ServiceURL: chromeinfra.CIPDServiceURL, PackagesBySubdir: slicesByPath}, template.DefaultExpander())
+	if err != nil {
+		return errors.Annotate(err, "failed to resolve CIPD package versions").Err()
+	}
+
+	// Download packages.
+	if _, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, 1, false); err != nil {
+		return errors.Annotate(err, "failed to install or update CIPD packages").Err()
+	}
+	return nil
+
 }
 
 func prepareDir(dir string) error {
