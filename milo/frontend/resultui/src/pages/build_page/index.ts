@@ -42,7 +42,7 @@ import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { genFeedbackUrl } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
-import { BuilderID, BuildStatus } from '../../services/buildbucket';
+import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -225,8 +225,8 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           this.invocationState = new InvocationState(appState);
           this.invocationState.invocationId = this.buildState.invocationId;
           this.invocationState.presentationConfig =
-            this.buildState.build?.output.properties.test_presentation_config ||
-            this.buildState.build?.input.properties.test_presentation_config ||
+            this.buildState.build?.output.properties[TEST_PRESENTATION_KEY] ||
+            this.buildState.build?.input.properties[TEST_PRESENTATION_KEY] ||
             {};
 
           // Emulate @property() update.
@@ -248,8 +248,8 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     this.addDisposer(
       reaction(
         () =>
-          this.buildState.build?.output.properties.test_presentation_config ||
-          this.buildState.build?.input.properties.test_presentation_config ||
+          this.buildState.build?.output.properties[TEST_PRESENTATION_KEY] ||
+          this.buildState.build?.input.properties[TEST_PRESENTATION_KEY] ||
           {},
         (config) => (this.invocationState.presentationConfig = config),
         { fireImmediately: true }

@@ -50,7 +50,7 @@ export class InvocationState {
   @observable.ref presentationConfig: TestPresentationConfig = {};
   @observable.ref columnsParam?: string[];
   @computed({ equals: comparer.shallow }) get defaultColumns() {
-    return this.presentationConfig.columns || ['v.test_suite'];
+    return this.presentationConfig.column_keys || ['v.test_suite'];
   }
   @computed({ equals: comparer.shallow }) get displayedColumns() {
     return this.columnsParam || this.defaultColumns;
@@ -77,7 +77,7 @@ export class InvocationState {
 
   @observable.ref groupingKeysParam?: string[];
   @computed({ equals: comparer.shallow }) get defaultGroupingKeys() {
-    return this.presentationConfig.groupingKeys || ['status'];
+    return this.presentationConfig.grouping_keys || ['status'];
   }
   @computed({ equals: comparer.shallow }) get groupingKeys() {
     return this.groupingKeysParam || this.defaultGroupingKeys;
