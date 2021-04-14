@@ -26,7 +26,7 @@ import (
 func TestStore(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("Autogeneration enabled", t, func() {
+	Convey("RandomSecret", t, func() {
 		store := Store{}
 
 		// Autogenerate one.
@@ -44,9 +44,18 @@ func TestStore(t *testing.T) {
 		})
 	})
 
-	Convey("Autogeneration disabled", t, func() {
-		store := Store{NoAutogenerate: true}
-		_, err := store.RandomSecret(ctx, "key1")
+	Convey("StoredSecret", t, func() {
+		store := Store{
+			Secrets: map[string]secrets.Secret{
+				"key1": {Current: []byte("blah")},
+			},
+		}
+
+		s, err := store.StoredSecret(ctx, "key1")
+		So(err, ShouldBeNil)
+		So(s, ShouldResemble, secrets.Secret{Current: []byte("blah")})
+
+		_, err = store.StoredSecret(ctx, "key2")
 		So(err, ShouldEqual, secrets.ErrNoSuchSecret)
 	})
 }
