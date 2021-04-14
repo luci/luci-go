@@ -13,18 +13,18 @@
 // limitations under the License.
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
-import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
+import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { autorun, computed, observable } from 'mobx';
 import { fromPromise, PENDING, REJECTED } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
-import './artifact_page_layout';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { NOT_FOUND_URL, router } from '../../routes';
-import { parseArtifactName } from '../../services/resultdb';
+import { consumeContext } from '../../libs/context';
+import { router } from '../../routes';
+import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
 /**
@@ -33,20 +33,17 @@ import commonStyle from '../../styles/common_style.css';
 // TODO(weiweilin): improve error handling.
 @customElement('milo-raw-artifact-page')
 @consumeAppState
-export class RawArtifactPageElement extends MiloBaseElement implements BeforeEnterObserver {
+@consumeContext('artifactIdent')
+export class RawArtifactPageElement extends MiloBaseElement {
   @observable.ref appState!: AppState;
-  @observable.ref private artifactName!: string;
-
-  @computed private get artifactIdent() {
-    return parseArtifactName(this.artifactName);
-  }
+  @observable.ref artifactIdent!: ArtifactIdentifier;
 
   @computed
   private get artifact$() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({ name: this.artifactName }));
+    return fromPromise(this.appState.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
 
   connectedCallback() {
@@ -81,15 +78,6 @@ export class RawArtifactPageElement extends MiloBaseElement implements BeforeEnt
         window.open(this.artifact$.value.fetchUrl, '_self');
       })
     );
-  }
-
-  onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
-    const artifactName = location.params['artifact_name'];
-    if (typeof artifactName !== 'string') {
-      return cmd.redirect(NOT_FOUND_URL);
-    }
-    this.artifactName = artifactName;
-    return;
   }
 
   protected render() {
