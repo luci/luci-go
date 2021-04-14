@@ -497,17 +497,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
               </select>
             </td>
           </tr>
-          <tr>
-            <td>New test results tab:</td>
-            <td style="padding-left: 5px;">
-              <input
-                type="checkbox"
-                ?checked=${this.uncommittedConfigs.testResults.newLayout}
-                @change=${() =>
-                  (this.uncommittedConfigs.testResults.newLayout = !this.uncommittedConfigs.testResults.newLayout)}
-              />
-            </td>
-          </tr>
           <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
           <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
         </table>

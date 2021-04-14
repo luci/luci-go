@@ -29,7 +29,6 @@ export interface UserConfigs {
     };
   };
   testResults: {
-    newLayout: boolean;
     columnWidths: {
       // the key is the property key.
       // the value is the width in px.
@@ -57,7 +56,6 @@ export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
     stepPinTime: Object.freeze({}),
   }),
   testResults: {
-    newLayout: false,
     columnWidths: {
       'v.test_suite': 350,
     },
