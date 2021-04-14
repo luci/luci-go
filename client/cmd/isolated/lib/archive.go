@@ -24,7 +24,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/pipeline"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/errors"
 	isol "go.chromium.org/luci/common/isolated"
@@ -87,7 +87,7 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 // Does the archive by uploading to isolate-server, then return the archive stats and error.
-func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats *archiver.Stats, err error) {
+func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats *pipeline.Stats, err error) {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	defer cancel()
 	defer signals.HandleInterrupt(cancel)()
@@ -101,7 +101,7 @@ func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats 
 	if c.defaultFlags.Quiet {
 		out = ioutil.Discard
 	}
-	arch := archiver.New(ctx, isolatedClient, out)
+	arch := pipeline.NewArchiver(ctx, isolatedClient, out)
 	defer func() {
 		// This waits for all uploads.
 		if cerr := arch.Close(); err == nil {
@@ -143,7 +143,7 @@ func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats 
 	return
 }
 
-func (c *archiveRun) postprocessStats(stats *archiver.Stats, start time.Time) error {
+func (c *archiveRun) postprocessStats(stats *pipeline.Stats, start time.Time) error {
 	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
@@ -175,7 +175,7 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 	return 0
 }
 
-func dumpStatsJSON(jsonPath string, stats *archiver.Stats) error {
+func dumpStatsJSON(jsonPath string, stats *pipeline.Stats) error {
 	hits := make([]int64, len(stats.Hits))
 	for i, h := range stats.Hits {
 		hits[i] = int64(h)

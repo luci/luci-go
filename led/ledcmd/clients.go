@@ -24,7 +24,7 @@ import (
 	"os"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/pipeline"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
@@ -55,7 +55,7 @@ type isoClientIface interface {
 
 type prodIsoClient struct {
 	raw *isolatedclient.Client
-	arc *archiver.Archiver
+	arc *pipeline.Archiver
 
 	server    string
 	namespace string
@@ -90,7 +90,7 @@ func mkIsoClient(ctx context.Context, authClient *http.Client, tree *api.CASTree
 	// os.Stderr will cause the archiver to print a one-liner progress status.
 	return &prodIsoClient{
 		client,
-		archiver.New(arcCtx, client, os.Stderr),
+		pipeline.NewArchiver(arcCtx, client, os.Stderr),
 		tree.Server,
 		tree.Namespace,
 	}
