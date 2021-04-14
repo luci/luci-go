@@ -62,7 +62,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 			b := b
 			proj := b.Proto.Builder.Project
 			cfg := cfgs[protoutil.FormatBucketID(proj, b.Proto.Builder.Bucket)][b.Proto.Builder.Builder]
-			if !cfg.Resultdb.Enable {
+			if !cfg.GetResultdb().GetEnable() {
 				continue
 			}
 			realm := b.Realm()
@@ -81,9 +81,9 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 				}
 
 				// Make a call to create build id invocation.
-				invId := fmt.Sprintf("build-%d", b.Proto.Id)
+				invID := fmt.Sprintf("build-%d", b.Proto.Id)
 				reqForBldID := &rdbPb.CreateInvocationRequest{
-					InvocationId: invId,
+					InvocationId: invID,
 					Invocation: &rdbPb.Invocation{
 						BigqueryExports:  cfg.Resultdb.BqExports,
 						ProducerResource: fmt.Sprintf("//%s/builds/%d", bbHost, b.Proto.Id),
@@ -92,7 +92,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 							UseInvocationTimestamp: cfg.Resultdb.HistoryOptions.UseInvocationTimestamp,
 						},
 					},
-					RequestId: invId,
+					RequestId: invID,
 				}
 				header := metadata.MD{}
 				if _, err = recorderClient.CreateInvocation(ctx, reqForBldID, grpc.Header(&header)); err != nil {

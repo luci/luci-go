@@ -25,6 +25,8 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -39,6 +41,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+type mockInterface struct {
+	config.Interface
+}
+
+func (*mockInterface) GetConfig(ctx context.Context, configSet config.Set, path string, metaOnly bool) (*config.Config, error) {
+	return &config.Config{Content: `resultdb {hostname: "rdbHost"}`}, nil
+}
 
 func TestScheduleBuild(t *testing.T) {
 	t.Parallel()
@@ -253,7 +263,10 @@ func TestScheduleBuild(t *testing.T) {
 	})
 
 	Convey("scheduleBuilds", t, func() {
-		ctx, _ := testclock.UseTime(mathrand.Set(txndefer.FilterRDS(memory.Use(context.Background())), rand.New(rand.NewSource(0))), testclock.TestRecentTimeUTC)
+		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = cfgclient.Use(ctx, &mockInterface{})
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -2176,7 +2189,10 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("ScheduleBuild", t, func() {
 		srv := &Builds{}
-		ctx, _ := testclock.UseTime(mathrand.Set(txndefer.FilterRDS(memory.Use(context.Background())), rand.New(rand.NewSource(0))), testclock.TestRecentTimeUTC)
+		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = cfgclient.Use(ctx, &mockInterface{})
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
