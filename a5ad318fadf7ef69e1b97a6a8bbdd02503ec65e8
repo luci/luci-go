@@ -16,6 +16,24 @@
       "message": "Without reading all of factory.go....\n\nI assume that one client object can\u0027t be used across different luci projects for one host? (or across different hosts for one luci project?",
       "revId": "a5ad318fadf7ef69e1b97a6a8bbdd02503ec65e8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b0e1041_69c84220",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-14T22:46:59Z",
+      "side": 1,
+      "message": "Yes, because common/api/gerrit Rest client is bound a Gerrit host, while authentication is bound to a LUCI project (% legacy netrc creds we\u0027ll have to kill some day).",
+      "parentUuid": "c640fef3_64cb6edc",
+      "revId": "a5ad318fadf7ef69e1b97a6a8bbdd02503ec65e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
