@@ -44,7 +44,7 @@ const cacheExp = time.Minute * 5
 // Config can be used to tweak parameters of the store. It is fine to use
 // default values.
 type Config struct {
-	NoAutogenerate bool      // if true, GetSecret will NOT generate secrets
+	NoAutogenerate bool      // if true, RandomSecret will NOT generate secrets
 	SecretLen      int       // length of generated secrets, 32 bytes default
 	Prefix         string    // optional prefix for entity keys to namespace them
 	Entropy        io.Reader // source of random numbers, crypto rand by default
@@ -77,8 +77,8 @@ type storeImpl struct {
 	cfg Config
 }
 
-// GetSecret returns a secret by its key.
-func (s *storeImpl) GetSecret(ctx context.Context, k string) (secrets.Secret, error) {
+// RandomSecret returns a secret by its name.
+func (s *storeImpl) RandomSecret(ctx context.Context, k string) (secrets.Secret, error) {
 	secret, err := secretsCache.LRU(ctx).GetOrCreate(ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
 		secret, err := s.getSecretFromDatastore(ctx, k)
 		if err != nil {

@@ -36,7 +36,7 @@ func TestDerivedStore(t *testing.T) {
 		}
 		store := NewDerivedStore(root)
 
-		s1, _ := store.GetSecret(ctx, "secret_1")
+		s1, _ := store.RandomSecret(ctx, "secret_1")
 		So(s1, ShouldResemble, Secret{
 			Current: derive([]byte("1"), "secret_1"),
 			Previous: [][]byte{
@@ -46,17 +46,17 @@ func TestDerivedStore(t *testing.T) {
 		})
 
 		// Test cache hit.
-		s2, _ := store.GetSecret(ctx, "secret_1")
+		s2, _ := store.RandomSecret(ctx, "secret_1")
 		So(s2, ShouldResemble, s1)
 
 		// Test noop root key change.
 		store.SetRoot(root)
-		s2, _ = store.GetSecret(ctx, "secret_1")
+		s2, _ = store.RandomSecret(ctx, "secret_1")
 		So(s2, ShouldResemble, s1)
 
 		// Test actual root key change.
 		store.SetRoot(Secret{Current: []byte("zzz")})
-		s2, _ = store.GetSecret(ctx, "secret_1")
+		s2, _ = store.RandomSecret(ctx, "secret_1")
 		So(s2, ShouldNotResemble, s1)
 	})
 }
