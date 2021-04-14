@@ -21,10 +21,9 @@ import (
 )
 
 var (
-	// ErrNoSuchSecret is returned by GetSecret if it can't find a secret.
+	// ErrNoSuchSecret indicates the store can't find the requested secret.
 	ErrNoSuchSecret = errors.New("secret not found")
-	// ErrNoStoreConfigured is returned by GetSecret if the secret store is not in
-	// the context.
+	// ErrNoStoreConfigured indicates there's no Store in the context.
 	ErrNoStoreConfigured = errors.New("secrets.Store is not in the context")
 )
 
@@ -35,23 +34,23 @@ func Use(ctx context.Context, s Store) context.Context {
 	return context.WithValue(ctx, &contextKey, s)
 }
 
-// GetSecret returns a secret using Store in the context.
+// RandomSecret returns a random secret using Store in the context.
 //
 // If the context doesn't have Store set, returns ErrNoStoreConfigured.
-func GetSecret(ctx context.Context, key string) (Secret, error) {
+func RandomSecret(ctx context.Context, name string) (Secret, error) {
 	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
-		return store.GetSecret(ctx, key)
+		return store.RandomSecret(ctx, name)
 	}
 	return Secret{}, ErrNoStoreConfigured
 }
 
-// Store knows how to retrieve or autogenerate a secret given its key.
+// Store knows how to retrieve or autogenerate a secret given its name.
 type Store interface {
-	// GetSecret returns a secret given its key.
+	// RandomSecret returns a random secret given its name.
 	//
-	// Store may choose to autogenerate a secret if there's no existing one, or it
-	// may choose to treat it as an error and return ErrNoSuchSecret.
-	GetSecret(ctx context.Context, name string) (Secret, error)
+	// The store will auto-generate the secret if necessary. Its value is
+	// a random high-entropy blob.
+	RandomSecret(ctx context.Context, name string) (Secret, error)
 }
 
 // Secret represents a current value of a secret as well as a set of few

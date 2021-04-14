@@ -33,13 +33,13 @@ type Store struct {
 	sync.Mutex
 
 	Secrets        map[string]secrets.Secret // current map of all secrets
-	NoAutogenerate bool                      // if true, GetSecret will NOT generate secrets
+	NoAutogenerate bool                      // if true, RandomSecret will NOT generate secrets
 	SecretLen      int                       // length of generated secret, 8 bytes default
 	Rand           *rand.Rand                // used to generate missing secrets
 }
 
-// GetSecret is a part of Store interface.
-func (t *Store) GetSecret(ctx context.Context, k string) (secrets.Secret, error) {
+// RandomSecret is a part of Store interface.
+func (t *Store) RandomSecret(ctx context.Context, k string) (secrets.Secret, error) {
 	t.Lock()
 	defer t.Unlock()
 
