@@ -27,7 +27,6 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/client/archiver"
 	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
