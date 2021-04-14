@@ -25,7 +25,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/pipeline"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -58,22 +58,22 @@ type ArchiveOptions struct {
 // uploads it and its dependencies.
 //
 // Archive returns the digest of the composite isolated file.
-func Archive(ctx context.Context, arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingItem {
+func Archive(ctx context.Context, arch *pipeline.Archiver, opts *ArchiveOptions) *pipeline.PendingItem {
 	item, err := archive(ctx, arch, opts)
 	if err != nil {
-		i := &archiver.PendingItem{DisplayName: opts.Isolated}
+		i := &pipeline.PendingItem{DisplayName: opts.Isolated}
 		i.SetErr(err)
 		return i
 	}
 	return item
 }
 
-// ArchiveFiles uploads given files using given archiver.
+// ArchiveFiles uploads given files using given pipeline.
 //
 // This is thin wrapper of Archive.
 // Note that this function may have large number of concurrent RPCs to isolate server.
-func ArchiveFiles(ctx context.Context, arch *archiver.Archiver, baseDir string, files []string) ([]*archiver.PendingItem, error) {
-	items := make([]*archiver.PendingItem, len(files))
+func ArchiveFiles(ctx context.Context, arch *pipeline.Archiver, baseDir string, files []string) ([]*pipeline.PendingItem, error) {
+	items := make([]*pipeline.PendingItem, len(files))
 
 	g, ctx := errgroup.WithContext(ctx)
 	for i, file := range files {
@@ -117,9 +117,9 @@ func ArchiveFiles(ctx context.Context, arch *archiver.Archiver, baseDir string, 
 }
 
 // Convenience type to track pending items and their corresponding filepaths.
-type itemToPathMap map[*archiver.PendingItem]string
+type itemToPathMap map[*pipeline.PendingItem]string
 
-func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (*archiver.PendingItem, error) {
+func archive(c context.Context, arch *pipeline.Archiver, opts *ArchiveOptions) (*pipeline.PendingItem, error) {
 	// Archive all files.
 	fItems := make(itemToPathMap, len(opts.Files))
 	for file, wd := range opts.Files {
@@ -144,7 +144,7 @@ func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (
 	// Archive all directories.
 	for dir, wd := range opts.Dirs {
 		path := filepath.Join(wd, dir)
-		dirFItems, dirSymItems, err := archiver.PushDirectory(arch, path, dir)
+		dirFItems, dirSymItems, err := pipeline.PushDirectory(arch, path, dir)
 		if err != nil {
 			return nil, err
 		}

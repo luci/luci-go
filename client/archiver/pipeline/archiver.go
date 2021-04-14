@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package archiver
+package pipeline
 
 import (
 	"context"
@@ -137,12 +137,12 @@ func (s *Stats) deepCopy() *Stats {
 	return &Stats{s.Hits, s.Pushed}
 }
 
-// New returns a thread-safe Archiver instance.
+// NewArchiver returns a thread-safe Archiver instance.
 //
 // If not nil, out will contain tty-oriented progress information.
 //
 // ctx will be used for logging.
-func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver {
+func NewArchiver(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver {
 	// TODO(maruel): Cache hashes and server cache presence.
 	ctx2, cancel := context.WithCancel(ctx)
 	a := &Archiver{
