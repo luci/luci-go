@@ -34,16 +34,6 @@ export class InvocationState {
   // null means uninitialized.
   @observable.ref invocationId: string | null = null;
 
-  // Whether the empty groups should be rendered.
-  @observable.ref showEmptyGroups = true;
-
-  // The following settings only apply when this.multiSections = true.
-  @observable.ref showUnexpectedVariants = true;
-  @observable.ref showUnexpectedlySkippedVariants = true;
-  @observable.ref showFlakyVariants = true;
-  @observable.ref showExoneratedVariants = true;
-  @observable.ref showExpectedVariants = true;
-
   @observable.ref searchText = '';
   @observable.ref searchFilter = (_v: TestVariant) => true;
 

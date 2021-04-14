@@ -115,12 +115,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       {
         id: 'test-results',
         label: 'Test Results',
-        href: router.urlForName(
-          this.configsStore.userConfigs.testResults.newLayout
-            ? 'invocation-test-results-new'
-            : 'invocation-test-results',
-          { invocation_id: this.invocationState.invocationId! }
-        ),
+        href: router.urlForName('invocation-test-results', { invocation_id: this.invocationState.invocationId! }),
       },
       {
         id: 'invocation-details',

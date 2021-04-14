@@ -62,17 +62,6 @@ router.setRoutes({
           },
         },
         {
-          path: '/test-results-new',
-          name: 'invocation-test-results-new',
-          action: async (_ctx, cmd) => {
-            await import(
-              /* webpackChunkName: "test_results_tab_new" */
-              './pages/test_results_tab_new'
-            );
-            return cmd.component('milo-test-results-tab-new');
-          },
-        },
-        {
           path: '/invocation-details',
           name: 'invocation-details',
           action: async (_ctx, cmd) => {
@@ -138,17 +127,6 @@ router.setRoutes({
               './pages/test_results_tab'
             );
             return cmd.component('milo-test-results-tab');
-          },
-        },
-        {
-          path: '/test-results-new',
-          name: 'build-test-results-new',
-          action: async (_ctx, cmd) => {
-            await import(
-              /* webpackChunkName: "test_results_tab_new" */
-              './pages/test_results_tab_new'
-            );
-            return cmd.component('milo-test-results-tab-new');
           },
         },
         {
