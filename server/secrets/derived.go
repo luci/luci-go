@@ -42,8 +42,8 @@ func NewDerivedStore(root Secret) *DerivedStore {
 	}
 }
 
-// GetSecret returns a generated secret given its key.
-func (d *DerivedStore) GetSecret(ctx context.Context, name string) (Secret, error) {
+// RandomSecret returns a generated secret given its name.
+func (d *DerivedStore) RandomSecret(ctx context.Context, name string) (Secret, error) {
 	d.m.RLock()
 	s, ok := d.cache[name]
 	d.m.RUnlock()
