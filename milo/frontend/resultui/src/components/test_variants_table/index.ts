@@ -90,9 +90,9 @@ export class TestVariantsTableElement extends MiloBaseElement {
     );
   }
 
-  private async loadMore(untilStatus?: TestVariantStatus) {
+  private async loadMore() {
     try {
-      await this.invocationState.testLoader?.loadNextTestVariants(untilStatus);
+      await this.invocationState.testLoader?.loadNextTestVariants();
     } catch (e) {
       this.dispatchEvent(
         new ErrorEvent('error', {
@@ -203,15 +203,12 @@ export class TestVariantsTableElement extends MiloBaseElement {
     `;
   }
 
-  private renderLoadMore(forStatus?: TestVariantStatus) {
+  private renderLoadMore() {
     const state = this.invocationState;
     return html`
       <span
         style=${styleMap({ display: state.testLoader?.isLoading ?? true ? 'none' : '' })}
-        @click=${(e: Event) => {
-          this.loadMore(forStatus);
-          e.stopPropagation();
-        }}
+        @click=${() => this.loadMore()}
       >
         [load more]
       </span>

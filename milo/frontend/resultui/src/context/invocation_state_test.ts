@@ -80,37 +80,27 @@ describe('InvocationState', () => {
     it('should not filter out anything when search text is empty', () => {
       invocationState.searchText = '';
       assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, [variant1, variant2]);
-      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, [variant3]);
-      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, [variant4]);
       assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
 
     it("should filter out variants whose test ID doesn't match the search text", () => {
       invocationState.searchText = 'test-suite-a';
       assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, [variant1, variant2]);
-      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, []);
-      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, []);
       assert.deepEqual(invocationState.testLoader!.expectedTestVariants, []);
     });
 
     it('search text should be case insensitive', () => {
       invocationState.searchText = 'test-suite-b';
       assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, [variant3]);
-      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, [variant4]);
       assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
 
     it('should preserve the last known valid filter', () => {
       invocationState.searchText = 'test-suite-b';
       assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, [variant3]);
-      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, [variant4]);
       assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
       invocationState.searchText = 'invalid:filter';
       assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(invocationState.testLoader!.flakyTestVariants, [variant3]);
-      assert.deepEqual(invocationState.testLoader!.exoneratedTestVariants, [variant4]);
       assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
     });
   });
