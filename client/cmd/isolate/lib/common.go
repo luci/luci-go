@@ -40,7 +40,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version"
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/tarring"
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
@@ -296,7 +296,7 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 	return fmt.Printf("%s"+format, args...)
 }
 
-func (al *archiveLogger) printSummary(summary archiver.IsolatedSummary) {
+func (al *archiveLogger) printSummary(summary tarring.IsolatedSummary) {
 	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
 }
 

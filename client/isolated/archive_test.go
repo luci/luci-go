@@ -29,7 +29,6 @@ import (
 	"runtime"
 	"testing"
 
-	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
