@@ -44,6 +44,16 @@ func RandomSecret(ctx context.Context, name string) (Secret, error) {
 	return Secret{}, ErrNoStoreConfigured
 }
 
+// StoredSecret returns a stored secret using Store in the context.
+//
+// If the context doesn't have Store set, returns ErrNoStoreConfigured.
+func StoredSecret(ctx context.Context, name string) (Secret, error) {
+	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
+		return store.StoredSecret(ctx, name)
+	}
+	return Secret{}, ErrNoStoreConfigured
+}
+
 // Store knows how to retrieve or autogenerate a secret given its name.
 type Store interface {
 	// RandomSecret returns a random secret given its name.
@@ -51,6 +61,14 @@ type Store interface {
 	// The store will auto-generate the secret if necessary. Its value is
 	// a random high-entropy blob.
 	RandomSecret(ctx context.Context, name string) (Secret, error)
+
+	// StoredSecret returns a previously stored secret given its name.
+	//
+	// How it was stored depends on the concrete implementation of the Store. The
+	// difference from RandomSecret is that the Store will never try to
+	// auto-generate such secret if it is missing and will return ErrNoSuchSecret
+	// instead.
+	StoredSecret(ctx context.Context, name string) (Secret, error)
 }
 
 // Secret represents a current value of a secret as well as a set of few
