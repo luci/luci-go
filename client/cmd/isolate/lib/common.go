@@ -376,9 +376,7 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 	var uploadedBytes int64
 
 	uploadEg, uctx := errgroup.WithContext(ctx)
-
-	done := make(chan struct{})
-	go func() {
+	uploadEg.Go(func() error {
 		uploaded := make(map[digest.Digest]struct{})
 		for entrs := range entriesC {
 			entryCount += len(entrs)
@@ -412,8 +410,8 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 				return nil
 			})
 		}
-		close(done)
-	}()
+		return nil
+	})
 
 	if err := digestEg.Wait(); err != nil {
 		close(entriesC)
@@ -421,8 +419,6 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 	}
 
 	close(entriesC)
-	<-done
-
 	if err := uploadEg.Wait(); err != nil {
 		return nil, err
 	}
