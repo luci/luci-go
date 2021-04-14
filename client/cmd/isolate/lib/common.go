@@ -435,15 +435,14 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 		return rootDgs, nil
 	}
 
+	m := make(map[string]string, len(opts))
+	for i, o := range opts {
+		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
+	}
 	f, err := os.Create(dumpJSON)
 	if err != nil {
 		return rootDgs, err
 	}
 	defer f.Close()
-
-	m := make(map[string]string, len(opts))
-	for i, o := range opts {
-		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
-	}
 	return rootDgs, json.NewEncoder(f).Encode(m)
 }
