@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a60c7517_ee21cddf",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-14T04:50:24Z",
+      "side": 1,
+      "message": "follow\nhttps://github.com/golang/go/wiki/CodeReviewComments#comment-sentences",
+      "revId": "f9d69e13dbdb05591af2b9878c1d063d1c41619a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
