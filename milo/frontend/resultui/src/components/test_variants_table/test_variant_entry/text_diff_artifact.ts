@@ -19,11 +19,11 @@ import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
-import '../expandable_entry';
-import { sanitizeHTML } from '../../libs/sanitize_html';
-import { router } from '../../routes';
-import { Artifact } from '../../services/resultdb';
-import commonStyle from '../../styles/common_style.css';
+import '../../expandable_entry';
+import { sanitizeHTML } from '../../../libs/sanitize_html';
+import { router } from '../../../routes';
+import { Artifact } from '../../../services/resultdb';
+import commonStyle from '../../../styles/common_style.css';
 
 /**
  * Renders a text diff artifact.

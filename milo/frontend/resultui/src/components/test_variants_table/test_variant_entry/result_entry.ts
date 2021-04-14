@@ -20,18 +20,18 @@ import { Duration } from 'luxon';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
-import '../../context/artifact_provider';
-import '../expandable_entry';
+import '../../../context/artifact_provider';
+import '../../expandable_entry';
 import './image_diff_artifact';
 import './text_artifact';
 import './text_diff_artifact';
-import { AppState, consumeAppState } from '../../context/app_state';
-import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { sanitizeHTML } from '../../libs/sanitize_html';
-import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
-import { Artifact, ListArtifactsResponse, TestResult } from '../../services/resultdb';
-import colorClasses from '../../styles/color_classes.css';
-import commonStyle from '../../styles/common_style.css';
+import { AppState, consumeAppState } from '../../../context/app_state';
+import { TEST_STATUS_DISPLAY_MAP } from '../../../libs/constants';
+import { sanitizeHTML } from '../../../libs/sanitize_html';
+import { displayDuration, parseProtoDuration } from '../../../libs/time_utils';
+import { Artifact, ListArtifactsResponse, TestResult } from '../../../services/resultdb';
+import colorClasses from '../../../styles/color_classes.css';
+import commonStyle from '../../../styles/common_style.css';
 
 /**
  * Renders an expandable entry of the given test result.

@@ -18,10 +18,10 @@ import { css, customElement, html, property } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 
-import '../dot_spinner';
-import { consumeContext } from '../../libs/context';
-import { Artifact } from '../../services/resultdb';
-import commonStyle from '../../styles/common_style.css';
+import '../../dot_spinner';
+import { consumeContext } from '../../../libs/context';
+import { Artifact } from '../../../services/resultdb';
+import commonStyle from '../../../styles/common_style.css';
 
 /**
  * Renders a text artifact.
