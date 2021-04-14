@@ -13,10 +13,10 @@
 // limitations under the License.
 
 // Package secrets provides an interface for a simple secret store: you ask it
-// for a secret (a byte blob, identifies by some key), and it returns it
-// to you (current version, as well as a bunch of previous versions). Caller are
-// supposed to use the secret for an operation and then forget it (e.g. do not
-// try to store it elsewhere).
+// for a secret (a byte blob, identified by some key), and it returns it
+// to you (the current version, as well as a bunch of previous versions).
+// Callers are supposed to use the secret for an operation and then forget it
+// (e.g. do not try to store it elsewhere).
 //
 // Secure storage, retrieval and rotation of secrets is outside of the scope of
 // this interface: it's the responsibility of the implementation.

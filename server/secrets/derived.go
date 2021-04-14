@@ -15,6 +15,7 @@
 package secrets
 
 import (
+	"context"
 	"crypto/sha256"
 	"io"
 	"sync"
@@ -22,7 +23,7 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-// DerivedStore implements Store by deriving secrets from some single master
+// DerivedStore implements Store by deriving secrets from some single root
 // secret using HKDF.
 //
 // Caches all derived secrets internally forever. Assumes the set of possible
@@ -42,7 +43,7 @@ func NewDerivedStore(root Secret) *DerivedStore {
 }
 
 // GetSecret returns a generated secret given its key.
-func (d *DerivedStore) GetSecret(name string) (Secret, error) {
+func (d *DerivedStore) GetSecret(ctx context.Context, name string) (Secret, error) {
 	d.m.RLock()
 	s, ok := d.cache[name]
 	d.m.RUnlock()
