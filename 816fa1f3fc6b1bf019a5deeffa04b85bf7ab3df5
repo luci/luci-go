@@ -22,6 +22,30 @@
       },
       "revId": "816fa1f3fc6b1bf019a5deeffa04b85bf7ab3df5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "096b1daa_6a5c1d44",
+        "filename": "server/secrets/secrets.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-14T19:22:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2fb11c16_92061680",
+      "range": {
+        "startLine": 53,
+        "startChar": 31,
+        "endLine": 53,
+        "endChar": 32
+      },
+      "revId": "816fa1f3fc6b1bf019a5deeffa04b85bf7ab3df5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
