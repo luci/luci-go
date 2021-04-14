@@ -42,15 +42,6 @@ export const enum LoadingStage {
   Done = 5,
 }
 
-const VARIANT_STATUS_LOADING_STAGE_MAP = Object.freeze({
-  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: LoadingStage.LoadingUnexpected,
-  [TestVariantStatus.UNEXPECTED]: LoadingStage.LoadingUnexpected,
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: LoadingStage.LoadingUnexpectedlySkipped,
-  [TestVariantStatus.FLAKY]: LoadingStage.LoadingFlaky,
-  [TestVariantStatus.EXONERATED]: LoadingStage.LoadingExonerated,
-  [TestVariantStatus.EXPECTED]: LoadingStage.LoadingExpected,
-});
-
 export class LoadTestVariantsError {
   constructor(readonly req: QueryTestVariantsRequest, readonly source: unknown) {}
 
@@ -92,13 +83,7 @@ export class TestLoader {
 
   @computed
   get testVariantCount() {
-    return (
-      this.unexpectedTestVariants.length +
-      this.unexpectedlySkippedTestVariants.length +
-      this.flakyTestVariants.length +
-      this.exoneratedTestVariants.length +
-      this.expectedTestVariants.length
-    );
+    return this.nonExpectedTestVariants.length + this.expectedTestVariants.length;
   }
 
   /**
@@ -127,24 +112,12 @@ export class TestLoader {
   @computed get unexpectedTestVariants() {
     return this.unfilteredUnexpectedVariants.filter(this.filter);
   }
-  @computed get unexpectedlySkippedTestVariants() {
-    return this.unfilteredUnexpectedlySkippedVariants.filter(this.filter);
-  }
-  @computed get flakyTestVariants() {
-    return this.unfilteredFlakyVariants.filter(this.filter);
-  }
-  @computed get exoneratedTestVariants() {
-    return this.unfilteredExoneratedVariants.filter(this.filter);
-  }
   @computed get expectedTestVariants() {
     return this.unfilteredExpectedVariants.filter(this.filter);
   }
 
   @observable.shallow private unfilteredNonExpectedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredUnexpectedVariants: TestVariant[] = [];
-  @observable.shallow private unfilteredUnexpectedlySkippedVariants: TestVariant[] = [];
-  @observable.shallow private unfilteredFlakyVariants: TestVariant[] = [];
-  @observable.shallow private unfilteredExoneratedVariants: TestVariant[] = [];
   @observable.shallow private unfilteredExpectedVariants: TestVariant[] = [];
 
   @computed get loadedAllVariants() {
@@ -153,29 +126,11 @@ export class TestLoader {
   @computed get loadedAllUnexpectedVariants() {
     return this.stage > LoadingStage.LoadingUnexpected;
   }
-  @computed get loadedAllUnexpectedlySkippedVariants() {
-    return this.stage > LoadingStage.LoadingUnexpectedlySkipped;
-  }
-  @computed get loadedAllFlakyVariants() {
-    return this.stage > LoadingStage.LoadingFlaky;
-  }
-  @computed get loadedAllExoneratedVariants() {
-    return this.stage > LoadingStage.LoadingExonerated;
-  }
-  @computed get loadedAllExpectedVariants() {
-    return this.stage > LoadingStage.LoadingExpected;
-  }
   @computed get firstPageLoaded() {
     return this.unfilteredUnexpectedVariants.length > 0 || this.loadedAllUnexpectedVariants;
   }
   @computed get firstPageIsEmpty() {
-    return (
-      this.loadedAllUnexpectedVariants &&
-      this.unfilteredUnexpectedVariants.length === 0 &&
-      this.unfilteredUnexpectedlySkippedVariants.length === 0 &&
-      this.unfilteredFlakyVariants.length === 0 &&
-      this.unfilteredExoneratedVariants.length === 0
-    );
+    return this.loadedAllUnexpectedVariants && this.unfilteredUnexpectedVariants.length === 0;
   }
 
   // undefined means the end has been reached.
@@ -187,48 +142,32 @@ export class TestLoader {
   private loadPromise = Promise.resolve();
 
   /**
-   * Load at least one test variant of the specified status (or any status if
-   * not specified) unless the last page is reached.
+   * Load at least one test variant unless the last page is reached.
    */
-  loadNextTestVariants(untilStatus?: TestVariantStatus) {
+  loadNextTestVariants() {
     this._firstRequestSent = true;
     if (this.stage === LoadingStage.Done) {
       return this.loadPromise;
     }
 
     this.loadingReqCount++;
-    this.loadPromise = this.loadPromise.then(() => this.loadNextTestVariantsInternal(untilStatus));
+    this.loadPromise = this.loadPromise.then(() => this.loadNextTestVariantsInternal());
     return this.loadPromise.then(() => this.loadingReqCount--);
   }
 
   /**
-   * Load at least one test variant of the specified status (or any status if
-   * not specified) unless the last page is reached.
+   * Load at least one test variant unless the last page is reached.
    *
    * @precondition there should not exist a running instance of
    * this.loadNextTestVariantsInternal
    */
-  private async loadNextTestVariantsInternal(untilStatus?: TestVariantStatus) {
+  private async loadNextTestVariantsInternal() {
     const beforeCount = this.testVariantCount;
-
-    let shouldLoadNextPage: boolean;
 
     // Load pages until the next expected status is at least the one we're after.
     do {
       await this.loadNextPage();
-      shouldLoadNextPage =
-        (!this.loadedAllVariants && this.testVariantCount === beforeCount) ||
-        (untilStatus !== undefined && this.stage < VARIANT_STATUS_LOADING_STAGE_MAP[untilStatus]);
-    } while (shouldLoadNextPage);
-
-    // If we wanted to load up to Expected, and none have arrived yet
-    // (i.e. we're at the point where ResultDB has just returned the final
-    // non-expected variants to us), load one more page.
-    // Note: the while loop above only ensures at least one test variant of
-    // *any* status is loaded.
-    if (untilStatus === TestVariantStatus.EXPECTED && this.unfilteredExpectedVariants.length === 0) {
-      await this.loadNextPage();
-    }
+    } while (!this.loadedAllVariants && this.testVariantCount === beforeCount);
   }
 
   /**
@@ -280,17 +219,14 @@ export class TestLoader {
           break;
         case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
           this._stage = LoadingStage.LoadingUnexpectedlySkipped;
-          this.unfilteredUnexpectedlySkippedVariants.push(testVariant);
           this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.FLAKY:
           this._stage = LoadingStage.LoadingFlaky;
-          this.unfilteredFlakyVariants.push(testVariant);
           this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.EXONERATED:
           this._stage = LoadingStage.LoadingExonerated;
-          this.unfilteredExoneratedVariants.push(testVariant);
           this.unfilteredNonExpectedVariants.push(testVariant);
           break;
         case TestVariantStatus.EXPECTED:
