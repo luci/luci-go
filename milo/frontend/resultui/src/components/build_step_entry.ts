@@ -108,12 +108,12 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
 
   private renderDuration() {
     if (!this.step.duration) {
-      return html` <span id="duration" title="No duration">N/A</span> `;
+      return html` <span class="badge" title="No duration">N/A</span> `;
     }
 
     return html`
       <div
-        id="duration"
+        class="badge"
         @mouseover=${(e: MouseEvent) => {
           const tooltip = document.createElement('div');
           render(this.renderDurationTooltip(), tooltip);
@@ -268,22 +268,6 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
 
       #header-markdown * {
         display: inline;
-      }
-
-      #duration {
-        color: white;
-        background-color: var(--active-color);
-        display: inline-block;
-        padding: 0.25em 0.4em;
-        font-size: 75%;
-        font-weight: 700;
-        line-height: 13px;
-        text-align: center;
-        white-space: nowrap;
-        vertical-align: bottom;
-        border-radius: 0.25rem;
-        margin-bottom: 3px;
-        width: 35px;
       }
 
       #summary {

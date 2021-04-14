@@ -28,7 +28,8 @@ import './text_diff_artifact';
 import { AppState, consumeAppState } from '../../../context/app_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../../libs/constants';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
-import { displayDuration, parseProtoDuration } from '../../../libs/time_utils';
+import { displayCompactDuration, parseProtoDuration } from '../../../libs/time_utils';
+import { router } from '../../../routes';
 import { Artifact, ListArtifactsResponse, TestResult } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
@@ -39,9 +40,10 @@ import commonStyle from '../../../styles/common_style.css';
 @customElement('milo-result-entry')
 @consumeAppState
 export class ResultEntryElement extends MobxLitElement {
+  @observable.ref appState!: AppState;
+
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
-  @observable.ref appState!: AppState;
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -73,12 +75,15 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed
-  private get swarmingTaskLink() {
+  private get swarmingTask() {
     const match = this.parentInvId.match(/^task-(.+)-([0-9a-f]+)$/);
     if (!match) {
       return null;
     }
-    return `https://${match[1]}/task?id=${match[2]}`;
+    return {
+      host: match[1],
+      id: match[2],
+    };
   }
 
   @computed
@@ -124,16 +129,6 @@ export class ResultEntryElement extends MobxLitElement {
       actual: this.resultArtifacts.find((a) => a.artifactId === 'actual_image'),
       diff: this.resultArtifacts.find((a) => a.artifactId === 'image_diff'),
     };
-  }
-
-  private renderParentInvType() {
-    if (this.parentInvId.startsWith('build-')) {
-      return 'Buildbucket build';
-    }
-    if (this.parentInvId.startsWith('task-')) {
-      return html`<a href=${this.swarmingTaskLink} target="_blank">Swarming task</a>`;
-    }
-    return 'invocation';
   }
 
   private renderSummaryHtml() {
@@ -193,7 +188,9 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <div id="inv-artifacts-header">From the parent ${this.renderParentInvType()}:</div>
+      <div id="inv-artifacts-header">
+        From the parent inv <a href=${router.urlForName('invocation', { invocation_id: this.parentInvId })}></a>:
+      </div>
       <ul>
         ${this.invArtifacts.map(
           (artifact) => html`
@@ -237,7 +234,6 @@ export class ResultEntryElement extends MobxLitElement {
     }
     return html`
       ${this.renderSummaryHtml()}
-      ${!this.swarmingTaskLink ? '' : html` <div id="swarming-task">${this.renderParentInvType()}</div> `}
       ${this.textDiffArtifact &&
       html` <milo-text-diff-artifact .artifact=${this.textDiffArtifact}> </milo-text-diff-artifact> `}
       ${this.imageDiffArtifactGroup.diff &&
@@ -257,11 +253,26 @@ export class ResultEntryElement extends MobxLitElement {
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <span id="header" slot="header">
+          <div class="badge" title=${this.duration ? '' : 'No duration'}>
+            ${this.duration ? displayCompactDuration(this.duration) : 'N/A'}
+          </div>
           run #${this.id}
-          <span class="${this.testResult.expected ? 'expected' : 'unexpected'}">
-            ${this.testResult.expected ? '' : html`unexpectedly`} ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
+          <span class=${this.testResult.expected ? 'expected' : 'unexpected'}>
+            ${this.testResult.expected ? 'expectedly' : 'unexpectedly'}
+            ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
           </span>
-          ${this.duration ? `after ${displayDuration(this.duration)}` : ''}
+          ${this.swarmingTask
+            ? html`
+                in task:
+                <a
+                  href="https://${this.swarmingTask.host}/task?id=${this.swarmingTask.id}"
+                  target="_blank"
+                  @click=${(e: Event) => e.stopPropagation()}
+                >
+                  ${this.swarmingTask.id}
+                </a>
+              `
+            : ''}
         </span>
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
@@ -277,6 +288,7 @@ export class ResultEntryElement extends MobxLitElement {
       }
 
       #header {
+        display: inline-block;
         font-size: 14px;
         letter-spacing: 0.1px;
         font-weight: 500;
@@ -311,10 +323,6 @@ export class ResultEntryElement extends MobxLitElement {
       }
       .greyed-out {
         color: var(--greyed-out-text-color);
-      }
-
-      #swarming-task {
-        margin: 5px;
       }
 
       ul {
