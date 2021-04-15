@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f3e28f6_2173392f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T20:06:50Z",
+      "side": 1,
+      "message": "nitty-nit: I sense some inconsistency between names ArtifactStreamer and ArtifactStreamHost. Consider ArtifactStreamClient.",
+      "range": {
+        "startLine": 79,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 17
+      },
+      "revId": "aff28d756ecf4342b3f76fdefe850c81fb3a5af6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
