@@ -22,6 +22,30 @@
       },
       "revId": "5012a0faa2ae179357f4c1c4d8616c0b5cb9b1e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1f7b74f3_234a5e16",
+        "filename": "client/swarming/command.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-15T02:49:53Z",
+      "side": 1,
+      "message": "renamed\n\n\u003eAnd also, does this have to be public?\nReplaceParameters is called by cmdrunner.getCommandEnv, so I think so?",
+      "parentUuid": "2c3b3ced_139ea7a8",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 36,
+        "endChar": 22
+      },
+      "revId": "5012a0faa2ae179357f4c1c4d8616c0b5cb9b1e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
