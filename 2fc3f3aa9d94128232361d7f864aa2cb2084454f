@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "83ab6f23_08f9f38a",
+        "filename": "milo/frontend/resultui/src/pages/artifact/artifact_page_layout.ts",
+        "patchSetId": 13
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-15T00:00:09Z",
+      "side": 1,
+      "message": "ESLint will report \"not all code paths return a value\" if I remove this.",
+      "parentUuid": "b615591d_c117c237",
+      "revId": "2fc3f3aa9d94128232361d7f864aa2cb2084454f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d4c67ab6_52432f5b",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-04-14T16:30:50Z",
       "side": 1,
       "message": "is this because of that ignored group? \nmaybe use non-capturing group instead?\nhttps://www.regular-expressions.info/brackets.html\n\n  ...(:?\\/tests/...",
+      "revId": "2fc3f3aa9d94128232361d7f864aa2cb2084454f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4840515f_39316c4e",
+        "filename": "milo/frontend/resultui/src/service_worker_ext.ts",
+        "patchSetId": 13
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-15T00:00:09Z",
+      "side": 1,
+      "message": "Made the artifact type and the (test/.../result/...) group non-capturing.\n.slice() is still needed because the first item is always the whole string.",
+      "parentUuid": "d4c67ab6_52432f5b",
       "revId": "2fc3f3aa9d94128232361d7f864aa2cb2084454f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
