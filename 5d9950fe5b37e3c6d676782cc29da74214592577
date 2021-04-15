@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b26e12f_aab31fbd",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-15T22:38:10Z",
+      "side": 1,
+      "message": "Should it ever be nil? If not should this be an assertion instead?",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 37
+      },
+      "revId": "5d9950fe5b37e3c6d676782cc29da74214592577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
