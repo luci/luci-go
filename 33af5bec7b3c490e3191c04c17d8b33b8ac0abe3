@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69644454_a5b1b010",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T23:18:36Z",
+      "side": 1,
+      "message": "In the next CL, artifact_uploader.BatchUpload() calls this function, CreateRequest() to prepare a request for recorder.BatchCreateArtifacts().\n\nEven if the length of the size is different to what stat() initially claimed when the upload task was created, ResultSink can still upload the artifact content as it is. However, at an extreme case, the size could grow such that the artifact is too large to fit in a batch.\n\nartifact_uploader.BatchUpload() could call artifact_uploader.StreamUpload() to handle such an artifact, but I think returning an error at this point is a good choice. If the test framework continues changing the content of an artifact after it being sent to ResultSink, there is likely a bug in the test framework, and it should be fixed.\n\nThat\u0027s the reason of this error check. WDYT?",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 124,
+        "endChar": 2
+      },
+      "revId": "33af5bec7b3c490e3191c04c17d8b33b8ac0abe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

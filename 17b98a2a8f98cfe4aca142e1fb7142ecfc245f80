@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b989088_a92f4839",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T23:18:36Z",
+      "side": 1,
+      "message": "Please let me know if there is a better error code for this response. Practically speaking, if os.Stat() fails and newUploadTask() returns an error at this moment, it\u0027s likely that the report file path doesn\u0027t exist or sink has no permission to access the file info.\n\nI picked FailedPrecondition instead of InternalError, because InternalError will return an error to the caller w/o the error details.\n\nAlso, FailedPrecondition seems to be a better choice than InvalidArgument, based on my understanding of the descriptions in https://pkg.go.dev/google.golang.org/grpc/codes\n\nWDYT?",
+      "range": {
+        "startLine": 173,
+        "startChar": 36,
+        "endLine": 173,
+        "endChar": 54
+      },
+      "revId": "17b98a2a8f98cfe4aca142e1fb7142ecfc245f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
