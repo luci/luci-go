@@ -33,8 +33,8 @@ func TestArtifactChannel(t *testing.T) {
 	Convey("schedule", t, func() {
 		name := "invocations/inv/artifacts/art1"
 		ctx := context.Background()
-		cfg := testServerConfig("127.0.0.1:123", "secret")
 		reqCh := make(chan *http.Request, 1)
+		cfg := testServerConfig("127.0.0.1:123", "secret")
 		cfg.ArtifactStreamClient.Transport = mockTransport(
 			func(req *http.Request) (*http.Response, error) {
 				reqCh <- req
@@ -42,8 +42,14 @@ func TestArtifactChannel(t *testing.T) {
 			},
 		)
 
-		task, err := newUploadTask(name, testArtifactWithContents([]byte("content")))
-		So(err, ShouldBeNil)
+		Convey("with a small artifact", func() {
+			task, err := newUploadTask(name, testArtifactWithContents([]byte("content")))
+			So(err, ShouldBeNil)
+		})
+
+		Convey("with a large artifact", func() {
+
+		})
 
 		ac := newArtifactChannel(ctx, &cfg)
 		ac.schedule(task)
