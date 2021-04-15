@@ -49,9 +49,10 @@ func TestArtifactUploader(t *testing.T) {
 			reqCh <- req
 			return &http.Response{StatusCode: http.StatusNoContent}, nil
 		}
-		uploader := &ArtifactUploader{
-			Client: &http.Client{Transport: mockTransport(keepReq)},
-			Host:   "example.org",
+		uploader := &artifactUploader{
+			Recorder:     &mockRecorder{},
+			StreamClient: &http.Client{Transport: mockTransport(keepReq)},
+			StreamHost:   "example.org",
 		}
 
 		Convey("Upload w/ file", func() {
