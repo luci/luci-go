@@ -59,6 +59,7 @@ import (
 // defaults to auth.AsSelf if LUCI project doesn't have PSSA configured.
 // Thus CV can't rely on the above method as is.
 type factory struct {
+	clientCache *lru.Cache // caches clients per (LUCI project, host).
 	legacyCache *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
 
 	mockMintProjectToken func(context.Context, auth.ProjectTokenParams) (*auth.Token, error)
@@ -66,6 +67,7 @@ type factory struct {
 
 func newFactory() *factory {
 	return &factory{
+		clientCache: lru.New(64),
 		// CV supports <20 legacy hosts. New ones shouldn't be added.
 		legacyCache: lru.New(20),
 	}
@@ -75,11 +77,21 @@ func (f *factory) makeClient(ctx context.Context, gerritHost, luciProject string
 	if strings.ContainsRune(luciProject, '.') {
 		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())
 	}
-	t, err := f.transport(ctx, gerritHost, luciProject)
+	key := luciProject + "/" + gerritHost
+	client, err := f.clientCache.GetOrCreate(ctx, key, func() (value interface{}, ttl time.Duration, err error) {
+		// Default ttl of 0 means never expire. Note that specific authorization
+		// token is still loaded per each request (see transport() function).
+		t, err := f.transport(ctx, gerritHost, luciProject)
+		if err != nil {
+			return
+		}
+		value, err = gerrit.NewRESTClient(&http.Client{Transport: t}, gerritHost, true)
+		return
+	})
 	if err != nil {
 		return nil, err
 	}
-	return gerrit.NewRESTClient(&http.Client{Transport: t}, gerritHost, true)
+	return client.(Client), nil
 }
 
 func (f *factory) transport(ctx context.Context, gerritHost, luciProject string) (http.RoundTripper, error) {

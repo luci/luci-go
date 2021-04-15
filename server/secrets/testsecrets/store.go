@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package testsecrets provides a dumb in-memory secret store to use in unit
-// tests. Use secrets.Set(c, &testsecrets.Store{...}) to inject it into
+// tests. Use secrets.Use(c, &testsecrets.Store{...}) to inject it into
 // the context.
 package testsecrets
 
@@ -32,14 +32,22 @@ import (
 type Store struct {
 	sync.Mutex
 
-	Secrets        map[string]secrets.Secret // current map of all secrets
-	NoAutogenerate bool                      // if true, GetSecret will NOT generate secrets
-	SecretLen      int                       // length of generated secret, 8 bytes default
-	Rand           *rand.Rand                // used to generate missing secrets
+	Secrets   map[string]secrets.Secret // current map of all secrets
+	SecretLen int                       // length of generated secret, 8 bytes default
+	Rand      *rand.Rand                // used to generate missing secrets
 }
 
-// GetSecret is a part of Store interface.
-func (t *Store) GetSecret(k string) (secrets.Secret, error) {
+// RandomSecret is a part of Store interface.
+func (t *Store) RandomSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	return t.getSecret(ctx, k, true)
+}
+
+// StoredSecret is a part of Store interface.
+func (t *Store) StoredSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	return t.getSecret(ctx, k, false)
+}
+
+func (t *Store) getSecret(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -47,7 +55,7 @@ func (t *Store) GetSecret(k string) (secrets.Secret, error) {
 		return s, nil
 	}
 
-	if t.NoAutogenerate {
+	if !autogen {
 		return secrets.Secret{}, secrets.ErrNoSuchSecret
 	}
 
@@ -69,9 +77,4 @@ func (t *Store) GetSecret(k string) (secrets.Secret, error) {
 	}
 	t.Secrets[k] = secrets.Secret{Current: secret}
 	return t.Secrets[k], nil
-}
-
-// Use installs default testing store into the context.
-func Use(c context.Context) context.Context {
-	return secrets.Set(c, &Store{})
 }

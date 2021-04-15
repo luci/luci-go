@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package secrets provides an interface for a simple secret store: you ask it
-// for a secret (a byte blob, identified by some key), and it returns it
-// to you (the current version, as well as a bunch of previous versions).
-// Callers are supposed to use the secret for an operation and then forget it
-// (e.g. do not try to store it elsewhere).
-//
-// Secure storage, retrieval and rotation of secrets is outside of the scope of
-// this interface: it's the responsibility of the implementation.
-package secrets
+// +build !race
+
+package cvtesting
+
+const raceDetectionEnabled = false

@@ -15,7 +15,6 @@
 package secrets
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -83,27 +82,5 @@ func TestSecret(t *testing.T) {
 			},
 		})
 		So(string(blob), ShouldResemble, `{"current":"MQ==","previous":["Mg==","Mw=="]}`)
-	})
-}
-
-func TestContext(t *testing.T) {
-	t.Parallel()
-
-	Convey("Works", t, func() {
-		c := Set(context.Background(), StaticStore{
-			"key": Secret{Current: []byte("secret")},
-		})
-		s, err := GetSecret(c, "key")
-		So(err, ShouldBeNil)
-		So(s.Current, ShouldResemble, []byte("secret"))
-
-		_, err = GetSecret(c, "missing")
-		So(err, ShouldEqual, ErrNoSuchSecret)
-
-		// For code coverage.
-		c = Set(c, nil)
-		So(Get(c), ShouldBeNil)
-		_, err = GetSecret(c, "key")
-		So(err, ShouldEqual, ErrNoStoreConfigured)
 	})
 }

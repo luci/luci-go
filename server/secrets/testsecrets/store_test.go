@@ -15,6 +15,7 @@
 package testsecrets
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/luci/server/secrets"
@@ -23,27 +24,38 @@ import (
 )
 
 func TestStore(t *testing.T) {
-	Convey("Autogeneration enabled", t, func() {
+	ctx := context.Background()
+
+	Convey("RandomSecret", t, func() {
 		store := Store{}
 
 		// Autogenerate one.
-		s1, err := store.GetSecret("key1")
+		s1, err := store.RandomSecret(ctx, "key1")
 		So(err, ShouldBeNil)
 		So(s1, ShouldResemble, secrets.Secret{
 			Current: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
 		})
 
 		// Getting same one back.
-		s2, err := store.GetSecret("key1")
+		s2, err := store.RandomSecret(ctx, "key1")
 		So(err, ShouldBeNil)
 		So(s2, ShouldResemble, secrets.Secret{
 			Current: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
 		})
 	})
 
-	Convey("Autogeneration disabled", t, func() {
-		store := Store{NoAutogenerate: true}
-		_, err := store.GetSecret("key1")
+	Convey("StoredSecret", t, func() {
+		store := Store{
+			Secrets: map[string]secrets.Secret{
+				"key1": {Current: []byte("blah")},
+			},
+		}
+
+		s, err := store.StoredSecret(ctx, "key1")
+		So(err, ShouldBeNil)
+		So(s, ShouldResemble, secrets.Secret{Current: []byte("blah")})
+
+		_, err = store.StoredSecret(ctx, "key2")
 		So(err, ShouldEqual, secrets.ErrNoSuchSecret)
 	})
 }

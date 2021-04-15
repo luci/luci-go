@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -31,7 +32,7 @@ func TestCookie(t *testing.T) {
 	Convey("With context", t, func() {
 		c := context.Background()
 		c, _ = testclock.UseTime(c, time.Unix(1442540000, 0))
-		c = testsecrets.Use(c)
+		c = secrets.Use(c, &testsecrets.Store{})
 
 		Convey("Encode and decode works", func() {
 			cookie, err := makeSessionCookie(c, "sid", true)

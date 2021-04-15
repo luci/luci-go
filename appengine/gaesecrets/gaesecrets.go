@@ -44,10 +44,9 @@ const cacheExp = time.Minute * 5
 // Config can be used to tweak parameters of the store. It is fine to use
 // default values.
 type Config struct {
-	NoAutogenerate bool      // if true, GetSecret will NOT generate secrets
-	SecretLen      int       // length of generated secrets, 32 bytes default
-	Prefix         string    // optional prefix for entity keys to namespace them
-	Entropy        io.Reader // source of random numbers, crypto rand by default
+	SecretLen int       // length of generated secrets, 32 bytes default
+	Prefix    string    // optional prefix for entity keys to namespace them
+	Entropy   io.Reader // source of random numbers, crypto rand by default
 }
 
 // Use injects the GAE implementation of secrets.Store into the context.
@@ -66,9 +65,7 @@ func Use(ctx context.Context, cfg *Config) context.Context {
 	if config.Entropy == nil {
 		config.Entropy = rand.Reader
 	}
-	return secrets.SetFactory(ctx, func(ctx context.Context) secrets.Store {
-		return &storeImpl{config, ctx}
-	})
+	return secrets.Use(ctx, &storeImpl{config})
 }
 
 // full secret key (including prefix) => secrets.Secret.
@@ -77,13 +74,21 @@ var secretsCache = caching.RegisterLRUCache(100)
 // storeImpl is implementation of secrets.Store bound to a GAE context.
 type storeImpl struct {
 	cfg Config
-	ctx context.Context
 }
 
-// GetSecret returns a secret by its key.
-func (s *storeImpl) GetSecret(k string) (secrets.Secret, error) {
-	secret, err := secretsCache.LRU(s.ctx).GetOrCreate(s.ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
-		secret, err := s.getSecretFromDatastore(k)
+// RandomSecret returns a secret by its name, generating it if necessary.
+func (s *storeImpl) RandomSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	return s.getSecret(ctx, k, true)
+}
+
+// StoredSecret returns a secret by its name, fetching it from the storage.
+func (s *storeImpl) StoredSecret(ctx context.Context, k string) (secrets.Secret, error) {
+	return s.getSecret(ctx, k, false)
+}
+
+func (s *storeImpl) getSecret(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
+	secret, err := secretsCache.LRU(ctx).GetOrCreate(ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
+		secret, err := s.getSecretFromDatastore(ctx, k, autogen)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -95,11 +100,9 @@ func (s *storeImpl) GetSecret(k string) (secrets.Secret, error) {
 	return secret.(secrets.Secret), nil
 }
 
-// getSecretImpl uses non-transactional datastore (txnBuf.GetNoTxn) to grab a
-// secret.
-func (s *storeImpl) getSecretFromDatastore(k string) (secrets.Secret, error) {
+func (s *storeImpl) getSecretFromDatastore(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
 	// Switch to default namespace.
-	ctx, err := info.Namespace(s.ctx, "")
+	ctx, err := info.Namespace(ctx, "")
 	if err != nil {
 		panic(err) // should not happen, Namespace errors only on bad namespace name
 	}
@@ -114,10 +117,10 @@ func (s *storeImpl) getSecretFromDatastore(k string) (secrets.Secret, error) {
 
 	// Autogenerate and put into the datastore.
 	if err == ds.ErrNoSuchEntity {
-		if s.cfg.NoAutogenerate {
+		if !autogen {
 			return secrets.Secret{}, secrets.ErrNoSuchSecret
 		}
-		ent.Created = clock.Now(s.ctx).UTC()
+		ent.Created = clock.Now(ctx).UTC()
 		if ent.Secret, err = s.generateSecret(); err != nil {
 			return secrets.Secret{}, transient.Tag.Apply(err)
 		}

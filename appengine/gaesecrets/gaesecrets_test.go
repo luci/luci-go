@@ -31,13 +31,22 @@ func TestWorks(t *testing.T) {
 		c = caching.WithEmptyProcessCache(c)
 
 		// Autogenerates one.
-		s1, err := secrets.GetSecret(c, "key1")
+		s1, err := secrets.RandomSecret(c, "key1")
 		So(err, ShouldBeNil)
 		So(len(s1.Current), ShouldEqual, 32)
 
 		// Returns same one.
-		s2, err := secrets.GetSecret(c, "key1")
+		s2, err := secrets.RandomSecret(c, "key1")
 		So(err, ShouldBeNil)
 		So(s2, ShouldResemble, s1)
+
+		// Can also be fetched as stored.
+		s3, err := secrets.StoredSecret(c, "key1")
+		So(err, ShouldBeNil)
+		So(s3, ShouldResemble, s1)
+
+		// Missing stored secrets are not auto-generated though.
+		_, err = secrets.StoredSecret(c, "key2")
+		So(err, ShouldEqual, secrets.ErrNoSuchSecret)
 	})
 }

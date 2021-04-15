@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/scheduler/appengine/catalog"
@@ -111,7 +112,7 @@ func newTestContext(now time.Time) context.Context {
 	c := memory.UseWithAppID(context.Background(), fakeAppID)
 	c = clock.Set(c, testclock.New(now))
 	c = mathrand.Set(c, rand.New(rand.NewSource(1000)))
-	c = testsecrets.Use(c)
+	c = secrets.Use(c, &testsecrets.Store{})
 
 	// Signer is used by ShouldEnforceRealmACL to discover app ID.
 	c = auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {

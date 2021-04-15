@@ -16,17 +16,65 @@ package secrets
 
 import (
 	"bytes"
+	"context"
 	"errors"
 )
 
 var (
-	// ErrNoSuchSecret is returned by Store.GetSecret if it can't find a secret.
+	// ErrNoSuchSecret indicates the store can't find the requested secret.
 	ErrNoSuchSecret = errors.New("secret not found")
+	// ErrNoStoreConfigured indicates there's no Store in the context.
+	ErrNoStoreConfigured = errors.New("secrets.Store is not in the context")
 )
 
+var contextKey = "secrets.Store"
+
+// Use installs a Store implementation into the context.
+func Use(ctx context.Context, s Store) context.Context {
+	return context.WithValue(ctx, &contextKey, s)
+}
+
+// RandomSecret returns a random secret using Store in the context.
+//
+// If the context doesn't have Store set, returns ErrNoStoreConfigured.
+func RandomSecret(ctx context.Context, name string) (Secret, error) {
+	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
+		return store.RandomSecret(ctx, name)
+	}
+	return Secret{}, ErrNoStoreConfigured
+}
+
+// StoredSecret returns a stored secret using Store in the context.
+//
+// If the context doesn't have Store set, returns ErrNoStoreConfigured.
+func StoredSecret(ctx context.Context, name string) (Secret, error) {
+	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
+		return store.StoredSecret(ctx, name)
+	}
+	return Secret{}, ErrNoStoreConfigured
+}
+
+// Store knows how to retrieve or autogenerate a secret given its name.
+type Store interface {
+	// RandomSecret returns a random secret given its name.
+	//
+	// The store will auto-generate the secret if necessary. Its value is
+	// a random high-entropy blob.
+	RandomSecret(ctx context.Context, name string) (Secret, error)
+
+	// StoredSecret returns a previously stored secret given its name.
+	//
+	// How it was stored depends on the concrete implementation of the Store. The
+	// difference from RandomSecret is that the Store will never try to
+	// auto-generate such secret if it is missing and will return ErrNoSuchSecret
+	// instead.
+	StoredSecret(ctx context.Context, name string) (Secret, error)
+}
+
 // Secret represents a current value of a secret as well as a set of few
-// previous values. Previous values are important when key is being rotated:
-// there may be valid outstanding derivatives of previous values of the secret.
+// previous values. Previous values are important when the secret is being
+// rotated: there may be valid outstanding derivatives of previous values of
+// the secret.
 type Secret struct {
 	Current  []byte   `json:"current"`            // current value of the secret, always set
 	Previous [][]byte `json:"previous,omitempty"` // optional list of previous values, most recent first
@@ -57,27 +105,4 @@ func (s Secret) Equal(a Secret) bool {
 		}
 	}
 	return true
-}
-
-// Store knows how to retrieve (or autogenerate) a secret given its key.
-type Store interface {
-	// GetSecret returns a secret given its key.
-	//
-	// Store may choose to autogenerate a secret if there's no existing one, or it
-	// may choose to treat it as a error and return ErrNoSuchSecret.
-	GetSecret(name string) (Secret, error)
-}
-
-// StaticStore is Store with predefined secrets.
-type StaticStore map[string]Secret
-
-// GetSecret returns a secret given its key or ErrNoSuchSecret if no such
-// secret exists.
-//
-// The caller must not mutate the secret.
-func (s StaticStore) GetSecret(k string) (Secret, error) {
-	if secret, ok := s[k]; ok {
-		return secret, nil
-	}
-	return Secret{}, ErrNoSuchSecret
 }
