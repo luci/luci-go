@@ -64,6 +64,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ccd51e9d_d06a686a",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T23:45:52Z",
+      "side": 1,
+      "message": "%q looks ugly and all realistic secret references won\u0027t have spaces, but fine",
+      "parentUuid": "b7eadeb1_0a157f4f",
+      "range": {
+        "startLine": 172,
+        "startChar": 36,
+        "endLine": 172,
+        "endChar": 38
+      },
+      "revId": "8871be4b171fae422b7d715caf586004fc316035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4eb1c270_441a30d2",
@@ -87,6 +111,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ac734d3_b72bb64e",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T23:45:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4eb1c270_441a30d2",
+      "range": {
+        "startLine": 300,
+        "startChar": 37,
+        "endLine": 300,
+        "endChar": 38
+      },
+      "revId": "8871be4b171fae422b7d715caf586004fc316035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b0b6d0af_6e1ce3d1",
@@ -100,6 +148,30 @@
       "writtenOn": "2021-04-15T22:50:22Z",
       "side": 1,
       "message": "imo, deserves a const just like reloadIntervalMin.",
+      "range": {
+        "startLine": 346,
+        "startChar": 10,
+        "endLine": 346,
+        "endChar": 25
+      },
+      "revId": "8871be4b171fae422b7d715caf586004fc316035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e15c49b_6b9a561d",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T23:45:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0b6d0af_6e1ce3d1",
       "range": {
         "startLine": 346,
         "startChar": 10,
@@ -135,6 +207,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7f32f48f_2eace335",
+        "filename": "server/secrets/secrets.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T23:45:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "075d84ee_32ccceef",
+      "range": {
+        "startLine": 95,
+        "startChar": 44,
+        "endLine": 95,
+        "endChar": 56
+      },
+      "revId": "8871be4b171fae422b7d715caf586004fc316035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "4d99fd72_e894a28e",
         "filename": "server/secrets/secrets.go",
         "patchSetId": 7
@@ -146,6 +242,30 @@
       "writtenOn": "2021-04-15T22:50:22Z",
       "side": 1,
       "message": "the given Secret.Current \u003d\u003d the new secret, right?",
+      "range": {
+        "startLine": 96,
+        "startChar": 43,
+        "endLine": 96,
+        "endChar": 49
+      },
+      "revId": "8871be4b171fae422b7d715caf586004fc316035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4f57782_3a719cff",
+        "filename": "server/secrets/secrets.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T23:45:52Z",
+      "side": 1,
+      "message": "Yes",
+      "parentUuid": "4d99fd72_e894a28e",
       "range": {
         "startLine": 96,
         "startChar": 43,
