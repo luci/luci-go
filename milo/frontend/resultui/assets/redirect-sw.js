@@ -41,5 +41,4 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(Response.redirect(url.toString()));
     return;
   }
-  event.respondWith(fetch(event.request));
 });
