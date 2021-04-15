@@ -22,6 +22,30 @@
       },
       "revId": "5d9950fe5b37e3c6d676782cc29da74214592577",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5385d54_d7ca42e1",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T23:00:47Z",
+      "side": 1,
+      "message": "Not all test need to mock recorder.\n\nIf a test needs to verify the invocation of a recorder call, it needs to set the custom handler to snap the request or mock the response. Adding an assertion can enforce such tests to set the custom handler, but cannot enforce them to perform the actual verification w/ the snapped request or the impact of the mocked response.\n\nIf the test doesn\u0027t need to set a custom handler, it means that the test doesn\u0027t need to verify the invocation of the recorder call. Therefore, no assertion should be required for such a test.\n\ni.e., Tests are expected to set the custom handler for the RPCs that they test. Assertion won\u0027t enforce the tests to perform what they should do.",
+      "parentUuid": "8b26e12f_aab31fbd",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 37
+      },
+      "revId": "5d9950fe5b37e3c6d676782cc29da74214592577",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
