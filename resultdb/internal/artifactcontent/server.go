@@ -154,6 +154,8 @@ type contentRequest struct {
 	invID      invocations.ID
 	parentID   string
 	artifactID string
+	// Maximum size of the artifact, in bytes.
+	limit int
 
 	contentType spanner.NullString
 	size        spanner.NullInt64
@@ -219,7 +221,25 @@ func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) er
 	r.invID = invocations.ID(invID)
 	r.parentID = artifacts.ParentID(testID, resultID)
 	r.artifactID = artifactID
-	return nil
+
+	query := req.URL.Query()
+	limitStr, ok := query["n"]
+	if !ok {
+		return nil
+	}
+	if len(limitStr) != 1 {
+		return fmt.Errorf("artifact url only accepts 1 query parmeter n, but got %d", len(limitStr))
+	}
+
+	r.limit, err = strconv.Atoi(limitStr[0])
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "query parmeter n must be a positive integer, but got %s", limitStr[0]).Err()
+	case r.limit <= 0:
+		return fmt.Errorf("query parmeter n must be a positive integer, but got %d", r.limit)
+	default:
+		return nil
+	}
 }
 
 // checkAccess ensures that the requester has access to the artifact content.
