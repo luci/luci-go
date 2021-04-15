@@ -28,7 +28,7 @@ func TestArtifactChannel(t *testing.T) {
 
 	Convey("schedule", t, func() {
 		ctx := context.Background()
-		cfg := testServerConfig(nil, "127.0.0.1:123", "secret")
+		cfg := testServerConfig("127.0.0.1:123", "secret")
 		reqCh := make(chan *http.Request, 1)
 		cfg.ArtifactStreamClient.Transport = mockTransport(
 			func(req *http.Request) (*http.Response, error) {

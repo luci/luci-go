@@ -47,13 +47,13 @@ func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.R
 	return sinkClient.ReportTestResults(ctx, in)
 }
 
-func testServerConfig(recorder pb.RecorderClient, addr, tk string) ServerConfig {
+func testServerConfig(addr, tk string) ServerConfig {
 	return ServerConfig{
 		Address:              addr,
 		AuthToken:            tk,
 		ArtifactStreamClient: &http.Client{},
 		ArtifactStreamHost:   "example.org",
-		Recorder:             recorder,
+		Recorder:             &mockRecorder{},
 		Invocation:           "invocations/u-foo-1587421194_893166206",
 		invocationID:         "u-foo-1587421194_893166206",
 		UpdateToken:          "UpdateToken-ABC",
@@ -115,8 +115,19 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 type mockRecorder struct {
 	pb.RecorderClient
 	batchCreateTestResults func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error)
+	batchCreateArtifacts   func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error)
 }
 
 func (m *mockRecorder) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*pb.BatchCreateTestResultsResponse, error) {
-	return m.batchCreateTestResults(ctx, in)
+	if m.batchCreateTestResults != nil {
+		return m.batchCreateTestResults(ctx, in)
+	}
+	return nil, nil
+}
+
+func (m *mockRecorder) BatchCreateArtifacts(ctx context.Context, in *pb.BatchCreateArtifactsRequest, opts ...grpc.CallOption) (*pb.BatchCreateArtifactsResponse, error) {
+	if m.batchCreateArtifacts != nil {
+		return m.batchCreateArtifacts(ctx, in)
+	}
+	return nil, nil
 }
