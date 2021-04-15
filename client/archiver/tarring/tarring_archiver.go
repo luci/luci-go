@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package archiver
+package tarring
 
 import (
 	"fmt"
@@ -27,9 +27,9 @@ import (
 	"go.chromium.org/luci/common/isolated"
 )
 
-// TarringArchiver archives the files specified by an isolate file to the server,
+// Archiver archives the files specified by an isolate file to the server,
 // Small files are combining into tar archives before uploading.
-type TarringArchiver struct {
+type Archiver struct {
 	checker  Checker
 	uploader Uploader
 	tracker  *UploadTracker
@@ -41,19 +41,18 @@ type TarringArchiver struct {
 	filePathWalk func(string, filepath.WalkFunc) error
 }
 
-// NewTarringArchiver constructs a TarringArchiver.
-func NewTarringArchiver(checker Checker, uploader Uploader) *TarringArchiver {
-
-	return &TarringArchiver{checker: checker, uploader: uploader, fileHashCache: sync.Map{}, filePathWalk: filepath.Walk}
+// NewArchiver constructs a Archiver.
+func NewArchiver(checker Checker, uploader Uploader) *Archiver {
+	return &Archiver{checker: checker, uploader: uploader, fileHashCache: sync.Map{}, filePathWalk: filepath.Walk}
 }
 
 // This module variable is overwritten by tests.
-var prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated, fileHashCache *sync.Map) {
+var prepareToArchive = func(ta *Archiver, isol *isolated.Isolated, fileHashCache *sync.Map) {
 	ta.tracker = newUploadTracker(ta.checker, ta.uploader, isol, fileHashCache)
 }
 
-// TarringArgs wraps all the args for TarringArchiver.Archive().
-type TarringArgs struct {
+// ArchiveArgs wraps all the args for Archiver.Archive().
+type ArchiveArgs struct {
 	Deps          []string
 	RootDir       string
 	IgnoredPathRe string
@@ -62,7 +61,7 @@ type TarringArgs struct {
 }
 
 // Archive uploads a single isolate.
-func (ta *TarringArchiver) Archive(args *TarringArgs) (IsolatedSummary, error) {
+func (ta *Archiver) Archive(args *ArchiveArgs) (IsolatedSummary, error) {
 	prepareToArchive(ta, args.Isol, &ta.fileHashCache)
 	parts, err := ta.partitionDeps(args.Deps, args.RootDir, args.IgnoredPathRe)
 	if err != nil {
@@ -171,7 +170,7 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 
 // partitionDeps walks each of the deps, partitioning the results into symlinks
 // and files categorized by size.
-func (ta *TarringArchiver) partitionDeps(deps []string, rootDir string, ignoredPathRe string) (partitionedDeps, error) {
+func (ta *Archiver) partitionDeps(deps []string, rootDir string, ignoredPathRe string) (partitionedDeps, error) {
 	fsView, err := common.NewFilesystemView(rootDir, ignoredPathRe)
 	if err != nil {
 		return partitionedDeps{}, err

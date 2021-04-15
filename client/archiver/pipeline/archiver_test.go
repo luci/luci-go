@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package archiver
+package pipeline
 
 import (
 	"context"
@@ -36,7 +36,7 @@ func TestArchiverEmpty(t *testing.T) {
 	ctx := context.Background()
 
 	Convey(`An empty archiver should produce sane output.`, t, func() {
-		a := New(ctx, isolatedclient.NewClient("https://localhost:1"), nil)
+		a := NewArchiver(ctx, isolatedclient.NewClient("https://localhost:1"), nil)
 		stats := a.Stats()
 		So(stats.TotalHits(), ShouldResemble, 0)
 		So(stats.TotalMisses(), ShouldResemble, 0)
@@ -55,7 +55,7 @@ func TestArchiverFile(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		namespace := isolatedclient.DefaultNamespace
-		a := New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
+		a := NewArchiver(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 
 		fEmpty, err := ioutil.TempFile("", "archiver")
 		So(err, ShouldBeNil)
@@ -113,7 +113,7 @@ func TestArchiverFileHit(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		namespace := isolatedclient.DefaultNamespace
-		a := New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
+		a := NewArchiver(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 		server.Inject(namespace, []byte("foo"))
 		item := a.Push("foo", isolatedclient.NewBytesSource([]byte("foo")), 0)
 		item.WaitForHashed()
@@ -136,7 +136,7 @@ func TestArchiverCancel(t *testing.T) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(ctx, isolatedclient.NewClient(ts.URL), nil)
+		a := NewArchiver(ctx, isolatedclient.NewClient(ts.URL), nil)
 
 		tmpDir := t.TempDir()
 
@@ -166,7 +166,7 @@ func TestArchiverPushClosed(t *testing.T) {
 	ctx := context.Background()
 
 	Convey(`A closed archiver should ignore additional input.`, t, func() {
-		a := New(ctx, nil, nil)
+		a := NewArchiver(ctx, nil, nil)
 		So(a.Close(), ShouldBeNil)
 		So(a.PushFile("ignored", "ignored", 0), ShouldBeNil)
 	})

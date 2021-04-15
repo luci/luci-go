@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package archiver
+package tarring
 
 import (
 	"io"
@@ -57,7 +57,7 @@ func TestFileHashingSharedAcrossArchives(t *testing.T) {
 		uploader := &fakeUploader{}
 
 		// namespace := isolatedclient.DefaultNamespace
-		ta := NewTarringArchiver(checker, uploader)
+		ta := NewArchiver(checker, uploader)
 		isol := &isolated.Isolated{}
 
 		// Override filesystem calls in upload_tracker with fake.
@@ -69,7 +69,7 @@ func TestFileHashingSharedAcrossArchives(t *testing.T) {
 		defer func() {
 			prepareToArchive = origPrepareToArchive
 		}()
-		prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated, fileHashCache *sync.Map) {
+		prepareToArchive = func(ta *Archiver, isol *isolated.Isolated, fileHashCache *sync.Map) {
 			origPrepareToArchive(ta, isol, fileHashCache)
 			fos := &fakeOS{
 				readFiles: map[string]io.Reader{
@@ -88,7 +88,7 @@ func TestFileHashingSharedAcrossArchives(t *testing.T) {
 				return origDoHashFileImpl(ut, path)
 			}
 		}
-		args := &TarringArgs{
+		args := &ArchiveArgs{
 			Deps:     []string{largeFilePath},
 			RootDir:  "/",
 			Isolated: "isolate1",

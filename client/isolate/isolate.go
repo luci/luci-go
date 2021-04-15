@@ -26,7 +26,7 @@ import (
 	"runtime"
 	"strings"
 
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/pipeline"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -144,11 +144,11 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 
 // Archive processes a .isolate, generates a .isolated and archive it.
 // Returns a *PendingItem to the .isolated.
-func Archive(arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingItem {
+func Archive(arch *pipeline.Archiver, opts *ArchiveOptions) *pipeline.PendingItem {
 	displayName := filepath.Base(opts.Isolated)
 	f, err := archive(arch, opts, displayName)
 	if err != nil {
-		i := &archiver.PendingItem{DisplayName: displayName}
+		i := &pipeline.PendingItem{DisplayName: displayName}
 		i.SetErr(err)
 		return i
 	}
@@ -264,13 +264,13 @@ func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 	return relDeps, rootDir, err
 }
 
-func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) (*archiver.PendingItem, error) {
+func archive(arch *pipeline.Archiver, opts *ArchiveOptions, displayName string) (*pipeline.PendingItem, error) {
 	deps, rootDir, i, err := ProcessIsolate(opts)
 	if err != nil {
 		return nil, err
 	}
 	// Handle each dependency, either a file or a directory.
-	var fileItems []*archiver.PendingItem
+	var fileItems []*pipeline.PendingItem
 	for _, dep := range deps {
 		relPath, err := filepath.Rel(rootDir, dep)
 		if err != nil {
@@ -286,7 +286,7 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 			if relPath, err = filepath.Rel(rootDir, dep); err != nil {
 				return nil, err
 			}
-			dirFItems, dirSymItems, err := archiver.PushDirectory(arch, dep, relPath)
+			dirFItems, dirSymItems, err := pipeline.PushDirectory(arch, dep, relPath)
 			if err != nil {
 				return nil, err
 			}

@@ -27,7 +27,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/pipeline"
 	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
@@ -108,7 +108,7 @@ func TestArchive(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		namespace := isolatedclient.DefaultNamespace
-		a := archiver.New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
+		a := pipeline.NewArchiver(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 
 		// Setup temporary directory.
 		//   /base/bar
@@ -225,7 +225,7 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 	t.Parallel()
 
 	Convey(`The client should handle missing isolate files.`, t, func() {
-		a := archiver.New(context.Background(), isolatedclient.NewClient("http://unused"), nil)
+		a := pipeline.NewArchiver(context.Background(), isolatedclient.NewClient("http://unused"), nil)
 		opts := &ArchiveOptions{
 			Isolate:  "/this-file-does-not-exist",
 			Isolated: "/this-file-doesnt-either",
@@ -250,7 +250,7 @@ func TestArchiveDir(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		namespace := isolatedclient.DefaultNamespace
-		a := archiver.New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
+		a := pipeline.NewArchiver(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 
 		// Setup temporary directory.
 		//   /base/subdir/foo

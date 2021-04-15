@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package archiver
+package pipeline
 
 import (
 	"context"
@@ -260,7 +260,7 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, namespace stri
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(context.Background(), isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
+	a := NewArchiver(context.Background(), isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 
 	// Create the directories and symlinks.
 	for _, node := range nodes {

@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/pipeline"
 	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/client/isolated"
 	clientswarming "go.chromium.org/luci/client/swarming"
@@ -218,7 +218,7 @@ func upload(ctx context.Context, client *isolatedclient.Client, baseDir, outDir 
 	var digest commonisolated.HexDigest
 
 	if !isEmpty {
-		arch := archiver.New(ctx, client, nil)
+		arch := pipeline.NewArchiver(ctx, client, nil)
 		defer arch.Close() // Ignore "was already closed" error here.
 
 		items, err := isolated.ArchiveFiles(ctx, arch, baseDir, []string{outDir})
