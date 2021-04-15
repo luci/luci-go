@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f22b31a5_19a57e07",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T17:53:29Z",
+      "side": 1,
+      "message": "Inlined `token` but not `au`. The next CL will redefine `au`.",
+      "parentUuid": "03da3a3f_0197f45a",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 25
+      },
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e7354be8_5cbdaabe",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-04-15T17:19:44Z",
       "side": 1,
       "message": "move closer to the usage, before L167?",
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45f4733e_730d3bef",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T17:53:29Z",
+      "side": 1,
+      "message": "The intention here is that nothing should be scheduled until the entire inputs are fully validated.\n\nTherefore, this slice is declared out of the loop and the loop simply adds tasks to the slice. When the loop is over (finished validating all), this function schedules tasks for uploading artifacts and test results.",
+      "parentUuid": "e7354be8_5cbdaabe",
       "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e58c161_a4ebc9be",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T17:53:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ed32005_71a24d5b",
+      "range": {
+        "startLine": 144,
+        "startChar": 3,
+        "endLine": 145,
+        "endChar": 45
+      },
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2920cc5a_83e08db3",
@@ -81,6 +147,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "9716538e_48cf4b34",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T17:53:29Z",
+      "side": 1,
+      "message": "L178 goroutine is located out of this loop.\nDid you mean that the loop L178 can have a loop to iterate all the test results and artifacts?\n\nL169 constructs and adds an uploadTask{} into the slice. Could you elaborate more on \"without waiting for artifacts\"?",
+      "parentUuid": "2920cc5a_83e08db3",
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "11c2f7bc_cd3b4641",
@@ -94,6 +178,24 @@
       "writtenOn": "2021-04-15T17:19:44Z",
       "side": 1,
       "message": "nit: consider uts[i] \u003d ...\nI think it is more common to do it this way",
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6bdc9f8_ae7dca3b",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T17:53:29Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "11c2f7bc_cd3b4641",
       "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
