@@ -55,6 +55,7 @@ const allowGroup = "service-luci-change-verifier-admins"
 
 type DiagnosticServer struct {
 	GerritUpdater *updater.Updater
+	PMNotifier    *prjmanager.Notifier
 
 	diagnosticpb.UnimplementedDiagnosticServer
 }
@@ -362,7 +363,7 @@ func (d *DiagnosticServer) SendProjectEvent(ctx context.Context, req *diagnostic
 		return nil, status.Errorf(codes.NotFound, "project not found")
 	}
 
-	if err := prjpb.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
+	if err := d.PMNotifier.TaskRefs.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
 	}
 	return &emptypb.Empty{}, nil
