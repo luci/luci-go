@@ -49,13 +49,14 @@ func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.R
 
 func testServerConfig(recorder pb.RecorderClient, addr, tk string) ServerConfig {
 	return ServerConfig{
-		Address:          addr,
-		AuthToken:        tk,
-		ArtifactUploader: &ArtifactUploader{Client: &http.Client{}, Host: "example.org"},
-		Recorder:         recorder,
-		Invocation:       "invocations/u-foo-1587421194_893166206",
-		invocationID:     "u-foo-1587421194_893166206",
-		UpdateToken:      "UpdateToken-ABC",
+		Address:              addr,
+		AuthToken:            tk,
+		ArtifactStreamClient: &http.Client{},
+		ArtifactStreamHost:   "example.org",
+		Recorder:             recorder,
+		Invocation:           "invocations/u-foo-1587421194_893166206",
+		invocationID:         "u-foo-1587421194_893166206",
+		UpdateToken:          "UpdateToken-ABC",
 	}
 }
 

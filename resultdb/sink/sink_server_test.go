@@ -230,12 +230,10 @@ func TestReportInvocationLevelArtifacts(t *testing.T) {
 		ctx := metadata.NewIncomingContext(
 			context.Background(),
 			metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
-
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
 		cfg := testServerConfig(&mockRecorder{}, "", "secret")
-
 		sink, err := newSinkServer(ctx, cfg)
 		So(err, ShouldBeNil)
 		defer closeSinkServer(ctx, sink)

@@ -29,18 +29,23 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// ArtifactUploader provides functions for uploading artifacts to ResultDB.
-type ArtifactUploader struct {
-	// Client is an HTTP client used for uploading artifacts to ResultDB.
-	Client *http.Client
-	// Host is the host of a ResultDB instance to upload artifacts to.
-	Host string
+// artifactUploader provides functions for uploading artifacts to ResultDB.
+type artifactUploader struct {
+	// Recorder is a gRPC client used to upload artifacts in batches.
+	Recorder pb.RecorderClient
+
+	// StreamClient is an HTTP client used to upload artifacts that are too large
+	// to be batched.
+	StreamClient *http.Client
+	// Host is the host of a ResultDB service instance, to which artifacts are streamed.
+	StreamHost string
 }
 
 // StreamUpload uploads the artifact in a streaming manner via HTTP..
-func (u *ArtifactUploader) StreamUpload(ctx context.Context, t *uploadTask, updateToken string) error {
+func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, updateToken string) error {
 	var body io.ReadSeeker
 	var err error
 	if fp := t.art.GetFilePath(); fp == "" {
@@ -55,7 +60,7 @@ func (u *ArtifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 	}
 
 	req, err := http.NewRequestWithContext(
-		ctx, "PUT", fmt.Sprintf("https://%s/%s", u.Host, t.artName), body)
+		ctx, "PUT", fmt.Sprintf("https://%s/%s", u.StreamHost, t.artName), body)
 	if err != nil {
 		return errors.Annotate(err, "newHTTPRequest").Err()
 	}
@@ -107,9 +112,9 @@ func (u *ArtifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 	return u.sendHTTP(req)
 }
 
-func (u *ArtifactUploader) sendHTTP(req *http.Request) error {
+func (u *artifactUploader) sendHTTP(req *http.Request) error {
 	return retry.Retry(req.Context(), transient.Only(retry.Default), func() error {
-		resp, err := u.Client.Do(req)
+		resp, err := u.StreamClient.Do(req)
 		if err != nil {
 			return errors.Annotate(err, "failed to send HTTP request").Err()
 		}
@@ -137,7 +142,7 @@ func calculateHash(input io.Reader) (string, error) {
 	return "sha256:" + hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func (u *ArtifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {
+func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {
 	// TODO(ddoman): implement me
 	return nil
 }

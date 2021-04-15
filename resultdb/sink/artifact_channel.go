@@ -68,7 +68,11 @@ type uploadTask struct {
 func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
 	var err error
 	c := &artifactChannel{}
-	au := cfg.ArtifactUploader
+	au := artifactUploader{
+		Recorder:     cfg.Recorder,
+		StreamClient: cfg.ArtifactStreamClient,
+		StreamHost:   cfg.ArtifactStreamHost,
+	}
 
 	// batchChannel
 	bcOpts := &dispatcher.Options{
