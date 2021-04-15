@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ca1a48c_512c5696",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T21:32:34Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "b57959934ea556ce4a56b7cbaeacb00102d04b3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3074f73e_59e92c95",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T21:32:34Z",
+      "side": 1,
+      "message": "I decided to go with a single goroutine and a priority queue (vs a goroutine per secret + timer in each one), since I assumed it will be easier to implement w.r.t. to \"all background stuff must happen within MaintenanceLoop with its context\" API.\n\nIt is justified because we expect relatively few secrets, and their rotation check period is measures in hours, so this loop won\u0027t be busy at all.\n\nThe implementation isn\u0027t that hard (except PQ boilerplate), but writing tests proved to be very challenging: I spent several hours on them :( Mocking time in background is hard.",
+      "range": {
+        "startLine": 81,
+        "startChar": 30,
+        "endLine": 81,
+        "endChar": 45
+      },
+      "revId": "b57959934ea556ce4a56b7cbaeacb00102d04b3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
