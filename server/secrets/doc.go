@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package secrets provides an interface for a simple secret store: you ask it
-// for a secret (a byte blob, identified by some key), and it returns it
-// to you (the current version, as well as a bunch of previous versions).
-// Callers are supposed to use the secret for an operation and then forget it
-// (e.g. do not try to store it elsewhere).
+// Package secrets provides a secrets store based on Google Secret Manager.
 //
-// Secure storage, retrieval and rotation of secrets is outside of the scope of
-// this interface: it's the responsibility of the implementation.
+// It supports stored and auto-generated secrets.
+//
+// Stored secrets are predefined blobs or texts (e.g. passwords) that are placed
+// in the Google Secret Manager and then read back via this package. How secrets
+// are written is outside the scope of this package, it just reads them.
+//
+// Auto-generated secrets are random high-entropy strings with no inherent
+// structure. They are usually derived via a key derivation function from their
+// name and some root secret read from Google Secret Manager. They are useful
+// when calculating HMACs, as salts, etc.
 package secrets
