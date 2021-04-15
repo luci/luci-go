@@ -40,6 +40,7 @@ import (
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
+	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
@@ -542,8 +543,9 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	// TODO(crbug/1150607): Create ResultDB invocations.
 
 	err = parallel.FanOutIn(func(work chan<- func() error) {
-		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
 		work <- func() error { return model.UpdateBuilderStat(ctx, blds, now) }
+		work <- func() error { return resultdb.CreateInvocations(ctx, blds, cfgs) }
+		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
 	})
 	if err != nil {
 		return nil, err
