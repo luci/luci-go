@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0bb6c5b5_9c9607ab",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-15T18:04:39Z",
+      "side": 1,
+      "message": "Nit: if L193 is uts :\u003d make([]*uploadTask, 0, len(in.Artifacts)) then you can just append each uploadTask to uts without keeping track of i?",
+      "range": {
+        "startLine": 206,
+        "startChar": 2,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "3584987b8f9ecef59a941e6e74d7aba6edadce44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
