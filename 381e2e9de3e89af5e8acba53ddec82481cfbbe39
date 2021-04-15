@@ -16,6 +16,24 @@
       "message": "why remove this?",
       "revId": "381e2e9de3e89af5e8acba53ddec82481cfbbe39",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd3608b1_222d71d3",
+        "filename": "cmdrunner/command_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T05:57:08Z",
+      "side": 0,
+      "message": "accident. restored",
+      "parentUuid": "4d357d14_d1ad2dc0",
+      "revId": "381e2e9de3e89af5e8acba53ddec82481cfbbe39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
