@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/client/archiver"
 	swarminglib "go.chromium.org/luci/client/cmd/swarming/lib"
 	"go.chromium.org/luci/client/isolated"
+	clientswarming "go.chromium.org/luci/client/swarming"
 	"go.chromium.org/luci/common/errors"
 	commonisolated "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -36,62 +37,8 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
-const (
-	executableSuffixParameter = "${EXECUTABLE_SUFFIX}"
-	isolatedOutdirParameter   = "${ISOLATED_OUTDIR}"
-	swarmingBotFileParameter  = "${SWARMING_BOT_FILE}"
-)
-
 // ErrHardTimeout is error for timeout from Run command.
 var ErrHardTimeout = errors.Reason("timeout happens").Err()
-
-// replaceParameters replaces parameter tokens with appropriate values in a
-// string.
-func replaceParameters(ctx context.Context, arg, outDir, botFile string) (string, error) {
-
-	if runtime.GOOS == "windows" {
-		arg = strings.Replace(arg, executableSuffixParameter, ".exe", -1)
-	} else {
-		arg = strings.Replace(arg, executableSuffixParameter, "", -1)
-	}
-	replaceSlash := false
-
-	if strings.Contains(arg, isolatedOutdirParameter) {
-		if outDir == "" {
-			return "", errors.Reason("output directory is requested in command or env var, but not provided; please specify one").Err()
-		}
-		arg = strings.Replace(arg, isolatedOutdirParameter, outDir, -1)
-		replaceSlash = true
-	}
-
-	if strings.Contains(arg, swarmingBotFileParameter) {
-		if botFile != "" {
-			arg = strings.Replace(arg, swarmingBotFileParameter, botFile, -1)
-			replaceSlash = true
-		} else {
-			logging.Warningf(ctx, "swarmingBotFileParameter found in command or env var, but no bot_file specified. Leaving parameter unchanged.")
-		}
-	}
-
-	if replaceSlash {
-		arg = strings.Replace(arg, "/", string(filepath.Separator), -1)
-	}
-
-	return arg, nil
-}
-
-// processCommand replaces parameters in a command line.
-func processCommand(ctx context.Context, command []string, outDir, botFile string) ([]string, error) {
-	newCommand := make([]string, 0, len(command))
-	for _, arg := range command {
-		newArg, err := replaceParameters(ctx, arg, outDir, botFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to replace parameter %s: %v", arg, err)
-		}
-		newCommand = append(newCommand, newArg)
-	}
-	return newCommand, nil
-}
 
 type cipdInfo struct {
 	binaryPath string
@@ -112,7 +59,7 @@ func getCommandEnv(ctx context.Context, tmpDir string, cipdInfo *cipdInfo, runDi
 			out.Remove(k)
 			return nil
 		}
-		p, err := replaceParameters(ctx, v, outDir, botFile)
+		p, err := clientswarming.ReplaceCommandParameters(ctx, v, outDir, botFile)
 		if err != nil {
 			return fmt.Errorf("failed to call replaceParameters for %s: %v", v, err)
 		}
