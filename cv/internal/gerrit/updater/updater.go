@@ -42,8 +42,15 @@ const blindRefreshInterval = time.Minute
 
 var errStaleData = errors.New("Fetched stale Gerrit data", transient.Tag)
 
-func init() {
-	tq.RegisterTaskClass(tq.TaskClass{
+// Updater updates CLs in Datastore by querying Gerrit.
+type Updater struct {
+	tqd *tq.Dispatcher
+}
+
+// New creates new Updater.
+func New(tqd *tq.Dispatcher) *Updater {
+	u := &Updater{tqd: tqd}
+	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:        TaskClass,
 		Prototype: &RefreshGerritCL{},
 		Queue:     "refresh-gerrit-cl",
@@ -52,7 +59,7 @@ func init() {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			// Keep this function small, as it's not unit tested.
 			t := payload.(*RefreshGerritCL)
-			err := Refresh(ctx, t)
+			err := u.Refresh(ctx, t)
 			return common.TQIfy{
 				// Don't log the entire stack trace of stale data, which is sadly an
 				// hourly occurrence.
@@ -60,13 +67,14 @@ func init() {
 			}.Error(ctx, err)
 		},
 	})
+	return u
 }
 
 // Schedule enqueues a TQ task to refresh a Gerrit CL.
 //
 // It should be used instead of direct tq.AddTask for consistent deduplication
 // and ease of debugging.
-func Schedule(ctx context.Context, p *RefreshGerritCL) error {
+func (u *Updater) Schedule(ctx context.Context, p *RefreshGerritCL) error {
 	task := &tq.Task{
 		Payload: p,
 		Title:   fmt.Sprintf("%s/%s/%d", p.GetLuciProject(), p.GetHost(), p.GetChange()),
@@ -97,7 +105,7 @@ func Schedule(ctx context.Context, p *RefreshGerritCL) error {
 			strconv.FormatInt(ts.UnixNano(), 16),
 		}, "\n")
 	}
-	return tq.AddTask(ctx, task)
+	return u.tqd.AddTask(ctx, task)
 }
 
 // Refresh fetches latest info from Gerrit.
@@ -107,7 +115,7 @@ func Schedule(ctx context.Context, p *RefreshGerritCL) error {
 // but forceNotifyPM will still be obeyed.
 //
 // Prefer Schedule() instead of Refresh() in production.
-func Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
+func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	f := fetcher{
 		luciProject:   r.GetLuciProject(),
 		host:          r.GetHost(),
@@ -123,4 +131,21 @@ func Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 		return err
 	}
 	return f.update(ctx, common.CLID(r.GetClidHint()))
+}
+
+// Default provides legacy package API to ease the migration to use of the
+// Updater object.
+// TODO(tandrii): delete it.
+var Default *Updater
+
+func init() {
+	Default = New(&tq.Default)
+}
+
+func Schedule(ctx context.Context, p *RefreshGerritCL) error {
+	return Default.Schedule(ctx, p)
+}
+
+func Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
+	return Default.Refresh(ctx, r)
 }
