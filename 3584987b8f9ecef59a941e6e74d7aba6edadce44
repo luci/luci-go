@@ -22,6 +22,30 @@
       },
       "revId": "3584987b8f9ecef59a941e6e74d7aba6edadce44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "add4773f_fbba01bc",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T18:34:23Z",
+      "side": 1,
+      "message": "apologies, somehow I missed the fact that in.Artifacts is a map. I thought it is a slice. I think your prev code was better. Sorry for the noise.",
+      "parentUuid": "0bb6c5b5_9c9607ab",
+      "range": {
+        "startLine": 206,
+        "startChar": 2,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "3584987b8f9ecef59a941e6e74d7aba6edadce44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

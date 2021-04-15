@@ -83,6 +83,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c042396_27446e8f",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T18:34:23Z",
+      "side": 1,
+      "message": "sorry, I misread the code",
+      "parentUuid": "45f4733e_730d3bef",
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7ed32005_71a24d5b",
@@ -179,6 +197,24 @@
       "side": 1,
       "message": "ah, did you mean that\n- one goroutine performs all the iteration, validation, and scheduling tasks for artifacts, and\n- another goroutine performs all the work for test results?\n\nNo, this can\u0027t do that to avoid partial failures. If any of the validation fails then nothing should be uploaded to ResultDB. Hence, both goroutines need to wait until all the test results and artifacts are validated.",
       "parentUuid": "9716538e_48cf4b34",
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3d76584_962f4b46",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T18:34:23Z",
+      "side": 1,
+      "message": "I misread the code, ignore this comment please.",
+      "parentUuid": "3ccc9be9_839e2150",
       "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
