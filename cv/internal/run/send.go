@@ -21,14 +21,26 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
+// Notifier notifies RUn Manager.
+type Notifier struct {
+	// TaskRefs are used to register handlers of RM implementation to
+	// avoid circular dependency.
+	TaskRefs eventpb.TaskRefs
+}
+
+func NewNotifier(tqd *tq.Dispatcher) *Notifier {
+	return &Notifier{TaskRefs: eventpb.Register(tqd)}
+}
+
 // Start tells RunManager to start the given run.
-func Start(ctx context.Context, runID common.RunID) error {
-	return eventpb.SendNow(ctx, runID, &eventpb.Event{
+func (n *Notifier) Start(ctx context.Context, runID common.RunID) error {
+	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Start{
 			Start: &eventpb.Start{},
 		},
@@ -39,14 +51,14 @@ func Start(ctx context.Context, runID common.RunID) error {
 //
 // It's a shorthand of `PokeAfter(ctx, runID, after)` where `after` <= 0 or
 // `PokeAt(ctx, runID, eta)` where `eta` is an earlier timestamp.
-func PokeNow(ctx context.Context, runID common.RunID) error {
-	return PokeAfter(ctx, runID, 0)
+func (n *Notifier) PokeNow(ctx context.Context, runID common.RunID) error {
+	return n.PokeAfter(ctx, runID, 0)
 }
 
 // PokeAfter tells RunManager to check its own state after the given duration.
 //
 // Providing a non-positive duration is equivalent to `PokeNow(...)`.
-func PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error {
+func (n *Notifier) PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error {
 	evt := &eventpb.Event{
 		Event: &eventpb.Event_Poke{
 			Poke: &eventpb.Poke{},
@@ -55,10 +67,9 @@ func PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) err
 	if after > 0 {
 		t := clock.Now(ctx).Add(after)
 		evt.ProcessAfter = timestamppb.New(t)
-		return eventpb.Send(ctx, runID, evt, t)
-
+		return n.TaskRefs.Send(ctx, runID, evt, t)
 	}
-	return eventpb.SendNow(ctx, runID, evt)
+	return n.TaskRefs.SendNow(ctx, runID, evt)
 }
 
 // PokeAt tells RunManager to check its own state at around `eta`.
@@ -66,7 +77,7 @@ func PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) err
 // Guarantees no earlier than `eta` but may not be exactly at `eta`.
 // Providing an earlier timestamp than the current is equivalent to
 // `PokeNow(...)`.
-func PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error {
+func (n *Notifier) PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error {
 	evt := &eventpb.Event{
 		Event: &eventpb.Event_Poke{
 			Poke: &eventpb.Poke{},
@@ -74,15 +85,14 @@ func PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error {
 	}
 	if eta.After(clock.Now(ctx)) {
 		evt.ProcessAfter = timestamppb.New(eta)
-		return eventpb.Send(ctx, runID, evt, eta)
-
+		return n.TaskRefs.Send(ctx, runID, evt, eta)
 	}
-	return eventpb.SendNow(ctx, runID, evt)
+	return n.TaskRefs.SendNow(ctx, runID, evt)
 }
 
 // UpdateConfig tells RunManager to update the given Run to new config.
-func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
-	return eventpb.SendNow(ctx, runID, &eventpb.Event{
+func (n *Notifier) UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
+	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_NewConfig{
 			NewConfig: &eventpb.NewConfig{
 				Hash:     hash,
@@ -95,8 +105,8 @@ func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion
 // Cancel tells RunManager to cancel the given Run.
 //
 // TODO(yiwzhang,tandrii): support reason.
-func Cancel(ctx context.Context, runID common.RunID) error {
-	return eventpb.SendNow(ctx, runID, &eventpb.Event{
+func (n *Notifier) Cancel(ctx context.Context, runID common.RunID) error {
+	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_Cancel{
 			Cancel: &eventpb.Cancel{},
 		},
@@ -104,8 +114,8 @@ func Cancel(ctx context.Context, runID common.RunID) error {
 }
 
 // NotifyCLUpdated informs RunManager that given CL has a new version available.
-func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
-	return eventpb.SendNow(ctx, runID, &eventpb.Event{
+func (n *Notifier) NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
+	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_ClUpdated{
 			ClUpdated: &eventpb.CLUpdated{
 				Clid:     int64(clid),
@@ -117,27 +127,61 @@ func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, 
 
 // NotifyReadyForSubmission informs RunManager that the provided Run will be
 // ready for submission at `eta`.
-func NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error {
+func (n *Notifier) NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error {
 	evt := &eventpb.Event{
 		Event: &eventpb.Event_ReadyForSubmission{
 			ReadyForSubmission: &eventpb.ReadyForSubmission{},
 		},
 	}
 	if eta.IsZero() {
-		return eventpb.SendNow(ctx, runID, evt)
+		return n.TaskRefs.SendNow(ctx, runID, evt)
 	}
 	evt.ProcessAfter = timestamppb.New(eta)
-	return eventpb.Send(ctx, runID, evt, eta)
+	return n.TaskRefs.Send(ctx, runID, evt, eta)
 }
 
 // NotifyCQDVerificationCompleted tells RunManager that CQDaemon has completed
 // verifying the provided Run.
 //
 // TODO(crbug/1141880): Remove this event after migration.
-func NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
-	return eventpb.SendNow(ctx, runID, &eventpb.Event{
+func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
+	return n.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 		Event: &eventpb.Event_CqdVerificationCompleted{
 			CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
 		},
 	})
+}
+
+var DefaultNotifier *Notifier
+
+func init() {
+	DefaultNotifier = &Notifier{TaskRefs: eventpb.DefaultTaskRefs}
+}
+
+func Start(ctx context.Context, runID common.RunID) error {
+	return DefaultNotifier.Start(ctx, runID)
+}
+func PokeNow(ctx context.Context, runID common.RunID) error {
+	return DefaultNotifier.PokeNow(ctx, runID)
+}
+func PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error {
+	return DefaultNotifier.PokeAfter(ctx, runID, after)
+}
+func PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error {
+	return DefaultNotifier.PokeAt(ctx, runID, eta)
+}
+func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
+	return DefaultNotifier.UpdateConfig(ctx, runID, hash, eversion)
+}
+func Cancel(ctx context.Context, runID common.RunID) error {
+	return DefaultNotifier.Cancel(ctx, runID)
+}
+func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
+	return DefaultNotifier.NotifyCLUpdated(ctx, runID, clid, eVersion)
+}
+func NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error {
+	return DefaultNotifier.NotifyReadyForSubmission(ctx, runID, eta)
+}
+func NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
+	return DefaultNotifier.NotifyCQDVerificationCompleted(ctx, runID)
 }

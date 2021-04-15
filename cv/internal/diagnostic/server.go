@@ -56,6 +56,7 @@ const allowGroup = "service-luci-change-verifier-admins"
 type DiagnosticServer struct {
 	GerritUpdater *updater.Updater
 	PMNotifier    *prjmanager.Notifier
+	RunNotifier   *run.Notifier
 
 	diagnosticpb.UnimplementedDiagnosticServer
 }
@@ -388,7 +389,7 @@ func (d *DiagnosticServer) SendRunEvent(ctx context.Context, req *diagnosticpb.S
 		return nil, status.Errorf(codes.Internal, "failed to fetch Run")
 	}
 
-	if err := eventpb.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
+	if err := d.RunNotifier.TaskRefs.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to send event: %s", err)
 	}
 	return &emptypb.Empty{}, nil
