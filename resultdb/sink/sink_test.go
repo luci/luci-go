@@ -36,7 +36,7 @@ func TestNewServer(t *testing.T) {
 
 	Convey("NewServer", t, func() {
 		ctx := context.Background()
-		cfg := testServerConfig(&mockRecorder{}, ":42", "my_token")
+		cfg := testServerConfig(":42", "my_token")
 
 		Convey("succeeds", func() {
 			srv, err := NewServer(ctx, cfg)
@@ -61,7 +61,7 @@ func TestNewServer(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(srv.cfg.ArtChannelMaxLeases, ShouldEqual, 123)
 			So(srv.cfg.TestResultChannelMaxLeases, ShouldEqual, 456)
-			testServerConfig(&mockRecorder{}, "", "my_token")
+			testServerConfig("", "my_token")
 		})
 		Convey("with TestLocationBase", func() {
 			// empty
@@ -115,7 +115,7 @@ func TestServer(t *testing.T) {
 		req := &sinkpb.ReportTestResultsRequest{}
 		ctx := context.Background()
 
-		srvCfg := testServerConfig(&mockRecorder{}, "", "secret")
+		srvCfg := testServerConfig("", "secret")
 		srv, err := NewServer(ctx, srvCfg)
 		So(err, ShouldBeNil)
 
@@ -222,7 +222,7 @@ func TestServerExport(t *testing.T) {
 
 	Convey("Export returns the configured address and auth_token", t, func() {
 		ctx := context.Background()
-		srv, err := NewServer(ctx, testServerConfig(&mockRecorder{}, ":42", "hello"))
+		srv, err := NewServer(ctx, testServerConfig(":42", "hello"))
 		So(err, ShouldBeNil)
 
 		ctx = srv.Export(ctx)

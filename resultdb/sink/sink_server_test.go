@@ -45,17 +45,15 @@ func TestReportTestResults(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
-		var actualReq *pb.BatchCreateTestResultsRequest
-		recorder := &mockRecorder{
-			batchCreateTestResults: func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
-				actualReq = in
-				return &pb.BatchCreateTestResultsResponse{}, nil
-			},
-		}
-		cfg := testServerConfig(recorder, "", "secret")
-
+		cfg := testServerConfig("", "secret")
 		tr, cleanup := validTestResult()
 		defer cleanup()
+
+		var sentReq *pb.BatchCreateTestResultsRequest
+		cfg.Recorder.(*mockRecorder).batchCreateTestResults = func(c context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
+			sentReq = in
+			return nil, nil
+		}
 
 		expected := &pb.TestResult{
 			TestId:       tr.TestId,
@@ -85,9 +83,9 @@ func TestReportTestResults(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			closeSinkServer(ctx, sink)
-			So(actualReq, ShouldNotBeNil)
-			So(actualReq.Requests, ShouldHaveLength, 1)
-			So(actualReq.Requests[0].TestResult, ShouldResembleProto, expected)
+			So(sentReq, ShouldNotBeNil)
+			So(sentReq.Requests, ShouldHaveLength, 1)
+			So(sentReq.Requests[0].TestResult, ShouldResembleProto, expected)
 		}
 
 		Convey("works", func() {
@@ -233,13 +231,12 @@ func TestReportInvocationLevelArtifacts(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
-		cfg := testServerConfig(&mockRecorder{}, "", "secret")
+		cfg := testServerConfig("", "secret")
 		sink, err := newSinkServer(ctx, cfg)
 		So(err, ShouldBeNil)
 		defer closeSinkServer(ctx, sink)
 
 		art := &sinkpb.Artifact{Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
-
 		req := &sinkpb.ReportInvocationLevelArtifactsRequest{
 			Artifacts: map[string]*sinkpb.Artifact{"art1": art},
 		}
