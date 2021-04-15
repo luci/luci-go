@@ -1,0 +1,210 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6e86afa_9ba11f71",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "nice!",
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77b5a32b_382d31fb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "looks pretty good",
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3e72a76a_34f90a4e",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "idk, I think artName was better because `name` is ambiguous. For example, when I read the code that uses this, my first reaction was that `uploadTask.name` is a file name.",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 5
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "481a57e5_20fe8a62",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "nit: this looks a bit cryptic for a param name :) maybe `name`?\n\nunlike n, a is obviously an artifact because of the param type",
+      "range": {
+        "startLine": 73,
+        "startChar": 19,
+        "endLine": 73,
+        "endChar": 20
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d7ead17_f24f5bb2",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "nit:\n\n  if fp :\u003d ...; fp !\u003d \"\" {\n\nlike in L114",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 5
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "28dc0558_8da148e3",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "since we are here, should we also check that it is a regular file, e.g. not a dir?",
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "910eefa1_ab3abe56",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "is panic more appropriate?",
+      "range": {
+        "startLine": 103,
+        "startChar": 5,
+        "endLine": 103,
+        "endChar": 26
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fedc35a3_c5f339f8",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "1. You probably meant CreateArtifact.\n2. stepping back, what info does this provide that the callsite doens\u0027t already know about? I\u0027d rather say something like \"reading file contents\" or something specific to L115",
+      "range": {
+        "startLine": 116,
+        "startChar": 37,
+        "endLine": 116,
+        "endChar": 58
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9be253d9_ff614f52",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "nit: as an alternative to a collection of variables (p, cnts), consider declaring CreateArtifactRequest variable in the beginning, and then write into that. Then we don\u0027t need extra vars.",
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd08d713_08af92a0",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "right now this looks like an assumptions because newUploadTask doc-comments don\u0027t say that. E.g. a future programmer might change newUplodTask without realizing that the assumption of this callsite.\n\nplease add a doc-comment to newUploadTask that establishes this contract",
+      "range": {
+        "startLine": 172,
+        "startChar": 4,
+        "endLine": 172,
+        "endChar": 60
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

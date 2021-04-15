@@ -22,6 +22,30 @@
       },
       "revId": "33af5bec7b3c490e3191c04c17d8b33b8ac0abe3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "46662ca8_5dfabb33",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T23:58:46Z",
+      "side": 1,
+      "message": "totally agree. If the size changed, something seems wrong at a different level, and we don\u0027t want to mask that bug.\n\nI imagine this might happen if the test framework (incorrectly) reuses artifact files (overwrites them on the second/third/... test attempt)",
+      "parentUuid": "69644454_a5b1b010",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 124,
+        "endChar": 2
+      },
+      "revId": "33af5bec7b3c490e3191c04c17d8b33b8ac0abe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
