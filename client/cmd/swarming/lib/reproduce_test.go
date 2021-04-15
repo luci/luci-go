@@ -17,6 +17,7 @@ package lib
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -105,7 +106,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 						},
 						&swarming.SwarmingRpcsTaskSlice{
 							Properties: &swarming.SwarmingRpcsTaskProperties{
-								Command:     []string{"rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/"},
+								Command:     []string{"rbd${EXECUTABLE_SUFFIX}", "stream", "-test-id-prefix", "--isolated-output=${ISOLATED_OUTDIR}/chicken-output.json"},
 								RelativeCwd: relativeCwd,
 								Env: []*swarming.SwarmingRpcsStringPair{
 									&swarming.SwarmingRpcsStringPair{
@@ -165,7 +166,12 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		}
 		cmd, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
 		So(err, ShouldBeNil)
-		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
+		var expected *exec.Cmd
+		if runtime.GOOS == "windows" {
+			expected = exec.CommandContext(ctx, "rbd.exe", "stream", "-test-id-prefix", fmt.Sprintf("--isolated-output=%s/farm/chicken-output.json", c.work))
+		} else {
+			expected = exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", fmt.Sprintf("--isolated-output=%s/farm/chicken-output.json", c.work))
+		}
 		expected.Dir = filepath.Join(c.work, relativeCwd)
 
 		expectedEnvMap.Remove("removeKey")
