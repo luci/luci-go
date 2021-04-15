@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5902b67b_ebec9f86",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1163549
+      },
+      "writtenOn": "2021-04-15T22:02:49Z",
+      "side": 1,
+      "message": "Nit: \"Add X emoji\" or similar",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 17
+      },
+      "revId": "91252ee1d9cedaa1aac9b3b98109ce5f87eba1ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aa1844a1_c26cab9d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1163549
+      },
+      "writtenOn": "2021-04-15T22:02:49Z",
+      "side": 1,
+      "message": "Nit: Add a longer description under the 1-line description, such as what the emoji means.",
+      "revId": "91252ee1d9cedaa1aac9b3b98109ce5f87eba1ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
