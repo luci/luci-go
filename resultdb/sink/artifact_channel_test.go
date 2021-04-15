@@ -30,7 +30,7 @@ func TestArtifactChannel(t *testing.T) {
 		ctx := context.Background()
 		cfg := testServerConfig(nil, "127.0.0.1:123", "secret")
 		reqCh := make(chan *http.Request, 1)
-		cfg.ArtifactUploader.Client.Transport = mockTransport(
+		cfg.ArtifactStreamClient.Transport = mockTransport(
 			func(req *http.Request) (*http.Response, error) {
 				reqCh <- req
 				return &http.Response{StatusCode: http.StatusNoContent}, nil
@@ -45,7 +45,7 @@ func TestArtifactChannel(t *testing.T) {
 		So(req, ShouldNotBeNil)
 
 		// verify the request sent
-		So(req.URL.String(), ShouldEqual, "https://"+cfg.ArtifactUploader.Host+"/"+name)
+		So(req.URL.String(), ShouldEqual, "https://"+cfg.ArtifactStreamHost+"/"+name)
 		body, err := ioutil.ReadAll(req.Body)
 		So(err, ShouldBeNil)
 		So(body, ShouldResemble, []byte("content"))
