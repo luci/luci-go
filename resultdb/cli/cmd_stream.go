@@ -270,18 +270,21 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 
 	cfg := sink.ServerConfig{
-		Recorder:                   r.recorder,
-		Invocation:                 r.invocation.Name,
-		UpdateToken:                r.invocation.UpdateToken,
-		TestIDPrefix:               r.testIDPrefix,
-		BaseVariant:                &pb.Variant{Def: r.vars},
-		ArtifactUploader:           &sink.ArtifactUploader{Client: r.http, Host: r.host},
 		ArtChannelMaxLeases:        r.artChannelMaxLeases,
+		ArtifactStreamClient:       r.http,
+		ArtifactStreamHost:         r.host,
+		Recorder:                   r.recorder,
 		TestResultChannelMaxLeases: r.trChannelMaxLeases,
-		TestLocationBase:           r.testTestLocationBase,
-		BaseTags:                   pbutil.FromStrpairMap(r.tags),
-		CoerceNegativeDuration:     r.coerceNegativeDuration,
-		LocationTags:               locationTags,
+
+		Invocation:  r.invocation.Name,
+		UpdateToken: r.invocation.UpdateToken,
+
+		BaseTags:               pbutil.FromStrpairMap(r.tags),
+		BaseVariant:            &pb.Variant{Def: r.vars},
+		CoerceNegativeDuration: r.coerceNegativeDuration,
+		LocationTags:           locationTags,
+		TestLocationBase:       r.testTestLocationBase,
+		TestIDPrefix:           r.testIDPrefix,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
