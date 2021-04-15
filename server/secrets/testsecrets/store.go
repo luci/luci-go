@@ -47,6 +47,11 @@ func (t *Store) StoredSecret(ctx context.Context, k string) (secrets.Secret, err
 	return t.getSecret(ctx, k, false)
 }
 
+// AddRotationHandler is a part of Store interface.
+func (t *Store) AddRotationHandler(ctx context.Context, name string, cb secrets.RotationHandler) error {
+	return nil
+}
+
 func (t *Store) getSecret(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
 	t.Lock()
 	defer t.Unlock()

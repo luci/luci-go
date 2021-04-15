@@ -67,6 +67,11 @@ func (d *DerivedStore) StoredSecret(ctx context.Context, name string) (Secret, e
 	return Secret{}, errors.New("DerivedStore: stored secrets are not supported")
 }
 
+// AddRotationHandler is not implemented.
+func (d *DerivedStore) AddRotationHandler(ctx context.Context, name string, cb RotationHandler) error {
+	return errors.New("not implemented")
+}
+
 // SetRoot replaces the root key used to derive secrets.
 func (d *DerivedStore) SetRoot(root Secret) {
 	d.m.RLock()

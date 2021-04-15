@@ -54,7 +54,20 @@ func StoredSecret(ctx context.Context, name string) (Secret, error) {
 	return Secret{}, ErrNoStoreConfigured
 }
 
+// AddRotationHandler registers a callback called when the secret is updated.
+//
+// If the context doesn't have Store set, returns ErrNoStoreConfigured.
+func AddRotationHandler(ctx context.Context, name string, cb RotationHandler) error {
+	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
+		return store.AddRotationHandler(ctx, name, cb)
+	}
+	return ErrNoStoreConfigured
+}
+
 // Store knows how to retrieve or autogenerate a secret given its name.
+//
+// See SecretManagerStore for a concrete implementation usually used in
+// production.
 type Store interface {
 	// RandomSecret returns a random secret given its name.
 	//
@@ -69,7 +82,18 @@ type Store interface {
 	// auto-generate such secret if it is missing and will return ErrNoSuchSecret
 	// instead.
 	StoredSecret(ctx context.Context, name string) (Secret, error)
+
+	// AddRotationHandler registers a callback called when the secret is updated.
+	//
+	// Useful when a value of StoredSecret(...) is used to derive something else.
+	// The callback allows the store to notify the consumer of the secret when
+	// it changes.
+	AddRotationHandler(ctx context.Context, name string, cb RotationHandler) error
 }
+
+// RotationHandler is called from an internal goroutine after the store fetches
+// a new version of a stored secret.
+type RotationHandler func(context.Context, Secret)
 
 // Secret represents a current value of a secret as well as a set of few
 // previous values. Previous values are important when the secret is being
