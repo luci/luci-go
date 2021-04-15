@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "501d6c7b_35bbeb28",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T03:51:03Z",
+      "side": 1,
+      "message": "PTAL, added tests.",
+      "revId": "7e032eb42313fa024b923dc2313d2a541e17a60c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac98a5ca_87dfcd29",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-15T03:51:03Z",
+      "side": 1,
+      "message": "This looks over-engineer for this CL, but it will make more sense in the next CL.",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 3
+      },
+      "revId": "7e032eb42313fa024b923dc2313d2a541e17a60c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
