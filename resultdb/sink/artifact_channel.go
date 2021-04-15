@@ -17,6 +17,8 @@ package sink
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -24,6 +26,8 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
+	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
@@ -61,8 +65,73 @@ type artifactChannel struct {
 }
 
 type uploadTask struct {
-	artName string
-	art     *sinkpb.Artifact
+	art  *sinkpb.Artifact
+	name string // artifact name
+	size int64  // artifact content size
+}
+
+func newUploadTask(n string, a *sinkpb.Artifact) (*uploadTask, error) {
+	// Find and save the content size on uploadTask creation, so that the task scheduling
+	// and processing logic can use the size information w/o issuing system calls.
+	s := int64(len(a.GetContents()))
+	fp := a.GetFilePath()
+	if fp != "" {
+		st, err := os.Stat(fp)
+		if err != nil {
+			return nil, errors.Annotate(err, "newUploadTask").Err()
+		}
+		s = st.Size()
+	}
+
+	return &uploadTask{
+		art:  a,
+		name: n,
+		size: s,
+	}, nil
+}
+
+// CreateRequest returns a CreateArtifactRequest for the upload task.
+//
+// Note that this will open and read content from the file, the artifact is set with
+// Artifact_FilePath. Save the returned request to avoid unnecessary I/Os,
+// if necessary.
+func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
+	invID, tID, rID, aID, err := pbutil.ParseArtifactName(t.name)
+	var p string
+	switch {
+	case err != nil:
+		// This shouldn't happen, as all the input requests should have been validated
+		// when the request was received.
+		return nil, errors.Annotate(err, "newUploadTask").Err()
+	case tID == "":
+		// Invocation-level artifact
+		p = pbutil.InvocationName(invID)
+	default:
+		p = pbutil.TestResultName(invID, tID, rID)
+	}
+
+	cnts := t.art.GetContents()
+	if fp := t.art.GetFilePath(); fp != "" {
+		if cnts, err = ioutil.ReadFile(fp); err != nil {
+			return nil, errors.Annotate(err, "CreateArtifactRequest %q", t.name).Err()
+		}
+	}
+	// If the size of the read content is different to what stat claimed initially, then
+	// return an error, so that the batching logic can be kept simple. Test frameworks
+	// are not expected to send artifacts to ResultSink and the change the contents.
+	if int64(len(cnts)) != t.size {
+		return nil, errors.Reason("the size of artifact %q changed from %d to %d", t.name, t.size, len(cnts)).Err()
+	}
+
+	return &pb.CreateArtifactRequest{
+		Parent: p,
+		Artifact: &pb.Artifact{
+			ArtifactId:  aID,
+			ContentType: t.art.GetContentType(),
+			SizeBytes:   t.size,
+			Contents:    cnts,
+		},
+	}, nil
 }
 
 func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
