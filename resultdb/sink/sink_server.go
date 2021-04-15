@@ -34,8 +34,10 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
@@ -128,6 +130,8 @@ func authTokenPrelude(authToken string) func(context.Context, string, proto.Mess
 func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
 	now := clock.Now(ctx).UTC()
 
+	// create a slice with a rough estimate.
+	uts := make([]*uploadTask, 0, len(in.TestResults)*4)
 	for _, tr := range in.TestResults {
 		tr.TestId = s.cfg.TestIDPrefix + tr.GetTestId()
 
@@ -135,12 +139,14 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		if tr.ResultId == "" {
 			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultCounter, 1))
 		}
-		if tr.GetTestMetadata().GetLocation().GetFileName() != "" && s.cfg.TestLocationBase != "" && !strings.HasPrefix(tr.TestMetadata.Location.FileName, "//") {
-			// path.Join converts the leading double slashes to a single slash, add a slash to keep the double slashes.
-			tr.TestMetadata.Location.FileName = "/" + path.Join(s.cfg.TestLocationBase, tr.TestMetadata.Location.FileName)
-		}
-		for _, a := range tr.GetArtifacts() {
-			updateArtifactContentType(a)
+
+		if s.cfg.TestLocationBase != "" {
+			locFn := tr.GetTestMetadata().GetLocation().GetFileName()
+			// path.Join converts the leading double slashes to a single slash.
+			// Add a slash to keep the double slashes.
+			if locFn != "" && !strings.HasPrefix(locFn, "//") {
+				tr.TestMetadata.Location.FileName = "/" + path.Join(s.cfg.TestLocationBase, locFn)
+			}
 		}
 		// The system-clock of GCE machines may get updated by ntp while a test is running.
 		// It can possibly cause a negative duration produced, because most test harnesses
@@ -155,11 +161,28 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		}
 
 		if err := validateTestResult(now, tr); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
+			return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		}
+
+		for id, a := range tr.GetArtifacts() {
+			updateArtifactContentType(a)
+			uts = append(uts, &uploadTask{
+				artName: pbutil.TestResultArtifactName(s.cfg.invocationID, tr.TestId, tr.ResultId, id),
+				art:     a,
+			})
 		}
 	}
-	s.ac.scheduleTestResults(in.TestResults...)
-	s.tc.schedule(in.TestResults...)
+
+	parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() error {
+			s.ac.schedule(uts...)
+			return nil
+		}
+		work <- func() error {
+			s.tc.schedule(in.TestResults...)
+			return nil
+		}
+	})
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
@@ -167,6 +190,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 
 // ReportInvocationLevelArtifacts implement sinkpb.SinkServer.
 func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
+	uts := make([]*uploadTask, 0, len(in.Artifacts))
 	for id, a := range in.Artifacts {
 		s.mu.Lock()
 		if added := s.invocationArtifactIDs.Add(id); !added {
@@ -178,8 +202,12 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 		if err := validateArtifact(a); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
 		}
+		uts = append(uts, &uploadTask{
+			artName: pbutil.InvocationArtifactName(s.cfg.invocationID, id),
+			art:     a,
+		})
 	}
-	s.ac.scheduleArtifacts(in.Artifacts)
+	s.ac.schedule(uts...)
 
 	return &empty.Empty{}, nil
 }

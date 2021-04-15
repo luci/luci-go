@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
-	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
@@ -49,8 +48,6 @@ type artifactChannel struct {
 	// Use batchChannel, if possible.
 	streamChannel dispatcher.Channel
 
-	cfg *ServerConfig
-
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
 	//
 	// reportTestResults can be invoked by multiple goroutines in parallel. wgActive is used
@@ -70,9 +67,8 @@ type uploadTask struct {
 
 func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
 	var err error
-	c := &artifactChannel{cfg: cfg}
-	au := c.cfg.ArtifactUploader
-	token := c.cfg.UpdateToken
+	c := &artifactChannel{}
+	au := cfg.ArtifactUploader
 
 	// batchChannel
 	bcOpts := &dispatcher.Options{
@@ -103,7 +99,9 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 		},
 	}
 	c.streamChannel, err = dispatcher.NewChannel(ctx, stOpts, func(b *buffer.Batch) error {
-		return errors.Annotate(au.StreamUpload(ctx, b.Data[0].(*uploadTask), token), "StreamUpload").Err()
+		return errors.Annotate(
+			au.StreamUpload(ctx, b.Data[0].(*uploadTask), cfg.UpdateToken),
+			"StreamUpload").Err()
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create stream channel for artifacts: %s", err))
@@ -132,7 +130,7 @@ func (c *artifactChannel) closeAndDrain(ctx context.Context) {
 	draining.Wait()
 }
 
-func (c *artifactChannel) schedule(tasks []*uploadTask) {
+func (c *artifactChannel) schedule(tasks ...*uploadTask) {
 	c.wgActive.Add(1)
 	defer c.wgActive.Done()
 	// if the channel already has been closed, drop the test results.
@@ -144,28 +142,4 @@ func (c *artifactChannel) schedule(tasks []*uploadTask) {
 		// TODO(ddoman): send small artifacts to batchChannel
 		c.streamChannel.C <- task
 	}
-}
-
-func (c *artifactChannel) scheduleTestResults(trs ...*sinkpb.TestResult) {
-	tasks := make([]*uploadTask, 0)
-	for _, tr := range trs {
-		for id, art := range tr.GetArtifacts() {
-			tasks = append(tasks, &uploadTask{
-				artName: pbutil.TestResultArtifactName(c.cfg.invocationID, tr.TestId, tr.ResultId, id),
-				art:     art,
-			})
-		}
-	}
-	c.schedule(tasks)
-}
-
-func (c *artifactChannel) scheduleArtifacts(as map[string]*sinkpb.Artifact) {
-	tasks := make([]*uploadTask, 0, len(as))
-	for id, a := range as {
-		tasks = append(tasks, &uploadTask{
-			artName: pbutil.InvocationArtifactName(c.cfg.invocationID, id),
-			art:     a,
-		})
-	}
-	c.schedule(tasks)
 }

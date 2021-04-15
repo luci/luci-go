@@ -160,7 +160,7 @@ func TestReportTestResults(t *testing.T) {
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
-				So(err, ShouldErrLike, "bad request: duration: is < 0")
+				So(err, ShouldErrLike, "duration: is < 0")
 			})
 		})
 		Convey("with ServerConfig.TestLocationBase", func() {
