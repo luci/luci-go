@@ -29,7 +29,7 @@ import (
 	"runtime"
 	"testing"
 
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/pipeline"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
@@ -95,7 +95,7 @@ func TestArchive(t *testing.T) {
 		// TODO(maruel): Make other algorithms work too.
 		for _, namespace := range []string{isolatedclient.DefaultNamespace} {
 			Convey(fmt.Sprintf("Run on namespace %s", namespace), func() {
-				a := archiver.New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
+				a := pipeline.NewArchiver(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 				item := Archive(ctx, a, opts)
 				So(item.DisplayName, ShouldResemble, filepath.Join(tmpDir, "baz.isolated"))
 				item.WaitForHashed()
@@ -162,7 +162,7 @@ func TestArchiveFiles(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 
-		a := archiver.New(ctx, isolatedclient.NewClient(ts.URL), nil)
+		a := pipeline.NewArchiver(ctx, isolatedclient.NewClient(ts.URL), nil)
 
 		So(testfs.Build(dir, map[string]string{
 			"a":   "a",
@@ -213,7 +213,7 @@ func TestArchiveFail(t *testing.T) {
 		defer ts.Close()
 
 		Convey(`File missing`, func() {
-			a := archiver.New(ctx, isolatedclient.NewClient(ts.URL), nil)
+			a := pipeline.NewArchiver(ctx, isolatedclient.NewClient(ts.URL), nil)
 
 			tmpDir := t.TempDir()
 
@@ -258,7 +258,7 @@ func TestArchiveFail(t *testing.T) {
 					So(j.Encode(out), ShouldBeNil)
 				})
 			})
-			a := archiver.New(ctx, isolatedclient.NewClient(ts.URL), nil)
+			a := pipeline.NewArchiver(ctx, isolatedclient.NewClient(ts.URL), nil)
 
 			tmpDir := t.TempDir()
 

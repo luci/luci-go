@@ -25,7 +25,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/archiver/tarring"
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
@@ -132,15 +132,16 @@ func (c *archiveRun) archiveToIsolate(ctx context.Context, al *archiveLogger) er
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
 	// Set up a checker and uploader.
-	checker := archiver.NewChecker(ctx, client, c.maxConcurrentChecks)
-	uploader := archiver.NewUploader(ctx, client, c.maxConcurrentUploads)
-	arc := archiver.NewTarringArchiver(checker, uploader)
-	isolSummary, err := arc.Archive(&archiver.TarringArgs{
+	checker := tarring.NewChecker(ctx, client, c.maxConcurrentChecks)
+	uploader := tarring.NewUploader(ctx, client, c.maxConcurrentUploads)
+	arc := tarring.NewArchiver(checker, uploader)
+	isolSummary, err := arc.Archive(&tarring.ArchiveArgs{
 		Deps:          deps,
 		RootDir:       rootDir,
 		IgnoredPathRe: opts.IgnoredPathFilterRe,
 		Isolated:      opts.Isolated,
-		Isol:          isol})
+		Isol:          isol,
+	})
 	if err != nil {
 		return errors.Annotate(err, "isolate %s", opts.Isolate).Err()
 	}
@@ -176,7 +177,7 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 	return 0
 }
 
-func dumpSummaryJSON(filename string, summaries ...archiver.IsolatedSummary) error {
+func dumpSummaryJSON(filename string, summaries ...tarring.IsolatedSummary) error {
 	if len(filename) == 0 {
 		return nil
 	}
