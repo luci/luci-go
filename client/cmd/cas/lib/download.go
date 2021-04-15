@@ -347,6 +347,19 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 
 	var kvs *embeddedkvs.KVS
 	if r.kvs != "" {
+		if err := filepath.Walk(r.kvs, func(path string, info os.FileInfo, err error) error {
+			if os.IsNotExist(err) {
+				return nil
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+			logger.Infof("kvs file %s: size %d", path, info.Size())
+			return nil
+		}); err != nil {
+			return errors.Annotate(err, "failed to walk dir: %s", r.kvs).Err()
+		}
 		kvs, err = embeddedkvs.New(ctx, r.kvs)
 		if err != nil {
 			return err
