@@ -74,8 +74,12 @@ var ErrCloseBeforeStart error = errors.Reason("the server is not started yet").E
 type ServerConfig struct {
 	// Recorder is the gRPC client to the Recorder service exposed by ResultDB.
 	Recorder pb.RecorderClient
-	// ArtifactUploader implements methods for uploading artifacts to ResultDB.
-	ArtifactUploader *ArtifactUploader
+	// ArtifactStreamer is an HTTP client to be used for streaming artifacts larger than
+	// MaxBatchableArtifactSize.
+	ArtifactStreamer *http.Client
+	// ArtifactStreamHost is the hostname of an ResultDB service instance to which
+	// artifacts are streamed.
+	ArtifactStreamHost string
 
 	// AuthToken is a secret token to expect from clients. If it is "" then it
 	// will be randomly generated in a secure way.
@@ -138,8 +142,8 @@ func (c *ServerConfig) Validate() error {
 	}
 
 	switch {
-	case c.ArtifactUploader == nil:
-		return errors.Reason("ArtifactUploader: unspecified").Err()
+	case c.ArtifactStreamer == nil:
+		return errors.Reason("ArtifactStreamer: unspecified").Err()
 	case isErr(pbutil.ValidateStringPairs(c.BaseTags)):
 		return errors.Annotate(err, "BaseTags").Err()
 	case isErr(pbutil.ValidateVariant(c.BaseVariant)):
