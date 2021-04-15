@@ -16,6 +16,24 @@
       "message": "I wonder the performance of walk operation itself.  However, we might see the number of files and might be able to guess how much time consumed for walk.",
       "revId": "efb4791fd1d381171434a351fded0c48b7b68f0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f661d262_47ca1bb9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-15T11:32:39Z",
+      "side": 1,
+      "message": "badger won\u0027t have many files there, so I think we don\u0027t need take care that.",
+      "parentUuid": "9351602b_9014958b",
+      "revId": "efb4791fd1d381171434a351fded0c48b7b68f0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
