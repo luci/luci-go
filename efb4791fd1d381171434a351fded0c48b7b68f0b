@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9351602b_9014958b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2021-04-15T11:03:25Z",
+      "side": 1,
+      "message": "I wonder the performance of walk operation itself.  However, we might see the number of files and might be able to guess how much time consumed for walk.",
+      "revId": "efb4791fd1d381171434a351fded0c48b7b68f0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
