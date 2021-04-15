@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03da3a3f_0197f45a",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T17:19:44Z",
+      "side": 1,
+      "message": "used in one place. maybe just inline?",
+      "range": {
+        "startLine": 71,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 25
+      },
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7354be8_5cbdaabe",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T17:19:44Z",
+      "side": 1,
+      "message": "move closer to the usage, before L167?",
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ed32005_71a24d5b",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T17:19:44Z",
+      "side": 1,
+      "message": "should this be moved two lines down?",
+      "range": {
+        "startLine": 144,
+        "startChar": 3,
+        "endLine": 145,
+        "endChar": 45
+      },
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2920cc5a_83e08db3",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T17:19:44Z",
+      "side": 1,
+      "message": "nit: consider moving this into the L178 goroutine, os that test results get scheduled without waiting for artifacts",
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11c2f7bc_cd3b4641",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-15T17:19:44Z",
+      "side": 1,
+      "message": "nit: consider uts[i] \u003d ...\nI think it is more common to do it this way",
+      "revId": "cb5e64526aa8dbe488ae7a1b0ccd7b7aef79a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
