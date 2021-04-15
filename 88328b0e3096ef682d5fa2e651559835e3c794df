@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7be16fc7_e0c33efa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-15T23:39:18Z",
+      "side": 1,
+      "message": "Demo: https://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/linux-rel-swarming/12634/test-results\n\nI placed the ID in the \"sub-title\" of a test variant entry and it\u0027s elided to display only the prefix.\nThis is because I don\u0027t think ID is important enough to take an entire line, and the suffix usually\nsimilar to the test name.\nLet me know what you think about this design.\n",
+      "revId": "88328b0e3096ef682d5fa2e651559835e3c794df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
