@@ -36,6 +36,10 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+// When artifact content exceeds limit, append longContentEllipsis to the partial
+// content indicating the content is truncated.
+var longContentEllipsis = []byte("...")
+
 // RBEConn creates a gRPC connection to RBE authenticated as self.
 func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
@@ -82,6 +86,7 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 
 	// Forward the blob to the client.
 	wroteHeader := false
+	totalSize := 0
 	for {
 		_, readSpan := trace.StartSpan(c.Context, "resultdb.readChunk")
 		chunk, err := stream.Recv()
@@ -114,12 +119,28 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 				wroteHeader = true
 			}
 
+			content := chunk.Data
+			if r.limit > 0 && totalSize+len(chunk.Data)+len(longContentEllipsis) > r.limit {
+				bound := r.limit - totalSize - len(longContentEllipsis)
+				if bound > 0 {
+					content = chunk.Data[:bound]
+					content = append(content, longContentEllipsis...)
+				} else {
+					content = longContentEllipsis
+				}
+			}
+
 			_, writeSpan := trace.StartSpan(c.Context, "resultdb.writeChunk")
-			writeSpan.Attribute("size", len(chunk.Data))
-			_, err := c.Writer.Write(chunk.Data)
+			writeSpan.Attribute("size", len(content))
+			_, err := c.Writer.Write(content)
 			writeSpan.End(err)
 			if err != nil {
 				logging.Warningf(c.Context, "Failed to write a response chunk: %s", err)
+				return
+			}
+			totalSize += len(content)
+			if r.limit > 0 && totalSize >= r.limit {
+				logging.Infof(c.Context, "content of artifact %s exceeds request limit %d, return partial content", r.artifactName, r.limit)
 				return
 			}
 		}
