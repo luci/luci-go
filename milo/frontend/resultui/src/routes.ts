@@ -177,9 +177,16 @@ router.setRoutes({
     },
     {
       path: '/artifact',
+      action: async (_ctx, cmd) => {
+        await import(
+          /* webpackChunkName: "artifact_page" */
+          './pages/artifact/artifact_page_layout'
+        );
+        return cmd.component('milo-artifact-page-layout');
+      },
       children: [
         {
-          path: '/text-diff/:artifact_name',
+          path: '/text-diff/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
           name: 'text-diff-artifact',
           action: async (_ctx, cmd) => {
             await import(
@@ -190,7 +197,7 @@ router.setRoutes({
           },
         },
         {
-          path: '/image-diff/:artifact_name',
+          path: '/image-diff/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
           name: 'image-diff-artifact',
           action: async (_ctx, cmd) => {
             await import(
@@ -201,7 +208,7 @@ router.setRoutes({
           },
         },
         {
-          path: '/raw/:artifact_name',
+          path: '/raw/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
           name: 'raw-artifact',
           action: async (_ctx, cmd) => {
             await import(

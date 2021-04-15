@@ -21,7 +21,7 @@ import { PrpcClientExt } from './libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from './libs/prpc_utils';
 import { timeout } from './libs/utils';
 import { BUILD_FIELD_MASK, BuildsService, GetBuildRequest } from './services/buildbucket';
-import { ResultDb } from './services/resultdb';
+import { constructArtifactName, ResultDb } from './services/resultdb';
 
 importScripts('/configs.js');
 
@@ -172,11 +172,15 @@ async function prefetchBuild(reqUrl: URL) {
  */
 async function prefetchArtifact(reqUrl: URL) {
   // TODO(crbug/1108198): remove the /ui prefix.
-  const match = reqUrl.pathname.match(/^\/ui\/artifact\/([^/]+)\/([^/]+)\/?/i);
+  const match = reqUrl.pathname.match(
+    /^\/ui\/artifact\/(?:[^/]+)\/invocations\/([^/]+)(?:\/tests\/([^/]+)\/results\/([^/]+))?\/artifacts\/([^/]+)\/?/i
+  );
   if (!match) {
     return;
   }
-  const artifactName = decodeURIComponent(match[2]);
+  const [invocationId, testId, resultId, artifactId] = match
+    .slice(1, 5)
+    .map((v) => (v === undefined ? undefined : decodeURIComponent(v)));
 
   const authState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
   const prefetchResultDBService = new ResultDb(
@@ -206,8 +210,11 @@ async function prefetchArtifact(reqUrl: URL) {
   );
 
   prefetchResultDBService
-    // Bypass the service cache but trigger the cachedFetch cache.
-    .getArtifact({ name: artifactName }, { acceptCache: false, skipUpdate: true })
+    .getArtifact(
+      { name: constructArtifactName({ invocationId: invocationId!, testId, resultId, artifactId: artifactId! }) },
+      // Bypass the service cache but trigger the cachedFetch cache.
+      { acceptCache: false, skipUpdate: true }
+    )
     // Ignore any error, let the consumer of the cache deal with it.
     .catch((_e) => {});
 }

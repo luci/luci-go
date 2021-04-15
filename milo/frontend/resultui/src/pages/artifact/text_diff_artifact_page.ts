@@ -13,18 +13,17 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
 
+import '../../components/dot_spinner';
 import '../../components/status_bar';
-import './artifact_page_layout';
 import { AppState, consumeAppState } from '../../context/app_state';
+import { consumeContext } from '../../libs/context';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { NOT_FOUND_URL } from '../../routes';
-import { parseArtifactName } from '../../services/resultdb';
+import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
 /**
@@ -33,20 +32,18 @@ import commonStyle from '../../styles/common_style.css';
 // TODO(weiweilin): improve error handling.
 @customElement('milo-text-diff-artifact-page')
 @consumeAppState
-export class TextDiffArtifactPageElement extends MobxLitElement implements BeforeEnterObserver {
+@consumeContext('artifactIdent')
+export class TextDiffArtifactPageElement extends MobxLitElement {
   @observable.ref appState!: AppState;
-  @observable.ref private artifactName!: string;
 
-  @computed private get artifactIdent() {
-    return parseArtifactName(this.artifactName);
-  }
+  @observable.ref artifactIdent!: ArtifactIdentifier;
 
   @computed
   private get artifact$() {
     if (!this.appState.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({ name: this.artifactName }));
+    return fromPromise(this.appState.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
   @computed private get artifact() {
     return this.artifact$.state === FULFILLED ? this.artifact$.value : null;
@@ -64,30 +61,23 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
     return this.content$.state === FULFILLED ? this.content$.value : null;
   }
 
-  onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
-    const artifactName = location.params['artifact_name'];
-    if (typeof artifactName !== 'string') {
-      return cmd.redirect(NOT_FOUND_URL);
-    }
-    this.artifactName = artifactName;
-    return;
-  }
-
   protected render() {
+    if (this.content$.state === PENDING) {
+      return html`<div id="content" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
+    }
+
     return html`
-      <milo-artifact-page-layout .ident=${this.artifactIdent} .isLoading=${this.artifact$.state === PENDING}>
-        <div id="details">
-          ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
-        </div>
-        <div id="content">
-          <link
-            rel="stylesheet"
-            type="text/css"
-            href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
-          />
-          ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
-        </div>
-      </milo-artifact-page-layout>
+      <div id="details">
+        ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
+      </div>
+      <div id="content">
+        <link
+          rel="stylesheet"
+          type="text/css"
+          href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
+        />
+        ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
+      </div>
     `;
   }
 
