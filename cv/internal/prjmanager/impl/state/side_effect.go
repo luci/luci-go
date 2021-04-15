@@ -117,6 +117,7 @@ func (c *CancelIncompleteRuns) Do(ctx context.Context) error {
 // TriggerPurgeCLTasks triggers PurgeCLTasks via TQ.
 type TriggerPurgeCLTasks struct {
 	payloads []*prjpb.PurgeCLTask
+	clPurger *clpurger.Purger
 }
 
 // Do implements SideEffect interface.
@@ -125,7 +126,7 @@ func (t *TriggerPurgeCLTasks) Do(ctx context.Context) error {
 		for _, p := range t.payloads {
 			p := p
 			work <- func() error {
-				return clpurger.Default.Schedule(ctx, p)
+				return t.clPurger.Schedule(ctx, p)
 			}
 		}
 	})

@@ -148,7 +148,7 @@ func TestUpdateConfig(t *testing.T) {
 		Convey("initializes newly started project", func() {
 			// Newly started project doesn't have any CLs, yet, regardless of what CL
 			// snapshots are stored in Datastore.
-			s0 := NewInitial(ct.lProject)
+			s0 := NewInitial(ct.lProject, nil, nil)
 			pb0 := backupPB(s0)
 			s1, sideEffect, err := s0.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
@@ -233,7 +233,7 @@ func TestUpdateConfig(t *testing.T) {
 					Clids: []int64{404},
 				},
 			},
-		})
+		}, nil, nil)
 		pb1 := backupPB(s1)
 
 		Convey("noop update is quick", func() {
@@ -482,7 +482,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
-		})
+		}, nil, nil)
 		pb0 := backupPB(s0)
 
 		// NOTE: conversion of individual CL to PCL is in TestUpdateConfig.
@@ -570,7 +570,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				}),
-			})
+			}, nil, nil)
 			pb1 := backupPB(s1)
 			bumpEVersion(ctx, cl203, 3)
 			s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
@@ -696,7 +696,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			CreatedPruns: []*prjpb.PRun{
 				{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}},
 			},
-		})
+		}, nil, nil)
 		pb1 := backupPB(s1)
 
 		Convey("Noops", func() {
@@ -848,7 +848,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 		defer cancel()
 
 		Convey("Empty", func() {
-			s1 := NewExisting(&prjpb.PState{})
+			s1 := NewExisting(&prjpb.PState{}, nil, nil)
 			s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{{OperationId: "op1"}})
 			So(err, ShouldBeNil)
 			So(sideEffect, ShouldBeNil)
@@ -874,7 +874,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 					{Clids: []int64{2}, Dirty: true},
 					{Clids: []int64{3}},
 				},
-			})
+			}, nil, nil)
 			pb := backupPB(s1)
 
 			Convey("Expires and removed", func() {
@@ -1052,7 +1052,7 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
 			DirtyComponents:  true,
-		})
+		}, nil, nil)
 
 		Convey("just categorization", func() {
 			state.PB.Pcls = sortPCLs([]*prjpb.PCL{
@@ -1332,7 +1332,7 @@ func TestRepartition(t *testing.T) {
 	Convey("repartition works", t, func() {
 		state := NewExisting(&prjpb.PState{
 			DirtyComponents: true,
-		})
+		}, nil, nil)
 		cat := &categorizedCLs{
 			active:   clidsSet{},
 			deps:     clidsSet{},

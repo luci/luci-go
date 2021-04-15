@@ -127,7 +127,7 @@ var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("the task should be d
 //
 //   * all other errors are non retryable and typically indicate a bug or severe
 //     misconfiguration. For example, lack of ProjectStateOffload entity.
-func (rb *Creator) Create(ctx context.Context) (ret *run.Run, err error) {
+func (rb *Creator) Create(ctx context.Context, pmNotifier *prjmanager.Notifier) (ret *run.Run, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")
 	defer func() { span.End(err) }()
 
@@ -136,7 +136,7 @@ func (rb *Creator) Create(ctx context.Context) (ret *run.Run, err error) {
 	}
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		ret, innerErr = rb.createTransactionally(ctx)
+		ret, innerErr = rb.createTransactionally(ctx, pmNotifier)
 		return innerErr
 	}, nil)
 	switch {
@@ -173,7 +173,7 @@ func (rb *Creator) prepare(ctx context.Context) error {
 	return nil
 }
 
-func (rb *Creator) createTransactionally(ctx context.Context) (*run.Run, error) {
+func (rb *Creator) createTransactionally(ctx context.Context, pmNotifier *prjmanager.Notifier) (*run.Run, error) {
 	rb.computeRunID(ctx)
 	switch err := rb.load(ctx); {
 	case err == errAlreadyCreated:
@@ -181,7 +181,7 @@ func (rb *Creator) createTransactionally(ctx context.Context) (*run.Run, error) 
 	case err != nil:
 		return nil, err
 	}
-	if err := rb.save(ctx); err != nil {
+	if err := rb.save(ctx, pmNotifier); err != nil {
 		return nil, err
 	}
 	return rb.run, nil
@@ -279,7 +279,7 @@ func (rb *Creator) checkCLsUnchanged(ctx context.Context) {
 // save saves all modified and created Datastore entities.
 //
 // It may be retried multiple times on failure.
-func (rb *Creator) save(ctx context.Context) error {
+func (rb *Creator) save(ctx context.Context, pmNotifier *prjmanager.Notifier) error {
 	rb.dsBatcher.reset()
 	// Keep .CreateTime and .UpdateTime entities the same across all saved
 	// entities. Do pre-emptive rounding before Datastore layer does it, such
@@ -301,7 +301,9 @@ func (rb *Creator) save(ctx context.Context) error {
 	if err := rb.dsBatcher.put(ctx); err != nil {
 		return err
 	}
-	if err := prjmanager.NotifyRunCreated(ctx, rb.runID); err != nil {
+	// In the future once Runs can be created via API requests, the PM has to be
+	// awoken.
+	if err := pmNotifier.NotifyRunCreated(ctx, rb.runID); err != nil {
 		return err
 	}
 	return run.Start(ctx, rb.runID)
