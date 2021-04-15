@@ -23,6 +23,7 @@ package gaesecrets
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"io"
 	"strings"
 	"time"
@@ -84,6 +85,11 @@ func (s *storeImpl) RandomSecret(ctx context.Context, k string) (secrets.Secret,
 // StoredSecret returns a secret by its name, fetching it from the storage.
 func (s *storeImpl) StoredSecret(ctx context.Context, k string) (secrets.Secret, error) {
 	return s.getSecret(ctx, k, false)
+}
+
+// AddRotationHandler is not implemented.
+func (s *storeImpl) AddRotationHandler(ctx context.Context, name string, cb secrets.RotationHandler) error {
+	return errors.New("not implemented")
 }
 
 func (s *storeImpl) getSecret(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
