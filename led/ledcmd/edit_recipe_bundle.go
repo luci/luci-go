@@ -131,7 +131,7 @@ func logCmd(ctx context.Context, inDir string, arg0 string, args ...string) *exe
 	return ret
 }
 
-func cmdErr(err error, reason string) error {
+func cmdErr(cmd *exec.Cmd, err error, reason string) error {
 	if err != nil {
 		ee, _ := err.(*exec.ExitError)
 		outErr := ""
@@ -141,7 +141,7 @@ func cmdErr(err error, reason string) error {
 				outErr = outErr[:128] + "..."
 			}
 		}
-		err = errors.Annotate(err, reason+": %s", outErr).Err()
+		err = errors.Annotate(err, "running %q: %s: %s", strings.Join(cmd.Args, " "), reason, outErr).Err()
 	}
 	return err
 }
@@ -172,7 +172,7 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
-	if err = cmdErr(cmd.Run(), "creating bundle"); err != nil {
+	if err = cmdErr(cmd, cmd.Run(), "creating bundle"); err != nil {
 		return
 	}
 	if opts.DebugSleep != 0 {
@@ -205,7 +205,7 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 func findRecipesPy(ctx context.Context, inDir string) (string, error) {
 	cmd := logCmd(ctx, inDir, "git", "rev-parse", "--show-toplevel")
 	out, err := cmd.Output()
-	if err = cmdErr(err, "finding git repo"); err != nil {
+	if err = cmdErr(cmd, err, "finding git repo"); err != nil {
 		return "", err
 	}
 
