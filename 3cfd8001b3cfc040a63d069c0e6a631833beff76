@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18173788_fc770464",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-15T16:47:01Z",
+      "side": 0,
+      "message": "The status code already indicates that it\u0027s an error, and err provides the details. `bad request` doesn\u0027t add any extra info to the response.",
+      "range": {
+        "startLine": 158,
+        "startChar": 53,
+        "endLine": 158,
+        "endChar": 64
+      },
+      "revId": "3cfd8001b3cfc040a63d069c0e6a631833beff76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
