@@ -16,13 +16,9 @@ package sink
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
-
-	"go.chromium.org/luci/resultdb/pbutil"
-	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -30,55 +26,28 @@ import (
 func TestArtifactChannel(t *testing.T) {
 	t.Parallel()
 
-	Convey("schedule works", t, func() {
+	Convey("schedule", t, func() {
 		ctx := context.Background()
 		cfg := testServerConfig(nil, "127.0.0.1:123", "secret")
 		reqCh := make(chan *http.Request, 1)
-		cfg.ArtifactUploader.Client.Transport = mockTransport(func(req *http.Request) (*http.Response, error) {
-			reqCh <- req
-			return &http.Response{StatusCode: http.StatusNoContent}, nil
-		})
-
+		cfg.ArtifactUploader.Client.Transport = mockTransport(
+			func(req *http.Request) (*http.Response, error) {
+				reqCh <- req
+				return &http.Response{StatusCode: http.StatusNoContent}, nil
+			},
+		)
 		ac := newArtifactChannel(ctx, &cfg)
-		art := &sinkpb.Artifact{Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
 
-		Convey("scheduleTestResults works", func() {
-			// send a sample request
-			tr, cleanup := validTestResult()
-			defer cleanup()
-			tr.Artifacts = map[string]*sinkpb.Artifact{"art1": art}
-			ac.scheduleTestResults(tr)
-			ac.closeAndDrain(ctx)
+		name := "invocations/inv/artifacts/art1"
+		ac.schedule(&uploadTask{name, testArtifactWithContents([]byte("content"))})
+		ac.closeAndDrain(ctx)
+		req := <-reqCh
+		So(req, ShouldNotBeNil)
 
-			// verify the URL of the sent request
-			req := <-reqCh
-			artName := pbutil.TestResultArtifactName(cfg.invocationID, tr.TestId, tr.ResultId, "art1")
-			expectedURL := fmt.Sprintf("https://%s/%s", cfg.ArtifactUploader.Host, artName)
-			So(req, ShouldNotBeNil)
-			So(req.URL.String(), ShouldEqual, expectedURL)
-
-			// verify the body
-			body, err := ioutil.ReadAll(req.Body)
-			So(err, ShouldBeNil)
-			So(body, ShouldResemble, []byte("123"))
-		})
-
-		Convey("scheduleArtifacts works", func() {
-			// send a sample request
-			ac.scheduleArtifacts(map[string]*sinkpb.Artifact{"art1": art})
-			ac.closeAndDrain(ctx)
-
-			// verify the URL of the sent request
-			req := <-reqCh
-			artName := pbutil.InvocationArtifactName(cfg.invocationID, "art1")
-			expectedURL := fmt.Sprintf("https://%s/%s", cfg.ArtifactUploader.Host, artName)
-			So(req, ShouldNotBeNil)
-			So(req.URL.String(), ShouldEqual, expectedURL)
-
-			// verify the body
-			body, err := ioutil.ReadAll(req.Body)
-			So(err, ShouldBeNil)
-			So(body, ShouldResemble, []byte("123"))
-		})
+		// verify the request sent
+		So(req.URL.String(), ShouldEqual, "https://"+cfg.ArtifactUploader.Host+"/"+name)
+		body, err := ioutil.ReadAll(req.Body)
+		So(err, ShouldBeNil)
+		So(body, ShouldResemble, []byte("content"))
 	})
 }
