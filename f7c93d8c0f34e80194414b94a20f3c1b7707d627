@@ -16,6 +16,86 @@
       "message": "PTAL",
       "revId": "f7c93d8c0f34e80194414b94a20f3c1b7707d627",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "54f3b721_5b7fc17c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T00:04:49Z",
+      "side": 1,
+      "message": "that was quick! nice code too, thanks 😊",
+      "revId": "f7c93d8c0f34e80194414b94a20f3c1b7707d627",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5affabfd_8718594e",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T00:04:49Z",
+      "side": 1,
+      "message": "nit: symbols comments should start with the symbol name",
+      "revId": "f7c93d8c0f34e80194414b94a20f3c1b7707d627",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "68c9a535_7698de5f",
+        "filename": "resultdb/internal/artifactcontent/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T00:04:49Z",
+      "side": 1,
+      "message": "inline?",
+      "range": {
+        "startLine": 225,
+        "startChar": 1,
+        "endLine": 225,
+        "endChar": 6
+      },
+      "revId": "f7c93d8c0f34e80194414b94a20f3c1b7707d627",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "216e952a_05a9a62e",
+        "filename": "resultdb/internal/artifactcontent/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T00:04:49Z",
+      "side": 1,
+      "message": "nit: i believe it is fairly typical to ignore the rest of values, so in case you want to reduce amount of code, there is this func: https://pkg.go.dev/net/url#Values.Get",
+      "range": {
+        "startLine": 230,
+        "startChar": 0,
+        "endLine": 232,
+        "endChar": 2
+      },
+      "revId": "f7c93d8c0f34e80194414b94a20f3c1b7707d627",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
