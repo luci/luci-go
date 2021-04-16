@@ -226,7 +226,7 @@ func (c *Cache) Mutate(ctx context.Context, key interface{}, gen Generator) (val
 	// Invoke our generator.
 	it = gen(it)
 	if it == nil {
-		// The generator indicated that no value should be stored, and any
+		// The generator indicted that no value should be stored, and any
 		// current value should be purged.
 		if e != nil {
 			c.evictEntryLocked(e)
