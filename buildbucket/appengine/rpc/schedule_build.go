@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
@@ -323,7 +324,7 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 
 // setExecutable computes the executable from the given request and builder
 // config, setting it in the model. Mutates the given *model.Build.
-// model.Build.Experiments must be set (see setExperiments).
+// build.Experiments must be set (see setExperiments).
 func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
 	build.Proto.Exe = cfg.GetExe()
 	if build.Proto.Exe == nil {
@@ -353,7 +354,7 @@ func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.B
 
 // setExperiments computes the experiments from the given request and builder
 // config, setting them in the model and proto. Mutates the given *model.Build.
-// model.Build.Proto.Input must not be nil.
+// build.Proto.Input must not be nil.
 func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
 	// Experiment -> enabled.
 	exps := make(map[string]bool, len(bb.WellKnownExperiments)+len(req.GetExperiments()))
@@ -408,9 +409,67 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	sort.Strings(build.Experiments)
 }
 
-// setInput computes the input from the given request and builder config,
-// setting them in the model. Mutates the given *model.Build. Panics if
-// the builder config is invalid.
+// setInfra computes the infra values from the given request and builder config,
+// setting them in the model. Mutates the given *model.Build. build.Experiments
+// must be set (see setExperiments).
+func setInfra(appID string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+	build.Proto.Infra = &pb.BuildInfra{
+		Buildbucket: &pb.BuildInfra_Buildbucket{
+			RequestedDimensions: req.GetDimensions(),
+			RequestedProperties: req.GetProperties(),
+		},
+		Logdog: &pb.BuildInfra_LogDog{
+			Prefix:  fmt.Sprintf("buildbucket/%s/%d", appID, build.Proto.Id),
+			Project: build.Proto.Builder.GetProject(),
+		},
+		Swarming: &pb.BuildInfra_Swarming{
+			Hostname:           cfg.GetSwarmingHost(),
+			ParentRunId:        req.GetSwarming().GetParentRunId(),
+			Priority:           int32(cfg.GetPriority()),
+			TaskServiceAccount: cfg.GetServiceAccount(),
+		},
+	}
+	if build.Proto.Infra.Swarming.Priority == 0 {
+		build.Proto.Infra.Swarming.Priority = 30
+	}
+
+	if cfg.GetRecipe() != nil {
+		build.Proto.Infra.Recipe = &pb.BuildInfra_Recipe{
+			CipdPackage: cfg.Recipe.CipdPackage,
+			Name:        cfg.Recipe.Name,
+		}
+	}
+
+	build.Proto.Infra.Swarming.Caches = make([]*pb.BuildInfra_Swarming_CacheEntry, len(cfg.GetCaches()))
+	for i, c := range cfg.GetCaches() {
+		build.Proto.Infra.Swarming.Caches[i] = &pb.BuildInfra_Swarming_CacheEntry{
+			EnvVar: c.EnvVar,
+			Name:   c.Name,
+			Path:   c.Path,
+			WaitForWarmCache: &durationpb.Duration{
+				Seconds: int64(c.WaitForWarmCacheSecs),
+			},
+		}
+		if build.Proto.Infra.Swarming.Caches[i].Name == "" {
+			build.Proto.Infra.Swarming.Caches[i].Name = c.Path
+		}
+	}
+
+	switch {
+	case req.GetPriority() > 0:
+		build.Proto.Infra.Swarming.Priority = req.Priority
+	case build.ExperimentStatus(bb.ExperimentBBAgent) == pb.Trinary_YES:
+		build.Proto.Infra.Swarming.Priority = 255
+	}
+
+	// Requested caches override global caches.
+	// TODO(crbug/1042991): Apply global caches that weren't overridden, ensure builder cache.
+	// TODO(crbug/1042991): Apply dimensions from the builder config and override from the request.
+}
+
+// setInput computes the input values from the given request and builder config,
+// setting them in the model. Mutates the given *model.Build. May panic if the
+// builder config is invalid.
 func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
 	build.Proto.Input = &pb.Build_Input{
 		Properties: &structpb.Struct{},
@@ -447,10 +506,7 @@ func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build)
 				StringValue: cfg.Recipe.Name,
 			},
 		}
-		return
-	}
-
-	if cfg.GetProperties() != "" {
+	} else if cfg.GetProperties() != "" {
 		if err := jsonpb.UnmarshalString(cfg.Properties, build.Proto.Input.Properties); err != nil {
 			// Builder config should have been validated already.
 			panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.Name).Err())
@@ -580,8 +636,9 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		}
 
 		setInput(reqs[i], cfg, blds[i])
-		setExperiments(ctx, reqs[i], cfg, blds[i]) // Requires setInput.
-		setExecutable(reqs[i], cfg, blds[i])       // Requires setExperiments.
+		setExperiments(ctx, reqs[i], cfg, blds[i])       // Requires setInput.
+		setExecutable(reqs[i], cfg, blds[i])             // Requires setExperiments.
+		setInfra(info.AppID(ctx), reqs[i], cfg, blds[i]) // Requires setExperiments.
 		setTags(reqs[i], blds[i])
 		setTimeouts(reqs[i], cfg, blds[i])
 
@@ -623,21 +680,21 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			// blds and reqs slices map 1:1.
 			reqID := reqs[i].RequestId
 			work <- func() error {
-				toPut := []interface{}{b}
-				if b.Proto.Infra != nil {
-					toPut = append(toPut, &model.BuildInfra{
+				toPut := []interface{}{
+					b,
+					&model.BuildInfra{
 						Build: datastore.KeyForObj(ctx, b),
 						Proto: model.DSBuildInfra{
 							BuildInfra: *b.Proto.Infra,
 						},
-					})
-				}
-				toPut = append(toPut, &model.BuildInputProperties{
-					Build: datastore.KeyForObj(ctx, b),
-					Proto: model.DSStruct{
-						Struct: *b.Proto.Input.Properties,
 					},
-				})
+					&model.BuildInputProperties{
+						Build: datastore.KeyForObj(ctx, b),
+						Proto: model.DSStruct{
+							Struct: *b.Proto.Input.Properties,
+						},
+					},
+				}
 				r := model.NewRequestID(ctx, b.ID, now, reqID)
 
 				// Write the entities and trigger a task queue task to create the Swarming task.
