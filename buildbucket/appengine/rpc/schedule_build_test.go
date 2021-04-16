@@ -341,6 +341,16 @@ func TestScheduleBuild(t *testing.T) {
 						Seconds: 30,
 					},
 					Id: 9021868963221667745,
+					Infra: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963221667745",
+							Project: "project",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Priority: 30,
+						},
+					},
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{},
 					},
@@ -426,6 +436,16 @@ func TestScheduleBuild(t *testing.T) {
 						Seconds: 30,
 					},
 					Id: 9021868963221610337,
+					Infra: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963221610337",
+							Project: "project",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Priority: 30,
+						},
+					},
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{},
 					},
@@ -453,6 +473,16 @@ func TestScheduleBuild(t *testing.T) {
 						Seconds: 30,
 					},
 					Id: 9021868963221610321,
+					Infra: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963221610321",
+							Project: "project",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Priority: 30,
+						},
+					},
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{},
 					},
@@ -480,6 +510,16 @@ func TestScheduleBuild(t *testing.T) {
 						Seconds: 30,
 					},
 					Id: 9021868963221610305,
+					Infra: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963221610305",
+							Project: "project",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Priority: 30,
+						},
+					},
 					Input: &pb.Build_Input{
 						Properties: &structpb.Struct{},
 					},
@@ -1917,6 +1957,253 @@ func TestScheduleBuild(t *testing.T) {
 								bb.ExperimentNonProduction,
 							},
 						},
+					},
+				})
+			})
+		})
+	})
+
+	Convey("setInfra", t, func() {
+		Convey("nil", func() {
+			ent := &model.Build{}
+
+			setInfra("", nil, nil, ent)
+			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Logdog: &pb.BuildInfra_LogDog{
+					Prefix: "buildbucket//0",
+				},
+				Swarming: &pb.BuildInfra_Swarming{
+					Priority: 30,
+				},
+			})
+		})
+
+		Convey("experimental", func() {
+			ent := &model.Build{
+				Experiments: []string{
+					"+" + bb.ExperimentBBAgent,
+				},
+			}
+
+			setInfra("", nil, nil, ent)
+			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Logdog: &pb.BuildInfra_LogDog{
+					Prefix: "buildbucket//0",
+				},
+				Swarming: &pb.BuildInfra_Swarming{
+					Priority: 255,
+				},
+			})
+		})
+
+		Convey("logdog", func() {
+			ent := &model.Build{
+				Proto: pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Id: 1,
+				},
+			}
+
+			setInfra("app-id", nil, nil, ent)
+			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Logdog: &pb.BuildInfra_LogDog{
+					Prefix:  "buildbucket/app-id/1",
+					Project: "project",
+				},
+				Swarming: &pb.BuildInfra_Swarming{
+					Priority: 30,
+				},
+			})
+		})
+
+		Convey("config", func() {
+			Convey("recipe", func() {
+				cfg := &pb.Builder{
+					Recipe: &pb.Builder_Recipe{
+						CipdPackage: "package",
+						Name:        "name",
+					},
+				}
+				ent := &model.Build{}
+
+				setInfra("", nil, cfg, ent)
+				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Logdog: &pb.BuildInfra_LogDog{
+						Prefix: "buildbucket//0",
+					},
+					Recipe: &pb.BuildInfra_Recipe{
+						CipdPackage: "package",
+						Name:        "name",
+					},
+					Swarming: &pb.BuildInfra_Swarming{
+						Priority: 30,
+					},
+				})
+			})
+
+			Convey("swarming", func() {
+				Convey("no dimensions", func() {
+					cfg := &pb.Builder{
+						Priority:       1,
+						ServiceAccount: "account",
+						SwarmingHost:   "host",
+					}
+					ent := &model.Build{}
+
+					setInfra("", nil, cfg, ent)
+					So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix: "buildbucket//0",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Hostname:           "host",
+							Priority:           1,
+							TaskServiceAccount: "account",
+						},
+					})
+				})
+			})
+		})
+
+		Convey("request", func() {
+			Convey("dimensions", func() {
+				req := &pb.ScheduleBuildRequest{
+					Dimensions: []*pb.RequestedDimension{
+						{
+							Expiration: &durationpb.Duration{
+								Seconds: 1,
+							},
+							Key:   "key",
+							Value: "value",
+						},
+					},
+				}
+				ent := &model.Build{}
+
+				setInfra("", req, nil, ent)
+				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						RequestedDimensions: []*pb.RequestedDimension{
+							{
+								Expiration: &durationpb.Duration{
+									Seconds: 1,
+								},
+								Key:   "key",
+								Value: "value",
+							},
+						},
+					},
+					Logdog: &pb.BuildInfra_LogDog{
+						Prefix: "buildbucket//0",
+					},
+					Swarming: &pb.BuildInfra_Swarming{
+						Priority: 30,
+					},
+				})
+			})
+
+			Convey("properties", func() {
+				req := &pb.ScheduleBuildRequest{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "value",
+								},
+							},
+						},
+					},
+				}
+				ent := &model.Build{}
+
+				setInfra("", req, nil, ent)
+				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						RequestedProperties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"key": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "value",
+									},
+								},
+							},
+						},
+					},
+					Logdog: &pb.BuildInfra_LogDog{
+						Prefix: "buildbucket//0",
+					},
+					Swarming: &pb.BuildInfra_Swarming{
+						Priority: 30,
+					},
+				})
+			})
+
+			Convey("parent run id", func() {
+				req := &pb.ScheduleBuildRequest{
+					Swarming: &pb.ScheduleBuildRequest_Swarming{
+						ParentRunId: "id",
+					},
+				}
+				ent := &model.Build{}
+
+				setInfra("", req, nil, ent)
+				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Logdog: &pb.BuildInfra_LogDog{
+						Prefix: "buildbucket//0",
+					},
+					Swarming: &pb.BuildInfra_Swarming{
+						ParentRunId: "id",
+						Priority:    30,
+					},
+				})
+			})
+
+			Convey("priority", func() {
+				req := &pb.ScheduleBuildRequest{
+					Priority: 1,
+				}
+				ent := &model.Build{}
+
+				setInfra("", req, nil, ent)
+				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Logdog: &pb.BuildInfra_LogDog{
+						Prefix: "buildbucket//0",
+					},
+					Swarming: &pb.BuildInfra_Swarming{
+						Priority: 1,
+					},
+				})
+			})
+
+			Convey("priority > experimental", func() {
+				req := &pb.ScheduleBuildRequest{
+					Priority: 1,
+				}
+				ent := &model.Build{
+					Experiments: []string{
+						"+" + bb.ExperimentBBAgent,
+					},
+				}
+
+				setInfra("", req, nil, ent)
+				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Logdog: &pb.BuildInfra_LogDog{
+						Prefix: "buildbucket//0",
+					},
+					Swarming: &pb.BuildInfra_Swarming{
+						Priority: 1,
 					},
 				})
 			})
