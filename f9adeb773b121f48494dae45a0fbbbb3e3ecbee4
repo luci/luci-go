@@ -288,6 +288,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "e74ee8b3_75836a98",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T21:19:50Z",
+      "side": 1,
+      "message": "+1 to everything Yiwei wrote. I propose to not care about *waiting* for `FinishedRun` in this CL.",
+      "parentUuid": "f70f12ca_0f2b17c9",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 89
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "26b5c975_81eda6b1",

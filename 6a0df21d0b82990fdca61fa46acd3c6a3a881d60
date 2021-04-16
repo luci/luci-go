@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08b0cd82_111c127e",
+        "filename": "cv/internal/bq/bq.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T21:19:50Z",
+      "side": 1,
+      "message": "oops, i didn\u0027t realize there was no way to use this bq package when reviewing prior CL. This fix is 👍\n\n(one nit: either mustClient should be public, OR remove mention of \"mustClient\" from SendRow doc, since godoc wouldn\u0027t even list private mustClient func)",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 1
+      },
+      "revId": "6a0df21d0b82990fdca61fa46acd3c6a3a881d60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "137ef677_84a88506",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T21:19:50Z",
+      "side": 1,
+      "message": "food for thought -- just thinking out loud so that either you can correct me and/or my thoughts can help speed up our code in the future.\n\nyou are loading 2 entities here *sequentially*, which means two roundtrips to datastore + delays. In general, prefer to read both in a single datastore.Get.\n\nDuring migration, we\u0027ll almost always need to load 3 kinds of entities here:\n1. Run itself. [Always needed.]\n2. Either RunFinished or RunVerified entity from CQD\n[possibly not exists, possibly not needed to be loaded in some cases]\n3. RunCLs.\n[I think these are always needed]\n\n(1) and (2) can be loaded at the same time, since their IDs are known in advance.\n(3) can only be loaded once you get Run entity.\nThus, ideal is \n  first: datastore.Get(\u0026Run, \u0026RUnFInished, \u0026RunVerified)\n  second: datastore.Get([\u0026RunCL for cl in run.cls])\n\nUnfortunately, loading 2+ entities via datastore.Get() is somewhat annoying wrt dealing with errors.\nAlso, once CQDaemon is deleted we won\u0027t need (2).\n\nSo, perhaps it\u0027s OK to write simpler code with 3 sequential RPCs to datastore today in (1) (2) (3) order, s.t. it\u0027s easy to remove step (2) once CQDaemon is dead.",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 40
+      },
+      "revId": "6a0df21d0b82990fdca61fa46acd3c6a3a881d60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3cb800db_80e10349",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T21:19:50Z",
+      "side": 1,
+      "message": "yes.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 81
+      },
+      "revId": "6a0df21d0b82990fdca61fa46acd3c6a3a881d60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
