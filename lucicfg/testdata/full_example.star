@@ -165,6 +165,10 @@ luci.builder(
             by_timestamp = True,
         ),
     ),
+    test_presentation_config = test_presentation.config(
+        column_keys = ["v.gpu"],
+        grouping_keys = ["status", "v.test_suite"],
+    ),
 )
 
 luci.builder(
