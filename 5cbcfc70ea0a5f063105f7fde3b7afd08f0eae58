@@ -33,6 +33,24 @@
       "message": "nit: this list is not very readable. \ndoesn\u0027t have to be in this CL though.",
       "revId": "5cbcfc70ea0a5f063105f7fde3b7afd08f0eae58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dedb70c7_93077f39",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-16T00:48:21Z",
+      "side": 1,
+      "message": "I thought about using .map() and .join() to construct the list, but I also don\u0027t want to add unnecessary execution.\n\nAs a compromise, added a comment above to list the fields in a more readable format.",
+      "parentUuid": "55e5b629_74902ca5",
+      "revId": "5cbcfc70ea0a5f063105f7fde3b7afd08f0eae58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
