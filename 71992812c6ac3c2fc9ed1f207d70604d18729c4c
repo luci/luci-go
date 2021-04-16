@@ -70,6 +70,24 @@
       "parentUuid": "a37a23b3_41d5692d",
       "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ebe533f4_6b6e05e9",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T18:38:47Z",
+      "side": 1,
+      "message": "wait. I think I misinterpreted \"If the trailing component (i.e., basename) of pathname is a symbolic link, then the open fails\".\n\nI will do more checks",
+      "parentUuid": "fd1ae26b_ac2ecc9c",
+      "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
