@@ -35,6 +35,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7cf152b4_9f325a78",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T00:08:21Z",
+      "side": 1,
+      "message": "LGTM except an alternate",
+      "revId": "f7c93d8c0f34e80194414b94a20f3c1b7707d627",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5affabfd_8718594e",
@@ -48,6 +65,29 @@
       "writtenOn": "2021-04-16T00:04:49Z",
       "side": 1,
       "message": "nit: symbols comments should start with the symbol name",
+      "revId": "f7c93d8c0f34e80194414b94a20f3c1b7707d627",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "187a5c66_18cfdfae",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T00:08:21Z",
+      "side": 1,
+      "message": "Could we use ReadRequest.ReadLimit instead?\nhttps://pkg.go.dev/google.golang.org/genproto/googleapis/bytestream#ReadRequest",
+      "range": {
+        "startLine": 74,
+        "startChar": 41,
+        "endLine": 76,
+        "endChar": 2
+      },
       "revId": "f7c93d8c0f34e80194414b94a20f3c1b7707d627",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
