@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe0266dd_b0d7f4f6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2021-04-16T17:26:09Z",
+      "side": 1,
+      "message": "I remember having the intention of computing this even for build invocations on finalize. Is this still part of the plan?",
+      "range": {
+        "startLine": 10,
+        "startChar": 21,
+        "endLine": 10,
+        "endChar": 85
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "73673d33_ab0a4f27",
