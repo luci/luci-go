@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb7a8c1a_c5111fd1",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-16T00:41:25Z",
+      "side": 1,
+      "message": "This doesn\u0027t result in any changes in the output.\nI suspect this is because this is not defined in\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/project_config.proto;l\u003d80\n\nIt seems to my that this ends up in builder config, does this also get piped to build.input.properties? I don\u0027t see a lot of the properties defined here in a typical input.properties of a typical build.",
+      "range": {
+        "startLine": 168,
+        "startChar": 4,
+        "endLine": 171,
+        "endChar": 6
+      },
+      "revId": "79a851fc5aca0f0da11554760f4c38eaa7c26c30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
