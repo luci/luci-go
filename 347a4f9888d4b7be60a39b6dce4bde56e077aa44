@@ -16,6 +16,24 @@
       "message": "LGTM. Sorry for the delay.\n\nI still have slight concerns about (low-level of) modularity of the code. It seems to be a pattern to place everything in one place, regardless of how general the code is. Sometimes it is hard to predict if a certain piece of code will be reused later, but it is not the case here: we are rewriting code - we can reasonably predict if [a code we are rewriting] will be reused - it is already reused in Python.",
       "revId": "347a4f9888d4b7be60a39b6dce4bde56e077aa44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2187be45_93442f2c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-16T16:15:20Z",
+      "side": 1,
+      "message": "It\u0027s an evolving project. We often fix issues and make feature and behavioral changes while executing this project, so I can\u0027t predict what kind of structure the config-related packages will have and I\u0027m not interested in spending time on it now especially since safely refactoring the code is significantly easier compared to Python. I also haven\u0027t seen significant issue with this approach in the last year of this project so I\u0027m not sure what the cause for concern is.",
+      "parentUuid": "1be40592_73d70a75",
+      "revId": "347a4f9888d4b7be60a39b6dce4bde56e077aa44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
