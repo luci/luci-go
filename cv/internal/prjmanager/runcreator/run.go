@@ -101,6 +101,7 @@ type Creator struct {
 // CL is a helper struct for per-CL input for run creation.
 type CL struct {
 	ID               common.CLID
+	ExternalID       changelist.ExternalID
 	ExpectedEVersion int
 	TriggerInfo      *run.Trigger
 	Snapshot         *changelist.Snapshot // Only needed for compat with CQDaemon.
@@ -334,10 +335,11 @@ func (rb *Creator) registerSaveRun(ctx context.Context, now time.Time) {
 func (rb *Creator) registerSaveRunCL(ctx context.Context, index int) {
 	inputCL := rb.InputCLs[index]
 	entity := &run.RunCL{
-		Run:     datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
-		ID:      inputCL.ID,
-		Trigger: inputCL.TriggerInfo,
-		Detail:  rb.cls[index].Snapshot,
+		Run:        datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
+		ID:         inputCL.ID,
+		ExternalID: rb.cls[index].ExternalID,
+		Trigger:    inputCL.TriggerInfo,
+		Detail:     rb.cls[index].Snapshot,
 	}
 	rb.dsBatcher.register(entity, func(err error) error {
 		return errors.Annotate(err, "failed to save RunCL %d", inputCL.ID).Tag(transient.Tag).Err()
