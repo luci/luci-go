@@ -69,6 +69,7 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 	// Start a reading stream.
 	stream, err := r.ReadCASBlob(c.Context, &bytestream.ReadRequest{
 		ResourceName: resourceName(r.RBECASInstanceName, hash, r.size.Int64),
+		ReadLimit:    r.limit,
 	})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {

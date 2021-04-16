@@ -178,6 +178,29 @@ func TestServeContent(t *testing.T) {
 			So(actualContents, ShouldEqual, "contents")
 		})
 
+		Convey(`limit`, func() {
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+			So(err, ShouldBeNil)
+
+			Convey(`empty`, func() {
+				u += "&n="
+				res, _ := fetch(u)
+				So(res.StatusCode, ShouldEqual, http.StatusOK)
+			})
+
+			Convey(`multiple`, func() {
+				u += "&n=10&n=50"
+				res, _ := fetch(u)
+				So(res.StatusCode, ShouldEqual, http.StatusOK)
+			})
+
+			Convey(`invalide`, func() {
+				u += "&n=limit"
+				res, _ := fetch(u)
+				So(res.StatusCode, ShouldEqual, http.StatusBadRequest)
+			})
+		})
+
 		Convey(`RBE-CAS`, func() {
 			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
 			So(err, ShouldBeNil)
@@ -211,6 +234,22 @@ func TestServeContent(t *testing.T) {
 				So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
 				So(res.Header.Get("Content-Length"), ShouldEqual, "64")
 			})
+
+			//Convey(`RBE-CAS with limit`, func() {
+			//	casReader.Res = []*bytestream.ReadResponse{
+			//		{Data: []byte("first ")},
+			//		{Data: []byte("second")},
+			//	}
+			//
+			//	u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
+			//	So(err, ShouldBeNil)
+			//	u += "&n=10"
+			//	res, actualContents := fetch(u)
+			//	So(res.StatusCode, ShouldEqual, http.StatusOK)
+			//	So(actualContents, ShouldEqual, "first s...")
+			//	So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
+			//	So(res.Header.Get("Content-Length"), ShouldEqual, "64")
+			//})
 		})
 	})
 }
