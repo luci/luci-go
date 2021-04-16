@@ -284,6 +284,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "dac39215_91cb0b46",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "994cc2ed_09c95f87",
+      "range": {
+        "startLine": 245,
+        "startChar": 4,
+        "endLine": 245,
+        "endChar": 10
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8577d0d4_3f4eeb21",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2
@@ -460,6 +484,30 @@
       "side": 1,
       "message": "1. CV TQ handler can take 10 minutes.\n  -\u003e I don\u0027t recall if it get it by default, so we may need to create a dedicated service for RM operations.\n\n2. Oh, I actually forgot to cap Run by 100 CLs -- will do so 😊\n\n\n\u003e If we mark it as transient, it is possible for CV to submit everything upon second retry although it means there\u0027s a short window that a RUN is partially submitted and waiting for the acquiring the submit queue again.\n\nIMO, the big problem is NOT the waiting for re-acquire (though ideally, there is no waiting). It is that another Run can be submitted in the mean time.\n\nHence, my proposal above, which combined with 10 minutes, should provide better service than CQD.\n\n\nAs a follow up, we can speed up re-acquisition by:\n  (a) add new \"taskID\" in Run.Submission\n  (b) Run.Submission.TaskID is set to value from X-CloudTasks-TaskName header (need to be exposed in server.tq.TaskExecutionInfo https://chromium.googlesource.com/infra/luci/luci-go/+/9d9b06541571/server/tq/dispatcher.go#430)\n  (c) on retry the X-CloudTasks-TaskName will match the one stored in the server.tq.TaskExecutionInfo, so there is no need to wait for the deadline.\n  (d) deadline now can be made larger, e.g. 20 minutes.",
       "parentUuid": "f6304f0e_3187540e",
+      "range": {
+        "startLine": 286,
+        "startChar": 13,
+        "endLine": 287,
+        "endChar": 41
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76af358c_94e7474c",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Do I understand correctly you are suggesting that the lifetime of a submission attempt (dictated by submission.deadline) can be larger than the lifetime of task (right now they are equal)?\n\nIf a task has successfully submitted a few CLs but fail to submit a CL in the middle with *transient* error should not release the queue, but instead, it should return error and let the tq retry the task and the retried task will quickly re-acquire the submit queue and continue the submission until the submission succeeds or permanent fail or excceed the deadline (which should be considered permanent failure because it has partially submitted CLs)",
+      "parentUuid": "4d146b95_c1319c04",
       "range": {
         "startLine": 286,
         "startChar": 13,
@@ -863,6 +911,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "44f28733_913b1bf2",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3116c15e_caced8ad",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "afad0d28_01533a7b",
@@ -912,6 +978,24 @@
       "side": 1,
       "message": "I meant to re-use template functions that I defined in https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/cv/internal/prjmanager/clpurger/user_text.go;l\u003d114?q\u003dcv%20internal%20clpurger\u0026ss\u003dchromium\n\nThis will make it easier to improve messages in the future, e.g. by sourcing contact point for respective LUCI project maintainers from say `luci-config/projects.cfg` file.",
       "parentUuid": "c1f09a3c_9ef77f8c",
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a4ba7dc_62c0cad3",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Done\n\n\u003e This will make it easier to improve messages in the future, e.g. by sourcing contact point for respective LUCI project maintainers from say `luci-config/projects.cfg` file.\n\nGood point.",
+      "parentUuid": "7908cc08_d358df3b",
       "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },

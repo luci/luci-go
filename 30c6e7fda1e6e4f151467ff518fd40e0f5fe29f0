@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7c226b8_1e9a6701",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0651481e_152b3f30",
+      "range": {
+        "startLine": 240,
+        "startChar": 15,
+        "endLine": 240,
+        "endChar": 25
+      },
+      "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d20ade4d_63d6b770",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-04-13T13:03:06Z",
       "side": 1,
       "message": "This is too low in practice. Gerrit Submit RPC can easily take 1 minute and fail but succeed on retry.\nConsider limiting # of Retries (e.g. 10), and letting context deadline determine effective MaxTotal.",
+      "range": {
+        "startLine": 308,
+        "startChar": 0,
+        "endLine": 308,
+        "endChar": 30
+      },
+      "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23157eb3_50d84722",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Done, adjusted",
+      "parentUuid": "d20ade4d_63d6b770",
       "range": {
         "startLine": 308,
         "startChar": 0,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f9112c95_81d4cb6d",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1fcdb798_69968475",
+      "range": {
+        "startLine": 342,
+        "startChar": 53,
+        "endLine": 342,
+        "endChar": 54
+      },
+      "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e425f321_3f22fd7a",
@@ -100,6 +172,30 @@
       "writtenOn": "2021-04-13T13:03:06Z",
       "side": 1,
       "message": "clock.Now(ctx).After(s.deadline)",
+      "range": {
+        "startLine": 375,
+        "startChar": 4,
+        "endLine": 375,
+        "endChar": 38
+      },
+      "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a69bc1a_7c8b8e39",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e425f321_3f22fd7a",
       "range": {
         "startLine": 375,
         "startChar": 4,
@@ -133,6 +229,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ff78654_740199d8",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2cf66edb_8bad0501",
+      "range": {
+        "startLine": 443,
+        "startChar": 16,
+        "endLine": 443,
+        "endChar": 17
+      },
+      "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "58628fca_aab1f092",
@@ -156,6 +276,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "25974ede_4f309094",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "58628fca_aab1f092",
+      "range": {
+        "startLine": 445,
+        "startChar": 34,
+        "endLine": 445,
+        "endChar": 38
+      },
+      "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "aa5f78b0_a1ef642f",
@@ -169,6 +313,24 @@
       "writtenOn": "2021-04-13T13:03:06Z",
       "side": 1,
       "message": "👍 Are you already tackling this and/or do you intend to own this?",
+      "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d8c2b3b_9888a946",
+        "filename": "cv/internal/run/impl/handler/submit_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T23:45:22Z",
+      "side": 1,
+      "message": "The later. filed https://crbug.com/1199880",
+      "parentUuid": "aa5f78b0_a1ef642f",
       "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
