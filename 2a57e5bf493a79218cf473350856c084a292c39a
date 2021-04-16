@@ -3,6 +3,92 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3db3787a_07b0fb35",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T18:03:52Z",
+      "side": 1,
+      "message": "does this mean for the same key? maybe it should be clarified",
+      "range": {
+        "startLine": 334,
+        "startChar": 4,
+        "endLine": 334,
+        "endChar": 14
+      },
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de4098a5_34c46099",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T18:03:52Z",
+      "side": 1,
+      "message": "nit: not sure about this variable. We keep it synchronized with dims in 3 places. The whole purpose is to get a sorted list of keys. It seems like the following\n\n  for k, values :\u003d range dims {\n    sort.Slice(values, func(i, j int) bool {\n      return values[i].Expiration.GetSeconds() \u003c values[j].Expiration.GetSeconds()\n    })\n    build.Proto.Infra.Swarming.TaskDimensions \u003d append(build.Proto.Infra.Swarming.TaskDimensions, values...)\n  }\n  sort.Strings(build.Proto.Infra.Swarming.TaskDimensions, func(...))\n\nwould be less code, less memory allocation and less lookups into dims?",
+      "range": {
+        "startLine": 345,
+        "startChar": 1,
+        "endLine": 345,
+        "endChar": 5
+      },
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0da67964_7f8ca082",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T18:03:52Z",
+      "side": 1,
+      "message": "inconsistency: is there a reason why guess the size in L345, but not here?",
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c96ecfb_341d039d",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T18:03:52Z",
+      "side": 1,
+      "message": "and also non-int64?",
+      "range": {
+        "startLine": 353,
+        "startChar": 59,
+        "endLine": 353,
+        "endChar": 75
+      },
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8e5b0e82_459dc4a3",
         "filename": "buildbucket/appengine/rpc/schedule_build.go",
         "patchSetId": 1
@@ -14,6 +100,24 @@
       "writtenOn": "2021-04-16T17:33:59Z",
       "side": 1,
       "message": "Strictly speaking, \u003cvalue\u003e may only be empty in \u003ckey\u003e:\u003cvalue\u003e format (e.g. \"1:key:\" is not valid), which is ensured by validation. But it simplifies implementation here if there\u0027s a consistent treatment of empty \u003cvalue\u003e even if \u003cexp\u003e is specified.\n\nI didn\u0027t document this though, because I think it\u0027s too much information for most people. All I\u0027m commenting on in the code is the well-defined behavior of this block.",
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5b5b448_f3bcf353",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T18:03:52Z",
+      "side": 1,
+      "message": "\u003e e.g. \"1:key:\" is not valid\n\nthis looks like a bug / non-intentional. So fixing it SGTM",
+      "parentUuid": "8e5b0e82_459dc4a3",
       "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
