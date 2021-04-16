@@ -16,6 +16,109 @@
       "message": "PTAL",
       "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce8839bf_c8d829b5",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:20:12Z",
+      "side": 1,
+      "message": "looks like now the concurrent loop in L60 is blocked by this (not as concurrent) RPC:\n1. why not shard it as well, i.e. somewhere in the L62 func\n\n2. stepping back, seems like we are sending this RPC to Spanner, read the results, and then send them back to Spanner again in L66. Did you consider incorporating the new filters right into https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/testresults/query.go;l\u003d282?q\u003dtestresults%2Fquery.go\n? Then both history and QueryTestResults would benefit from this CL, because the optimization is done in the common layer.",
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32e0849a_d335ec4b",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:20:12Z",
+      "side": 1,
+      "message": "to reduce unnecessary code-reviewing: is this a pure revert?\n\nconsider reverting the original CL instead, and rebasing this CL on top (i.e. this CL is trying to do two things at the same time)",
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "421421d0_1b137494",
+        "filename": "resultdb/internal/invocations/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:20:12Z",
+      "side": 1,
+      "message": "that may have test results that match the predicate.\n\nthe emphasis on \"may\"",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 72
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "042e0117_908bd519",
+        "filename": "resultdb/internal/invocations/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:20:12Z",
+      "side": 1,
+      "message": "the package is already called invocations, so perhaps we don\u0027t need \"Invs\" in the beginning.",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 26
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ecea712e_9e9a0ee8",
+        "filename": "resultdb/internal/invocations/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:20:12Z",
+      "side": 1,
+      "message": "nit: seems like this code is unnecessary. L38 and L50 will evaluate to false and L65 will exit",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 0
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
