@@ -69,6 +69,30 @@
       },
       "revId": "803a43f897a2151e2137d9703453aeb593ecd947",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1abbf76_b6bb0608",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T21:06:21Z",
+      "side": 1,
+      "message": "ha, I suspected that, but I wasn\u0027t sure, so wanted to ensure I don\u0027t miss out on learning something. Thanks for explanation 😊",
+      "parentUuid": "07393f54_dc396d65",
+      "range": {
+        "startLine": 129,
+        "startChar": 26,
+        "endLine": 129,
+        "endChar": 32
+      },
+      "revId": "803a43f897a2151e2137d9703453aeb593ecd947",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
