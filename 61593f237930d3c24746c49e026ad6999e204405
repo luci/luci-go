@@ -16,6 +16,24 @@
       "message": "now Gerrit thinks that I uploaded this code (after a fixed a typo). You might have to edit the commit message again",
       "revId": "61593f237930d3c24746c49e026ad6999e204405",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0dee7342_7d09d91d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-16T00:51:41Z",
+      "side": 1,
+      "message": "I seems like I just needed to `review +1`",
+      "parentUuid": "f666f36e_07bbe2f8",
+      "revId": "61593f237930d3c24746c49e026ad6999e204405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
