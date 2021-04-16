@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9476ca3_faec12fa",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T21:10:47Z",
+      "side": 1,
+      "message": "nit: reading this code without seeing preallocation immediately triggers a thought \"was TaskDimensions preallocated?\". Given that TaskDimensions is not mutated until this line, consider moving the prellocation from L330 to here.\n\nalso consider creating a variable with a short name, e.g. taskDims. The long expression \"build.Proto.Infra.Swarming.TaskDimensions\" is repeated many times below, so it is a bit hard to read. Then it would be \n\n  build.Proto.Infra.Swarming.TaskDimensions \u003d taskDims\n\nin the end",
+      "revId": "e0d090b550c4b1651819ad67f3e2a89b0bf7766c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
