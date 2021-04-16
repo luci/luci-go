@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d0281f6_c365e38d",
+        "filename": "resultdb/internal/artifactcontent/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T00:58:33Z",
+      "side": 1,
+      "message": "nit; I found that the common pattern is\n\n```\n// foo is great\nfoo int\n\nor\n\nfoo int // is great\n```\n\nI think this comment is short enough to be like below\n```\nlimit int64 // Maximum size of the artifact, in bytes.\n```",
+      "range": {
+        "startLine": 157,
+        "startChar": 1,
+        "endLine": 158,
+        "endChar": 12
+      },
+      "revId": "0a5a6d81a5414c3a56f7b8b9256c1ef71ab05aa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
