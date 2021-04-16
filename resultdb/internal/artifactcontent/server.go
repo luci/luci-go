@@ -154,6 +154,8 @@ type contentRequest struct {
 	invID      invocations.ID
 	parentID   string
 	artifactID string
+	// Maximum size of the artifact, in bytes.
+	limit int64
 
 	contentType spanner.NullString
 	size        spanner.NullInt64
@@ -219,6 +221,16 @@ func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) er
 	r.invID = invocations.ID(invID)
 	r.parentID = artifacts.ParentID(testID, resultID)
 	r.artifactID = artifactID
+
+	limitStr := req.URL.Query().Get("n")
+	if limitStr == "" {
+		return nil
+	}
+
+	r.limit, err = strconv.ParseInt(limitStr, 10, 64)
+	if err != nil || r.limit <= 0 {
+		return errors.Annotate(err, "query parmeter n must be a positive integer, but got %q", limitStr).Err()
+	}
 	return nil
 }
 
