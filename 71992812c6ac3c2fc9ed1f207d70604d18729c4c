@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "109dffab_f0cd063c",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:25:51Z",
+      "side": 1,
+      "message": "maybe !st.IsRegular()? we don\u0027t really support symlinks",
+      "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
