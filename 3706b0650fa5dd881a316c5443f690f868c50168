@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "56090193_0cce4c48",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-16T22:19:02Z",
+      "side": 1,
+      "message": "Maybe this should be a part of resultdb group of options? e.g. \n\n  luci.builder(\n    ...\n    resultdb_settings \u003d resultdb.settings(\n          enable \u003d True,\n          history_options \u003d resultdb.history_options(\n              by_timestamp \u003d True,\n          ),\n          test_presentation \u003d resultdb.test_resentation(\n              column_keys \u003d [\"v.gpu\"],\n              grouping_keys \u003d [\"status\", \"v.test_suite\"],\n          ),\n      ),\n  )\n\nMy reasoning is:\n1. IIUC, test_presentation works only with ResultDB results, and thus makes sense only if ResultDB is enabled.\n2. From a user point of view, LUCI is one system. This setting seems to be mostly related to results. It being a property read by Milo is an implementation detail that doesn\u0027t need to be exposed in public API.\n3. Avoiding adding new global namespace.\n\nPerhaps it even should be added to https://source.chromium.org/chromium/infra/infra/+/master:recipes-py/recipe_proto/go.chromium.org/luci/buildbucket/proto/project_config.proto;l\u003d188?q\u003d%22ResultDB%22%20lang:proto\u0026ss\u003dchromium (who knows, maybe we\u0027ll have a non-Milo UI that will like to interpret this option).\n\nI\u0027m not insisting, just asking your opinion.",
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "63420b91_8358ca1c",
