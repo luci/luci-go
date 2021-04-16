@@ -25,8 +25,11 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/encryptedcookies/internal"
 	"go.chromium.org/luci/server/encryptedcookies/session"
 	"go.chromium.org/luci/server/encryptedcookies/session/sessionpb"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
 )
 
 // Store uses Cloud Datastore for sessions.
@@ -35,6 +38,18 @@ type Store struct {
 }
 
 var _ session.Store = (*Store)(nil)
+
+func init() {
+	internal.RegisterStoreImpl(internal.StoreImpl{
+		ID: "datastore",
+		Factory: func(ctx context.Context, namespace string) (session.Store, error) {
+			return &Store{Namespace: namespace}, nil
+		},
+		Deps: []module.Dependency{
+			module.RequiredDependency(gaeemulation.ModuleName),
+		},
+	})
+}
 
 // FetchSession fetches an existing session with the given ID.
 //
