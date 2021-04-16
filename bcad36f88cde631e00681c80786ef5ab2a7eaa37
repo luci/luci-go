@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f657b7ce_06be18f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-16T04:05:28Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "bcad36f88cde631e00681c80786ef5ab2a7eaa37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1f4dd01_48ec0d38",
+        "filename": "examples/appengine/helloworld_v2/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-16T04:05:28Z",
+      "side": 1,
+      "message": "I don\u0027t like this :( But I have no better ideas yet.",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 41
+      },
+      "revId": "bcad36f88cde631e00681c80786ef5ab2a7eaa37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1af7a8c5_42298326",
+        "filename": "server/encryptedcookies/module.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-16T04:05:28Z",
+      "side": 1,
+      "message": "a typical production configuration will look like:\n\n  ./server \\\n    ...\n    -cloud-project \"some-project\" \\\n    -encrypted-cookies-tink-aead-key \"sm://dev-tink-aead-key\" \\\n    -encrypted-cookies-client-id \"301407...-cqp....apps.googleusercontent.com\" \\\n    -encrypted-cookies-client-secret \"sm://oauth2-client-secret\" \\\n    -encrypted-cookies-redirect-url \"https://myurl.com/auth/openid/callback\"\n\nOther flags exist to handle edge cases.",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 18
+      },
+      "revId": "bcad36f88cde631e00681c80786ef5ab2a7eaa37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
