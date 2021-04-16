@@ -52,6 +52,24 @@
       "parentUuid": "15ce27ec_86cd7f55",
       "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd1ae26b_ac2ecc9c",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T18:35:55Z",
+      "side": 1,
+      "message": "1) AFAIK, Go doc doesn\u0027t explicitly mention whether os.Open() follows symlink.\n2) Man page for open() claims that open() follows the symlink, unless O_NOFOLLOW is given.\n\nhttps://man7.org/linux/man-pages/man2/open.2.html\n\n- O_NOFOLLOW\nIf the trailing component (i.e., basename) of pathname is\na symbolic link, then the open fails, \n...\nThis flag is a FreeBSD extension, which was added to Linux\nin version 2.1.126, and .... has subsequently been standardized\nin POSIX.1-2008.\n\n3) I checked the go/src/syscall/syscall_*.go, and didn\u0027t find any implementation passing O_NOFOLLOW to open()/CreateFile()/etc.\n\nI believe that it\u0027s safe to assume os.Open() follows symlinks, as the POSIX spec requires, unless O_NOFOLLOW was passed by the user.",
+      "parentUuid": "a37a23b3_41d5692d",
+      "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
