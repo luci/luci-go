@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63420b91_8358ca1c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/test_presentation.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-16T02:42:01Z",
+      "side": 1,
+      "message": "In the design doc and in the frontend implementation, this defaults to [\u0027v.test_suite\u0027].\nIn the recipe module, this defaults to [] (by mistake).\n\nBut I\u0027m preferring defaulting to [] now.\nBecause in quite a few places (e.g. protobuf, validate.list), there is no clear distinction between [] and None/undefined.\nWe often needs another field to clearly communicate that the value is set to an empty array rather than left unspecified.\n\nIf we default to [\u0027v.test_suite\u0027], then we\n1. need an extra field to support [] (no extra column), or\n2. force every project to have at least one extra column.\nNeither is good.\n\nThis doesn\u0027t apply to grouping_keys, because forcing them to at least group by status is probably fine.",
+      "range": {
+        "startLine": 40,
+        "startChar": 17,
+        "endLine": 40,
+        "endChar": 31
+      },
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

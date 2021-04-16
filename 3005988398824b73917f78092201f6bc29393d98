@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1ae128d_a3f12a6c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/test_presentation.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-16T02:42:01Z",
+      "side": 1,
+      "message": "Not sure if I should put this in luci/lib/milo.star instead.\nThere\u0027s already a luci/rules/milo.star.\n\nluci/rules/milo.star is exposed as luci.milo.\nluci/lib/milo.star will be exposed as milo.\nSo there\u0027s no name collision, but it can be confusing to have two milo module/rule.",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 97,
+        "endChar": 17
+      },
+      "revId": "3005988398824b73917f78092201f6bc29393d98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5b8e73f_a98e7253",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-16T02:42:01Z",
+      "side": 1,
+      "message": "Not sure if I should rename this to something else.\nThis is consistent with \"$recipe_engine/milo/blamelist\".\nBut it\u0027s a bit weird to set a $recipe_engine property here.",
+      "range": {
+        "startLine": 232,
+        "startChar": 19,
+        "endLine": 232,
+        "endChar": 58
+      },
+      "revId": "3005988398824b73917f78092201f6bc29393d98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
