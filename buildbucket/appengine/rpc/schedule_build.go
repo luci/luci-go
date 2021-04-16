@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
@@ -322,6 +324,96 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 	})
 }
 
+// setDimensions computes the dimensions from the given request and builder
+// config, setting them in the model. Mutates the given *model.Build.
+// build.Proto.Infra.Swarming must be set (see setInfra).
+func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+	build.Proto.Infra.Swarming.TaskDimensions = make([]*pb.RequestedDimension, 0, len(cfg.GetDimensions()))
+
+	// Requested dimensions override dimensions specified in the builder config by wiping out all
+	// associated expiration times and values in the builder config.
+	//
+	// For example if:
+	// Request contains: ("key", "value 1", 60), ("key", "value 2", 120)
+	// Config contains: ("key", "value 3", 180), ("key", "value 2", 240)
+	//
+	// Then the result is:
+	// ("key", "value 1", 60), ("key", "value 2", 120)
+	// Even though the expiration times didn't conflict and theoretically could have been merged.
+
+	// Slice of all keys in the config and request, used to ensure deterministic ordering.
+	keys := stringset.New(len(cfg.GetDimensions()) + len(req.GetDimensions()))
+	// If the config contains any reference to the builder dimension, ignore its auto builder dimension setting.
+	seenBuilder := false
+
+	// key -> slice of dimensions (key, value, expiration) with matching keys.
+	dims := make(map[string][]*pb.RequestedDimension)
+
+	// cfg.Dimensions is a slice of strings. Each string has already been validated to match either
+	// <key>:<value> or <exp>:<key>:<value>, where <key> is a non-empty string, <value> is a string
+	// which may be empty, and <exp> is an int64 expiration time. <key>:<value> is shorthand for
+	// 0:<key>:<value>. An empty <value> means the dimension should be excluded.
+	// TODO(crbug/1042991): Deduplicate dimension parsing logic with config validation for dimensions.
+	for _, d := range cfg.GetDimensions() {
+		// Split at the first colon and check if it's an int64 or not.
+		// If k is an int64, v is of the form <key>:<value>. Otherwise k is the <key> and v is the <value>.
+		k, v := strpair.Parse(d)
+		exp, err := strconv.ParseInt(k, 10, 64)
+		if err == nil {
+			// k was an int64, so v is in <key>:<value> form.
+			k, v = strpair.Parse(v)
+		} else {
+			exp = 0
+			// k was the <key> and v was the <value>.
+		}
+		if k == "builder" {
+			seenBuilder = true
+		}
+		if v == "" {
+			// Omit empty <value>.
+			continue
+		}
+		keys.Add(k)
+		dim := &pb.RequestedDimension{
+			Key:   k,
+			Value: v,
+		}
+		if exp > 0 {
+			dim.Expiration = &durationpb.Duration{
+				Seconds: exp,
+			}
+		}
+		dims[k] = append(dims[k], dim)
+	}
+
+	if cfg.GetAutoBuilderDimension() == pb.Toggle_YES && !seenBuilder {
+		keys.Add("builder")
+		dims["builder"] = []*pb.RequestedDimension{
+			{
+				Key:   "builder",
+				Value: cfg.Name,
+			},
+		}
+	}
+
+	// key -> slice of dimensions (key, value, expiration) with matching keys.
+	reqDims := make(map[string][]*pb.RequestedDimension)
+	for _, d := range req.GetDimensions() {
+		reqDims[d.Key] = append(reqDims[d.Key], d)
+	}
+	for k, d := range reqDims {
+		keys.Add(k)
+		dims[k] = d
+	}
+
+	for _, k := range keys.ToSortedSlice() {
+		sort.Slice(dims[k], func(i, j int) bool {
+			return dims[k][i].Expiration.GetSeconds() < dims[k][j].Expiration.GetSeconds()
+		})
+		build.Proto.Infra.Swarming.TaskDimensions = append(build.Proto.Infra.Swarming.TaskDimensions, dims[k]...)
+	}
+}
+
 // setExecutable computes the executable from the given request and builder
 // config, setting it in the model. Mutates the given *model.Build.
 // build.Experiments must be set (see setExperiments).
@@ -464,7 +556,6 @@ func setInfra(appID string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build
 
 	// Requested caches override global caches.
 	// TODO(crbug/1042991): Apply global caches that weren't overridden, ensure builder cache.
-	// TODO(crbug/1042991): Apply dimensions from the builder config and override from the request.
 }
 
 // setInput computes the input values from the given request and builder config,
@@ -639,6 +730,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		setExperiments(ctx, reqs[i], cfg, blds[i])       // Requires setInput.
 		setExecutable(reqs[i], cfg, blds[i])             // Requires setExperiments.
 		setInfra(info.AppID(ctx), reqs[i], cfg, blds[i]) // Requires setExperiments.
+		setDimensions(reqs[i], cfg, blds[i])             // Requires setInfra.
 		setTags(reqs[i], blds[i])
 		setTimeouts(reqs[i], cfg, blds[i])
 
