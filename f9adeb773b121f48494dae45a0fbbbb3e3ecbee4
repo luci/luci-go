@@ -264,6 +264,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "f70f12ca_0f2b17c9",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T18:28:27Z",
+      "side": 1,
+      "message": "constructing an attempt proto sgtm.\n\nAs a matter of fact, I think we should always start with constructing the proto using the information available in Run entity because this is what the logic in the future will look like. Then if any information is missing (IIUC, only tryjobs/builds will be missing), load the VerifiedCQDRun (if available) to add the missing pieces. \n\nRegarding the example I\u0027ve given in my previous comment, I don\u0027t think VerifiedCQDRun will be available, we either emit a BQ row without tryjobs/builds or fallback to use FinishedRun reported by CQDaemon which means BQ row sending may need to wait for CQDaemon reporting that.",
+      "parentUuid": "05197901_f994c0e4",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 89
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "26b5c975_81eda6b1",
