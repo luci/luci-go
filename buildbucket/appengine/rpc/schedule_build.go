@@ -22,7 +22,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -30,6 +32,7 @@ import (
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -405,6 +408,66 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	sort.Strings(build.Experiments)
 }
 
+// setInput computes the input from the given request and builder config,
+// setting them in the model. Mutates the given *model.Build. Panics if
+// the builder config is invalid.
+func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+	build.Proto.Input = &pb.Build_Input{
+		Properties: &structpb.Struct{},
+	}
+
+	if cfg.GetRecipe() != nil {
+		// TODO(crbug/1042991): Deduplicate property parsing logic with config validation for properties.
+		build.Proto.Input.Properties.Fields = make(map[string]*structpb.Value, len(cfg.Recipe.Properties)+len(cfg.Recipe.PropertiesJ)+1)
+		for _, prop := range cfg.Recipe.Properties {
+			k, v := strpair.Parse(prop)
+			build.Proto.Input.Properties.Fields[k] = &structpb.Value{
+				Kind: &structpb.Value_StringValue{
+					StringValue: v,
+				},
+			}
+		}
+
+		// Values are JSON-encoded strings which need to be unmarshalled to structpb.Struct.
+		// jsonpb unmarshals dicts to structpb.Struct, but cannot unmarshal directly to
+		// structpb.Value, so create a dummy dict in order to get the structpb.Value.
+		// TODO(crbug/1042991): Deduplicate legacy property parsing with buildbucket/cli.
+		for _, prop := range cfg.Recipe.PropertiesJ {
+			k, v := strpair.Parse(prop)
+			s := &structpb.Struct{}
+			v = fmt.Sprintf("{\"%s\": %s}", k, v)
+			if err := jsonpb.UnmarshalString(v, s); err != nil {
+				// Builder config should have been validated already.
+				panic(errors.Annotate(err, "error parsing %q", v).Err())
+			}
+			build.Proto.Input.Properties.Fields[k] = s.Fields[k]
+		}
+		build.Proto.Input.Properties.Fields["recipe"] = &structpb.Value{
+			Kind: &structpb.Value_StringValue{
+				StringValue: cfg.Recipe.Name,
+			},
+		}
+		return
+	}
+
+	if cfg.GetProperties() != "" {
+		if err := jsonpb.UnmarshalString(cfg.Properties, build.Proto.Input.Properties); err != nil {
+			// Builder config should have been validated already.
+			panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.Name).Err())
+		}
+	}
+
+	if build.Proto.Input.Properties.Fields == nil {
+		build.Proto.Input.Properties.Fields = make(map[string]*structpb.Value, len(req.GetProperties().GetFields()))
+	}
+	for k, v := range req.GetProperties().GetFields() {
+		build.Proto.Input.Properties.Fields[k] = v
+	}
+
+	build.Proto.Input.GitilesCommit = req.GetGitilesCommit()
+	build.Proto.Input.GerritChanges = req.GetGerritChanges()
+}
+
 // setTags computes the tags from the given request, setting them in the model.
 // Mutates the given *model.Build.
 func setTags(req *pb.ScheduleBuildRequest, build *model.Build) {
@@ -506,7 +569,6 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 				CreatedBy:       string(user),
 				CreateTime:      timestamppb.New(now),
 				Id:              ids[i],
-				Input:           &pb.Build_Input{},
 				Status:          pb.Status_SCHEDULED,
 				WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
 			},
@@ -517,8 +579,9 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 			blds[i].Proto.Critical = reqs[i].Critical
 		}
 
-		setExperiments(ctx, reqs[i], cfg, blds[i])
-		setExecutable(reqs[i], cfg, blds[i]) // Requires setExperiments.
+		setInput(reqs[i], cfg, blds[i])
+		setExperiments(ctx, reqs[i], cfg, blds[i]) // Requires setInput.
+		setExecutable(reqs[i], cfg, blds[i])       // Requires setExperiments.
 		setTags(reqs[i], blds[i])
 		setTimeouts(reqs[i], cfg, blds[i])
 
@@ -569,14 +632,12 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 						},
 					})
 				}
-				if b.Proto.Input.Properties != nil {
-					toPut = append(toPut, &model.BuildInputProperties{
-						Build: datastore.KeyForObj(ctx, b),
-						Proto: model.DSStruct{
-							Struct: *b.Proto.Input.Properties,
-						},
-					})
-				}
+				toPut = append(toPut, &model.BuildInputProperties{
+					Build: datastore.KeyForObj(ctx, b),
+					Proto: model.DSStruct{
+						Struct: *b.Proto.Input.Properties,
+					},
+				})
 				r := model.NewRequestID(ctx, b.ID, now, reqID)
 
 				// Write the entities and trigger a task queue task to create the Swarming task.

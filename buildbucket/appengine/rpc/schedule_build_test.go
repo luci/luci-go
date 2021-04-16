@@ -340,8 +340,10 @@ func TestScheduleBuild(t *testing.T) {
 					GracePeriod: &durationpb.Duration{
 						Seconds: 30,
 					},
-					Id:    9021868963221667745,
-					Input: &pb.Build_Input{},
+					Id: 9021868963221667745,
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{},
+					},
 					SchedulingTimeout: &durationpb.Duration{
 						Seconds: 21600,
 					},
@@ -423,8 +425,10 @@ func TestScheduleBuild(t *testing.T) {
 					GracePeriod: &durationpb.Duration{
 						Seconds: 30,
 					},
-					Id:    9021868963221610337,
-					Input: &pb.Build_Input{},
+					Id: 9021868963221610337,
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{},
+					},
 					SchedulingTimeout: &durationpb.Duration{
 						Seconds: 21600,
 					},
@@ -448,8 +452,10 @@ func TestScheduleBuild(t *testing.T) {
 					GracePeriod: &durationpb.Duration{
 						Seconds: 30,
 					},
-					Id:    9021868963221610321,
-					Input: &pb.Build_Input{},
+					Id: 9021868963221610321,
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{},
+					},
 					SchedulingTimeout: &durationpb.Duration{
 						Seconds: 21600,
 					},
@@ -473,8 +479,10 @@ func TestScheduleBuild(t *testing.T) {
 					GracePeriod: &durationpb.Duration{
 						Seconds: 30,
 					},
-					Id:    9021868963221610305,
-					Input: &pb.Build_Input{},
+					Id: 9021868963221610305,
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{},
+					},
 					SchedulingTimeout: &durationpb.Duration{
 						Seconds: 21600,
 					},
@@ -1911,6 +1919,328 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				})
+			})
+		})
+	})
+
+	Convey("setInput", t, func() {
+		Convey("nil", func() {
+			ent := &model.Build{}
+
+			setInput(nil, nil, ent)
+			So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+				Properties: &structpb.Struct{},
+			})
+		})
+
+		Convey("request", func() {
+			Convey("properties", func() {
+				Convey("empty", func() {
+					req := &pb.ScheduleBuildRequest{}
+					ent := &model.Build{}
+
+					setInput(req, nil, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{},
+					})
+				})
+
+				Convey("non-empty", func() {
+					req := &pb.ScheduleBuildRequest{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"int": {
+									Kind: &structpb.Value_NumberValue{
+										NumberValue: 1,
+									},
+								},
+								"str": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "value",
+									},
+								},
+							},
+						},
+					}
+					ent := &model.Build{}
+
+					setInput(req, nil, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"int": {
+									Kind: &structpb.Value_NumberValue{
+										NumberValue: 1,
+									},
+								},
+								"str": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "value",
+									},
+								},
+							},
+						},
+					})
+				})
+			})
+		})
+
+		Convey("config", func() {
+			Convey("properties", func() {
+				cfg := &pb.Builder{
+					Properties: "{\"int\": 1, \"str\": \"value\"}",
+				}
+				ent := &model.Build{}
+
+				setInput(nil, cfg, ent)
+				So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"int": {
+								Kind: &structpb.Value_NumberValue{
+									NumberValue: 1,
+								},
+							},
+							"str": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "value",
+								},
+							},
+						},
+					},
+				})
+			})
+
+			Convey("recipe", func() {
+				Convey("empty", func() {
+					cfg := &pb.Builder{
+						Recipe: &pb.Builder_Recipe{},
+					}
+					ent := &model.Build{}
+
+					setInput(nil, cfg, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"recipe": {
+									Kind: &structpb.Value_StringValue{},
+								},
+							},
+						},
+					})
+				})
+
+				Convey("properties", func() {
+					cfg := &pb.Builder{
+						Recipe: &pb.Builder_Recipe{
+							Properties: []string{
+								"key:value",
+							},
+						},
+					}
+					ent := &model.Build{}
+
+					setInput(nil, cfg, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"key": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "value",
+									},
+								},
+								"recipe": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "",
+									},
+								},
+							},
+						},
+					})
+				})
+
+				Convey("properties json", func() {
+					cfg := &pb.Builder{
+						Recipe: &pb.Builder_Recipe{
+							PropertiesJ: []string{
+								"str:\"value\"",
+								"int:1",
+							},
+						},
+					}
+					ent := &model.Build{}
+
+					setInput(nil, cfg, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"int": {
+									Kind: &structpb.Value_NumberValue{
+										NumberValue: 1,
+									},
+								},
+								"recipe": {
+									Kind: &structpb.Value_StringValue{},
+								},
+								"str": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "value",
+									},
+								},
+							},
+						},
+					})
+				})
+
+				Convey("recipe", func() {
+					cfg := &pb.Builder{
+						Recipe: &pb.Builder_Recipe{
+							Name: "recipe",
+						},
+					}
+					ent := &model.Build{}
+
+					setInput(nil, cfg, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"recipe": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "recipe",
+									},
+								},
+							},
+						},
+					})
+				})
+
+				Convey("properties json > properties", func() {
+					cfg := &pb.Builder{
+						Recipe: &pb.Builder_Recipe{
+							Properties: []string{
+								"key:value",
+							},
+							PropertiesJ: []string{
+								"key:1",
+							},
+						},
+					}
+					ent := &model.Build{}
+
+					setInput(nil, cfg, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"key": {
+									Kind: &structpb.Value_NumberValue{
+										NumberValue: 1,
+									},
+								},
+								"recipe": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "",
+									},
+								},
+							},
+						},
+					})
+				})
+
+				Convey("recipe > properties", func() {
+					cfg := &pb.Builder{
+						Recipe: &pb.Builder_Recipe{
+							Name: "recipe",
+							Properties: []string{
+								"recipe:value",
+							},
+						},
+					}
+					ent := &model.Build{}
+
+					setInput(nil, cfg, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"recipe": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "recipe",
+									},
+								},
+							},
+						},
+					})
+				})
+
+				Convey("recipe > properties json", func() {
+					cfg := &pb.Builder{
+						Recipe: &pb.Builder_Recipe{
+							Name: "recipe",
+							PropertiesJ: []string{
+								"recipe:\"value\"",
+							},
+						},
+					}
+					ent := &model.Build{}
+
+					setInput(nil, cfg, ent)
+					So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"recipe": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "recipe",
+									},
+								},
+							},
+						},
+					})
+				})
+			})
+		})
+
+		Convey("request > config", func() {
+			req := &pb.ScheduleBuildRequest{
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"override": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "req value",
+							},
+						},
+						"req key": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "req value",
+							},
+						},
+					},
+				},
+			}
+			cfg := &pb.Builder{
+				Properties: "{\"override\": \"cfg value\", \"cfg key\": \"cfg value\"}",
+			}
+			ent := &model.Build{}
+
+			setInput(req, cfg, ent)
+			So(ent.Proto.Input, ShouldResembleProto, &pb.Build_Input{
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"cfg key": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "cfg value",
+							},
+						},
+						"override": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "req value",
+							},
+						},
+						"req key": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "req value",
+							},
+						},
+					},
+				},
 			})
 		})
 	})
