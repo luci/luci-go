@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e5b0e82_459dc4a3",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-16T17:33:59Z",
+      "side": 1,
+      "message": "Strictly speaking, \u003cvalue\u003e may only be empty in \u003ckey\u003e:\u003cvalue\u003e format (e.g. \"1:key:\" is not valid), which is ensured by validation. But it simplifies implementation here if there\u0027s a consistent treatment of empty \u003cvalue\u003e even if \u003cexp\u003e is specified.\n\nI didn\u0027t document this though, because I think it\u0027s too much information for most people. All I\u0027m commenting on in the code is the well-defined behavior of this block.",
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
