@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8054251b_ade6cad8",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-16T01:01:23Z",
+      "side": 1,
+      "message": "Thanks for pointing this out. I feel stupid for missing this :(",
+      "parentUuid": "ac8c154d_457edf83",
+      "range": {
+        "startLine": 235,
+        "startChar": 8,
+        "endLine": 235,
+        "endChar": 66
+      },
+      "revId": "79a851fc5aca0f0da11554760f4c38eaa7c26c30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bb7a8c1a_c5111fd1",
         "filename": "lucicfg/testdata/full_example.star",
         "patchSetId": 2
