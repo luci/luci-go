@@ -45,6 +45,30 @@
       },
       "revId": "803a43f897a2151e2137d9703453aeb593ecd947",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07393f54_dc396d65",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-16T21:00:35Z",
+      "side": 1,
+      "message": "Eh, for a consistent application of errors.\u003cbuilder\u003e.Err() pattern. Roughly same reason people use fmt.Errorf(\"static string\") instead of errors.New(\"static string\").",
+      "parentUuid": "5e67b03d_9d69c450",
+      "range": {
+        "startLine": 129,
+        "startChar": 26,
+        "endLine": 129,
+        "endChar": 32
+      },
+      "revId": "803a43f897a2151e2137d9703453aeb593ecd947",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
