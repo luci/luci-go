@@ -16,6 +16,109 @@
       "message": "ping",
       "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4dabd92c_fc0ebb49",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T23:13:25Z",
+      "side": 1,
+      "message": "LGTM. This was difficult (~2.5 hours), but I liked this % concern on L420 about severe conditions.",
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5172a9e_2a6fc9bf",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T23:13:25Z",
+      "side": 1,
+      "message": "iiuc, it\u0027s common to nullify old[n-1]\nyou don\u0027t do it here because trackedSecretsPQ in practice is fixed-length.\nright? if so, please add a comment.\n\nupdate: actually, how about replacing this code with just \n  panic(\"Pop is not actually used, but defined to comply with heap.Interface)",
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de7759d2_db86eeed",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T23:13:25Z",
+      "side": 1,
+      "message": "iiuc under very severe conditions (e.g. extreme CPU starvation), we can have:\nT0:  a secret is reloaded -\u003e v1, goroutine G1 for callbacks created \nT1:  a secret is reloaded -\u003e v2, goroutine G2 for callbacks created\nT2:  G2 calls cb(v2)\nT3:  G1 calls cb(v1)\n\nare you explicitly OK with this?\n\nI don\u0027t have really great counter-suggestions. All I can think of requires adding a long-lived goroutine per reloadable secret which listens on the channel in-order",
+      "range": {
+        "startLine": 417,
+        "startChar": 3,
+        "endLine": 420,
+        "endChar": 4
+      },
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b180464e_ec897b63",
+        "filename": "server/secrets/gsm_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T23:13:25Z",
+      "side": 1,
+      "message": "TIL. I did read https://pkg.go.dev/github.com/smartystreets/goconvey/convey#Reset\n\nbut I don\u0027t grasp why an easier to read defer() would suffice.",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 7
+      },
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ed53b63_72351239",
+        "filename": "server/secrets/gsm_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T23:13:25Z",
+      "side": 1,
+      "message": "ha, when I read your comment in email, I expected the shenanigan of extra channel and manual tick-propagation. But I really like what you ended up with it\u0027s super readable.",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 29
+      },
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
