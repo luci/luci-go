@@ -26,6 +26,7 @@ import {
   BuilderItem,
   GetBuildRequest,
   GitilesCommit,
+  SEARCH_BUILD_FIELD_MASK,
 } from '../services/buildbucket';
 import { Project, QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
@@ -154,7 +155,7 @@ export class BuildState {
         this.appState
           .buildsService!.searchBuilds({
             predicate: { tags: [{ key: 'buildset', value: b }] },
-            fields: BUILD_FIELD_MASK,
+            fields: SEARCH_BUILD_FIELD_MASK,
             pageSize: 1000,
           })
           .then((res) => res.builds)
