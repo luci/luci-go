@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	clientswarming "go.chromium.org/luci/client/swarming"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
@@ -196,7 +197,12 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, properties.Command[0], properties.Command[1:]...)
+	// Create a Comand that can run the task request.
+	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, workdir, "")
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to process command in properties").Err()
+	}
+	cmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
 	cmd.Env = cmdEnvMap.Sorted()
 	cmd.Dir = workdir
 	return cmd, nil
