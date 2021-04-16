@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/tink/go/tink"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/server/auth/authdb"
@@ -60,11 +59,6 @@ type ActorTokensProvider interface {
 	GenerateIDToken(c context.Context, serviceAccount, audience string) (string, error)
 }
 
-// AEADProvider returns an implementation of Authenticated Encryption with
-// Additional Authenticated primitive (essentially incapsulating server's
-// encryption keys).
-type AEADProvider func(c context.Context) tink.AEAD
-
 // Config contains global configuration of the auth library.
 //
 // This configuration adjusts the library to the particular execution
@@ -84,11 +78,6 @@ type Config struct {
 	//
 	// Used to implement '/auth/api/v1/server/(certificates|info)' routes.
 	Signer signing.Signer
-
-	// AEADProvider returns an implementation of Authenticated Encryption with
-	// Additional Authenticated primitive (essentially incapsulating server's
-	// encryption keys).
-	AEADProvider AEADProvider
 
 	// AccessTokenProvider knows how to generate OAuth2 access tokens for the
 	// service account belonging to the server itself.
@@ -228,22 +217,6 @@ func GetDB(c context.Context) (authdb.DB, error) {
 func GetSigner(c context.Context) signing.Signer {
 	if cfg := getConfig(c); cfg != nil {
 		return cfg.Signer
-	}
-	return nil
-}
-
-// GetAEAD returns tink.AEAD interface which incapsulates the server's
-// encryption keys.
-//
-// Uses AEADProvider from the Config to construct it. Different calls (even
-// within the same request handler) may produce different, but compatible,
-// tink.AEAD instances. This may happen if the primary key was rotated between
-// the calls.
-//
-// Returns nil if AEAD is not available.
-func GetAEAD(c context.Context) tink.AEAD {
-	if cfg := getConfig(c); cfg != nil && cfg.AEADProvider != nil {
-		return cfg.AEADProvider(c)
 	}
 	return nil
 }
