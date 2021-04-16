@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "73c6061e_565faad4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-16T22:35:48Z",
+      "side": 1,
+      "message": "I mentioned the proto because today https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/doc/README.md#resultdb.settings maps 1-to-1 to the proto. It will be somewhat confusing to have extra data in it that doesn\u0027t end up in the proto. Also at very least some documentation and/or lucicfg implementation will have to change.",
+      "parentUuid": "ecd1ea4e_fd33e16a",
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "63420b91_8358ca1c",
