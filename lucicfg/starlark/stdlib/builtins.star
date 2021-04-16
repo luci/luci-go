@@ -49,6 +49,7 @@ load("@stdlib//internal/luci/lib/resultdb.star", _resultdb = "resultdb")
 load("@stdlib//internal/luci/lib/scheduler.star", _scheduler = "scheduler")
 load("@stdlib//internal/luci/lib/swarming.star", _swarming = "swarming")
 load("@stdlib//internal/luci/lib/cq.star", _cq_helpers = "cq")
+load("@stdlib//internal/luci/lib/test_presentation.star", _test_presentation = "test_presentation")
 
 # Register all LUCI config generator callbacks.
 load("@stdlib//internal/luci/generators.star", _register = "register")
@@ -93,3 +94,4 @@ resultdb = _resultdb
 scheduler = _scheduler
 swarming = _swarming
 cq = _cq_helpers
+test_presentation = _test_presentation

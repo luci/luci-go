@@ -22,6 +22,7 @@ load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/luci/lib/resultdb.star", "resultdb")
 load("@stdlib//internal/luci/lib/scheduler.star", "schedulerimpl")
 load("@stdlib//internal/luci/lib/swarming.star", "swarming")
+load("@stdlib//internal/luci/lib/test_presentation.star", "test_presentation")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
 
 def _builder(
@@ -60,6 +61,7 @@ def _builder(
 
         # Results.
         resultdb_settings = None,
+        test_presentation_config = None,
 
         # Relations.
         triggers = None,
@@ -208,6 +210,8 @@ def _builder(
         with resultdb.settings(...). A configuration that defines if
         Buildbucket:ResultDB integration should be enabled for this builder and
         which results to export to BigQuery.
+      test_presentation_config: A luci.test_presentation(...) struct. A
+        configuration that defines how tests should be rendered in the UI.
 
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.
@@ -247,6 +251,7 @@ def _builder(
         "task_template_canary_percentage": validate.int("task_template_canary_percentage", task_template_canary_percentage, min = 0, max = 100, required = False),
         "repo": validate.repo_url("repo", repo, required = False),
         "resultdb": resultdb.validate_settings("settings", resultdb_settings),
+        "test_presentation_config": test_presentation.validate_config("test_presentation_config", test_presentation_config),
     }
 
     # Merge explicitly passed properties with the module-scoped defaults.
@@ -380,5 +385,6 @@ builder = lucicfg.rule(
         "experiments": _validate_experiments,
         "task_template_canary_percentage": lambda attr, val: validate.int(attr, val, min = 0, max = 100),
         "resultdb": resultdb.validate_settings,
+        "test_presentation_config": test_presentation.validate_config,
     }),
 )
