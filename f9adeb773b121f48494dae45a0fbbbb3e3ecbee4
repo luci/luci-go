@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "87e216d3_84411cae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-16T17:38:55Z",
+      "side": 1,
+      "message": "Thanks for review Yiwei, I\u0027ll ping again (on Monday) when I get time to finish this :-)",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "73732a9e_a3b2a1a1",
@@ -14,6 +31,24 @@
       "writtenOn": "2021-04-16T05:05:26Z",
       "side": 1,
       "message": "Del",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d5eed68_e810b148",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-16T17:38:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73732a9e_a3b2a1a1",
       "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -35,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c006a4d0_7f31d182",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-16T17:38:55Z",
+      "side": 1,
+      "message": "Done (this was mostly a note to myself while writing)",
+      "parentUuid": "804484b5_cc4a400c",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "60cf4890_5e51eedf",
@@ -48,6 +101,30 @@
       "writtenOn": "2021-04-16T05:05:26Z",
       "side": 1,
       "message": "may be just errors.Reason(\"Run %q not found\", id).Err()",
+      "range": {
+        "startLine": 38,
+        "startChar": 14,
+        "endLine": 38,
+        "endChar": 78
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf085de5_acbd92f0",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-16T17:38:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "60cf4890_5e51eedf",
       "range": {
         "startLine": 38,
         "startChar": 14,
@@ -81,6 +158,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb5a68c1_717a667d",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-16T17:38:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18446c8a_4b3474e9",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 2
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e294a1e5_835c3168",
@@ -94,6 +195,24 @@
       "writtenOn": "2021-04-16T05:05:26Z",
       "side": 1,
       "message": "same here.",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8a21f86_4d8be51e",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-16T17:38:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e294a1e5_835c3168",
       "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -121,6 +240,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "05197901_f994c0e4",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-16T17:38:55Z",
+      "side": 1,
+      "message": "Hmm, in this case we can\u0027t get Attempt proto from CQDaemon -- but ideally we\u0027d still like to record such aborted runs in the BQ table...\n\nSounds like we\u0027d either have to construct an Attempt proto here, or just not record such runs before fully migrating?",
+      "parentUuid": "f1a1fb03_70aea474",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 89
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "26b5c975_81eda6b1",
@@ -134,6 +277,24 @@
       "writtenOn": "2021-04-16T05:05:26Z",
       "side": 1,
       "message": "I assume starting from here, it is still WIP?",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "573066a2_0d50fdfc",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-16T17:38:55Z",
+      "side": 1,
+      "message": "Correct :-)",
+      "parentUuid": "26b5c975_81eda6b1",
       "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
