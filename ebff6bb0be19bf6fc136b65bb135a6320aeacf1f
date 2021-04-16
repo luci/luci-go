@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc905be2_93222202",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-16T00:40:40Z",
+      "side": 1,
+      "message": "Changed the approach to use ReadRequest.ReadLimit.\n\nAlthough now I don\u0027t append the ellipsis to truncated content any more. LMK if I should still do that.",
+      "revId": "ebff6bb0be19bf6fc136b65bb135a6320aeacf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
