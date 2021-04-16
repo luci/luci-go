@@ -22,6 +22,76 @@
       },
       "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d77bab9e_d4d99064",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/test_presentation.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:40:15Z",
+      "side": 1,
+      "message": "i consider lucicfg a bit more generic codebase than milo and recipes, so I\u0027d prefer it not to hardcode test_suite which is chrome-specific. Chrome-specific star files (that use this func) can define their own defaults.\n\nfrom this perspective, it shouldn\u0027t be a diff between [] and None?",
+      "parentUuid": "63420b91_8358ca1c",
+      "range": {
+        "startLine": 40,
+        "startChar": 17,
+        "endLine": 40,
+        "endChar": 31
+      },
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00fa470e_98545646",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/test_presentation.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:40:15Z",
+      "side": 1,
+      "message": "list of string keys",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 51
+      },
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc5b7d70_f1c0203c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:40:15Z",
+      "side": 1,
+      "message": "all these params are configurations. maybe just \"test_presentation\"?",
+      "range": {
+        "startLine": 213,
+        "startChar": 6,
+        "endLine": 213,
+        "endChar": 30
+      },
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
