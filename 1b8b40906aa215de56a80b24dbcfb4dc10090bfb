@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "825313a1_3079418c",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T16:13:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e72a76a_34f90a4e",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 5
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "481a57e5_20fe8a62",
@@ -71,6 +95,30 @@
       "writtenOn": "2021-04-15T23:58:46Z",
       "side": 1,
       "message": "nit: this looks a bit cryptic for a param name :) maybe `name`?\n\nunlike n, a is obviously an artifact because of the param type",
+      "range": {
+        "startLine": 73,
+        "startChar": 19,
+        "endLine": 73,
+        "endChar": 20
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fe1ed33_5d87d6dc",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T16:13:42Z",
+      "side": 1,
+      "message": "agreed; done.",
+      "parentUuid": "481a57e5_20fe8a62",
       "range": {
         "startLine": 73,
         "startChar": 19,
@@ -104,6 +152,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8cec63f3_059f75ae",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T16:13:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d7ead17_f24f5bb2",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 5
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "28dc0558_8da148e3",
@@ -121,6 +193,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2767c190_1ece845f",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T16:13:42Z",
+      "side": 1,
+      "message": "good point. done.",
+      "parentUuid": "28dc0558_8da148e3",
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "910eefa1_ab3abe56",
@@ -134,6 +224,30 @@
       "writtenOn": "2021-04-15T23:58:46Z",
       "side": 1,
       "message": "is panic more appropriate?",
+      "range": {
+        "startLine": 103,
+        "startChar": 5,
+        "endLine": 103,
+        "endChar": 26
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7901d5a_a0692881",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T16:13:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "910eefa1_ab3abe56",
       "range": {
         "startLine": 103,
         "startChar": 5,
@@ -167,6 +281,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "54da1604_9d22b89c",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T16:13:42Z",
+      "side": 1,
+      "message": "Thanks for this comment. I removed this annotation. The doc-comment explains that this call performs I/O, and the system-call errors are informative enough.\n\ne.g.,\n\"stat /tmp/abc: no such file or directory\"\n\"chmod /tmpb/abc: no such file or directory\"",
+      "parentUuid": "fedc35a3_c5f339f8",
+      "range": {
+        "startLine": 116,
+        "startChar": 37,
+        "endLine": 116,
+        "endChar": 58
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9be253d9_ff614f52",
@@ -184,6 +322,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c6a8b44_41824189",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T16:13:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9be253d9_ff614f52",
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cd08d713_08af92a0",
@@ -197,6 +353,30 @@
       "writtenOn": "2021-04-15T23:58:46Z",
       "side": 1,
       "message": "right now this looks like an assumptions because newUploadTask doc-comments don\u0027t say that. E.g. a future programmer might change newUplodTask without realizing that the assumption of this callsite.\n\nplease add a doc-comment to newUploadTask that establishes this contract",
+      "range": {
+        "startLine": 172,
+        "startChar": 4,
+        "endLine": 172,
+        "endChar": 60
+      },
+      "revId": "1b8b40906aa215de56a80b24dbcfb4dc10090bfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "649bec34_6f6844b7",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T16:13:42Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "cd08d713_08af92a0",
       "range": {
         "startLine": 172,
         "startChar": 4,
