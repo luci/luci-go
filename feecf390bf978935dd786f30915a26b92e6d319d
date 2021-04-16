@@ -22,6 +22,30 @@
       },
       "revId": "feecf390bf978935dd786f30915a26b92e6d319d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a91f77b7_5e061b19",
+        "filename": "resultdb/internal/artifactcontent/server_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-16T01:02:49Z",
+      "side": 1,
+      "message": "Ah... This test should be removed... \n\ncrrev.com/c/2830571",
+      "parentUuid": "6d9ce4d9_fd9659eb",
+      "range": {
+        "startLine": 238,
+        "startChar": 3,
+        "endLine": 252,
+        "endChar": 7
+      },
+      "revId": "feecf390bf978935dd786f30915a26b92e6d319d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
