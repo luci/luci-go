@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b5ddc92_ca21e14f",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T16:59:38Z",
+      "side": 1,
+      "message": "^",
+      "range": {
+        "startLine": 35,
+        "startChar": 30,
+        "endLine": 35,
+        "endChar": 36
+      },
+      "revId": "803a43f897a2151e2137d9703453aeb593ecd947",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e67b03d_9d69c450",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-16T16:59:38Z",
+      "side": 1,
+      "message": "why? Isn\u0027t it the same as New() when called from our common/errors package?",
+      "range": {
+        "startLine": 129,
+        "startChar": 26,
+        "endLine": 129,
+        "endChar": 32
+      },
+      "revId": "803a43f897a2151e2137d9703453aeb593ecd947",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
