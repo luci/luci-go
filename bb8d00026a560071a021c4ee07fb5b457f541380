@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6931e1b6_dd6b796e",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-16T00:34:16Z",
+      "side": 1,
+      "message": "why not use filepath.Join()?",
+      "range": {
+        "startLine": 170,
+        "startChar": 34,
+        "endLine": 170,
+        "endChar": 128
+      },
+      "revId": "bb8d00026a560071a021c4ee07fb5b457f541380",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
