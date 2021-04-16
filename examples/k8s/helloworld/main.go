@@ -149,26 +149,6 @@ func main() {
 			c.Writer.Write(blob)
 		})
 
-		srv.Routes.GET("/stored-secret/:Name", router.MiddlewareChain{}, func(c *router.Context) {
-			name := c.Params.ByName("Name")
-			val, err := secrets.StoredSecret(c.Context, "sm://"+name)
-			if err != nil {
-				http.Error(c.Writer, err.Error(), 500)
-			} else {
-				c.Writer.Write(val.Current)
-			}
-		})
-
-		srv.Routes.GET("/random-secret/:Name", router.MiddlewareChain{}, func(c *router.Context) {
-			name := c.Params.ByName("Name")
-			val, err := secrets.RandomSecret(c.Context, name)
-			if err != nil {
-				http.Error(c.Writer, err.Error(), 500)
-			} else {
-				c.Writer.Write([]byte(base64.RawStdEncoding.EncodeToString(val.Current)))
-			}
-		})
-
 		return nil
 	})
 }
