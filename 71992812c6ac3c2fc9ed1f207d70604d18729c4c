@@ -16,6 +16,24 @@
       "message": "maybe !st.IsRegular()? we don\u0027t really support symlinks",
       "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "15ce27ec_86cd7f55",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T17:49:36Z",
+      "side": 1,
+      "message": "Done.\n\nBTW, if we don\u0027t support symlinks, should this use os.Lstat() and return an error if the file path is pointing to a symlink?",
+      "parentUuid": "109dffab_f0cd063c",
+      "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
