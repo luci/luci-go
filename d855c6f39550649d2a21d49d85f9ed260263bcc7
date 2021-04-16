@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70eeb8fe_c7ac8fd0",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 684,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T16:43:09Z",
+      "side": 1,
+      "message": "can this if-statement removed now?",
+      "revId": "d855c6f39550649d2a21d49d85f9ed260263bcc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
