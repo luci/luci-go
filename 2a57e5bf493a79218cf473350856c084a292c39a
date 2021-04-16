@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "78e2b994_b3c206f7",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-16T20:59:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3db3787a_07b0fb35",
+      "range": {
+        "startLine": 334,
+        "startChar": 4,
+        "endLine": 334,
+        "endChar": 14
+      },
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "de4098a5_34c46099",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-16T18:03:52Z",
       "side": 1,
       "message": "nit: not sure about this variable. We keep it synchronized with dims in 3 places. The whole purpose is to get a sorted list of keys. It seems like the following\n\n  for k, values :\u003d range dims {\n    sort.Slice(values, func(i, j int) bool {\n      return values[i].Expiration.GetSeconds() \u003c values[j].Expiration.GetSeconds()\n    })\n    build.Proto.Infra.Swarming.TaskDimensions \u003d append(build.Proto.Infra.Swarming.TaskDimensions, values...)\n  }\n  sort.Strings(build.Proto.Infra.Swarming.TaskDimensions, func(...))\n\nwould be less code, less memory allocation and less lookups into dims?",
+      "range": {
+        "startLine": 345,
+        "startChar": 1,
+        "endLine": 345,
+        "endChar": 5
+      },
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aaeef90e_c2f87270",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-16T20:59:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de4098a5_34c46099",
       "range": {
         "startLine": 345,
         "startChar": 1,
@@ -64,6 +112,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0cedcfa0_44fae5a0",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-16T20:59:40Z",
+      "side": 1,
+      "message": "I matched the size estimate with L331 rather than (now deleted) L345.",
+      "parentUuid": "0da67964_7f8ca082",
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c96ecfb_341d039d",
@@ -77,6 +143,30 @@
       "writtenOn": "2021-04-16T18:03:52Z",
       "side": 1,
       "message": "and also non-int64?",
+      "range": {
+        "startLine": 353,
+        "startChar": 59,
+        "endLine": 353,
+        "endChar": 75
+      },
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2200ab2e_415feb53",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-16T20:59:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c96ecfb_341d039d",
       "range": {
         "startLine": 353,
         "startChar": 59,
@@ -118,6 +208,24 @@
       "side": 1,
       "message": "\u003e e.g. \"1:key:\" is not valid\n\nthis looks like a bug / non-intentional. So fixing it SGTM",
       "parentUuid": "8e5b0e82_459dc4a3",
+      "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfa7c668_c321f6a8",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-16T20:59:40Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c5b5b448_f3bcf353",
       "revId": "2a57e5bf493a79218cf473350856c084a292c39a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
