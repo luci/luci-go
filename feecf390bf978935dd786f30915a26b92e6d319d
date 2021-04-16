@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d9ce4d9_fd9659eb",
+        "filename": "resultdb/internal/artifactcontent/server_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T00:50:50Z",
+      "side": 1,
+      "message": "uncomment?",
+      "range": {
+        "startLine": 238,
+        "startChar": 3,
+        "endLine": 252,
+        "endChar": 7
+      },
+      "revId": "feecf390bf978935dd786f30915a26b92e6d319d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
