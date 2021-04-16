@@ -16,6 +16,29 @@
       "message": "Changed the approach to use ReadRequest.ReadLimit.\n\nAlthough now I don\u0027t append the ellipsis to truncated content any more. LMK if I should still do that.",
       "revId": "ebff6bb0be19bf6fc136b65bb135a6320aeacf1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24a159ea_895e0022",
+        "filename": "resultdb/internal/artifactcontent/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T00:41:57Z",
+      "side": 1,
+      "message": "q",
+      "range": {
+        "startLine": 232,
+        "startChar": 85,
+        "endLine": 232,
+        "endChar": 86
+      },
+      "revId": "ebff6bb0be19bf6fc136b65bb135a6320aeacf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
