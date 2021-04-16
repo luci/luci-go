@@ -23,7 +23,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 type mockTransport func(*http.Request) (*http.Response, error)
@@ -35,7 +34,7 @@ func (c mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func TestArtifactUploader(t *testing.T) {
 	t.Parallel()
 
-	name := "invocations/inv1/tests/t1/results/r1/output"
+	name := "invocations/inv1/tests/t1/results/r1/artifacts/stderr"
 	token := "this is an update token"
 	content := "the test passed"
 	contentType := "test/output"
@@ -56,15 +55,17 @@ func TestArtifactUploader(t *testing.T) {
 		}
 
 		Convey("Upload w/ file", func() {
-			Convey("works", func() {
-				art := testArtifactWithFile(func(f *os.File) {
-					_, err := f.Write([]byte(content))
-					So(err, ShouldBeNil)
-				})
-				art.ContentType = contentType
-				defer os.Remove(art.GetFilePath())
-				err := uploader.StreamUpload(ctx, &uploadTask{name, art}, token)
+			art := testArtifactWithFile(func(f *os.File) {
+				_, err := f.Write([]byte(content))
 				So(err, ShouldBeNil)
+			})
+			art.ContentType = contentType
+			defer os.Remove(art.GetFilePath())
+
+			Convey("works", func() {
+				ut, err := newUploadTask(name, art)
+				So(err, ShouldBeNil)
+				So(uploader.StreamUpload(ctx, ut, token), ShouldBeNil)
 
 				// validate the request
 				sent := <-reqCh
@@ -76,20 +77,21 @@ func TestArtifactUploader(t *testing.T) {
 			})
 
 			Convey("fails if file doesn't exist", func() {
-				art := &sinkpb.Artifact{
-					Body:        &sinkpb.Artifact_FilePath{FilePath: "never_exist"},
-					ContentType: "text/plain",
-				}
-				err := uploader.StreamUpload(ctx, &uploadTask{name, art}, token)
-				So(err, ShouldErrLike, "open never_exist: ") // no such file or directory
+				ut, err := newUploadTask(name, art)
+				So(err, ShouldBeNil)
+				So(os.Remove(art.GetFilePath()), ShouldBeNil)
+
+				// "no such file or directory"
+				So(uploader.StreamUpload(ctx, ut, token), ShouldErrLike, "open "+art.GetFilePath())
 			})
 		})
 
 		Convey("Upload w/ contents", func() {
 			art := testArtifactWithContents([]byte(content))
 			art.ContentType = contentType
-			err := uploader.StreamUpload(ctx, &uploadTask{name, art}, token)
+			ut, err := newUploadTask(name, art)
 			So(err, ShouldBeNil)
+			So(uploader.StreamUpload(ctx, ut, token), ShouldBeNil)
 
 			// validate the request
 			sent := <-reqCh

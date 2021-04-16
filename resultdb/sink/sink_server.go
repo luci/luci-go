@@ -166,10 +166,13 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 
 		for id, a := range tr.GetArtifacts() {
 			updateArtifactContentType(a)
-			uts = append(uts, &uploadTask{
-				artName: pbutil.TestResultArtifactName(s.cfg.invocationID, tr.TestId, tr.ResultId, id),
-				art:     a,
-			})
+			n := pbutil.TestResultArtifactName(s.cfg.invocationID, tr.TestId, tr.ResultId, id)
+			t, err := newUploadTask(n, a)
+			if err != nil {
+				// newUploadTask can return an error if os.Stat() fails.
+				return nil, status.Errorf(codes.FailedPrecondition, "artifact %q: %s", id, err)
+			}
+			uts = append(uts, t)
 		}
 	}
 
@@ -202,10 +205,12 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 		if err := validateArtifact(a); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
 		}
-		uts = append(uts, &uploadTask{
-			artName: pbutil.InvocationArtifactName(s.cfg.invocationID, id),
-			art:     a,
-		})
+		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a)
+		if err != nil {
+			// newUploadTask can return an error if os.Stat() fails.
+			return nil, status.Errorf(codes.FailedPrecondition, "artifact %q: %s", id, err)
+		}
+		uts = append(uts, t)
 	}
 	s.ac.schedule(uts...)
 

@@ -17,6 +17,9 @@ package sink
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -24,12 +27,99 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
+	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 // MaxBatchableArtifactSize is the maximum size of an artifact that can be added to
 // batchChannel.
 const MaxBatchableArtifactSize = 2 * 1024 * 1024
+
+type uploadTask struct {
+	art     *sinkpb.Artifact
+	artName string
+	size    int64 // content size
+}
+
+// newUploadTask constructs an uploadTask for the artifact.
+//
+// If FilePath is set on the artifact, this calls os.Stat to obtain the file information,
+// and may return an error if the Stat call fails. e.g., permission denied, not found.
+// It also returns an error if the artifact file path is a directory.
+func newUploadTask(name string, art *sinkpb.Artifact) (*uploadTask, error) {
+	ret := &uploadTask{
+		art:     art,
+		artName: name,
+		size:    int64(len(art.GetContents())),
+	}
+
+	// Find and save the content size on uploadTask creation, so that the task scheduling
+	// and processing logic can use the size information w/o issuing system calls.
+	if fp := art.GetFilePath(); fp != "" {
+		st, err := os.Stat(fp)
+		switch {
+		case err != nil:
+			return nil, errors.Annotate(err, "querying file info").Err()
+		case st.Mode().IsRegular():
+			// break
+
+		// Return a more human friendly error than 1000....0.
+		case st.IsDir():
+			return nil, errors.Reason("%q is a directory", fp).Err()
+		default:
+			return nil, errors.Reason("%q is not a regular file: %s", fp, strconv.FormatInt(int64(st.Mode()), 2)).Err()
+		}
+		ret.size = st.Size()
+	}
+	return ret, nil
+}
+
+// CreateRequest returns a CreateArtifactRequest for the upload task.
+//
+// Note that this will open and read content from the file, the artifact is set with
+// Artifact_FilePath. Save the returned request to avoid unnecessary I/Os,
+// if necessary.
+func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
+	invID, tID, rID, aID, err := pbutil.ParseArtifactName(t.artName)
+	req := &pb.CreateArtifactRequest{
+		Artifact: &pb.Artifact{
+			ArtifactId:  aID,
+			ContentType: t.art.GetContentType(),
+			SizeBytes:   t.size,
+			Contents:    t.art.GetContents(),
+		},
+	}
+
+	// parent
+	switch {
+	case err != nil:
+		// This should not happend.
+		// uploadTask should be created with validated artifacts only.
+		panic(fmt.Sprintf("invalid uploadTask.artName %q: %s", t.artName, err))
+	case tID == "":
+		// Invocation-level artifact
+		req.Parent = pbutil.InvocationName(invID)
+	default:
+		req.Parent = pbutil.TestResultName(invID, tID, rID)
+	}
+
+	// contents
+	if fp := t.art.GetFilePath(); fp != "" {
+		if req.Artifact.Contents, err = ioutil.ReadFile(fp); err != nil {
+			return nil, err
+		}
+	}
+	// If the size of the read content is different to what stat claimed initially, then
+	// return an error, so that the batching logic can be kept simple. Test frameworks
+	// should send finalized artifacts only.
+	if int64(len(req.Artifact.Contents)) != t.size {
+		return nil, errors.Reason(
+			"the size of the artifact contents changed from %d to %d",
+			t.size, len(req.Artifact.Contents)).Err()
+	}
+	return req, nil
+}
 
 type artifactChannel struct {
 	// batchChannel uploads artifacts via pb.BatchCreateArtifacts().
@@ -58,11 +148,6 @@ type artifactChannel struct {
 	// 1 indicates that artifactChannel started the process of closing and draining
 	// the channel. 0, otherwise.
 	closed int32
-}
-
-type uploadTask struct {
-	artName string
-	art     *sinkpb.Artifact
 }
 
 func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
