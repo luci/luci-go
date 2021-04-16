@@ -22,7 +22,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -211,12 +210,19 @@ func TestReportTestResults(t *testing.T) {
 		Convey("returns an error if artifacts are invalid", func() {
 			sink, err := newSinkServer(ctx, cfg)
 			So(err, ShouldBeNil)
+			defer closeSinkServer(ctx, sink)
+
+			report := func(trs ...*sinkpb.TestResult) error {
+				_, err := sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: trs})
+				return err
+			}
 
 			tr.Artifacts["art2"] = &sinkpb.Artifact{}
-			_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{
-				TestResults: []*sinkpb.TestResult{tr}})
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			closeSinkServer(ctx, sink)
+			So(report(tr), ShouldHaveRPCCode, codes.InvalidArgument, "either file_path or contents must be provided")
+
+			// "no such file or directory"
+			tr.Artifacts["art2"] = &sinkpb.Artifact{Body: &sinkpb.Artifact_FilePath{FilePath: "not_exist"}}
+			So(report(tr), ShouldHaveRPCCode, codes.FailedPrecondition, "querying file info")
 		})
 	})
 }
