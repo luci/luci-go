@@ -34,6 +34,24 @@
       "parentUuid": "109dffab_f0cd063c",
       "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a37a23b3_41d5692d",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T18:07:20Z",
+      "side": 1,
+      "message": "oh, maybe I am wrong about not supporting symlinks? if os.Open works on symlinks implicitly, then perhaps we do support symlinks?",
+      "parentUuid": "15ce27ec_86cd7f55",
+      "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
