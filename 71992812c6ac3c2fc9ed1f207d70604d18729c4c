@@ -88,6 +88,24 @@
       "parentUuid": "fd1ae26b_ac2ecc9c",
       "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63778dff_cf7f1eb9",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-16T18:40:11Z",
+      "side": 1,
+      "message": "nvm. My initial interpretation was correct 😊\n\n```\n$ basename /etc/fstab\nfstab\n```",
+      "parentUuid": "ebe533f4_6b6e05e9",
+      "revId": "71992812c6ac3c2fc9ed1f207d70604d18729c4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
