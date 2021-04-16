@@ -27,7 +27,7 @@ import (
 
 func TestWorks(t *testing.T) {
 	Convey("gaesecrets.Store works", t, func() {
-		c := Use(memory.Use(context.Background()), nil)
+		c := secrets.Use(memory.Use(context.Background()), New(nil))
 		c = caching.WithEmptyProcessCache(c)
 
 		// Autogenerates one.

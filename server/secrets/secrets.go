@@ -34,11 +34,17 @@ func Use(ctx context.Context, s Store) context.Context {
 	return context.WithValue(ctx, &contextKey, s)
 }
 
+// CurrentStore returns a store installed in the context or nil.
+func CurrentStore(ctx context.Context) Store {
+	store, _ := ctx.Value(&contextKey).(Store)
+	return store
+}
+
 // RandomSecret returns a random secret using Store in the context.
 //
 // If the context doesn't have Store set, returns ErrNoStoreConfigured.
 func RandomSecret(ctx context.Context, name string) (Secret, error) {
-	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
+	if store := CurrentStore(ctx); store != nil {
 		return store.RandomSecret(ctx, name)
 	}
 	return Secret{}, ErrNoStoreConfigured
@@ -48,7 +54,7 @@ func RandomSecret(ctx context.Context, name string) (Secret, error) {
 //
 // If the context doesn't have Store set, returns ErrNoStoreConfigured.
 func StoredSecret(ctx context.Context, name string) (Secret, error) {
-	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
+	if store := CurrentStore(ctx); store != nil {
 		return store.StoredSecret(ctx, name)
 	}
 	return Secret{}, ErrNoStoreConfigured
@@ -58,7 +64,7 @@ func StoredSecret(ctx context.Context, name string) (Secret, error) {
 //
 // If the context doesn't have Store set, returns ErrNoStoreConfigured.
 func AddRotationHandler(ctx context.Context, name string, cb RotationHandler) error {
-	if store, _ := ctx.Value(&contextKey).(Store); store != nil {
+	if store := CurrentStore(ctx); store != nil {
 		return store.AddRotationHandler(ctx, name, cb)
 	}
 	return ErrNoStoreConfigured
