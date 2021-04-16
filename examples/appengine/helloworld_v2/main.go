@@ -23,21 +23,28 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/gomodule/redigo/redis"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/templates"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
+
+	// Use datastore as a backend for auth session and TQ transactions.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func main() {
@@ -50,12 +57,16 @@ func main() {
 		warmup.NewModuleFromFlags(),
 	}
 
+	// Retain a reference to the cookiesModule, we'll need it later.
+	cookiesModule := encryptedcookies.NewModuleFromFlags()
+	modules = append(modules, cookiesModule)
+
 	server.Main(nil, modules, func(srv *server.Server) error {
 		// pRPC example.
 		apipb.RegisterGreeterServer(srv.PRPC, &greeterServer{})
 
 		// Logging and tracing example.
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/log", router.MiddlewareChain{}, func(c *router.Context) {
 			logging.Debugf(c.Context, "Hello debug world")
 
 			ctx, span := trace.StartSpan(c.Context, "Testing")
@@ -130,6 +141,40 @@ func main() {
 				return
 			}
 			defer resp.Body.Close()
+		})
+
+		// An example of a site that uses encrypted cookies for authentication.
+		templatesBundle := &templates.Bundle{
+			Loader:    templates.FileSystemLoader("templates"),
+			DebugMode: func(context.Context) bool { return !srv.Options.Prod },
+			DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {
+				loginURL, err := auth.LoginURL(ctx, e.Request.URL.RequestURI())
+				if err != nil {
+					return nil, err
+				}
+				logoutURL, err := auth.LogoutURL(ctx, e.Request.URL.RequestURI())
+				if err != nil {
+					return nil, err
+				}
+				return templates.Args{
+					"IsAnonymous": auth.CurrentIdentity(ctx) == identity.AnonymousIdentity,
+					"User":        auth.CurrentUser(ctx),
+					"LoginURL":    loginURL,
+					"LogoutURL":   logoutURL,
+				}, nil
+			},
+		}
+		htmlPageMW := router.NewMiddlewareChain(
+			templates.WithTemplates(templatesBundle),
+			auth.Authenticate(cookiesModule.AuthMethod),
+		)
+
+		srv.Routes.GET("/", htmlPageMW, func(c *router.Context) {
+			templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
+		})
+		// To test redirects after login.
+		srv.Routes.GET("/test/*something", htmlPageMW, func(c *router.Context) {
+			templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
 		})
 
 		return nil
