@@ -234,22 +234,6 @@ func TestServeContent(t *testing.T) {
 				So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
 				So(res.Header.Get("Content-Length"), ShouldEqual, "64")
 			})
-
-			//Convey(`RBE-CAS with limit`, func() {
-			//	casReader.Res = []*bytestream.ReadResponse{
-			//		{Data: []byte("first ")},
-			//		{Data: []byte("second")},
-			//	}
-			//
-			//	u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
-			//	So(err, ShouldBeNil)
-			//	u += "&n=10"
-			//	res, actualContents := fetch(u)
-			//	So(res.StatusCode, ShouldEqual, http.StatusOK)
-			//	So(actualContents, ShouldEqual, "first s...")
-			//	So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
-			//	So(res.Header.Get("Content-Length"), ShouldEqual, "64")
-			//})
 		})
 	})
 }

@@ -154,8 +154,7 @@ type contentRequest struct {
 	invID      invocations.ID
 	parentID   string
 	artifactID string
-	// Maximum size of the artifact, in bytes.
-	limit int64
+	limit      int64 // Maximum size of the artifact, in bytes.
 
 	contentType spanner.NullString
 	size        spanner.NullInt64
