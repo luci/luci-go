@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d3fd70d2_f9a5e577",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-16T01:01:58Z",
+      "side": 1,
+      "message": "PTAL\n\nWill simplify migrating CIPD (or at least decouple GAEv1 \u003d\u003e GAEv2 switch from \"secret in datastore \u003d\u003e secrets is GSM\" switch).",
+      "revId": "ef0b4246cd62c8f84dcb5b80d0d4fd59734608fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
