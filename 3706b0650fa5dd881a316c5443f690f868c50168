@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ecd1ea4e_fd33e16a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-16T22:27:01Z",
+      "side": 1,
+      "message": "yeah, resultdb.settings might be a better place for this (note: doesn\u0027t mean we have to change resultdb protos - we can still use a property).\n\ni am less sure about project_config.proto - not sure I understand the rationale. If you are referring to milo-specific property, then we can use resultdb-specific property instead.\n\nalso note that the idea behind using properties is that a recipe can configure this dynamically (but we don\u0027t have a use case today).",
+      "parentUuid": "56090193_0cce4c48",
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "63420b91_8358ca1c",
