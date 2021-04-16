@@ -34,14 +34,17 @@ func SendNow(ctx context.Context, runID common.RunID, evt *Event) error {
 
 // Send sends the event to Run's eventbox and invokes RunManager at `eta`.
 func Send(ctx context.Context, runID common.RunID, evt *Event, eta time.Time) error {
+	if err := SendWithoutDispatch(ctx, runID, evt); err != nil {
+		return err
+	}
+	return Dispatch(ctx, string(runID), eta)
+}
+
+// SendWithoutDispatch sends the event to Run's eventbox without invoking RM.
+func SendWithoutDispatch(ctx context.Context, runID common.RunID, evt *Event) error {
 	value, err := proto.Marshal(evt)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal").Err()
 	}
-	rid := string(runID)
-	to := datastore.MakeKey(ctx, "Run", rid)
-	if err := eventbox.Emit(ctx, value, to); err != nil {
-		return err
-	}
-	return Dispatch(ctx, rid, eta)
+	return eventbox.Emit(ctx, value, datastore.MakeKey(ctx, "Run", string(runID)))
 }
