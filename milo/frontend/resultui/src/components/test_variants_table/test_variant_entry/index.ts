@@ -23,7 +23,7 @@ import '../../expandable_entry';
 import '../../lazy_list';
 import '../../copy_to_clipboard';
 import './result_entry';
-import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_DISPLAY_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
+import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { TestVariant } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
@@ -149,14 +149,19 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
       return html``;
     }
     return html`
-      <span id="variant-def">
-        <span class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
-          ${VARIANT_STATUS_DISPLAY_MAP[this.variant.status]} result
-        </span>
-        ${this.sourceUrl ? '|' : ''}
+      <div id="basic-info">
         <a href=${this.sourceUrl} target="_blank" style=${styleMap({ display: this.sourceUrl ? '' : 'none' })}
           >source</a
         >
+        ${this.sourceUrl ? '|' : ''}
+        <div id="test-id">
+          <span class="greyed-out" title=${this.variant.testId}>ID: ${this.variant.testId}</span>
+          <milo-copy-to-clipboard
+            .textToCopy=${this.variant.testId}
+            @click=${(e: Event) => e.stopPropagation()}
+            title="copy test ID to clipboard"
+          ></milo-copy-to-clipboard>
+        </div>
         ${this.variantDef.length !== 0 ? '|' : ''}
         <span class="greyed-out">
           ${this.variantDef.map(
@@ -168,7 +173,7 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
             `
           )}
         </span>
-      </span>
+      </div>
       ${repeat(
         this.variant.exonerations || [],
         (e) => e.exonerationId,
@@ -206,7 +211,7 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
           </mwc-icon>
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
-          <div id="test-identifier">
+          <div id="test-name">
             <span title=${this.longName}>${this.shortName}</span>
             <milo-copy-to-clipboard
               .textToCopy=${this.longName}
@@ -251,27 +256,36 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
         text-overflow: ellipsis;
       }
 
-      #test-identifier {
+      #test-name {
         display: flex;
         font-size: 16px;
         line-height: 24px;
       }
-      #test-identifier > span {
+      #test-name > span {
         overflow: hidden;
         text-overflow: ellipsis;
-      }
-      milo-copy-to-clipboard {
-        flex: 0 0 16px;
       }
 
       #body {
         overflow: hidden;
       }
 
-      #variant-def {
+      #basic-info {
         font-weight: 500;
         line-height: 24px;
         margin-left: 5px;
+      }
+
+      #test-id {
+        display: inline-flex;
+        max-width: 300px;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      #test-id > span {
+        display: inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .kv-key::after {
         content: ':';
@@ -296,12 +310,11 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
       }
 
       milo-copy-to-clipboard {
+        flex: 0 0 16px;
         display: none;
-        margin-left: 5px;
-        margin-right: 5px;
       }
-      #header:hover milo-copy-to-clipboard {
-        display: initial;
+      :hover > milo-copy-to-clipboard {
+        display: inline-block;
       }
     `,
   ];
