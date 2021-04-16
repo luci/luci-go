@@ -34,6 +34,11 @@ export const BUILD_FIELD_MASK =
   'id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,' +
   'infra.swarming,infra.resultdb,tags,exe';
 
+// Includes: id, builder, number, createTime, startTime, endTime, status, summaryMarkdown.
+export const SEARCH_BUILD_FIELD_MASK =
+  'builds.*.id,builds.*.builder,builds.*.number,builds.*.createTime,builds.*.startTime,builds.*.endTime,' +
+  'builds.*.status,builds.*.summaryMarkdown';
+
 export const enum Trinary {
   Unset = 'UNSET',
   Yes = 'YES',
