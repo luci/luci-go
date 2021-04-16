@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "73732a9e_a3b2a1a1",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T05:05:26Z",
+      "side": 1,
+      "message": "Del",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "804484b5_cc4a400c",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T05:05:26Z",
+      "side": 1,
+      "message": "Del. I think it\u0027s pretty straightforward in code.",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60cf4890_5e51eedf",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T05:05:26Z",
+      "side": 1,
+      "message": "may be just errors.Reason(\"Run %q not found\", id).Err()",
+      "range": {
+        "startLine": 38,
+        "startChar": 14,
+        "endLine": 38,
+        "endChar": 78
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18446c8a_4b3474e9",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T05:05:26Z",
+      "side": 1,
+      "message": "Generally in cv, we use following pattern.\n\n```\nswitch err :\u003d datastore.Get(ctx, \u0026v); {\n  case err \u003d\u003d datastore.ErrNoSuchEntity:\n    return nil, errors.Annotate(err, \"no Run found trying to get Attempt\").Err()\n  case err !\u003d nil:\n    return nil, errors.Annotate(err, \"failed to fetch run\").Tag(transient.Tag).Err()\n}\n```",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 2
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e294a1e5_835c3168",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T05:05:26Z",
+      "side": 1,
+      "message": "same here.",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1a1fb03_70aea474",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T05:05:26Z",
+      "side": 1,
+      "message": "This case is not necessarily an error. A Run could end without VerifiedCQDRun reported. For example, if a new patchset is uploaded while tryjob is still running. CV will bring Run to final state and cancels the verification CQDaemon is running.",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 89
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26b5c975_81eda6b1",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-16T05:05:26Z",
+      "side": 1,
+      "message": "I assume starting from here, it is still WIP?",
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
