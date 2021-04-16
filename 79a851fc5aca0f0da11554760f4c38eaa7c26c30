@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ac8c154d_457edf83",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-16T00:59:02Z",
+      "side": 1,
+      "message": "You\u0027ll need to put them inside these \"properties\". You\u0027ll likely need to make a copy of them in order to modify them (it is common in Starlark to have immutable dicts).\n\n`props` holds properties of luci.builder(...) definition (which is a lot of stuff). `properties` are specifically what ends up as builder properties in the config.",
+      "range": {
+        "startLine": 235,
+        "startChar": 8,
+        "endLine": 235,
+        "endChar": 66
+      },
+      "revId": "79a851fc5aca0f0da11554760f4c38eaa7c26c30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bb7a8c1a_c5111fd1",
         "filename": "lucicfg/testdata/full_example.star",
         "patchSetId": 2
