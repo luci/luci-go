@@ -22,6 +22,7 @@ load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/luci/lib/resultdb.star", "resultdb")
 load("@stdlib//internal/luci/lib/scheduler.star", "schedulerimpl")
 load("@stdlib//internal/luci/lib/swarming.star", "swarming")
+load("@stdlib//internal/luci/lib/test_presentation.star", "test_presentation")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
 
 def _builder(
@@ -60,6 +61,7 @@ def _builder(
 
         # Results.
         resultdb_settings = None,
+        test_presentation_config = None,
 
         # Relations.
         triggers = None,
@@ -208,6 +210,8 @@ def _builder(
         with resultdb.settings(...). A configuration that defines if
         Buildbucket:ResultDB integration should be enabled for this builder and
         which results to export to BigQuery.
+      test_presentation_config: A luci.test_presentation(...) struct. A
+        configuration that defines how tests should be rendered in the UI.
 
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.
@@ -219,6 +223,14 @@ def _builder(
     bucket_key = keys.bucket(bucket)
     executable_key = keys.executable(executable)
 
+    properties = validate.str_dict("properties", properties)
+    test_presentation_config = test_presentation.validate_config("test_presentation_config", test_presentation_config)
+
+    # To reduce noise in the properties, set the test presentation config only
+    # when it's not the default value.
+    if test_presentation_config != test_presentation.config():
+        properties["$recipe_engine/milo/test_presentation"] = test_presentation.to_dict(test_presentation_config)
+
     # TODO(vadimsh): Validators here and in lucicfg.rule(..., defaults = ...)
     # are duplicated. There's probably a way to avoid this by introducing a
     # Schema object.
@@ -228,7 +240,7 @@ def _builder(
         "realm": bucket_key.id if realms.experiment.is_enabled() else None,
         "description_html": validate.string("description_html", description_html, required = False),
         "project": "",  # means "whatever is being defined right now"
-        "properties": validate.str_dict("properties", properties),
+        "properties": properties,
         "service_account": validate.string("service_account", service_account, required = False),
         "caches": swarming.validate_caches("caches", caches),
         "execution_timeout": validate.duration("execution_timeout", execution_timeout, required = False),
@@ -380,5 +392,6 @@ builder = lucicfg.rule(
         "experiments": _validate_experiments,
         "task_template_canary_percentage": lambda attr, val: validate.int(attr, val, min = 0, max = 100),
         "resultdb": resultdb.validate_settings,
+        "test_presentation_config": test_presentation.validate_config,
     }),
 )
