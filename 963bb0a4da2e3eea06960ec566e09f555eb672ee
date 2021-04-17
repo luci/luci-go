@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e9f7a5e_7365aa40",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-17T21:05:24Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "963bb0a4da2e3eea06960ec566e09f555eb672ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec1197bb_6e6bed7b",
+        "filename": "cv/internal/gerrit/factory_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-17T21:05:24Z",
+      "side": 1,
+      "message": "the diff is wrong. I merely indented prior tests and wrapped them in \"factory.token \" convey block.",
+      "revId": "963bb0a4da2e3eea06960ec566e09f555eb672ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9db49549_9439a74a",
+        "filename": "cv/internal/gerrit/factory_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-17T21:05:24Z",
+      "side": 1,
+      "message": "this is genuinely new test.",
+      "revId": "963bb0a4da2e3eea06960ec566e09f555eb672ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
