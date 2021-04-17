@@ -13,35 +13,3 @@
 // limitations under the License.
 
 package eventpb
-
-import (
-	"context"
-	"time"
-
-	"google.golang.org/protobuf/proto"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/eventbox"
-)
-
-// SendNow sends the event to Run's eventbox and invokes RunManager immediately.
-func SendNow(ctx context.Context, runID common.RunID, evt *Event) error {
-	return Send(ctx, runID, evt, time.Time{})
-}
-
-// Send sends the event to Run's eventbox and invokes RunManager at `eta`.
-func Send(ctx context.Context, runID common.RunID, evt *Event, eta time.Time) error {
-	value, err := proto.Marshal(evt)
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
-	}
-	rid := string(runID)
-	to := datastore.MakeKey(ctx, "Run", rid)
-	if err := eventbox.Emit(ctx, value, to); err != nil {
-		return err
-	}
-	return Dispatch(ctx, rid, eta)
-}
