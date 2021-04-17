@@ -27,6 +27,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -114,7 +115,7 @@ func TestComponentsActions(t *testing.T) {
 				{Clids: []int64{3}, DecisionTime: timestamppb.New(now.Add(3 * time.Minute))},
 			},
 			NextEvalTime: timestamppb.New(now.Add(3 * time.Minute)),
-		})
+		}, nil, nil)
 
 		pb := backupPB(state)
 
@@ -360,7 +361,7 @@ func (t *testCActor) NextActionTime(_ context.Context, now time.Time) (time.Time
 	return t.parent.nextAction(t.c.GetClids()[0], now)
 }
 
-func (t *testCActor) Act(context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
+func (t *testCActor) Act(context.Context, *prjmanager.Notifier) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
 	for _, clid := range t.parent.actErrOnCLs {
 		if t.c.GetClids()[0] == clid {
 			return nil, nil, errors.Reason("act-oops %v", t.c).Err()
