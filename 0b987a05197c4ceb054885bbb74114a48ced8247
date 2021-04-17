@@ -520,6 +520,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ca199903_a0a5a6b1",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-17T00:00:24Z",
+      "side": 1,
+      "message": "Yes, exactly.",
+      "parentUuid": "76af358c_94e7474c",
+      "range": {
+        "startLine": 286,
+        "startChar": 13,
+        "endLine": 287,
+        "endChar": 41
+      },
+      "revId": "0b987a05197c4ceb054885bbb74114a48ced8247",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a660b52b_3226020b",
         "filename": "cv/internal/run/impl/handler/submit.go",
         "patchSetId": 2

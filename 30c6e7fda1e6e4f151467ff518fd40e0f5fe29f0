@@ -159,6 +159,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ca0ae87_ad4596f4",
+        "filename": "cv/internal/run/impl/handler/submit.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-17T00:00:24Z",
+      "side": 1,
+      "message": "oh, I didn\u0027t realize this is a RunCL. What you did is SGTM.",
+      "parentUuid": "f9112c95_81d4cb6d",
+      "range": {
+        "startLine": 342,
+        "startChar": 53,
+        "endLine": 342,
+        "endChar": 54
+      },
+      "revId": "30c6e7fda1e6e4f151467ff518fd40e0f5fe29f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e425f321_3f22fd7a",
