@@ -307,6 +307,7 @@ func TestRunBuilder(t *testing.T) {
 						Run: datastore.MakeKey(ctx, run.RunKind, expectedRunID),
 					}
 					So(datastore.Get(ctx, saved), ShouldBeNil)
+					So(saved.ExternalID, ShouldEqual, rb.cls[i].ExternalID)
 					So(saved.Trigger, ShouldResembleProto, rb.InputCLs[i].TriggerInfo)
 					So(saved.Detail, ShouldResembleProto, rb.cls[i].Snapshot)
 				})
