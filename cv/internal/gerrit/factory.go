@@ -59,39 +59,53 @@ import (
 // defaults to auth.AsSelf if LUCI project doesn't have PSSA configured.
 // Thus CV can't rely on the above method as is.
 type factory struct {
-	legacyCache *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
+	baseTransport http.RoundTripper
+	clientCache   *lru.Cache // caches clients per (LUCI project, host).
+	legacyCache   *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
 
 	mockMintProjectToken func(context.Context, auth.ProjectTokenParams) (*auth.Token, error)
 }
 
-func newFactory() *factory {
+func newFactory(ctx context.Context) (*factory, error) {
+	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
+	if err != nil {
+		return nil, err
+	}
 	return &factory{
+		baseTransport: t,
+		clientCache:   lru.New(64),
 		// CV supports <20 legacy hosts. New ones shouldn't be added.
 		legacyCache: lru.New(20),
-	}
+	}, nil
 }
 
 func (f *factory) makeClient(ctx context.Context, gerritHost, luciProject string) (Client, error) {
 	if strings.ContainsRune(luciProject, '.') {
 		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())
 	}
-	t, err := f.transport(ctx, gerritHost, luciProject)
+	key := luciProject + "/" + gerritHost
+	client, err := f.clientCache.GetOrCreate(ctx, key, func() (value interface{}, ttl time.Duration, err error) {
+		// Default ttl of 0 means never expire. Note that specific authorization
+		// token is still loaded per each request (see transport() function).
+		t, err := f.transport(gerritHost, luciProject)
+		if err != nil {
+			return
+		}
+		value, err = gerrit.NewRESTClient(&http.Client{Transport: t}, gerritHost, true)
+		return
+	})
 	if err != nil {
 		return nil, err
 	}
-	return gerrit.NewRESTClient(&http.Client{Transport: t}, gerritHost, true)
+	return client.(Client), nil
 }
 
-func (f *factory) transport(ctx context.Context, gerritHost, luciProject string) (http.RoundTripper, error) {
+func (f *factory) transport(gerritHost, luciProject string) (http.RoundTripper, error) {
 	// Do what auth.GetRPCTransport(ctx, auth.AsProject, ...) would do,
 	// except obey pssa blocklist and default to legacy ~/.netrc creds.
 	// See factory doc for more details.
-	baseTransport, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		return nil, err
-	}
-	return luciauth.NewModifyingTransport(baseTransport, func(req *http.Request) error {
-		tok, err := f.token(ctx, gerritHost, luciProject)
+	return luciauth.NewModifyingTransport(f.baseTransport, func(req *http.Request) error {
+		tok, err := f.token(req.Context(), gerritHost, luciProject)
 		if err != nil {
 			return err
 		}
