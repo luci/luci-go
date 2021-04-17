@@ -45,6 +45,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/cloud"
@@ -54,6 +55,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/secrets"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.
@@ -61,7 +63,8 @@ var ModuleName = module.RegisterName("go.chromium.org/luci/server/gaeemulation")
 
 // ModuleOptions contain configuration of the GAE Emulation server module
 type ModuleOptions struct {
-	DSCache string // currently either "disable" (default) or "redis"
+	DSCache                  string // currently either "disable" (default) or "redis"
+	RandomSecretsInDatastore bool   // true to replace the random secrets store with the GAEv1-one
 }
 
 // Register registers the command line flags.
@@ -71,6 +74,13 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"ds-cache",
 		o.DSCache,
 		`What datastore caching layer to use ("disable" or "redis").`,
+	)
+	f.BoolVar(
+		&o.RandomSecretsInDatastore,
+		"random-secrets-in-datastore",
+		o.RandomSecretsInDatastore,
+		`If set, use datastore to store random secrets instead of deriving them from a -root-secret. `+
+			`Can be used for compatibility with older GAE services. Do not use in new services.`,
 	)
 }
 
@@ -109,6 +119,7 @@ func (*gaeModule) Name() module.Name {
 func (*gaeModule) Dependencies() []module.Dependency {
 	return []module.Dependency{
 		module.OptionalDependency(redisconn.ModuleName), // for dscache, if enabled
+		module.OptionalDependency(secrets.ModuleName),   // to install DS random secrets backend
 	}
 }
 
@@ -129,6 +140,14 @@ func (m *gaeModule) Initialize(ctx context.Context, host module.Host, opts modul
 		cacheImpl = redisCache{pool: pool}
 	default:
 		return nil, errors.Reason("unsupported -ds-cache %q", m.opts.DSCache).Err()
+	}
+
+	if m.opts.RandomSecretsInDatastore {
+		store, _ := secrets.CurrentStore(ctx).(*secrets.SecretManagerStore)
+		if store == nil {
+			return nil, errors.Reason("-random-secrets-in-datastore requires module %q", secrets.ModuleName).Err()
+		}
+		store.SetRandomSecretsStore(gaesecrets.New(nil))
 	}
 
 	var client *datastore.Client

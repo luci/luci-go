@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/warmup"
 
@@ -202,7 +203,7 @@ func (e *Environment) With(ctx context.Context, req *http.Request) context.Conte
 	if e.WithConfig != nil {
 		ctx = e.WithConfig(ctx)
 	}
-	ctx = gaesecrets.Use(ctx, nil)
+	ctx = secrets.Use(ctx, gaesecrets.New(nil))
 	if e.WithAuth != nil {
 		ctx = e.WithAuth(ctx)
 	}

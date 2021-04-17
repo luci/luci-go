@@ -18,6 +18,9 @@
 // mechanism to persistently store non-static secrets on GAE.
 //
 // All secrets are global (live in default GAE namespace).
+//
+// TODO(vadimsh): Merge into go.chromium.org/luci/server/gaeemulation once
+// there are no other users.
 package gaesecrets
 
 import (
@@ -50,9 +53,8 @@ type Config struct {
 	Entropy   io.Reader // source of random numbers, crypto rand by default
 }
 
-// Use injects the GAE implementation of secrets.Store into the context.
-// The context must be configured with GAE datastore implementation already.
-func Use(ctx context.Context, cfg *Config) context.Context {
+// New constructs a secrets.Store implementation that uses datastore.
+func New(cfg *Config) secrets.Store {
 	config := Config{}
 	if cfg != nil {
 		config = *cfg
@@ -66,7 +68,13 @@ func Use(ctx context.Context, cfg *Config) context.Context {
 	if config.Entropy == nil {
 		config.Entropy = rand.Reader
 	}
-	return secrets.Use(ctx, &storeImpl{config})
+	return &storeImpl{config}
+}
+
+// Use injects the GAE implementation of secrets.Store into the context.
+// The context must be configured with GAE datastore implementation already.
+func Use(ctx context.Context, cfg *Config) context.Context {
+	return secrets.Use(ctx, New(cfg))
 }
 
 // full secret key (including prefix) => secrets.Secret.
