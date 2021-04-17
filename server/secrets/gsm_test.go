@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -27,8 +28,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -37,15 +41,63 @@ func TestSecretManagerSource(t *testing.T) {
 	t.Parallel()
 
 	Convey("With SecretManagerStore", t, func() {
-		ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(123)))
+		ctx := context.Background()
+		ctx = gologger.StdConfig.Use(ctx)
+		ctx = logging.SetLevel(ctx, logging.Debug)
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(123)))
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		// Machinery to advance fake time in a lock step with MaintenanceLoop.
+		ticks := make(chan bool, 1)
+		tc.SetTimerCallback(func(d time.Duration, _ clock.Timer) {
+			// Do not block clock.After call itself, just delay advancing of the
+			// clock until `ticks` is signaled.
+			go func() {
+				select {
+				case do := <-ticks:
+					if do {
+						tc.Add(d)
+					}
+				case <-ctx.Done():
+				}
+			}()
+		})
+
+		// Handle reports from MaintenanceLoop.
+		events := make(chan string)
+		expectChecked := func(secret string) {
+			So(<-events, ShouldEqual, "checking")
+			So(<-events, ShouldEqual, "checked "+secret)
+		}
+		expectReloaded := func(secret string) {
+			So(<-events, ShouldEqual, "checking")
+			So(<-events, ShouldEqual, "reloaded "+secret)
+		}
+		expectSleep := func(dur string) {
+			So(<-events, ShouldEqual, "sleeping")
+			ticks <- true // advance clock in the timer
+			So(<-events, ShouldEqual, "slept "+dur)
+		}
+		expectWoken := func(afterSleep bool) {
+			So(<-events, ShouldEqual, "sleeping")
+			So(<-events, ShouldEqual, "woken")
+			if afterSleep {
+				ticks <- false // the timer was aborted, don't advance clock in it
+			}
+			So(<-events, ShouldEqual, "checking")
+		}
 
 		gsm := secretManagerMock{}
 
 		sm := SecretManagerStore{
 			CloudProject:        "fake-project",
 			AccessSecretVersion: gsm.AccessSecretVersion,
+			testingEvents:       events,
 		}
+		go sm.MaintenanceLoop(ctx)
+		So(<-events, ShouldEqual, "checking") // wait until it blocks
 
 		Convey("normalizeName sm://<secret>", func() {
 			name, err := sm.normalizeName("sm://secret")
@@ -132,22 +184,21 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.createVersion("project", "secret", "zzz")
 
 			So(sm.LoadRootSecret(ctx, "sm://project/secret"), ShouldBeNil)
+			expectWoken(false)
 
 			s1, err := sm.RandomSecret(ctx, "name")
 			So(err, ShouldBeNil)
 			So(s1, ShouldResemble, Secret{Current: ver1})
 
 			rotated := make(chan struct{})
-			sm.AddRotationHandler(ctx, "sm://project/secret", func(context.Context, Secret) {
+			sm.AddRotationHandler(ctx, "sm://project/secret", func(_ context.Context, s Secret) {
 				close(rotated)
 			})
 
 			// Rotate the secret and make sure the change is picked up.
 			gsm.createVersion("project", "secret", "xxx")
-			tc.Add(reloadIntervalMax + time.Second)
-			bctx, cancel := context.WithCancel(ctx)
-			go sm.MaintenanceLoop(bctx)
-			defer cancel()
+			expectSleep("2h16m23s")
+			expectReloaded("sm://project/secret")
 			<-rotated
 
 			// Random secrets are rotated too.
@@ -158,17 +209,105 @@ func TestSecretManagerSource(t *testing.T) {
 				Previous: [][]byte{ver1},
 			})
 		})
+
+		Convey("Stored secrets OK", func() {
+			gsm.createVersion("project", "secret", "v1")
+
+			rotated := make(chan struct{})
+			sm.AddRotationHandler(ctx, "sm://project/secret", func(_ context.Context, s Secret) {
+				rotated <- struct{}{}
+			})
+
+			s, err := sm.StoredSecret(ctx, "sm://project/secret")
+			So(err, ShouldBeNil)
+			So(s, ShouldResemble, Secret{Current: []byte("v1")})
+			expectWoken(false)
+
+			// Rotate the secret and make sure the change is picked up when expected.
+			gsm.createVersion("project", "secret", "v2")
+			expectSleep("2h16m23s")
+			expectReloaded("sm://project/secret")
+
+			s, err = sm.StoredSecret(ctx, "sm://project/secret")
+			So(err, ShouldBeNil)
+			So(s, ShouldResemble, Secret{Current: []byte("v2")})
+
+			<-rotated // doesn't hang
+		})
+
+		Convey("Stored secrets exponential back-off", func() {
+			gsm.createVersion("project", "secret", "v1")
+
+			s, err := sm.StoredSecret(ctx, "sm://project/secret")
+			So(err, ShouldBeNil)
+			So(s, ShouldResemble, Secret{Current: []byte("v1")})
+			expectWoken(false)
+
+			// Rotate the secret and "break" the backend.
+			gsm.createVersion("project", "secret", "v2")
+			gsm.setError(status.Errorf(codes.Internal, "boom"))
+
+			// Attempts to do a regular update first.
+			expectSleep("2h16m23s")
+			expectChecked("sm://project/secret")
+
+			// Notices the error and starts checking more often.
+			expectSleep("2s")
+			expectChecked("sm://project/secret")
+			expectSleep("6s")
+			expectChecked("sm://project/secret")
+
+			// "Fix" the backend.
+			gsm.setError(nil)
+
+			// The updated eventually succeeds and returns to the slow schedule.
+			expectSleep("14s")
+			expectReloaded("sm://project/secret")
+			expectSleep("2h17m45s")
+			expectChecked("sm://project/secret")
+		})
+
+		Convey("Stored secrets priority queue", func() {
+			gsm.createVersion("project", "secret1", "v1")
+			gsm.createVersion("project", "secret2", "v1")
+
+			// Load the first one and let it be for a while to advance time.
+			sm.StoredSecret(ctx, "sm://project/secret1")
+			expectWoken(false)
+			expectSleep("2h16m23s")
+			expectChecked("sm://project/secret1")
+
+			// Load the second one, it wakes up the maintenance loop, but it finds
+			// there's nothing to reload yet.
+			sm.StoredSecret(ctx, "sm://project/secret2")
+			expectWoken(true)
+
+			// Starts waking up periodically to update one secret or another. Checks
+			// for secret1 and secret2 happened to be bunched relatively close to
+			// one another (~7m).
+			expectSleep("3h47m31s")
+			expectChecked("sm://project/secret2")
+			expectSleep("6m39s")
+			expectChecked("sm://project/secret1")
+			expectSleep("2h17m45s")
+			expectChecked("sm://project/secret1")
+			expectSleep("12m48s")
+			expectChecked("sm://project/secret2")
+		})
 	})
 }
 
 type secretManagerMock struct {
-	calls []string
-
+	m        sync.Mutex
+	err      error
 	versions map[string]string // full ref => a value or "" if disabled
 	latest   map[string]int    // latest ref => version number
 }
 
 func (sm *secretManagerMock) createVersion(project, name, value string) string {
+	sm.m.Lock()
+	defer sm.m.Unlock()
+
 	if sm.versions == nil {
 		sm.versions = make(map[string]string, 1)
 		sm.latest = make(map[string]int, 1)
@@ -186,15 +325,32 @@ func (sm *secretManagerMock) createVersion(project, name, value string) string {
 }
 
 func (sm *secretManagerMock) disableVersion(ref string) {
+	sm.m.Lock()
+	defer sm.m.Unlock()
+
 	sm.versions[ref] = ""
 }
 
 func (sm *secretManagerMock) deleteVersion(ref string) {
+	sm.m.Lock()
+	defer sm.m.Unlock()
+
 	delete(sm.versions, ref)
 }
 
+func (sm *secretManagerMock) setError(err error) {
+	sm.m.Lock()
+	defer sm.m.Unlock()
+	sm.err = err
+}
+
 func (sm *secretManagerMock) AccessSecretVersion(_ context.Context, req *secretmanagerpb.AccessSecretVersionRequest, _ ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error) {
-	sm.calls = append(sm.calls, req.Name)
+	sm.m.Lock()
+	defer sm.m.Unlock()
+
+	if sm.err != nil {
+		return nil, sm.err
+	}
 
 	// Recognize ".../versions/latest" aliases.
 	versionRef := req.Name
