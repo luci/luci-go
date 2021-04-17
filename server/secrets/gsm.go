@@ -65,14 +65,19 @@ func (sm *SecretManagerStore) LoadRootSecret(ctx context.Context, rootSecret str
 	if err != nil {
 		return errors.Annotate(err, "failed to read the initial value of the root secret").Err()
 	}
-
 	derivedStore := NewDerivedStore(secret)
 	sm.AddRotationHandler(ctx, rootSecret, func(_ context.Context, secret Secret) {
 		derivedStore.SetRoot(secret)
 	})
-
-	sm.randomSecrets = derivedStore
+	sm.SetRandomSecretsStore(derivedStore)
 	return nil
+}
+
+// SetRandomSecretsStore changes the store used for RandomSecret(...).
+//
+// Can be used instead of LoadRootSecret to hook up a custom implementation.
+func (sm *SecretManagerStore) SetRandomSecretsStore(s Store) {
+	sm.randomSecrets = s
 }
 
 // MaintenanceLoop runs a loop that periodically rereads secrets.
@@ -121,7 +126,7 @@ func (sm *SecretManagerStore) MaintenanceLoop(ctx context.Context) {
 // RandomSecret returns a random secret given its name.
 func (sm *SecretManagerStore) RandomSecret(ctx context.Context, name string) (Secret, error) {
 	if sm.randomSecrets == nil {
-		return Secret{}, errors.New("the root secret of the secret store is not initialized")
+		return Secret{}, errors.Reason("random secrets store is not initialized").Err()
 	}
 	return sm.randomSecrets.RandomSecret(ctx, name)
 }
