@@ -123,6 +123,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c1d4090_c368c46a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-17T13:14:35Z",
+      "side": 1,
+      "message": "+1 about not being convoluted.\n\nI didn\u0027t keep up with developments in luciexe lately, but why do we need to mock os calls instead of letting them run against an actual OS file system?",
+      "parentUuid": "199023a5_ab89059b",
+      "revId": "2320f72b37841d1ff953c92012406242efd9fe18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be2bbb9d_f929c639",
