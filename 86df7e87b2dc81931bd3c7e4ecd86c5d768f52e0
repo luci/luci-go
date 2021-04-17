@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50334d38_523adf5d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-17T21:27:11Z",
+      "side": 1,
+      "message": "Yiwei, can you land this CL plz s.t. I don\u0027t create for you or myself conflicts while refactoring.",
+      "revId": "86df7e87b2dc81931bd3c7e4ecd86c5d768f52e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
