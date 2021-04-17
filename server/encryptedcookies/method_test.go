@@ -84,12 +84,6 @@ func TestMethod(t *testing.T) {
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = authtest.MockAuthConfig(ctx)
-		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
-			cfg.AEADProvider = func(context.Context) tink.AEAD {
-				return ae
-			}
-			return cfg
-		})
 
 		method := &AuthMethod{
 			OpenIDConfig: func(context.Context) (*OpenIDConfig, error) {
@@ -100,7 +94,8 @@ func TestMethod(t *testing.T) {
 					RedirectURI:  provider.ExpectedRedirectURI,
 				}, nil
 			},
-			Sessions: &datastore.Store{},
+			AEADProvider: func(context.Context) tink.AEAD { return ae },
+			Sessions:     &datastore.Store{},
 		}
 
 		call := func(h router.Handler, host string, url *url.URL, header http.Header) *http.Response {

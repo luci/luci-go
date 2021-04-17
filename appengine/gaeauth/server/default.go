@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
+	"go.chromium.org/luci/appengine/gaemiddleware"
 )
 
 var handlersInstalled = false
@@ -71,6 +72,7 @@ func SwitchToEncryptedCookies() {
 					RedirectURI:  s.RedirectURI,
 				}, nil
 			},
+			AEADProvider:        gaemiddleware.AEADProvider,
 			Sessions:            &datastore.Store{},
 			Insecure:            method.Insecure,
 			IncompatibleCookies: method.IncompatibleCookies,

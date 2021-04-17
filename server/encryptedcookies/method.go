@@ -88,6 +88,11 @@ type AuthMethod struct {
 	// Required.
 	OpenIDConfig func(ctx context.Context) (*OpenIDConfig, error)
 
+	// AEADProvider returns an implementation of Authenticated Encryption with
+	// Additional Authenticated primitive used to encrypt the cookies and other
+	// sensitive state.
+	AEADProvider func(ctx context.Context) tink.AEAD
+
 	// Sessions keeps user sessions in some permanent storage.
 	//
 	// Required.
@@ -140,7 +145,7 @@ func (m *AuthMethod) Warmup(ctx context.Context) error {
 	if _, err := doc.SigningKeys(ctx); err != nil {
 		return err
 	}
-	_ = auth.GetAEAD(ctx)
+	_ = m.AEADProvider(ctx)
 	return nil
 }
 
@@ -156,7 +161,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 	// Decrypt the cookie to get the session ID. Ignore undecryptable cookies.
 	// This may happen if we no longer have the encryption key due to rotations
 	// or we changed the cookie format. We just assume such cookies are expired.
-	aead := auth.GetAEAD(ctx)
+	aead := m.AEADProvider(ctx)
 	if aead == nil {
 		return nil, nil, errors.Reason("the encryption key is not configured").Err()
 	}
@@ -261,6 +266,9 @@ func (m *AuthMethod) checkConfigured(ctx context.Context) (*OpenIDConfig, error)
 	if m.OpenIDConfig == nil {
 		panic("bad encryptedcookies.AuthMethod usage: OpenIDConfig is nil")
 	}
+	if m.AEADProvider == nil {
+		panic("bad encryptedcookies.AuthMethod usage: AEADProvider is nil")
+	}
 	if m.Sessions == nil {
 		panic("bad encryptedcookies.AuthMethod usage: Sessions is nil")
 	}
@@ -318,7 +326,7 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 		}
 
 		// Encrypt it using service-global AEAD, since we are going to expose it.
-		aead := auth.GetAEAD(ctx)
+		aead := m.AEADProvider(ctx)
 		if aead == nil {
 			return errors.Reason("the service encryption key is not configured").Err()
 		}
@@ -359,7 +367,7 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 		// If we have a cookie, revoke the refresh token and mark the session
 		// as closed.
 		if encryptedCookie, _ := r.Cookie(internal.SessionCookieName); encryptedCookie != nil {
-			aead := auth.GetAEAD(ctx)
+			aead := m.AEADProvider(ctx)
 			if aead == nil {
 				return errors.Reason("the encryption key is not configured").Err()
 			}
@@ -411,7 +419,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		}
 
 		// Decrypt/verify `state`.
-		aead := auth.GetAEAD(ctx)
+		aead := m.AEADProvider(ctx)
 		if aead == nil {
 			return errors.Reason("the encryption key is not configured").Err()
 		}
