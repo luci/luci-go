@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea235b8d_ac4a60a6",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-17T00:36:12Z",
+      "side": 1,
+      "message": "This code was copy-pasted straight from container/heap docs. Added panic(...).",
+      "parentUuid": "c5172a9e_2a6fc9bf",
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "de7759d2_db86eeed",
@@ -65,6 +83,30 @@
       "writtenOn": "2021-04-16T23:13:25Z",
       "side": 1,
       "message": "iiuc under very severe conditions (e.g. extreme CPU starvation), we can have:\nT0:  a secret is reloaded -\u003e v1, goroutine G1 for callbacks created \nT1:  a secret is reloaded -\u003e v2, goroutine G2 for callbacks created\nT2:  G2 calls cb(v2)\nT3:  G1 calls cb(v1)\n\nare you explicitly OK with this?\n\nI don\u0027t have really great counter-suggestions. All I can think of requires adding a long-lived goroutine per reloadable secret which listens on the channel in-order",
+      "range": {
+        "startLine": 417,
+        "startChar": 3,
+        "endLine": 420,
+        "endChar": 4
+      },
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1be0e1d5_59bf43c6",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-17T00:36:12Z",
+      "side": 1,
+      "message": "yeah, the rotation check interval is hours, it should be *very* extreme conditions\n\nI can add a counter passed to the callback (incremented each time rotation happens). It would offload the ordering problem to the consumer. But I really think it is not a big deal.",
+      "parentUuid": "de7759d2_db86eeed",
       "range": {
         "startLine": 417,
         "startChar": 3,
@@ -100,6 +142,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "97d9c249_6a7a19e8",
+        "filename": "server/secrets/gsm_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-17T00:36:12Z",
+      "side": 1,
+      "message": "Dunno, convey is magic. Changed to defer, seems to work.",
+      "parentUuid": "b180464e_ec897b63",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 7
+      },
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "6ed53b63_72351239",
         "filename": "server/secrets/gsm_test.go",
         "patchSetId": 3
@@ -111,6 +177,30 @@
       "writtenOn": "2021-04-16T23:13:25Z",
       "side": 1,
       "message": "ha, when I read your comment in email, I expected the shenanigan of extra channel and manual tick-propagation. But I really like what you ended up with it\u0027s super readable.",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 29
+      },
+      "revId": "5ce91a5b0748bade4031af2dceaf87dac5652a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7636f063_7d4c1ecd",
+        "filename": "server/secrets/gsm_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-17T00:36:12Z",
+      "side": 1,
+      "message": "Unfortunately it is not super writable. I actually had to see what events are produced to write this test (i.e. I wrote code first, and then a test for it, not vice versa). I think this test is pretty brittle. But I also don\u0027t anticipate this code changing much, so whatever.",
+      "parentUuid": "6ed53b63_72351239",
       "range": {
         "startLine": 53,
         "startChar": 2,
