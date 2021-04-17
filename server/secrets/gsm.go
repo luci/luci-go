@@ -15,6 +15,7 @@
 package secrets
 
 import (
+	"container/heap"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -45,33 +46,32 @@ type SecretManagerStore struct {
 	// AccessSecretVersion is an RPC to fetch the secret from the Secret Manager.
 	AccessSecretVersion func(context.Context, *secretmanagerpb.AccessSecretVersionRequest, ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error)
 
-	rootSecret    *trackedSecret // the secret loaded in LoadRootSecret
-	randomSecrets *DerivedStore  // the store used by RandomSecret
+	randomSecrets Store // the store used by RandomSecret
 
-	handlersM sync.RWMutex
-	handlers  map[string][]RotationHandler
+	rwm           sync.RWMutex
+	secretsByName map[string]*trackedSecret
+	secretsByTime trackedSecretsPQ
+	wakeUp        chan struct{}
+	handlers      map[string][]RotationHandler
+
+	testingEvents chan string // used in tests
 }
 
 // LoadRootSecret loads the root secret used to generate random secrets.
 //
-// See StoredSecret for the format of the root secret. Must be called before
-// MaintenanceLoop.
+// See StoredSecret for the format of the root secret.
 func (sm *SecretManagerStore) LoadRootSecret(ctx context.Context, rootSecret string) error {
-	rootSecret, err := sm.normalizeName(rootSecret)
-	if err != nil {
-		return errors.Annotate(err, "bad root secret name").Err()
-	}
-	secret, err := sm.readSecret(ctx, rootSecret, true)
+	secret, err := sm.readAndTrackSecret(ctx, rootSecret, true)
 	if err != nil {
 		return errors.Annotate(err, "failed to read the initial value of the root secret").Err()
 	}
-	secret.logActiveVersions(ctx)
-	secret.logNextReloadTime(ctx)
-	sm.rootSecret = secret
-	sm.randomSecrets = NewDerivedStore(secret.value)
-	sm.AddRotationHandler(ctx, secret.name, func(_ context.Context, secret Secret) {
-		sm.randomSecrets.SetRoot(secret)
+
+	derivedStore := NewDerivedStore(secret)
+	sm.AddRotationHandler(ctx, rootSecret, func(_ context.Context, secret Secret) {
+		derivedStore.SetRoot(secret)
 	})
+
+	sm.randomSecrets = derivedStore
 	return nil
 }
 
@@ -79,17 +79,41 @@ func (sm *SecretManagerStore) LoadRootSecret(ctx context.Context, rootSecret str
 //
 // It exits on context cancellation. Logs errors inside.
 func (sm *SecretManagerStore) MaintenanceLoop(ctx context.Context) {
-	rootSecret := sm.rootSecret
-	if rootSecret == nil || rootSecret.nextReload.IsZero() {
-		return // not using derived secrets at all or using a static root secret
-	}
-	for {
-		sleep := rootSecret.nextReload.Sub(clock.Now(ctx))
-		if r := <-clock.After(ctx, sleep); r.Err != nil {
-			return // the context is canceled
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
+
+	for ctx.Err() == nil {
+		var nextReload time.Time
+		var wakeUp chan struct{}
+
+		sm.emitTestingEvent(ctx, "checking")
+
+		sm.rwm.Lock()
+		for sm.reloadNextSecretLocked(ctx, &wg) {
 		}
-		if sm.tryReloadSecret(ctx, rootSecret) {
-			sm.notifyUpdateHandlers(ctx, rootSecret.name, rootSecret.value)
+		if len(sm.secretsByTime) != 0 {
+			nextReload = sm.secretsByTime[0].nextReload
+		}
+		wakeUp = make(chan struct{})
+		sm.wakeUp = wakeUp // closed in readAndTrackSecret
+		sm.rwm.Unlock()
+
+		sm.emitTestingEvent(ctx, "sleeping")
+		if !nextReload.IsZero() {
+			sleep := nextReload.Sub(clock.Now(ctx))
+			logging.Debugf(ctx, "Sleeping %s until the next scheduled refresh", sleep)
+			select {
+			case <-wakeUp:
+				sm.emitTestingEvent(ctx, "woken")
+			case <-clock.After(ctx, sleep):
+				sm.emitTestingEvent(ctx, "slept %s", sleep.Round(time.Second))
+			}
+		} else {
+			select {
+			case <-wakeUp:
+				sm.emitTestingEvent(ctx, "woken")
+			case <-ctx.Done():
+			}
 		}
 	}
 }
@@ -110,18 +134,15 @@ func (sm *SecretManagerStore) RandomSecret(ctx context.Context, name string) (Se
 //   * `devsecret://<base64-encoded secret>`: return this concrete secret.
 //   * `devsecret-text://<string>`: return this concrete secret.
 func (sm *SecretManagerStore) StoredSecret(ctx context.Context, name string) (Secret, error) {
-	name, err := sm.normalizeName(name)
-	if err != nil {
-		return Secret{}, err
-	}
-	return Secret{}, errors.New("not implemented yet")
+	return sm.readAndTrackSecret(ctx, name, false)
 }
 
 // AddRotationHandler registers a callback which is called when the stored
 // secret is updated.
 //
 // The handler is called from an internal goroutine and receives a context
-// passed to MaintenanceLoop.
+// passed to MaintenanceLoop. If multiple handlers for the same secret are
+// registered, they are called in order of their registration one by one.
 func (sm *SecretManagerStore) AddRotationHandler(ctx context.Context, name string, cb RotationHandler) error {
 	switch name, err := sm.normalizeName(name); {
 	case err != nil:
@@ -131,8 +152,8 @@ func (sm *SecretManagerStore) AddRotationHandler(ctx context.Context, name strin
 		return nil // no updates for static secrets
 
 	default:
-		sm.handlersM.Lock()
-		defer sm.handlersM.Unlock()
+		sm.rwm.Lock()
+		defer sm.rwm.Unlock()
 		if sm.handlers == nil {
 			sm.handlers = make(map[string][]RotationHandler, 1)
 		}
@@ -144,7 +165,7 @@ func (sm *SecretManagerStore) AddRotationHandler(ctx context.Context, name strin
 ////////////////////////////////////////////////////////////////////////////////
 
 const (
-	// Randomized secret re-reading interval. It is pretty big, since secrets are
+	// Randomized secret reloading interval. It is pretty big, since secrets are
 	// assumed to be rotated infrequently. In rare emergencies a service can be
 	// restarted to pick new secrets faster.
 	reloadIntervalMin = 2 * time.Hour
@@ -184,6 +205,73 @@ func (s *trackedSecret) logNextReloadTime(ctx context.Context) {
 	if !s.nextReload.IsZero() {
 		logging.Debugf(ctx, "Will attempt to reload the secret %q in %s", s.name, s.nextReload.Sub(clock.Now(ctx)))
 	}
+}
+
+type trackedSecretsPQ []*trackedSecret
+
+func (pq trackedSecretsPQ) Len() int           { return len(pq) }
+func (pq trackedSecretsPQ) Less(i, j int) bool { return pq[i].nextReload.Before(pq[j].nextReload) }
+func (pq trackedSecretsPQ) Swap(i, j int)      { pq[i], pq[j] = pq[j], pq[i] }
+
+func (pq *trackedSecretsPQ) Push(x interface{}) {
+	*pq = append(*pq, x.(*trackedSecret))
+}
+
+func (pq *trackedSecretsPQ) Pop() interface{} {
+	panic("Pop is not actually used, but defined to comply with heap.Interface")
+}
+
+func (sm *SecretManagerStore) readAndTrackSecret(ctx context.Context, name string, withPrevVersion bool) (Secret, error) {
+	name, err := sm.normalizeName(name)
+	if err != nil {
+		return Secret{}, err
+	}
+
+	sm.rwm.RLock()
+	known := sm.secretsByName[name]
+	sm.rwm.RUnlock()
+	if known != nil {
+		return known.value, nil
+	}
+
+	// Note: this lock effectively means we load one secret at a time. This should
+	// be fine, there shouldn't be many secrets. And it is probably better to
+	// serialize all loading than to hit the GSM from a lot of handlers at the
+	// same time when referring to a "popular" secret.
+	sm.rwm.Lock()
+	defer sm.rwm.Unlock()
+
+	// Double check after grabbing the write lock.
+	if known := sm.secretsByName[name]; known != nil {
+		return known.value, nil
+	}
+
+	// Read the initial values of the secret.
+	secret, err := sm.readSecret(ctx, name, withPrevVersion)
+	if err != nil {
+		return Secret{}, err
+	}
+	secret.logActiveVersions(ctx)
+	secret.logNextReloadTime(ctx)
+
+	// Note: first withPrevVersion option wins, i.e. it is impossible to convert
+	// a secret loaded withPrevVersion=false to the one withPrevVersion=true
+	// and vice-versa. This is fine, since it is private API for now.
+	if sm.secretsByName == nil {
+		sm.secretsByName = make(map[string]*trackedSecret, 1)
+	}
+	sm.secretsByName[name] = secret
+
+	// Wake up the MaintenanceLoop (if any) to let it reschedule the next refresh.
+	if !secret.nextReload.IsZero() {
+		heap.Push(&sm.secretsByTime, secret)
+		if sm.wakeUp != nil {
+			close(sm.wakeUp)
+			sm.wakeUp = nil
+		}
+	}
+
+	return secret.value, nil
 }
 
 // normalizeName check the secret name format and normalizes it.
@@ -300,14 +388,49 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 	}
 }
 
-// tryReloadSecret attempts to reload the secret, mutating it in-place.
+// reloadNextSecretLocked looks at the secret at the top of secretsByTime PQ and
+// reloads it.
+//
+// Returns false if the top of the queue is not due for the reload yet.
+//
+// Launches RotationHandler in individual goroutines adding them to `wg`.
+func (sm *SecretManagerStore) reloadNextSecretLocked(ctx context.Context, wg *sync.WaitGroup) bool {
+	if len(sm.secretsByTime) == 0 || clock.Now(ctx).Before(sm.secretsByTime[0].nextReload) {
+		return false
+	}
+
+	// Reload the secret. This always changes its nextReload, even on failures.
+	secret := sm.secretsByTime[0]
+	updated := sm.tryReloadSecretLocked(ctx, secret)
+	heap.Fix(&sm.secretsByTime, 0) // fix after its nextReload changed
+
+	// Call RotationHandler callbacks from a goroutine to avoid blocking the loop.
+	if updated {
+		handlers := append([]RotationHandler(nil), sm.handlers[secret.name]...)
+		newValue := secret.value
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, cb := range handlers {
+				cb(ctx, newValue)
+			}
+		}()
+		sm.emitTestingEvent(ctx, "reloaded %s", secret.name)
+	} else {
+		sm.emitTestingEvent(ctx, "checked %s", secret.name)
+	}
+
+	return true
+}
+
+// tryReloadSecretLocked attempts to reload the secret, mutating it in-place.
 //
 // Returns true if the secret has a new value now or false if the value didn't
 // change (either we failed to fetch it or it really didn't change).
 //
 // Logs errors inside. Fields `secret.attempts` and `secret.nextReload` are
 // mutated even on failures.
-func (sm *SecretManagerStore) tryReloadSecret(ctx context.Context, secret *trackedSecret) bool {
+func (sm *SecretManagerStore) tryReloadSecretLocked(ctx context.Context, secret *trackedSecret) bool {
 	fresh, err := sm.readSecret(ctx, secret.name, secret.withPrevVersion)
 	if err != nil {
 		secret.attempts += 1
@@ -325,13 +448,13 @@ func (sm *SecretManagerStore) tryReloadSecret(ctx context.Context, secret *track
 	return updated
 }
 
-// notifyUpdateHandlers calls callback registered by RegisterUpdateHandler.
-func (sm *SecretManagerStore) notifyUpdateHandlers(ctx context.Context, name string, val Secret) {
-	sm.handlersM.RLock()
-	cbs := append([]RotationHandler(nil), sm.handlers[name]...)
-	sm.handlersM.RUnlock()
-	for _, cb := range cbs {
-		cb(ctx, val)
+// emitTestingEvent is used in tests to expose what MaintenanceLoop is doing.
+func (sm *SecretManagerStore) emitTestingEvent(ctx context.Context, msg string, args ...interface{}) {
+	if sm.testingEvents != nil {
+		select {
+		case sm.testingEvents <- fmt.Sprintf(msg, args...):
+		case <-ctx.Done():
+		}
 	}
 }
 
