@@ -13,35 +13,3 @@
 // limitations under the License.
 
 package prjpb
-
-import (
-	"context"
-	"time"
-
-	"google.golang.org/protobuf/proto"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/cv/internal/eventbox"
-)
-
-// SendNow sends the event to Project's eventbox and invokes PM immediately.
-func SendNow(ctx context.Context, luciProject string, e *Event) error {
-	if err := SendWithoutDispatch(ctx, luciProject, e); err != nil {
-		return err
-	}
-	return Dispatch(ctx, luciProject, time.Time{} /*asap*/)
-}
-
-// Send sends the event to Project's eventbox without invoking a PM.
-func SendWithoutDispatch(ctx context.Context, luciProject string, e *Event) error {
-	value, err := proto.Marshal(e)
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
-	}
-	// Must be same as prjmanager.ProjectKind, but can't import due to circular
-	// imports.
-	to := datastore.MakeKey(ctx, "Project", luciProject)
-	return eventbox.Emit(ctx, value, to)
-}
