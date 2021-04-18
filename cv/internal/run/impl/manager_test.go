@@ -75,7 +75,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return eventpb.SendNow(ctx, runID, &eventpb.Event{
+					return eventpb.DefaultTaskRefs.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_ClSubmitted{
 							ClSubmitted: &eventpb.CLSubmitted{
 								Clid: 1,
@@ -95,7 +95,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return eventpb.SendNow(ctx, runID, &eventpb.Event{
+					return eventpb.DefaultTaskRefs.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_SubmissionCompleted{
 							SubmissionCompleted: &eventpb.SubmissionCompleted{
 								Result:  eventpb.SubmissionResult_SUCCEEDED,
@@ -113,7 +113,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return eventpb.SendNow(ctx, runID, &eventpb.Event{
+					return eventpb.DefaultTaskRefs.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_ReadyForSubmission{
 							ReadyForSubmission: &eventpb.ReadyForSubmission{},
 						},
