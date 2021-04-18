@@ -98,7 +98,7 @@ func TestComponentsActions(t *testing.T) {
 		}})
 		meta := ct.Cfg.MustExist(ctx, lProject)
 
-		state := NewExisting(&prjpb.PState{
+		state := &State{PB: &prjpb.PState{
 			LuciProject: lProject,
 			Status:      prjpb.Status_STARTED,
 			ConfigHash:  meta.Hash(),
@@ -115,7 +115,7 @@ func TestComponentsActions(t *testing.T) {
 				{Clids: []int64{3}, DecisionTime: timestamppb.New(now.Add(3 * time.Minute))},
 			},
 			NextEvalTime: timestamppb.New(now.Add(3 * time.Minute)),
-		}, nil, nil)
+		}}
 
 		pb := backupPB(state)
 
