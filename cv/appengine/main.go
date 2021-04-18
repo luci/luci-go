@@ -62,7 +62,14 @@ func main() {
 		if srv.Options.CloudProject == "luci-change-verifier-dev" {
 			srv.Context = common.SetDev(srv.Context)
 		}
-		srv.Context = gerrit.UseProd(srv.Context)
+
+		switch ctx, err := gerrit.UseProd(srv.Context); {
+		case err != nil:
+			return nil
+		default:
+			srv.Context = ctx
+		}
+
 		var err error
 		if srv.Context, err = tree.InstallProd(srv.Context); err != nil {
 			return err
