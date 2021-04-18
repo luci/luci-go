@@ -39,7 +39,7 @@ import (
 )
 
 func init() {
-	prjpb.PurgeProjectCLTaskRef.AttachHandler(
+	prjpb.DefaultTaskRefs.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
 			err := PurgeCL(ctx, task)

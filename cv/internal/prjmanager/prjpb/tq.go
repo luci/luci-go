@@ -20,8 +20,11 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -46,37 +49,42 @@ const (
 	PurgeProjectCLTaskClass    = "purge-project-cl"
 )
 
-var (
-	// These are TQ task refs registered in init() s.t. produces can submit their
-	// tasks, but whose handlers will be added later.
+// TaskRefs are task refs used by PM to separate task creation and handling,
+// which in turns avoids circular dependency.
+type TaskRefs struct {
+	ManageProject     tq.TaskClassRef
+	KickManageProject tq.TaskClassRef
+	PurgeProjectCL    tq.TaskClassRef
 
-	ManageProjectTaskRef     tq.TaskClassRef
-	KickManageProjectTaskRef tq.TaskClassRef
-	PurgeProjectCLTaskRef    tq.TaskClassRef
-)
+	tqd *tq.Dispatcher
+}
 
-func init() {
-	ManageProjectTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        ManageProjectTaskClass,
-		Prototype: &ManageProjectTask{},
-		Queue:     "manage-project",
-		Kind:      tq.NonTransactional,
-		Quiet:     true,
-	})
-	KickManageProjectTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        KickManageProjectTaskClass,
-		Prototype: &KickManageProjectTask{},
-		Queue:     "kick-manage-project",
-		Kind:      tq.Transactional,
-		Quiet:     true,
-	})
-	PurgeProjectCLTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        PurgeProjectCLTaskClass,
-		Prototype: &PurgeCLTask{},
-		Queue:     "purge-project-cl",
-		Kind:      tq.Transactional,
-		Quiet:     false, // these tasks are rare enough that verbosity only helps.
-	})
+func Register(tqd *tq.Dispatcher) TaskRefs {
+	return TaskRefs{
+		tqd: tqd,
+
+		ManageProject: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:        ManageProjectTaskClass,
+			Prototype: &ManageProjectTask{},
+			Queue:     "manage-project",
+			Kind:      tq.NonTransactional,
+			Quiet:     true,
+		}),
+		KickManageProject: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:        KickManageProjectTaskClass,
+			Prototype: &KickManageProjectTask{},
+			Queue:     "kick-manage-project",
+			Kind:      tq.Transactional,
+			Quiet:     true,
+		}),
+		PurgeProjectCL: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:        PurgeProjectCLTaskClass,
+			Prototype: &PurgeCLTask{},
+			Queue:     "purge-project-cl",
+			Kind:      tq.Transactional,
+			Quiet:     false, // these tasks are rare enough that verbosity only helps.
+		}),
+	}
 }
 
 // Dispatch ensures invocation of ProjectManager via ManageProjectTask.
@@ -86,7 +94,7 @@ func init() {
 // * next possible.
 //
 // To avoid actually dispatching TQ tasks in tests, use pmtest.MockDispatch().
-func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
+func (tr TaskRefs) Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 	mock, mocked := ctx.Value(&mockDispatcherContextKey).(func(string, time.Time))
 
 	if datastore.CurrentTransaction(ctx) != nil {
@@ -102,7 +110,7 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 			mock(luciProject, eta)
 			return nil
 		}
-		return tq.AddTask(ctx, &tq.Task{
+		return tr.tqd.AddTask(ctx, &tq.Task{
 			Title:            luciProject,
 			DeduplicationKey: "", // not allowed in a transaction
 			Payload:          payload,
@@ -128,7 +136,7 @@ func Dispatch(ctx context.Context, luciProject string, eta time.Time) error {
 		mock(luciProject, eta)
 		return nil
 	}
-	return tq.AddTask(ctx, &tq.Task{
+	return tr.tqd.AddTask(ctx, &tq.Task{
 		Title:            luciProject,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", luciProject, eta.UnixNano()),
 		ETA:              eta,
@@ -144,4 +152,35 @@ var mockDispatcherContextKey = "prjpb.mockDispatcher"
 // See pmtest.MockDispatch().
 func InstallMockDispatcher(ctx context.Context, f func(luciProject string, eta time.Time)) context.Context {
 	return context.WithValue(ctx, &mockDispatcherContextKey, f)
+}
+
+// SendNow sends the event to Project's eventbox and invokes PM immediately.
+func (tr TaskRefs) SendNow(ctx context.Context, luciProject string, e *Event) error {
+	if err := Send(ctx, luciProject, e); err != nil {
+		return err
+	}
+	return tr.Dispatch(ctx, luciProject, time.Time{} /*asap*/)
+}
+
+// Send sends the event to Project's eventbox without invoking a PM.
+func Send(ctx context.Context, luciProject string, e *Event) error {
+	value, err := proto.Marshal(e)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal").Err()
+	}
+	// Must be same as prjmanager.ProjectKind, but can't import due to circular
+	// imports.
+	to := datastore.MakeKey(ctx, "Project", luciProject)
+	return eventbox.Emit(ctx, value, to)
+}
+
+var (
+	// DefaultTaskRefs is for backwards compat during migration away from Default
+	// tq Dispatcher.
+	// TODO(tandrii): remove this.
+	DefaultTaskRefs TaskRefs
+)
+
+func init() {
+	DefaultTaskRefs = Register(&tq.Default)
 }
