@@ -312,6 +312,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1945738_4317bdf4",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T22:53:56Z",
+      "side": 1,
+      "message": "Yep, I agree.\n\nNote that constructing an Attempt proto with Run + RunCLs means:\n\n - Converting RunCLs to GerritChanges\n - Deciding Status and Substatus from Run Status etc.\n - Creating attempt key, cl group key, and equiv cl group key (from RunCLs).\n\nI\u0027ll change this CL to do this, but I think I\u0027ll leave some of it unimplemented in this CL if I think it makes it easier to review one part at a time.",
+      "parentUuid": "e74ee8b3_75836a98",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 89
+      },
+      "revId": "f9adeb773b121f48494dae45a0fbbbb3e3ecbee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "26b5c975_81eda6b1",
