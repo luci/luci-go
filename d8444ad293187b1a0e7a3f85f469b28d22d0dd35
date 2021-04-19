@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d149a13_69fb61e9",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-19T06:31:01Z",
+      "side": 1,
+      "message": "Can\u0027t think of a good way to dedupe this.\nThe two errors have slightly different way to tell if the request should be ignored or retried with another inv ID.",
+      "revId": "d8444ad293187b1a0e7a3f85f469b28d22d0dd35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
