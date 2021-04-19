@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84b3b365_14b90111",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-19T19:52:24Z",
+      "side": 1,
+      "message": "PTAL.\nThe HTTP interface for artifact uploads also trims the prefix before opening up a stream to CAS.\n: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/create_artifact.go;l\u003d140\n",
+      "revId": "d915f7fb39f729bd3bd27ea964c9f1ed4f72349f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
