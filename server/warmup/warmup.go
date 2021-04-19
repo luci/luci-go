@@ -14,7 +14,7 @@
 
 // Package warmup allows to register hooks executed during the server warmup.
 //
-// All registered hooks should be optional. Warmup can be skipped.
+// All registered hooks should be optional. The warmup stage can be skipped.
 package warmup
 
 import (
