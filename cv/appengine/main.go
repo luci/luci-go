@@ -91,10 +91,11 @@ func main() {
 			RunNotifier:   run.DefaultNotifier,
 		})
 
+		pcr := configcron.New(&tq.Default, prjmanager.DefaultNotifier)
 		srv.Routes.GET(
 			"/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),
-			refreshConfig,
+			func(rc *router.Context) { refreshConfig(rc, pcr) },
 		)
 
 		// The service has no UI, so just redirect to the RPC Explorer.
@@ -106,13 +107,13 @@ func main() {
 	})
 }
 
-func refreshConfig(rc *router.Context) {
+func refreshConfig(rc *router.Context, pcr *configcron.ProjectConfigRefresher) {
 	// The cron job interval is 1 minute.
 	ctx, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
 	defer cancel()
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error { return servicecfg.ImportConfig(ctx) })
-	eg.Go(func() error { return configcron.SubmitRefreshTasks(ctx) })
+	eg.Go(func() error { return pcr.SubmitRefreshTasks(ctx) })
 	code := 200
 	if err := eg.Wait(); err != nil {
 		errors.Log(ctx, err)
