@@ -37,17 +37,42 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 )
 
+// Poller polls Gerrit to discover new CLs and updates to existing ones.
+type Poller struct {
+	tqd *tq.Dispatcher
+}
+
+// New creates a new Poller, registering it in the given TQ dispatcher.
+func New(tqd *tq.Dispatcher) *Poller {
+	p := &Poller{tqd: tqd}
+	tqd.RegisterTaskClass(tq.TaskClass{
+		ID:        task.ClassID,
+		Prototype: &task.PollGerritTask{},
+		Queue:     "poll-gerrit",
+		Quiet:     true,
+		Kind:      tq.NonTransactional,
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			task := payload.(*task.PollGerritTask)
+			err := p.poll(ctx, task.GetLuciProject(), task.GetEta().AsTime())
+			return common.TQIfy{
+				KnownRetry: []error{errConcurrentStateUpdate},
+			}.Error(ctx, err)
+		},
+	})
+	return p
+}
+
 // Poke schedules the next poll via task queue.
 //
 // Under perfect operation, this is redundant, but not harmful.
 // Given bugs or imperfect operation, this ensures poller continues operating.
 //
 // Must not be called inside a datastore transaction.
-func Poke(ctx context.Context, luciProject string) error {
+func (p *Poller) Poke(ctx context.Context, luciProject string) error {
 	if datastore.CurrentTransaction(ctx) != nil {
 		panic("must be called outside of transaction context")
 	}
-	return schedule(ctx, luciProject, time.Time{})
+	return p.schedule(ctx, luciProject, time.Time{})
 }
 
 var errConcurrentStateUpdate = errors.New("concurrent change to poller state", transient.Tag)
@@ -56,10 +81,10 @@ var errConcurrentStateUpdate = errors.New("concurrent change to poller state", t
 //
 // For each discovered CL, enqueues a task for CL updater to refresh CL state.
 // Automatically enqueues a new task to perform next poll.
-func poll(ctx context.Context, luciProject string, eta time.Time) error {
+func (p *Poller) poll(ctx context.Context, luciProject string, eta time.Time) error {
 	if delay := clock.Now(ctx).Sub(eta); delay > maxAcceptableDelay {
 		logging.Warningf(ctx, "poll %s arrived %s late; scheduling next poll instead", eta, delay)
-		return schedule(ctx, luciProject, time.Time{})
+		return p.schedule(ctx, luciProject, time.Time{})
 	}
 	// TODO(tandrii): avoid concurrent polling of the same project via cheap
 	// best-effort locking in Redis.
@@ -83,32 +108,15 @@ func poll(ctx context.Context, luciProject string, eta time.Time) error {
 
 	switch {
 	case err == nil:
-		return schedule(ctx, luciProject, eta)
+		return p.schedule(ctx, luciProject, eta)
 	case clock.Now(ctx).After(eta.Add(pollInterval - time.Second)):
 		// Time to finish this task despite error, and trigger a new one.
 		err = errors.Annotate(err, "failed to do poll %s for %q", eta, luciProject).Err()
 		common.LogError(ctx, err, errConcurrentStateUpdate)
-		return schedule(ctx, luciProject, eta)
+		return p.schedule(ctx, luciProject, eta)
 	default:
 		return err
 	}
-}
-
-func init() {
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        task.ClassID,
-		Prototype: &task.PollGerritTask{},
-		Queue:     "poll-gerrit",
-		Quiet:     true,
-		Kind:      tq.NonTransactional,
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*task.PollGerritTask)
-			err := poll(ctx, task.GetLuciProject(), task.GetEta().AsTime())
-			return common.TQIfy{
-				KnownRetry: []error{errConcurrentStateUpdate},
-			}.Error(ctx, err)
-		},
-	})
 }
 
 // pollInterval is approximate and merely best effort average interval between
@@ -133,7 +141,7 @@ const maxAcceptableDelay = 6 * pollInterval
 //
 // Optional `after` can be set to the current task's ETA to ensure that next
 // poll's task isn't de-duplicated with the current task.
-func schedule(ctx context.Context, luciProject string, after time.Time) error {
+func (p *Poller) schedule(ctx context.Context, luciProject string, after time.Time) error {
 	// Desired properties:
 	//   * for a single LUCI project, minimize p99 of actually observed poll
 	//     intervals.
@@ -163,7 +171,7 @@ func schedule(ctx context.Context, luciProject string, after time.Time) error {
 		ETA:              eta,
 		DeduplicationKey: fmt.Sprintf("%s:%d", luciProject, eta.UnixNano()),
 	}
-	if err := tq.AddTask(ctx, task); err != nil {
+	if err := p.tqd.AddTask(ctx, task); err != nil {
 		return err
 	}
 	logging.Debugf(ctx, "scheduled next poll for %q at %s", luciProject, eta)
@@ -171,6 +179,8 @@ func schedule(ctx context.Context, luciProject string, after time.Time) error {
 }
 
 // State persists poller's State in datastore.
+//
+// State is exported for exposure via diagnostic API.
 type State struct {
 	_kind string `gae:"$kind,GerritPoller"`
 
@@ -302,4 +312,16 @@ func save(ctx context.Context, s *State) error {
 		return nil
 	}
 	return errors.Annotate(err, "project %q", s.LuciProject).Err()
+}
+
+// Default is default Poller registered with Default TQ Dispatcher.
+// TODO(tandrii): remove after migration.
+var Default *Poller
+
+func init() {
+	Default = New(&tq.Default)
+}
+
+func Poke(ctx context.Context, luciProject string) error {
+	return Default.Poke(ctx, luciProject)
 }
