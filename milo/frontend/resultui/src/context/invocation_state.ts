@@ -13,18 +13,19 @@
 // limitations under the License.
 
 import { autorun, comparer, computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { consumeContext, provideContext } from '../libs/context';
 import { parseSearchQuery } from '../libs/search_query';
+import { unwrapObservable } from '../libs/utils';
 import { TestLoader } from '../models/test_loader';
 import { TestPresentationConfig } from '../services/buildbucket';
 import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant } from '../services/resultdb';
 import { AppState } from './app_state';
 
 export class QueryInvocationError extends Error {
-  constructor(readonly invId: string, readonly inner: Error) {
-    super(inner.message);
+  constructor(readonly invId: string, readonly source: Error) {
+    super(source.message);
   }
 }
 
@@ -128,7 +129,7 @@ export class InvocationState {
   }
 
   @computed
-  get invocation$(): IPromiseBasedObservable<Invocation> {
+  private get invocation$(): IPromiseBasedObservable<Invocation> {
     if (!this.appState.resultDb || !this.invocationName) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
@@ -143,10 +144,7 @@ export class InvocationState {
 
   @computed
   get invocation(): Invocation | null {
-    if (this.invocation$.state !== FULFILLED) {
-      return null;
-    }
-    return this.invocation$.value;
+    return unwrapObservable(this.invocation$, null);
   }
 
   @computed({ keepAlive: true })
