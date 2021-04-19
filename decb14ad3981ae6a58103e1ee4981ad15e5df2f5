@@ -34,6 +34,24 @@
       "parentUuid": "ab4b242b_97c177ed",
       "revId": "decb14ad3981ae6a58103e1ee4981ad15e5df2f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "662d1e33_4f853886",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2021-04-19T23:18:50Z",
+      "side": 1,
+      "message": "ok, will rewrite that package.",
+      "parentUuid": "1aeb00fe_80f4b08d",
+      "revId": "decb14ad3981ae6a58103e1ee4981ad15e5df2f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
