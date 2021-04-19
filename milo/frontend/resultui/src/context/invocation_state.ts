@@ -22,8 +22,10 @@ import { TestPresentationConfig } from '../services/buildbucket';
 import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant } from '../services/resultdb';
 import { AppState } from './app_state';
 
-export class QueryInvocationError {
-  constructor(readonly invId: string, readonly inner: unknown) {}
+export class QueryInvocationError extends Error {
+  constructor(readonly invId: string, readonly inner: Error) {
+    super(inner.message);
+  }
 }
 
 /**
