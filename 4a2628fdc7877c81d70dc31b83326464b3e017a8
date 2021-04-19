@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68df0182_d2226eb7",
+        "filename": "buildbucket/appengine/rpc/schedule_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 686,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2021-04-19T20:31:31Z",
+      "side": 0,
+      "message": "Done in some other CL.",
+      "revId": "4a2628fdc7877c81d70dc31b83326464b3e017a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
