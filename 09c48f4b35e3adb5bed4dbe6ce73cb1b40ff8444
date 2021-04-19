@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3677345_ca6b5b90",
+        "filename": "cv/internal/gerrit/poller/poller.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-19T20:20:00Z",
+      "side": 1,
+      "message": "I think you mean *the*?",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 57
+      },
+      "revId": "09c48f4b35e3adb5bed4dbe6ce73cb1b40ff8444",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
