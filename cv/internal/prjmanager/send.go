@@ -21,14 +21,28 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/server/tq"
 )
+
+// Notifier notifies PM.
+type Notifier struct {
+	// TaskRefs are used to register handlers of PM Implementation & CL Purger to
+	// avoid circular dependency.
+	TaskRefs prjpb.TaskRefs
+}
+
+// NewNotifier creates a new PM notifier and registers it in the provided
+// tq.Dispatcher.
+func NewNotifier(tqd *tq.Dispatcher) *Notifier {
+	return &Notifier{TaskRefs: prjpb.Register(tqd)}
+}
 
 // UpdateConfig tells ProjectManager to read and update to newest ProjectConfig
 // by fetching it from Datatstore.
 //
 // Results in stopping ProjectManager if ProjectConfig got disabled or deleted.
-func UpdateConfig(ctx context.Context, luciProject string) error {
-	return prjpb.SendNow(ctx, luciProject, &prjpb.Event{
+func (n *Notifier) UpdateConfig(ctx context.Context, luciProject string) error {
+	return n.TaskRefs.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_NewConfig{
 			NewConfig: &prjpb.NewConfig{},
 		},
@@ -37,8 +51,8 @@ func UpdateConfig(ctx context.Context, luciProject string) error {
 
 // Poke tells ProjectManager to poke all downstream actors and check its own
 // state.
-func Poke(ctx context.Context, luciProject string) error {
-	return prjpb.SendNow(ctx, luciProject, &prjpb.Event{
+func (n *Notifier) Poke(ctx context.Context, luciProject string) error {
+	return n.TaskRefs.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_Poke{
 			Poke: &prjpb.Poke{},
 		},
@@ -46,8 +60,8 @@ func Poke(ctx context.Context, luciProject string) error {
 }
 
 // NotifyCLUpdated tells ProjectManager to check latest version of a given CL.
-func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
-	return prjpb.SendNow(ctx, luciProject, &prjpb.Event{
+func (n *Notifier) NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
+	return n.TaskRefs.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClUpdated{
 			ClUpdated: &prjpb.CLUpdated{
 				Clid:     int64(clid),
@@ -60,8 +74,8 @@ func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, 
 // NotifyCLsUpdated is a batch of NotifyCLUpdated for the same ProjectManager.
 //
 // In each given CL, .ID and .EVersion must be set.
-func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
-	return prjpb.SendNow(ctx, luciProject, &prjpb.Event{
+func (n *Notifier) NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
+	return n.TaskRefs.SendNow(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_ClsUpdated{
 			ClsUpdated: prjpb.MakeCLsUpdated(cls),
 		},
@@ -74,8 +88,8 @@ func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist
 // information is provided here.
 //
 // TODO(tandrii): remove eta parameter once CV does all the purging.
-func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string, eta time.Time) error {
-	err := prjpb.SendWithoutDispatch(ctx, luciProject, &prjpb.Event{
+func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string, eta time.Time) error {
+	err := prjpb.Send(ctx, luciProject, &prjpb.Event{
 		Event: &prjpb.Event_PurgeCompleted{
 			PurgeCompleted: &prjpb.PurgeCompleted{
 				OperationId: operationID,
@@ -85,14 +99,14 @@ func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID s
 	if err != nil {
 		return err
 	}
-	return prjpb.Dispatch(ctx, luciProject, eta)
+	return n.TaskRefs.Dispatch(ctx, luciProject, eta)
 }
 
 // NotifyRunCreated is sent by ProjectManager to itself within a Run creation
 // transaction.
 //
-// Unlike other event-sending funcs, this only creates an event and doesn't
-// create a task. This is fine because:
+// Unlike other event-sending of Notifier, this one only creates an event and
+// doesn't create a task. This is fine because:
 //   * if Run creation transaction fails, then this event isn't actually
 //     created anyways.
 //   * if ProjectManager observes the Run creation success, then it'll act as if
@@ -104,8 +118,8 @@ func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID s
 //     failure OR ProjectManager fails at any point before it can act on
 //     RunCreation, then the existing TQ task running ProjectManager will be
 //     retried. So once again there is no need to create a TQ task.
-func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
-	return prjpb.SendWithoutDispatch(ctx, runID.LUCIProject(), &prjpb.Event{
+func (n *Notifier) NotifyRunCreated(ctx context.Context, runID common.RunID) error {
+	return prjpb.Send(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunCreated{
 			RunCreated: &prjpb.RunCreated{
 				RunId: string(runID),
@@ -115,12 +129,40 @@ func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
 }
 
 // NotifyRunFinished tells ProjectManager that a run has finalized its state.
-func NotifyRunFinished(ctx context.Context, runID common.RunID) error {
-	return prjpb.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
+func (n *Notifier) NotifyRunFinished(ctx context.Context, runID common.RunID) error {
+	return n.TaskRefs.SendNow(ctx, runID.LUCIProject(), &prjpb.Event{
 		Event: &prjpb.Event_RunFinished{
 			RunFinished: &prjpb.RunFinished{
 				RunId: string(runID),
 			},
 		},
 	})
+}
+
+var DefaultNotifier *Notifier
+
+func init() {
+	DefaultNotifier = &Notifier{TaskRefs: prjpb.DefaultTaskRefs}
+}
+
+func UpdateConfig(ctx context.Context, luciProject string) error {
+	return DefaultNotifier.UpdateConfig(ctx, luciProject)
+}
+func Poke(ctx context.Context, luciProject string) error {
+	return DefaultNotifier.Poke(ctx, luciProject)
+}
+func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
+	return DefaultNotifier.NotifyCLUpdated(ctx, luciProject, clid, eversion)
+}
+func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
+	return DefaultNotifier.NotifyCLsUpdated(ctx, luciProject, cls)
+}
+func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string, eta time.Time) error {
+	return DefaultNotifier.NotifyPurgeCompleted(ctx, luciProject, operationID, eta)
+}
+func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
+	return DefaultNotifier.NotifyRunCreated(ctx, runID)
+}
+func NotifyRunFinished(ctx context.Context, runID common.RunID) error {
+	return DefaultNotifier.NotifyRunFinished(ctx, runID)
 }

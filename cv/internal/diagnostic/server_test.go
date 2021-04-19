@@ -309,12 +309,16 @@ func TestSendProjectEvent(t *testing.T) {
 	t.Parallel()
 
 	Convey("SendProjectEvent works", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
 		const lProject = "luci"
-		d := DiagnosticServer{}
+		d := DiagnosticServer{
+			PMNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
+		}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{

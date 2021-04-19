@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/cv/internal/tree"
 
@@ -83,6 +84,7 @@ func main() {
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
 		diagnosticpb.RegisterDiagnosticServer(srv.PRPC, &diagnostic.DiagnosticServer{
 			GerritUpdater: updater.Default,
+			PMNotifier:    prjmanager.DefaultNotifier,
 		})
 
 		srv.Routes.GET(
