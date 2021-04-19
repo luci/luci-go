@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4900946e_7051b36f",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-19T20:46:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f78d5ec6_d06a328d",
+      "range": {
+        "startLine": 40,
+        "startChar": 33,
+        "endLine": 40,
+        "endChar": 41
+      },
+      "revId": "27aa9b87d809589d3482a6a956911d7874168e84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0578c911_ff44a685",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-04-19T20:34:58Z",
       "side": 1,
       "message": "enqueues",
+      "range": {
+        "startLine": 61,
+        "startChar": 12,
+        "endLine": 61,
+        "endChar": 19
+      },
+      "revId": "27aa9b87d809589d3482a6a956911d7874168e84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f0531b8_fded74bb",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-19T20:46:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0578c911_ff44a685",
       "range": {
         "startLine": 61,
         "startChar": 12,
