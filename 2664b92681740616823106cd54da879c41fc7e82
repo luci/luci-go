@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b5fa6d3e_725f5913",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-19T20:28:46Z",
+      "side": 1,
+      "message": "I am somewhat surprised to see this error handling here, and not where the query was made. What prevents this errorHandler from growing wildly to cover errors across the code?",
+      "revId": "2664b92681740616823106cd54da879c41fc7e82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0ad112a_2d90e7c3",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-19T20:28:46Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "2664b92681740616823106cd54da879c41fc7e82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
