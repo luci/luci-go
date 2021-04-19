@@ -29,6 +29,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,6 +43,8 @@ func TestQueue(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
+		notifier := run.DefaultNotifier
 
 		const lProject = "lProject"
 		run1 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("deaddead"))
@@ -62,7 +65,7 @@ func TestQueue(t *testing.T) {
 				var waitlisted bool
 				var innerErr error
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, innerErr = TryAcquire(ctx, runID, opts)
+					waitlisted, innerErr = TryAcquire(ctx, notifier, runID, opts)
 					return innerErr
 				}, nil)
 				So(innerErr, ShouldBeNil)
@@ -147,7 +150,7 @@ func TestQueue(t *testing.T) {
 			mustRelease := func(ctx context.Context, runID common.RunID) {
 				var innerErr error
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					innerErr = Release(ctx, runID)
+					innerErr = Release(ctx, notifier, runID)
 					return innerErr
 				}, nil)
 				So(innerErr, ShouldBeNil)
