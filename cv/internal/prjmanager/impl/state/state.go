@@ -30,6 +30,8 @@ import (
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
+	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -59,6 +61,11 @@ type State struct {
 	// https://en.wikipedia.org/wiki/Copy-on-write
 	PB *prjpb.PState
 
+	// Dependencies.
+
+	pmNotifier *prjmanager.Notifier
+	clPurger   *clpurger.Purger
+
 	// Helper private fields used during mutations.
 
 	// alreadyCloned is set to true after state is cloned to prevent incorrect
@@ -79,15 +86,17 @@ type State struct {
 }
 
 // NewInitial returns initial state at the start of PM's lifetime.
-func NewInitial(luciProject string) *State {
-	return &State{
-		PB: &prjpb.PState{LuciProject: luciProject},
-	}
+func NewInitial(luciProject string, n *prjmanager.Notifier, p *clpurger.Purger) *State {
+	return NewExisting(&prjpb.PState{LuciProject: luciProject}, n, p)
 }
 
 // NewExisting returns state from its parts.
-func NewExisting(pb *prjpb.PState) *State {
-	return &State{PB: pb}
+func NewExisting(pb *prjpb.PState, n *prjmanager.Notifier, p *clpurger.Purger) *State {
+	return &State{
+		PB:         pb,
+		pmNotifier: n,
+		clPurger:   p,
+	}
 }
 
 // UpdateConfig updates PM to latest config version.
