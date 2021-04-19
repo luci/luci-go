@@ -174,6 +174,15 @@ func Send(ctx context.Context, luciProject string, e *Event) error {
 	return eventbox.Emit(ctx, value, to)
 }
 
+// SchedulePurgeCL schedules a task to purge a CL.
+func (tr TaskRefs) SchedulePurgeCL(ctx context.Context, t *PurgeCLTask) error {
+	return tr.tqd.AddTask(ctx, &tq.Task{
+		Payload: t,
+		// No DeduplicationKey as these tasks are created transactionally by PM.
+		Title: fmt.Sprintf("%s/%d/%s", t.GetLuciProject(), t.GetPurgingCl().GetClid(), t.GetPurgingCl().GetOperationId()),
+	})
+}
+
 var (
 	// DefaultTaskRefs is for backwards compat during migration away from Default
 	// tq Dispatcher.
