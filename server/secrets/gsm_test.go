@@ -50,7 +50,7 @@ func TestSecretManagerSource(t *testing.T) {
 		defer cancel()
 
 		// Machinery to advance fake time in a lock step with MaintenanceLoop.
-		ticks := make(chan bool, 1)
+		ticks := make(chan bool)
 		tc.SetTimerCallback(func(d time.Duration, _ clock.Timer) {
 			// Do not block clock.After call itself, just delay advancing of the
 			// clock until `ticks` is signaled.
