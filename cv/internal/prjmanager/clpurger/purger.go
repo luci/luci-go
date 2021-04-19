@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -38,25 +37,34 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-func init() {
-	prjpb.DefaultTaskRefs.PurgeProjectCL.AttachHandler(
+// Purger purges CLs for Project Manager.
+type Purger struct {
+	pmNotifier *prjmanager.Notifier
+}
+
+// New creates a Purger and registers it for handling tasks created by the given
+// PM Notifier.
+func New(n *prjmanager.Notifier) *Purger {
+	p := &Purger{
+		pmNotifier: n,
+	}
+	n.TaskRefs.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
-			err := PurgeCL(ctx, task)
+			err := p.PurgeCL(ctx, task)
 			return common.TQifyError(ctx, err)
 		},
 	)
+	return p
 }
 
-func Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
-	return tq.AddTask(ctx, &tq.Task{
-		Payload: t,
-		// No DeduplicationKey as these tasks are created transactionally by PM.
-		Title: fmt.Sprintf("%s/%d/%s", t.GetLuciProject(), t.GetPurgingCl().GetClid(), t.GetPurgingCl().GetOperationId()),
-	})
+// Schedule enqueues a task to purge a CL for immediate execution.
+func (p *Purger) Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
+	return p.pmNotifier.TaskRefs.SchedulePurgeCL(ctx, t)
 }
 
-func PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
+// PurgeCL purges a CL and notifies PM on success or failure.
+func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 	ctx = logging.SetField(ctx, "cl", task.GetPurgingCl().GetClid())
 	now := clock.Now(ctx)
@@ -68,7 +76,7 @@ func PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 		logging.Warningf(ctx, "this app isn't managing Runs for the project")
 		// Don't notify PM immediately to give CQD more time do the same CL purge,
 		// otherwise PM will re-create purge task.
-		return notifyPM(ctx, task, now.Add(time.Minute))
+		return p.notifyPM(ctx, task, now.Add(time.Minute))
 	}
 
 	d := task.GetPurgingCl().GetDeadline()
@@ -85,11 +93,11 @@ func PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 			return err
 		}
 	}
-	return notifyPM(ctx, task, time.Time{} /*wake up PM ASAP*/)
+	return p.notifyPM(ctx, task, time.Time{} /*wake up PM ASAP*/)
 }
 
-func notifyPM(ctx context.Context, task *prjpb.PurgeCLTask, eta time.Time) error {
-	return prjmanager.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl().GetOperationId(), eta)
+func (p *Purger) notifyPM(ctx context.Context, task *prjpb.PurgeCLTask, eta time.Time) error {
+	return p.pmNotifier.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl().GetOperationId(), eta)
 }
 
 func purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
@@ -158,4 +166,10 @@ func needsPurging(ctx context.Context, cl *changelist.CL, task *prjpb.PurgeCLTas
 		return false
 	}
 	return true
+}
+
+var Default *Purger
+
+func init() {
+	Default = New(prjmanager.DefaultNotifier)
 }
