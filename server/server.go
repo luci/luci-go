@@ -31,6 +31,10 @@
 //
 // • go.chromium.org/luci/server/caching: in-process caching.
 //
+// • go.chromium.org/luci/server/warmup: allows other server components to
+// register warmup callbacks that run before the server starts handling
+// requests.
+//
 // • go.chromium.org/luci/server/experiments: simple feature flags support.
 //
 // • go.chromium.org/luci/grpc/prpc: pRPC server and RPC Explorer UI.
@@ -50,14 +54,12 @@
 //     "go.chromium.org/luci/server/gaeemulation"
 //     "go.chromium.org/luci/server/module"
 //     "go.chromium.org/luci/server/redisconn"
-//     "go.chromium.org/luci/server/warmup"
 //   )
 //
 //   func main() {
 //     modules := []module.Module{
 //       gaeemulation.NewModuleFromFlags(),
 //       redisconn.NewModuleFromFlags(),
-//       warmup.NewModuleFromFlags(),
 //     }
 //     server.Main(nil, modules, func(srv *server.Server) error {
 //       // Initialize global state, change root context (if necessary).
@@ -110,9 +112,6 @@
 // • go.chromium.org/luci/server/tq: implements a task queue mechanism on top of
 // Cloud Tasks and Cloud PubSub. Also implements transactional task enqueuing
 // when submitting tasks in a Cloud Datastore or a Cloud Spanner transaction.
-//
-// • go.chromium.org/luci/server/warmup: allows other server components to
-// register warmup callback that run before the server starts handling requests.
 //
 // Most of them need to be configured via corresponding CLI flags to be useful.
 // See implementation of individual modules for details.
@@ -227,6 +226,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tsmon"
+	"go.chromium.org/luci/server/warmup"
 )
 
 const (
@@ -839,6 +839,9 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	if err := srv.initAdminPort(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
 	}
+	if err := srv.initWarmup(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize warmup callbacks").Err()
+	}
 
 	// Sort modules by their initialization order based on declared dependencies,
 	// discover unfulfilled required dependencies.
@@ -1253,8 +1256,9 @@ func (s *Server) RegisterWarmup(cb func(context.Context)) {
 func (s *Server) runWarmup() {
 	s.warmupM.Lock()
 	defer s.warmupM.Unlock()
+	ctx := logging.SetField(s.Context, "activity", "luci.warmup")
 	for _, cb := range s.warmup {
-		cb(s.Context)
+		cb(ctx)
 	}
 }
 
@@ -2044,6 +2048,20 @@ func (s *Server) initErrorReporting() error {
 	}
 
 	s.RegisterCleanup(func(ctx context.Context) { s.errRptClient.Close() })
+	return nil
+}
+
+// initWarmup schedules execution of global warmup callbacks.
+//
+// On GAE also registers /_ah/warmup route.
+func (s *Server) initWarmup() error {
+	// See https://cloud.google.com/appengine/docs/standard/go/configuring-warmup-requests.
+	// All warmups should happen *before* the serving loop and /_ah/warmup should
+	// just always return OK.
+	if s.Options.GAE {
+		s.Routes.GET("/_ah/warmup", router.MiddlewareChain{}, func(*router.Context) {})
+	}
+	s.RegisterWarmup(func(ctx context.Context) { warmup.Warmup(ctx) })
 	return nil
 }
 
