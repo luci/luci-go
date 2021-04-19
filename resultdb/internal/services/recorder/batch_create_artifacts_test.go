@@ -155,7 +155,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		}
 		compHash := func(content string) string {
 			h := sha256.Sum256([]byte(content))
-			return fmt.Sprintf("sha256:%s", hex.EncodeToString(h[:]))
+			return hex.EncodeToString(h[:])
 		}
 
 		Convey("works", func() {
