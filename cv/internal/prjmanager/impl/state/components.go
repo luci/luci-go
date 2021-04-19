@@ -32,9 +32,9 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
 
 // earliestDecisionTime returns the earliest decision time of all components.
@@ -200,7 +200,7 @@ func (s *State) execComponentActions(ctx context.Context, actions []cAction, com
 				})
 
 				oldC := components[a.componentIndex]
-				switch newC, purgeTasks, err := a.actor.Act(ctx, s.PMNotifier); {
+				switch newC, purgeTasks, err := a.actor.Act(ctx, s.PMNotifier, s.RunNotifier); {
 				case err != nil:
 					// Ensure this component is reconsidered during then next PM mutation.
 					newC = components[a.componentIndex].CloneShallow()
@@ -405,5 +405,5 @@ type componentActor interface {
 	// TODO(tandrii): support cancel Run actions.
 	// TODO(tandrii): return RunCreators s.t. actual Run creation is done here,
 	// just like PurgeCLTasks. This will make testing ComponentActor easier.
-	Act(ctx context.Context, n *prjmanager.Notifier) (*prjpb.Component, []*prjpb.PurgeCLTask, error)
+	Act(ctx context.Context, pm runcreator.PM, rm runcreator.RM) (*prjpb.Component, []*prjpb.PurgeCLTask, error)
 }
