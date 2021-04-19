@@ -76,12 +76,12 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 	}
 
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
-	pm := &projectManager{
+	proc := &pmProcessor{
 		luciProject: luciProject,
 		pmNotifier:  prjmanager.DefaultNotifier,
 		clPurger:    clpurger.Default,
 	}
-	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, pm); {
+	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc); {
 	case err == nil:
 		for _, postProcessFn := range postProcessFns {
 			if err := postProcessFn(ctx); err != nil {
@@ -105,8 +105,8 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 	}
 }
 
-// projectManager implements eventbox.Processor.
-type projectManager struct {
+// pmProcessor implements eventbox.Processor.
+type pmProcessor struct {
 	luciProject string
 
 	pmNotifier *prjmanager.Notifier
@@ -117,16 +117,16 @@ type projectManager struct {
 }
 
 // LoadState is called to load the state before a transaction.
-func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
-	switch p, err := prjmanager.Load(ctx, pm.luciProject); {
+func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
+	switch p, err := prjmanager.Load(ctx, proc.luciProject); {
 	case err != nil:
 		return nil, 0, err
 	case p == nil:
-		return state.NewInitial(pm.luciProject, pm.pmNotifier, pm.clPurger), 0, nil
+		return state.NewInitial(proc.luciProject, proc.pmNotifier, proc.clPurger), 0, nil
 	default:
-		p.State.LuciProject = pm.luciProject
-		pm.loadedPState = p.State
-		return state.NewExisting(p.State, pm.pmNotifier, pm.clPurger), eventbox.EVersion(p.EVersion), nil
+		p.State.LuciProject = proc.luciProject
+		proc.loadedPState = p.State
+		return state.NewExisting(p.State, proc.pmNotifier, proc.clPurger), eventbox.EVersion(p.EVersion), nil
 	}
 }
 
@@ -134,7 +134,7 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 //
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
-func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) (ts []eventbox.Transition, noops eventbox.Events, err error) {
+func (proc *pmProcessor) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) (ts []eventbox.Transition, noops eventbox.Events, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/Mutate")
 	defer func() { span.End(err) }()
 
@@ -144,7 +144,7 @@ func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s 
 	}
 	tr.removeCLUpdateNoops()
 
-	ts, err = pm.mutate(ctx, tr, s.(*state.State))
+	ts, err = proc.mutate(ctx, tr, s.(*state.State))
 	return ts, tr.noops, err
 }
 
@@ -153,13 +153,13 @@ func (pm *projectManager) Mutate(ctx context.Context, events eventbox.Events, s 
 // The returned EVersion is compared against the one associated with a state
 // loaded via GetState. If different, the transaction is aborted and new state
 // isn't saved.
-func (pm *projectManager) FetchEVersion(ctx context.Context) (eventbox.EVersion, error) {
-	p := &prjmanager.Project{ID: pm.luciProject}
+func (proc *pmProcessor) FetchEVersion(ctx context.Context) (eventbox.EVersion, error) {
+	p := &prjmanager.Project{ID: proc.luciProject}
 	switch err := datastore.Get(ctx, p); {
 	case err == datastore.ErrNoSuchEntity:
 		return 0, nil
 	case err != nil:
-		return 0, errors.Annotate(err, "failed to get %q", pm.luciProject).Tag(transient.Tag).Err()
+		return 0, errors.Annotate(err, "failed to get %q", proc.luciProject).Tag(transient.Tag).Err()
 	default:
 		return eventbox.EVersion(p.EVersion), nil
 	}
@@ -169,22 +169,22 @@ func (pm *projectManager) FetchEVersion(ctx context.Context) (eventbox.EVersion,
 //
 // The passed EVersion is the incremented value of EVersion of what GetState
 // returned before.
-func (pm *projectManager) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
+func (proc *pmProcessor) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
 	s := st.(*state.State)
 	// Erase PB.LuciProject as it's already stored as Project{ID:...}.
 	s.PB.LuciProject = ""
 	entities := make([]interface{}, 1, 2)
 	entities[0] = &prjmanager.Project{
-		ID:         pm.luciProject,
+		ID:         proc.luciProject,
 		EVersion:   int(ev),
 		UpdateTime: clock.Now(ctx).UTC(),
 		State:      s.PB,
 	}
 
-	old := pm.loadedPState
+	old := proc.loadedPState
 	if s.PB.GetConfigHash() != old.GetConfigHash() || s.PB.GetStatus() != old.GetStatus() {
 		entities = append(entities, &prjmanager.ProjectStateOffload{
-			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, pm.luciProject),
+			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, proc.luciProject),
 			Status:     s.PB.GetStatus(),
 			ConfigHash: s.PB.GetConfigHash(),
 		})
@@ -319,7 +319,7 @@ func (tr *triageResult) removeCLUpdateNoops() {
 	cu.clEvents = nil // free memory
 }
 
-func (pm *projectManager) mutate(ctx context.Context, tr *triageResult, s *state.State) ([]eventbox.Transition, error) {
+func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.State) ([]eventbox.Transition, error) {
 	var err error
 	var se state.SideEffect
 	ret := make([]eventbox.Transition, 0, 6)
