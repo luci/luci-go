@@ -21,10 +21,12 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -36,7 +38,9 @@ func TestCancel(t *testing.T) {
 	t.Parallel()
 
 	Convey("Cancel", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, close := ct.SetUp()
 		defer close()
 		ctx, _ = pmtest.MockDispatch(ctx)
@@ -49,6 +53,7 @@ func TestCancel(t *testing.T) {
 				CreateTime: clock.Now(ctx).UTC().Add(-2 * time.Minute),
 				CLs:        common.CLIDs{clid},
 			},
+			PmNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 		So(datastore.Put(ctx, &changelist.CL{
 			ID:             clid,

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	gobupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -36,9 +37,16 @@ import (
 // depending on the event received).
 type RunState struct {
 	Run run.Run
+	// TODO(yiwzhang): add RunOwner, []RunCL, []RunTryjob.
+
+	// PMNotifier notifies itself and invokes itself via async TQ tasks.
+	//
+	// TODO(tandrii): define actually used subset as an interface.
+	PmNotifier *prjmanager.Notifier
+	// runNotifier notifies Run Manager.
+	RunNotifier *run.Notifier
 
 	cachedConfigGroup *config.ConfigGroup
-	// TODO(yiwzhang): add RunOwner, []RunCL, []RunTryjob.
 }
 
 // ShallowCopy returns a shallow copy of run state
@@ -47,7 +55,11 @@ func (rs *RunState) ShallowCopy() *RunState {
 		return nil
 	}
 	ret := &RunState{
-		Run:               rs.Run,
+		Run: rs.Run,
+
+		PmNotifier:  rs.PmNotifier,
+		RunNotifier: rs.RunNotifier,
+
 		cachedConfigGroup: rs.cachedConfigGroup,
 	}
 	return ret
