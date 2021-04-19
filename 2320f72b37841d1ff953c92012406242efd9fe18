@@ -141,6 +141,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "65597b9c_c48a8d18",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-19T06:07:30Z",
+      "side": 1,
+      "message": "My original thought process is that mocking exec\u0027s is hard, and they interact with the real filesystem and environment (e.g. lookpath). Originally I thought I would need to have a mock filesystem for this, but vadim convinced me I can use the real filesystem (though... I think there will still be some sharp edges vs. python recipes)",
+      "parentUuid": "0c1d4090_c368c46a",
+      "revId": "2320f72b37841d1ff953c92012406242efd9fe18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "be2bbb9d_f929c639",
