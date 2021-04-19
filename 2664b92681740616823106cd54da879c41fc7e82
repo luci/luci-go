@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "edd0b514_8a7c792f",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-19T20:31:03Z",
+      "side": 1,
+      "message": "also, since this code is not in the place where we make the query, I imagine the reader of the code might be wondering where we handle the error?\n\nbasically, seems like code and handling of its errors should be in one place",
+      "parentUuid": "b5fa6d3e_725f5913",
+      "revId": "2664b92681740616823106cd54da879c41fc7e82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f0ad112a_2d90e7c3",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
         "patchSetId": 8
