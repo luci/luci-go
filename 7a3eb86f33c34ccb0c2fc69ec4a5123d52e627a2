@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "107849e8_b3781cd1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-19T23:05:49Z",
+      "side": 1,
+      "message": "The commit message is incorrect.",
+      "revId": "7a3eb86f33c34ccb0c2fc69ec4a5123d52e627a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
