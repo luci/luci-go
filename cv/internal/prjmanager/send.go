@@ -144,25 +144,3 @@ var DefaultNotifier *Notifier
 func init() {
 	DefaultNotifier = &Notifier{TaskRefs: prjpb.DefaultTaskRefs}
 }
-
-func UpdateConfig(ctx context.Context, luciProject string) error {
-	return DefaultNotifier.UpdateConfig(ctx, luciProject)
-}
-func Poke(ctx context.Context, luciProject string) error {
-	return DefaultNotifier.Poke(ctx, luciProject)
-}
-func NotifyCLUpdated(ctx context.Context, luciProject string, clid common.CLID, eversion int) error {
-	return DefaultNotifier.NotifyCLUpdated(ctx, luciProject, clid, eversion)
-}
-func NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
-	return DefaultNotifier.NotifyCLsUpdated(ctx, luciProject, cls)
-}
-func NotifyPurgeCompleted(ctx context.Context, luciProject string, operationID string, eta time.Time) error {
-	return DefaultNotifier.NotifyPurgeCompleted(ctx, luciProject, operationID, eta)
-}
-func NotifyRunCreated(ctx context.Context, runID common.RunID) error {
-	return DefaultNotifier.NotifyRunCreated(ctx, runID)
-}
-func NotifyRunFinished(ctx context.Context, runID common.RunID) error {
-	return DefaultNotifier.NotifyRunFinished(ctx, runID)
-}
