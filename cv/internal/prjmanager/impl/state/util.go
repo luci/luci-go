@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // pokeRuns pokes run manager of each of IncompleteRuns.
@@ -34,7 +33,7 @@ func (s *State) pokeRuns(ctx context.Context) error {
 		for _, id := range s.PB.IncompleteRuns() {
 			id := id
 			work <- func() error {
-				return run.PokeNow(ctx, id)
+				return s.RunNotifier.PokeNow(ctx, id)
 			}
 		}
 	})

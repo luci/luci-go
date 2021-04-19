@@ -65,7 +65,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		case err != nil:
 			return nil, err
 		case !treeOpen:
-			if err := run.PokeAfter(ctx, rid, 1*time.Minute); err != nil {
+			if err := rs.RunNotifier.PokeAfter(ctx, rid, 1*time.Minute); err != nil {
 				// Tree is closed, revisit after 1 minute.
 				return nil, err
 			}
