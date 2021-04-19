@@ -155,7 +155,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		}
 		compHash := func(content string) string {
 			h := sha256.Sum256([]byte(content))
-			return fmt.Sprintf("sha256:%s", hex.EncodeToString(h[:]))
+			return artifacts.AddHashPrefix(hex.EncodeToString(h[:]))
 		}
 
 		Convey("works", func() {
@@ -188,14 +188,14 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				Requests: []*repb.BatchUpdateBlobsRequest_Request{
 					{
 						Digest: &repb.Digest{
-							Hash:      compHash("c0ntent"),
+							Hash:      artifacts.TrimHashPrefix(compHash("c0ntent")),
 							SizeBytes: int64(len("c0ntent")),
 						},
 						Data: []byte("c0ntent"),
 					},
 					{
 						Digest: &repb.Digest{
-							Hash:      compHash("c1ntent"),
+							Hash:      artifacts.TrimHashPrefix(compHash("c1ntent")),
 							SizeBytes: int64(len("c1ntent")),
 						},
 						Data: []byte("c1ntent"),
