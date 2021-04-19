@@ -15,15 +15,15 @@
 import '@material/mwc-button';
 import '@material/mwc-dialog';
 import '@material/mwc-icon';
-import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
 import { autorun, computed, observable, reaction, when } from 'mobx';
-import { FULFILLED, PENDING, REJECTED } from 'mobx-utils';
+import { REJECTED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
+import { reportError } from '../../components/error_handler';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -196,28 +196,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     this.addDisposer(() => this.buildState.dispose());
 
     this.addDisposer(
-      autorun(() => {
-        if (this.buildState.build$.state !== REJECTED) {
-          return;
-        }
-        const err = this.buildState.build$.value as GrpcError;
-        // If the build is not found and the user is not logged in, redirect
-        // them to the login page.
-        if (err.code === RpcCode.NOT_FOUND && this.appState.userId === '') {
-          Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
-          return;
-        }
-        this.dispatchEvent(
-          new ErrorEvent('error', {
-            message: this.buildState.build$.value.toString(),
-            composed: true,
-            bubbles: true,
-          })
-        );
-      })
-    );
-
-    this.addDisposer(
       reaction(
         () => this.appState,
         (appState) => {
@@ -289,7 +267,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // Redirect to the long link after the build is fetched.
       this.addDisposer(
         when(
-          () => this.buildState.build$.state === FULFILLED,
+          () => this.buildState.build !== null,
           () => {
             const build = this.buildState.build!;
             const buildUrl = router.urlForName('build', {
@@ -458,133 +436,136 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     `;
   }
 
-  protected render() {
-    if (this.isShortLink || this.prerender) {
-      return html``;
-    }
+  protected render = reportError.bind(this)(
+    () => {
+      if (this.isShortLink || this.prerender) {
+        return html``;
+      }
 
-    return html`
-      <mwc-dialog
-        id="settings-dialog"
-        heading="Settings"
-        ?open=${this.appState.showSettingsDialog}
-        @closed=${(event: CustomEvent<{ action: string }>) => {
-          if (event.detail.action === 'save') {
-            merge(this.configsStore.userConfigs, this.uncommittedConfigs);
-            this.configsStore.save();
-          }
-          // Reset uncommitted configs.
-          merge(this.uncommittedConfigs, this.configsStore.userConfigs);
-          this.appState.showSettingsDialog = false;
-        }}
-      >
-        <table>
-          <tr>
-            <td>Default tab:</td>
-            <td>
-              <select
-                id="default-tab-selector"
-                @change=${(e: InputEvent) =>
-                  (this.uncommittedConfigs.defaultBuildPageTabName = (e.target as HTMLOptionElement).value)}
-              >
-                ${TAB_NAME_LABEL_TUPLES.map(
-                  ([tabName, label]) => html`
-                    <option value=${tabName} ?selected=${tabName === this.uncommittedConfigs.defaultBuildPageTabName}>
-                      ${label}
-                    </option>
-                  `
-                )}
-              </select>
-            </td>
-          </tr>
-          <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
-          <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
-        </table>
-      </mwc-dialog>
-      <mwc-dialog
-        id="feedback-dialog"
-        heading="Tell Us What's Missing"
-        ?open=${this.showFeedbackDialog}
-        @closed=${() => {
-          const noFeedbackEle = this.shadowRoot!.getElementById('no-feedback-prompt')! as HTMLInputElement;
-          if (noFeedbackEle.checked) {
-            this.configsStore.userConfigs.askForFeedback = false;
-            this.configsStore.save();
-          }
-          this.showFeedbackDialog = false;
-          window.open(this.legacyUrl, this.switchVerTemporarily ? '_blank' : '_self');
-        }}
-      >
-        <div>
-          We'd love to make the new build page work better for everyone.<br />
-          Please take a moment to give us feedback before switching back to the old build page.
+      return html`
+        <mwc-dialog
+          id="settings-dialog"
+          heading="Settings"
+          ?open=${this.appState.showSettingsDialog}
+          @closed=${(event: CustomEvent<{ action: string }>) => {
+            if (event.detail.action === 'save') {
+              merge(this.configsStore.userConfigs, this.uncommittedConfigs);
+              this.configsStore.save();
+            }
+            // Reset uncommitted configs.
+            merge(this.uncommittedConfigs, this.configsStore.userConfigs);
+            this.appState.showSettingsDialog = false;
+          }}
+        >
+          <table>
+            <tr>
+              <td>Default tab:</td>
+              <td>
+                <select
+                  id="default-tab-selector"
+                  @change=${(e: InputEvent) =>
+                    (this.uncommittedConfigs.defaultBuildPageTabName = (e.target as HTMLOptionElement).value)}
+                >
+                  ${TAB_NAME_LABEL_TUPLES.map(
+                    ([tabName, label]) => html`
+                      <option value=${tabName} ?selected=${tabName === this.uncommittedConfigs.defaultBuildPageTabName}>
+                        ${label}
+                      </option>
+                    `
+                  )}
+                </select>
+              </td>
+            </tr>
+            <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
+            <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
+          </table>
+        </mwc-dialog>
+        <mwc-dialog
+          id="feedback-dialog"
+          heading="Tell Us What's Missing"
+          ?open=${this.showFeedbackDialog}
+          @closed=${() => {
+            const noFeedbackEle = this.shadowRoot!.getElementById('no-feedback-prompt')! as HTMLInputElement;
+            if (noFeedbackEle.checked) {
+              this.configsStore.userConfigs.askForFeedback = false;
+              this.configsStore.save();
+            }
+            this.showFeedbackDialog = false;
+            window.open(this.legacyUrl, this.switchVerTemporarily ? '_blank' : '_self');
+          }}
+        >
+          <div>
+            We'd love to make the new build page work better for everyone.<br />
+            Please take a moment to give us feedback before switching back to the old build page.
+          </div>
+          <br />
+          <input type="checkbox" id="no-feedback-prompt" />
+          <label for="no-feedback-prompt">Don't show again</label>
+          <mwc-button slot="primaryAction" dense unelevated @click=${() => window.open(genFeedbackUrl())}>
+            Open Feedback Page
+          </mwc-button>
+          <mwc-button slot="secondaryAction" dialogAction="dismiss">Proceed to legacy page</mwc-button>
+        </mwc-dialog>
+        <div id="build-summary">
+          <div id="build-id">
+            <span id="build-id-label">Build </span>
+            <a href=${getURLPathForProject(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
+            <span>/</span>
+            <span>${this.builderIdParam!.bucket}</span>
+            <span>/</span>
+            <a href=${getURLPathForBuilder(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
+            <span>/</span>
+            <span>${this.buildNumOrId}</span>
+          </div>
+          ${this.buildState.customBugLink === null
+            ? html``
+            : html`
+                <div class="delimiter"></div>
+                <a href=${this.buildState.customBugLink} target="_blank">File a bug</a>
+              `}
+          ${this.appState.redirectSw === null
+            ? html``
+            : html`
+                <div class="delimiter"></div>
+                <a
+                  @click=${(e: MouseEvent) => {
+                    this.switchVerTemporarily = e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
+                    trackEvent(
+                      GA_CATEGORIES.LEGACY_BUILD_PAGE,
+                      this.switchVerTemporarily ? GA_ACTIONS.SWITCH_VERSION_TEMP : GA_ACTIONS.SWITCH_VERSION,
+                      window.location.href
+                    );
+
+                    if (this.configsStore.userConfigs.askForFeedback) {
+                      this.showFeedbackDialog = true;
+                      e.preventDefault();
+                    }
+
+                    if (this.switchVerTemporarily) {
+                      return;
+                    }
+
+                    const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+                    document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
+                    this.appState.redirectSw?.unregister();
+                  }}
+                  href=${this.legacyUrl}
+                >
+                  Switch to the legacy build page
+                </a>
+              `}
+          <div id="build-status">${this.renderBuildStatus()}</div>
         </div>
-        <br />
-        <input type="checkbox" id="no-feedback-prompt" />
-        <label for="no-feedback-prompt">Don't show again</label>
-        <mwc-button slot="primaryAction" dense unelevated @click=${() => window.open(genFeedbackUrl())}>
-          Open Feedback Page
-        </mwc-button>
-        <mwc-button slot="secondaryAction" dialogAction="dismiss">Proceed to legacy page</mwc-button>
-      </mwc-dialog>
-      <div id="build-summary">
-        <div id="build-id">
-          <span id="build-id-label">Build </span>
-          <a href=${getURLPathForProject(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
-          <span>/</span>
-          <span>${this.builderIdParam!.bucket}</span>
-          <span>/</span>
-          <a href=${getURLPathForBuilder(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
-          <span>/</span>
-          <span>${this.buildNumOrId}</span>
-        </div>
-        ${this.buildState.customBugLink === null
-          ? html``
-          : html`
-              <div class="delimiter"></div>
-              <a href=${this.buildState.customBugLink} target="_blank">File a bug</a>
-            `}
-        ${this.appState.redirectSw === null
-          ? html``
-          : html`
-              <div class="delimiter"></div>
-              <a
-                @click=${(e: MouseEvent) => {
-                  this.switchVerTemporarily = e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
-                  trackEvent(
-                    GA_CATEGORIES.LEGACY_BUILD_PAGE,
-                    this.switchVerTemporarily ? GA_ACTIONS.SWITCH_VERSION_TEMP : GA_ACTIONS.SWITCH_VERSION,
-                    window.location.href
-                  );
-
-                  if (this.configsStore.userConfigs.askForFeedback) {
-                    this.showFeedbackDialog = true;
-                    e.preventDefault();
-                  }
-
-                  if (this.switchVerTemporarily) {
-                    return;
-                  }
-
-                  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
-                  document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
-                  this.appState.redirectSw?.unregister();
-                }}
-                href=${this.legacyUrl}
-              >
-                Switch to the legacy build page
-              </a>
-            `}
-        <div id="build-status">${this.renderBuildStatus()}</div>
-      </div>
-      <milo-status-bar
-        .components=${[{ color: this.statusBarColor, weight: 1 }]}
-        .loading=${this.buildState.build$.state === PENDING}
-      ></milo-status-bar>
-      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
-      <slot></slot>
-    `;
-  }
+        <milo-status-bar
+          .components=${[{ color: this.statusBarColor, weight: 1 }]}
+          .loading=${!this.buildState.build}
+        ></milo-status-bar>
+        <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
+        <slot></slot>
+      `;
+    },
+    () => 'an error occurred'
+  );
 
   static styles = [
     commonStyle,
