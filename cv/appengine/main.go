@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/cv/internal/config/configcron"
 	"go.chromium.org/luci/cv/internal/diagnostic"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/cv/internal/tree"
@@ -80,7 +81,9 @@ func main() {
 
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
-		diagnosticpb.RegisterDiagnosticServer(srv.PRPC, &diagnostic.DiagnosticServer{})
+		diagnosticpb.RegisterDiagnosticServer(srv.PRPC, &diagnostic.DiagnosticServer{
+			GerritUpdater: updater.Default,
+		})
 
 		srv.Routes.GET(
 			"/internal/cron/refresh-config",

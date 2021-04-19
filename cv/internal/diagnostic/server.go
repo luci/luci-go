@@ -54,6 +54,8 @@ import (
 const allowGroup = "service-luci-change-verifier-admins"
 
 type DiagnosticServer struct {
+	GerritUpdater *updater.Updater
+
 	diagnosticpb.UnimplementedDiagnosticServer
 }
 
@@ -322,7 +324,7 @@ func (d *DiagnosticServer) RefreshProjectCLs(ctx context.Context, req *diagnosti
 					Change:      change,
 					ClidHint:    id,
 				}
-				return updater.Schedule(ctx, payload)
+				return d.GerritUpdater.Schedule(ctx, payload)
 			}
 		}
 	})

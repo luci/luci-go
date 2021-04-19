@@ -24,12 +24,14 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/tq"
 
 	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -256,12 +258,16 @@ func TestRefreshProjectCLs(t *testing.T) {
 	t.Parallel()
 
 	Convey("RefreshProjectCLs works", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
 		const lProject = "luci"
-		d := DiagnosticServer{}
+		d := DiagnosticServer{
+			GerritUpdater: updater.New(ct.TQDispatcher),
+		}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
