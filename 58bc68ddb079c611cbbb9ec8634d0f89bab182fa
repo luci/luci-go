@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b66c12fe_bfffaf15",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T20:33:33Z",
+      "side": 1,
+      "message": "LGTM with questions",
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "188c709e_2285fd15",
+        "filename": "cv/internal/prjmanager/prjpb/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T20:33:33Z",
+      "side": 1,
+      "message": "Is this file deleted in a future CL? If it\u0027s empty after this CL it could also be deleted here perhaps.",
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a184d58_207749e1",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T20:33:33Z",
+      "side": 1,
+      "message": "It might be clearer if this is explained in more words, like \"other event-sending methods on Notifier...\"",
+      "range": {
+        "startLine": 108,
+        "startChar": 34,
+        "endLine": 108,
+        "endChar": 47
+      },
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
