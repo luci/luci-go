@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"regexp"
 	"sort"
@@ -33,6 +34,7 @@ import (
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
@@ -499,10 +501,36 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	sort.Strings(build.Experiments)
 }
 
+var (
+	// defBuilderCacheTimeout is the default value for WaitForWarmCache in the
+	// pb.BuildInfra_Swarming_CacheEntry whose Name is "builder"
+	// See setInfra.
+	defBuilderCacheTimeout = durationpb.New(4 * time.Minute)
+)
+
+// configuredCacheToTaskCache returns the equivalent
+// *pb.BuildInfra_Swarming_CacheEntry for the given *pb.Builder_CacheEntry.
+func configuredCacheToTaskCache(builderCache *pb.Builder_CacheEntry) *pb.BuildInfra_Swarming_CacheEntry {
+	taskCache := &pb.BuildInfra_Swarming_CacheEntry{
+		EnvVar: builderCache.EnvVar,
+		Name:   builderCache.Name,
+		Path:   builderCache.Path,
+	}
+	if taskCache.Name == "" {
+		taskCache.Name = taskCache.Path
+	}
+	if builderCache.WaitForWarmCacheSecs > 0 {
+		taskCache.WaitForWarmCache = &durationpb.Duration{
+			Seconds: int64(builderCache.WaitForWarmCacheSecs),
+		}
+	}
+	return taskCache
+}
+
 // setInfra computes the infra values from the given request and builder config,
 // setting them in the model. Mutates the given *model.Build. build.Experiments
-// must be set (see setExperiments).
-func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+// and build.Proto.Builder must be set (see setExperiments and scheduleBuilds).
+func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build, caches []*pb.Builder_CacheEntry) {
 	build.Proto.Infra = &pb.BuildInfra{
 		Buildbucket: &pb.BuildInfra_Buildbucket{
 			RequestedDimensions: req.GetDimensions(),
@@ -534,20 +562,36 @@ func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, c
 		}
 	}
 
-	build.Proto.Infra.Swarming.Caches = make([]*pb.BuildInfra_Swarming_CacheEntry, len(cfg.GetCaches()))
+	taskCaches := make([]*pb.BuildInfra_Swarming_CacheEntry, len(cfg.GetCaches()))
+	names := stringset.New(len(cfg.GetCaches()))
+	paths := stringset.New(len(cfg.GetCaches()))
 	for i, c := range cfg.GetCaches() {
-		build.Proto.Infra.Swarming.Caches[i] = &pb.BuildInfra_Swarming_CacheEntry{
-			EnvVar: c.EnvVar,
-			Name:   c.Name,
-			Path:   c.Path,
-			WaitForWarmCache: &durationpb.Duration{
-				Seconds: int64(c.WaitForWarmCacheSecs),
-			},
-		}
-		if build.Proto.Infra.Swarming.Caches[i].Name == "" {
-			build.Proto.Infra.Swarming.Caches[i].Name = c.Path
+		taskCaches[i] = configuredCacheToTaskCache(c)
+		names.Add(taskCaches[i].Name)
+		paths.Add(taskCaches[i].Path)
+	}
+
+	// Requested caches have precedence over global caches.
+	// Apply global caches whose names and paths weren't overriden.
+	for _, c := range caches {
+		if !names.Has(c.Name) && !paths.Has(c.Path) {
+			taskCaches = append(taskCaches, configuredCacheToTaskCache(c))
 		}
 	}
+
+	if !paths.Has("builder") {
+		id := fmt.Sprintf("%s/%s/%s", build.Proto.Builder.Project, build.Proto.Builder.Bucket, build.Proto.Builder.Builder)
+		taskCaches = append(taskCaches, &pb.BuildInfra_Swarming_CacheEntry{
+			Name:             fmt.Sprintf("builder_%x_v2", sha256.Sum256([]byte(id))),
+			Path:             "builder",
+			WaitForWarmCache: defBuilderCacheTimeout,
+		})
+	}
+
+	sort.Slice(taskCaches, func(i, j int) bool {
+		return taskCaches[i].Path < taskCaches[j].Path
+	})
+	build.Proto.Infra.Swarming.Caches = taskCaches
 
 	switch {
 	case req.GetPriority() > 0:
@@ -555,9 +599,6 @@ func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, c
 	case build.ExperimentStatus(bb.ExperimentBBAgent) == pb.Trinary_YES:
 		build.Proto.Infra.Swarming.Priority = 255
 	}
-
-	// Requested caches override global caches.
-	// TODO(crbug/1042991): Apply global caches that weren't overridden, ensure builder cache.
 }
 
 // setInput computes the input values from the given request and builder config,
@@ -694,6 +735,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 	if err != nil {
 		return nil, errors.Annotate(err, "error fetching service config").Err()
 	}
+	caches := cfg.GetSwarming().GetGlobalCaches()
 	logdogHost := cfg.GetLogdog().GetHostname()
 	rdbHost := cfg.GetResultdb().GetHostname()
 
@@ -710,8 +752,6 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		bucket := fmt.Sprintf("%s/%s", reqs[i].Builder.Project, reqs[i].Builder.Bucket)
 		cfg := cfgs[bucket][reqs[i].Builder.Builder]
 
-		// TODO(crbug/1042991): Fill in relevant proto fields from the builder config.
-		// TODO(crbug/1042991): Fill in relevant proto fields from the request.
 		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
 		blds[i] = &model.Build{
 			ID:         ids[i],
@@ -733,14 +773,12 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		}
 
 		setInput(reqs[i], cfg, blds[i])
-		setExperiments(ctx, reqs[i], cfg, blds[i])                            // Requires setInput.
-		setExecutable(reqs[i], cfg, blds[i])                                  // Requires setExperiments.
-		setInfra(info.AppID(ctx), logdogHost, rdbHost, reqs[i], cfg, blds[i]) // Requires setExperiments.
-		setDimensions(reqs[i], cfg, blds[i])                                  // Requires setInfra.
+		setExperiments(ctx, reqs[i], cfg, blds[i])                                    // Requires setInput.
+		setExecutable(reqs[i], cfg, blds[i])                                          // Requires setExperiments.
+		setInfra(info.AppID(ctx), logdogHost, rdbHost, reqs[i], cfg, blds[i], caches) // Requires setExperiments.
+		setDimensions(reqs[i], cfg, blds[i])                                          // Requires setInfra.
 		setTags(reqs[i], blds[i])
 		setTimeouts(reqs[i], cfg, blds[i])
-
-		// TODO(crbug/1042991): Fill in Input, Infra, experimental priority, caches.
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
