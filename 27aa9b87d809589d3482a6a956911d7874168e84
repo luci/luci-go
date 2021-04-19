@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "864ff629_5ecc8f6f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T20:34:58Z",
+      "side": 1,
+      "message": "LGTM; although I didn\u0027t review in detail, just saying LGTM mainly based on the description; hopefully Yiwei should review this before submitting :-P",
+      "revId": "27aa9b87d809589d3482a6a956911d7874168e84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f78d5ec6_d06a328d",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T20:34:58Z",
+      "side": 1,
+      "message": "spelling",
+      "range": {
+        "startLine": 40,
+        "startChar": 33,
+        "endLine": 40,
+        "endChar": 41
+      },
+      "revId": "27aa9b87d809589d3482a6a956911d7874168e84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0578c911_ff44a685",
+        "filename": "cv/internal/prjmanager/clpurger/purger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T20:34:58Z",
+      "side": 1,
+      "message": "enqueues",
+      "range": {
+        "startLine": 61,
+        "startChar": 12,
+        "endLine": 61,
+        "endChar": 19
+      },
+      "revId": "27aa9b87d809589d3482a6a956911d7874168e84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
