@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/tq"
-	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -48,7 +47,6 @@ func Main(init func(srv *server.Server, services *Services) error) {
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
-		warmup.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
