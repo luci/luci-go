@@ -1522,6 +1522,343 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
+	Convey("setDimensions", t, func() {
+		Convey("config", func() {
+			Convey("omit", func() {
+				cfg := &pb.Builder{
+					Dimensions: []string{
+						"key:",
+					},
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+					},
+				}
+
+				setDimensions(nil, cfg, ent)
+				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
+			})
+
+			Convey("simple", func() {
+				cfg := &pb.Builder{
+					Dimensions: []string{
+						"key:value",
+					},
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+					},
+				}
+
+				setDimensions(nil, cfg, ent)
+				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+					TaskDimensions: []*pb.RequestedDimension{
+						{
+							Key:   "key",
+							Value: "value",
+						},
+					},
+				})
+			})
+
+			Convey("expiration", func() {
+				cfg := &pb.Builder{
+					Dimensions: []string{
+						"1:key:value",
+					},
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+					},
+				}
+
+				setDimensions(nil, cfg, ent)
+				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+					TaskDimensions: []*pb.RequestedDimension{
+						{
+							Expiration: &durationpb.Duration{
+								Seconds: 1,
+							},
+							Key:   "key",
+							Value: "value",
+						},
+					},
+				})
+			})
+
+			Convey("many", func() {
+				cfg := &pb.Builder{
+					Dimensions: []string{
+						"key:",
+						"key:value",
+						"key:value:",
+						"key:val:ue",
+						"0:key:",
+						"0:key:value",
+						"0:key:value:",
+						"0:key:val:ue",
+						"1:key:",
+						"1:key:value",
+						"1:key:value:",
+						"1:key:val:ue",
+					},
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+					},
+				}
+
+				setDimensions(nil, cfg, ent)
+				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Swarming: &pb.BuildInfra_Swarming{
+						TaskDimensions: []*pb.RequestedDimension{
+							{
+								Key:   "key",
+								Value: "value",
+							},
+							{
+								Key:   "key",
+								Value: "value:",
+							},
+							{
+								Key:   "key",
+								Value: "val:ue",
+							},
+							{
+								Key:   "key",
+								Value: "value",
+							},
+							{
+								Key:   "key",
+								Value: "value:",
+							},
+							{
+								Key:   "key",
+								Value: "val:ue",
+							},
+							{
+								Expiration: &durationpb.Duration{
+									Seconds: 1,
+								},
+								Key:   "key",
+								Value: "value",
+							},
+							{
+								Expiration: &durationpb.Duration{
+									Seconds: 1,
+								},
+								Key:   "key",
+								Value: "value:",
+							},
+							{
+								Expiration: &durationpb.Duration{
+									Seconds: 1,
+								},
+								Key:   "key",
+								Value: "val:ue",
+							},
+						},
+					},
+				})
+			})
+
+			Convey("auto builder", func() {
+				cfg := &pb.Builder{
+					AutoBuilderDimension: pb.Toggle_YES,
+					Name:                 "builder",
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+					},
+				}
+
+				setDimensions(nil, cfg, ent)
+				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+					TaskDimensions: []*pb.RequestedDimension{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+					},
+				})
+			})
+
+			Convey("builder > auto builder", func() {
+				cfg := &pb.Builder{
+					AutoBuilderDimension: pb.Toggle_YES,
+					Dimensions: []string{
+						"1:builder:cfg builder",
+					},
+					Name: "auto builder",
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+					},
+				}
+
+				setDimensions(nil, cfg, ent)
+				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+					TaskDimensions: []*pb.RequestedDimension{
+						{
+							Expiration: &durationpb.Duration{
+								Seconds: 1,
+							},
+							Key:   "builder",
+							Value: "cfg builder",
+						},
+					},
+				})
+			})
+
+			Convey("omit builder > auto builder", func() {
+				cfg := &pb.Builder{
+					AutoBuilderDimension: pb.Toggle_YES,
+					Dimensions: []string{
+						"builder:",
+					},
+					Name: "auto builder",
+				}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Infra: &pb.BuildInfra{
+							Swarming: &pb.BuildInfra_Swarming{},
+						},
+					},
+				}
+
+				setDimensions(nil, cfg, ent)
+				So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
+			})
+		})
+
+		Convey("request", func() {
+			req := &pb.ScheduleBuildRequest{
+				Dimensions: []*pb.RequestedDimension{
+					{
+						Expiration: &durationpb.Duration{
+							Seconds: 1,
+						},
+						Key:   "key",
+						Value: "value",
+					},
+				},
+			}
+			ent := &model.Build{
+				Proto: pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
+					},
+				},
+			}
+
+			setDimensions(req, nil, ent)
+			So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				TaskDimensions: []*pb.RequestedDimension{
+					{
+						Expiration: &durationpb.Duration{
+							Seconds: 1,
+						},
+						Key:   "key",
+						Value: "value",
+					},
+				},
+			})
+		})
+
+		Convey("request > config", func() {
+			req := &pb.ScheduleBuildRequest{
+				Dimensions: []*pb.RequestedDimension{
+					{
+						Expiration: &durationpb.Duration{
+							Seconds: 1,
+						},
+						Key:   "req only",
+						Value: "req value",
+					},
+					{
+						Key:   "req only",
+						Value: "req value",
+					},
+					{
+						Key:   "key",
+						Value: "req value",
+					},
+				},
+			}
+			cfg := &pb.Builder{
+				AutoBuilderDimension: pb.Toggle_YES,
+				Dimensions: []string{
+					"1:cfg only:cfg value",
+					"cfg only:cfg value",
+					"cfg only:",
+					"1:key:cfg value",
+				},
+				Name: "auto builder",
+			}
+			ent := &model.Build{
+				Proto: pb.Build{
+					Infra: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{},
+					},
+				},
+			}
+
+			setDimensions(req, cfg, ent)
+			So(ent.Proto.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+				TaskDimensions: []*pb.RequestedDimension{
+					{
+						Key:   "builder",
+						Value: "auto builder",
+					},
+					{
+						Key:   "cfg only",
+						Value: "cfg value",
+					},
+					{
+						Expiration: &durationpb.Duration{
+							Seconds: 1,
+						},
+						Key:   "cfg only",
+						Value: "cfg value",
+					},
+					{
+						Key:   "key",
+						Value: "req value",
+					},
+					{
+						Key:   "req only",
+						Value: "req value",
+					},
+					{
+						Expiration: &durationpb.Duration{
+							Seconds: 1,
+						},
+						Key:   "req only",
+						Value: "req value",
+					},
+				},
+			})
+		})
+	})
+
 	Convey("setExecutable", t, func() {
 		Convey("nil", func() {
 			ent := &model.Build{}
