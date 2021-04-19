@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab4b242b_97c177ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-19T21:51:02Z",
+      "side": 1,
+      "message": "This will blow up luci-config by sending a config fetching request per each ScheduleBuild call. Please change https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/buildbucket/appengine/internal/config/config.go to use https://pkg.go.dev/go.chromium.org/luci/config/server/cfgcache first.",
+      "revId": "decb14ad3981ae6a58103e1ee4981ad15e5df2f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
