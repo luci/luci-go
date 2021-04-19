@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, FULFILLED, IPromiseBasedObservable, PENDING, REJECTED } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
 import { consumeContext, provideContext } from '../libs/context';
@@ -97,7 +97,7 @@ export class BuildState {
 
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
-    this.relatedBuilds;
+    this.relatedBuilds$;
     this.queryBlamelistResIterFns;
   }
 
@@ -140,9 +140,9 @@ export class BuildState {
     return new BuildExt(this.build$.value);
   }
 
-  @computed
+  @computed({ keepAlive: true })
   private get relatedBuilds$(): IPromiseBasedObservable<readonly Build[]> {
-    if (!this.build) {
+    if (this.isDisposed || !this.build) {
       return fromPromise(Promise.race([]));
     }
 
@@ -180,12 +180,16 @@ export class BuildState {
     );
   }
 
-  @computed({ keepAlive: true })
+  @computed
   get relatedBuilds(): readonly BuildExt[] | null {
-    if (this.isDisposed || this.relatedBuilds$.state !== FULFILLED) {
-      return null;
+    switch (this.relatedBuilds$.state) {
+      case PENDING:
+        return null;
+      case REJECTED:
+        throw this.relatedBuilds$.value;
+      default:
+        return this.relatedBuilds$.value.map((build) => new BuildExt(build));
     }
-    return this.relatedBuilds$.value.map((build) => new BuildExt(build));
   }
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
