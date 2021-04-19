@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, FULFILLED, IPromiseBasedObservable, PENDING, REJECTED } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
 import { consumeContext, provideContext } from '../libs/context';
@@ -103,7 +103,7 @@ export class BuildState {
 
   private buildQueryTime = this.appState.timestamp;
   @computed
-  get build$(): IPromiseBasedObservable<Build> {
+  private get build$(): IPromiseBasedObservable<Build> {
     if (!this.appState.buildsService || (!this.buildId && (!this.builderIdParam || !this.buildNum))) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
@@ -134,10 +134,14 @@ export class BuildState {
 
   @computed
   get build(): BuildExt | null {
-    if (this.build$.state !== FULFILLED) {
-      return null;
+    switch (this.build$.state) {
+      case PENDING:
+        return null;
+      case REJECTED:
+        throw this.build$.value;
+      default:
+        return new BuildExt(this.build$.value);
     }
-    return new BuildExt(this.build$.value);
   }
 
   @computed
