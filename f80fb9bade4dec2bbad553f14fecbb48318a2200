@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4034da83_129180b0",
+        "filename": "milo/frontend/resultui/src/components/error_handler.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-19T20:15:38Z",
+      "side": 1,
+      "message": "not sure about this name. maybe errFn?\nalso doc-comment doesn\u0027t explain how this func is used/called\n\nsame below",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 96,
+        "endChar": 11
+      },
+      "revId": "f80fb9bade4dec2bbad553f14fecbb48318a2200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50667815_c83f7425",
+        "filename": "milo/frontend/resultui/src/components/error_handler.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-19T20:15:38Z",
+      "side": 1,
+      "message": "I\u0027d expect \"intercept\" function to be more about transformation https://grpc.io/blog/grpc-web-interceptor/\nthis returns a boolean. Usually such funcs are called predicates.\n\nConsider returning an ErrorEvent, where returning null means \"ignore this\".",
+      "range": {
+        "startLine": 159,
+        "startChar": 34,
+        "endLine": 159,
+        "endChar": 39
+      },
+      "revId": "f80fb9bade4dec2bbad553f14fecbb48318a2200",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
