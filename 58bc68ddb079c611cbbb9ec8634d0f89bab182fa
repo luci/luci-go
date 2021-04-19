@@ -55,6 +55,40 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "06c43ef5_c3b5cf4f",
+        "filename": "cv/internal/prjmanager/prjpb/tq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-19T21:06:48Z",
+      "side": 1,
+      "message": "This should be in a separate block.",
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dbf145ab_17a0c369",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-19T21:06:48Z",
+      "side": 1,
+      "message": "nit: move to separate block",
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8a184d58_207749e1",
         "filename": "cv/internal/prjmanager/send.go",
         "patchSetId": 4
