@@ -31,7 +31,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -40,24 +39,15 @@ import (
 var mockRecorderClientKey = "used in tests only for setting the mock recorder client"
 
 // CreateInvocations creates resultdb invocations for each build.
-// It would only create invocations if ResultDB hostname is globally set.
+// build.Proto.Infra.Resultdb must not be nil.
 //
 // cfgs is the builder config map with the struct of Bucket ID -> Builder name -> *pb.Builder.
 //
 // Note: it will mutate the value of build.Proto.Infra.Resultdb.Invocation and build.ResultDBUpdateToken.
-func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.Builder) error {
-	serviceCfg, err := config.GetSettingsCfg(ctx)
-	switch {
-	case err != nil:
-		return err
-	case serviceCfg.Resultdb.Hostname == "":
-		// resultdb host needs to be enabled at service level, i.e. globally per buildbucket deployment.
-		return nil
-	}
-	rdbHost := serviceCfg.Resultdb.Hostname
+func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.Builder, host string) error {
 	bbHost := info.AppID(ctx) + ".appspot.com"
 
-	err = parallel.WorkPool(64, func(ch chan<- func() error) {
+	err := parallel.WorkPool(64, func(ch chan<- func() error) {
 		for _, b := range builds {
 			b := b
 			proj := b.Proto.Builder.Project
@@ -75,7 +65,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 				// we can combine build id invocation and number invocation into a Batch.
 
 				// Use per-project credential to create invocation.
-				recorderClient, err := newRecorderClient(ctx, rdbHost, proj)
+				recorderClient, err := newRecorderClient(ctx, host, proj)
 				if err != nil {
 					return errors.Annotate(err, "failed to create resultDB recorder client for project: %s", proj).Err()
 				}

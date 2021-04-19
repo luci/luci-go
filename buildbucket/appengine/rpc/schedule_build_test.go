@@ -347,6 +347,9 @@ func TestScheduleBuild(t *testing.T) {
 							Prefix:  "buildbucket/app/9021868963221667745",
 							Project: "project",
 						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
 						Swarming: &pb.BuildInfra_Swarming{
 							Priority: 30,
 						},
@@ -442,6 +445,9 @@ func TestScheduleBuild(t *testing.T) {
 							Prefix:  "buildbucket/app/9021868963221610337",
 							Project: "project",
 						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
 						Swarming: &pb.BuildInfra_Swarming{
 							Priority: 30,
 						},
@@ -479,6 +485,9 @@ func TestScheduleBuild(t *testing.T) {
 							Prefix:  "buildbucket/app/9021868963221610321",
 							Project: "project",
 						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
 						Swarming: &pb.BuildInfra_Swarming{
 							Priority: 30,
 						},
@@ -515,6 +524,9 @@ func TestScheduleBuild(t *testing.T) {
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix:  "buildbucket/app/9021868963221610305",
 							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
 							Priority: 30,
@@ -2304,12 +2316,13 @@ func TestScheduleBuild(t *testing.T) {
 		Convey("nil", func() {
 			ent := &model.Build{}
 
-			setInfra("", nil, nil, ent)
+			setInfra("", "", "", nil, nil, ent)
 			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
 					Prefix: "buildbucket//0",
 				},
+				Resultdb: &pb.BuildInfra_ResultDB{},
 				Swarming: &pb.BuildInfra_Swarming{
 					Priority: 30,
 				},
@@ -2323,12 +2336,13 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra("", nil, nil, ent)
+			setInfra("", "", "", nil, nil, ent)
 			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
 					Prefix: "buildbucket//0",
 				},
+				Resultdb: &pb.BuildInfra_ResultDB{},
 				Swarming: &pb.BuildInfra_Swarming{
 					Priority: 255,
 				},
@@ -2347,12 +2361,43 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra("app-id", nil, nil, ent)
+			setInfra("app-id", "host", "", nil, nil, ent)
 			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
-					Prefix:  "buildbucket/app-id/1",
-					Project: "project",
+					Hostname: "host",
+					Prefix:   "buildbucket/app-id/1",
+					Project:  "project",
+				},
+				Resultdb: &pb.BuildInfra_ResultDB{},
+				Swarming: &pb.BuildInfra_Swarming{
+					Priority: 30,
+				},
+			})
+		})
+
+		Convey("resultdb", func() {
+			ent := &model.Build{
+				Proto: pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Id: 1,
+				},
+			}
+
+			setInfra("", "", "host", nil, nil, ent)
+			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Logdog: &pb.BuildInfra_LogDog{
+					Hostname: "",
+					Prefix:   "buildbucket//1",
+					Project:  "project",
+				},
+				Resultdb: &pb.BuildInfra_ResultDB{
+					Hostname: "host",
 				},
 				Swarming: &pb.BuildInfra_Swarming{
 					Priority: 30,
@@ -2370,7 +2415,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				ent := &model.Build{}
 
-				setInfra("", nil, cfg, ent)
+				setInfra("", "", "", nil, cfg, ent)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
@@ -2380,6 +2425,7 @@ func TestScheduleBuild(t *testing.T) {
 						CipdPackage: "package",
 						Name:        "name",
 					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
 						Priority: 30,
 					},
@@ -2395,12 +2441,13 @@ func TestScheduleBuild(t *testing.T) {
 					}
 					ent := &model.Build{}
 
-					setInfra("", nil, cfg, ent)
+					setInfra("", "", "", nil, cfg, ent)
 					So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
 						Logdog: &pb.BuildInfra_LogDog{
 							Prefix: "buildbucket//0",
 						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
 						Swarming: &pb.BuildInfra_Swarming{
 							Hostname:           "host",
 							Priority:           1,
@@ -2426,7 +2473,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				ent := &model.Build{}
 
-				setInfra("", req, nil, ent)
+				setInfra("", "", "", req, nil, ent)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						RequestedDimensions: []*pb.RequestedDimension{
@@ -2442,6 +2489,7 @@ func TestScheduleBuild(t *testing.T) {
 					Logdog: &pb.BuildInfra_LogDog{
 						Prefix: "buildbucket//0",
 					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
 						Priority: 30,
 					},
@@ -2462,7 +2510,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				ent := &model.Build{}
 
-				setInfra("", req, nil, ent)
+				setInfra("", "", "", req, nil, ent)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						RequestedProperties: &structpb.Struct{
@@ -2478,6 +2526,7 @@ func TestScheduleBuild(t *testing.T) {
 					Logdog: &pb.BuildInfra_LogDog{
 						Prefix: "buildbucket//0",
 					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
 						Priority: 30,
 					},
@@ -2492,12 +2541,13 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				ent := &model.Build{}
 
-				setInfra("", req, nil, ent)
+				setInfra("", "", "", req, nil, ent)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
 						Prefix: "buildbucket//0",
 					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
 						ParentRunId: "id",
 						Priority:    30,
@@ -2511,12 +2561,13 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				ent := &model.Build{}
 
-				setInfra("", req, nil, ent)
+				setInfra("", "", "", req, nil, ent)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
 						Prefix: "buildbucket//0",
 					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
 						Priority: 1,
 					},
@@ -2533,12 +2584,13 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra("", req, nil, ent)
+				setInfra("", "", "", req, nil, ent)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
 						Prefix: "buildbucket//0",
 					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
 						Priority: 1,
 					},
