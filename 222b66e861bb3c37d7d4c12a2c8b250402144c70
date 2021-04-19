@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1c144f0_b19ff0b3",
+        "filename": "cv/internal/prjmanager/prjpb/tq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-19T21:19:17Z",
+      "side": 1,
+      "message": "Why creating a helper function here? Are we expecting callsites other than clpurger package?",
+      "revId": "222b66e861bb3c37d7d4c12a2c8b250402144c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
