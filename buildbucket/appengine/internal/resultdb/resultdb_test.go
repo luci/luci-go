@@ -136,7 +136,7 @@ func TestCreateInvocations(t *testing.T) {
 				return &rdbPb.Invocation{}, nil
 			})
 
-			err := CreateInvocations(ctx, builds, cfgs)
+			err := CreateInvocations(ctx, builds, cfgs, "host")
 			So(err, ShouldBeNil)
 			So(builds[0].ResultDBUpdateToken, ShouldEqual, "token for build-1")
 			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-1")
@@ -192,7 +192,7 @@ func TestCreateInvocations(t *testing.T) {
 					RequestId: "build-1-123",
 				})).Return(&rdbPb.Invocation{}, nil)
 
-			err := CreateInvocations(ctx, builds, cfgs)
+			err := CreateInvocations(ctx, builds, cfgs, "host")
 			So(err, ShouldBeNil)
 			So(len(builds), ShouldEqual, 1)
 			So(builds[0].ResultDBUpdateToken, ShouldEqual, "token for build id 1")
@@ -247,7 +247,7 @@ func TestCreateInvocations(t *testing.T) {
 				return &rdbPb.Invocation{}, nil
 			})
 
-			err := CreateInvocations(ctx, builds, cfgs)
+			err := CreateInvocations(ctx, builds, cfgs, "host")
 			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = AlreadyExists desc = already exists")
 		})
 
@@ -270,7 +270,7 @@ func TestCreateInvocations(t *testing.T) {
 
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, grpcStatus.Error(codes.DeadlineExceeded, "timeout"))
 
-			err := CreateInvocations(ctx, builds, cfgs)
+			err := CreateInvocations(ctx, builds, cfgs, "host")
 			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = DeadlineExceeded desc = timeout")
 		})
 
@@ -297,7 +297,7 @@ func TestCreateInvocations(t *testing.T) {
 				}},
 			}
 
-			err := CreateInvocations(ctx, builds, cfgs)
+			err := CreateInvocations(ctx, builds, cfgs, "host")
 			So(err, ShouldBeNil)
 			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "")
 		})

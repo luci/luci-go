@@ -44,6 +44,7 @@ import (
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
@@ -501,15 +502,19 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 // setInfra computes the infra values from the given request and builder config,
 // setting them in the model. Mutates the given *model.Build. build.Experiments
 // must be set (see setExperiments).
-func setInfra(appID string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
+func setInfra(appID, logdogHost, rdbHost string, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Build) {
 	build.Proto.Infra = &pb.BuildInfra{
 		Buildbucket: &pb.BuildInfra_Buildbucket{
 			RequestedDimensions: req.GetDimensions(),
 			RequestedProperties: req.GetProperties(),
 		},
 		Logdog: &pb.BuildInfra_LogDog{
-			Prefix:  fmt.Sprintf("buildbucket/%s/%d", appID, build.Proto.Id),
-			Project: build.Proto.Builder.GetProject(),
+			Hostname: logdogHost,
+			Prefix:   fmt.Sprintf("buildbucket/%s/%d", appID, build.Proto.Id),
+			Project:  build.Proto.Builder.GetProject(),
+		},
+		Resultdb: &pb.BuildInfra_ResultDB{
+			Hostname: rdbHost,
 		},
 		Swarming: &pb.BuildInfra_Swarming{
 			Hostname:           cfg.GetSwarmingHost(),
@@ -683,9 +688,14 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *model.Bui
 // scheduleBuilds handles requests to schedule builds. Requests must be
 // validated and authorized.
 func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
-	// TODO(crbug/1042991): Deduplicate request IDs.
 	now := clock.Now(ctx).UTC()
 	user := auth.CurrentIdentity(ctx)
+	cfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "error fetching service config").Err()
+	}
+	logdogHost := cfg.GetLogdog().GetHostname()
+	rdbHost := cfg.GetResultdb().GetHostname()
 
 	// Bucket -> Builder -> *pb.Builder.
 	cfgs, err := fetchBuilderConfigs(ctx, reqs)
@@ -700,7 +710,6 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		bucket := fmt.Sprintf("%s/%s", reqs[i].Builder.Project, reqs[i].Builder.Bucket)
 		cfg := cfgs[bucket][reqs[i].Builder.Builder]
 
-		// TODO(crbug/1042991): Fill in LogDog, ResultDB hostnames and Swarming caches from settings config.
 		// TODO(crbug/1042991): Fill in relevant proto fields from the builder config.
 		// TODO(crbug/1042991): Fill in relevant proto fields from the request.
 		// TODO(crbug/1042991): Parallelize build creation from requests if necessary.
@@ -724,10 +733,10 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		}
 
 		setInput(reqs[i], cfg, blds[i])
-		setExperiments(ctx, reqs[i], cfg, blds[i])       // Requires setInput.
-		setExecutable(reqs[i], cfg, blds[i])             // Requires setExperiments.
-		setInfra(info.AppID(ctx), reqs[i], cfg, blds[i]) // Requires setExperiments.
-		setDimensions(reqs[i], cfg, blds[i])             // Requires setInfra.
+		setExperiments(ctx, reqs[i], cfg, blds[i])                            // Requires setInput.
+		setExecutable(reqs[i], cfg, blds[i])                                  // Requires setExperiments.
+		setInfra(info.AppID(ctx), logdogHost, rdbHost, reqs[i], cfg, blds[i]) // Requires setExperiments.
+		setDimensions(reqs[i], cfg, blds[i])                                  // Requires setInfra.
 		setTags(reqs[i], blds[i])
 		setTimeouts(reqs[i], cfg, blds[i])
 
@@ -749,11 +758,11 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 		return nil, errors.Annotate(err, "error generating build numbers").Err()
 	}
 
-	// TODO(crbug/1150607): Create ResultDB invocations.
-
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error { return model.UpdateBuilderStat(ctx, blds, now) }
-		work <- func() error { return resultdb.CreateInvocations(ctx, blds, cfgs) }
+		if rdbHost != "" {
+			work <- func() error { return resultdb.CreateInvocations(ctx, blds, cfgs, rdbHost) }
+		}
 		work <- func() error { return search.UpdateTagIndex(ctx, blds) }
 	})
 	if err != nil {
