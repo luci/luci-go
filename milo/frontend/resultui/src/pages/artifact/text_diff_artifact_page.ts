@@ -16,20 +16,21 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
+import { fromPromise } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
+import { reportError } from '../../components/error_handler';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeContext } from '../../libs/context';
 import { sanitizeHTML } from '../../libs/sanitize_html';
+import { unwrapObservable } from '../../libs/utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders a text diff artifact.
  */
-// TODO(weiweilin): improve error handling.
 @customElement('milo-text-diff-artifact-page')
 @consumeAppState
 @consumeContext('artifactIdent')
@@ -46,7 +47,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
     return fromPromise(this.appState.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
   @computed private get artifact() {
-    return this.artifact$.state === FULFILLED ? this.artifact$.value : null;
+    return unwrapObservable(this.artifact$, null);
   }
 
   @computed
@@ -58,28 +59,31 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
     return fromPromise(fetch(this.artifact.fetchUrl).then((res) => res.text()));
   }
   @computed private get content() {
-    return this.content$.state === FULFILLED ? this.content$.value : null;
+    return unwrapObservable(this.content$, null);
   }
 
-  protected render() {
-    if (this.content$.state === PENDING) {
-      return html`<div id="content" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
-    }
+  protected render = reportError.bind(this)(
+    () => {
+      if (!this.content) {
+        return html`<div id="content" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
+      }
 
-    return html`
-      <div id="details">
-        ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
-      </div>
-      <div id="content">
-        <link
-          rel="stylesheet"
-          type="text/css"
-          href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
-        />
-        ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
-      </div>
-    `;
-  }
+      return html`
+        <div id="details">
+          ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
+        </div>
+        <div id="content">
+          <link
+            rel="stylesheet"
+            type="text/css"
+            href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
+          />
+          ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
+        </div>
+      `;
+    },
+    () => 'An error occurred'
+  );
 
   static styles = [
     commonStyle,

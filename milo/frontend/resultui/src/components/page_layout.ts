@@ -130,6 +130,7 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
       </div>
       <milo-error-handler
         .intercept=${(e: ErrorEvent) => {
+          // TODO(weiweilin): add integration tests to ensure redirection works properly.
           if (e.error instanceof GrpcError) {
             const mayRequireSignin = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(
               e.error.code
