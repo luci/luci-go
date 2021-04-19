@@ -31,8 +31,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 const TaskClass = "refresh-gerrit-cl"
@@ -149,21 +147,4 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 		return err
 	}
 	return f.update(ctx, common.CLID(r.GetClidHint()))
-}
-
-// Default provides legacy package API to ease the migration to use of the
-// Updater object.
-// TODO(tandrii): delete it.
-var Default *Updater
-
-func init() {
-	Default = New(&tq.Default, prjmanager.DefaultNotifier, run.DefaultNotifier)
-}
-
-func Schedule(ctx context.Context, p *RefreshGerritCL) error {
-	return Default.Schedule(ctx, p)
-}
-
-func Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
-	return Default.Refresh(ctx, r)
 }

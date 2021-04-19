@@ -40,16 +40,14 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/diagnostic"
 	pollertask "go.chromium.org/luci/cv/internal/gerrit/poller/task"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
-
-	// Import all modules with server/tq handler additions in init() calls, which
-	// are otherwise not imported directly or transitively via imports above.
-	_ "go.chromium.org/luci/cv/internal/prjmanager/impl"
-	_ "go.chromium.org/luci/cv/internal/run/impl"
+	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
 const dsFlakinessFlagName = "cv.dsflakiness"
@@ -72,6 +70,9 @@ type Test struct {
 	// Defaults to `cv` GAE app.
 	CVDev bool
 
+	PMNotifier  *prjmanager.Notifier
+	RunNotifier *run.Notifier
+
 	DiagnosticServer diagnosticpb.DiagnosticServer
 	MigrationServer  migrationpb.MigrationServer
 	// TODO(tandrii): add CQD fake.
@@ -84,7 +85,9 @@ type Test struct {
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	switch {
 	case t.Test == nil:
-		t.Test = &cvtesting.Test{}
+		t.Test = &cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 	case t.Test.AppID != "":
 		panic("overriding cvtesting.Test{AppID} in e2e not supported")
 	}
@@ -106,6 +109,12 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		logging.Warningf(ctx, "Using %.4f flaky Datastore", t.dsFlakiness)
 		t.dsFlakinesRand = rand.NewSource(0)
 	}
+
+	t.PMNotifier = prjmanager.NewNotifier(t.TQDispatcher)
+	t.RunNotifier = run.NewNotifier(t.TQDispatcher)
+	clUpdater := updater.New(t.TQDispatcher, t.PMNotifier, t.RunNotifier)
+	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clUpdater)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clUpdater)
 
 	t.MigrationServer = &migration.MigrationServer{}
 	t.DiagnosticServer = &diagnostic.DiagnosticServer{}
