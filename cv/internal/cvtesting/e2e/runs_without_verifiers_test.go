@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -57,7 +56,7 @@ func TestCreatesSingularRun(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		So(prjmanager.DefaultNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
@@ -126,7 +125,7 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		ct.GFake.SetDependsOn(gHost, "13_3", "12_2")
 
 		ct.LogPhase(ctx, "CV starts dry Run on just the 13")
-		So(prjmanager.DefaultNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		var r13 *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r13 = ct.EarliestCreatedRunOf(ctx, lProject)

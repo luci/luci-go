@@ -24,7 +24,6 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -59,7 +58,7 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		So(trigger.Find(ct.GFake.GetChange(gHost, gChange).Info), ShouldNotBeNil)
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		So(prjmanager.DefaultNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
 			return trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil
 		})
@@ -125,7 +124,7 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 		)))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		So(prjmanager.DefaultNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
 			return trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil
 		})
