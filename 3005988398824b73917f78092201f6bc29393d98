@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9980b389_982a503e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/test_presentation.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-19T07:40:28Z",
+      "side": 1,
+      "message": "Removed to resultdb.test_presentation as suggested in another thread.",
+      "parentUuid": "c05a7c95_0e1ae097",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 97,
+        "endChar": 17
+      },
+      "revId": "3005988398824b73917f78092201f6bc29393d98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5b8e73f_a98e7253",
@@ -85,6 +109,30 @@
       "side": 1,
       "message": "I agree it is bit weird, but that\u0027s the namespacing scheme in properties (the only one, as there should be only one) - it is the full name of the recipe module, which is \"$\u003crepo\u003e/\u003cmodule\u003e\"\n\nnot sure what else we can do here",
       "parentUuid": "c5b8e73f_a98e7253",
+      "range": {
+        "startLine": 232,
+        "startChar": 19,
+        "endLine": 232,
+        "endChar": 58
+      },
+      "revId": "3005988398824b73917f78092201f6bc29393d98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "512152c1_dac869c5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-19T07:40:28Z",
+      "side": 1,
+      "message": "I see.",
+      "parentUuid": "7dce40f9_88e48a5a",
       "range": {
         "startLine": 232,
         "startChar": 19,

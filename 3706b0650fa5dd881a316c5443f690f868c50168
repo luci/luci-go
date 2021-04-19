@@ -56,6 +56,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e9fc916a_2f914da9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-19T07:40:28Z",
+      "side": 1,
+      "message": "\u003e (note: doesn\u0027t mean we have to change resultdb protos - we can still use a property).\n\nresultdb.settings returns a buildbucket_pb.Builder.ResultDB.\nIs it actually possible to add other field there without modifying the proto file?\n\nFor now, I moved it to\n```\nluci.builder(\n    ...\n    resultdb_settings \u003d ...,\n    test_presentation \u003d resultdb.test_resentation(\n        column_keys \u003d [\"v.gpu\"],\n        grouping_keys \u003d [\"status\", \"v.test_suite\"],\n    ),\n)\n```\n\nAnother confusing thing is that now we have `resultdb.test_presentation`, which sets \"$recipe/milo/test_presentation\".\nAnd we also have `MiloApi.config_test_presentation` that sets \"$recipe/milo/test_presentation\".\nI think we should either put everything under resultdb and set \"$recipe/resultdb/test_presentation\"\nOr put everything under milo and set \"$recipe/milo/test_presentation\".",
+      "parentUuid": "73c6061e_565faad4",
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "63420b91_8358ca1c",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/test_presentation.star",
         "patchSetId": 5
@@ -101,6 +119,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d93c294_c3e2737c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/test_presentation.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-19T07:40:28Z",
+      "side": 1,
+      "message": "Yeah, if we default to [], then there should be no different between [] and None.",
+      "parentUuid": "d77bab9e_d4d99064",
+      "range": {
+        "startLine": 40,
+        "startChar": 17,
+        "endLine": 40,
+        "endChar": 31
+      },
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "00fa470e_98545646",
@@ -124,6 +166,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e497f00b_6792d9d6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/test_presentation.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-19T07:40:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "00fa470e_98545646",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 51
+      },
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc5b7d70_f1c0203c",
@@ -137,6 +203,30 @@
       "writtenOn": "2021-04-16T16:40:15Z",
       "side": 1,
       "message": "all these params are configurations. maybe just \"test_presentation\"?",
+      "range": {
+        "startLine": 213,
+        "startChar": 6,
+        "endLine": 213,
+        "endChar": 30
+      },
+      "revId": "3706b0650fa5dd881a316c5443f690f868c50168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa07a296_3d8e05c2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-19T07:40:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc5b7d70_f1c0203c",
       "range": {
         "startLine": 213,
         "startChar": 6,
