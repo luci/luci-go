@@ -267,7 +267,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 
 		const lProject = "luci"
 		d := DiagnosticServer{
-			GerritUpdater: updater.New(ct.TQDispatcher),
+			GerritUpdater: updater.New(ct.TQDispatcher, nil, nil),
 		}
 
 		Convey("without access", func() {
