@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -142,7 +143,71 @@ func calculateHash(input io.Reader) (string, error) {
 	return "sha256:" + hex.EncodeToString(hash.Sum(nil)), nil
 }
 
+// uploadTaskSlicer slices upload tasks and creates BatchCreateArtifactsRequest for
+// each chunk.
+//
+// Each chunk can have at most 500 artifacts and the total size is capped
+// at MaxBatchableArtifactSize.
+type uploadTaskSlicer struct {
+	batchReq *pb.BatchCreateArtifactsRequest
+	pos      int
+	tasks    []interface{}
+}
+
+// BatchCreateRequest returns a BatchCreateArtifactsRequest for the current slice of the tasks.
+//
+// Call Advance() to move the cursor for the current slice.
+// Returns nil if there are no more tasks to be sliced.
+func (s *uploadTaskSlicer) BatchCreateRequest() (*pb.BatchCreateArtifactsRequest, error) {
+	if s.batchReq != nil {
+		return s.batchReq, nil
+	}
+	l := len(s.tasks) - s.pos
+	switch {
+	case l > 500:
+		l = 500
+	case l == 0:
+		// Nothing to batch.
+		return nil, nil
+	}
+	reqs := make([]*pb.CreateArtifactRequest, 0, l)
+	var sizeTotal int64
+	for _, t := range s.tasks[s.pos:] {
+		ut := t.(*uploadTask)
+		r, err := ut.CreateRequest()
+		if err != nil {
+			return nil, errors.Annotate(err, "BatchCreateRequest").Err()
+		}
+		reqs = append(reqs, r)
+		sizeTotal += ut.size
+		if sizeTotal > MaxBatchableArtifactSize || len(reqs) > 500 {
+			break
+		}
+	}
+	s.pos += len(reqs)
+	s.batchReq = &pb.BatchCreateArtifactsRequest{Requests: reqs}
+	return s.batchReq, nil
+}
+
+// Advance moves the cursor to point the next slice in the upload tasks.
+func (s *uploadTaskSlicer) Advance() {
+	s.batchReq = nil
+}
+
 func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {
-	// TODO(ddoman): implement me
+	if b.Meta == nil {
+		b.Meta = &uploadTaskSlicer{tasks: b.Data}
+	}
+
+	s := b.Meta.(*uploadTaskSlicer)
+	for r, e := s.BatchCreateRequest(); r != nil; r, e = s.BatchCreateRequest() {
+		if e != nil {
+			return e
+		}
+		if _, e = u.Recorder.BatchCreateArtifacts(ctx, r); e != nil {
+			return e
+		}
+		s.Advance()
+	}
 	return nil
 }

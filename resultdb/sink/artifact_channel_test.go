@@ -31,32 +31,67 @@ func TestArtifactChannel(t *testing.T) {
 	t.Parallel()
 
 	Convey("schedule", t, func() {
-		name := "invocations/inv/artifacts/art1"
-		ctx := context.Background()
 		cfg := testServerConfig("127.0.0.1:123", "secret")
-		reqCh := make(chan *http.Request, 1)
+		ctx := context.Background()
+
+		streamCh := make(chan *http.Request, 10)
 		cfg.ArtifactStreamClient.Transport = mockTransport(
-			func(req *http.Request) (*http.Response, error) {
-				reqCh <- req
+			func(in *http.Request) (*http.Response, error) {
+				streamCh <- in
 				return &http.Response{StatusCode: http.StatusNoContent}, nil
 			},
 		)
+		batchCh := make(chan *pb.BatchCreateArtifactsRequest, 10)
+		cfg.Recorder.(*mockRecorder).batchCreateArtifacts = func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
+			batchCh <- in
+			return nil, nil
+		}
 
-		task, err := newUploadTask(name, testArtifactWithContents([]byte("content")))
-		So(err, ShouldBeNil)
+		Convey("with a small artifact", func() {
+			art := testArtifactWithContents([]byte("content"))
+			task, err := newUploadTask("invocations/inv/artifacts/art1", art)
+			So(err, ShouldBeNil)
 
-		ac := newArtifactChannel(ctx, &cfg)
-		ac.schedule(task)
-		ac.closeAndDrain(ctx)
-		req := <-reqCh
-		So(req, ShouldNotBeNil)
+			ac := newArtifactChannel(ctx, &cfg)
+			ac.schedule(task)
+			ac.closeAndDrain(ctx)
 
-		// verify the request sent
-		So(req.URL.String(), ShouldEqual, "https://"+cfg.ArtifactStreamHost+"/"+name)
-		body, err := ioutil.ReadAll(req.Body)
-		So(err, ShouldBeNil)
-		So(body, ShouldResemble, []byte("content"))
+			// The artifact should have been sent to the batch channel.
+			So(<-batchCh, ShouldResembleProto, &pb.BatchCreateArtifactsRequest{
+				Requests: []*pb.CreateArtifactRequest{{
+					Parent: "invocations/inv",
+					Artifact: &pb.Artifact{
+						ArtifactId:  "art1",
+						ContentType: art.ContentType,
+						SizeBytes:   int64(len("content")),
+						Contents:    []byte("content"),
+					},
+				}},
+			})
+		})
+
+		Convey("with a large artifact", func() {
+			art := testArtifactWithContents([]byte("content-foo-bar"))
+			task, err := newUploadTask("invocations/inv/artifacts/art1", art)
+			So(err, ShouldBeNil)
+
+			ac := newArtifactChannel(ctx, &cfg)
+			// art with > 10 bytes of content will be sent to the stream channel
+			ac.maxBatchable = 10
+			ac.schedule(task)
+			ac.closeAndDrain(ctx)
+
+			// The artifact should have been sent to the stream channel.
+			req := <-streamCh
+			So(req, ShouldNotBeNil)
+			So(req.URL.String(), ShouldEqual,
+				"https://"+cfg.ArtifactStreamHost+"/invocations/inv/artifacts/art1")
+			body, err := ioutil.ReadAll(req.Body)
+			So(err, ShouldBeNil)
+			So(body, ShouldResemble, []byte("content-foo-bar"))
+		})
 	})
+
 }
 
 func TestUploadTask(t *testing.T) {

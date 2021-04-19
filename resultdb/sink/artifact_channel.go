@@ -148,11 +148,17 @@ type artifactChannel struct {
 	// 1 indicates that artifactChannel started the process of closing and draining
 	// the channel. 0, otherwise.
 	closed int32
+
+	// maxBatchable is the maximum size of an artifact that can be batched.
+	//
+	// By default, this has the same value as MaxBatchableArtifactSize. The primiary usage
+	// of this field is to mock MaxBatchableArtifactSize in unit tests.
+	maxBatchable int64
 }
 
 func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
 	var err error
-	c := &artifactChannel{}
+	c := &artifactChannel{maxBatchable: MaxBatchableArtifactSize}
 	au := artifactUploader{
 		Recorder:     cfg.Recorder,
 		StreamClient: cfg.ArtifactStreamClient,
@@ -162,17 +168,13 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	// batchChannel
 	bcOpts := &dispatcher.Options{
 		Buffer: buffer.Options{
-			// BatchRequest can include up to 500 requests. KEEP BatchSize <= 500
-			// For more details, visit
-			// https://godoc.org/go.chromium.org/luci/resultdb/proto/v1#BatchCreateArtifactsRequest
 			BatchSize:    500,
 			MaxLeases:    int(cfg.ArtChannelMaxLeases),
 			FullBehavior: &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
 	c.batchChannel, err = dispatcher.NewChannel(ctx, bcOpts, func(b *buffer.Batch) error {
-		// TODO(ddoman): implement me
-		return nil
+		return errors.Annotate(au.BatchUpload(ctx, b), "BatchUpload").Err()
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create batch channel for artifacts: %s", err))
@@ -228,7 +230,10 @@ func (c *artifactChannel) schedule(tasks ...*uploadTask) {
 	}
 
 	for _, task := range tasks {
-		// TODO(ddoman): send small artifacts to batchChannel
-		c.streamChannel.C <- task
+		if task.size > c.maxBatchable {
+			c.streamChannel.C <- task
+		} else {
+			c.batchChannel.C <- task
+		}
 	}
 }
