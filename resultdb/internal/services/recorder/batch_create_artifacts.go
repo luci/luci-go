@@ -250,7 +250,7 @@ func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.Cont
 	casReq := &repb.BatchUpdateBlobsRequest{InstanceName: rbeIns}
 	for _, a := range arts {
 		casReq.Requests = append(casReq.Requests, &repb.BatchUpdateBlobsRequest_Request{
-			Digest: &repb.Digest{Hash: a.hash, SizeBytes: a.size},
+			Digest: &repb.Digest{Hash: artifacts.TrimHashPrefix(a.hash), SizeBytes: a.size},
 			Data:   a.data,
 		})
 	}
