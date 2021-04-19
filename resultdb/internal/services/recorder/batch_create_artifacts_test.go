@@ -155,7 +155,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		}
 		compHash := func(content string) string {
 			h := sha256.Sum256([]byte(content))
-			return fmt.Sprintf("sha256:%s", hex.EncodeToString(h[:]))
+			return hex.EncodeToString(h[:])
 		}
 
 		Convey("works", func() {
@@ -205,12 +205,12 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			// verify the Spanner states
 			size, hash, cType := fetchState("art1")
 			So(size, ShouldEqual, int64(len("c0ntent")))
-			So(hash, ShouldEqual, compHash("c0ntent"))
+			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c0ntent")))
 			So(cType, ShouldEqual, "text/plain")
 
 			size, hash, cType = fetchState("art2")
 			So(size, ShouldEqual, int64(len("c1ntent")))
-			So(hash, ShouldEqual, compHash("c1ntent"))
+			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c1ntent")))
 			So(cType, ShouldEqual, "text/richtext")
 		})
 
@@ -264,7 +264,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				"InvocationId": invocations.ID("inv"),
 				"ParentId":     "",
 				"ArtifactId":   "art1",
-				"RBECASHash":   compHash("c0ntent"),
+				"RBECASHash":   artifacts.AddHashPrefix(compHash("c0ntent")),
 				"Size":         len("c0ntent"),
 				"ContentType":  "text/plain",
 			}
