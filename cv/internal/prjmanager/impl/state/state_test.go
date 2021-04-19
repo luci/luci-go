@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -146,6 +147,9 @@ func TestUpdateConfig(t *testing.T) {
 		ct := ctest{
 			lProject: "test",
 			gHost:    "c-review.example.com",
+			Test: cvtesting.Test{
+				TQDispatcher: &tq.Dispatcher{},
+			},
 		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -157,10 +161,15 @@ func TestUpdateConfig(t *testing.T) {
 		meta := ct.Cfg.MustExist(ctx, ct.lProject)
 		So(gobmap.Update(ctx, ct.lProject), ShouldBeNil)
 
+		clPoller := poller.New(ct.TQDispatcher, nil, nil)
+
 		Convey("initializes newly started project", func() {
 			// Newly started project doesn't have any CLs, yet, regardless of what CL
 			// snapshots are stored in Datastore.
-			s0 := &State{PB: &prjpb.PState{LuciProject: ct.lProject}}
+			s0 := &State{
+				PB:       &prjpb.PState{LuciProject: ct.lProject},
+				CLPoller: clPoller,
+			}
 			pb0 := backupPB(s0)
 			s1, sideEffect, err := s0.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
@@ -202,50 +211,53 @@ func TestUpdateConfig(t *testing.T) {
 		cl202 := ct.runCLUpdater(ctx, 202)
 		cl203 := ct.runCLUpdater(ctx, 203)
 
-		s1 := &State{PB: &prjpb.PState{
-			LuciProject:      ct.lProject,
-			Status:           prjpb.Status_STARTED,
-			ConfigHash:       meta.Hash(),
-			ConfigGroupNames: []string{"g0", "g1"},
-			Pcls: []*prjpb.PCL{
-				{
-					Clid:               int64(cl101.ID),
-					Eversion:           1,
-					ConfigGroupIndexes: []int32{0}, // g0
-					Status:             prjpb.PCL_OK,
-					Trigger:            trigger.Find(ci101),
-				},
-				{
-					Clid:               int64(cl202.ID),
-					Eversion:           1,
-					ConfigGroupIndexes: []int32{1}, // g1
-					Status:             prjpb.PCL_OK,
-					Trigger:            trigger.Find(ci202),
-				},
-				{
-					Clid:               int64(cl203.ID),
-					Eversion:           1,
-					ConfigGroupIndexes: []int32{1}, // g1
-					Status:             prjpb.PCL_OK,
-					Trigger:            trigger.Find(ci203),
-					Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
-				},
-			},
-			Components: []*prjpb.Component{
-				{
-					Clids: []int64{int64(cl101.ID)},
-					Pruns: []*prjpb.PRun{
-						{
-							Id:    ct.lProject + "/" + "1111-v1-beef",
-							Clids: []int64{int64(cl101.ID)},
-						},
+		s1 := &State{
+			PB: &prjpb.PState{
+				LuciProject:      ct.lProject,
+				Status:           prjpb.Status_STARTED,
+				ConfigHash:       meta.Hash(),
+				ConfigGroupNames: []string{"g0", "g1"},
+				Pcls: []*prjpb.PCL{
+					{
+						Clid:               int64(cl101.ID),
+						Eversion:           1,
+						ConfigGroupIndexes: []int32{0}, // g0
+						Status:             prjpb.PCL_OK,
+						Trigger:            trigger.Find(ci101),
+					},
+					{
+						Clid:               int64(cl202.ID),
+						Eversion:           1,
+						ConfigGroupIndexes: []int32{1}, // g1
+						Status:             prjpb.PCL_OK,
+						Trigger:            trigger.Find(ci202),
+					},
+					{
+						Clid:               int64(cl203.ID),
+						Eversion:           1,
+						ConfigGroupIndexes: []int32{1}, // g1
+						Status:             prjpb.PCL_OK,
+						Trigger:            trigger.Find(ci203),
+						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				},
-				{
-					Clids: []int64{404},
+				Components: []*prjpb.Component{
+					{
+						Clids: []int64{int64(cl101.ID)},
+						Pruns: []*prjpb.PRun{
+							{
+								Id:    ct.lProject + "/" + "1111-v1-beef",
+								Clids: []int64{int64(cl101.ID)},
+							},
+						},
+					},
+					{
+						Clids: []int64{404},
+					},
 				},
 			},
-		}}
+			CLPoller: clPoller,
+		}
 		pb1 := backupPB(s1)
 
 		Convey("noop update is quick", func() {

@@ -50,6 +50,10 @@ func TestPurgeCL(t *testing.T) {
 		defer cancel()
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 
+		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
+		clUpdater := updater.New(ct.TQDispatcher, pmNotifier, nil)
+		purger := New(pmNotifier, clUpdater)
+
 		const lProject = "lprj"
 		const gHost = "x-review"
 		const gRepo = "repo"
@@ -82,7 +86,7 @@ func TestPurgeCL(t *testing.T) {
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
 
 		refreshCL := func() {
-			So(updater.Refresh(ctx, &updater.RefreshGerritCL{
+			So(clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
 				LuciProject: lProject,
 				Host:        gHost,
 				Change:      change,
@@ -121,8 +125,6 @@ func TestPurgeCL(t *testing.T) {
 			},
 		}
 		So(task.Trigger, ShouldNotBeNil)
-
-		purger := New(prjmanager.NewNotifier(ct.TQDispatcher))
 
 		schedule := func() error {
 			return datastore.RunInTransaction(ctx, func(tCtx context.Context) error {
