@@ -16,6 +16,24 @@
       "message": "Why creating a helper function here? Are we expecting callsites other than clpurger package?",
       "revId": "222b66e861bb3c37d7d4c12a2c8b250402144c70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "015a718e_c0dc79b8",
+        "filename": "cv/internal/prjmanager/prjpb/tq.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-19T21:26:41Z",
+      "side": 1,
+      "message": "oh, that\u0027s a great question. I wasn\u0027t sure about this when I did this, but I didn\u0027t want to expose TaskRefs `tqd` field. I actually ended up exposing it, so this func can go back to purger package in a follow up -- will do in https://crrev.com/c/2837825 (not yet uploaded, need to upload a bunch of dependencies first)",
+      "parentUuid": "f1c144f0_b19ff0b3",
+      "revId": "222b66e861bb3c37d7d4c12a2c8b250402144c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
