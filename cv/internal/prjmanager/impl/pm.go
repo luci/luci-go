@@ -38,7 +38,7 @@ import (
 )
 
 func init() {
-	prjpb.ManageProjectTaskRef.AttachHandler(
+	prjpb.DefaultTaskRefs.ManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.ManageProjectTask)
 			err := manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
@@ -46,14 +46,14 @@ func init() {
 		},
 	)
 
-	prjpb.KickManageProjectTaskRef.AttachHandler(
+	prjpb.DefaultTaskRefs.KickManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.KickManageProjectTask)
 			var eta time.Time
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
 			}
-			err := prjpb.Dispatch(ctx, task.GetLuciProject(), eta)
+			err := prjpb.DefaultTaskRefs.Dispatch(ctx, task.GetLuciProject(), eta)
 			return common.TQifyError(ctx, err)
 		},
 	)
@@ -67,7 +67,7 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)
 		// Scheduling new task reduces probability of concurrent tasks in extreme
 		// events.
-		if err := prjpb.Dispatch(ctx, luciProject, time.Time{}); err != nil {
+		if err := prjpb.DefaultTaskRefs.Dispatch(ctx, luciProject, time.Time{}); err != nil {
 			return err
 		}
 		// Hard-fail this task to avoid retries and get correct monitoring stats.
@@ -88,7 +88,7 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 		// overlapped with another task, and risking another overlap for busy
 		// project, schedule a new one in the future which will get a chance of
 		// deduplication.
-		if err2 := prjpb.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
+		if err2 := prjpb.DefaultTaskRefs.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
 			// This should be rare and retry is the best we can do.
 			return errors.Annotate(err2, "project %q", luciProject).Err()
 		}
