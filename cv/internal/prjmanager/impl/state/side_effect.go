@@ -125,7 +125,7 @@ func (t *TriggerPurgeCLTasks) Do(ctx context.Context) error {
 		for _, p := range t.payloads {
 			p := p
 			work <- func() error {
-				return clpurger.Schedule(ctx, p)
+				return clpurger.Default.Schedule(ctx, p)
 			}
 		}
 	})
