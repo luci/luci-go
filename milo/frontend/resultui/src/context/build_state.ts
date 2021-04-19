@@ -141,7 +141,7 @@ export class BuildState {
   }
 
   @computed
-  private get relatedBuildReq(): IPromiseBasedObservable<readonly Build[]> {
+  private get relatedBuilds$(): IPromiseBasedObservable<readonly Build[]> {
     if (!this.build) {
       return fromPromise(Promise.race([]));
     }
@@ -182,10 +182,10 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   get relatedBuilds(): readonly BuildExt[] | null {
-    if (this.isDisposed || this.relatedBuildReq.state !== FULFILLED) {
+    if (this.isDisposed || this.relatedBuilds$.state !== FULFILLED) {
       return null;
     }
-    return this.relatedBuildReq.value.map((build) => new BuildExt(build));
+    return this.relatedBuilds$.value.map((build) => new BuildExt(build));
   }
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
