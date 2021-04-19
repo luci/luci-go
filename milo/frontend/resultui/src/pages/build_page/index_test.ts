@@ -50,6 +50,7 @@ describe('Invocation Page', () => {
       },
     } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
+    page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
@@ -74,6 +75,7 @@ describe('Invocation Page', () => {
       },
     } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
+    page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
@@ -120,6 +122,7 @@ describe('Invocation Page', () => {
     } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
 
+    page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
@@ -165,6 +168,7 @@ describe('Invocation Page', () => {
     } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
 
+    page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
