@@ -22,7 +22,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -45,7 +44,7 @@ func TestPurgeCL(t *testing.T) {
 	t.Parallel()
 
 	Convey("PurgeCL works", t, func() {
-		ct := cvtesting.Test{AppID: "cv", TQDispatcher: &tq.Dispatcher{}}
+		ct := cvtesting.Test{AppID: "cv"}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)

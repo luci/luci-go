@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -50,9 +49,7 @@ func TestSchedule(t *testing.T) {
 	t.Parallel()
 
 	Convey("schedule works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ct.Clock.Set(ct.Clock.Now().Truncate(pollInterval).Add(pollInterval))
@@ -164,9 +161,7 @@ func TestPoller(t *testing.T) {
 	t.Parallel()
 
 	Convey("Polling & task scheduling works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
