@@ -66,6 +66,7 @@ type State struct {
 	PMNotifier  *prjmanager.Notifier
 	RunNotifier *run.Notifier
 	CLPurger    *clpurger.Purger
+	CLPoller    *poller.Poller
 
 	// Helper private fields used during mutations.
 
@@ -103,7 +104,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 
 		// Tell poller to update ASAP. It doesn't need to wait for a transaction as
 		// it's OK for poller to be temporarily more up-to-date than PM.
-		if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
+		if err := s.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 			return nil, nil, err
 		}
 
@@ -147,7 +148,7 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 			s.PB.Status = prjpb.Status_STOPPING
 			fallthrough
 		case prjpb.Status_STOPPING:
-			if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
+			if err := s.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 				return nil, nil, err
 			}
 			runs := s.PB.IncompleteRuns()
@@ -183,7 +184,7 @@ func (s *State) Poke(ctx context.Context) (*State, SideEffect, error) {
 	}
 
 	// Propagate downstream directly.
-	if err := poller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
+	if err := s.CLPoller.Poke(ctx, s.PB.GetLuciProject()); err != nil {
 		return nil, nil, err
 	}
 	if err := s.pokeRuns(ctx); err != nil {
