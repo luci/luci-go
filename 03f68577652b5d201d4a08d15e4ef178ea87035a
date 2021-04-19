@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d17908a_4b83b053",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-19T21:33:30Z",
+      "side": 1,
+      "message": "PTAL\n\nThis is needed to unblock the next CL.",
+      "revId": "03f68577652b5d201d4a08d15e4ef178ea87035a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
