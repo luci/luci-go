@@ -165,6 +165,10 @@ luci.builder(
             by_timestamp = True,
         ),
     ),
+    test_presentation = resultdb.test_presentation(
+        column_keys = ["v.gpu"],
+        grouping_keys = ["status", "v.test_suite"],
+    ),
 )
 
 luci.builder(
@@ -643,6 +647,7 @@ lucicfg.emit(
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
+#         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.gpu\"],\"grouping_keys\":[\"status\",\"v.test_suite\"]}"
 #         properties_j: "prop1:\"val1\""
 #         properties_j: "prop2:[\"val2\",123]"
 #       }
