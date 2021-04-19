@@ -102,8 +102,8 @@ func (r *dsState) BeginTransaction(c context.Context) error {
 // CommitTransaction is exposed as a "breakable" hook to simulate bad
 // transaction commits.
 //
-// It not a part of RawDatastore interface, but can nevertheless be overridden
-// with BreakFeature to simulate transaction commit errors.
+// It is not a part of RawDatastore interface, but can nevertheless be
+// overridden with BreakFeature to simulate transaction commit errors.
 func (r *dsState) CommitTransaction(c context.Context) error {
 	return r.run(c, func() error { return nil })
 }
