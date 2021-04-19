@@ -385,7 +385,7 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	t, tPB := earliestDecisionTime(components)
 	if !proto.Equal(s.PB.NextEvalTime, tPB) {
 		s.PB.NextEvalTime = tPB
-		if err := prjpb.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
+		if err := prjpb.DefaultTaskRefs.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
 			return nil, nil, err
 		}
 	}
