@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -75,7 +76,12 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 	}
 
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
-	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, &projectManager{luciProject: luciProject}); {
+	pm := &projectManager{
+		luciProject: luciProject,
+		pmNotifier:  prjmanager.DefaultNotifier,
+		clPurger:    clpurger.Default,
+	}
+	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, pm); {
 	case err == nil:
 		for _, postProcessFn := range postProcessFns {
 			if err := postProcessFn(ctx); err != nil {
@@ -103,6 +109,9 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 type projectManager struct {
 	luciProject string
 
+	pmNotifier *prjmanager.Notifier
+	clPurger   *clpurger.Purger
+
 	// loadedPState is set by LoadState and read by SaveState.
 	loadedPState *prjpb.PState
 }
@@ -113,11 +122,11 @@ func (pm *projectManager) LoadState(ctx context.Context) (eventbox.State, eventb
 	case err != nil:
 		return nil, 0, err
 	case p == nil:
-		return state.NewInitial(pm.luciProject), 0, nil
+		return state.NewInitial(pm.luciProject, pm.pmNotifier, pm.clPurger), 0, nil
 	default:
 		p.State.LuciProject = pm.luciProject
 		pm.loadedPState = p.State
-		return state.NewExisting(p.State), eventbox.EVersion(p.EVersion), nil
+		return state.NewExisting(p.State, pm.pmNotifier, pm.clPurger), eventbox.EVersion(p.EVersion), nil
 	}
 }
 
