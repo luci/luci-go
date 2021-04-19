@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5d667f0_f2afc680",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-19T20:22:57Z",
+      "side": 1,
+      "message": "that",
+      "range": {
+        "startLine": 10,
+        "startChar": 8,
+        "endLine": 10,
+        "endChar": 9
+      },
+      "revId": "4f105aaa95ee642c43d8aa8f04630bebfbed0974",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "93c2c0f5_4842bf41",
+        "filename": "milo/frontend/resultui/src/pages/build_page/related_builds_tab.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-19T20:22:57Z",
+      "side": 1,
+      "message": "looks generic. Should this be the the default error func?\n\nshould it contain the error message?",
+      "revId": "4f105aaa95ee642c43d8aa8f04630bebfbed0974",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
