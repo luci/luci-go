@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1502060_9d0c0f4d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-19T23:56:06Z",
+      "side": 1,
+      "message": "BTW, I thought this maps to the params keys.\nShouldn\u0027t this be resultdb_settings instead?",
+      "range": {
+        "startLine": 393,
+        "startChar": 8,
+        "endLine": 393,
+        "endChar": 18
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
