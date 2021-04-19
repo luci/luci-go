@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd47740f_dbf26cf6",
+        "filename": "cv/internal/prjmanager/prjpb/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-19T20:43:24Z",
+      "side": 1,
+      "message": "Oh, that\u0027s an oversight. I meant to delete it. Done.",
+      "parentUuid": "188c709e_2285fd15",
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8a184d58_207749e1",
@@ -48,6 +66,30 @@
       "writtenOn": "2021-04-19T20:33:33Z",
       "side": 1,
       "message": "It might be clearer if this is explained in more words, like \"other event-sending methods on Notifier...\"",
+      "range": {
+        "startLine": 108,
+        "startChar": 34,
+        "endLine": 108,
+        "endChar": 47
+      },
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "33256801_297a139e",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-19T20:43:24Z",
+      "side": 1,
+      "message": "lol, this was a regexp-based replace messing up with comment. Fixed 😊",
+      "parentUuid": "8a184d58_207749e1",
       "range": {
         "startLine": 108,
         "startChar": 34,
