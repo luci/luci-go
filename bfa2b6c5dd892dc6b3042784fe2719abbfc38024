@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35ab6c8e_cb676046",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-19T20:38:41Z",
+      "side": 1,
+      "message": "return ret {\n  ...\n}\n\n?",
+      "range": {
+        "startLine": 328,
+        "startChar": 4,
+        "endLine": 331,
+        "endChar": 14
+      },
+      "revId": "bfa2b6c5dd892dc6b3042784fe2719abbfc38024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
