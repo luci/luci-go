@@ -54,8 +54,10 @@ func TestSchedule(t *testing.T) {
 		ct.Clock.Set(ct.Clock.Now().Truncate(pollInterval).Add(pollInterval))
 		const project = "chromium"
 
+		p := Default
+
 		Convey("schedule works", func() {
-			So(schedule(ctx, project, time.Time{}), ShouldBeNil)
+			So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
 			payloads := pt.PFilter(ct.TQ.Tasks())
 			So(payloads, ShouldHaveLength, 1)
 			first := payloads[0]
@@ -65,11 +67,11 @@ func TestSchedule(t *testing.T) {
 				ct.Clock.Now().UnixNano(), ct.Clock.Now().Add(pollInterval).UnixNano())
 
 			Convey("idempotency via task deduplication", func() {
-				So(schedule(ctx, project, time.Time{}), ShouldBeNil)
+				So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
 				So(pt.PFilter(ct.TQ.Tasks()), ShouldHaveLength, 1)
 
 				Convey("but only for the same project", func() {
-					So(schedule(ctx, "another-project", time.Time{}), ShouldBeNil)
+					So(p.schedule(ctx, "another-project", time.Time{}), ShouldBeNil)
 					ids := pt.Projects(ct.TQ.Tasks())
 					sort.Strings(ids)
 					So(ids, ShouldResemble, []string{"another-project", project})
@@ -77,14 +79,14 @@ func TestSchedule(t *testing.T) {
 			})
 
 			Convey("schedule next poll", func() {
-				So(schedule(ctx, project, firstETA), ShouldBeNil)
+				So(p.schedule(ctx, project, firstETA), ShouldBeNil)
 				payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
 				So(payloads, ShouldHaveLength, 2)
 				So(payloads[1].GetEta().AsTime(), ShouldEqual, firstETA.Add(pollInterval))
 
 				Convey("from a delayed prior poll", func() {
 					ct.Clock.Set(firstETA.Add(pollInterval).Add(pollInterval / 2))
-					So(schedule(ctx, project, firstETA), ShouldBeNil)
+					So(p.schedule(ctx, project, firstETA), ShouldBeNil)
 					payloads := pt.PFilter(ct.TQ.Tasks().SortByETA())
 					So(payloads, ShouldHaveLength, 3)
 					So(payloads[2].GetEta().AsTime(), ShouldEqual, firstETA.Add(2*pollInterval))
