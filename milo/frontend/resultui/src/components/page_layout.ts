@@ -17,10 +17,10 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable } from 'mobx';
 
 import './signin';
 import './tooltip';
+import './error_handler';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { genFeedbackUrl } from '../libs/utils';
@@ -45,8 +45,6 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
   readonly appState = new AppState();
   readonly configsStore = new UserConfigsStore();
 
-  @observable.ref errorMsg: string | null = null;
-
   constructor() {
     super();
     // Expires the token slightly (10s) earlier so an expired token won't be
@@ -64,10 +62,6 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
       });
   }
 
-  errorHandler = (event: ErrorEvent) => {
-    this.errorMsg = event.message;
-  };
-
   onBeforeEnter() {
     if ('serviceWorker' in navigator) {
       // onBeforeEnter can be async.
@@ -80,13 +74,7 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
     }
   }
 
-  connectedCallback() {
-    super.connectedCallback();
-    this.addEventListener('error', this.errorHandler);
-  }
-
   disconnectedCallback() {
-    this.removeEventListener('error', this.errorHandler);
     this.appState.dispose();
     super.disconnectedCallback();
   }
@@ -138,12 +126,9 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
             : ''}
         </div>
       </div>
-      ${this.errorMsg === null
-        ? html`<slot></slot>`
-        : html`
-            <div id="error-label">An error occurred:</div>
-            <div id="error-message">${this.errorMsg.split('\n').map((line) => html`<p>${line}</p>`)}</div>
-          `}
+      <milo-error-handler>
+        <slot></slot>
+      </milo-error-handler>
     `;
   }
 
@@ -201,16 +186,6 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
       }
       .interactive-icon:hover {
         opacity: 0.8;
-      }
-
-      #error-label {
-        margin: 8px 16px;
-      }
-
-      #error-message {
-        margin: 8px 16px;
-        background-color: var(--block-background-color);
-        padding: 5px;
       }
     `,
   ];
