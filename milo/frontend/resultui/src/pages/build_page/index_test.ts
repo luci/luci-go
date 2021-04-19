@@ -50,6 +50,7 @@ describe('Invocation Page', () => {
       },
     } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
+    page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
@@ -74,6 +75,7 @@ describe('Invocation Page', () => {
       },
     } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
+    page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
@@ -120,9 +122,12 @@ describe('Invocation Page', () => {
     } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
 
+    page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
+    assert.strictEqual(resultDbStub?.getInvocation.callCount, 1);
+    assert.strictEqual(page.buildState.useComputedInvId, false);
     assert.strictEqual(page.buildState.invocationId, 'invocation-id');
     page.disconnectedCallback();
   });
@@ -165,6 +170,7 @@ describe('Invocation Page', () => {
     } as Partial<RouterLocation>) as RouterLocation;
     const cmd = ({} as Partial<Commands>) as Commands;
 
+    page.prerender = false;
     await page.onBeforeEnter(location, cmd);
     page.connectedCallback();
     await aTimeout(0);
