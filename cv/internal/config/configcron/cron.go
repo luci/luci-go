@@ -29,14 +29,49 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 )
+
+// PM encapsulates Project Manager notified by the ConfigRefresher.
+//
+// In production, this will be prjmanager.Notifier.
+type PM interface {
+	Poke(ctx context.Context, luciProject string) error
+	UpdateConfig(ctx context.Context, luciProject string) error
+}
+
+type ProjectConfigRefresher struct {
+	pm  PM
+	tqd *tq.Dispatcher
+}
+
+// New creates new ProjectConfigRefresher and registers its TQ tasks.
+func New(tqd *tq.Dispatcher, pm PM) *ProjectConfigRefresher {
+	pcr := &ProjectConfigRefresher{pm, tqd}
+	pcr.tqd.RegisterTaskClass(tq.TaskClass{
+		ID:        "refresh-project-config",
+		Prototype: &RefreshProjectConfigTask{},
+		Queue:     "refresh-project-config",
+		Kind:      tq.NonTransactional,
+		Quiet:     true,
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			task := payload.(*RefreshProjectConfigTask)
+			if err := pcr.refreshProject(ctx, task.GetProject(), task.GetDisable()); err != nil {
+				// Never retry tasks because the refresh task is submitted every minute
+				// by the AppEngine Cron.
+				err = tq.Fatal.Apply(err)
+				return common.TQIfy{}.Error(ctx, err)
+			}
+			return nil
+		},
+	})
+	return pcr
+}
 
 // SubmitRefreshTasks submits tasks that update config for LUCI projects
 // or disable projects that do not have CV config in LUCI Config.
 //
 // It's expected to be called by a cron.
-func SubmitRefreshTasks(ctx context.Context) error {
+func (pcr *ProjectConfigRefresher) SubmitRefreshTasks(ctx context.Context) error {
 	projects, err := config.ProjectsWithConfig(ctx)
 	if err != nil {
 		return err
@@ -86,7 +121,7 @@ func SubmitRefreshTasks(ctx context.Context) error {
 		for _, task := range tasks {
 			task := task
 			workCh <- func() (err error) {
-				if err = tq.AddTask(ctx, task); err != nil {
+				if err = pcr.tqd.AddTask(ctx, task); err != nil {
 					logging.Errorf(ctx, "Failed to submit task for %q: %s", task.Title, err)
 				}
 				return
@@ -100,46 +135,26 @@ func SubmitRefreshTasks(ctx context.Context) error {
 	return nil
 }
 
-func init() {
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "refresh-project-config",
-		Prototype: &RefreshProjectConfigTask{},
-		Queue:     "refresh-project-config",
-		Kind:      tq.NonTransactional,
-		Quiet:     true,
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*RefreshProjectConfigTask)
-			if err := refreshProject(ctx, task.GetProject(), task.GetDisable()); err != nil {
-				// Never retry tasks because the refresh task is submitted every minute
-				// by the AppEngine Cron.
-				err = tq.Fatal.Apply(err)
-				return common.TQIfy{}.Error(ctx, err)
-			}
-			return nil
-		},
-	})
-}
-
-func refreshProject(ctx context.Context, project string, disable bool) error {
+func (pcr *ProjectConfigRefresher) refreshProject(ctx context.Context, project string, disable bool) error {
 	action, actionFn := "update", config.UpdateProject
 	if disable {
 		action, actionFn = "disable", config.DisableProject
 	}
 	err := actionFn(ctx, project, func(ctx context.Context) error {
-		return prjmanager.UpdateConfig(ctx, project)
+		return pcr.pm.UpdateConfig(ctx, project)
 	})
 	if err != nil {
 		return errors.Annotate(err, "failed to %s project %q", action, project).Err()
 	}
 	if !disable {
-		return maybePokePM(ctx, project)
+		return pcr.maybePokePM(ctx, project)
 	}
 	return nil
 }
 
 const pokePMInterval = 10 * time.Minute
 
-func maybePokePM(ctx context.Context, project string) error {
+func (pcr *ProjectConfigRefresher) maybePokePM(ctx context.Context, project string) error {
 	now := clock.Now(ctx).UTC()
 	offset := common.ProjectOffset("cron-poke", pokePMInterval, project)
 	nextPokeETA := now.Truncate(pokePMInterval).Add(offset)
@@ -152,7 +167,7 @@ func maybePokePM(ctx context.Context, project string) error {
 	// poke. This will sometimes result in 2 pokes sent instead of 1, but pokes
 	// are less likely to not be sent at all.
 	if nextPokeETA.Sub(now) < 90*time.Second {
-		return prjmanager.Poke(ctx, project)
+		return pcr.pm.Poke(ctx, project)
 	}
 	return nil
 }
