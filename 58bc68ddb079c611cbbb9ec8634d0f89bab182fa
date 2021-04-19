@@ -70,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b61171e2_dd32632c",
+        "filename": "cv/internal/prjmanager/prjpb/tq.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-19T21:34:29Z",
+      "side": 1,
+      "message": "done in https://crrev.com/c/2837825",
+      "parentUuid": "06c43ef5_c3b5cf4f",
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dbf145ab_17a0c369",
@@ -83,6 +101,24 @@
       "writtenOn": "2021-04-19T21:06:48Z",
       "side": 1,
       "message": "nit: move to separate block",
+      "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa4c55f1_06746012",
+        "filename": "cv/internal/prjmanager/send.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-19T21:34:29Z",
+      "side": 1,
+      "message": "https://crrev.com/c/2837825",
+      "parentUuid": "dbf145ab_17a0c369",
       "revId": "58bc68ddb079c611cbbb9ec8634d0f89bab182fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
