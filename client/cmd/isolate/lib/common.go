@@ -16,24 +16,24 @@ package lib
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
+	"regexp"
 	"sort"
 	"strings"
-	"sync/atomic"
 	"time"
+
+	cas2 "go.chromium.org/luci/client/rbe/cas"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"google.golang.org/grpc"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/uploadinfo"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 
@@ -99,9 +99,6 @@ func (c *baseCommandRun) ModifyContext(ctx context.Context) context.Context {
 
 func (c *baseCommandRun) newCASClient(ctx context.Context, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
 	factory := c.casClientFactory
-	if factory == nil {
-		factory = cas.NewClient
-	}
 	return factory(ctx, instance, opts, readOnly)
 }
 
@@ -322,126 +319,97 @@ func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec
 }
 
 func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authOpts auth.Options, fl *cas.Flags, al *archiveLogger, opts ...*isolate.ArchiveOptions) ([]digest.Digest, error) {
-	// To cancel |uploadEg| when there is error in |digestEg|.
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	// Construct auth.Options.
+	project := strings.Split(fl.Instance, "/")[1]
+	authOpts.ActAsServiceAccount = fmt.Sprintf("cas-read-write@%s.iam.gserviceaccount.com", project)
+	authOpts.ActViaLUCIRealm = fmt.Sprintf("@internal:%s/cas-read-write", project)
+	authOpts.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform"}
 
-	cl, err := r.newCASClient(ctx, fl.Instance, authOpts, false)
+	if strings.HasSuffix(project, "-dev") || strings.HasSuffix(project, "-staging") {
+		// use dev token server for dev/staging projects.
+		authOpts.TokenServerHost = chromeinfra.TokenServerDevHost
+	}
+
+	creds, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).PerRPCCredentials()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+	}
+	cfg := cas2.DefaultClientConfig()
+	cfg.DialParams.TransportCredsOnly = true
+	cfg.DialParams.DialOpts = append(cfg.DialParams.DialOpts, grpc.WithPerRPCCredentials(creds))
+	client, err := cas2.NewClientWithConfig(ctx, fl.Instance, cfg)
 	if err != nil {
 		return nil, err
 	}
-	defer cl.Close()
 
 	start := time.Now()
-	fmCache := filemetadata.NewSingleFlightCache()
 
-	rootDgs := make([]digest.Digest, len(opts))
-	entriesC := make(chan []*uploadinfo.Entry)
+	uploadInputC := make(chan *cas2.UploadInput)
+	eg, ctx := errgroup.WithContext(ctx)
+	predicates := map[string]cas2.FilePredicate{}
+	eg.Go(func() error {
+		defer close(uploadInputC)
+		for _, o := range opts {
+			var predicate func(absName string, mode os.FileMode) bool
+			if o.IgnoredPathFilterRe != "" {
+				predicate = predicates[o.IgnoredPathFilterRe]
+				if predicate == nil {
+					rgx, err := regexp.Compile(o.IgnoredPathFilterRe)
+					if err != nil {
+						return errors.Annotate(err, "invalid regexp %q", o.IgnoredPathFilterRe).Err()
+					}
+					predicate = func(absName string, mode os.FileMode) bool {
+						return !rgx.MatchString(absName)
+					}
+					predicates[o.IgnoredPathFilterRe] = predicate
+				}
+			}
 
-	digestEg, _ := errgroup.WithContext(ctx)
-
-	// limit the number of concurrent hash calculations and I/O operations.
-	ch := make(chan struct{}, runtime.NumCPU())
-	logger := logging.Get(ctx)
-
-	for i, o := range opts {
-		i, o := i, o
-		digestEg.Go(func() error {
-			ch <- struct{}{}
-			defer func() { <-ch }()
-
-			execRoot, is, err := buildCASInputSpec(o)
+			deps, _, _, err := isolate.ProcessIsolate(o)
 			if err != nil {
-				return errors.Annotate(err, "failed to call buildCASInputSpec").Err()
+				return err
 			}
-
-			start := time.Now()
-			rootDg, entrs, stats, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
-			if err != nil {
-				return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+			for _, d := range deps {
+				uploadInputC <- &cas2.UploadInput{
+					Path:      d,
+					Predicate: predicate,
+				}
 			}
-			logger.Infof("ComputeMerkleTree returns %d entries with total size %d for %s, took %s",
-				len(entrs), stats.TotalInputBytes, o.Isolate, time.Since(start))
-			rootDgs[i] = rootDg
-			entriesC <- entrs
-
-			return nil
-		})
-	}
-
-	var entryCount int
-	var entrySize int64
-	var uploadEntryCount int64
-	var uploadEntrySize int64
-	var uploadedBytes int64
-
-	uploadEg, uctx := errgroup.WithContext(ctx)
-	uploadEg.Go(func() error {
-		uploaded := make(map[digest.Digest]struct{})
-		for entrs := range entriesC {
-			entryCount += len(entrs)
-			toUpload := make([]*uploadinfo.Entry, 0, len(entrs))
-			for _, e := range entrs {
-				entrySize += e.Digest.Size
-				if _, ok := uploaded[e.Digest]; ok {
-					continue
-				}
-				uploaded[e.Digest] = struct{}{}
-				toUpload = append(toUpload, e)
-			}
-
-			uploadEg.Go(func() error {
-				start := time.Now()
-				uploaded, bytes, err := cl.UploadIfMissing(uctx, toUpload...)
-				if err != nil {
-					return errors.Annotate(err, "failed to upload").Err()
-				}
-
-				logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
-					len(toUpload), len(uploaded), bytes, time.Since(start))
-
-				uploadSizeSum := int64(0)
-				for _, d := range uploaded {
-					uploadSizeSum += d.Size
-				}
-				atomic.AddInt64(&uploadEntryCount, int64(len(uploaded)))
-				atomic.AddInt64(&uploadEntrySize, uploadSizeSum)
-				atomic.AddInt64(&uploadedBytes, bytes)
-				return nil
-			})
 		}
 		return nil
 	})
 
-	if err := digestEg.Wait(); err != nil {
-		close(entriesC)
+	var stats *cas2.TransferStats
+	eg.Go(func() (err error) {
+		stats, err = client.Upload(ctx, uploadInputC)
+		return
+	})
+
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
-	close(entriesC)
-	if err := uploadEg.Wait(); err != nil {
-		return nil, err
-	}
-
-	logger.Infof("finished upload for %d entries (%d uploaded, %d bytes), took %s",
-		entryCount, uploadEntryCount, uploadedBytes, time.Since(start))
+	logging.Infof(ctx, "finished upload for %d isolates (%d uploaded, %d bytes), took %s",
+		len(opts), stats.CacheMisses.Count, stats.CacheMisses.Bytes, time.Since(start))
 
 	if al != nil {
-		al.LogSummary(ctx, entryCount-int(uploadEntryCount), int(uploadEntryCount), units.Size(entrySize-uploadEntrySize), units.Size(uploadEntrySize))
+		al.LogSummary(ctx, int(stats.CacheHits.Count), int(stats.CacheMisses.Count), units.Size(stats.CacheHits.Bytes), units.Size(stats.CacheMisses.Bytes))
 	}
 
-	if dumpJSON == "" {
-		return rootDgs, nil
-	}
+	// TODO: rootDgs
+	return nil, nil
+	// if dumpJSON == "" {
+	// 	return rootDgs, nil
+	// }
 
-	m := make(map[string]string, len(opts))
-	for i, o := range opts {
-		m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
-	}
-	f, err := os.Create(dumpJSON)
-	if err != nil {
-		return rootDgs, err
-	}
-	defer f.Close()
-	return rootDgs, json.NewEncoder(f).Encode(m)
+	// m := make(map[string]string, len(opts))
+	// for i, o := range opts {
+	// 	m[filesystem.GetFilenameNoExt(o.Isolate)] = rootDgs[i].String()
+	// }
+	// f, err := os.Create(dumpJSON)
+	// if err != nil {
+	// 	return rootDgs, err
+	// }
+	// defer f.Close()
+	// return rootDgs, json.NewEncoder(f).Encode(m)
 }
