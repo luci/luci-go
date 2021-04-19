@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "76c047b4_307e2c2c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T20:30:18Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "4a98427dd4c8e4df412f699767e0313e62b89315",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5de0acf5_051ae0b7",
+        "filename": "cv/internal/cvtesting/util.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-19T20:30:18Z",
+      "side": 1,
+      "message": "Nit (could be done in a later CL): Name TQDispatcher rather than TQD in the comment",
+      "range": {
+        "startLine": 77,
+        "startChar": 4,
+        "endLine": 77,
+        "endChar": 7
+      },
+      "revId": "4a98427dd4c8e4df412f699767e0313e62b89315",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
