@@ -1,0 +1,17 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Example</title>
+  </head>
+  <body>
+    {{if not .IsAnonymous}}
+      <p>Hi there, {{.User.Email}}!</p>
+      {{if .User.Picture}}
+        <p>Here's your picture: <img src="{{.User.Picture}}"></p>
+      {{end}}
+      <a href="{{.LogoutURL}}">Logout</a>
+    {{else}}
+      <a href="{{.LoginURL}}">Login</a>
+    {{end}}
+  </body>
+</html>
