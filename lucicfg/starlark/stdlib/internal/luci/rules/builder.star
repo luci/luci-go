@@ -60,6 +60,7 @@ def _builder(
 
         # Results.
         resultdb_settings = None,
+        test_presentation = None,
 
         # Relations.
         triggers = None,
@@ -208,6 +209,8 @@ def _builder(
         with resultdb.settings(...). A configuration that defines if
         Buildbucket:ResultDB integration should be enabled for this builder and
         which results to export to BigQuery.
+      test_presentation: A resultdb.test_presentation(...) struct. A
+        configuration that defines how tests should be rendered in the UI.
 
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.
@@ -219,6 +222,14 @@ def _builder(
     bucket_key = keys.bucket(bucket)
     executable_key = keys.executable(executable)
 
+    properties = validate.str_dict("properties", properties)
+    test_presentation = resultdb.validate_test_presentation("test_presentation", test_presentation)
+
+    # To reduce noise in the properties, set the test presentation config only
+    # when it's not the default value.
+    if test_presentation != resultdb.test_presentation():
+        properties["$recipe_engine/milo/test_presentation"] = resultdb.test_presentation_to_dict(test_presentation)
+
     # TODO(vadimsh): Validators here and in lucicfg.rule(..., defaults = ...)
     # are duplicated. There's probably a way to avoid this by introducing a
     # Schema object.
@@ -228,7 +239,7 @@ def _builder(
         "realm": bucket_key.id if realms.experiment.is_enabled() else None,
         "description_html": validate.string("description_html", description_html, required = False),
         "project": "",  # means "whatever is being defined right now"
-        "properties": validate.str_dict("properties", properties),
+        "properties": properties,
         "service_account": validate.string("service_account", service_account, required = False),
         "caches": swarming.validate_caches("caches", caches),
         "execution_timeout": validate.duration("execution_timeout", execution_timeout, required = False),
@@ -380,5 +391,6 @@ builder = lucicfg.rule(
         "experiments": _validate_experiments,
         "task_template_canary_percentage": lambda attr, val: validate.int(attr, val, min = 0, max = 100),
         "resultdb": resultdb.validate_settings,
+        "test_presentation": resultdb.validate_test_presentation,
     }),
 )
