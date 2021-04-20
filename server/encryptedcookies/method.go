@@ -19,10 +19,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"net/url"
-	"path"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/google/tink/go/tink"
 	"golang.org/x/oauth2"
@@ -228,7 +225,7 @@ func (m *AuthMethod) LoginURL(ctx context.Context, dest string) (string, error) 
 	if _, err := m.checkConfigured(ctx); err != nil {
 		return "", err
 	}
-	return makeRedirectURL(loginURL, dest)
+	return internal.MakeRedirectURL(loginURL, dest)
 }
 
 // LogoutURL returns a URL that, when visited, signs the user out,
@@ -239,7 +236,7 @@ func (m *AuthMethod) LogoutURL(ctx context.Context, dest string) (string, error)
 	if _, err := m.checkConfigured(ctx); err != nil {
 		return "", err
 	}
-	return makeRedirectURL(logoutURL, dest)
+	return internal.MakeRedirectURL(logoutURL, dest)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -311,7 +308,7 @@ func (m *AuthMethod) handler(ctx *router.Context, cb handler) {
 // loginHandler initiates the login flow.
 func (m *AuthMethod) loginHandler(ctx *router.Context) {
 	m.handler(ctx, func(ctx context.Context, r *http.Request, rw http.ResponseWriter, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
-		dest, err := normalizeURL(r.URL.Query().Get("r"))
+		dest, err := internal.NormalizeURL(r.URL.Query().Get("r"))
 		if err != nil {
 			return errors.Annotate(err, "bad redirect URI").Err()
 		}
@@ -359,7 +356,7 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 // logoutHandler closes the session.
 func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 	m.handler(ctx, func(ctx context.Context, r *http.Request, rw http.ResponseWriter, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
-		dest, err := normalizeURL(r.URL.Query().Get("r"))
+		dest, err := internal.NormalizeURL(r.URL.Query().Get("r"))
 		if err != nil {
 			return errors.Annotate(err, "bad redirect URI").Err()
 		}
@@ -388,9 +385,9 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 		}
 
 		// Nuke all session cookies to get to a completely clean state.
-		removeCookie(rw, r, internal.SessionCookieName)
+		internal.RemoveCookie(rw, r, internal.SessionCookieName)
 		for _, name := range m.IncompatibleCookies {
-			removeCookie(rw, r, name)
+			internal.RemoveCookie(rw, r, name)
 		}
 		http.Redirect(rw, r, dest, http.StatusFound)
 		return nil
@@ -590,7 +587,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		httpCookie.Secure = !m.Insecure
 		http.SetCookie(rw, httpCookie)
 		for _, name := range m.IncompatibleCookies {
-			removeCookie(rw, r, name)
+			internal.RemoveCookie(rw, r, name)
 		}
 
 		// Finally redirect the user to the originally requested destination.
@@ -785,60 +782,6 @@ func bumpGeneration(ctx context.Context, s *sessionpb.Session, expected int32) {
 			s.Generation, expected)
 	}
 	s.Generation++
-}
-
-// normalizeURL verifies URL is parsable and that it is relative.
-func normalizeURL(dest string) (string, error) {
-	if dest == "" {
-		return "/", nil
-	}
-	u, err := url.Parse(dest)
-	if err != nil {
-		return "", errors.Annotate(err, "bad destination URL %q", dest).Err()
-	}
-	// Note: '//host/path' is a location on a server named 'host'.
-	if u.IsAbs() || !strings.HasPrefix(u.Path, "/") || strings.HasPrefix(u.Path, "//") {
-		return "", errors.Reason("bad absolute destination URL %q", u).Err()
-	}
-	// path.Clean removes trailing slash. It matters for URLs though. Keep it.
-	keepSlash := strings.HasSuffix(u.Path, "/")
-	u.Path = path.Clean(u.Path)
-	if !strings.HasSuffix(u.Path, "/") && keepSlash {
-		u.Path += "/"
-	}
-	if !strings.HasPrefix(u.Path, "/") {
-		return "", errors.Reason("bad destination URL %q", u).Err()
-	}
-	return u.String(), nil
-}
-
-// makeRedirectURL is used to generate login and logout URLs.
-func makeRedirectURL(base, dest string) (string, error) {
-	dest, err := normalizeURL(dest)
-	if err != nil {
-		return "", err
-	}
-	if dest == "/" {
-		return base, nil
-	}
-	v := url.Values{"r": {dest}}
-	return base + "?" + v.Encode(), nil
-}
-
-// removeCookie sets a cookie to a past expiration date so that the browser can
-// remove it.
-//
-// It also replaces the value with junk, in case the browser decides to ignore
-// the expiration time.
-func removeCookie(rw http.ResponseWriter, r *http.Request, cookie string) {
-	if prev, err := r.Cookie(cookie); err == nil {
-		cpy := *prev
-		cpy.Value = "deleted"
-		cpy.Path = "/"
-		cpy.MaxAge = -1
-		cpy.Expires = time.Unix(1, 0)
-		http.SetCookie(rw, &cpy)
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
