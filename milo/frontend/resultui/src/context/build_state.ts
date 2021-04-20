@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
 import { consumeContext, provideContext } from '../libs/context';
@@ -82,7 +82,7 @@ export class BuildState {
   }
 
   @computed get invocationId() {
-    return this.invocationId$.state === FULFILLED ? this.invocationId$.value : null;
+    return unwrapObservable(this.invocationId$, null);
   }
 
   constructor(private appState: AppState) {}
@@ -101,12 +101,18 @@ export class BuildState {
     this.build$;
     this.relatedBuilds$;
     this.queryBlamelistResIterFns;
+    this.permittedActions$;
+    this.projectCfg$;
   }
 
   private buildQueryTime = this.appState.timestamp;
   @computed({ keepAlive: true })
   private get build$(): IPromiseBasedObservable<BuildExt> {
-    if (!this.appState.buildsService || (!this.buildId && (!this.builderIdParam || !this.buildNum))) {
+    if (
+      this.isDisposed ||
+      !this.appState.buildsService ||
+      (!this.buildId && (!this.builderIdParam || !this.buildNum))
+    ) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -241,7 +247,7 @@ export class BuildState {
 
   @computed
   get builder(): BuilderItem | null {
-    return this.builder$.state === FULFILLED ? this.builder$.value : null;
+    return unwrapObservable(this.builder$, null);
   }
 
   @computed private get bucketResourceId() {
@@ -251,9 +257,9 @@ export class BuildState {
     return `luci.${this.builderId.project}.${this.builderId.bucket}`;
   }
 
-  @computed
+  @computed({ keepAlive: true })
   private get permittedActions$() {
-    if (!this.appState.accessService || !this.bucketResourceId) {
+    if (this.isDisposed || !this.appState.accessService || !this.bucketResourceId) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -272,16 +278,13 @@ export class BuildState {
 
   @computed
   get permittedActions(): Set<string> {
-    const actions =
-      this.permittedActions$.state === FULFILLED
-        ? this.permittedActions$.value.permitted[this.bucketResourceId!].actions
-        : undefined;
-    return new Set(actions || []);
+    const permittedActionRes = unwrapObservable(this.permittedActions$, null);
+    return new Set(permittedActionRes?.permitted[this.bucketResourceId!].actions || []);
   }
 
-  @computed
+  @computed({ keepAlive: true })
   private get projectCfg$() {
-    if (!this.appState.milo || !this.builderId?.project) {
+    if (this.isDisposed || !this.appState.milo || !this.builderId?.project) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -298,8 +301,8 @@ export class BuildState {
   }
 
   @computed
-  get projectCfg(): Project | null {
-    return this.projectCfg$.state === FULFILLED ? this.projectCfg$.value : null;
+  private get projectCfg(): Project | null {
+    return unwrapObservable(this.projectCfg$, null);
   }
 
   @computed
