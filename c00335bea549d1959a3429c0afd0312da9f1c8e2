@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "93378cb1_887474d8",
+        "filename": "milo/frontend/resultui/src/pages/artifact/image_diff_artifact_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-20T03:07:39Z",
+      "side": 1,
+      "message": "Because unwrapObservable is generic over T.\nWe can\u0027t have a default param here.\nWe would need typescript to support something close to\n\n```\nexport function unwrapObservable\u003cT extends Default\u003e(observable: IPromiseBasedObservable\u003cT\u003e, defaultValue \u003d T.Default()) {\n   ...\n}\n```\n\nWe could make a special case\n```\nexport function unwrapObservableOrNull\u003cT | null\u003e(observable: IPromiseBasedObservable\u003cT\u003e, defaultValue: T | null \u003d null) {\n   ...\n}\n```\nbut I don\u0027t think that\u0027s worth doing, adding `, null` isn\u0027t that bad after all.",
+      "parentUuid": "c9979eba_e13bac02",
+      "range": {
+        "startLine": 66,
+        "startChar": 47,
+        "endLine": 66,
+        "endChar": 52
+      },
+      "revId": "c00335bea549d1959a3429c0afd0312da9f1c8e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2a0d80ee_93d901ff",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-04-19T20:33:17Z",
       "side": 1,
       "message": "same here :)",
+      "revId": "c00335bea549d1959a3429c0afd0312da9f1c8e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a0f0bcd_cc3c989e",
+        "filename": "milo/frontend/resultui/src/pages/artifact/text_diff_artifact_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-20T03:07:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a0d80ee_93d901ff",
       "revId": "c00335bea549d1959a3429c0afd0312da9f1c8e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
