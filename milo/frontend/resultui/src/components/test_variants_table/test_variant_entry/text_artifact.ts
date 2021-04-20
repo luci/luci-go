@@ -16,12 +16,14 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html, property } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../dot_spinner';
 import { consumeContext } from '../../../libs/context';
+import { unwrapObservable } from '../../../libs/utils';
 import { Artifact } from '../../../services/resultdb';
 import commonStyle from '../../../styles/common_style.css';
+import { reportRenderError } from '../../error_handler';
 
 /**
  * Renders a text artifact.
@@ -49,10 +51,10 @@ export class TextArtifactElement extends MobxLitElement {
 
   @computed
   private get content() {
-    return this.content$.state === FULFILLED ? this.content$.value : null;
+    return unwrapObservable(this.content$, null);
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     if (this.content === null) {
       return html` <div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div> `;
     }
@@ -63,7 +65,7 @@ export class TextArtifactElement extends MobxLitElement {
     }
 
     return html` <pre>${this.content}</pre> `;
-  }
+  });
 
   static styles = [
     commonStyle,
