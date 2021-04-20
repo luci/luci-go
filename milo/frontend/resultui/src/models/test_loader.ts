@@ -42,11 +42,9 @@ export const enum LoadingStage {
   Done = 5,
 }
 
-export class LoadTestVariantsError {
-  constructor(readonly req: QueryTestVariantsRequest, readonly source: unknown) {}
-
-  toString() {
-    return `error when loading test variants\n ${this.source}`;
+export class LoadTestVariantsError extends Error {
+  constructor(readonly req: QueryTestVariantsRequest, readonly source: Error) {
+    super(source.message);
   }
 }
 
