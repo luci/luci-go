@@ -127,7 +127,7 @@ func TestPurgeCL(t *testing.T) {
 
 		schedule := func() error {
 			return datastore.RunInTransaction(ctx, func(tCtx context.Context) error {
-				return purger.pmNotifier.TaskRefs.SchedulePurgeCL(tCtx, task)
+				return purger.Schedule(tCtx, task)
 			}, nil)
 		}
 
