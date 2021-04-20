@@ -14,7 +14,8 @@
 
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { BeforeEnterObserver } from '@vaadin/router';
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 
@@ -24,6 +25,7 @@ import './error_handler';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { genFeedbackUrl } from '../libs/utils';
+import { router } from '../routes';
 import commonStyle from '../styles/common_style.css';
 import { UserUpdateEvent } from './signin';
 
@@ -129,7 +131,20 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
             : ''}
         </div>
       </div>
-      <milo-error-handler>
+      <milo-error-handler
+        .intercept=${(e: ErrorEvent) => {
+          if (e.error instanceof GrpcError) {
+            const mayRequireSignin = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(
+              e.error.code
+            );
+            if (mayRequireSignin && this.appState.userId === '') {
+              Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
+              return null;
+            }
+          }
+          return e;
+        }}
+      >
         <slot></slot>
       </milo-error-handler>
     `;

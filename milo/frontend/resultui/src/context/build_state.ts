@@ -98,13 +98,14 @@ export class BuildState {
 
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
+    this.build$;
     this.relatedBuilds$;
     this.queryBlamelistResIterFns;
   }
 
   private buildQueryTime = this.appState.timestamp;
-  @computed
-  get build$(): IPromiseBasedObservable<Build> {
+  @computed({ keepAlive: true })
+  private get build$(): IPromiseBasedObservable<BuildExt> {
     if (!this.appState.buildsService || (!this.buildId && (!this.builderIdParam || !this.buildNum))) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
@@ -130,15 +131,12 @@ export class BuildState {
       ? { id: this.buildId, fields: BUILD_FIELD_MASK }
       : { builder: this.builderIdParam, buildNumber: this.buildNum!, fields: BUILD_FIELD_MASK };
 
-    return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt));
+    return fromPromise(this.appState.buildsService.getBuild(req, cacheOpt).then((b) => new BuildExt(b)));
   }
 
   @computed
   get build(): BuildExt | null {
-    if (this.build$.state !== FULFILLED) {
-      return null;
-    }
-    return new BuildExt(this.build$.value);
+    return unwrapObservable(this.build$, null);
   }
 
   @computed({ keepAlive: true })
