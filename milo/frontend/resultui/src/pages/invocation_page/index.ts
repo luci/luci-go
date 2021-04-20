@@ -111,30 +111,27 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
     ];
   }
 
-  protected render = reportRenderError.bind(this)(
-    () => {
-      if (this.invocationState.invocationId === '') {
-        return html``;
-      }
+  protected render = reportRenderError.bind(this)(() => {
+    if (this.invocationState.invocationId === '') {
+      return html``;
+    }
 
-      return html`
-        <div id="test-invocation-summary">
-          <div id="test-invocation-id">
-            <span id="test-invocation-id-label">Invocation ID </span>
-            <span>${this.invocationState.invocationId}</span>
-          </div>
-          <div id="test-invocation-state">${this.renderInvocationState()}</div>
+    return html`
+      <div id="test-invocation-summary">
+        <div id="test-invocation-id">
+          <span id="test-invocation-id-label">Invocation ID </span>
+          <span>${this.invocationState.invocationId}</span>
         </div>
-        <milo-status-bar
-          .components=${[{ color: 'var(--active-color)', weight: 1 }]}
-          .loading=${this.invocationState.invocation === null}
-        ></milo-status-bar>
-        <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
-        <slot></slot>
-      `;
-    },
-    () => 'an error occurred'
-  );
+        <div id="test-invocation-state">${this.renderInvocationState()}</div>
+      </div>
+      <milo-status-bar
+        .components=${[{ color: 'var(--active-color)', weight: 1 }]}
+        .loading=${this.invocationState.invocation === null}
+      ></milo-status-bar>
+      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
+      <slot></slot>
+    `;
+  });
 
   static styles = [
     commonStyle,
