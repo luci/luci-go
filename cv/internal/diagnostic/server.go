@@ -334,7 +334,7 @@ func (d *DiagnosticServer) RefreshProjectCLs(ctx context.Context, req *diagnosti
 		return nil, err
 	}
 
-	if err := prjmanager.NotifyCLsUpdated(ctx, req.GetProject(), cls); err != nil {
+	if err := d.PMNotifier.NotifyCLsUpdated(ctx, req.GetProject(), cls); err != nil {
 		return nil, err
 	}
 
