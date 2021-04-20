@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/auth/realms"
 
@@ -53,12 +54,16 @@ import (
 
 var matchInvalidInvocationIDChars = regexp.MustCompile(`[^a-z0-9_\-:.]`)
 
-func mustReturnInvURL(invName string) string {
+func mustReturnInvURL(rdbHost, invName string) string {
 	invID, err := pbutil.ParseInvocationName(invName)
 	if err != nil {
 		panic(err)
 	}
-	return fmt.Sprintf("https://ci.chromium.org/ui/inv/%s", invID)
+
+	if rdbHost == chromeinfra.ResultDBHost {
+		return fmt.Sprintf("https://ci.chromium.org/ui/inv/%s", invID)
+	}
+	return fmt.Sprintf("https://%s/ui/inv/%s", chromeinfra.MiloHost, invID)
 }
 
 func cmdStream(p Params) *subcommands.Command {
@@ -198,7 +203,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		if err != nil {
 			return r.done(err)
 		}
-		fmt.Fprintf(os.Stderr, "rdb-stream: created invocation - %s\n", mustReturnInvURL(newInv.Name))
+		fmt.Fprintf(os.Stderr, "rdb-stream: created invocation - %s\n", mustReturnInvURL(r.host, newInv.Name))
 		if r.isIncluded {
 			curInv := r.resultdbCtx.CurrentInvocation
 			if err := r.includeInvocation(ctx, curInv, &newInv); err != nil {
@@ -234,7 +239,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 				logging.Errorf(ctx, "failed to finalize the invocation: %s", err)
 				ret = r.done(err)
 			}
-			fmt.Fprintf(os.Stderr, "rdb-stream: finalized invocation - %s\n", mustReturnInvURL(r.invocation.Name))
+			fmt.Fprintf(os.Stderr, "rdb-stream: finalized invocation - %s\n", mustReturnInvURL(r.host, r.invocation.Name))
 		}
 	}()
 
