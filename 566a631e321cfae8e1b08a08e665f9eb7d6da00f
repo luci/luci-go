@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9024691a_437ae274",
+        "filename": "milo/frontend/resultui/src/context/invocation_state.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-20T03:28:32Z",
+      "side": 1,
+      "message": "yes.\nTo be exact, column_keys can be undefined, but not null.",
+      "parentUuid": "2873951a_961910b1",
+      "range": {
+        "startLine": 45,
+        "startChar": 47,
+        "endLine": 45,
+        "endChar": 52
+      },
+      "revId": "566a631e321cfae8e1b08a08e665f9eb7d6da00f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6421277d_9f7599d0",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-04-20T03:01:17Z",
       "side": 1,
       "message": "Can you help me understand what the impact of changing this key is?",
+      "revId": "566a631e321cfae8e1b08a08e665f9eb7d6da00f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2776ac4_b56d9fd5",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-20T03:28:32Z",
+      "side": 1,
+      "message": "This is to synchronise with the changes in\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2830173/7/lucicfg/starlark/stdlib/internal/luci/rules/builder.star#231\n\nCurrently, there should be no impact. No one is using this key.\nAnd the exact key is an implementation detail of the related lucicfg/recipe modules (which are all under our control).",
+      "parentUuid": "6421277d_9f7599d0",
       "revId": "566a631e321cfae8e1b08a08e665f9eb7d6da00f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
