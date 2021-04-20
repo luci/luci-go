@@ -45,6 +45,7 @@ type RunState struct {
 	PmNotifier *prjmanager.Notifier
 	// runNotifier notifies Run Manager.
 	RunNotifier *run.Notifier
+	CLUpdater   *gobupdater.Updater
 
 	cachedConfigGroup *config.ConfigGroup
 }
@@ -109,7 +110,7 @@ func (rs *RunState) RefreshCLs(ctx context.Context) error {
 				if err != nil {
 					return err
 				}
-				return gobupdater.Schedule(ctx, &gobupdater.RefreshGerritCL{
+				return rs.CLUpdater.Schedule(ctx, &gobupdater.RefreshGerritCL{
 					LuciProject: rs.Run.ID.LUCIProject(),
 					Host:        host,
 					Change:      change,
