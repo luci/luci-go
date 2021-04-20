@@ -27,7 +27,7 @@ import { timeout } from '../libs/utils';
  */
 /* eslint-enable max-len */
 
-export const TEST_PRESENTATION_KEY = '$recipe_engine/milo/test_presentation';
+export const TEST_PRESENTATION_KEY = '$recipe_engine/resultdb/test_presentation';
 export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 
 export const BUILD_FIELD_MASK =
