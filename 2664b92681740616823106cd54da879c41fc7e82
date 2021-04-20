@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "996de7b8_d89e1b0c",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-20T03:01:41Z",
+      "side": 1,
+      "message": "I\u0027d argue this is the right place for error handling because it\u0027s (probably) the build page that caused this error in the first place.\n\nFrom the invocation state\u0027s perspective:\nAn error happened, I don\u0027t know what to do. But I\u0027ll attach some info (inv ID) to the error to help others figuring it out.\n\nFrom the build page\u0027s perspective:\nI tried to query an invocation with a computed inv ID, it failed. Now let\u0027s try another approach.",
+      "parentUuid": "edd0b514_8a7c792f",
+      "revId": "2664b92681740616823106cd54da879c41fc7e82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f0ad112a_2d90e7c3",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
         "patchSetId": 8
@@ -49,6 +67,24 @@
       "writtenOn": "2021-04-19T20:28:46Z",
       "side": 1,
       "message": "same here",
+      "revId": "2664b92681740616823106cd54da879c41fc7e82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f21fb7c_9b32b1af",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-20T03:01:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0ad112a_2d90e7c3",
       "revId": "2664b92681740616823106cd54da879c41fc7e82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
