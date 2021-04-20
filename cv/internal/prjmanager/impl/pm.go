@@ -441,9 +441,3 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 		TransitionTo: s,
 	}), nil
 }
-
-var Default *ProjectManager
-
-func init() {
-	Default = New(prjmanager.DefaultNotifier, run.DefaultNotifier, updater.Default)
-}

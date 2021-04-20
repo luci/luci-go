@@ -151,9 +151,3 @@ func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID com
 		},
 	})
 }
-
-var DefaultNotifier *Notifier
-
-func init() {
-	DefaultNotifier = &Notifier{TaskRefs: eventpb.DefaultTaskRefs}
-}

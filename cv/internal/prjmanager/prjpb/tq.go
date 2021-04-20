@@ -183,14 +183,3 @@ func (tr TaskRefs) SchedulePurgeCL(ctx context.Context, t *PurgeCLTask) error {
 		Title: fmt.Sprintf("%s/%d/%s", t.GetLuciProject(), t.GetPurgingCl().GetClid(), t.GetPurgingCl().GetOperationId()),
 	})
 }
-
-var (
-	// DefaultTaskRefs is for backwards compat during migration away from Default
-	// tq Dispatcher.
-	// TODO(tandrii): remove this.
-	DefaultTaskRefs TaskRefs
-)
-
-func init() {
-	DefaultTaskRefs = Register(&tq.Default)
-}

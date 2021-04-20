@@ -332,9 +332,3 @@ func (rp *runProcessor) enqueueNextPoke(ctx context.Context, nextReadyEventTime 
 		return rp.runNotifier.PokeAfter(ctx, rp.runID, pokeInterval)
 	}
 }
-
-var Default *RunManager
-
-func init() {
-	Default = New(run.DefaultNotifier, prjmanager.DefaultNotifier, updater.Default)
-}

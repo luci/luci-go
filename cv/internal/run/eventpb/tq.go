@@ -163,14 +163,3 @@ func SendWithoutDispatch(ctx context.Context, runID common.RunID, evt *Event) er
 	to := datastore.MakeKey(ctx, "Run", string(runID))
 	return eventbox.Emit(ctx, value, to)
 }
-
-var (
-	// DefaultTaskRefs is for backwards compat during migration away from Default
-	// tq Dispatcher.
-	// TODO(tandrii): remove this.
-	DefaultTaskRefs TaskRefs
-)
-
-func init() {
-	DefaultTaskRefs = Register(&tq.Default)
-}

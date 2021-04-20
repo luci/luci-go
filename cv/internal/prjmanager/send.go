@@ -138,9 +138,3 @@ func (n *Notifier) NotifyRunFinished(ctx context.Context, runID common.RunID) er
 		},
 	})
 }
-
-var DefaultNotifier *Notifier
-
-func init() {
-	DefaultNotifier = &Notifier{TaskRefs: prjpb.DefaultTaskRefs}
-}
