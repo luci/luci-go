@@ -31,6 +31,8 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/prjmanager"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 const TaskClass = "refresh-gerrit-cl"
@@ -42,14 +44,26 @@ const blindRefreshInterval = time.Minute
 
 var errStaleData = errors.New("Fetched stale Gerrit data", transient.Tag)
 
+// PM encapsulates interaction with Project Manager by the Gerrit CL Updater.
+type PM interface {
+	NotifyCLUpdated(ctx context.Context, project string, cl common.CLID, eversion int) error
+}
+
+// RM encapsulates interaction with Run Manager by the Gerrit CL Updater.
+type RM interface {
+	NotifyCLUpdated(ctx context.Context, rid common.RunID, cl common.CLID, eversion int) error
+}
+
 // Updater updates CLs in Datastore by querying Gerrit.
 type Updater struct {
+	pm  PM
+	rm  RM
 	tqd *tq.Dispatcher
 }
 
 // New creates new Updater.
-func New(tqd *tq.Dispatcher) *Updater {
-	u := &Updater{tqd: tqd}
+func New(tqd *tq.Dispatcher, pm PM, rm RM) *Updater {
+	u := &Updater{pm, rm, tqd}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:        TaskClass,
 		Prototype: &RefreshGerritCL{},
@@ -117,13 +131,17 @@ func (u *Updater) Schedule(ctx context.Context, p *RefreshGerritCL) error {
 // Prefer Schedule() instead of Refresh() in production.
 func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 	f := fetcher{
+		pm:                 u.pm,
+		rm:                 u.rm,
+		scheduleDepRefresh: u.Schedule,
+
 		luciProject:   r.GetLuciProject(),
 		host:          r.GetHost(),
 		change:        r.GetChange(),
 		forceNotifyPM: r.GetForceNotifyPm(),
 	}
-	if u := r.GetUpdatedHint(); u != nil {
-		f.updatedHint = u.AsTime()
+	if uh := r.GetUpdatedHint(); uh != nil {
+		f.updatedHint = uh.AsTime()
 	}
 	defer func() { err = errors.Annotate(err, "failed to refresh %s", &f).Err() }()
 
@@ -139,7 +157,7 @@ func (u *Updater) Refresh(ctx context.Context, r *RefreshGerritCL) (err error) {
 var Default *Updater
 
 func init() {
-	Default = New(&tq.Default)
+	Default = New(&tq.Default, prjmanager.DefaultNotifier, run.DefaultNotifier)
 }
 
 func Schedule(ctx context.Context, p *RefreshGerritCL) error {
