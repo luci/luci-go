@@ -211,7 +211,9 @@ func TestDeleteProjectEvents(t *testing.T) {
 	t.Parallel()
 
 	Convey("DeleteProjectEvents works", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
@@ -231,10 +233,11 @@ func TestDeleteProjectEvents(t *testing.T) {
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
+			pm := prjmanager.NewNotifier(ct.TQDispatcher)
 
-			So(prjmanager.NotifyCLUpdated(ctx, lProject, common.CLID(1), 1), ShouldBeNil)
-			So(prjmanager.NotifyCLUpdated(ctx, lProject, common.CLID(2), 1), ShouldBeNil)
-			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+			So(pm.NotifyCLUpdated(ctx, lProject, common.CLID(1), 1), ShouldBeNil)
+			So(pm.NotifyCLUpdated(ctx, lProject, common.CLID(2), 1), ShouldBeNil)
+			So(pm.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 			Convey("All", func() {
 				resp, err := d.DeleteProjectEvents(ctx, &diagnosticpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
@@ -268,6 +271,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 		const lProject = "luci"
 		d := DiagnosticServer{
 			GerritUpdater: updater.New(ct.TQDispatcher, nil, nil),
+			PMNotifier:    prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
 		Convey("without access", func() {

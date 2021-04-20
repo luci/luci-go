@@ -66,7 +66,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 
 		ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
 
-		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+		So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 		events1, err := eventbox.List(ctx, lProjectKey)
 		So(err, ShouldBeNil)
@@ -111,9 +111,9 @@ func TestProjectLifeCycle(t *testing.T) {
 
 		Convey("with new project", func() {
 			ct.Cfg.Create(ctx, lProject, singleRepoConfig("host", "repo"))
-			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
-			// Second event is noop, but should still be consumed at once.
-			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+			So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+			// Second event is a noop, but should still be consumed at once.
+			So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 			So(pmtest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 			events, err := eventbox.List(ctx, lProjectKey)
@@ -134,7 +134,7 @@ func TestProjectLifeCycle(t *testing.T) {
 					&run.Run{ID: common.RunID(lProject + "/222-cafe"), CLs: common.CLIDs{222}},
 				)
 				So(err, ShouldBeNil)
-				// This is what prjmanager.notifyRunCreated func does,
+				// This is what pmNotifier.notifyRunCreated func does,
 				// but because it's private, it can't be called from this package.
 				simulateRunCreated := func(suffix string) {
 					e := &prjpb.Event{Event: &prjpb.Event_RunCreated{
@@ -150,7 +150,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				simulateRunCreated("222-cafe")
 
 				ct.Cfg.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
-				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+				So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
@@ -162,7 +162,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 				Convey("disable project with incomplete runs", func() {
 					ct.Cfg.Disable(ctx, lProject)
-					So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+					So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 					p, ps := loadProjectEntities(ctx, lProject)
@@ -174,13 +174,13 @@ func TestProjectLifeCycle(t *testing.T) {
 					So(rmDispatcher.PopRuns(), ShouldResemble, p.IncompleteRuns())
 
 					Convey("wait for all IncompleteRuns to finish", func() {
-						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
+						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 						p, ps := loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjpb.Status_STOPPING)
 						So(p.IncompleteRuns(), ShouldResemble, common.MakeRunIDs(lProject+"/222-cafe"))
 
-						So(prjmanager.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
+						So(pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe")), ShouldBeNil)
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 						p, ps = loadProjectEntities(ctx, lProject)
 						So(ps.Status, ShouldEqual, prjpb.Status_STOPPED)
@@ -193,7 +193,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				// No components means also no runs.
 				p.State.Components = nil
 				ct.Cfg.Delete(ctx, lProject)
-				So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+				So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 				p, ps := loadProjectEntities(ctx, lProject)
@@ -221,10 +221,11 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
-		pm := New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, pmNotifier, runNotifier))
+		clUpdater := updater.New(ct.TQDispatcher, pmNotifier, runNotifier)
+		pm := New(pmNotifier, runNotifier, clUpdater)
 
 		refreshCLAndNotifyPM := func(c int64) {
-			So(updater.Refresh(ctx, &updater.RefreshGerritCL{
+			So(clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
 				LuciProject: lProject,
 				Host:        "host",
 				Change:      c,
@@ -270,12 +271,12 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// This event is the only event notifying PM about CL#43.
-		So(prjmanager.NotifyCLsUpdated(ctx, lProject, []*changelist.CL{cl43, cl44}), ShouldBeNil)
+		So(pmNotifier.NotifyCLsUpdated(ctx, lProject, []*changelist.CL{cl43, cl44}), ShouldBeNil)
 
 		const n = 10
 		for i := 0; i < n; i++ {
-			So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
-			So(prjmanager.Poke(ctx, lProject), ShouldBeNil)
+			So(pmNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+			So(pmNotifier.Poke(ctx, lProject), ShouldBeNil)
 
 			ct.Clock.Add(time.Second)
 			ct.GFake.MutateChange(gHost, 44, func(c *gf.Change) { gf.Updated(ct.Clock.Now())(c.Info) })
