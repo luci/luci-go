@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "71183309_d4b11ee8",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-20T17:25:17Z",
+      "side": 0,
+      "message": "I am curious why this comment was removed. It seems still relevant here (the 500 is specified here)",
+      "revId": "24468038e850eb8862c5bd90525e28d57383318e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
