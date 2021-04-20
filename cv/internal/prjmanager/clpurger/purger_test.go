@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/servicecfg"
@@ -43,7 +45,7 @@ func TestPurgeCL(t *testing.T) {
 	t.Parallel()
 
 	Convey("PurgeCL works", t, func() {
-		ct := cvtesting.Test{AppID: "cv"}
+		ct := cvtesting.Test{AppID: "cv", TQDispatcher: &tq.Dispatcher{}}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
@@ -120,9 +122,11 @@ func TestPurgeCL(t *testing.T) {
 		}
 		So(task.Trigger, ShouldNotBeNil)
 
+		purger := New(prjmanager.NewNotifier(ct.TQDispatcher))
+
 		schedule := func() error {
 			return datastore.RunInTransaction(ctx, func(tCtx context.Context) error {
-				return Schedule(tCtx, task)
+				return purger.pmNotifier.TaskRefs.SchedulePurgeCL(tCtx, task)
 			}, nil)
 		}
 
