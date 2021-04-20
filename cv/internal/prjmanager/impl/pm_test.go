@@ -282,7 +282,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 			i := i
 			go func() {
 				defer wg.Done()
-				errs[i] = manageProject(ctx, lProject, now)
+				errs[i] = Default.manageProject(ctx, lProject, now)
 			}()
 		}
 		wg.Wait()
