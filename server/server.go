@@ -89,6 +89,10 @@
 // • go.chromium.org/luci/config/server/cfgmodule: provides LUCI Config client,
 // exposes config validation endpoints used by LUCI Config service.
 //
+// • go.chromium.org/luci/server/encryptedcookies: implements an authentication
+// scheme for HTTP routes based on encrypted cookies and user sessions in
+// some session store.
+//
 // • go.chromium.org/luci/server/gaeemulation: implements
 // go.chromium.org/luci/gae Datastore interface via Google Cloud Datastore API.
 // Named so because because it enables migration of GAEv1 apps to GAEv2 without
@@ -629,6 +633,12 @@ type Server struct {
 	// Should be populated before ListenAndServe call.
 	PRPC *prpc.Server
 
+	// CookieAuth is an authentication method implemented via cookies.
+	//
+	// It is initialized only if the server has a module implementing such scheme
+	// (e.g. "go.chromium.org/luci/server/encryptedcookies").
+	CookieAuth auth.Method
+
 	// Options is a copy of options passed to New.
 	Options Options
 
@@ -685,8 +695,10 @@ type scopedAuth struct {
 // Just a tiny wrapper to make sure modules consume only curated limited set of
 // the server API and do not retain the pointer to the server.
 type moduleHostImpl struct {
-	srv     *Server
-	invalid bool
+	srv        *Server
+	mod        module.Module
+	invalid    bool
+	cookieAuth auth.Method
 }
 
 func (h *moduleHostImpl) panicIfInvalid() {
@@ -723,6 +735,11 @@ func (h *moduleHostImpl) RegisterCleanup(cb func(context.Context)) {
 func (h *moduleHostImpl) RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor) {
 	h.panicIfInvalid()
 	h.srv.RegisterUnaryServerInterceptor(intr)
+}
+
+func (h *moduleHostImpl) RegisterCookieAuth(method auth.Method) {
+	h.panicIfInvalid()
+	h.cookieAuth = method
 }
 
 // New constructs a new server instance.
@@ -851,16 +868,32 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 
 	// Initialize all modules in their topological order.
-	host := moduleHostImpl{srv: srv}
-	for _, m := range sorted {
-		switch ctx, err := m.Initialize(srv.Context, &host, srv.Options.hostOptions()); {
+	impls := make([]*moduleHostImpl, len(sorted))
+	for i, mod := range sorted {
+		impls[i] = &moduleHostImpl{srv: srv, mod: mod}
+		switch ctx, err := mod.Initialize(srv.Context, impls[i], srv.Options.hostOptions()); {
 		case err != nil:
-			return srv, errors.Annotate(err, "failed to initialize module %q", m.Name()).Err()
+			return srv, errors.Annotate(err, "failed to initialize module %q", mod.Name()).Err()
 		case ctx != nil:
 			srv.Context = ctx
 		}
+		impls[i].invalid = true // make sure the module does not retain it
 	}
-	host.invalid = true // break `host` to make sure modules do not retain it
+
+	// Ensure there's only one CookieAuth method registered.
+	var cookieAuthMod module.Module
+	for _, impl := range impls {
+		if impl.cookieAuth != nil {
+			if cookieAuthMod != nil {
+				return srv, errors.Annotate(err,
+					"conflict between %q and %q: both register a cookie auth scheme - pick one",
+					cookieAuthMod.Name(), impl.mod.Name(),
+				).Err()
+			}
+			cookieAuthMod = impl.mod
+			srv.CookieAuth = impl.cookieAuth
+		}
+	}
 
 	return srv, nil
 }
