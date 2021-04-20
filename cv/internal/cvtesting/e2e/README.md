@@ -50,4 +50,6 @@ If test is flaky, try:
 
 ## Advanced: run with flaky Datastore:
 
-Use special `-cv.dsflakiness` flag, e.g. `go test ./... -cv.dsflakiness=0.05`
+Use special `-cv.dsflakiness` flag, e.g. `go test ./... -cv.dsflakiness=0.06`.
+See `flakifyDS` function for explanation of what `0.06` value actually means and
+the shortcomings of the simulation.
