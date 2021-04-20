@@ -42,15 +42,11 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
+	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
 	"go.chromium.org/luci/cv/internal/run"
+	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	"go.chromium.org/luci/cv/internal/servicecfg"
 	"go.chromium.org/luci/cv/internal/tree"
-
-	// import all modules with server/tq handler additions in init() calls,
-	// which are otherwise not imported directly or transitively via imports
-	// above.
-	_ "go.chromium.org/luci/cv/internal/prjmanager/impl"
-	_ "go.chromium.org/luci/cv/internal/run/impl"
 )
 
 func main() {
@@ -81,17 +77,25 @@ func main() {
 			return err
 		}
 
+		// Register TQ handlers.
+		pmNotifier := prjmanager.NewNotifier(&tq.Default)
+		runNotifier := run.NewNotifier(&tq.Default)
+		clUpdater := updater.New(&tq.Default, pmNotifier, runNotifier)
+		_ = pmimpl.New(pmNotifier, runNotifier, clUpdater)
+		_ = runimpl.New(runNotifier, pmNotifier, clUpdater)
+
 		// Register pRPC servers.
 		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{
-			RunNotifier: run.DefaultNotifier,
+			RunNotifier: runNotifier,
 		})
 		diagnosticpb.RegisterDiagnosticServer(srv.PRPC, &diagnostic.DiagnosticServer{
-			GerritUpdater: updater.Default,
-			PMNotifier:    prjmanager.DefaultNotifier,
-			RunNotifier:   run.DefaultNotifier,
+			GerritUpdater: clUpdater,
+			PMNotifier:    pmNotifier,
+			RunNotifier:   runNotifier,
 		})
 
-		pcr := configcron.New(&tq.Default, prjmanager.DefaultNotifier)
+		// Register cron.
+		pcr := configcron.New(&tq.Default, pmNotifier)
 		srv.Routes.GET(
 			"/internal/cron/refresh-config",
 			router.NewMiddlewareChain(gaemiddleware.RequireCron),

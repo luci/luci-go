@@ -122,7 +122,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return eventpb.DefaultTaskRefs.SendNow(ctx, runID, &eventpb.Event{
+					return notifier.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_ReadyForSubmission{
 							ReadyForSubmission: &eventpb.ReadyForSubmission{},
 						},
