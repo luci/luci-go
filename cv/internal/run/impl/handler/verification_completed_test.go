@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
@@ -50,9 +49,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 	t.Parallel()
 
 	Convey("OnVerificationCompleted", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
