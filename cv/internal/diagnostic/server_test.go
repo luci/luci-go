@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -348,12 +349,16 @@ func TestSendRunEvent(t *testing.T) {
 	t.Parallel()
 
 	Convey("SendRunEvent works", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
 		const rid = "proj/123-deadbeef"
-		d := DiagnosticServer{}
+		d := DiagnosticServer{
+			RunNotifier: run.NewNotifier(ct.TQDispatcher),
+		}
 
 		Convey("without access", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
