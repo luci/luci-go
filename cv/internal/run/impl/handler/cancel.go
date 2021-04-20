@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -51,7 +50,7 @@ func (*Impl) Cancel(ctx context.Context, rs *state.RunState) (*Result, error) {
 			if err := rs.RemoveRunFromCLs(ctx); err != nil {
 				return err
 			}
-			return prjmanager.NotifyRunFinished(ctx, rs.Run.ID)
+			return rs.PmNotifier.NotifyRunFinished(ctx, rs.Run.ID)
 		},
 	}
 	res.State.Run.Status = run.Status_CANCELLED

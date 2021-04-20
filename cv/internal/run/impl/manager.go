@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
@@ -92,7 +93,8 @@ func (rm *runManager) LoadState(ctx context.Context) (eventbox.State, eventbox.E
 		return nil, 0, errors.Annotate(err, "failed to get Run %q", rm.runID).Tag(transient.Tag).Err()
 	}
 	rs := &state.RunState{
-		Run: r,
+		Run:        r,
+		PmNotifier: prjmanager.DefaultNotifier,
 	}
 	return rs, eventbox.EVersion(r.EVersion), nil
 }
