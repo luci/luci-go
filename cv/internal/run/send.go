@@ -157,31 +157,3 @@ var DefaultNotifier *Notifier
 func init() {
 	DefaultNotifier = &Notifier{TaskRefs: eventpb.DefaultTaskRefs}
 }
-
-func Start(ctx context.Context, runID common.RunID) error {
-	return DefaultNotifier.Start(ctx, runID)
-}
-func PokeNow(ctx context.Context, runID common.RunID) error {
-	return DefaultNotifier.PokeNow(ctx, runID)
-}
-func PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error {
-	return DefaultNotifier.PokeAfter(ctx, runID, after)
-}
-func PokeAt(ctx context.Context, runID common.RunID, eta time.Time) error {
-	return DefaultNotifier.PokeAt(ctx, runID, eta)
-}
-func UpdateConfig(ctx context.Context, runID common.RunID, hash string, eversion int64) error {
-	return DefaultNotifier.UpdateConfig(ctx, runID, hash, eversion)
-}
-func Cancel(ctx context.Context, runID common.RunID) error {
-	return DefaultNotifier.Cancel(ctx, runID)
-}
-func NotifyCLUpdated(ctx context.Context, runID common.RunID, clid common.CLID, eVersion int) error {
-	return DefaultNotifier.NotifyCLUpdated(ctx, runID, clid, eVersion)
-}
-func NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error {
-	return DefaultNotifier.NotifyReadyForSubmission(ctx, runID, eta)
-}
-func NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
-	return DefaultNotifier.NotifyCQDVerificationCompleted(ctx, runID)
-}

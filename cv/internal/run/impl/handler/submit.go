@@ -58,7 +58,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		case current == rs.Run.ID:
 			var innerErr error
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				innerErr = submit.Release(ctx, rs.Run.ID)
+				innerErr = submit.Release(ctx, rs.RunNotifier, rs.Run.ID)
 				return innerErr
 			}, nil)
 			switch {
@@ -76,7 +76,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		if deadline := rs.Run.Submission.Deadline.AsTime(); deadline.After(clock.Now(ctx)) {
 			// Deadline hasn't expired yet. Presumably another task is still working
 			// on the submission. So poke as soon as the deadline expires.
-			if err := run.PokeAt(ctx, rs.Run.ID, deadline); err != nil {
+			if err := rs.RunNotifier.PokeAt(ctx, rs.Run.ID, deadline); err != nil {
 				return nil, err
 			}
 			return &Result{State: rs}, nil
@@ -103,11 +103,12 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		}
 		submission := rs.Run.Submission
 		s := submitter{
-			runID:    rs.Run.ID,
-			deadline: submission.GetDeadline().AsTime(),
-			attempt:  submission.GetAttemptCount(),
-			treeURL:  cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
-			clids:    computeUnsubmittedCLs(submission.GetCls(), submission.GetSubmittedCls()),
+			runID:       rs.Run.ID,
+			deadline:    submission.GetDeadline().AsTime(),
+			attempt:     submission.GetAttemptCount(),
+			treeURL:     cg.Content.GetVerifiers().GetTreeStatus().GetUrl(),
+			clids:       computeUnsubmittedCLs(submission.GetCls(), submission.GetSubmittedCls()),
+			runNotifier: rs.RunNotifier,
 		}
 		return &Result{
 			State:         rs,
@@ -172,7 +173,7 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState) (waitlisted boo
 	rid := rs.Run.ID
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		waitlisted, innerErr = submit.TryAcquire(ctx, rid, cg.SubmitOptions)
+		waitlisted, innerErr = submit.TryAcquire(ctx, rs.RunNotifier, rid, cg.SubmitOptions)
 		switch {
 		case innerErr != nil:
 			return innerErr
@@ -180,7 +181,7 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState) (waitlisted boo
 			// If not waitlisted, RM will proceed as if ReadyForSubmission event is
 			// received. Sends a ReadyForSubmission event 10 seconds later in case
 			// the event processing has failed in the middle.
-			return run.NotifyReadyForSubmission(ctx, rid, now.Add(10*time.Second))
+			return rs.RunNotifier.NotifyReadyForSubmission(ctx, rid, now.Add(10*time.Second))
 		default:
 			return nil
 		}
@@ -250,6 +251,8 @@ type submitter struct {
 	treeURL string
 	// clids contains ids of cls to be submitted in submission order.
 	clids common.CLIDs
+
+	runNotifier *run.Notifier
 }
 
 const defaultFatalMsg = "CV failed to submit your change because of " +
@@ -282,7 +285,7 @@ func (s submitter) submit(ctx context.Context) error {
 
 	var innerErr error
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		if innerErr = submit.Release(ctx, s.runID); innerErr != nil {
+		if innerErr = submit.Release(ctx, s.runNotifier, s.runID); innerErr != nil {
 			return innerErr
 		}
 		if innerErr = notifySubmissionCompleted(ctx, s.runID, sc); innerErr != nil {

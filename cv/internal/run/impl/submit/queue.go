@@ -97,14 +97,14 @@ func loadQueue(ctx context.Context, luciProject string) (*queue, error) {
 // is blocked on this Run.
 //
 // MUST be called in a datastore transaction.
-func TryAcquire(ctx context.Context, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
+func TryAcquire(ctx context.Context, n *run.Notifier, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("TryAcquire must be called in a datastore transaction")
 	}
-	return tryAcquire(ctx, runID, opts)
+	return tryAcquire(ctx, n, runID, opts)
 }
 
-func tryAcquire(ctx context.Context, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
+func tryAcquire(ctx context.Context, n *run.Notifier, runID common.RunID, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
 	var shouldSave bool
 	q := &queue{ID: runID.LUCIProject()}
 	switch err := datastore.Get(ctx, q); {
@@ -137,7 +137,7 @@ func tryAcquire(ctx context.Context, runID common.RunID, opts *cfgpb.SubmitOptio
 			shouldSave = true
 			waitlisted = false
 		} else {
-			if err := run.NotifyReadyForSubmission(ctx, runID, eta); err != nil {
+			if err := n.NotifyReadyForSubmission(ctx, runID, eta); err != nil {
 				return false, err
 			}
 			waitlisted = true
@@ -164,14 +164,14 @@ func tryAcquire(ctx context.Context, runID common.RunID, opts *cfgpb.SubmitOptio
 // If the provided Run is not present in the submit queue, no-op.
 //
 // MUST be called in a datastore transaction.
-func Release(ctx context.Context, runID common.RunID) error {
+func Release(ctx context.Context, n *run.Notifier, runID common.RunID) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("Release must be called in a datastore transaction")
 	}
-	return release(ctx, runID)
+	return release(ctx, n, runID)
 }
 
-func release(ctx context.Context, runID common.RunID) error {
+func release(ctx context.Context, n *run.Notifier, runID common.RunID) error {
 	q, err := loadQueue(ctx, runID.LUCIProject())
 	if err != nil {
 		return err
@@ -193,7 +193,7 @@ func release(ctx context.Context, runID common.RunID) error {
 		return errors.Annotate(err, "failed to put SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
 	}
 	if notify != "" {
-		if err := run.NotifyReadyForSubmission(ctx, notify, q.nextSubmissionETA()); err != nil {
+		if err := n.NotifyReadyForSubmission(ctx, notify, q.nextSubmissionETA()); err != nil {
 			return err
 		}
 	}

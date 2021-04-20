@@ -92,7 +92,10 @@ func TestOnVerificationCompleted(t *testing.T) {
 				},
 			},
 		), ShouldBeNil)
-		rs := &state.RunState{Run: r}
+		rs := &state.RunState{
+			Run:         r,
+			RunNotifier: run.DefaultNotifier,
+		}
 		h := &Impl{}
 
 		statuses := []run.Status{
@@ -165,7 +168,8 @@ func TestOnVerificationCompleted(t *testing.T) {
 			Convey("Add Run to waitlist when submit queue is occupied", func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					// another run has taken the current slot
-					waitlisted, err := submit.TryAcquire(ctx, common.MakeRunID("infra", now, 1, []byte("cafecafe")), cfg.GetSubmitOptions())
+					anotherRunID := common.MakeRunID("infra", now, 1, []byte("cafecafe"))
+					waitlisted, err := submit.TryAcquire(ctx, rs.RunNotifier, anotherRunID, cfg.GetSubmitOptions())
 					So(waitlisted, ShouldBeFalse)
 					So(err, ShouldBeNil)
 					return nil

@@ -60,6 +60,8 @@ func TestRunManager(t *testing.T) {
 			return ret
 		}
 
+		notifier := run.DefaultNotifier
+
 		// sorted by the order of execution.
 		eventTestcases := []struct {
 			event                *eventpb.Event
@@ -75,7 +77,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return eventpb.DefaultTaskRefs.SendNow(ctx, runID, &eventpb.Event{
+					return notifier.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_ClSubmitted{
 							ClSubmitted: &eventpb.CLSubmitted{
 								Clid: 1,
@@ -95,7 +97,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return eventpb.DefaultTaskRefs.SendNow(ctx, runID, &eventpb.Event{
+					return notifier.TaskRefs.SendNow(ctx, runID, &eventpb.Event{
 						Event: &eventpb.Event_SubmissionCompleted{
 							SubmissionCompleted: &eventpb.SubmissionCompleted{
 								Result:  eventpb.SubmissionResult_SUCCEEDED,
@@ -128,7 +130,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return run.NotifyCQDVerificationCompleted(ctx, runID)
+					return notifier.NotifyCQDVerificationCompleted(ctx, runID)
 				},
 				"OnCQDVerificationCompleted",
 			},
@@ -139,7 +141,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return run.Cancel(ctx, runID)
+					return notifier.Cancel(ctx, runID)
 				},
 				"Cancel",
 			},
@@ -150,7 +152,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return run.Start(ctx, runID)
+					return notifier.Start(ctx, runID)
 				},
 				"Start",
 			},
@@ -164,7 +166,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return run.NotifyCLUpdated(ctx, runID, 1, 2)
+					return notifier.NotifyCLUpdated(ctx, runID, 1, 2)
 				},
 				"OnCLUpdated",
 			},
@@ -178,7 +180,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return run.UpdateConfig(ctx, runID, "deadbeef", 2)
+					return notifier.UpdateConfig(ctx, runID, "deadbeef", 2)
 				},
 				"",
 			},
@@ -189,7 +191,7 @@ func TestRunManager(t *testing.T) {
 					},
 				},
 				func(ctx context.Context) error {
-					return run.PokeNow(ctx, runID)
+					return notifier.PokeNow(ctx, runID)
 				},
 				"",
 			},
@@ -239,8 +241,8 @@ func TestRunManager(t *testing.T) {
 		Convey("Don't Start if received both Cancel and Start Event", func() {
 			fh := &fakeHandler{}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			run.Start(ctx, runID)
-			run.Cancel(ctx, runID)
+			notifier.Start(ctx, runID)
+			notifier.Cancel(ctx, runID)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			So(fh.invocations, ShouldResemble, []string{"Cancel"})
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
@@ -260,7 +262,7 @@ func TestRunManager(t *testing.T) {
 		Convey("Can Preserve events", func() {
 			fh := &fakeHandler{preserveEvents: true}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			run.Start(ctx, runID)
+			notifier.Start(ctx, runID)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			So(fh.invocations, ShouldResemble, []string{"Start"})
 			So(currentRun(ctx).EVersion, ShouldEqual, initialEVersion+1)
@@ -284,9 +286,10 @@ func TestRunManager(t *testing.T) {
 			Status:   run.Status_RUNNING,
 			EVersion: 10,
 		}), ShouldBeNil)
+		notifier := run.DefaultNotifier
 
 		Convey("Recursive", func() {
-			So(run.PokeNow(ctx, runID), ShouldBeNil)
+			So(notifier.PokeNow(ctx, runID), ShouldBeNil)
 			So(runtest.Runs(ct.TQ.Tasks()), ShouldResemble, common.RunIDs{runID})
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			for i := 0; i < 10; i++ {
@@ -302,8 +305,8 @@ func TestRunManager(t *testing.T) {
 		})
 
 		Convey("Existing event due during the interval", func() {
-			So(run.PokeNow(ctx, runID), ShouldBeNil)
-			So(run.PokeAfter(ctx, runID, 30*time.Second), ShouldBeNil)
+			So(notifier.PokeNow(ctx, runID), ShouldBeNil)
+			So(notifier.PokeAfter(ctx, runID, 30*time.Second), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 
 			runtest.AssertNotInEventbox(ctx, runID, &eventpb.Event{
