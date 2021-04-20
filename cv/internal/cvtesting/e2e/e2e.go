@@ -22,10 +22,12 @@ import (
 	"math"
 	"math/rand"
 	"strings"
-	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/sync/dispatcher"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -80,6 +82,7 @@ type Test struct {
 	// dsFlakiness enables ds flakiness for "RunUntil".
 	dsFlakiness    float64
 	dsFlakinesRand rand.Source
+	tqSweepChannel dispatcher.Channel
 }
 
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
@@ -97,7 +100,8 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	}
 
 	// Delegate most setup to cvtesting.Test.
-	ctx, cancel := t.Test.SetUp()
+	ctx, ctxCancel := t.Test.SetUp()
+	deferme = ctxCancel
 
 	if (*dsFlakinessFlag) != 0 {
 		t.dsFlakiness = *dsFlakinessFlag
@@ -106,6 +110,11 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		}
 		logging.Warningf(ctx, "Using %.4f flaky Datastore", t.dsFlakiness)
 		t.dsFlakinesRand = rand.NewSource(0)
+		stopSweeping := t.startTQSweeping(ctx)
+		deferme = func() {
+			stopSweeping()
+			ctxCancel()
+		}
 	}
 
 	t.PMNotifier = prjmanager.NewNotifier(t.TQDispatcher)
@@ -116,7 +125,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 
 	t.MigrationServer = &migration.MigrationServer{}
 	t.DiagnosticServer = &diagnostic.DiagnosticServer{}
-	return ctx, cancel
+	return ctx, deferme
 }
 
 // Now returns test clock time in UTC.
@@ -153,7 +162,7 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 	i := 0
 	tooLong := false
 
-	t.sweepTTQ(ctx)
+	t.enqueueTQSweep(ctx)
 	var finished []string
 	t.TQ.Run(
 		taskCtx,
@@ -161,7 +170,7 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 		// record all finished tasks.
 		tqtesting.StopAfter(func(task *tqtesting.Task) bool {
 			finished = append(finished, fmt.Sprintf("%30s (attempt# %d)", task.Class, task.Attempts))
-			t.sweepTTQ(ctx)
+			t.enqueueTQSweep(ctx)
 			return false
 		}),
 		// StopBefore is actually used to for conditional stopping.
@@ -325,36 +334,42 @@ func (t *Test) flakifyDS(ctx context.Context) context.Context {
 	return ctx
 }
 
-// sweepTTQ ensures all previously transactionally created tasks are actually
-// added to TQ.
+// startTQSweeping starts asynchronous sweeping for the duration of the test.
 //
-// This is critical when datastore is flaky, as this may result in transaction
-// succeeding, but client receiving a transient error.
-//
-// Context passed must not have flaky datastore.
-func (t *Test) sweepTTQ(ctx context.Context) {
-	if t.dsFlakiness > 0 {
-		// TODO(tandrii): find a way to instantiate && launch Sweeper per test with
-		// a controlled lifetime.
-		// Currently, tq.Default.Sweeper is global AND allows at most 1 concurrent
-		// sweep, regardless of what `ctx` is passed to Sweep.
-		// Furthermore, Sweep must be ran outside of
-		// tqtesting.StopAfter/tqtesting.StopBefore callbacks to avoid deadlock.
-		go func() {
-			tqDefaultSweeperLock.Lock()
-			defer tqDefaultSweeperLock.Unlock()
-			if err := tq.Sweep(ctx); err != nil && err != ctx.Err() {
-				logging.Errorf(ctx, "sweep failed: %s", err)
-			}
-		}()
-	}
-}
-
-var tqDefaultSweeperLock sync.Mutex
-
-func init() {
-	tq.Default.Sweeper = tq.NewInProcSweeper(tq.InProcSweeperOptions{
+// This is necessary if flaky DS is used.
+func (t *Test) startTQSweeping(ctx context.Context) (deferme func()) {
+	t.TQDispatcher.Sweeper = tq.NewInProcSweeper(tq.InProcSweeperOptions{
 		SweepShards:     1,
 		SubmitBatchSize: 1,
 	})
+	var err error
+	t.tqSweepChannel, err = dispatcher.NewChannel(
+		ctx,
+		&dispatcher.Options{
+			Buffer: buffer.Options{
+				BatchSize: 1, // incoming event => sweep ASAP.
+				MaxLeases: 1, // at most 1 sweep concurrently
+				// 2+ outstanding requests to sweep should result in just 1 sweep.
+				FullBehavior: &buffer.DropOldestBatch{MaxLiveItems: 1},
+				// This is only useful if something is misconfigured to avoid pointless
+				// retries, because the individual sweeps must not fail as we use
+				// non-flaky Datastore for sweeping.
+				Retry: retry.None,
+			},
+		},
+		func(*buffer.Batch) error { return t.TQDispatcher.Sweep(ctx) },
+	)
+	if err != nil {
+		panic(err)
+	}
+	return func() { t.tqSweepChannel.CloseAndDrain(ctx) }
+}
+
+// enqueueTQSweep ensures a TQ sweep will happen strictly afterwards.
+//
+// Noop if TQ sweeping is not required.
+func (t *Test) enqueueTQSweep(ctx context.Context) {
+	if t.TQDispatcher.Sweeper != nil {
+		t.tqSweepChannel.C <- struct{}{}
+	}
 }
