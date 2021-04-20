@@ -15,15 +15,15 @@
 import '@material/mwc-button';
 import '@material/mwc-dialog';
 import '@material/mwc-icon';
-import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
 import { autorun, computed, observable, reaction, when } from 'mobx';
-import { FULFILLED, PENDING, REJECTED } from 'mobx-utils';
+import { REJECTED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
+import { reportRenderError } from '../../components/error_handler';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -196,28 +196,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     this.addDisposer(() => this.buildState.dispose());
 
     this.addDisposer(
-      autorun(() => {
-        if (this.buildState.build$.state !== REJECTED) {
-          return;
-        }
-        const err = this.buildState.build$.value as GrpcError;
-        // If the build is not found and the user is not logged in, redirect
-        // them to the login page.
-        if (err.code === RpcCode.NOT_FOUND && this.appState.userId === '') {
-          Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
-          return;
-        }
-        this.dispatchEvent(
-          new ErrorEvent('error', {
-            message: this.buildState.build$.value.toString(),
-            composed: true,
-            bubbles: true,
-          })
-        );
-      })
-    );
-
-    this.addDisposer(
       reaction(
         () => this.appState,
         (appState) => {
@@ -289,7 +267,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // Redirect to the long link after the build is fetched.
       this.addDisposer(
         when(
-          () => this.buildState.build$.state === FULFILLED,
+          () => this.buildState.build !== null,
           () => {
             const build = this.buildState.build!;
             const buildUrl = router.urlForName('build', {
@@ -458,7 +436,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     `;
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     if (this.isShortLink || this.prerender) {
       return html``;
     }
@@ -579,12 +557,12 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       </div>
       <milo-status-bar
         .components=${[{ color: this.statusBarColor, weight: 1 }]}
-        .loading=${this.buildState.build$.state === PENDING}
+        .loading=${!this.buildState.build}
       ></milo-status-bar>
       <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
       <slot></slot>
     `;
-  }
+  });
 
   static styles = [
     commonStyle,
