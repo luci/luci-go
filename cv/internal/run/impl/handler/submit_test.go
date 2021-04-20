@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging/memlogger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -50,9 +51,14 @@ func TestOnReadyForSubmission(t *testing.T) {
 	t.Parallel()
 
 	Convey("OnReadyForSubmission", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
+		runNotifier := run.NewNotifier(ct.TQDispatcher)
+
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		runCLs := common.CLIDs{1, 2}
 		r := run.Run{
@@ -102,7 +108,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		), ShouldBeNil)
 		rs := &state.RunState{
 			Run:         r,
-			RunNotifier: run.DefaultNotifier,
+			RunNotifier: runNotifier,
 		}
 
 		h := &Impl{}
@@ -211,9 +217,13 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 func TestSubmitter(t *testing.T) {
 	Convey("Submitter", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
+		runNotifier := run.NewNotifier(ct.TQDispatcher)
 
 		const (
 			lProject = "test_proj"
@@ -232,7 +242,7 @@ func TestSubmitter(t *testing.T) {
 			treeURL:     "https://tree.example.com",
 			attempt:     2,
 			clids:       common.CLIDs{1, 2},
-			runNotifier: run.DefaultNotifier,
+			runNotifier: runNotifier,
 		}
 		So(datastore.Put(ctx,
 			&run.Run{

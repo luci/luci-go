@@ -25,10 +25,13 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
@@ -43,7 +46,9 @@ func TestRunManager(t *testing.T) {
 	t.Parallel()
 
 	Convey("RunManager", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		const runID = "chromium/222-1-deadbeef"
@@ -60,7 +65,9 @@ func TestRunManager(t *testing.T) {
 			return ret
 		}
 
-		notifier := run.DefaultNotifier
+		notifier := run.NewNotifier(ct.TQDispatcher)
+		pm := prjmanager.NewNotifier(ct.TQDispatcher)
+		_ = New(notifier, pm, updater.New(ct.TQDispatcher, pm, notifier))
 
 		// sorted by the order of execution.
 		eventTestcases := []struct {
@@ -277,7 +284,9 @@ func TestRunManager(t *testing.T) {
 	})
 
 	Convey("Poke", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		const runID = "chromium/222-1-deadbeef"
@@ -286,7 +295,10 @@ func TestRunManager(t *testing.T) {
 			Status:   run.Status_RUNNING,
 			EVersion: 10,
 		}), ShouldBeNil)
-		notifier := run.DefaultNotifier
+
+		notifier := run.NewNotifier(ct.TQDispatcher)
+		pm := prjmanager.NewNotifier(ct.TQDispatcher)
+		_ = New(notifier, pm, updater.New(ct.TQDispatcher, pm, notifier))
 
 		Convey("Recursive", func() {
 			So(notifier.PokeNow(ctx, runID), ShouldBeNil)

@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -36,35 +37,46 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
-func init() {
-	eventpb.DefaultTaskRefs.ManageRun.AttachHandler(
+// RunManager manages Runs.
+type RunManager struct {
+	runNotifier *run.Notifier
+	pmNotifier  *prjmanager.Notifier
+	clUpdater   *updater.Updater
+	handler     handler.Handler
+}
+
+func New(n *run.Notifier, pm *prjmanager.Notifier, u *updater.Updater) *RunManager {
+	rm := &RunManager{n, pm, u, &handler.Impl{}}
+	n.TaskRefs.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*eventpb.ManageRunTask)
-			err := manageRun(ctx, common.RunID(task.GetRunId()))
+			err := rm.manageRun(ctx, common.RunID(task.GetRunId()))
 			// TODO(tandrii/yiwzhang): avoid retries iff we know a new task was
 			// already scheduled for the next second.
 			return common.TQifyError(ctx, err)
 		},
 	)
+	return rm
 }
 
 var pokeInterval = 5 * time.Minute
 
 var fakeHandlerKey = "Fake Run Events Handler"
 
-func manageRun(ctx context.Context, runID common.RunID) error {
+func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 	ctx = logging.SetField(ctx, "run", runID)
 	recipient := datastore.MakeKey(ctx, run.RunKind, string(runID))
-	rm := &runProcessor{
+	proc := &runProcessor{
 		runID:       runID,
-		runNotifier: run.DefaultNotifier,
+		runNotifier: rm.runNotifier,
+		pmNotifier:  rm.pmNotifier,
+		clUpdater:   rm.clUpdater,
+		handler:     rm.handler,
 	}
 	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
-		rm.handler = h
-	} else {
-		rm.handler = &handler.Impl{}
+		proc.handler = h
 	}
-	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, rm)
+	postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc)
 	if err != nil {
 		return errors.Annotate(err, "run: %q", runID).Err()
 	}
@@ -78,9 +90,13 @@ func manageRun(ctx context.Context, runID common.RunID) error {
 
 // runProcessor implements eventbox.Processor.
 type runProcessor struct {
-	runID       common.RunID
-	handler     handler.Handler
+	runID common.RunID
+
 	runNotifier *run.Notifier
+	pmNotifier  *prjmanager.Notifier
+	clUpdater   *updater.Updater
+
+	handler handler.Handler
 }
 
 var _ eventbox.Processor = (*runProcessor)(nil)
@@ -98,8 +114,9 @@ func (rp *runProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox
 	}
 	rs := &state.RunState{
 		Run:         r,
-		PmNotifier:  prjmanager.DefaultNotifier,
+		PmNotifier:  rp.pmNotifier,
 		RunNotifier: rp.runNotifier,
+		CLUpdater:   rp.clUpdater,
 	}
 	return rs, eventbox.EVersion(r.EVersion), nil
 }
@@ -308,10 +325,16 @@ func (rp *runProcessor) enqueueNextPoke(ctx context.Context, nextReadyEventTime 
 	case now.After(nextReadyEventTime):
 		// It is possible that by this time, next ready event is already overdue.
 		// Invoke Run Manager immediately.
-		return eventpb.DefaultTaskRefs.Dispatch(ctx, string(rp.runID), time.Time{})
+		return rp.runNotifier.TaskRefs.Dispatch(ctx, string(rp.runID), time.Time{})
 	case nextReadyEventTime.Before(now.Add(pokeInterval)):
-		return eventpb.DefaultTaskRefs.Dispatch(ctx, string(rp.runID), nextReadyEventTime)
+		return rp.runNotifier.TaskRefs.Dispatch(ctx, string(rp.runID), nextReadyEventTime)
 	default:
 		return rp.runNotifier.PokeAfter(ctx, rp.runID, pokeInterval)
 	}
+}
+
+var Default *RunManager
+
+func init() {
+	Default = New(run.DefaultNotifier, prjmanager.DefaultNotifier, updater.Default)
 }
