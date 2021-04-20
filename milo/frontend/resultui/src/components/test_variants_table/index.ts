@@ -31,6 +31,7 @@ import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
+import { reportErrorAsync } from '../error_handler';
 import { MiloBaseElement } from '../milo_base';
 import { TestVariantEntryElement } from './test_variant_entry';
 
@@ -90,20 +91,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
     );
   }
 
-  private async loadMore() {
-    try {
-      await this.invocationState.testLoader?.loadNextTestVariants();
-    } catch (e) {
-      this.dispatchEvent(
-        new ErrorEvent('error', {
-          error: e,
-          message: e.toString(),
-          composed: true,
-          bubbles: true,
-        })
-      );
-    }
-  }
+  private loadMore = reportErrorAsync.bind(this)(async () => this.invocationState.testLoader?.loadNextTestVariants());
 
   private renderAllVariants() {
     const testLoader = this.invocationState.testLoader;
