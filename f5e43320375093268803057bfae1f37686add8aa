@@ -1,0 +1,314 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6426404_29ce2c85",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "The err only happens if it\u0027s presumed transient, meaning retries will likely help.\nHence, return error to the caller and let caller retry.",
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff27ffee_5e840c47",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "make it a switch. THis cond shouldn\u0027t be evaluated iff err !\u003d nil.",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 17
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d84111ed_7de14b49",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "Even iff we have CQD attempt record, we must not send data which conflicts with the rest of the row computed from Run entity.\nAre you sure both are necessarily consistent?\n\nI guess there is no harm in Builds \u0026 CustomReq., \nbut Substatus -- not sure at all.",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 52
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da93d383_e83304fb",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "Yiwei already added a func for this somewhere in run/ package. You can move it to top level Run package, e.g.\n\nfunc (r *Run) LoadCLs() ([]*RunCL, error)",
+      "range": {
+        "startLine": 76,
+        "startChar": 37,
+        "endLine": 77,
+        "endChar": 26
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77380202_53e5050a",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "*",
+      "range": {
+        "startLine": 127,
+        "startChar": 36,
+        "endLine": 127,
+        "endChar": 37
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "978391f0_39786292",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "general: we don\u0027t use this in CV. It\u0027s not really useful in general and logs look ugly.\n\nspecifically here it\u0027s also useless, since the dbg message after it says it all.",
+      "range": {
+        "startLine": 155,
+        "startChar": 10,
+        "endLine": 155,
+        "endChar": 25
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1f0ad1f2_d296836b",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "Do you you think this can happen?\n\nI think it\u0027s better to guarantee such bad data isn\u0027t ever inserted by adding this check to migration package before it saves the DS entity.",
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "67404a5e_15440a0e",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "just id should work.",
+      "range": {
+        "startLine": 160,
+        "startChar": 74,
+        "endLine": 160,
+        "endChar": 84
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ace1c9d7_42482536",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "%q is better here, since there are lots special chars in Run\u0027s id.",
+      "range": {
+        "startLine": 160,
+        "startChar": 69,
+        "endLine": 160,
+        "endChar": 71
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2cf43db_013d106c",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "for better or worse, we adopted GetXYZ in protos for accessing, hoping that it\u0027d ease transition to next-generation proto library later.\n\nreturn v.Payload.GetRun().GetAttempt(), nil\n\n(bonus -- it doesn\u0027t panic if either payload or run is nil)",
+      "range": {
+        "startLine": 162,
+        "startChar": 17,
+        "endLine": 162,
+        "endChar": 29
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c98f346e_bce0ca90",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "I don\u0027t think this does what https://crbug.com/1114686#c5 says.\n\nFirst, you must ensure that r.Status is SUCCESS.\nSecond, this is legacy `commit_queue` row. So, we must remain backwards compat and emit SUCCESS even if some CLs failed submission.\n\nI think this chunk of code should relocate to the case where CV RUn status is Status_FAILED.\n\nBtw, can you please check that Run package correctly finalizes Run when CQD reports\n  Attempt(mode: FUll, status: SUCCESS, but with some failed to submit gerrit CLs)\n? It\u0027d be great to have and end to end test for this (in separate CL, of course)",
+      "range": {
+        "startLine": 168,
+        "startChar": 0,
+        "endLine": 170,
+        "endChar": 2
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ccbb14f6_6b398148",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "why? you can and should panic iff run status isn\u0027t final.",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 181,
+        "endChar": 37
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a7954b04_70e56aff",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "please, move this into default block of the switch \u0026\u0026 log error before returning.",
+      "range": {
+        "startLine": 189,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 55
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29dda32f_fc3dcd71",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "yeah. We should also change entirely how these are computed -- ought to be sha2 hash, for example.",
+      "range": {
+        "startLine": 197,
+        "startChar": 1,
+        "endLine": 197,
+        "endChar": 80
+      },
+      "revId": "f5e43320375093268803057bfae1f37686add8aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

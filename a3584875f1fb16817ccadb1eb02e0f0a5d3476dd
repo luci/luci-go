@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a87536f4_d9d8de20",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "nit-nit: i think it\u0027s 1 row, for now at least.",
+      "range": {
+        "startLine": 15,
+        "startChar": 46,
+        "endLine": 15,
+        "endChar": 47
+      },
+      "revId": "a3584875f1fb16817ccadb1eb02e0f0a5d3476dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

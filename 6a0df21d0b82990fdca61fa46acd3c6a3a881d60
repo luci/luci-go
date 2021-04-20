@@ -95,6 +95,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "239018c9_79a6cbd5",
+        "filename": "cv/internal/run/bq/bq.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T20:41:44Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "a6f72870_9beddf23",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 40
+      },
+      "revId": "6a0df21d0b82990fdca61fa46acd3c6a3a881d60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "3cb800db_80e10349",
