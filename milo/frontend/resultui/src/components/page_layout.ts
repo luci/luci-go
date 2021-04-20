@@ -49,7 +49,10 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
     super();
     // Expires the token slightly (10s) earlier so an expired token won't be
     // used if gAuth takes a while to return the new access token.
-    if (CACHED_AUTH_STATE && CACHED_AUTH_STATE.expiresAt > Date.now() - 10000) {
+    // We can't solely rely on SW to check the expiration because an expired
+    // state could be used if <milo-page-layout /> is reinitialized at a later
+    // stage.
+    if (CACHED_AUTH_STATE && CACHED_AUTH_STATE.expiresAt > Date.now() + 10000) {
       this.appState.accessToken = CACHED_AUTH_STATE.accessToken;
       this.appState.userId = CACHED_AUTH_STATE.userId;
     }

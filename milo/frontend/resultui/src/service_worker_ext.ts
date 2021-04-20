@@ -37,6 +37,11 @@ const _self = (self as unknown) as ServiceWorkerGlobalScope;
 const AUTH_STATE_KEY = 'auth-state';
 const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
 
+async function getAuthState() {
+  const cachedAuthState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
+  return cachedAuthState && cachedAuthState.expiresAt > Date.now() ? cachedAuthState : null;
+}
+
 export interface SetAuthStateEventData {
   type: 'SET_AUTH_STATE';
   authState: AuthState | null;
@@ -71,7 +76,7 @@ _self.addEventListener('fetch', async (e) => {
   if (url.pathname === '/ui/cached-auth-state.js') {
     e.respondWith(
       (async () => {
-        const authState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
+        const authState = await getAuthState();
         return new Response(`CACHED_AUTH_STATE=${JSON.stringify(authState)};`, {
           headers: { 'content-type': 'application/javascript' },
         });
@@ -136,7 +141,10 @@ async function prefetchBuild(reqUrl: URL) {
     return;
   }
 
-  const authState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
+  const authState = await getAuthState();
+  if (!authState) {
+    return;
+  }
   const prefetchBuildsService = new BuildsService(
     new PrpcClientExt(
       {
@@ -156,7 +164,7 @@ async function prefetchBuild(reqUrl: URL) {
           throw 0;
         },
       },
-      () => authState?.accessToken || ''
+      () => authState.accessToken
     )
   );
 
@@ -182,7 +190,10 @@ async function prefetchArtifact(reqUrl: URL) {
     .slice(1, 5)
     .map((v) => (v === undefined ? undefined : decodeURIComponent(v)));
 
-  const authState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
+  const authState = await getAuthState();
+  if (!authState) {
+    return;
+  }
   const prefetchResultDBService = new ResultDb(
     new PrpcClientExt(
       {
@@ -205,7 +216,7 @@ async function prefetchArtifact(reqUrl: URL) {
           throw 0;
         },
       },
-      () => authState?.accessToken || ''
+      () => authState.accessToken
     )
   );
 
