@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -59,7 +60,11 @@ func New(n *prjmanager.Notifier, u *updater.Updater) *Purger {
 
 // Schedule enqueues a task to purge a CL for immediate execution.
 func (p *Purger) Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
-	return p.pmNotifier.TaskRefs.SchedulePurgeCL(ctx, t)
+	return p.pmNotifier.TaskRefs.Tqd.AddTask(ctx, &tq.Task{
+		Payload: t,
+		// No DeduplicationKey as these tasks are created transactionally by PM.
+		Title: fmt.Sprintf("%s/%d/%s", t.GetLuciProject(), t.GetPurgingCl().GetClid(), t.GetPurgingCl().GetOperationId()),
+	})
 }
 
 // PurgeCL purges a CL and notifies PM on success or failure.

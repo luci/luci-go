@@ -19,13 +19,15 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/cv/internal/eventbox"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/cv/internal/eventbox"
 )
 
 const (
@@ -173,13 +175,4 @@ func Send(ctx context.Context, luciProject string, e *Event) error {
 	// imports.
 	to := datastore.MakeKey(ctx, "Project", luciProject)
 	return eventbox.Emit(ctx, value, to)
-}
-
-// SchedulePurgeCL schedules a task to purge a CL.
-func (tr TaskRefs) SchedulePurgeCL(ctx context.Context, t *PurgeCLTask) error {
-	return tr.Tqd.AddTask(ctx, &tq.Task{
-		Payload: t,
-		// No DeduplicationKey as these tasks are created transactionally by PM.
-		Title: fmt.Sprintf("%s/%d/%s", t.GetLuciProject(), t.GetPurgingCl().GetClid(), t.GetPurgingCl().GetOperationId()),
-	})
 }

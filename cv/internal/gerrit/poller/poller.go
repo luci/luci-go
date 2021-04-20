@@ -44,7 +44,8 @@ type PM interface {
 	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
 }
 
-// Poller polls Gerrit to discover new CLs and updates to existing ones.
+// Poller polls Gerrit to discover new CLs and modifications of the existing
+// ones.
 type Poller struct {
 	tqd       *tq.Dispatcher
 	clUpdater *updater.Updater
