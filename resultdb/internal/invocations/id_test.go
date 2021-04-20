@@ -15,6 +15,7 @@
 package invocations
 
 import (
+	"fmt"
 	"testing"
 
 	"cloud.google.com/go/spanner"
@@ -54,6 +55,7 @@ func TestSpannerConversion(t *testing.T) {
 		Convey(`ID`, func() {
 			id := ID("a")
 			So(id.ToSpanner(), ShouldEqual, "ca978112:a")
+			fmt.Println(ID("task-chromium-swarm-dev.appspot.com-53040279bd436111").ToSpanner())
 
 			row, err := spanner.NewRow([]string{"a"}, []interface{}{id.ToSpanner()})
 			So(err, ShouldBeNil)
