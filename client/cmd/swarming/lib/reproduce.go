@@ -153,12 +153,12 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 	}
 
 	// Download input files.
-	if properties.InputsRef != nil && properties.CasInputRoot != nil {
+	if properties.InputsRef != nil && properties.InputsRef.Isolated != "" && properties.CasInputRoot != nil {
 		return nil, errors.Reason("fetched TaskRequest has files from Isolate and RBE-CAS").Err()
 	}
 
 	// Support isolated input in task request.
-	if properties.InputsRef != nil {
+	if properties.InputsRef != nil && properties.InputsRef.Isolated != "" {
 		if _, err := service.GetFilesFromIsolate(ctx, workdir, properties.InputsRef); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch files from isolate").Err()
 		}
