@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "9d590966_1e75eb40",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T20:53:09Z",
+      "side": 1,
+      "message": "Thanks for the reminder.\n\nI think we can test the performance of this approach first, and ifit\u0027s still ideal, then we can computing the values on finalization. WDYT?",
+      "parentUuid": "fe0266dd_b0d7f4f6",
+      "range": {
+        "startLine": 10,
+        "startChar": 21,
+        "endLine": 10,
+        "endChar": 85
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "73673d33_ab0a4f27",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c10b259_9460d2ac",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T20:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce8839bf_c8d829b5",
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "32e0849a_d335ec4b",
@@ -75,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec95b756_41700029",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T20:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "32e0849a_d335ec4b",
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "421421d0_1b137494",
@@ -88,6 +148,30 @@
       "writtenOn": "2021-04-16T16:20:12Z",
       "side": 1,
       "message": "that may have test results that match the predicate.\n\nthe emphasis on \"may\"",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 72
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0b03b8a_4cd22a88",
+        "filename": "resultdb/internal/invocations/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T20:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "421421d0_1b137494",
       "range": {
         "startLine": 31,
         "startChar": 49,
@@ -121,6 +205,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "658007b1_5b82bdeb",
+        "filename": "resultdb/internal/invocations/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T20:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "042e0117_908bd519",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 26
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ecea712e_9e9a0ee8",
@@ -134,6 +242,30 @@
       "writtenOn": "2021-04-16T16:20:12Z",
       "side": 1,
       "message": "nit: seems like this code is unnecessary. L38 and L50 will evaluate to false and L65 will exit",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 0
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2f19583_9f93e255",
+        "filename": "resultdb/internal/invocations/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T20:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecea712e_9e9a0ee8",
       "range": {
         "startLine": 33,
         "startChar": 0,
