@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/server/encryptedcookies/internal"
+	"go.chromium.org/luci/server/encryptedcookies/internal/fakecookies"
 	"go.chromium.org/luci/server/encryptedcookies/session"
 )
 
@@ -152,10 +153,9 @@ func (*serverModule) Dependencies() []module.Dependency {
 
 // Initialize is part of module.Module interface.
 func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
+	// If in the dev mode and have no configuration, use a fake implementation.
 	if !opts.Prod && m.opts.ClientID == "" {
-		// TODO(vadimsh): Implement a dev mode that uses some simple cookies and
-		// does not require elaborate configuration, similar to GAE devappserver.
-		return nil, errors.Reason("dev mode is not implemented yet").Err()
+		return ctx, m.initInDevMode(ctx, host)
 	}
 
 	// Check required flags.
@@ -318,4 +318,15 @@ func (m *serverModule) loadOpenIDConfig(ctx context.Context) (*atomic.Value, err
 	})
 
 	return val, nil
+}
+
+// initInDevMode initializes a primitive fake cookie-based auth method.
+//
+// Can be used on the localhost during the development as a replacement for the
+// real thing.
+func (m *serverModule) initInDevMode(ctx context.Context, host module.Host) error {
+	method := &fakecookies.AuthMethod{}
+	host.RegisterCookieAuth(method)
+	method.InstallHandlers(host.Routes(), router.MiddlewareChain{})
+	return nil
 }
