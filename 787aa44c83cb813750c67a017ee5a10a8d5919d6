@@ -160,6 +160,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8711031c_110d9d08",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-20T18:02:55Z",
+      "side": 1,
+      "message": "An alternative approach is to enqueue the remaining tasks back to the channel, if they are too small. For sure that there are spaces where we can do more optimization. However, I\u0027d claim that we need to profile a number of real test runs first.\n\nNote that the intent of this batch uploads is to reduce # of Spanner transactions. For example, given [1, 2, 3, 4, 5] artifacts, it\u0027s effectively the same whether sink slices and send them by ([1, 2], [3,4,5]) or ([1,2,3,4] [5]) for the purpose.\n\nEven if we want to maximize the size of the artifacts in a batch request for network efficiency, there are other factors that affect the efficiency of the batch requests\n- Dispatcher options, such as BatchDuration and QPSLimit\n- Whether the test was run by result_adapter or with direct integration of ResultSink APIs\n\nIn short, I\u0027d consider further optimization if it becomes a visible problem that the last chunk may not maximize the batch request utilization. In https://paste.googleplex.com/5242766629011456, I ran result_adapter with a sample output.json, and efficiency from the last chunk was not an issue.",
+      "parentUuid": "66c2c4be_3ace94d8",
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d2861032_ffcdaab4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 4
