@@ -16,6 +16,29 @@
       "message": "LGTM",
       "revId": "030a159ee0b840aaeed2b73c725c5ad031fea196",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f3cfa95_571bacac",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-20T00:25:20Z",
+      "side": 1,
+      "message": "Add `runNotifier: run.DefaultNotifier`?",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 97,
+        "endChar": 41
+      },
+      "revId": "030a159ee0b840aaeed2b73c725c5ad031fea196",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
