@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2873951a_961910b1",
+        "filename": "milo/frontend/resultui/src/context/invocation_state.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-04-20T03:01:17Z",
+      "side": 1,
+      "message": "Is this still needed because column_keys can be null? (as opposed to an empty array)",
+      "range": {
+        "startLine": 45,
+        "startChar": 47,
+        "endLine": 45,
+        "endChar": 52
+      },
+      "revId": "566a631e321cfae8e1b08a08e665f9eb7d6da00f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6421277d_9f7599d0",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2021-04-20T03:01:17Z",
+      "side": 1,
+      "message": "Can you help me understand what the impact of changing this key is?",
+      "revId": "566a631e321cfae8e1b08a08e665f9eb7d6da00f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
