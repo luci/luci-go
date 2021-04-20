@@ -56,12 +56,13 @@ type TaskRefs struct {
 	KickManageProject tq.TaskClassRef
 	PurgeProjectCL    tq.TaskClassRef
 
-	tqd *tq.Dispatcher
+	// TODO(tandrii): hide this member.
+	Tqd *tq.Dispatcher
 }
 
 func Register(tqd *tq.Dispatcher) TaskRefs {
 	return TaskRefs{
-		tqd: tqd,
+		Tqd: tqd,
 
 		ManageProject: tqd.RegisterTaskClass(tq.TaskClass{
 			ID:        ManageProjectTaskClass,
@@ -110,7 +111,7 @@ func (tr TaskRefs) Dispatch(ctx context.Context, luciProject string, eta time.Ti
 			mock(luciProject, eta)
 			return nil
 		}
-		return tr.tqd.AddTask(ctx, &tq.Task{
+		return tr.Tqd.AddTask(ctx, &tq.Task{
 			Title:            luciProject,
 			DeduplicationKey: "", // not allowed in a transaction
 			Payload:          payload,
@@ -136,7 +137,7 @@ func (tr TaskRefs) Dispatch(ctx context.Context, luciProject string, eta time.Ti
 		mock(luciProject, eta)
 		return nil
 	}
-	return tr.tqd.AddTask(ctx, &tq.Task{
+	return tr.Tqd.AddTask(ctx, &tq.Task{
 		Title:            luciProject,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", luciProject, eta.UnixNano()),
 		ETA:              eta,
@@ -176,7 +177,7 @@ func Send(ctx context.Context, luciProject string, e *Event) error {
 
 // SchedulePurgeCL schedules a task to purge a CL.
 func (tr TaskRefs) SchedulePurgeCL(ctx context.Context, t *PurgeCLTask) error {
-	return tr.tqd.AddTask(ctx, &tq.Task{
+	return tr.Tqd.AddTask(ctx, &tq.Task{
 		Payload: t,
 		// No DeduplicationKey as these tasks are created transactionally by PM.
 		Title: fmt.Sprintf("%s/%d/%s", t.GetLuciProject(), t.GetPurgingCl().GetClid(), t.GetPurgingCl().GetOperationId()),
