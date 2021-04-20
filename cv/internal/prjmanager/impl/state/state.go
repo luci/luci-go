@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // State is a state of Project Manager.
@@ -44,7 +45,7 @@ import (
 // would other have to be copied, too.
 //
 // To illustrate correct and incorrect usages:
-//     s0 := NewExisting(...)
+//     s0 := &State{...}
 //     s1, _, err := s0.Mut1()
 //     if err != nil {
 //       // ... := s0.Mut2()             // NOT OK, 2nd call on s0
@@ -62,9 +63,9 @@ type State struct {
 	PB *prjpb.PState
 
 	// Dependencies.
-
-	pmNotifier *prjmanager.Notifier
-	clPurger   *clpurger.Purger
+	PMNotifier  *prjmanager.Notifier
+	RunNotifier *run.Notifier
+	CLPurger    *clpurger.Purger
 
 	// Helper private fields used during mutations.
 
@@ -83,20 +84,6 @@ type State struct {
 	// Test mocks. Not set in production.
 
 	testComponentActorFactory func(*prjpb.Component, componentactor.Supporter) componentActor
-}
-
-// NewInitial returns initial state at the start of PM's lifetime.
-func NewInitial(luciProject string, n *prjmanager.Notifier, p *clpurger.Purger) *State {
-	return NewExisting(&prjpb.PState{LuciProject: luciProject}, n, p)
-}
-
-// NewExisting returns state from its parts.
-func NewExisting(pb *prjpb.PState, n *prjmanager.Notifier, p *clpurger.Purger) *State {
-	return &State{
-		PB:         pb,
-		pmNotifier: n,
-		clPurger:   p,
-	}
 }
 
 // UpdateConfig updates PM to latest config version.
@@ -140,9 +127,10 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 		// complete finalization, send us OnRunFinished event and then we'll remove
 		// them from the state anyway.
 		return s, &UpdateIncompleteRunsConfig{
-			EVersion: meta.EVersion,
-			Hash:     meta.Hash(),
-			RunIDs:   s.PB.IncompleteRuns(),
+			RunNotifier: s.RunNotifier,
+			EVersion:    meta.EVersion,
+			Hash:        meta.Hash(),
+			RunIDs:      s.PB.IncompleteRuns(),
 		}, err
 
 	case config.StatusDisabled, config.StatusNotExists:
@@ -168,7 +156,10 @@ func (s *State) UpdateConfig(ctx context.Context) (*State, SideEffect, error) {
 				s.PB.Status = prjpb.Status_STOPPED
 				return s, nil, nil
 			}
-			return s, &CancelIncompleteRuns{RunIDs: s.PB.IncompleteRuns()}, nil
+			return s, &CancelIncompleteRuns{
+				RunNotifier: s.RunNotifier,
+				RunIDs:      s.PB.IncompleteRuns(),
+			}, nil
 		default:
 			panic(fmt.Errorf("unexpected project status: %d", s.PB.GetStatus()))
 		}
@@ -394,7 +385,7 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 	t, tPB := earliestDecisionTime(components)
 	if !proto.Equal(s.PB.NextEvalTime, tPB) {
 		s.PB.NextEvalTime = tPB
-		if err := prjpb.DefaultTaskRefs.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
+		if err := s.PMNotifier.TaskRefs.Dispatch(ctx, s.PB.GetLuciProject(), t); err != nil {
 			return nil, nil, err
 		}
 	}

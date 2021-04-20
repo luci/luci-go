@@ -36,21 +36,26 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // ProjectManager implements managing projects.
 type ProjectManager struct {
-	// notifier notifies itself and invokes itself via async TQ tasks.
-	notifier *prjmanager.Notifier
+	// pmNotifier notifies itself and invokes itself via async TQ tasks.
+	pmNotifier *prjmanager.Notifier
+	// runNotifier notifies Run Manager.
+	runNotifier *run.Notifier
+
 	clPurger *clpurger.Purger
 }
 
 // New creates a new ProjectManager and registers it for handling tasks created
 // by the given TQ Notifier.
-func New(n *prjmanager.Notifier) *ProjectManager {
+func New(n *prjmanager.Notifier, rn *run.Notifier) *ProjectManager {
 	pm := &ProjectManager{
-		notifier: n,
-		clPurger: clpurger.New(n),
+		pmNotifier:  n,
+		runNotifier: rn,
+		clPurger:    clpurger.New(n),
 	}
 	n.TaskRefs.ManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
@@ -82,7 +87,7 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)
 		// Scheduling new task reduces probability of concurrent tasks in extreme
 		// events.
-		if err := pm.notifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); err != nil {
+		if err := pm.pmNotifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); err != nil {
 			return err
 		}
 		// Hard-fail this task to avoid retries and get correct monitoring stats.
@@ -92,7 +97,8 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
 	proc := &pmProcessor{
 		luciProject: luciProject,
-		pmNotifier:  pm.notifier,
+		pmNotifier:  pm.pmNotifier,
+		runNotifier: pm.runNotifier,
 		clPurger:    pm.clPurger,
 	}
 	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc); {
@@ -108,7 +114,7 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 		// overlapped with another task, and risking another overlap for busy
 		// project, schedule a new one in the future which will get a chance of
 		// deduplication.
-		if err2 := prjpb.DefaultTaskRefs.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
+		if err2 := pm.pmNotifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); err2 != nil {
 			// This should be rare and retry is the best we can do.
 			return errors.Annotate(err2, "project %q", luciProject).Err()
 		}
@@ -123,8 +129,9 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 type pmProcessor struct {
 	luciProject string
 
-	pmNotifier *prjmanager.Notifier
-	clPurger   *clpurger.Purger
+	pmNotifier  *prjmanager.Notifier
+	runNotifier *run.Notifier
+	clPurger    *clpurger.Purger
 
 	// loadedPState is set by LoadState and read by SaveState.
 	loadedPState *prjpb.PState
@@ -132,15 +139,22 @@ type pmProcessor struct {
 
 // LoadState is called to load the state before a transaction.
 func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
+	s := &state.State{
+		PMNotifier:  proc.pmNotifier,
+		RunNotifier: proc.runNotifier,
+		CLPurger:    proc.clPurger,
+	}
 	switch p, err := prjmanager.Load(ctx, proc.luciProject); {
 	case err != nil:
 		return nil, 0, err
 	case p == nil:
-		return state.NewInitial(proc.luciProject, proc.pmNotifier, proc.clPurger), 0, nil
+		s.PB = &prjpb.PState{LuciProject: proc.luciProject}
+		return s, 0, nil
 	default:
 		p.State.LuciProject = proc.luciProject
 		proc.loadedPState = p.State
-		return state.NewExisting(p.State, proc.pmNotifier, proc.clPurger), eventbox.EVersion(p.EVersion), nil
+		s.PB = p.State
+		return s, eventbox.EVersion(p.EVersion), nil
 	}
 }
 
@@ -422,5 +436,5 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 var Default *ProjectManager
 
 func init() {
-	Default = New(prjmanager.DefaultNotifier)
+	Default = New(prjmanager.DefaultNotifier, run.DefaultNotifier)
 }
