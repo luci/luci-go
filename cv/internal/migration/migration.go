@@ -44,6 +44,8 @@ import (
 const allowGroup = "luci-cv-migration-crbug-1141880"
 
 type MigrationServer struct {
+	RunNotifier *run.Notifier
+
 	migrationpb.UnimplementedMigrationServer
 }
 
@@ -97,7 +99,7 @@ func (m *MigrationServer) ReportVerifiedRun(ctx context.Context, req *migrationp
 		err = errors.Annotate(err, "failed to put VerifiedRun %q", rid).Tag(transient.Tag).Err()
 		return
 	}
-	if err = run.NotifyCQDVerificationCompleted(ctx, rid); err != nil {
+	if err = m.RunNotifier.NotifyCQDVerificationCompleted(ctx, rid); err != nil {
 		return
 	}
 
