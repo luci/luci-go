@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -46,9 +45,7 @@ func TestRunManager(t *testing.T) {
 	t.Parallel()
 
 	Convey("RunManager", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		const runID = "chromium/222-1-deadbeef"
@@ -284,9 +281,7 @@ func TestRunManager(t *testing.T) {
 	})
 
 	Convey("Poke", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		const runID = "chromium/222-1-deadbeef"

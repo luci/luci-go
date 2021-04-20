@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/logging/memlogger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -51,9 +50,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 	t.Parallel()
 
 	Convey("OnReadyForSubmission", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
@@ -217,9 +214,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 
 func TestSubmitter(t *testing.T) {
 	Convey("Submitter", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 

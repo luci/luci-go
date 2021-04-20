@@ -30,7 +30,6 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -48,9 +47,7 @@ func TestSchedule(t *testing.T) {
 	t.Parallel()
 
 	Convey("Schedule works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
@@ -308,9 +305,7 @@ func TestUpdateCLWorks(t *testing.T) {
 	t.Parallel()
 
 	Convey("Updating CL works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		const lProject = "infra"

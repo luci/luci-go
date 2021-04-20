@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -50,9 +49,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 	t.Parallel()
 
 	Convey("PM task does nothing if it comes too late", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, _ = runtest.MockDispatch(ctx)
@@ -95,9 +92,7 @@ func TestProjectLifeCycle(t *testing.T) {
 	t.Parallel()
 
 	Convey("Project can be created, updated, deleted", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, rmDispatcher := runtest.MockDispatch(ctx)
@@ -209,9 +204,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 	t.Parallel()
 
 	Convey("PM handles many events", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 

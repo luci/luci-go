@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -38,9 +37,7 @@ func TestCancel(t *testing.T) {
 	t.Parallel()
 
 	Convey("Cancel", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, close := ct.SetUp()
 		defer close()
 		ctx, _ = pmtest.MockDispatch(ctx)

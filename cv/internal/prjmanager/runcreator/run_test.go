@@ -26,7 +26,6 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -96,9 +95,7 @@ func TestRunBuilder(t *testing.T) {
 	t.Parallel()
 
 	Convey("RunBuilder works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)

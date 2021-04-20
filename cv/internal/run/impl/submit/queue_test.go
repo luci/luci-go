@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
@@ -41,9 +40,7 @@ func TestQueue(t *testing.T) {
 	t.Parallel()
 
 	Convey("Queue", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 

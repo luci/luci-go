@@ -85,9 +85,7 @@ type Test struct {
 func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	switch {
 	case t.Test == nil:
-		t.Test = &cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		t.Test = &cvtesting.Test{}
 	case t.Test.AppID != "":
 		panic("overriding cvtesting.Test{AppID} in e2e not supported")
 	}

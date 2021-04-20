@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -61,7 +60,6 @@ type ctest struct {
 }
 
 func (ct *ctest) SetUp() (context.Context, func()) {
-	ct.TQDispatcher = &tq.Dispatcher{}
 	ctx, cancel := ct.Test.SetUp()
 	ct.pm = prjmanager.NewNotifier(ct.TQDispatcher)
 	ct.clUpdater = updater.New(ct.TQDispatcher, ct.pm, nil)
@@ -147,9 +145,7 @@ func TestUpdateConfig(t *testing.T) {
 		ct := ctest{
 			lProject: "test",
 			gHost:    "c-review.example.com",
-			Test: cvtesting.Test{
-				TQDispatcher: &tq.Dispatcher{},
-			},
+			Test:     cvtesting.Test{},
 		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
