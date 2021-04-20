@@ -18,7 +18,7 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { Duration } from 'luxon';
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../../context/artifact_provider';
 import '../../expandable_entry';
@@ -29,10 +29,12 @@ import { AppState, consumeAppState } from '../../../context/app_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../../libs/constants';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { displayCompactDuration, parseProtoDuration } from '../../../libs/time_utils';
+import { unwrapObservable } from '../../../libs/utils';
 import { router } from '../../../routes';
 import { Artifact, ListArtifactsResponse, TestResult } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
+import { reportRenderError } from '../../error_handler';
 
 /**
  * Renders an expandable entry of the given test result.
@@ -97,7 +99,7 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get resultArtifacts() {
-    return this.resultArtifacts$.state === FULFILLED ? this.resultArtifacts$.value.artifacts || [] : [];
+    return unwrapObservable(this.resultArtifacts$, {}).artifacts || [];
   }
 
   @computed private get invArtifacts$() {
@@ -110,7 +112,7 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get invArtifacts() {
-    return this.invArtifacts$.state === FULFILLED ? this.invArtifacts$.value.artifacts || [] : [];
+    return unwrapObservable(this.invArtifacts$, {}).artifacts || [];
   }
 
   @computed private get artifactsMapping() {
@@ -249,7 +251,7 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <span id="header" slot="header">
@@ -277,7 +279,7 @@ export class ResultEntryElement extends MobxLitElement {
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
     `;
-  }
+  });
 
   static styles = [
     commonStyle,
