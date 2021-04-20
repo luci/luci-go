@@ -44,6 +44,8 @@ type ProjectManager struct {
 	// pmNotifier notifies itself and invokes itself via async TQ tasks.
 	pmNotifier *prjmanager.Notifier
 	// runNotifier notifies Run Manager.
+	//
+	// TODO(tandrii): define actually used subset as an interface.
 	runNotifier *run.Notifier
 
 	clPurger *clpurger.Purger
