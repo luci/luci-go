@@ -62,7 +62,8 @@ type ctest struct {
 func (ct *ctest) SetUp() (context.Context, func()) {
 	ct.TQDispatcher = &tq.Dispatcher{}
 	ctx, cancel := ct.Test.SetUp()
-	ct.clUpdater = updater.New(ct.TQDispatcher)
+	ct.pm = prjmanager.NewNotifier(ct.TQDispatcher)
+	ct.clUpdater = updater.New(ct.TQDispatcher, ct.pm, nil)
 	return ctx, cancel
 }
 

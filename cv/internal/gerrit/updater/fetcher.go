@@ -43,8 +43,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cqdepend"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
-	"go.chromium.org/luci/cv/internal/prjmanager"
-	"go.chromium.org/luci/cv/internal/run"
 )
 
 // fetcher efficiently computes new snapshot by fetching data from Gerrit.
@@ -55,6 +53,10 @@ import (
 //
 // The prior Snapshot, if given, can reduce RPCs made to Gerrit.
 type fetcher struct {
+	pm                 PM
+	rm                 RM
+	scheduleDepRefresh func(ctx context.Context, p *RefreshGerritCL) error
+
 	luciProject   string
 	host          string
 	change        int64
@@ -140,7 +142,7 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			panic("update can be skipped iff priorCL is set")
 		}
 		if f.forceNotifyPM {
-			return prjmanager.NotifyCLUpdated(ctx, f.luciProject, f.priorCL.ID, f.priorCL.EVersion)
+			return f.pm.NotifyCLUpdated(ctx, f.luciProject, f.priorCL.ID, f.priorCL.EVersion)
 		}
 		return nil
 	default:
@@ -151,14 +153,14 @@ func (f *fetcher) update(ctx context.Context, clidHint common.CLID) (err error) 
 			func(ctx context.Context, cl *changelist.CL) error {
 				eg, ectx := errgroup.WithContext(ctx)
 				eg.Go(func() error {
-					return prjmanager.NotifyCLUpdated(ectx, f.luciProject, cl.ID, cl.EVersion)
+					return f.pm.NotifyCLUpdated(ectx, f.luciProject, cl.ID, cl.EVersion)
 				})
 				// Generally, a CL will have only one Run at a time. Hence, use
 				// unbounded parallelism here.
 				for _, rid := range cl.IncompleteRuns {
 					rid := rid
 					eg.Go(func() error {
-						return run.NotifyCLUpdated(ctx, rid, cl.ID, cl.EVersion)
+						return f.rm.NotifyCLUpdated(ectx, rid, cl.ID, cl.EVersion)
 					})
 				}
 				return eg.Wait()
@@ -578,7 +580,7 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 			if err != nil {
 				panic("impossible: by construction, all deps are Gerrit, too")
 			}
-			return Schedule(ctx, &RefreshGerritCL{
+			return f.scheduleDepRefresh(ctx, &RefreshGerritCL{
 				LuciProject: f.luciProject,
 				Host:        depHost,
 				Change:      depChange,
