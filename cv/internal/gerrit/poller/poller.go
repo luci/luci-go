@@ -31,20 +31,30 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 )
+
+// PM encapsulates interaction with Project Manager by the Gerrit Poller.
+type PM interface {
+	NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error
+}
 
 // Poller polls Gerrit to discover new CLs and updates to existing ones.
 type Poller struct {
-	tqd *tq.Dispatcher
+	tqd       *tq.Dispatcher
+	clUpdater *updater.Updater
+	pm        PM
 }
 
 // New creates a new Poller, registering it in the given TQ dispatcher.
-func New(tqd *tq.Dispatcher) *Poller {
-	p := &Poller{tqd: tqd}
+func New(tqd *tq.Dispatcher, clUpdater *updater.Updater, pm PM) *Poller {
+	p := &Poller{tqd, clUpdater, pm}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:        task.ClassID,
 		Prototype: &task.PollGerritTask{},
@@ -101,7 +111,7 @@ func (p *Poller) poll(ctx context.Context, luciProject string, eta time.Time) er
 		}
 		return nil
 	case meta.Status == config.StatusEnabled:
-		err = pollWithConfig(ctx, luciProject, meta)
+		err = p.pollWithConfig(ctx, luciProject, meta)
 	default:
 		panic(fmt.Errorf("unknown project config status: %d", meta.Status))
 	}
@@ -204,13 +214,13 @@ type State struct {
 }
 
 // pollWithConfig performs the poll and if necessary updates to newest project config.
-func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) error {
+func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) error {
 	stateBefore := State{LuciProject: luciProject}
 	switch err := datastore.Get(ctx, &stateBefore); {
 	case err != nil && err != datastore.ErrNoSuchEntity:
 		return errors.Annotate(err, "failed to get poller state for %q", luciProject).Tag(transient.Tag).Err()
 	case err == datastore.ErrNoSuchEntity || stateBefore.ConfigHash != meta.Hash():
-		if err = updateConfig(ctx, &stateBefore, meta); err != nil {
+		if err = p.updateConfig(ctx, &stateBefore, meta); err != nil {
 			return err
 		}
 	}
@@ -222,7 +232,7 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 		for i, sp := range stateBefore.SubPollers.GetSubPollers() {
 			i, sp := i, sp
 			work <- func() error {
-				err := subpoll(ctx, luciProject, sp)
+				err := p.subpoll(ctx, luciProject, sp)
 				errs[i] = errors.Annotate(err, "subpoller %s", sp).Err()
 				return nil
 			}
@@ -252,7 +262,7 @@ func pollWithConfig(ctx context.Context, luciProject string, meta config.Meta) e
 
 // updateConfig fetches latest config and updates poller's state
 // in RAM only.
-func updateConfig(ctx context.Context, s *State, meta config.Meta) error {
+func (p *Poller) updateConfig(ctx context.Context, s *State, meta config.Meta) error {
 	s.ConfigHash = meta.Hash()
 	cgs, err := meta.GetConfigGroups(ctx)
 	if err != nil {
@@ -265,7 +275,7 @@ func updateConfig(ctx context.Context, s *State, meta config.Meta) error {
 	proposed := partitionConfig(cgs)
 	toUse, discarded := reuseIfPossible(s.SubPollers.GetSubPollers(), proposed)
 	for _, d := range discarded {
-		if err := scheduleRefreshTasks(ctx, s.LuciProject, d.GetHost(), d.Changes); err != nil {
+		if err := p.scheduleRefreshTasks(ctx, s.LuciProject, d.GetHost(), d.Changes); err != nil {
 			return err
 		}
 	}
@@ -319,7 +329,7 @@ func save(ctx context.Context, s *State) error {
 var Default *Poller
 
 func init() {
-	Default = New(&tq.Default)
+	Default = New(&tq.Default, updater.Default, prjmanager.DefaultNotifier)
 }
 
 func Poke(ctx context.Context, luciProject string) error {

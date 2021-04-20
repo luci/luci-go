@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 )
 
 const (
@@ -80,10 +79,11 @@ const (
 )
 
 // subpoll queries Gerrit and updates the state of individual SubPoller.
-func subpoll(ctx context.Context, luciProject string, sp *SubPoller) error {
+func (p *Poller) subpoll(ctx context.Context, luciProject string, sp *SubPoller) error {
 	q := singleQuery{
 		luciProject: luciProject,
 		sp:          sp,
+		p:           p,
 	}
 	var err error
 	if q.client, err = gerrit.CurrentClient(ctx, sp.GetHost(), luciProject); err != nil {
@@ -101,7 +101,9 @@ func subpoll(ctx context.Context, luciProject string, sp *SubPoller) error {
 
 type singleQuery struct {
 	luciProject string
+	pm          PM
 	sp          *SubPoller
+	p           *Poller
 	client      gerrit.QueryClient
 }
 
@@ -125,7 +127,7 @@ func (q *singleQuery) full(ctx context.Context) error {
 	if diff := common.DifferenceSorted(q.sp.Changes, cur); len(diff) != 0 {
 		// `diff` changes are no longer matching the limited query,
 		// so they probably updated since.
-		if err := scheduleRefreshTasks(ctx, q.luciProject, q.sp.GetHost(), diff); err != nil {
+		if err := q.p.scheduleRefreshTasks(ctx, q.luciProject, q.sp.GetHost(), diff); err != nil {
 			return err
 		}
 	}
@@ -221,7 +223,7 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 		if err != nil {
 			return err
 		}
-		if err := notifyPMifKnown(ctx, q.luciProject, clids, maxLoadCLBatchSize); err != nil {
+		if err := q.p.notifyPMifKnown(ctx, q.luciProject, clids, maxLoadCLBatchSize); err != nil {
 			return err
 		}
 	}
@@ -236,14 +238,14 @@ func (q *singleQuery) scheduleTasks(ctx context.Context, changes []*gerritpb.Cha
 				ForceNotifyPm: forceNotifyPM && (clids[i] == 0),
 			}
 			work <- func() error {
-				return updater.Schedule(ctx, payload)
+				return q.p.clUpdater.Schedule(ctx, payload)
 			}
 		}
 	})
 	return common.MostSevereError(errs)
 }
 
-func scheduleRefreshTasks(ctx context.Context, luciProject, host string, changes []int64) error {
+func (p *Poller) scheduleRefreshTasks(ctx context.Context, luciProject, host string, changes []int64) error {
 	logging.Debugf(ctx, "scheduling %d CLUpdate tasks for no longer matched CLs", len(changes))
 	var err error
 	eids := make([]changelist.ExternalID, len(changes))
@@ -262,7 +264,7 @@ func scheduleRefreshTasks(ctx context.Context, luciProject, host string, changes
 		return err
 	}
 
-	if err := notifyPMifKnown(ctx, luciProject, clids, maxLoadCLBatchSize); err != nil {
+	if err := p.notifyPMifKnown(ctx, luciProject, clids, maxLoadCLBatchSize); err != nil {
 		return err
 	}
 
@@ -275,7 +277,7 @@ func scheduleRefreshTasks(ctx context.Context, luciProject, host string, changes
 				ForceNotifyPm: 0 == clids[i], // notify iff CL ID isn't yet known.
 			}
 			work <- func() error {
-				return updater.Schedule(ctx, payload)
+				return p.clUpdater.Schedule(ctx, payload)
 			}
 		}
 	})
@@ -290,13 +292,13 @@ func scheduleRefreshTasks(ctx context.Context, luciProject, host string, changes
 //
 // In practice, most of these CLs would be already dscache-ed, so loading them
 // is fast.
-func notifyPMifKnown(ctx context.Context, luciProject string, clids []common.CLID, maxBatchSize int) error {
+func (p *Poller) notifyPMifKnown(ctx context.Context, luciProject string, clids []common.CLID, maxBatchSize int) error {
 	cls := make([]*changelist.CL, 0, maxBatchSize)
 	flush := func() error {
 		if err := datastore.Get(ctx, cls); err != nil {
 			return errors.Annotate(common.MostSevereError(err), "failed to load CLs").Tag(transient.Tag).Err()
 		}
-		return prjmanager.NotifyCLsUpdated(ctx, luciProject, cls)
+		return p.pm.NotifyCLsUpdated(ctx, luciProject, cls)
 	}
 
 	for _, clid := range clids {
