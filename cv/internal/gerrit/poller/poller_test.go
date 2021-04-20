@@ -26,10 +26,12 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -37,8 +39,8 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	pt "go.chromium.org/luci/cv/internal/gerrit/poller/pollertest"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
-	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -48,13 +50,15 @@ func TestSchedule(t *testing.T) {
 	t.Parallel()
 
 	Convey("schedule works", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ct.Clock.Set(ct.Clock.Now().Truncate(pollInterval).Add(pollInterval))
 		const project = "chromium"
 
-		p := Default
+		p := New(ct.TQDispatcher, nil, nil)
 
 		Convey("schedule works", func() {
 			So(p.schedule(ctx, project, time.Time{}), ShouldBeNil)
@@ -160,10 +164,11 @@ func TestPoller(t *testing.T) {
 	t.Parallel()
 
 	Convey("Polling & task scheduling works", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 
 		const lProject = "chromium"
 		const gHost = "chromium-review.example.com"
@@ -185,8 +190,11 @@ func TestPoller(t *testing.T) {
 			So(afterState.EVersion, ShouldEqual, beforeState.EVersion)
 		}
 
+		pm := pmMock{}
+		p := New(ct.TQDispatcher, updater.New(ct.TQDispatcher, &pm, nil), &pm)
+
 		Convey("without project config, it's a noop", func() {
-			So(Poke(ctx, lProject), ShouldBeNil)
+			So(p.Poke(ctx, lProject), ShouldBeNil)
 			So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 			So(ct.TQ.Tasks().Payloads(), ShouldBeEmpty)
@@ -195,7 +203,7 @@ func TestPoller(t *testing.T) {
 
 		Convey("with existing project config, establishes task chain", func() {
 			ct.Cfg.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
-			So(Poke(ctx, lProject), ShouldBeNil)
+			So(p.Poke(ctx, lProject), ShouldBeNil)
 			// Execute next poll task, which should result in full poll.
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 			st := mustGetState(lProject)
@@ -213,14 +221,7 @@ func TestPoller(t *testing.T) {
 
 			Convey("with CLs", func() {
 				getCL := func(host string, change int) *changelist.CL {
-					eid, err := changelist.GobID(host, int64(change))
-					So(err, ShouldBeNil)
-					cl, err := eid.Get(ctx)
-					if err == datastore.ErrNoSuchEntity {
-						return nil
-					}
-					So(err, ShouldBeNil)
-					return cl
+					return getCL(ctx, host, change)
 				}
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(),
 					gf.CI(31, gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now())),
@@ -295,11 +296,8 @@ func TestPoller(t *testing.T) {
 						uTask33 := updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber()[1]
 						So(uTask33.GetForceNotifyPm(), ShouldBeTrue)
 
-						So(pmDispatcher.PopProjects(), ShouldResemble, []string{lProject})
 						// And PM is notified only 31 and 32 for now.
-						pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
-							getCL(gHost, 31), getCL(gHost, 32),
-						})
+						So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32))
 
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(task.ClassID))
 						So(getCL(gHost, 33), ShouldNotBeNil)
@@ -314,10 +312,7 @@ func TestPoller(t *testing.T) {
 
 							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
 							// PM must be notified on all 31..34.
-							So(pmDispatcher.PopProjects(), ShouldResemble, []string{lProject})
-							pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
-								getCL(gHost, 31), getCL(gHost, 32), getCL(gHost, 33), getCL(gHost, 34),
-							})
+							So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32, 33, 34))
 							// Because 33 was previously imported with ForceNotifyPm=true,
 							// the new task without ForceNotifyPm is't deduped.
 							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{33})
@@ -350,14 +345,8 @@ func TestPoller(t *testing.T) {
 
 							// 1x Poll + 1x PM task + 4x CL refresh.
 							So(pollertest.Projects(ct.TQ.Tasks()), ShouldResemble, []string{lProject})
-							// PM must be still notified on all 31..34, but in 2 phases.
-							So(pmDispatcher.PopProjects(), ShouldResemble, []string{lProject})
-							pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
-								getCL(gHost, 31), getCL(gHost, 32),
-							})
-							pmtest.AssertReceivedCLsNotified(ctx, lProject, []*changelist.CL{
-								getCL(gHost, 33), getCL(gHost, 34),
-							})
+							// PM must be still notified on all 31..34.
+							So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDsOf(ctx, gHost, 31, 32, 33, 34))
 							// 33 and 34 have 1 final refresh task without updateHint.
 							So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{33, 34})
 							for _, p := range updatertest.PFilter(ct.TQ.Tasks()) {
@@ -413,7 +402,7 @@ func TestPoller(t *testing.T) {
 					// PM can't be notified directly, because CL31 and CL32 are not in
 					// Datastore yet (unlikely, but possible if Gerrit updater TQ is
 					// stalled).
-					So(pmDispatcher.PopProjects(), ShouldBeEmpty)
+					So(pm.projects, ShouldBeEmpty)
 					So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{31, 32})
 					for _, p := range updatertest.PFilter(ct.TQ.Tasks()).SortByChangeNumber() {
 						So(p.GetForceNotifyPm(), ShouldBeTrue)
@@ -482,4 +471,55 @@ func sharedPrefixRepos(prefix string, n int) []string {
 		rs[i] = fmt.Sprintf("%s/%03d", prefix, i)
 	}
 	return rs
+}
+
+type pmMock struct {
+	projects map[string]common.CLIDs
+}
+
+// NotifyCLUpdated implements updater.PM.
+func (p *pmMock) NotifyCLUpdated(ctx context.Context, project string, cl common.CLID, eversion int) error {
+	if p.projects == nil {
+		p.projects = make(map[string]common.CLIDs, 1)
+	}
+	p.projects[project] = append(p.projects[project], cl)
+	return nil
+}
+
+// NotifyCLsUpdated implements PM.
+func (p *pmMock) NotifyCLsUpdated(ctx context.Context, luciProject string, cls []*changelist.CL) error {
+	for _, cl := range cls {
+		p.NotifyCLUpdated(ctx, luciProject, cl.ID, cl.EVersion)
+	}
+	return nil
+}
+
+func (p *pmMock) popNotifiedCLs(luciProject string) common.CLIDs {
+	res := p.projects[luciProject]
+	delete(p.projects, luciProject)
+	return sortedCLIDs(res...)
+}
+func getCL(ctx context.Context, gHost string, change int) *changelist.CL {
+	eid, err := changelist.GobID(gHost, int64(change))
+	So(err, ShouldBeNil)
+	cl, err := eid.Get(ctx)
+	if err == datastore.ErrNoSuchEntity {
+		return nil
+	}
+	So(err, ShouldBeNil)
+	return cl
+}
+
+func sortedCLIDsOf(ctx context.Context, gHost string, changes ...int) common.CLIDs {
+	ids := make([]common.CLID, len(changes))
+	for i, c := range changes {
+		ids[i] = getCL(ctx, gHost, c).ID
+	}
+	return sortedCLIDs(ids...)
+}
+
+func sortedCLIDs(ids ...common.CLID) common.CLIDs {
+	res := common.CLIDs(ids)
+	res.Dedupe() // it also sorts as a by-product.
+	return res
 }
