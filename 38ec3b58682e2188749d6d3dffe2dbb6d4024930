@@ -16,6 +16,47 @@
       "message": "PTAL\n\nThere\u0027s temptation to generalize the hell out of it (this is basically a dependency injection problem, see also http://shortn/_FiJjoLhOLR for some generalized prior art), but I decided to avoid generalizing unless really necessary, assuming it will not be hard to refactor stuff later...",
       "revId": "38ec3b58682e2188749d6d3dffe2dbb6d4024930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3847c8b_e9d8b571",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T19:54:10Z",
+      "side": 1,
+      "message": "\u003e  http://shortn/_FiJjoLhOLR \n\nTIL \u0026 👍",
+      "parentUuid": "927f0291_977f0cb0",
+      "revId": "38ec3b58682e2188749d6d3dffe2dbb6d4024930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee5c68e2_3c81725d",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 638,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T19:54:10Z",
+      "side": 1,
+      "message": "with?",
+      "range": {
+        "startLine": 638,
+        "startChar": 54,
+        "endLine": 638,
+        "endChar": 58
+      },
+      "revId": "38ec3b58682e2188749d6d3dffe2dbb6d4024930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
