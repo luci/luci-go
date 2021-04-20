@@ -351,6 +351,15 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
 							Priority: 30,
 						},
 					},
@@ -449,6 +458,15 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
 							Priority: 30,
 						},
 					},
@@ -489,6 +507,15 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
 							Priority: 30,
 						},
 					},
@@ -529,6 +556,15 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
 							Priority: 30,
 						},
 					},
@@ -2314,16 +2350,34 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("setInfra", t, func() {
 		Convey("nil", func() {
-			ent := &model.Build{}
+			ent := &model.Build{
+				Proto: pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+			}
 
-			setInfra("", "", "", nil, nil, ent)
+			setInfra("", "", "", nil, nil, ent, nil)
 			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
-					Prefix: "buildbucket//0",
+					Prefix:  "buildbucket//0",
+					Project: "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
 				Swarming: &pb.BuildInfra_Swarming{
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path: "builder",
+							WaitForWarmCache: &durationpb.Duration{
+								Seconds: 240,
+							},
+						},
+					},
 					Priority: 30,
 				},
 			})
@@ -2334,16 +2388,33 @@ func TestScheduleBuild(t *testing.T) {
 				Experiments: []string{
 					"+" + bb.ExperimentBBAgent,
 				},
+				Proto: pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
 			}
 
-			setInfra("", "", "", nil, nil, ent)
+			setInfra("", "", "", nil, nil, ent, nil)
 			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
-					Prefix: "buildbucket//0",
+					Prefix:  "buildbucket//0",
+					Project: "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
 				Swarming: &pb.BuildInfra_Swarming{
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path: "builder",
+							WaitForWarmCache: &durationpb.Duration{
+								Seconds: 240,
+							},
+						},
+					},
 					Priority: 255,
 				},
 			})
@@ -2361,7 +2432,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra("app-id", "host", "", nil, nil, ent)
+			setInfra("app-id", "host", "", nil, nil, ent, nil)
 			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
@@ -2371,6 +2442,15 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
 				Swarming: &pb.BuildInfra_Swarming{
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path: "builder",
+							WaitForWarmCache: &durationpb.Duration{
+								Seconds: 240,
+							},
+						},
+					},
 					Priority: 30,
 				},
 			})
@@ -2388,7 +2468,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra("", "", "host", nil, nil, ent)
+			setInfra("", "", "host", nil, nil, ent, nil)
 			So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{},
 				Logdog: &pb.BuildInfra_LogDog{
@@ -2400,6 +2480,15 @@ func TestScheduleBuild(t *testing.T) {
 					Hostname: "host",
 				},
 				Swarming: &pb.BuildInfra_Swarming{
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path: "builder",
+							WaitForWarmCache: &durationpb.Duration{
+								Seconds: 240,
+							},
+						},
+					},
 					Priority: 30,
 				},
 			})
@@ -2413,13 +2502,22 @@ func TestScheduleBuild(t *testing.T) {
 						Name:        "name",
 					},
 				}
-				ent := &model.Build{}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}
 
-				setInfra("", "", "", nil, cfg, ent)
+				setInfra("", "", "", nil, cfg, ent, nil)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix: "buildbucket//0",
+						Prefix:  "buildbucket//0",
+						Project: "project",
 					},
 					Recipe: &pb.BuildInfra_Recipe{
 						CipdPackage: "package",
@@ -2427,6 +2525,15 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
+						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+							{
+								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path: "builder",
+								WaitForWarmCache: &durationpb.Duration{
+									Seconds: 240,
+								},
+							},
+						},
 						Priority: 30,
 					},
 				})
@@ -2439,20 +2546,255 @@ func TestScheduleBuild(t *testing.T) {
 						ServiceAccount: "account",
 						SwarmingHost:   "host",
 					}
-					ent := &model.Build{}
+					ent := &model.Build{
+						Proto: pb.Build{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+						},
+					}
 
-					setInfra("", "", "", nil, cfg, ent)
+					setInfra("", "", "", nil, cfg, ent, nil)
 					So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 						Buildbucket: &pb.BuildInfra_Buildbucket{},
 						Logdog: &pb.BuildInfra_LogDog{
-							Prefix: "buildbucket//0",
+							Prefix:  "buildbucket//0",
+							Project: "project",
 						},
 						Resultdb: &pb.BuildInfra_ResultDB{},
 						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
 							Hostname:           "host",
 							Priority:           1,
 							TaskServiceAccount: "account",
 						},
+					})
+				})
+
+				Convey("caches", func() {
+					Convey("nil", func() {
+						ent := &model.Build{
+							Proto: pb.Build{
+								Builder: &pb.BuilderID{
+									Project: "project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+							},
+						}
+
+						setInfra("", "", "", nil, nil, ent, nil)
+						So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Logdog: &pb.BuildInfra_LogDog{
+								Prefix:  "buildbucket//0",
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{},
+							Swarming: &pb.BuildInfra_Swarming{
+								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+									{
+										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+										Path: "builder",
+										WaitForWarmCache: &durationpb.Duration{
+											Seconds: 240,
+										},
+									},
+								},
+								Priority: 30,
+							},
+						})
+					})
+
+					Convey("global", func() {
+						set := []*pb.Builder_CacheEntry{
+							{
+								Path: "cache",
+							},
+						}
+						ent := &model.Build{
+							Proto: pb.Build{
+								Builder: &pb.BuilderID{
+									Project: "project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+							},
+						}
+
+						setInfra("", "", "", nil, nil, ent, set)
+						So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Logdog: &pb.BuildInfra_LogDog{
+								Prefix:  "buildbucket//0",
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{},
+							Swarming: &pb.BuildInfra_Swarming{
+								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+									{
+										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+										Path: "builder",
+										WaitForWarmCache: &durationpb.Duration{
+											Seconds: 240,
+										},
+									},
+									{
+										Name: "cache",
+										Path: "cache",
+									},
+								},
+								Priority: 30,
+							},
+						})
+					})
+
+					Convey("config", func() {
+						cfg := &pb.Builder{
+							Caches: []*pb.Builder_CacheEntry{
+								{
+									Path: "cache",
+								},
+							},
+						}
+						ent := &model.Build{
+							Proto: pb.Build{
+								Builder: &pb.BuilderID{
+									Project: "project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+							},
+						}
+
+						setInfra("", "", "", nil, cfg, ent, nil)
+						So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Logdog: &pb.BuildInfra_LogDog{
+								Prefix:  "buildbucket//0",
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{},
+							Swarming: &pb.BuildInfra_Swarming{
+								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+									{
+										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+										Path: "builder",
+										WaitForWarmCache: &durationpb.Duration{
+											Seconds: 240,
+										},
+									},
+									{
+										Name: "cache",
+										Path: "cache",
+									},
+								},
+								Priority: 30,
+							},
+						})
+					})
+
+					Convey("config > global", func() {
+						cfg := &pb.Builder{
+							Caches: []*pb.Builder_CacheEntry{
+								{
+									Name: "builder only name",
+									Path: "builder only path",
+								},
+								{
+									Name: "name",
+									Path: "builder path",
+								},
+								{
+									Name: "builder name",
+									Path: "path",
+								},
+								{
+									EnvVar: "builder env",
+									Path:   "env",
+								},
+							},
+						}
+						set := []*pb.Builder_CacheEntry{
+							{
+								Name: "global only name",
+								Path: "global only path",
+							},
+							{
+								Name: "name",
+								Path: "global path",
+							},
+							{
+								Name: "global name",
+								Path: "path",
+							},
+							{
+								EnvVar: "global env",
+								Path:   "path",
+							},
+						}
+						ent := &model.Build{
+							Proto: pb.Build{
+								Builder: &pb.BuilderID{
+									Project: "project",
+									Bucket:  "bucket",
+									Builder: "builder",
+								},
+							},
+						}
+
+						setInfra("", "", "", nil, cfg, ent, set)
+						So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
+							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Logdog: &pb.BuildInfra_LogDog{
+								Prefix:  "buildbucket//0",
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{},
+							Swarming: &pb.BuildInfra_Swarming{
+								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+									{
+										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+										Path: "builder",
+										WaitForWarmCache: &durationpb.Duration{
+											Seconds: 240,
+										},
+									},
+									{
+										Name: "builder only name",
+										Path: "builder only path",
+									},
+									{
+										Name: "name",
+										Path: "builder path",
+									},
+									{
+										EnvVar: "builder env",
+										Name:   "env",
+										Path:   "env",
+									},
+									{
+										Name: "global only name",
+										Path: "global only path",
+									},
+									{
+										Name: "builder name",
+										Path: "path",
+									},
+								},
+								Priority: 30,
+							},
+						})
 					})
 				})
 			})
@@ -2471,9 +2813,17 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				}
-				ent := &model.Build{}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}
 
-				setInfra("", "", "", req, nil, ent)
+				setInfra("", "", "", req, nil, ent, nil)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						RequestedDimensions: []*pb.RequestedDimension{
@@ -2487,10 +2837,20 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix: "buildbucket//0",
+						Prefix:  "buildbucket//0",
+						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
+						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+							{
+								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path: "builder",
+								WaitForWarmCache: &durationpb.Duration{
+									Seconds: 240,
+								},
+							},
+						},
 						Priority: 30,
 					},
 				})
@@ -2508,9 +2868,17 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				}
-				ent := &model.Build{}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}
 
-				setInfra("", "", "", req, nil, ent)
+				setInfra("", "", "", req, nil, ent, nil)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						RequestedProperties: &structpb.Struct{
@@ -2524,10 +2892,20 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix: "buildbucket//0",
+						Prefix:  "buildbucket//0",
+						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
+						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+							{
+								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path: "builder",
+								WaitForWarmCache: &durationpb.Duration{
+									Seconds: 240,
+								},
+							},
+						},
 						Priority: 30,
 					},
 				})
@@ -2539,16 +2917,34 @@ func TestScheduleBuild(t *testing.T) {
 						ParentRunId: "id",
 					},
 				}
-				ent := &model.Build{}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}
 
-				setInfra("", "", "", req, nil, ent)
+				setInfra("", "", "", req, nil, ent, nil)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix: "buildbucket//0",
+						Prefix:  "buildbucket//0",
+						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
+						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+							{
+								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path: "builder",
+								WaitForWarmCache: &durationpb.Duration{
+									Seconds: 240,
+								},
+							},
+						},
 						ParentRunId: "id",
 						Priority:    30,
 					},
@@ -2559,16 +2955,34 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					Priority: 1,
 				}
-				ent := &model.Build{}
+				ent := &model.Build{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}
 
-				setInfra("", "", "", req, nil, ent)
+				setInfra("", "", "", req, nil, ent, nil)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix: "buildbucket//0",
+						Prefix:  "buildbucket//0",
+						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
+						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+							{
+								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path: "builder",
+								WaitForWarmCache: &durationpb.Duration{
+									Seconds: 240,
+								},
+							},
+						},
 						Priority: 1,
 					},
 				})
@@ -2579,19 +2993,36 @@ func TestScheduleBuild(t *testing.T) {
 					Priority: 1,
 				}
 				ent := &model.Build{
+					Proto: pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
 					Experiments: []string{
 						"+" + bb.ExperimentBBAgent,
 					},
 				}
 
-				setInfra("", "", "", req, nil, ent)
+				setInfra("", "", "", req, nil, ent, nil)
 				So(ent.Proto.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 					Logdog: &pb.BuildInfra_LogDog{
-						Prefix: "buildbucket//0",
+						Prefix:  "buildbucket//0",
+						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
+						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+							{
+								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path: "builder",
+								WaitForWarmCache: &durationpb.Duration{
+									Seconds: 240,
+								},
+							},
+						},
 						Priority: 1,
 					},
 				})
