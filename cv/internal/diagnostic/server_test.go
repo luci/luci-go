@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/tq"
 
 	diagnosticpb "go.chromium.org/luci/cv/api/diagnostic"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -211,9 +210,7 @@ func TestDeleteProjectEvents(t *testing.T) {
 	t.Parallel()
 
 	Convey("DeleteProjectEvents works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
@@ -262,9 +259,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 	t.Parallel()
 
 	Convey("RefreshProjectCLs works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
@@ -314,9 +309,7 @@ func TestSendProjectEvent(t *testing.T) {
 	t.Parallel()
 
 	Convey("SendProjectEvent works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
@@ -353,9 +346,7 @@ func TestSendRunEvent(t *testing.T) {
 	t.Parallel()
 
 	Convey("SendRunEvent works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 

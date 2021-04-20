@@ -74,7 +74,9 @@ type Test struct {
 	TreeFake *treetest.Fake
 	// BQFake is a fake BQ client.
 	BQFake *bq.Fake
-	// TQD is a dispatcher with which task classes must be registered.
+	// TQDispatcher is a dispatcher with which task classes must be registered.
+	//
+	// Must not be set.
 	TQDispatcher *tq.Dispatcher
 	// TQ allows to run TQ tasks.
 	TQ *tqtesting.Scheduler
@@ -120,10 +122,10 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 
 	ctx = t.setUpTestClock(ctx)
 
-	if t.TQDispatcher == nil {
-		// TODO(tandrii): create a new dispatcher to make tests truly independent.
-		t.TQDispatcher = &tq.Default
+	if t.TQDispatcher != nil {
+		panic("TQDispatcher must not be set")
 	}
+	t.TQDispatcher = &tq.Dispatcher{}
 	ctx, t.TQ = tq.TestingContext(ctx, t.TQDispatcher)
 
 	if t.GFake == nil {

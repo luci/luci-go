@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -77,9 +76,7 @@ func TestComponentsActions(t *testing.T) {
 	t.Parallel()
 
 	Convey("Component actions logic work in the abstract", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		now := ct.Clock.Now()
