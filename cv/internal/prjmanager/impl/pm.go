@@ -38,37 +38,51 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
-func init() {
-	prjpb.DefaultTaskRefs.ManageProject.AttachHandler(
+// ProjectManager implements managing projects.
+type ProjectManager struct {
+	// notifier notifies itself and invokes itself via async TQ tasks.
+	notifier *prjmanager.Notifier
+	clPurger *clpurger.Purger
+}
+
+// New creates a new ProjectManager and registers it for handling tasks created
+// by the given TQ Notifier.
+func New(n *prjmanager.Notifier) *ProjectManager {
+	pm := &ProjectManager{
+		notifier: n,
+		clPurger: clpurger.New(n),
+	}
+	n.TaskRefs.ManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.ManageProjectTask)
-			err := manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
+			err := pm.manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{KnownFatal: []error{errTaskArrivedTooLate}}.Error(ctx, err)
 		},
 	)
 
-	prjpb.DefaultTaskRefs.KickManageProject.AttachHandler(
+	n.TaskRefs.KickManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.KickManageProjectTask)
 			var eta time.Time
 			if t := task.GetEta(); t != nil {
 				eta = t.AsTime()
 			}
-			err := prjpb.DefaultTaskRefs.Dispatch(ctx, task.GetLuciProject(), eta)
+			err := n.TaskRefs.Dispatch(ctx, task.GetLuciProject(), eta)
 			return common.TQifyError(ctx, err)
 		},
 	)
+	return pm
 }
 
 var errTaskArrivedTooLate = errors.New("task arrived too late", tq.Fatal)
 
-func manageProject(ctx context.Context, luciProject string, taskETA time.Time) error {
+func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string, taskETA time.Time) error {
 	ctx = logging.SetField(ctx, "project", luciProject)
 	if delay := clock.Now(ctx).Sub(taskETA); delay > prjpb.MaxAcceptableDelay {
 		logging.Warningf(ctx, "task %s arrived %s late; scheduling next task instead", taskETA, delay)
 		// Scheduling new task reduces probability of concurrent tasks in extreme
 		// events.
-		if err := prjpb.DefaultTaskRefs.Dispatch(ctx, luciProject, time.Time{}); err != nil {
+		if err := pm.notifier.TaskRefs.Dispatch(ctx, luciProject, time.Time{}); err != nil {
 			return err
 		}
 		// Hard-fail this task to avoid retries and get correct monitoring stats.
@@ -78,8 +92,8 @@ func manageProject(ctx context.Context, luciProject string, taskETA time.Time) e
 	recipient := datastore.MakeKey(ctx, prjmanager.ProjectKind, luciProject)
 	proc := &pmProcessor{
 		luciProject: luciProject,
-		pmNotifier:  prjmanager.DefaultNotifier,
-		clPurger:    clpurger.Default,
+		pmNotifier:  pm.notifier,
+		clPurger:    pm.clPurger,
 	}
 	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc); {
 	case err == nil:
@@ -403,4 +417,10 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 		SideEffectFn: state.SideEffectFn(se),
 		TransitionTo: s,
 	}), nil
+}
+
+var Default *ProjectManager
+
+func init() {
+	Default = New(prjmanager.DefaultNotifier)
 }

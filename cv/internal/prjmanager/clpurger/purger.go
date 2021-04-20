@@ -167,9 +167,3 @@ func needsPurging(ctx context.Context, cl *changelist.CL, task *prjpb.PurgeCLTas
 	}
 	return true
 }
-
-var Default *Purger
-
-func init() {
-	Default = New(prjmanager.DefaultNotifier)
-}
