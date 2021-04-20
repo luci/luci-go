@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
@@ -40,11 +41,13 @@ func TestQueue(t *testing.T) {
 	t.Parallel()
 
 	Convey("Queue", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		notifier := run.DefaultNotifier
+		notifier := run.NewNotifier(ct.TQDispatcher)
 
 		const lProject = "lProject"
 		run1 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("deaddead"))
