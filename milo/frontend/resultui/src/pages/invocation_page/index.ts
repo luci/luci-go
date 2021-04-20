@@ -15,12 +15,12 @@
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { autorun, computed, observable, reaction } from 'mobx';
-import { REJECTED } from 'mobx-utils';
+import { computed, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import './invocation_details_tab';
+import { reportRenderError } from '../../components/error_handler';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -75,20 +75,6 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
     );
     this.addDisposer(() => this.invocationState.dispose());
 
-    this.addDisposer(
-      autorun(() => {
-        if (this.invocationState.invocation$.state !== REJECTED) {
-          return;
-        }
-        this.dispatchEvent(
-          new ErrorEvent('error', {
-            message: this.invocationState.invocation$.value.toString(),
-            composed: true,
-            bubbles: true,
-          })
-        );
-      })
-    );
     document.title = `inv: ${this.invocationId}`;
   }
 
@@ -125,7 +111,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
     ];
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     if (this.invocationState.invocationId === '') {
       return html``;
     }
@@ -140,12 +126,12 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       </div>
       <milo-status-bar
         .components=${[{ color: 'var(--active-color)', weight: 1 }]}
-        .loading=${this.invocationState.invocation$.state === 'pending'}
+        .loading=${this.invocationState.invocation === null}
       ></milo-status-bar>
       <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}></milo-tab-bar>
       <slot></slot>
     `;
-  }
+  });
 
   static styles = [
     commonStyle,

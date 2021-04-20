@@ -19,7 +19,6 @@ import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation
 import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
 import { autorun, computed, observable, reaction, when } from 'mobx';
-import { REJECTED } from 'mobx-utils';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -165,6 +164,20 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         e.stopPropagation();
         return;
       }
+    } else if (e.error instanceof QueryInvocationError) {
+      // Ignore request using the old invocation ID.
+      if (e.error.invId !== this.buildState.invocationId) {
+        e.stopPropagation();
+        return;
+      }
+
+      // Old builds don't support computed invocation ID.
+      // Disable it and try again.
+      if (this.buildState.useComputedInvId) {
+        this.buildState.useComputedInvId = false;
+        e.stopPropagation();
+        return;
+      }
     }
   };
 
@@ -231,35 +244,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           {},
         (config) => (this.invocationState.presentationConfig = config),
         { fireImmediately: true }
-      )
-    );
-
-    this.addDisposer(
-      reaction(
-        () => this.invocationState.invocation$.state,
-        () => {
-          if (this.invocationState.invocation$.state !== REJECTED) {
-            return;
-          }
-          const err = this.invocationState.invocation$.value as QueryInvocationError;
-          // Ignore request using the old invocation ID.
-          if (err.invId !== this.buildState.invocationId) {
-            return;
-          }
-          // Old builds don't support computed invocation ID.
-          // Disable it and try again.
-          if (this.buildState.useComputedInvId) {
-            this.buildState.useComputedInvId = false;
-            return;
-          }
-          this.dispatchEvent(
-            new ErrorEvent('error', {
-              message: this.invocationState.invocation$.value.toString(),
-              composed: true,
-              bubbles: true,
-            })
-          );
-        }
       )
     );
 
@@ -437,7 +421,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   protected render = reportRenderError.bind(this)(() => {
-    if (this.isShortLink || this.prerender) {
+    if (this.prerender || this.isShortLink) {
       return html``;
     }
 
