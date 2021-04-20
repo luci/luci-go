@@ -40,14 +40,13 @@ import (
 // Purger purges CLs for Project Manager.
 type Purger struct {
 	pmNotifier *prjmanager.Notifier
+	clUpdater  *updater.Updater
 }
 
 // New creates a Purger and registers it for handling tasks created by the given
 // PM Notifier.
-func New(n *prjmanager.Notifier) *Purger {
-	p := &Purger{
-		pmNotifier: n,
-	}
+func New(n *prjmanager.Notifier, u *updater.Updater) *Purger {
+	p := &Purger{n, u}
 	n.TaskRefs.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
@@ -89,7 +88,7 @@ func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	default:
 		dctx, cancel := clock.WithDeadline(ctx, dt)
 		defer cancel()
-		if err := purgeWithDeadline(dctx, task); err != nil {
+		if err := p.purgeWithDeadline(dctx, task); err != nil {
 			return err
 		}
 	}
@@ -100,7 +99,7 @@ func (p *Purger) notifyPM(ctx context.Context, task *prjpb.PurgeCLTask, eta time
 	return p.pmNotifier.NotifyPurgeCompleted(ctx, task.GetLuciProject(), task.GetPurgingCl().GetOperationId(), eta)
 }
 
-func purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
+func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	cl := &changelist.CL{ID: common.CLID(task.GetPurgingCl().GetClid())}
 	if err := datastore.Get(ctx, cl); err != nil {
 		return errors.Annotate(err, "failed to load %d", cl.ID).Tag(transient.Tag).Err()
@@ -136,7 +135,7 @@ func purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	}
 
 	// Refresh a CL.
-	return updater.Refresh(ctx, &updater.RefreshGerritCL{
+	return p.clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
 		LuciProject: task.GetLuciProject(),
 		Host:        cl.Snapshot.GetGerrit().GetHost(),
 		Change:      cl.Snapshot.GetGerrit().GetInfo().GetNumber(),

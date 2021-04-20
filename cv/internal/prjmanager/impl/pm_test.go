@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -49,10 +50,16 @@ func TestProjectTQLateTasks(t *testing.T) {
 	t.Parallel()
 
 	Convey("PM task does nothing if it comes too late", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, _ = runtest.MockDispatch(ctx)
+
+		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
+		runNotifier := run.NewNotifier(ct.TQDispatcher)
+		_ = New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, pmNotifier, runNotifier))
 
 		const lProject = "infra"
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
@@ -88,10 +95,16 @@ func TestProjectLifeCycle(t *testing.T) {
 	t.Parallel()
 
 	Convey("Project can be created, updated, deleted", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		ctx, rmDispatcher := runtest.MockDispatch(ctx)
+
+		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
+		runNotifier := run.NewNotifier(ct.TQDispatcher)
+		_ = New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, pmNotifier, runNotifier))
 
 		const lProject = "infra"
 		lProjectKey := datastore.MakeKey(ctx, prjmanager.ProjectKind, lProject)
@@ -196,13 +209,19 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 	t.Parallel()
 
 	Convey("PM handles many events", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
 		const lProject = "infra"
 		const gHost = "host"
 		const gRepo = "repo"
+
+		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
+		runNotifier := run.NewNotifier(ct.TQDispatcher)
+		pm := New(pmNotifier, runNotifier, updater.New(ct.TQDispatcher, pmNotifier, runNotifier))
 
 		refreshCLAndNotifyPM := func(c int64) {
 			So(updater.Refresh(ctx, &updater.RefreshGerritCL{
@@ -282,7 +301,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 			i := i
 			go func() {
 				defer wg.Done()
-				errs[i] = Default.manageProject(ctx, lProject, now)
+				errs[i] = pm.manageProject(ctx, lProject, now)
 			}()
 		}
 		wg.Wait()
