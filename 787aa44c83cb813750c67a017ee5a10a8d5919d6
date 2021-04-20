@@ -43,6 +43,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ac8d5cfe_dc36ab81",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T18:41:10Z",
+      "side": 1,
+      "message": "MaxBatchableArtifactSize is the maximum size of an artifact that can be batched, right? And it\u0027s also used here as the maximum size of a batch?\n\nOh this should be maxBatchable?",
+      "range": {
+        "startLine": 153,
+        "startChar": 6,
+        "endLine": 153,
+        "endChar": 30
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "74f7b711_860998a8",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 4
@@ -82,6 +105,75 @@
         "startChar": 8,
         "endLine": 160,
         "endChar": 36
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1a391a44_9b293fb2",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T18:41:10Z",
+      "side": 1,
+      "message": "This comment seems to be irrelevant with BatchCreateRequest?",
+      "range": {
+        "startLine": 166,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 52
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c288e84_0e0dc9be",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T18:41:10Z",
+      "side": 1,
+      "message": "What happens if nothing to be batched yet but more will come later?",
+      "range": {
+        "startLine": 176,
+        "startChar": 1,
+        "endLine": 179,
+        "endChar": 2
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e654856_604fc72c",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-20T18:41:10Z",
+      "side": 1,
+      "message": "So processed artifacts will be kept in buffer, right?",
+      "range": {
+        "startLine": 200,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 19
       },
       "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
