@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a8a5f887_0c53cc9b",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 480,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T18:43:12Z",
+      "side": 1,
+      "message": "No, it\u0027s used by CL updater.PM interface. Added comment.",
+      "parentUuid": "54bdbcb2_599787cb",
+      "range": {
+        "startLine": 480,
+        "startChar": 17,
+        "endLine": 480,
+        "endChar": 32
+      },
+      "revId": "695c8633c1d92405025c5ce0af81cb766fa52d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "756ab3b7_bf71fdcd",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-19T23:48:55Z",
       "side": 1,
       "message": "add empty line below.",
+      "range": {
+        "startLine": 499,
+        "startChar": 0,
+        "endLine": 499,
+        "endChar": 1
+      },
+      "revId": "695c8633c1d92405025c5ce0af81cb766fa52d92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09bcaeda_c1820590",
+        "filename": "cv/internal/gerrit/poller/poller_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 499,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T18:43:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "756ab3b7_bf71fdcd",
       "range": {
         "startLine": 499,
         "startChar": 0,
