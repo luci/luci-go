@@ -82,7 +82,9 @@ func main() {
 		}
 
 		// Register pRPC servers.
-		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{})
+		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{
+			RunNotifier: run.DefaultNotifier,
+		})
 		diagnosticpb.RegisterDiagnosticServer(srv.PRPC, &diagnostic.DiagnosticServer{
 			GerritUpdater: updater.Default,
 			PMNotifier:    prjmanager.DefaultNotifier,
