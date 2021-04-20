@@ -39,6 +39,30 @@
       },
       "revId": "030a159ee0b840aaeed2b73c725c5ad031fea196",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ef5c36b_df31af87",
+        "filename": "cv/internal/run/impl/manager.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-20T18:49:56Z",
+      "side": 1,
+      "message": "yeah, that was an oversight -- done 4 CLs later https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2834182/3/cv/internal/run/impl/manager.go#83",
+      "parentUuid": "3f3cfa95_571bacac",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 97,
+        "endChar": 41
+      },
+      "revId": "030a159ee0b840aaeed2b73c725c5ad031fea196",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
