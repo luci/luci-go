@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/poller/task"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/prjmanager"
 )
 
 // PM encapsulates interaction with Project Manager by the Gerrit Poller.
@@ -322,16 +321,4 @@ func save(ctx context.Context, s *State) error {
 		return nil
 	}
 	return errors.Annotate(err, "project %q", s.LuciProject).Err()
-}
-
-// Default is default Poller registered with Default TQ Dispatcher.
-// TODO(tandrii): remove after migration.
-var Default *Poller
-
-func init() {
-	Default = New(&tq.Default, updater.Default, prjmanager.DefaultNotifier)
-}
-
-func Poke(ctx context.Context, luciProject string) error {
-	return Default.Poke(ctx, luciProject)
 }
