@@ -18,10 +18,11 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
-	"go.chromium.org/luci/server/tq"
 )
 
 // Notifier notifies PM.
