@@ -18,6 +18,7 @@ import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
 import { getGitilesRepoURL, renderBuildBugTemplate } from '../libs/build_utils';
 import { consumeContext, provideContext } from '../libs/context';
 import * as iter from '../libs/iter_utils';
+import { unwrapObservable } from '../libs/utils';
 import { BuildExt } from '../models/build_ext';
 import {
   Build,
@@ -97,7 +98,7 @@ export class BuildState {
 
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
-    this.relatedBuilds;
+    this.relatedBuilds$;
     this.queryBlamelistResIterFns;
   }
 
@@ -140,9 +141,9 @@ export class BuildState {
     return new BuildExt(this.build$.value);
   }
 
-  @computed
-  private get relatedBuilds$(): IPromiseBasedObservable<readonly Build[]> {
-    if (!this.build) {
+  @computed({ keepAlive: true })
+  private get relatedBuilds$(): IPromiseBasedObservable<readonly BuildExt[]> {
+    if (this.isDisposed || !this.build) {
       return fromPromise(Promise.race([]));
     }
 
@@ -170,22 +171,16 @@ export class BuildState {
             buildMap.set(build.id, build);
           }
         }
-        return [...buildMap.values()].sort((b1, b2) => {
-          if (b1.id.length === b2.id.length) {
-            return b1.id.localeCompare(b2.id);
-          }
-          return b1.id.length - b2.id.length;
-        });
+        return [...buildMap.values()]
+          .sort((b1, b2) => (b1.id.length === b2.id.length ? b1.id.localeCompare(b2.id) : b1.id.length - b2.id.length))
+          .map((b) => new BuildExt(b));
       })
     );
   }
 
-  @computed({ keepAlive: true })
+  @computed
   get relatedBuilds(): readonly BuildExt[] | null {
-    if (this.isDisposed || this.relatedBuilds$.state !== FULFILLED) {
-      return null;
-    }
-    return this.relatedBuilds$.value.map((build) => new BuildExt(build));
+    return unwrapObservable(this.relatedBuilds$, null);
   }
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {

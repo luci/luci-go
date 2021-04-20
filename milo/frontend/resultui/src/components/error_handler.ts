@@ -116,6 +116,20 @@ export function reportError<T extends unknown[], V>(
 }
 
 /**
+ * A special case of reportError that is intended to be used to wrap
+ * LitElement.render.
+ *
+ * By default, fallback to render the error message in a <pre>.
+ */
+export function reportRenderError(
+  this: Element,
+  fn: () => unknown,
+  fallbackFn = (err: unknown): unknown => html`<pre>${`An error occurred:\n${err}`}</pre>`
+): () => unknown {
+  return reportError.bind(this)(fn, fallbackFn);
+}
+
+/**
  * Wraps the specified async fn. Whenever fn throws, dispatches an error event
  * from `this` element.
  */
