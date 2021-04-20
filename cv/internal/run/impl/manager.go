@@ -55,7 +55,10 @@ var fakeHandlerKey = "Fake Run Events Handler"
 func manageRun(ctx context.Context, runID common.RunID) error {
 	ctx = logging.SetField(ctx, "run", runID)
 	recipient := datastore.MakeKey(ctx, run.RunKind, string(runID))
-	rm := &runProcessor{runID: runID}
+	rm := &runProcessor{
+		runID:       runID,
+		runNotifier: run.DefaultNotifier,
+	}
 	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
 		rm.handler = h
 	} else {
@@ -75,8 +78,9 @@ func manageRun(ctx context.Context, runID common.RunID) error {
 
 // runProcessor implements eventbox.Processor.
 type runProcessor struct {
-	runID   common.RunID
-	handler handler.Handler
+	runID       common.RunID
+	handler     handler.Handler
+	runNotifier *run.Notifier
 }
 
 var _ eventbox.Processor = (*runProcessor)(nil)
@@ -93,8 +97,9 @@ func (rp *runProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox
 		return nil, 0, errors.Annotate(err, "failed to get Run %q", rp.runID).Tag(transient.Tag).Err()
 	}
 	rs := &state.RunState{
-		Run:        r,
-		PmNotifier: prjmanager.DefaultNotifier,
+		Run:         r,
+		PmNotifier:  prjmanager.DefaultNotifier,
+		RunNotifier: rp.runNotifier,
 	}
 	return rs, eventbox.EVersion(r.EVersion), nil
 }
@@ -279,7 +284,7 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		transitions = append(transitions, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: rs})
 	}
 
-	if err := enqueueNextPoke(ctx, rp.runID, tr.nextReadyEventTime); err != nil {
+	if err := rp.enqueueNextPoke(ctx, tr.nextReadyEventTime); err != nil {
 		return nil, err
 	}
 	return transitions, nil
@@ -296,17 +301,17 @@ func applyResult(res *handler.Result, events eventbox.Events, transitions []even
 	return res.State, append(transitions, t)
 }
 
-func enqueueNextPoke(ctx context.Context, runID common.RunID, nextReadyEventTime time.Time) error {
+func (rp *runProcessor) enqueueNextPoke(ctx context.Context, nextReadyEventTime time.Time) error {
 	switch now := clock.Now(ctx); {
 	case nextReadyEventTime.IsZero():
-		return run.PokeAfter(ctx, runID, pokeInterval)
+		return rp.runNotifier.PokeAfter(ctx, rp.runID, pokeInterval)
 	case now.After(nextReadyEventTime):
 		// It is possible that by this time, next ready event is already overdue.
 		// Invoke Run Manager immediately.
-		return eventpb.DefaultTaskRefs.Dispatch(ctx, string(runID), time.Time{})
+		return eventpb.DefaultTaskRefs.Dispatch(ctx, string(rp.runID), time.Time{})
 	case nextReadyEventTime.Before(now.Add(pokeInterval)):
-		return eventpb.DefaultTaskRefs.Dispatch(ctx, string(runID), nextReadyEventTime)
+		return eventpb.DefaultTaskRefs.Dispatch(ctx, string(rp.runID), nextReadyEventTime)
 	default:
-		return run.PokeAfter(ctx, runID, pokeInterval)
+		return rp.runNotifier.PokeAfter(ctx, rp.runID, pokeInterval)
 	}
 }

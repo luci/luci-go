@@ -100,7 +100,10 @@ func TestOnReadyForSubmission(t *testing.T) {
 				},
 			},
 		), ShouldBeNil)
-		rs := &state.RunState{Run: r}
+		rs := &state.RunState{
+			Run:         r,
+			RunNotifier: run.DefaultNotifier,
+		}
 
 		h := &Impl{}
 
@@ -112,7 +115,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		for _, status := range statuses {
 			Convey(fmt.Sprintf("Release submit queue when Run is %s", status), func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					waitlisted, err := submit.TryAcquire(ctx, rs.Run.ID, nil)
+					waitlisted, err := submit.TryAcquire(ctx, rs.RunNotifier, rs.Run.ID, nil)
 					So(waitlisted, ShouldBeFalse)
 					return err
 				}, nil), ShouldBeNil)
@@ -159,7 +162,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				Convey("And if waitlisted, fall back to WAITING_FOR_SUBMISSION status", func() {
 					// submit queue is taken by another run.
 					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-						waitlisted, err := submit.TryAcquire(ctx, common.MakeRunID("infra", now, 1, []byte("another-run")), nil)
+						waitlisted, err := submit.TryAcquire(ctx, rs.RunNotifier, common.MakeRunID("infra", now, 1, []byte("another-run")), nil)
 						So(waitlisted, ShouldBeFalse)
 						return err
 					}, nil), ShouldBeNil)
@@ -224,11 +227,12 @@ func TestSubmitter(t *testing.T) {
 
 		now := ct.Clock.Now().UTC()
 		s := submitter{
-			runID:    common.MakeRunID(lProject, now, 1, []byte("deadbeef")),
-			deadline: now.Add(1 * time.Minute),
-			treeURL:  "https://tree.example.com",
-			attempt:  2,
-			clids:    common.CLIDs{1, 2},
+			runID:       common.MakeRunID(lProject, now, 1, []byte("deadbeef")),
+			deadline:    now.Add(1 * time.Minute),
+			treeURL:     "https://tree.example.com",
+			attempt:     2,
+			clids:       common.CLIDs{1, 2},
+			runNotifier: run.DefaultNotifier,
 		}
 		So(datastore.Put(ctx,
 			&run.Run{
@@ -264,7 +268,7 @@ func TestSubmitter(t *testing.T) {
 			},
 		), ShouldBeNil)
 		So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			waitlisted, err := submit.TryAcquire(ctx, s.runID, nil)
+			waitlisted, err := submit.TryAcquire(ctx, s.runNotifier, s.runID, nil)
 			So(err, ShouldBeNil)
 			So(waitlisted, ShouldBeFalse)
 			return err
@@ -282,7 +286,7 @@ func TestSubmitter(t *testing.T) {
 			log := logging.Get(ctx).(*memlogger.MemLogger)
 			Convey("Submit queue not acquired", func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return submit.Release(ctx, s.runID)
+					return submit.Release(ctx, s.runNotifier, s.runID)
 				}, nil), ShouldBeNil)
 				So(s.submit(ctx), ShouldBeNil)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
