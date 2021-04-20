@@ -17,13 +17,15 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../expandable_entry';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
+import { unwrapObservable } from '../../../libs/utils';
 import { router } from '../../../routes';
 import { Artifact } from '../../../services/resultdb';
 import commonStyle from '../../../styles/common_style.css';
+import { reportRenderError } from '../../error_handler';
 
 /**
  * Renders a text diff artifact.
@@ -40,10 +42,10 @@ export class TextDiffArtifactElement extends MobxLitElement {
 
   @computed
   private get content() {
-    return this.content$.state === FULFILLED ? this.content$.value : null;
+    return unwrapObservable(this.content$, null);
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     return html`
       <link
         rel="stylesheet"
@@ -63,7 +65,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
         </div>
       </milo-expandable-entry>
     `;
-  }
+  });
 
   static styles = [
     commonStyle,
