@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -369,7 +370,7 @@ func (t *testCActor) NextActionTime(_ context.Context, now time.Time) (time.Time
 	return t.parent.nextAction(t.c.GetClids()[0], now)
 }
 
-func (t *testCActor) Act(context.Context, *prjmanager.Notifier) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
+func (t *testCActor) Act(context.Context, runcreator.PM, runcreator.RM) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
 	for _, clid := range t.parent.actErrOnCLs {
 		if t.c.GetClids()[0] == clid {
 			return nil, nil, errors.Reason("act-oops %v", t.c).Err()

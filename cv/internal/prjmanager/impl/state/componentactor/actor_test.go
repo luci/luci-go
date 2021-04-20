@@ -48,6 +48,7 @@ func TestActor(t *testing.T) {
 		ct.RoundTestClock(10000 * time.Second)
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
+		runNotifier := run.NewNotifier(ct.TQDispatcher)
 
 		dryRun := func(t time.Time) *run.Trigger {
 			return &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}
@@ -105,7 +106,7 @@ func TestActor(t *testing.T) {
 				sup.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx}
 				a, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				newC, purgeTasks, err := a.Act(ctx, pmNotifier)
+				newC, purgeTasks, err := a.Act(ctx, pmNotifier, runNotifier)
 				So(err, ShouldBeNil)
 				So(purgeTasks, ShouldHaveLength, 1)
 				So(newC.GetDirty(), ShouldBeFalse)
@@ -119,7 +120,7 @@ func TestActor(t *testing.T) {
 				ct.Clock.Add(stabilizationDelay * 2)
 				a, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				_, purgeTasks, err := a.Act(ctx, pmNotifier)
+				_, purgeTasks, err := a.Act(ctx, pmNotifier, runNotifier)
 				So(err, ShouldBeNil)
 				So(purgeTasks, ShouldHaveLength, 1)
 			})
@@ -128,7 +129,7 @@ func TestActor(t *testing.T) {
 				sup.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
 				a, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				_, purgeTasks, err := a.Act(ctx, pmNotifier)
+				_, purgeTasks, err := a.Act(ctx, pmNotifier, runNotifier)
 				So(err, ShouldBeNil)
 				So(purgeTasks, ShouldHaveLength, 1)
 			})
