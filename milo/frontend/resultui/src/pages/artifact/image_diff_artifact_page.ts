@@ -16,13 +16,15 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
-import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
+import { fromPromise } from 'mobx-utils';
 
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
 import '../../components/dot_spinner';
+import { reportRenderError } from '../../components/error_handler';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeContext } from '../../libs/context';
+import { unwrapObservable } from '../../libs/utils';
 import { NOT_FOUND_URL } from '../../routes';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
@@ -61,7 +63,7 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
     return fromPromise(this.appState.resultDb.getArtifact({ name: this.diffArtifactName }));
   }
   @computed private get diffArtifact() {
-    return this.diffArtifact$.state === FULFILLED ? this.diffArtifact$.value : null;
+    return unwrapObservable(this.diffArtifact$, null);
   }
 
   @computed
@@ -72,7 +74,7 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
     return fromPromise(this.appState.resultDb.getArtifact({ name: this.expectedArtifactName }));
   }
   @computed private get expectedArtifact() {
-    return this.expectedArtifact$.state === FULFILLED ? this.expectedArtifact$.value : null;
+    return unwrapObservable(this.expectedArtifact$, null);
   }
 
   @computed
@@ -83,11 +85,11 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
     return fromPromise(this.appState.resultDb.getArtifact({ name: this.actualArtifactName }));
   }
   @computed private get actualArtifact() {
-    return this.actualArtifact$.state === FULFILLED ? this.actualArtifact$.value : null;
+    return unwrapObservable(this.actualArtifact$, null);
   }
 
   @computed get isLoading() {
-    return [this.expectedArtifact$.state, this.actualArtifact$.state, this.diffArtifact$.state].includes(PENDING);
+    return this.expectedArtifact || !this.actualArtifact || !this.diffArtifact;
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -104,7 +106,7 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
     return;
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     if (this.isLoading) {
       return html`<div id="loading-spinner" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
     }
@@ -117,7 +119,7 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
       >
       </milo-image-diff-viewer>
     `;
-  }
+  });
 
   static styles = [
     commonStyle,
