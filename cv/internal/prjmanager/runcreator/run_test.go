@@ -104,6 +104,7 @@ func TestRunBuilder(t *testing.T) {
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 		ctx, rmDispatcher := runtest.MockDispatch(ctx)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
+		runNotifier := run.NewNotifier(ct.TQDispatcher)
 
 		const lProject = "infra"
 		const gHost = "x-review.example.com"
@@ -189,7 +190,7 @@ func TestRunBuilder(t *testing.T) {
 		Convey("Checks preconditions", func() {
 			Convey("No ProjectStateOffload", func() {
 				So(datastore.Delete(ctx, projectStateOffload), ShouldBeNil)
-				_, err := rb.Create(ctx, pmNotifier)
+				_, err := rb.Create(ctx, pmNotifier, runNotifier)
 				So(err, ShouldErrLike, "failed to load ProjectStateOffload")
 				So(StateChangedTag.In(err), ShouldBeFalse)
 				So(transient.Tag.In(err), ShouldBeFalse)
@@ -198,7 +199,7 @@ func TestRunBuilder(t *testing.T) {
 			Convey("Mismatched project status", func() {
 				projectStateOffload.Status = prjpb.Status_STOPPING
 				So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
-				_, err := rb.Create(ctx, pmNotifier)
+				_, err := rb.Create(ctx, pmNotifier, runNotifier)
 				So(err, ShouldErrLike, "status is STOPPING, expected STARTED")
 				So(StateChangedTag.In(err), ShouldBeTrue)
 				So(transient.Tag.In(err), ShouldBeFalse)
@@ -207,7 +208,7 @@ func TestRunBuilder(t *testing.T) {
 			Convey("Mismatched project config", func() {
 				projectStateOffload.ConfigHash = "wrong-hash"
 				So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
-				_, err := rb.Create(ctx, pmNotifier)
+				_, err := rb.Create(ctx, pmNotifier, runNotifier)
 				So(err, ShouldErrLike, "expected sha256:cafe")
 				So(StateChangedTag.In(err), ShouldBeTrue)
 				So(transient.Tag.In(err), ShouldBeFalse)
@@ -215,7 +216,7 @@ func TestRunBuilder(t *testing.T) {
 
 			Convey("CL not exists", func() {
 				So(datastore.Delete(ctx, cl2), ShouldBeNil)
-				_, err := rb.Create(ctx, pmNotifier)
+				_, err := rb.Create(ctx, pmNotifier, runNotifier)
 				So(err, ShouldErrLike, fmt.Sprintf("CL %d doesn't exist", cl2.ID))
 				So(StateChangedTag.In(err), ShouldBeFalse)
 				So(transient.Tag.In(err), ShouldBeFalse)
@@ -223,7 +224,7 @@ func TestRunBuilder(t *testing.T) {
 
 			Convey("Mismatched CL version", func() {
 				rb.InputCLs[0].ExpectedEVersion = 11
-				_, err := rb.Create(ctx, pmNotifier)
+				_, err := rb.Create(ctx, pmNotifier, runNotifier)
 				So(err, ShouldErrLike, fmt.Sprintf("CL %d changed since EVersion 11", cl1.ID))
 				So(StateChangedTag.In(err), ShouldBeTrue)
 				So(transient.Tag.In(err), ShouldBeFalse)
@@ -232,7 +233,7 @@ func TestRunBuilder(t *testing.T) {
 			Convey("Unexpected IncompleteRun in a CL", func() {
 				cl2.IncompleteRuns = common.MakeRunIDs("unexpected/111-run")
 				So(datastore.Put(ctx, cl2), ShouldBeNil)
-				_, err := rb.Create(ctx, pmNotifier)
+				_, err := rb.Create(ctx, pmNotifier, runNotifier)
 				So(err, ShouldErrLike, fmt.Sprintf(`CL %d has unexpected incomplete runs: [unexpected/111-run]`, cl2.ID))
 				So(StateChangedTag.In(err), ShouldBeTrue)
 				So(transient.Tag.In(err), ShouldBeFalse)
@@ -257,7 +258,7 @@ func TestRunBuilder(t *testing.T) {
 					CreationOperationID: "concurrent runner",
 				})
 				So(err, ShouldBeNil)
-				_, err = rb.Create(ctx, pmNotifier)
+				_, err = rb.Create(ctx, pmNotifier, runNotifier)
 				So(err, ShouldErrLike, `already created with OperationID "concurrent runner"`)
 				So(StateChangedTag.In(err), ShouldBeFalse)
 				So(transient.Tag.In(err), ShouldBeFalse)
@@ -269,7 +270,7 @@ func TestRunBuilder(t *testing.T) {
 					CreationOperationID: rb.OperationID,
 				})
 				So(err, ShouldBeNil)
-				r, err := rb.Create(ctx, pmNotifier)
+				r, err := rb.Create(ctx, pmNotifier, runNotifier)
 				So(r, ShouldNotBeNil)
 				So(err, ShouldBeNil)
 			})
@@ -277,7 +278,7 @@ func TestRunBuilder(t *testing.T) {
 
 		Convey("New Run is created", func() {
 			ct.Clock.Add(time.Hour)
-			r, err := rb.Create(ctx, pmNotifier)
+			r, err := rb.Create(ctx, pmNotifier, runNotifier)
 			So(err, ShouldBeNil)
 			expectedRun := &run.Run{
 				ID:         expectedRunID,
