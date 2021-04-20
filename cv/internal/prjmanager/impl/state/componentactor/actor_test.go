@@ -25,8 +25,10 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/server/tq"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -36,12 +38,16 @@ func TestActor(t *testing.T) {
 	t.Parallel()
 
 	Convey("Component's PCL deps triage", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
 		// Truncate start time point s.t. easy to see diff in test failures.
 		ct.RoundTestClock(10000 * time.Second)
+
+		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 
 		dryRun := func(t time.Time) *run.Trigger {
 			return &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}
@@ -99,7 +105,7 @@ func TestActor(t *testing.T) {
 				sup.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx}
 				a, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				newC, purgeTasks, err := a.Act(ctx)
+				newC, purgeTasks, err := a.Act(ctx, pmNotifier)
 				So(err, ShouldBeNil)
 				So(purgeTasks, ShouldHaveLength, 1)
 				So(newC.GetDirty(), ShouldBeFalse)
@@ -113,7 +119,7 @@ func TestActor(t *testing.T) {
 				ct.Clock.Add(stabilizationDelay * 2)
 				a, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				_, purgeTasks, err := a.Act(ctx)
+				_, purgeTasks, err := a.Act(ctx, pmNotifier)
 				So(err, ShouldBeNil)
 				So(purgeTasks, ShouldHaveLength, 1)
 			})
@@ -122,7 +128,7 @@ func TestActor(t *testing.T) {
 				sup.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
 				a, t := nextActionTime(oldC)
 				So(t, ShouldResemble, ct.Clock.Now().UTC())
-				_, purgeTasks, err := a.Act(ctx)
+				_, purgeTasks, err := a.Act(ctx, pmNotifier)
 				So(err, ShouldBeNil)
 				So(purgeTasks, ShouldHaveLength, 1)
 			})

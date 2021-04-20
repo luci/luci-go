@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/prjmanager/runcreator"
 )
@@ -101,11 +102,11 @@ func (a *Actor) NextActionTime(ctx context.Context, now time.Time) (time.Time, e
 }
 
 // Act implements state.componentActor.
-func (a *Actor) Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
+func (a *Actor) Act(ctx context.Context, n *prjmanager.Notifier) (*prjpb.Component, []*prjpb.PurgeCLTask, error) {
 	c := a.c.CloneShallow()
 	c.Dirty = false
 
-	switch newPruns, err := a.createRuns(ctx); {
+	switch newPruns, err := a.createRuns(ctx, n); {
 	case err != nil:
 		return nil, nil, err
 	case len(newPruns) > 0:
@@ -115,7 +116,7 @@ func (a *Actor) Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask
 	return c, a.purgeCLtasks, nil
 }
 
-func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
+func (a *Actor) createRuns(ctx context.Context, n *prjmanager.Notifier) ([]*prjpb.PRun, error) {
 	if len(a.runCreators) == 0 {
 		return nil, nil
 	}
@@ -134,7 +135,7 @@ func (a *Actor) createRuns(ctx context.Context) ([]*prjpb.PRun, error) {
 	toAdd := make([]*prjpb.PRun, 0, len(a.runCreators))
 	var errs errors.MultiError
 	for _, rb := range a.runCreators {
-		switch r, err := rb.Create(ctx); {
+		switch r, err := rb.Create(ctx, n); {
 		case err != nil:
 			errs = append(errs, err)
 		default:

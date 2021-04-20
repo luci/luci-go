@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
@@ -199,7 +200,7 @@ func (s *State) execComponentActions(ctx context.Context, actions []cAction, com
 				})
 
 				oldC := components[a.componentIndex]
-				switch newC, purgeTasks, err := a.actor.Act(ctx); {
+				switch newC, purgeTasks, err := a.actor.Act(ctx, s.pmNotifier); {
 				case err != nil:
 					// Ensure this component is reconsidered during then next PM mutation.
 					newC = components[a.componentIndex].CloneShallow()
@@ -298,7 +299,7 @@ func (s *State) addCLsToPurge(ctx context.Context, ts []*prjpb.PurgeCLTask) Side
 		purgingCLs[i] = t.GetPurgingCl()
 	}
 	s.PB.PurgingCls, _ = s.PB.COWPurgingCLs(nil, purgingCLs)
-	return &TriggerPurgeCLTasks{payloads: ts}
+	return &TriggerPurgeCLTasks{payloads: ts, clPurger: s.clPurger}
 }
 
 // maxPurgingCLDuration limits the time that a TQ task has to execute
@@ -383,7 +384,8 @@ type componentActor interface {
 
 	// Act executes the component action.
 	//
-	// Called if and only if shouldAct() returned true.
+	// Called if and only if NextActionTime() indicated that action is necessary
+	// now.
 	//
 	// Called outside of any Datastore transaction, notably before the transaction
 	// on PM state.
@@ -401,5 +403,7 @@ type componentActor interface {
 	// If error is not nil, the potentially modified component is ignored.
 	//
 	// TODO(tandrii): support cancel Run actions.
-	Act(ctx context.Context) (*prjpb.Component, []*prjpb.PurgeCLTask, error)
+	// TODO(tandrii): return RunCreators s.t. actual Run creation is done here,
+	// just like PurgeCLTasks. This will make testing ComponentActor easier.
+	Act(ctx context.Context, n *prjmanager.Notifier) (*prjpb.Component, []*prjpb.PurgeCLTask, error)
 }
