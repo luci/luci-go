@@ -19,9 +19,10 @@ package module
 import (
 	"context"
 
-	"go.chromium.org/luci/server/router"
-
 	"google.golang.org/grpc"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 )
 
 // Module represents some optional part of a server.
@@ -129,4 +130,11 @@ type Host interface {
 	// the order of modules in the list of modules. The first registered
 	// interceptor becomes the outermost.
 	RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor)
+
+	// RegisterCookieAuth registers an implementation of a cookie-based
+	// authentication scheme.
+	//
+	// If there are multiple such schemes registered, the server will refuse to
+	// start.
+	RegisterCookieAuth(method auth.Method)
 }

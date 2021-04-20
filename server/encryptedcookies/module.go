@@ -111,11 +111,11 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 
 // NewModule returns a server module that configures an authentication method
 // based on encrypted cookies.
-func NewModule(opts *ModuleOptions) *Module {
+func NewModule(opts *ModuleOptions) module.Module {
 	if opts == nil {
 		opts = &ModuleOptions{}
 	}
-	return &Module{opts: opts}
+	return &serverModule{opts: opts}
 }
 
 // NewModuleFromFlags is a variant of NewModule that initializes options through
@@ -123,29 +123,24 @@ func NewModule(opts *ModuleOptions) *Module {
 //
 // Calling this function registers flags in flag.CommandLine. They are usually
 // parsed in server.Main(...).
-func NewModuleFromFlags() *Module {
+func NewModuleFromFlags() module.Module {
 	opts := &ModuleOptions{}
 	opts.Register(flag.CommandLine)
 	return NewModule(opts)
 }
 
-// Module implements module.Module.
-type Module struct {
-	// AuthMethod can be used with the authentication middleware.
-	//
-	// It is available after the module is successfully initialized.
-	AuthMethod *AuthMethod
-
+// serverModule implements module.Module.
+type serverModule struct {
 	opts *ModuleOptions
 }
 
 // Name is part of module.Module interface.
-func (*Module) Name() module.Name {
+func (*serverModule) Name() module.Name {
 	return ModuleName
 }
 
 // Dependencies is part of module.Module interface.
-func (*Module) Dependencies() []module.Dependency {
+func (*serverModule) Dependencies() []module.Dependency {
 	deps := []module.Dependency{
 		module.RequiredDependency(secrets.ModuleName),
 	}
@@ -156,7 +151,7 @@ func (*Module) Dependencies() []module.Dependency {
 }
 
 // Initialize is part of module.Module interface.
-func (m *Module) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
+func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	if !opts.Prod && m.opts.ClientID == "" {
 		// TODO(vadimsh): Implement a dev mode that uses some simple cookies and
 		// does not require elaborate configuration, similar to GAE devappserver.
@@ -201,7 +196,7 @@ func (m *Module) Initialize(ctx context.Context, host module.Host, opts module.H
 	}
 
 	// Have enough configuration to create the AuthMethod.
-	m.AuthMethod = &AuthMethod{
+	method := &AuthMethod{
 		OpenIDConfig: func(context.Context) (*OpenIDConfig, error) { return cfg.Load().(*OpenIDConfig), nil },
 		AEADProvider: func(context.Context) tink.AEAD { return aead.Load().(tink.AEAD) },
 		Sessions:     sessions,
@@ -209,14 +204,15 @@ func (m *Module) Initialize(ctx context.Context, host module.Host, opts module.H
 	}
 
 	// Register it with the server guts.
-	warmup.Register("server/encryptedcookies", m.AuthMethod.Warmup)
-	m.AuthMethod.InstallHandlers(host.Routes(), router.MiddlewareChain{})
+	host.RegisterCookieAuth(method)
+	warmup.Register("server/encryptedcookies", method.Warmup)
+	method.InstallHandlers(host.Routes(), router.MiddlewareChain{})
 
 	return ctx, nil
 }
 
 // initSessionStore makes a store based on a link time configuration and flags.
-func (m *Module) initSessionStore(ctx context.Context) (session.Store, error) {
+func (m *serverModule) initSessionStore(ctx context.Context) (session.Store, error) {
 	impls := internal.StoreImpls()
 
 	var ids []string
@@ -258,7 +254,7 @@ func (m *Module) initSessionStore(ctx context.Context) (session.Store, error) {
 // Subscribes to its rotation. Returns an atomic with the current value of
 // the encryption primitive (as tink.AEAD). It will be updated when the key is
 // rotated.
-func (m *Module) loadTinkAEAD(ctx context.Context) (*atomic.Value, error) {
+func (m *serverModule) loadTinkAEAD(ctx context.Context) (*atomic.Value, error) {
 	secret, err := secrets.StoredSecret(ctx, m.opts.TinkAEADKey)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to load Tink AEAD key").Err()
@@ -298,7 +294,7 @@ func (m *Module) loadTinkAEAD(ctx context.Context) (*atomic.Value, error) {
 // Subscribes to its rotation. Returns an atomic with the current value of
 // the OpenID config (as *OpenIDConfig). It will be updated when the secret is
 // rotated.
-func (m *Module) loadOpenIDConfig(ctx context.Context) (*atomic.Value, error) {
+func (m *serverModule) loadOpenIDConfig(ctx context.Context) (*atomic.Value, error) {
 	secret, err := secrets.StoredSecret(ctx, m.opts.ClientSecret)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to load OAuth2 client secret").Err()

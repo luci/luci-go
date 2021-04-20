@@ -20,8 +20,8 @@ import (
 
 // Authenticate returns a middleware that performs authentication.
 //
-// Typically you only one one Method, but you may specify multiple Methods to be
-// tried in order (see Authenticator).
+// All given methods will be tried in order until the first applicable one.
+// Typically there's only one method.
 //
 // This middleware either updates the context by injecting the authentication
 // state into it (enabling functions like CurrentIdentity and IsMember), or
@@ -31,6 +31,14 @@ import (
 // identity.AnonymousIdentity in this case. Use separate authorization layer to
 // further restrict the access, if necessary.
 func Authenticate(m ...Method) router.Middleware {
+	if len(m) == 0 {
+		panic("at least one auth.Method is required")
+	}
+	for _, method := range m {
+		if method == nil {
+			panic("expecting auth.Method, got nil")
+		}
+	}
 	a := &Authenticator{Methods: m}
 	return a.GetMiddleware()
 }

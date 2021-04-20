@@ -49,15 +49,12 @@ import (
 func main() {
 	// Additional modules that extend the server functionality.
 	modules := []module.Module{
+		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
-
-	// Retain a reference to the cookiesModule, we'll need it later.
-	cookiesModule := encryptedcookies.NewModuleFromFlags()
-	modules = append(modules, cookiesModule)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		// pRPC example.
@@ -164,7 +161,7 @@ func main() {
 		}
 		htmlPageMW := router.NewMiddlewareChain(
 			templates.WithTemplates(templatesBundle),
-			auth.Authenticate(cookiesModule.AuthMethod),
+			auth.Authenticate(srv.CookieAuth),
 		)
 
 		srv.Routes.GET("/", htmlPageMW, func(c *router.Context) {
