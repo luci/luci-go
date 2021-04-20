@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -92,13 +93,19 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 		return err
 	}
 
+	_, filterByTestIdOrVariant := params["literalPrefix"]
+	if !filterByTestIdOrVariant {
+		_, filterByTestIdOrVariant = params["variant"]
+	}
+
 	// Execute the query.
 	st := q.genStatement("testResults", map[string]interface{}{
-		"params":            params,
-		"columns":           strings.Join(columns, ", "),
-		"onlyUnexpected":    q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS,
-		"withUnexpected":    q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS || q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS,
-		"excludeExonerated": q.Predicate.GetExcludeExonerated(),
+		"params":                  params,
+		"columns":                 strings.Join(columns, ", "),
+		"onlyUnexpected":          q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS,
+		"withUnexpected":          q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS || q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS,
+		"excludeExonerated":       q.Predicate.GetExcludeExonerated(),
+		"filterByTestIdOrVariant": filterByTestIdOrVariant,
 	})
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		tr, err := parser(row)
@@ -255,6 +262,14 @@ func (q *Query) baseParams() map[string]interface{} {
 
 	if re := q.Predicate.GetTestIdRegexp(); re != "" && re != ".*" {
 		params["testIdRegexp"] = fmt.Sprintf("^%s$", re)
+		r := regexp.MustCompile(re)
+		// We're trying to match the invocation's CommonTestIDPrefix with re,
+		// so re should have a literal prefix, otherwise the match likely
+		// fails.
+		// For example if an invocation's CommonTestIDPrefix is "ninja://" and
+		// re is ".*browser_tests.*", we wouldn't know if that invocation contains
+		// any test results with matching test ids or not.
+		params["literalPrefix"], _ = r.LiteralPrefix()
 	}
 
 	PopulateVariantParams(params, q.Predicate.GetVariant())
@@ -268,12 +283,19 @@ func PopulateVariantParams(params map[string]interface{}, variantPredicate *pb.V
 	switch p := variantPredicate.GetPredicate().(type) {
 	case *pb.VariantPredicate_Equals:
 		params["variantHashEquals"] = pbutil.VariantHash(p.Equals)
+		params["variant"] = pbutil.VariantToStrings(p.Equals)
 	case *pb.VariantPredicate_Contains:
 		params["variantContains"] = pbutil.VariantToStrings(p.Contains)
+		params["variant"] = params["variantContains"]
 	case nil:
 		// No filter.
 	default:
 		panic(errors.Reason("unexpected variant predicate %q", variantPredicate).Err())
+	}
+	if v, ok := params["variant"]; ok {
+		fmt.Println()
+		fmt.Println("variant param", v)
+		fmt.Println()
 	}
 }
 
@@ -283,6 +305,40 @@ var queryTmpl = template.Must(template.New("").Parse(`
 	{{define "testResults"}}
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
 		WITH
+		{{if .filterByTestIdOrVariant}}
+			invs AS (
+				SELECT
+					i.InvocationId,
+				FROM Invocations i
+				WHERE i.InvocationId IN UNNEST(@invIDs)
+				{{if .params.literalPrefix}}
+					AND i.CommonTestIDPrefix IS NOT NULL
+					AND (
+						-- For the cases where literalPrefix is long and specific, for example:
+						-- literalPrefix = "ninja://chrome/test:browser_tests/AutomationApiTest"
+						-- i.CommonTestIDPrefix = "ninja://chrome/test:browser_tests/"
+						STARTS_WITH(@literalPrefix, i.CommonTestIDPrefix) OR
+						-- For the cases where literalPrefix is short, likely because predicate.TestIdRegexp
+						-- contains non-literal regexp, for example:
+						-- predicate.TestIdRegexp = "ninja://.*browser_tests/" which makes literalPrefix
+						-- to be "ninja://".
+						-- This condition is not very useful to improve the performance of test
+						-- result history API, but without it will make the results incomplete.
+						STARTS_WITH(i.CommonTestIDPrefix, @literalPrefix)
+					)
+				{{end}}
+				{{if .params.variant}}
+					AND (SELECT LOGICAL_AND(kv IN UNNEST(i.TestResultVariantUnion)) FROM UNNEST(@variant) kv)
+				{{end}}
+			),
+		{{else}}
+			invs AS (
+				SELECT *
+				FROM UNNEST(@invIDs)
+				AS InvocationId
+			),
+		{{end}}
+
 		{{if .excludeExonerated}}
 			testVariants AS (
 				{{template "variantsWithUnexpectedResults" .}}
@@ -307,9 +363,9 @@ var queryTmpl = template.Must(template.New("").Parse(`
 
 		withUnexpected AS (
 			SELECT {{.columns}}
-			FROM variantsWithUnexpectedResults vur
-			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-			WHERE InvocationId IN UNNEST(@invIDs)
+			FROM invs
+			JOIN TestResults tr USING(InvocationId)
+			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} variantsWithUnexpectedResults vur USING (TestId, VariantHash)
 			{{/*
 				Don't have to use testIDAndVariantFilter because
 				variantsWithUnexpectedResults is already filtered
@@ -335,8 +391,9 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			WHERE true {{/* For optional conditions below */}}
 		{{else}}
 			SELECT {{.columns}}
-			FROM TestResults tr
-			WHERE InvocationId IN UNNEST(@invIDs)
+			FROM invs
+			JOIN  TestResults tr USING(InvocationId)
+			WHERE 1=1
 				{{template "testIDAndVariantFilter" .}}
 		{{end}}
 
@@ -354,8 +411,9 @@ var queryTmpl = template.Must(template.New("").Parse(`
 
 	{{define "variantsWithUnexpectedResults"}}
 		SELECT DISTINCT TestId, VariantHash
-		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
-		WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+		FROM invs
+		JOIN TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true} USING(InvocationId)
+		WHERE IsUnexpected
 		{{template "testIDAndVariantFilter" .}}
 	{{end}}
 

@@ -49,6 +49,11 @@ func (wi *workItem) fetchOneInv(ctx context.Context) error {
 		return err
 	}
 
+	reachableInvs, err = invocations.MatchPredicate(ctx, reachableInvs, wi.predicate)
+	if err != nil {
+		return err
+	}
+
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
@@ -133,7 +138,6 @@ func (q *Query) dispatchWorkItems(ctx context.Context) error {
 	invQ := &invocations.HistoryQuery{
 		Realm:     q.Request.Realm,
 		TimeRange: q.Request.GetTimeRange(),
-		Predicate: predicate,
 	}
 	return invQ.ByTimestamp(ctx, func(inv invocations.ID, ts *timestamp.Timestamp) error {
 		wi := &workItem{
