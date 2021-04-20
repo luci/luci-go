@@ -134,7 +134,7 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 	maxTasks := 1000.0
 	taskCtx := ctx
 	if t.dsFlakiness > 0 {
-		maxTasks *= math.Max(1.0, math.Round(100*t.dsFlakiness))
+		maxTasks *= math.Max(1.0, math.Round(1000*t.dsFlakiness))
 		taskCtx = t.flakifyDS(ctx)
 	}
 	i := 0
@@ -312,11 +312,42 @@ func (t *Test) flakifyDS(ctx context.Context) context.Context {
 	ctx, fb := featureBreaker.FilterRDS(ctx, nil)
 	fb.BreakFeaturesWithCallback(
 		flaky.Errors(flaky.Params{
-			Rand:                             t.dsFlakinesRand,
-			DeadlineProbability:              t.dsFlakiness,
-			ConcurrentTransactionProbability: t.dsFlakiness,
+			Rand:                t.dsFlakinesRand,
+			DeadlineProbability: t.dsFlakiness,
 		}),
-		featureBreaker.DatastoreFeatures...,
+		"DecodeCursor",
+		"Run",
+		"Count",
+		"BeginTransaction",
+		"GetMulti",
+	)
+	// NOTE: feature breaker currently doesn't allow simulating
+	// an error from actually successful DeleteMulti/PutMulti, a.k.a. submarine
+	// writes. However, the CommitTransaction feature breaker is simulating
+	// returning an error from an actually successful transaction, which makes
+	// ConcurrentTransactionProbability incorrectly simulated.
+	//
+	// NOTE: a transaction with 1 Get and 1 Put will roll a dice 4 times:
+	//   BeginTransaction, GetMulti, PutMulti, CommitTransaction.
+	//   However, in Cloud Datastore client, PutMulti within transaction doesn't
+	//   reach Datastore until the end of the transaction.
+	//
+	// TODO(tandrii): make realistic feature breaker with submarine writes outside
+	// of transaction and easier to control probabilities of transaction breaker.
+	//
+	// For now, use 5x higher probability of failure for mutations,
+	// which for simple Get/Put transactions results (2x + 10x) higher probability
+	// than a non-transactional Get.
+	fb.BreakFeaturesWithCallback(
+		flaky.Errors(flaky.Params{
+			Rand:                             t.dsFlakinesRand,
+			DeadlineProbability:              math.Min(t.dsFlakiness*5, 1.0),
+			ConcurrentTransactionProbability: 0,
+		}),
+		"AllocateIDs",
+		"DeleteMulti",
+		"PutMulti",
+		"CommitTransaction",
 	)
 	return ctx
 }
