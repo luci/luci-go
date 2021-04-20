@@ -191,6 +191,9 @@ func (s *swarmingServiceImpl) GetFilesFromIsolate(ctx context.Context, outdir st
 	}
 	isolatedClient := isolatedclient.NewClient(isolateRef.Isolatedserver, isolatedOpts...)
 
+	//pretty.Println(isolatedOpts)
+	//pretty.Println(isolateRef.Isolatedserver)
+
 	var filesMu sync.Mutex
 	var files []string
 	ctx, cancel := context.WithCancel(ctx)

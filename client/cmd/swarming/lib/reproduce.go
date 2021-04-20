@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/kr/pretty"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/cipd/client/cipd"
@@ -157,6 +158,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 		return nil, errors.Reason("fetched TaskRequest has files from Isolate and RBE-CAS").Err()
 	}
 
+	pretty.Println(properties.InputsRef)
 	// Support isolated input in task request.
 	if properties.InputsRef != nil {
 		if _, err := service.GetFilesFromIsolate(ctx, workdir, properties.InputsRef); err != nil {
