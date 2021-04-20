@@ -18,6 +18,7 @@ import { repeat } from 'lit-html/directives/repeat';
 import { observable } from 'mobx';
 
 import '../../components/dot_spinner';
+import { reportRenderError } from '../../components/error_handler';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
@@ -41,7 +42,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     trackEvent(GA_CATEGORIES.RELATED_BUILD_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     if (this.buildState.relatedBuilds === null) {
       return this.renderLoadingBar();
     }
@@ -49,7 +50,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       return this.renderNoRelatedBuilds();
     }
     return html` ${this.renderBuildsetInfo()} ${this.renderRelatedBuildsTable()} `;
-  }
+  });
 
   private renderLoadingBar() {
     return html` <div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div> `;
