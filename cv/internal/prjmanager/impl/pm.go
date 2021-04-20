@@ -32,6 +32,8 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/eventbox"
+	"go.chromium.org/luci/cv/internal/gerrit/poller"
+	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state"
@@ -49,15 +51,17 @@ type ProjectManager struct {
 	runNotifier *run.Notifier
 
 	clPurger *clpurger.Purger
+	clPoller *poller.Poller
 }
 
 // New creates a new ProjectManager and registers it for handling tasks created
 // by the given TQ Notifier.
-func New(n *prjmanager.Notifier, rn *run.Notifier) *ProjectManager {
+func New(n *prjmanager.Notifier, rn *run.Notifier, u *updater.Updater) *ProjectManager {
 	pm := &ProjectManager{
 		pmNotifier:  n,
 		runNotifier: rn,
-		clPurger:    clpurger.New(n),
+		clPurger:    clpurger.New(n, u),
+		clPoller:    poller.New(n.TaskRefs.Tqd, u, n),
 	}
 	n.TaskRefs.ManageProject.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
@@ -102,6 +106,7 @@ func (pm *ProjectManager) manageProject(ctx context.Context, luciProject string,
 		pmNotifier:  pm.pmNotifier,
 		runNotifier: pm.runNotifier,
 		clPurger:    pm.clPurger,
+		clPoller:    pm.clPoller,
 	}
 	switch postProcessFns, err := eventbox.ProcessBatch(ctx, recipient, proc); {
 	case err == nil:
@@ -134,6 +139,7 @@ type pmProcessor struct {
 	pmNotifier  *prjmanager.Notifier
 	runNotifier *run.Notifier
 	clPurger    *clpurger.Purger
+	clPoller    *poller.Poller
 
 	// loadedPState is set by LoadState and read by SaveState.
 	loadedPState *prjpb.PState
@@ -145,6 +151,7 @@ func (proc *pmProcessor) LoadState(ctx context.Context) (eventbox.State, eventbo
 		PMNotifier:  proc.pmNotifier,
 		RunNotifier: proc.runNotifier,
 		CLPurger:    proc.clPurger,
+		CLPoller:    proc.clPoller,
 	}
 	switch p, err := prjmanager.Load(ctx, proc.luciProject); {
 	case err != nil:
@@ -438,5 +445,5 @@ func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.
 var Default *ProjectManager
 
 func init() {
-	Default = New(prjmanager.DefaultNotifier, run.DefaultNotifier)
+	Default = New(prjmanager.DefaultNotifier, run.DefaultNotifier, updater.Default)
 }
