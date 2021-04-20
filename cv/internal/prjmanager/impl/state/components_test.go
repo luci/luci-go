@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -74,7 +76,9 @@ func TestComponentsActions(t *testing.T) {
 	t.Parallel()
 
 	Convey("Component actions logic work in the abstract", t, func() {
-		ct := cvtesting.Test{}
+		ct := cvtesting.Test{
+			TQDispatcher: &tq.Dispatcher{},
+		}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		now := ct.Clock.Now()
@@ -98,24 +102,28 @@ func TestComponentsActions(t *testing.T) {
 		}})
 		meta := ct.Cfg.MustExist(ctx, lProject)
 
-		state := NewExisting(&prjpb.PState{
-			LuciProject: lProject,
-			Status:      prjpb.Status_STARTED,
-			ConfigHash:  meta.Hash(),
-			Pcls: []*prjpb.PCL{
-				{Clid: 1},
-				{Clid: 2},
-				{Clid: 3},
-				{Clid: 999},
+		state := &State{
+			PB: &prjpb.PState{
+				LuciProject: lProject,
+				Status:      prjpb.Status_STARTED,
+				ConfigHash:  meta.Hash(),
+				Pcls: []*prjpb.PCL{
+					{Clid: 1},
+					{Clid: 2},
+					{Clid: 3},
+					{Clid: 999},
+				},
+				Components: []*prjpb.Component{
+					{Clids: []int64{999}}, // never sees any action.
+					{Clids: []int64{1}},
+					{Clids: []int64{2}},
+					{Clids: []int64{3}, DecisionTime: timestamppb.New(now.Add(3 * time.Minute))},
+				},
+				NextEvalTime: timestamppb.New(now.Add(3 * time.Minute)),
 			},
-			Components: []*prjpb.Component{
-				{Clids: []int64{999}}, // never sees any action.
-				{Clids: []int64{1}},
-				{Clids: []int64{2}},
-				{Clids: []int64{3}, DecisionTime: timestamppb.New(now.Add(3 * time.Minute))},
-			},
-			NextEvalTime: timestamppb.New(now.Add(3 * time.Minute)),
-		}, nil, nil)
+			PMNotifier:  prjmanager.NewNotifier(ct.TQDispatcher),
+			RunNotifier: run.NewNotifier(ct.TQDispatcher),
+		}
 
 		pb := backupPB(state)
 
