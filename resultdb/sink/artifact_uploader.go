@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -42,6 +43,9 @@ type artifactUploader struct {
 	StreamClient *http.Client
 	// Host is the host of a ResultDB service instance, to which artifacts are streamed.
 	StreamHost string
+
+	// MaxBatchable is the maximum size of an artifact that can be batched.
+	MaxBatchable int64
 }
 
 // StreamUpload uploads the artifact in a streaming manner via HTTP..
@@ -142,7 +146,81 @@ func calculateHash(input io.Reader) (string, error) {
 	return "sha256:" + hex.EncodeToString(hash.Sum(nil)), nil
 }
 
+// uploadTaskSlicer slices upload tasks and creates BatchCreateArtifactsRequest for
+// each chunk.
+//
+// Each chunk can have at most 500 artifacts and the total size is capped
+// at MaxBatchableArtifactSize.
+type uploadTaskSlicer struct {
+	batchReq *pb.BatchCreateArtifactsRequest
+	pos      int
+	tasks    []interface{}
+
+	// maxBatchable is the maximum size of an artifact that can be batched.
+	// See artifactChannel.maxBatchable for more info.
+	maxBatchable int64
+}
+
+// BatchCreateRequest returns a BatchCreateArtifactsRequest for the current slice of the tasks.
+//
+// Use Advance to move the cursor to the next chunk.
+// Returns nil if there are no more tasks to be sliced.
+func (s *uploadTaskSlicer) BatchCreateRequest() (*pb.BatchCreateArtifactsRequest, error) {
+	if s.batchReq != nil {
+		return s.batchReq, nil
+	}
+	l := len(s.tasks) - s.pos
+	switch {
+	case l > 500:
+		l = 500
+	case l == 0:
+		// Nothing to batch.
+		return nil, nil
+	}
+	reqs := make([]*pb.CreateArtifactRequest, 0, l)
+	var sizeTotal int64
+	for _, t := range s.tasks[s.pos:] {
+		ut := t.(*uploadTask)
+		r, err := ut.CreateRequest()
+		if err != nil {
+			return nil, errors.Annotate(err, "BatchCreateRequest").Err()
+		}
+
+		if ut.size > s.maxBatchable {
+			// artifactChannel.schedule() should have sent it to streamChannel.
+			panic(fmt.Sprintf("An artifact cannot be bigger than %d", s.maxBatchable))
+		}
+
+		if sizeTotal+ut.size > s.maxBatchable || len(reqs) > 500 {
+			break
+		}
+		reqs = append(reqs, r)
+		sizeTotal += ut.size
+	}
+	s.pos += len(reqs)
+	s.batchReq = &pb.BatchCreateArtifactsRequest{Requests: reqs}
+	return s.batchReq, nil
+}
+
+// Advance moves the cursor to point the next slice in the upload tasks.
+func (s *uploadTaskSlicer) Advance() {
+	s.batchReq = nil
+}
+
 func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {
-	// TODO(ddoman): implement me
+	if b.Meta == nil {
+		b.Meta = &uploadTaskSlicer{tasks: b.Data, maxBatchable: u.MaxBatchable}
+	}
+
+	s := b.Meta.(*uploadTaskSlicer)
+	for r, e := s.BatchCreateRequest(); r != nil; r, e = s.BatchCreateRequest() {
+		if e != nil {
+			return e
+		}
+		if _, e = u.Recorder.BatchCreateArtifacts(ctx, r); e != nil {
+			return e
+		}
+		s.Advance()
+	}
 	return nil
 }
