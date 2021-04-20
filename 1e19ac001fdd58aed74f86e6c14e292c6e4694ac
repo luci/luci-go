@@ -3,6 +3,121 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f1fc1445_26d6eec4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-20T20:42:07Z",
+      "side": 1,
+      "message": "this is no longer correct",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 39
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "179a18ad_a6ede547",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-20T20:42:07Z",
+      "side": 1,
+      "message": "nit: comments here can use markdown, consider tweaking them to make https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/73/2830173/7/lucicfg/doc/README.md#resultdb.test_presentation look nicer.",
+      "range": {
+        "startLine": 270,
+        "startChar": 4,
+        "endLine": 270,
+        "endChar": 8
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c390c23a_3c61c9a7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-20T20:42:07Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 333,
+        "startChar": 0,
+        "endLine": 334,
+        "endChar": 1
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3bd50bf6_35da9d9e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-20T20:42:07Z",
+      "side": 1,
+      "message": "this should not be a part of the public API. You can put it into `resultdbimpl`\n\n  resultdbimpl \u003d struct(\n    test_presentation_to_dict \u003d ...\n  )\n\nAnd then load(...) it in builder.star (see `schedulerimpl` for example).",
+      "range": {
+        "startLine": 346,
+        "startChar": 4,
+        "endLine": 346,
+        "endChar": 59
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "048ce510_7b9ea12a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-20T20:42:07Z",
+      "side": 1,
+      "message": "I think this should happen after \"Merge explicitly passed properties ...\" stage below to support luci.builder.defaults.test_presentation.set(...)\n\nSomething like\n\n  props \u003d {\n     ...\n     \"test_presentation\": ...\n  }\n\n  # Merge ...\n  ...\n\n  test_presentation \u003d props.pop(\"test_presentation\")\n  if test_presentation !\u003d resultdb.test_presentation():\n    props[\"properties\"][\"$recipe_engine/...\"] \u003d ...",
+      "range": {
+        "startLine": 228,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 119
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f1502060_9d0c0f4d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 7
@@ -19,6 +134,53 @@
         "startChar": 8,
         "endLine": 393,
         "endChar": 18
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4ac78d0_00259793",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-20T20:42:07Z",
+      "side": 1,
+      "message": "Yes, but then \"resultdb\" in `prop` above should also be renamed to \"resultdb_settings\". Also if it is already used, renaming it will be a breaking change :( But looks like it isn\u0027t used yet. Either way, it should probably be a separate CL.",
+      "parentUuid": "f1502060_9d0c0f4d",
+      "range": {
+        "startLine": 393,
+        "startChar": 8,
+        "endLine": 393,
+        "endChar": 18
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "96bac3cf_463047be",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-20T20:42:07Z",
+      "side": 1,
+      "message": "please add a test that\n1. Sets luci.builder.defaults.test_presentation to some non-default presentation (should propagate to properties as expected).\n2. Sets luci.builder.defaults.test_presentation to default empty presentation (properties should not change).\n\nExpect both will not pass.",
+      "range": {
+        "startLine": 394,
+        "startChar": 9,
+        "endLine": 394,
+        "endChar": 26
       },
       "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
