@@ -200,7 +200,7 @@ func (s *State) execComponentActions(ctx context.Context, actions []cAction, com
 				})
 
 				oldC := components[a.componentIndex]
-				switch newC, purgeTasks, err := a.actor.Act(ctx, s.pmNotifier); {
+				switch newC, purgeTasks, err := a.actor.Act(ctx, s.PMNotifier); {
 				case err != nil:
 					// Ensure this component is reconsidered during then next PM mutation.
 					newC = components[a.componentIndex].CloneShallow()
@@ -299,7 +299,7 @@ func (s *State) addCLsToPurge(ctx context.Context, ts []*prjpb.PurgeCLTask) Side
 		purgingCLs[i] = t.GetPurgingCl()
 	}
 	s.PB.PurgingCls, _ = s.PB.COWPurgingCLs(nil, purgingCLs)
-	return &TriggerPurgeCLTasks{payloads: ts, clPurger: s.clPurger}
+	return &TriggerPurgeCLTasks{payloads: ts, clPurger: s.CLPurger}
 }
 
 // maxPurgingCLDuration limits the time that a TQ task has to execute

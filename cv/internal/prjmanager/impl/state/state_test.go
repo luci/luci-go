@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -51,8 +53,17 @@ import (
 type ctest struct {
 	cvtesting.Test
 
-	lProject string
-	gHost    string
+	lProject  string
+	gHost     string
+	pm        *prjmanager.Notifier
+	clUpdater *updater.Updater
+}
+
+func (ct *ctest) SetUp() (context.Context, func()) {
+	ct.TQDispatcher = &tq.Dispatcher{}
+	ctx, cancel := ct.Test.SetUp()
+	ct.clUpdater = updater.New(ct.TQDispatcher)
+	return ctx, cancel
 }
 
 func (ct ctest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
@@ -60,7 +71,7 @@ func (ct ctest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
 }
 
 func (ct ctest) runCLUpdaterAs(ctx context.Context, change int64, lProject string) *changelist.CL {
-	So(updater.Refresh(ctx, &updater.RefreshGerritCL{
+	So(ct.clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
 		LuciProject: lProject,
 		Host:        ct.gHost,
 		Change:      change,
@@ -148,7 +159,7 @@ func TestUpdateConfig(t *testing.T) {
 		Convey("initializes newly started project", func() {
 			// Newly started project doesn't have any CLs, yet, regardless of what CL
 			// snapshots are stored in Datastore.
-			s0 := NewInitial(ct.lProject, nil, nil)
+			s0 := &State{PB: &prjpb.PState{LuciProject: ct.lProject}}
 			pb0 := backupPB(s0)
 			s1, sideEffect, err := s0.UpdateConfig(ctx)
 			So(err, ShouldBeNil)
@@ -190,7 +201,7 @@ func TestUpdateConfig(t *testing.T) {
 		cl202 := ct.runCLUpdater(ctx, 202)
 		cl203 := ct.runCLUpdater(ctx, 203)
 
-		s1 := NewExisting(&prjpb.PState{
+		s1 := &State{PB: &prjpb.PState{
 			LuciProject:      ct.lProject,
 			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
@@ -233,7 +244,7 @@ func TestUpdateConfig(t *testing.T) {
 					Clids: []int64{404},
 				},
 			},
-		}, nil, nil)
+		}}
 		pb1 := backupPB(s1)
 
 		Convey("noop update is quick", func() {
@@ -477,12 +488,12 @@ func TestOnCLsUpdated(t *testing.T) {
 		cl202 := ct.runCLUpdater(ctx, 202)
 		cl203 := ct.runCLUpdater(ctx, 203)
 
-		s0 := NewExisting(&prjpb.PState{
+		s0 := &State{PB: &prjpb.PState{
 			LuciProject:      ct.lProject,
 			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
-		}, nil, nil)
+		}}
 		pb0 := backupPB(s0)
 
 		// NOTE: conversion of individual CL to PCL is in TestUpdateConfig.
@@ -554,7 +565,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				Status:             prjpb.PCL_OK,
 				Trigger:            trigger.Find(ci101),
 			}
-			s1 := NewExisting(&prjpb.PState{
+			s1 := &State{PB: &prjpb.PState{
 				LuciProject:      ct.lProject,
 				Status:           prjpb.Status_STARTED,
 				ConfigHash:       meta.Hash(),
@@ -570,7 +581,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						Deps:               []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				}),
-			}, nil, nil)
+			}}
 			pb1 := backupPB(s1)
 			bumpEVersion(ctx, cl203, 3)
 			s2, sideEffect, err := s1.OnCLsUpdated(ctx, map[int64]int64{
@@ -675,7 +686,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: common.CLIDs{709, 707, 708}}
 		So(datastore.Put(ctx, run1, run789), ShouldBeNil)
 
-		s1 := NewExisting(&prjpb.PState{
+		s1 := &State{PB: &prjpb.PState{
 			LuciProject:      ct.lProject,
 			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
@@ -696,7 +707,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			CreatedPruns: []*prjpb.PRun{
 				{Id: ct.lProject + "/789-efg", Clids: []int64{707, 708, 709}},
 			},
-		}, nil, nil)
+		}}
 		pb1 := backupPB(s1)
 
 		Convey("Noops", func() {
@@ -848,7 +859,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 		defer cancel()
 
 		Convey("Empty", func() {
-			s1 := NewExisting(&prjpb.PState{}, nil, nil)
+			s1 := &State{PB: &prjpb.PState{}}
 			s2, sideEffect, err := s1.OnPurgesCompleted(ctx, []*prjpb.PurgeCompleted{{OperationId: "op1"}})
 			So(err, ShouldBeNil)
 			So(sideEffect, ShouldBeNil)
@@ -858,7 +869,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 		Convey("With existing", func() {
 			now := testclock.TestRecentTimeUTC
 			ctx, _ := testclock.UseTime(ctx, now)
-			s1 := NewExisting(&prjpb.PState{
+			s1 := &State{PB: &prjpb.PState{
 				PurgingCls: []*prjpb.PurgingCL{
 					// expires later
 					{Clid: 1, OperationId: "1", Deadline: timestamppb.New(now.Add(time.Minute))},
@@ -874,7 +885,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 					{Clids: []int64{2}, Dirty: true},
 					{Clids: []int64{3}},
 				},
-			}, nil, nil)
+			}}
 			pb := backupPB(s1)
 
 			Convey("Expires and removed", func() {
@@ -1046,13 +1057,13 @@ func TestLoadActiveIntoPCLs(t *testing.T) {
 		}
 		So(datastore.Put(ctx, run4, run56, run789), ShouldBeNil)
 
-		state := NewExisting(&prjpb.PState{
+		state := &State{PB: &prjpb.PState{
 			LuciProject:      ct.lProject,
 			Status:           prjpb.Status_STARTED,
 			ConfigHash:       meta.Hash(),
 			ConfigGroupNames: []string{"g0", "g1"},
 			DirtyComponents:  true,
-		}, nil, nil)
+		}}
 
 		Convey("just categorization", func() {
 			state.PB.Pcls = sortPCLs([]*prjpb.PCL{
@@ -1330,9 +1341,9 @@ func TestRepartition(t *testing.T) {
 	t.Parallel()
 
 	Convey("repartition works", t, func() {
-		state := NewExisting(&prjpb.PState{
+		state := &State{PB: &prjpb.PState{
 			DirtyComponents: true,
-		}, nil, nil)
+		}}
 		cat := &categorizedCLs{
 			active:   clidsSet{},
 			deps:     clidsSet{},

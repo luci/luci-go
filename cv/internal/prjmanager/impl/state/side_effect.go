@@ -77,9 +77,10 @@ const concurrency = 16
 
 // UpdateIncompleteRunsConfig sends UpdateConfig events to incomplete Runs.
 type UpdateIncompleteRunsConfig struct {
-	RunIDs   common.RunIDs
-	Hash     string
-	EVersion int64
+	RunNotifier *run.Notifier
+	RunIDs      common.RunIDs
+	Hash        string
+	EVersion    int64
 }
 
 // Do implements SideEffect interface.
@@ -88,7 +89,7 @@ func (u *UpdateIncompleteRunsConfig) Do(ctx context.Context) error {
 		for _, id := range u.RunIDs {
 			id := id
 			work <- func() error {
-				return run.UpdateConfig(ctx, id, u.Hash, u.EVersion)
+				return u.RunNotifier.UpdateConfig(ctx, id, u.Hash, u.EVersion)
 			}
 		}
 	})
@@ -97,7 +98,8 @@ func (u *UpdateIncompleteRunsConfig) Do(ctx context.Context) error {
 
 // CancelIncompleteRuns sends Cancel event to incomplete Runs.
 type CancelIncompleteRuns struct {
-	RunIDs common.RunIDs
+	RunNotifier *run.Notifier
+	RunIDs      common.RunIDs
 }
 
 // Do implements SideEffect interface.
@@ -107,7 +109,7 @@ func (c *CancelIncompleteRuns) Do(ctx context.Context) error {
 			id := id
 			work <- func() error {
 				// TODO(tandrii): pass "Project disabled" as a reason.
-				return run.Cancel(ctx, id)
+				return c.RunNotifier.Cancel(ctx, id)
 			}
 		}
 	})
