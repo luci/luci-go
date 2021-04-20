@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cvconfig "go.chromium.org/luci/cv/internal/config"
@@ -45,9 +44,7 @@ func TestConfigRefreshCron(t *testing.T) {
 	t.Parallel()
 
 	Convey("Config refresh cron works", t, func() {
-		ct := cvtesting.Test{
-			TQDispatcher: &tq.Dispatcher{},
-		}
+		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
