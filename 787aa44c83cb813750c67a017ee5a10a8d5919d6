@@ -106,6 +106,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "9164da01_9ff1686b",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-20T17:29:42Z",
+      "side": 1,
+      "message": "\u003e Alternatively to dispatcher, https://pkg.go.dev/google.golang.org/api/support/bundler knows about both sizes and counts, and is ready to be used today.\n\nThis is not actually a viable alternative (it only implements a portion of the buffer used by dispatcher, not dispatcher itself). Unless you were meaning to rewrite dispatcher to use this instead of it\u0027s current buffer implementation?\n\nI\u0027ll look at adding sizing to the current buffer implementation.",
+      "parentUuid": "1c5387f5_d1341e05",
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d2861032_ffcdaab4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 4
