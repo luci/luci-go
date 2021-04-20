@@ -41,14 +41,11 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/diagnostic"
-	pollertask "go.chromium.org/luci/cv/internal/gerrit/poller/task"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/impl"
-	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/eventpb"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 )
 
@@ -66,6 +63,8 @@ var dsFlakinessFlag = flag.Float64(dsFlakinessFlagName, 0, "DS flakiness probabi
 //   ct := Test{CVDev: true}
 //   ctx, cancel := ct.SetUp()
 //   defer cancel()
+//   ...
+//   ct.RunUntil(ctx, func() bool { return len(ct.LoadRunsOf("project")) > 0 })
 type Test struct {
 	*cvtesting.Test // auto-initialized if nil
 	// CVDev if true sets e2e test to use `cv-dev` GAE app.
@@ -126,27 +125,6 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	t.MigrationServer = &migration.MigrationServer{}
 	t.DiagnosticServer = &diagnostic.DiagnosticServer{}
 	return ctx, deferme
-}
-
-// Now returns test clock time in UTC.
-func (t *Test) Now() time.Time {
-	return t.Clock.Now().UTC()
-}
-
-// RunAtLeastOncePM runs at least 1 PM task, possibly more or other tasks.
-func (t *Test) RunAtLeastOncePM(ctx context.Context) {
-	t.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
-}
-
-// RunAtLeastOnceRun runs at least 1 Run task, possibly more or other tasks.
-func (t *Test) RunAtLeastOnceRun(ctx context.Context) {
-	t.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-}
-
-// RunAtLeastOncePoller runs at least 1 Poller task, possibly more or other
-// tasks.
-func (t *Test) RunAtLeastOncePoller(ctx context.Context) {
-	t.TQ.Run(ctx, tqtesting.StopAfterTask(pollertask.ClassID))
 }
 
 // RunUntil runs TQ tasks, while stopIf returns false.
@@ -212,6 +190,14 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 	if err := ctx.Err(); err != nil {
 		panic(err)
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Methods to examine state examiners.
+
+// Now returns test clock time in UTC.
+func (t *Test) Now() time.Time {
+	return t.Clock.Now().UTC()
 }
 
 // LoadProject returns Project entity or nil if not exists.
@@ -318,7 +304,8 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 	}
 }
 
-// implementation detail
+///////////////////////////////////////////////////////////////////////////////
+// DS flakiness & TQ sweep implementation.
 
 // flakifyDS returns context with flaky Datastore.
 func (t *Test) flakifyDS(ctx context.Context) context.Context {
