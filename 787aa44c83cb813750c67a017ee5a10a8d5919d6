@@ -142,6 +142,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "66c2c4be_3ace94d8",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-20T17:36:46Z",
+      "side": 1,
+      "message": "Yes, it calls the callback, but doesn\u0027t do any of the throttling/limiting/congestion control that dispatcher does, nor does it handle draining or cancelation.",
+      "parentUuid": "81044015_42513ad8",
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d2861032_ffcdaab4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 4
