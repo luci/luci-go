@@ -59,7 +59,7 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		So(trigger.Find(ct.GFake.GetChange(gHost, gChange).Info), ShouldNotBeNil)
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+		So(prjmanager.DefaultNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
 			return trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil
 		})
@@ -125,7 +125,7 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 		)))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		So(prjmanager.UpdateConfig(ctx, lProject), ShouldBeNil)
+		So(prjmanager.DefaultNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
 			return trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil
 		})
