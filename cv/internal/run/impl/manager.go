@@ -55,7 +55,7 @@ var fakeHandlerKey = "Fake Run Events Handler"
 func manageRun(ctx context.Context, runID common.RunID) error {
 	ctx = logging.SetField(ctx, "run", runID)
 	recipient := datastore.MakeKey(ctx, run.RunKind, string(runID))
-	rm := &runManager{runID: runID}
+	rm := &runProcessor{runID: runID}
 	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
 		rm.handler = h
 	} else {
@@ -73,24 +73,24 @@ func manageRun(ctx context.Context, runID common.RunID) error {
 	return nil
 }
 
-// runManager implements eventbox.Processor.
-type runManager struct {
+// runProcessor implements eventbox.Processor.
+type runProcessor struct {
 	runID   common.RunID
 	handler handler.Handler
 }
 
-var _ eventbox.Processor = (*runManager)(nil)
+var _ eventbox.Processor = (*runProcessor)(nil)
 
 // LoadState is called to load the state before a transaction.
-func (rm *runManager) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
-	r := run.Run{ID: rm.runID}
+func (rp *runProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
+	r := run.Run{ID: rp.runID}
 	switch err := datastore.Get(ctx, &r); {
 	case err == datastore.ErrNoSuchEntity:
-		err = errors.Reason("CRITICAL: requested run entity %q is missing in datastore.", rm.runID).Err()
+		err = errors.Reason("CRITICAL: requested run entity %q is missing in datastore.", rp.runID).Err()
 		common.LogError(ctx, err)
 		panic(err)
 	case err != nil:
-		return nil, 0, errors.Annotate(err, "failed to get Run %q", rm.runID).Tag(transient.Tag).Err()
+		return nil, 0, errors.Annotate(err, "failed to get Run %q", rp.runID).Tag(transient.Tag).Err()
 	}
 	rs := &state.RunState{
 		Run:        r,
@@ -104,12 +104,12 @@ func (rm *runManager) LoadState(ctx context.Context) (eventbox.State, eventbox.E
 //
 // All actions that must be done atomically with updating state must be
 // encapsulated inside Transition.SideEffectFn callback.
-func (rm *runManager) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, eventbox.Events, error) {
+func (rp *runProcessor) Mutate(ctx context.Context, events eventbox.Events, s eventbox.State) ([]eventbox.Transition, eventbox.Events, error) {
 	tr := &triageResult{}
 	for _, e := range events {
 		tr.triage(ctx, e)
 	}
-	ts, err := rm.processTriageResults(ctx, tr, s.(*state.RunState))
+	ts, err := rp.processTriageResults(ctx, tr, s.(*state.RunState))
 	return ts, nil, err
 }
 
@@ -118,10 +118,10 @@ func (rm *runManager) Mutate(ctx context.Context, events eventbox.Events, s even
 // The returned EVersion is compared against the one associated with a state
 // loaded via GetState. If different, the transaction is aborted and new state
 // isn't saved.
-func (rm *runManager) FetchEVersion(ctx context.Context) (eventbox.EVersion, error) {
-	r := &run.Run{ID: rm.runID}
+func (rp *runProcessor) FetchEVersion(ctx context.Context) (eventbox.EVersion, error) {
+	r := &run.Run{ID: rp.runID}
 	if err := datastore.Get(ctx, r); err != nil {
-		return 0, errors.Annotate(err, "failed to get %q", rm.runID).Tag(transient.Tag).Err()
+		return 0, errors.Annotate(err, "failed to get %q", rp.runID).Tag(transient.Tag).Err()
 	}
 	return eventbox.EVersion(r.EVersion), nil
 }
@@ -130,7 +130,7 @@ func (rm *runManager) FetchEVersion(ctx context.Context) (eventbox.EVersion, err
 //
 // The passed eversion is incremented value of eversion of what GetState
 // returned before.
-func (rm *runManager) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
+func (rp *runProcessor) SaveState(ctx context.Context, st eventbox.State, ev eventbox.EVersion) error {
 	rs := st.(*state.RunState)
 	rs.Run.EVersion = int(ev)
 	rs.Run.UpdateTime = clock.Now(ctx).UTC()
@@ -211,31 +211,31 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event) {
 	}
 }
 
-func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) ([]eventbox.Transition, error) {
+func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) ([]eventbox.Transition, error) {
 	var transitions []eventbox.Transition
 	if len(tr.clSubmittedEvents.events) > 0 {
-		res, err := rm.handler.OnCLSubmitted(ctx, rs, tr.clSubmittedEvents.cls)
+		res, err := rp.handler.OnCLSubmitted(ctx, rs, tr.clSubmittedEvents.cls)
 		if err != nil {
 			return nil, err
 		}
 		rs, transitions = applyResult(res, tr.clSubmittedEvents.events, transitions)
 	}
 	if sc := tr.submissionCompletedEvents; len(sc.events) > 0 {
-		res, err := rm.handler.OnSubmissionCompleted(ctx, rs, sc.result, sc.attempt)
+		res, err := rp.handler.OnSubmissionCompleted(ctx, rs, sc.result, sc.attempt)
 		if err != nil {
 			return nil, err
 		}
 		rs, transitions = applyResult(res, sc.events, transitions)
 	}
 	if len(tr.readyForSubmissionEvents) > 0 {
-		res, err := rm.handler.OnReadyForSubmission(ctx, rs)
+		res, err := rp.handler.OnReadyForSubmission(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
 		rs, transitions = applyResult(res, tr.readyForSubmissionEvents, transitions)
 	}
 	if len(tr.cqdVerificationCompletedEvents) > 0 {
-		res, err := rm.handler.OnCQDVerificationCompleted(ctx, rs)
+		res, err := rp.handler.OnCQDVerificationCompleted(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
@@ -243,7 +243,7 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 	}
 	switch {
 	case len(tr.cancelEvents) > 0:
-		res, err := rm.handler.Cancel(ctx, rs)
+		res, err := rp.handler.Cancel(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
@@ -256,14 +256,14 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		events := append(tr.cancelEvents, tr.startEvents...)
 		rs, transitions = applyResult(res, events, transitions)
 	case len(tr.startEvents) > 0:
-		res, err := rm.handler.Start(ctx, rs)
+		res, err := rp.handler.Start(ctx, rs)
 		if err != nil {
 			return nil, err
 		}
 		rs, transitions = applyResult(res, tr.startEvents, transitions)
 	}
 	if len(tr.clUpdatedEvents.events) > 0 {
-		res, err := rm.handler.OnCLUpdated(ctx, rs, tr.clUpdatedEvents.cls)
+		res, err := rp.handler.OnCLUpdated(ctx, rs, tr.clUpdatedEvents.cls)
 		if err != nil {
 			return nil, err
 		}
@@ -279,7 +279,7 @@ func (rm *runManager) processTriageResults(ctx context.Context, tr *triageResult
 		transitions = append(transitions, eventbox.Transition{Events: tr.pokeEvents, TransitionTo: rs})
 	}
 
-	if err := enqueueNextPoke(ctx, rm.runID, tr.nextReadyEventTime); err != nil {
+	if err := enqueueNextPoke(ctx, rp.runID, tr.nextReadyEventTime); err != nil {
 		return nil, err
 	}
 	return transitions, nil
