@@ -36,7 +36,7 @@ export const BUILD_FIELD_MASK =
 
 // Includes: id, builder, number, createTime, startTime, endTime, status, summaryMarkdown.
 export const SEARCH_BUILD_FIELD_MASK =
-  'builds.*.id,builds.*.builder,builds.*.number,builds.*.createTime,builds.*.startTime,builds.*.endTime,' +
+  'builds.*.id,buils.*.builder,builds.*.number,builds.*.createTime,builds.*.startTime,builds.*.endTime,' +
   'builds.*.status,builds.*.summaryMarkdown';
 
 export const enum Trinary {

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { IPromiseBasedObservable, PENDING, REJECTED } from 'mobx-utils';
+
 /**
  * Extend URL with methods that can be chained.
  */
@@ -58,4 +60,21 @@ export async function sha256(message: string) {
  */
 export function timeout(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Unwraps the value in a promise based observable.
+ *
+ * If the observable is pending, return the defaultValue.
+ * If the observable is rejected, throw the error.
+ */
+export function unwrapObservable<T>(observable: IPromiseBasedObservable<T>, defaultValue: T) {
+  switch (observable.state) {
+    case PENDING:
+      return defaultValue;
+    case REJECTED:
+      throw observable.value;
+    default:
+      return observable.value;
+  }
 }
