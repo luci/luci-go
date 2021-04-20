@@ -36,7 +36,7 @@ import (
 )
 
 func init() {
-	eventpb.ManageRunTaskRef.AttachHandler(
+	eventpb.DefaultTaskRefs.ManageRun.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*eventpb.ManageRunTask)
 			err := manageRun(ctx, common.RunID(task.GetRunId()))
@@ -122,7 +122,6 @@ func (rm *runManager) FetchEVersion(ctx context.Context) (eventbox.EVersion, err
 		return 0, errors.Annotate(err, "failed to get %q", rm.runID).Tag(transient.Tag).Err()
 	}
 	return eventbox.EVersion(r.EVersion), nil
-
 }
 
 // SaveState is called in a transaction to save the state if it has changed.
@@ -302,9 +301,9 @@ func enqueueNextPoke(ctx context.Context, runID common.RunID, nextReadyEventTime
 	case now.After(nextReadyEventTime):
 		// It is possible that by this time, next ready event is already overdue.
 		// Invoke Run Manager immediately.
-		return eventpb.Dispatch(ctx, string(runID), time.Time{})
+		return eventpb.DefaultTaskRefs.Dispatch(ctx, string(runID), time.Time{})
 	case nextReadyEventTime.Before(now.Add(pokeInterval)):
-		return eventpb.Dispatch(ctx, string(runID), nextReadyEventTime)
+		return eventpb.DefaultTaskRefs.Dispatch(ctx, string(runID), nextReadyEventTime)
 	default:
 		return run.PokeAfter(ctx, runID, pokeInterval)
 	}

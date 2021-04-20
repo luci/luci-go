@@ -298,7 +298,7 @@ func (s submitter) submit(ctx context.Context) error {
 	}
 	// TODO(yiwzhang): optimization for happy path: for successful submission,
 	// invoke the RM within the same task to reduce latency.
-	return eventpb.Dispatch(ctx, string(s.runID), time.Time{})
+	return eventpb.DefaultTaskRefs.Dispatch(ctx, string(s.runID), time.Time{})
 }
 
 var perCLRetryFactory retry.Factory = transient.Only(func() retry.Iterator {

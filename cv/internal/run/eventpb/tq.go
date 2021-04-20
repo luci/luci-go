@@ -23,7 +23,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/eventbox"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 )
@@ -37,33 +39,43 @@ const (
 	taskInterval = time.Second
 )
 
-// ManageRunTaskRef is used by RunManager implementation to add its handler.
-var ManageRunTaskRef tq.TaskClassRef
+// TaskRefs are task refs used by RunManager to separate task creation and
+// handling, which in turns avoids circular dependency.
+type TaskRefs struct {
+	ManageRun  tq.TaskClassRef
+	KickManage tq.TaskClassRef
 
-func init() {
-	ManageRunTaskRef = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        ManageRunTaskClass,
-		Prototype: &ManageRunTask{},
-		Queue:     "manage-run",
-		Kind:      tq.NonTransactional,
-	})
+	tqd *tq.Dispatcher
+}
 
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        fmt.Sprintf("kick-%s", ManageRunTaskClass),
-		Prototype: &KickManageRunTask{},
-		Queue:     "kick-manage-run",
-		Kind:      tq.Transactional,
-		Quiet:     true,
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*KickManageRunTask)
-			var eta time.Time
-			if t := task.GetEta(); t != nil {
-				eta = t.AsTime()
-			}
-			err := Dispatch(ctx, task.GetRunId(), eta)
-			return common.TQifyError(ctx, err)
-		},
+// Registers tasks with the given TQ Dispatcher.
+func Register(tqd *tq.Dispatcher) TaskRefs {
+	t := TaskRefs{
+		ManageRun: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:        ManageRunTaskClass,
+			Prototype: &ManageRunTask{},
+			Queue:     "manage-run",
+			Kind:      tq.NonTransactional,
+		}),
+		KickManage: tqd.RegisterTaskClass(tq.TaskClass{
+			ID:        fmt.Sprintf("kick-%s", ManageRunTaskClass),
+			Prototype: &KickManageRunTask{},
+			Queue:     "kick-manage-run",
+			Kind:      tq.Transactional,
+			Quiet:     true,
+		}),
+		tqd: tqd,
+	}
+	t.KickManage.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		task := payload.(*KickManageRunTask)
+		var eta time.Time
+		if t := task.GetEta(); t != nil {
+			eta = t.AsTime()
+		}
+		err := t.Dispatch(ctx, task.GetRunId(), eta)
+		return common.TQifyError(ctx, err)
 	})
+	return t
 }
 
 // Dispatch ensures invocation of RunManager via ManageRunTask.
@@ -73,7 +85,7 @@ func init() {
 //  * next possible.
 //
 // To avoid actually dispatching TQ tasks in tests, use runtest.MockDispatch().
-func Dispatch(ctx context.Context, runID string, eta time.Time) error {
+func (tr TaskRefs) Dispatch(ctx context.Context, runID string, eta time.Time) error {
 	mock, mocked := ctx.Value(&mockDispatcherContextKey).(func(string, time.Time))
 
 	if datastore.CurrentTransaction(ctx) != nil {
@@ -86,7 +98,7 @@ func Dispatch(ctx context.Context, runID string, eta time.Time) error {
 			mock(runID, eta)
 			return nil
 		}
-		return tq.AddTask(ctx, &tq.Task{
+		return tr.tqd.AddTask(ctx, &tq.Task{
 			DeduplicationKey: "", // not allowed in a transaction
 			Payload:          payload,
 		})
@@ -111,7 +123,7 @@ func Dispatch(ctx context.Context, runID string, eta time.Time) error {
 		mock(runID, eta)
 		return nil
 	}
-	return tq.AddTask(ctx, &tq.Task{
+	return tr.tqd.AddTask(ctx, &tq.Task{
 		Title:            runID,
 		DeduplicationKey: fmt.Sprintf("%s\n%d", runID, eta.UnixNano()),
 		ETA:              eta,
@@ -127,4 +139,38 @@ var mockDispatcherContextKey = "eventpb.mockDispatcher"
 // See runtest.MockDispatch().
 func InstallMockDispatcher(ctx context.Context, f func(runID string, eta time.Time)) context.Context {
 	return context.WithValue(ctx, &mockDispatcherContextKey, f)
+}
+
+// SendNow sends the event to Run's eventbox and invokes RunManager immediately.
+func (tr TaskRefs) SendNow(ctx context.Context, runID common.RunID, evt *Event) error {
+	return tr.Send(ctx, runID, evt, time.Time{})
+}
+
+// Send sends the event to Run's eventbox and invokes RunManager at `eta`.
+func (tr TaskRefs) Send(ctx context.Context, runID common.RunID, evt *Event, eta time.Time) error {
+	if err := SendWithoutDispatch(ctx, runID, evt); err != nil {
+		return err
+	}
+	return tr.Dispatch(ctx, string(runID), eta)
+}
+
+// SendWithoutDispatch sends the event to Run's eventbox without invoking RM.
+func SendWithoutDispatch(ctx context.Context, runID common.RunID, evt *Event) error {
+	value, err := proto.Marshal(evt)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal").Err()
+	}
+	to := datastore.MakeKey(ctx, "Run", string(runID))
+	return eventbox.Emit(ctx, value, to)
+}
+
+var (
+	// DefaultTaskRefs is for backwards compat during migration away from Default
+	// tq Dispatcher.
+	// TODO(tandrii): remove this.
+	DefaultTaskRefs TaskRefs
+)
+
+func init() {
+	DefaultTaskRefs = Register(&tq.Default)
 }
