@@ -12,25 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError, RpcCode } from '@chopsui/prpc-client';
-import { Router } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { autorun, computed, observable } from 'mobx';
-import { fromPromise, PENDING, REJECTED } from 'mobx-utils';
+import { fromPromise } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
+import { reportError } from '../../components/error_handler';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeContext } from '../../libs/context';
-import { router } from '../../routes';
+import { unwrapObservable } from '../../libs/utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders a raw artifact.
  */
-// TODO(weiweilin): improve error handling.
 @customElement('milo-raw-artifact-page')
 @consumeAppState
 @consumeContext('artifactIdent')
@@ -46,37 +44,22 @@ export class RawArtifactPageElement extends MiloBaseElement {
     return fromPromise(this.appState.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
 
+  @computed
+  private get artifact() {
+    return unwrapObservable(this.artifact$, null);
+  }
+
   connectedCallback() {
     super.connectedCallback();
 
-    // TODO(weiweilin): add integration tests to ensure redirection works properly.
     this.addDisposer(
-      autorun(() => {
-        if (this.artifact$.state === PENDING) {
-          return;
-        }
-
-        if (this.artifact$.state === REJECTED) {
-          const err = this.artifact$.value as GrpcError;
-          const mayRequireSignin = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(
-            err.code
-          );
-          if (mayRequireSignin && this.appState.userId === '') {
-            Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
-            return;
+      autorun(
+        reportError.bind(this)(() => {
+          if (this.artifact) {
+            window.open(this.artifact.fetchUrl, '_self');
           }
-          this.dispatchEvent(
-            new ErrorEvent('error', {
-              message: err.message,
-              composed: true,
-              bubbles: true,
-            })
-          );
-          return;
-        }
-
-        window.open(this.artifact$.value.fetchUrl, '_self');
-      })
+        })
+      )
     );
   }
 
