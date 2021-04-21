@@ -21,7 +21,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -31,11 +32,14 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 	"go.chromium.org/luci/server/dsmapper/internal/splitter"
 	"go.chromium.org/luci/server/dsmapper/internal/tasks"
+
+	// Need this to enqueue tasks inside Datastore transactions.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 // ID identifies a mapper registered in the controller.
@@ -136,11 +140,41 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 	}
 	ctl.disp = disp
 
-	disp.RegisterTask(&tasks.SplitAndLaunch{}, ctl.splitAndLaunchHandler, ctl.ControlQueue, nil)
-	disp.RegisterTask(&tasks.FanOutShards{}, ctl.fanOutShardsHandler, ctl.ControlQueue, nil)
-	disp.RegisterTask(&tasks.ProcessShard{}, ctl.processShardHandler, ctl.MapperQueue, nil)
-	disp.RegisterTask(&tasks.RequestJobStateUpdate{}, ctl.requestJobStateUpdateHandler, ctl.ControlQueue, nil)
-	disp.RegisterTask(&tasks.UpdateJobState{}, ctl.updateJobStateHandler, ctl.ControlQueue, nil)
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "dsmapper-split-and-launch",
+		Prototype: &tasks.SplitAndLaunch{},
+		Kind:      tq.Transactional,
+		Queue:     ctl.ControlQueue,
+		Handler:   ctl.splitAndLaunchHandler,
+	})
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "dsmapper-fan-out-shards",
+		Prototype: &tasks.FanOutShards{},
+		Kind:      tq.Transactional,
+		Queue:     ctl.ControlQueue,
+		Handler:   ctl.fanOutShardsHandler,
+	})
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "dsmapper-process-shard",
+		Prototype: &tasks.ProcessShard{},
+		Kind:      tq.FollowsContext,
+		Queue:     ctl.MapperQueue,
+		Handler:   ctl.processShardHandler,
+	})
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "dsmapper-request-job-state-update",
+		Prototype: &tasks.RequestJobStateUpdate{},
+		Kind:      tq.Transactional,
+		Queue:     ctl.ControlQueue,
+		Handler:   ctl.requestJobStateUpdateHandler,
+	})
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "dsmapper-update-job-state",
+		Prototype: &tasks.UpdateJobState{},
+		Kind:      tq.NonTransactional,
+		Queue:     ctl.ControlQueue,
+		Handler:   ctl.updateJobStateHandler,
+	})
 }
 
 // tq returns a dispatcher set in Install or panics if not set yet.
@@ -463,11 +497,13 @@ func (ctl *Controller) fanOutShardsHandler(ctx context.Context, payload proto.Me
 	// Enqueue a bunch of named ProcessShard tasks (one per shard) to actually
 	// launch shard processing. This is idempotent operation, so if FanOutShards
 	// crashes midway and later retried, nothing bad happens.
-	tsks := make([]*tq.Task, len(shardIDs))
-	for idx, sid := range shardIDs {
-		tsks[idx] = makeProcessShardTask(job.ID, sid, 0, true)
+	eg, ctx := errgroup.WithContext(ctx)
+	tq := ctl.tq()
+	for _, sid := range shardIDs {
+		task := makeProcessShardTask(job.ID, sid, 0, true)
+		eg.Go(func() error { return tq.AddTask(ctx, task) })
 	}
-	return ctl.tq().AddTask(ctx, tsks...)
+	return eg.Wait()
 }
 
 // processShardHandler reads a bunch of entities (up to PageSize), and hands

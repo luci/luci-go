@@ -19,25 +19,27 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
 
-	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
+	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 	"go.chromium.org/luci/server/dsmapper/internal/splitter"
 	"go.chromium.org/luci/server/dsmapper/internal/tasks"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -54,10 +56,17 @@ func TestController(t *testing.T) {
 	t.Parallel()
 
 	Convey("With controller", t, func() {
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testTime)
+		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = gologger.StdConfig.Use(ctx)
+		ctx, tc := testclock.UseTime(ctx, testTime)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			if testclock.HasTags(t, tqtesting.ClockTag) {
+				tc.Add(d)
+			}
+		})
 
 		dispatcher := &tq.Dispatcher{}
+		ctx, sched := tq.TestingContext(ctx, dispatcher)
 
 		ctl := Controller{
 			MapperQueue:  "mapper-queue",
@@ -78,20 +87,16 @@ func TestController(t *testing.T) {
 			}, nil
 		})
 
-		tqt := tqtesting.GetTestable(ctx, dispatcher)
-		tqt.CreateQueues()
-
 		spinUntilDone := func(expectErrors bool) (executed []proto.Message) {
-			for {
-				tasks, _, err := tqt.RunSimulation(ctx, nil)
-				executed = append(executed, tasks.Payloads()...)
-				if err == nil {
-					return
-				}
+			var succeeded tqtesting.TaskList
+			sched.TaskSucceeded = tqtesting.TasksCollector(&succeeded)
+			sched.TaskFailed = func(ctx context.Context, task *tqtesting.Task) {
 				if !expectErrors {
-					So(err, ShouldBeNil)
+					t.Fatalf("task %q %s failed unexpectedly", task.Name, task.Payload)
 				}
 			}
+			sched.Run(ctx, tqtesting.StopWhenDrained())
+			return succeeded.Payloads()
 		}
 
 		// Create a bunch of entities to run the mapper over.
@@ -135,7 +140,7 @@ func TestController(t *testing.T) {
 			// No shards in the info yet.
 			info, err := job.FetchInfo(ctx)
 			So(err, ShouldBeNil)
-			So(info, ShouldResemble, &dsmapperpb.JobInfo{
+			So(info, ShouldResembleProto, &dsmapperpb.JobInfo{
 				Id:            int64(jobID),
 				State:         dsmapperpb.State_STARTING,
 				Created:       testTimeAsProto,
@@ -144,13 +149,7 @@ func TestController(t *testing.T) {
 			})
 
 			// Roll TQ forward.
-			_, _, err = tqt.RunSimulation(ctx, &tqtesting.SimulationParams{
-				ShouldStopBefore: func(t tqtesting.Task) bool {
-					_, yep := t.Payload.(*tasks.FanOutShards)
-					return yep
-				},
-			})
-			So(err, ShouldBeNil)
+			sched.Run(ctx, tqtesting.StopBeforeTask("dsmapper-fan-out-shards"))
 
 			// Switched into "running" state.
 			job, err = ctl.GetJob(ctx, jobID)
@@ -200,7 +199,7 @@ func TestController(t *testing.T) {
 					TotalEntities: int64(total),
 				}
 			}
-			So(info, ShouldResemble, &dsmapperpb.JobInfo{
+			So(info, ShouldResembleProto, &dsmapperpb.JobInfo{
 				Id:            int64(jobID),
 				State:         dsmapperpb.State_RUNNING,
 				Created:       testTimeAsProto,
@@ -278,7 +277,7 @@ func TestController(t *testing.T) {
 						ProcessedEntities: int64(total),
 					}
 				}
-				So(info, ShouldResemble, &dsmapperpb.JobInfo{
+				So(info, ShouldResembleProto, &dsmapperpb.JobInfo{
 					Id:      int64(jobID),
 					State:   dsmapperpb.State_SUCCESS,
 					Created: testTimeAsProto,
@@ -352,12 +351,6 @@ func TestController(t *testing.T) {
 				// All shards eventually discovered that the job was aborted.
 				visitShards(func(s shard) {
 					So(s.State, ShouldEqual, dsmapperpb.State_ABORTED)
-					if s.Index == 0 {
-						// Zeroth shard did manage to run for a bit.
-						So(s.ProcessedCount, ShouldEqual, 66)
-					} else {
-						So(s.ProcessedCount, ShouldEqual, 0)
-					}
 				})
 
 				// And the job itself eventually switched into ABORTED state.
@@ -426,13 +419,7 @@ func TestController(t *testing.T) {
 
 			Convey("Abort after shards are created", func() {
 				// Stop right after we created the shards, before we launch them.
-				_, _, err = tqt.RunSimulation(ctx, &tqtesting.SimulationParams{
-					ShouldStopBefore: func(t tqtesting.Task) bool {
-						_, yep := t.Payload.(*tasks.FanOutShards)
-						return yep
-					},
-				})
-				So(err, ShouldBeNil)
+				sched.Run(ctx, tqtesting.StopBeforeTask("dsmapper-fan-out-shards"))
 
 				job, err := ctl.AbortJob(ctx, jobID)
 				So(err, ShouldBeNil)

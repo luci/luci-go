@@ -18,10 +18,11 @@ import (
 	"context"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+
+	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 )
 
 // runTxn runs a datastore transaction retrying the body on transient errors or
