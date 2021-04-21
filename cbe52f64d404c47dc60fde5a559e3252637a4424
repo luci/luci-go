@@ -72,6 +72,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "68618e39_88fd6eab",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T22:07:48Z",
+      "side": 1,
+      "message": "How does computing in finalization help?",
+      "parentUuid": "4bc6cbcd_02d5c7b3",
+      "range": {
+        "startLine": 10,
+        "startChar": 21,
+        "endLine": 10,
+        "endChar": 85
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "73673d33_ab0a4f27",
