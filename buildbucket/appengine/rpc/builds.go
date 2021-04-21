@@ -21,9 +21,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 
@@ -85,7 +82,7 @@ func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Mes
 		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
-	return status.Errorf(codes.Unimplemented, "method not implemented")
+	return err
 }
 
 // buildsServicePrelude logs the method name and proto request.
@@ -93,9 +90,6 @@ func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Mes
 // Used to aid in development.
 // TODO(crbug/1042991): Remove once methods are implemented.
 func buildsServicePrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
-	if methodName != "ScheduleBuild" {
-		return ctx, nil
-	}
 	return logDetails(ctx, methodName, req)
 }
 
