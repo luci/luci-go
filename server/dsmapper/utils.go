@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -58,6 +59,6 @@ func runTxn(ctx context.Context, cb func(context.Context) error) error {
 	return nil
 }
 
-func isFinalState(s State) bool {
-	return s == State_SUCCESS || s == State_FAIL || s == State_ABORTED
+func isFinalState(s dsmapperpb.State) bool {
+	return s == dsmapperpb.State_SUCCESS || s == dsmapperpb.State_FAIL || s == dsmapperpb.State_ABORTED
 }

@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package luci.server.dsmapper;
 
-option go_package = "go.chromium.org/luci/server/dsmapper";
+option go_package = "go.chromium.org/luci/server/dsmapper/dsmapperpb";
 
 import "google/protobuf/timestamp.proto";
 

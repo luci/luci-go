@@ -32,8 +32,9 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 
+	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
+	"go.chromium.org/luci/server/dsmapper/internal/splitter"
 	"go.chromium.org/luci/server/dsmapper/internal/tasks"
-	"go.chromium.org/luci/server/dsmapper/splitter"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -126,7 +127,7 @@ func TestController(t *testing.T) {
 			So(job, ShouldResemble, &Job{
 				ID:      jobID,
 				Config:  cfg,
-				State:   State_STARTING,
+				State:   dsmapperpb.State_STARTING,
 				Created: testTime,
 				Updated: testTime,
 			})
@@ -134,9 +135,9 @@ func TestController(t *testing.T) {
 			// No shards in the info yet.
 			info, err := job.FetchInfo(ctx)
 			So(err, ShouldBeNil)
-			So(info, ShouldResemble, &JobInfo{
+			So(info, ShouldResemble, &dsmapperpb.JobInfo{
 				Id:            int64(jobID),
-				State:         State_STARTING,
+				State:         dsmapperpb.State_STARTING,
 				Created:       testTimeAsProto,
 				Updated:       testTimeAsProto,
 				TotalEntities: -1,
@@ -154,7 +155,7 @@ func TestController(t *testing.T) {
 			// Switched into "running" state.
 			job, err = ctl.GetJob(ctx, jobID)
 			So(err, ShouldBeNil)
-			So(job.State, ShouldEqual, State_RUNNING)
+			So(job.State, ShouldEqual, dsmapperpb.State_RUNNING)
 
 			expectedShard := func(id int64, idx int, l, r, expected int64) shard {
 				rng := splitter.Range{}
@@ -168,7 +169,7 @@ func TestController(t *testing.T) {
 					ID:            id,
 					JobID:         jobID,
 					Index:         idx,
-					State:         State_STARTING,
+					State:         dsmapperpb.State_STARTING,
 					Range:         rng,
 					ExpectedCount: expected,
 					Created:       testTime,
@@ -190,22 +191,22 @@ func TestController(t *testing.T) {
 			info, err = job.FetchInfo(ctx)
 			So(err, ShouldBeNil)
 
-			expectedShardInfo := func(idx, total int) *ShardInfo {
-				return &ShardInfo{
+			expectedShardInfo := func(idx, total int) *dsmapperpb.ShardInfo {
+				return &dsmapperpb.ShardInfo{
 					Index:         int32(idx),
-					State:         State_STARTING,
+					State:         dsmapperpb.State_STARTING,
 					Created:       testTimeAsProto,
 					Updated:       testTimeAsProto,
 					TotalEntities: int64(total),
 				}
 			}
-			So(info, ShouldResemble, &JobInfo{
+			So(info, ShouldResemble, &dsmapperpb.JobInfo{
 				Id:            int64(jobID),
-				State:         State_RUNNING,
+				State:         dsmapperpb.State_RUNNING,
 				Created:       testTimeAsProto,
 				Updated:       testTimeAsProto,
 				TotalEntities: 512,
-				Shards: []*ShardInfo{
+				Shards: []*dsmapperpb.ShardInfo{
 					expectedShardInfo(0, 136),
 					expectedShardInfo(1, 132),
 					expectedShardInfo(2, 131),
@@ -251,7 +252,7 @@ func TestController(t *testing.T) {
 				spinUntilDone(false)
 
 				visitShards(func(s shard) {
-					So(s.State, ShouldEqual, State_SUCCESS)
+					So(s.State, ShouldEqual, dsmapperpb.State_SUCCESS)
 					So(s.ProcessTaskNum, ShouldEqual, 2)
 					So(s.ProcessedCount, ShouldEqual, []int64{
 						136, 132, 131, 113,
@@ -262,31 +263,31 @@ func TestController(t *testing.T) {
 
 				job, err = ctl.GetJob(ctx, jobID)
 				So(err, ShouldBeNil)
-				So(job.State, ShouldEqual, State_SUCCESS)
+				So(job.State, ShouldEqual, dsmapperpb.State_SUCCESS)
 
 				info, err := job.FetchInfo(ctx)
 				So(err, ShouldBeNil)
 
-				expectedShardInfo := func(idx, total int) *ShardInfo {
-					return &ShardInfo{
+				expectedShardInfo := func(idx, total int) *dsmapperpb.ShardInfo {
+					return &dsmapperpb.ShardInfo{
 						Index:             int32(idx),
-						State:             State_SUCCESS,
+						State:             dsmapperpb.State_SUCCESS,
 						Created:           testTimeAsProto,
 						Updated:           testTimeAsProto,
 						TotalEntities:     int64(total),
 						ProcessedEntities: int64(total),
 					}
 				}
-				So(info, ShouldResemble, &JobInfo{
+				So(info, ShouldResemble, &dsmapperpb.JobInfo{
 					Id:      int64(jobID),
-					State:   State_SUCCESS,
+					State:   dsmapperpb.State_SUCCESS,
 					Created: testTimeAsProto,
 					// There's 2 sec delay before UpdateJobState task.
 					Updated:           timestamppb.New(testTime.Add(2 * time.Second)),
 					TotalEntities:     512,
 					ProcessedEntities: 512,
 					EntitiesPerSec:    256,
-					Shards: []*ShardInfo{
+					Shards: []*dsmapperpb.ShardInfo{
 						expectedShardInfo(0, 136),
 						expectedShardInfo(1, 132),
 						expectedShardInfo(2, 131),
@@ -314,10 +315,10 @@ func TestController(t *testing.T) {
 
 				visitShards(func(s shard) {
 					if s.Index == 1 {
-						So(s.State, ShouldEqual, State_FAIL)
+						So(s.State, ShouldEqual, dsmapperpb.State_FAIL)
 						So(s.Error, ShouldEqual, `while mapping 33 keys: boom`)
 					} else {
-						So(s.State, ShouldEqual, State_SUCCESS)
+						So(s.State, ShouldEqual, dsmapperpb.State_SUCCESS)
 						So(s.ProcessTaskNum, ShouldEqual, 2)
 					}
 					So(s.ProcessedCount, ShouldEqual, []int64{
@@ -330,7 +331,7 @@ func TestController(t *testing.T) {
 
 				job, err = ctl.GetJob(ctx, jobID)
 				So(err, ShouldBeNil)
-				So(job.State, ShouldEqual, State_FAIL)
+				So(job.State, ShouldEqual, dsmapperpb.State_FAIL)
 			})
 
 			Convey("Job aborted midway", func() {
@@ -341,7 +342,7 @@ func TestController(t *testing.T) {
 
 					job, err = ctl.AbortJob(ctx, jobID)
 					So(err, ShouldBeNil)
-					So(job.State, ShouldEqual, State_ABORTING)
+					So(job.State, ShouldEqual, dsmapperpb.State_ABORTING)
 
 					return nil
 				}
@@ -350,7 +351,7 @@ func TestController(t *testing.T) {
 
 				// All shards eventually discovered that the job was aborted.
 				visitShards(func(s shard) {
-					So(s.State, ShouldEqual, State_ABORTED)
+					So(s.State, ShouldEqual, dsmapperpb.State_ABORTED)
 					if s.Index == 0 {
 						// Zeroth shard did manage to run for a bit.
 						So(s.ProcessedCount, ShouldEqual, 66)
@@ -362,7 +363,7 @@ func TestController(t *testing.T) {
 				// And the job itself eventually switched into ABORTED state.
 				job, err = ctl.GetJob(ctx, jobID)
 				So(err, ShouldBeNil)
-				So(job.State, ShouldEqual, State_ABORTED)
+				So(job.State, ShouldEqual, dsmapperpb.State_ABORTED)
 
 				// Processed 2 pages (instead of 1), since processShardHandler doesn't
 				// check job state inside the processing loop (only at the beginning).
@@ -410,12 +411,12 @@ func TestController(t *testing.T) {
 			// In "starting" state initially.
 			job, err := ctl.GetJob(ctx, jobID)
 			So(err, ShouldBeNil)
-			So(job.State, ShouldEqual, State_STARTING)
+			So(job.State, ShouldEqual, dsmapperpb.State_STARTING)
 
 			Convey("Abort right after start", func() {
 				job, err := ctl.AbortJob(ctx, jobID)
 				So(err, ShouldBeNil)
-				So(job.State, ShouldEqual, State_ABORTED) // aborted right away
+				So(job.State, ShouldEqual, dsmapperpb.State_ABORTED) // aborted right away
 
 				// Didn't actually launch any shards.
 				So(spinUntilDone(false), ShouldResembleProto, []proto.Message{
@@ -435,20 +436,20 @@ func TestController(t *testing.T) {
 
 				job, err := ctl.AbortJob(ctx, jobID)
 				So(err, ShouldBeNil)
-				So(job.State, ShouldEqual, State_ABORTING) // waits for shards to die
+				So(job.State, ShouldEqual, dsmapperpb.State_ABORTING) // waits for shards to die
 
 				spinUntilDone(false)
 
 				job, err = ctl.AbortJob(ctx, jobID)
 				So(err, ShouldBeNil)
-				So(job.State, ShouldEqual, State_ABORTED) // all shards are dead now
+				So(job.State, ShouldEqual, dsmapperpb.State_ABORTED) // all shards are dead now
 
 				// Dead indeed.
 				info, err := job.FetchInfo(ctx)
 				So(err, ShouldBeNil)
 				So(info.Shards, ShouldHaveLength, 4)
 				for _, s := range info.Shards {
-					So(s.State, ShouldEqual, State_ABORTED)
+					So(s.State, ShouldEqual, dsmapperpb.State_ABORTED)
 				}
 			})
 		})
