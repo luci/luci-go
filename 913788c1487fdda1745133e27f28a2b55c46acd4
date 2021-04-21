@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d3ac4253_ac3d278c",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T19:05:12Z",
+      "side": 1,
+      "message": "what\u0027s the reason that MaxBatchable reuses the value of MaxBatchableArtifactSize? That means the maximum size of a batch will be the minimum size of a streamed artifact, why\u0027s that?",
+      "range": {
+        "startLine": 155,
+        "startChar": 20,
+        "endLine": 155,
+        "endChar": 44
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
