@@ -132,6 +132,10 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 										Value: []string{"egg", "rooster"},
 									},
 								},
+								InputsRef: &swarming.SwarmingRpcsFilesRef{
+									Isolatedserver: "server-url",
+									Namespace:      "chicken-files",
+								},
 								CasInputRoot: &swarming.SwarmingRpcsCASReference{
 									CasInstance: "CAS-instance",
 								},
