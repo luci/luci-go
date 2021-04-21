@@ -16,6 +16,24 @@
       "message": "this wasn\u0027t used? I don\u0027t see removal of usages.",
       "revId": "7c5c07ea24f0cfcd15a4eddf0ec8e8874f996874",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c5ae68b_c6872e7f",
+        "filename": "milo/frontend/resultui/src/routes.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-21T21:19:37Z",
+      "side": 0,
+      "message": "It was used in test_diff_artifact.ts:L58.\nI removed it because the path is conditional, the path name should not be used to generate the URL.",
+      "parentUuid": "941dbe67_731a86d3",
+      "revId": "7c5c07ea24f0cfcd15a4eddf0ec8e8874f996874",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
