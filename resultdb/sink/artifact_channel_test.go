@@ -31,32 +31,122 @@ func TestArtifactChannel(t *testing.T) {
 	t.Parallel()
 
 	Convey("schedule", t, func() {
-		name := "invocations/inv/artifacts/art1"
-		ctx := context.Background()
 		cfg := testServerConfig("127.0.0.1:123", "secret")
-		reqCh := make(chan *http.Request, 1)
+		ctx := context.Background()
+
+		streamCh := make(chan *http.Request, 10)
 		cfg.ArtifactStreamClient.Transport = mockTransport(
-			func(req *http.Request) (*http.Response, error) {
-				reqCh <- req
+			func(in *http.Request) (*http.Response, error) {
+				streamCh <- in
 				return &http.Response{StatusCode: http.StatusNoContent}, nil
 			},
 		)
+		batchCh := make(chan *pb.BatchCreateArtifactsRequest, 10)
+		cfg.Recorder.(*mockRecorder).batchCreateArtifacts = func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
+			batchCh <- in
+			return nil, nil
+		}
+		createTask := func(name, content string) *uploadTask {
+			art := testArtifactWithContents([]byte(content))
+			task, err := newUploadTask(name, art)
+			So(err, ShouldBeNil)
+			return task
+		}
 
-		task, err := newUploadTask(name, testArtifactWithContents([]byte("content")))
-		So(err, ShouldBeNil)
+		Convey("with a small artifact", func() {
+			task := createTask("invocations/inv/artifacts/art1", "content")
+			ac := newArtifactChannel(ctx, &cfg)
+			ac.schedule(task)
+			ac.closeAndDrain(ctx)
 
-		ac := newArtifactChannel(ctx, &cfg)
-		ac.schedule(task)
-		ac.closeAndDrain(ctx)
-		req := <-reqCh
-		So(req, ShouldNotBeNil)
+			// The artifact should have been sent to the batch channel.
+			So(<-batchCh, ShouldResembleProto, &pb.BatchCreateArtifactsRequest{
+				Requests: []*pb.CreateArtifactRequest{{
+					Parent: "invocations/inv",
+					Artifact: &pb.Artifact{
+						ArtifactId:  "art1",
+						ContentType: task.art.ContentType,
+						SizeBytes:   int64(len("content")),
+						Contents:    []byte("content"),
+					},
+				}},
+			})
+		})
 
-		// verify the request sent
-		So(req.URL.String(), ShouldEqual, "https://"+cfg.ArtifactStreamHost+"/"+name)
-		body, err := ioutil.ReadAll(req.Body)
-		So(err, ShouldBeNil)
-		So(body, ShouldResemble, []byte("content"))
+		Convey("with multiple, small artifacts", func() {
+			cfg.MaxBatchableArtifactSize = 10
+			ac := newArtifactChannel(ctx, &cfg)
+
+			t1 := createTask("invocations/inv/artifacts/art1", "1234")
+			t2 := createTask("invocations/inv/artifacts/art2", "5678")
+			t3 := createTask("invocations/inv/artifacts/art3", "9012")
+			ac.schedule(t1)
+			ac.schedule(t2)
+			ac.schedule(t3)
+			ac.closeAndDrain(ctx)
+
+			// The 1st request should contain the first two artifacts.
+			So(<-batchCh, ShouldResembleProto, &pb.BatchCreateArtifactsRequest{
+				Requests: []*pb.CreateArtifactRequest{
+					// art1
+					{
+						Parent: "invocations/inv",
+						Artifact: &pb.Artifact{
+							ArtifactId:  "art1",
+							ContentType: t1.art.ContentType,
+							SizeBytes:   int64(len("1234")),
+							Contents:    []byte("1234"),
+						},
+					},
+					// art2
+					{
+						Parent: "invocations/inv",
+						Artifact: &pb.Artifact{
+							ArtifactId:  "art2",
+							ContentType: t2.art.ContentType,
+							SizeBytes:   int64(len("5678")),
+							Contents:    []byte("5678"),
+						},
+					},
+				},
+			})
+
+			// The 2nd request should only contain the last one.
+			So(<-batchCh, ShouldResembleProto, &pb.BatchCreateArtifactsRequest{
+				Requests: []*pb.CreateArtifactRequest{
+					// art3
+					{
+						Parent: "invocations/inv",
+						Artifact: &pb.Artifact{
+							ArtifactId:  "art3",
+							ContentType: t3.art.ContentType,
+							SizeBytes:   int64(len("9012")),
+							Contents:    []byte("9012"),
+						},
+					},
+				},
+			})
+		})
+
+		Convey("with a large artifact", func() {
+			cfg.MaxBatchableArtifactSize = 10
+			ac := newArtifactChannel(ctx, &cfg)
+
+			t1 := createTask("invocations/inv/artifacts/art1", "content-foo-bar")
+			ac.schedule(t1)
+			ac.closeAndDrain(ctx)
+
+			// The artifact should have been sent to the stream channel.
+			req := <-streamCh
+			So(req, ShouldNotBeNil)
+			So(req.URL.String(), ShouldEqual,
+				"https://"+cfg.ArtifactStreamHost+"/invocations/inv/artifacts/art1")
+			body, err := ioutil.ReadAll(req.Body)
+			So(err, ShouldBeNil)
+			So(body, ShouldResemble, []byte("content-foo-bar"))
+		})
 	})
+
 }
 
 func TestUploadTask(t *testing.T) {
