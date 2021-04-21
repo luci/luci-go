@@ -96,6 +96,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "59561ca3_64ab5624",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T22:58:14Z",
+      "side": 1,
+      "message": "So that build invocations can also have CommonTestIDPrefix and TestResultVariantUnion populated. Then we can filter invocations in ByTimestamp (so https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2836493 can be reverted). And then we\u0027ll have fewer invocations to fetch reachables and query test results.",
+      "parentUuid": "68618e39_88fd6eab",
+      "range": {
+        "startLine": 10,
+        "startChar": 21,
+        "endLine": 10,
+        "endChar": 85
+      },
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "73673d33_ab0a4f27",
