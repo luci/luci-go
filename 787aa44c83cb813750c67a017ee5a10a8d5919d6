@@ -456,6 +456,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "aa21d6f8_cc390975",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T21:01:35Z",
+      "side": 1,
+      "message": "yeah, this sounds reasonable. Let\u0027s ship what we can, while dispatcher is being improved.\n\nI looked at the code in this line. It looks smart and seems incorrect: the error is ignored because r is nil. Can the code be simpler? Simpler code has lower chances of being buggy.",
+      "parentUuid": "d5f6757d_29751b1d",
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d2861032_ffcdaab4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 4

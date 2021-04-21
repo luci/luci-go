@@ -70,6 +70,132 @@
       },
       "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca0a95d5_1965638d",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T21:01:35Z",
+      "side": 1,
+      "message": "nit: overall, not sure why we need a stateful struct for this.\nSeems like all we need is a function that takes []*uploadTask and returns []*BatchCreateArtifactsRequest. We can store the returned slice in b.Meta. Each time we upload a request, pop the first batch-req and move on.",
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "77f7f38c_e5427759",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T21:01:35Z",
+      "side": 1,
+      "message": "do we really need pos? seems like we could\n\n  tasks \u003d tasks[processed:]",
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6cc43f0d_2e04f02f",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T21:01:35Z",
+      "side": 1,
+      "message": "did you mean CreateRequest?\n\nusually the annotation contains info that the callsite doesn\u0027t know. They already know that this is BatchCreateRequest.",
+      "range": {
+        "startLine": 183,
+        "startChar": 37,
+        "endLine": 183,
+        "endChar": 55
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "225f7120_00c5c15c",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T21:01:35Z",
+      "side": 1,
+      "message": "\u003e\u003d",
+      "range": {
+        "startLine": 191,
+        "startChar": 53,
+        "endLine": 191,
+        "endChar": 54
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9cda1367_58304246",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T21:01:35Z",
+      "side": 1,
+      "message": "is there a reason this isn\u0027t standard `err`?",
+      "range": {
+        "startLine": 217,
+        "startChar": 8,
+        "endLine": 217,
+        "endChar": 9
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d2c41c8_780c5393",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T21:01:35Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be an error?\n\nalso shouldn\u0027t this check be in cfg.Validate()",
+      "range": {
+        "startLine": 211,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 4
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
