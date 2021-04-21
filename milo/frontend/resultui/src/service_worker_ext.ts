@@ -77,7 +77,7 @@ _self.addEventListener('fetch', async (e) => {
     e.respondWith(
       (async () => {
         const authState = await getAuthState();
-        return new Response(`CACHED_AUTH_STATE=${JSON.stringify(authState)};`, {
+        return new Response(`const CACHED_AUTH_STATE=${JSON.stringify(authState)};`, {
           headers: { 'content-type': 'application/javascript' },
         });
       })()
@@ -86,7 +86,7 @@ _self.addEventListener('fetch', async (e) => {
 
   // Ensure all clients served by this service worker use the same config.
   if (url.pathname === '/configs.js') {
-    const res = new Response(`var CONFIGS=${JSON.stringify(CONFIGS)};`);
+    const res = new Response(`const CONFIGS=${JSON.stringify(CONFIGS)};`);
     res.headers.set('content-type', 'application/javascript');
     e.respondWith(res);
   }
