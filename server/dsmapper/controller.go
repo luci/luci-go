@@ -89,7 +89,7 @@ type Factory func(ctx context.Context, j *Job, shardIdx int) (Mapper, error)
 // each other since they use global datastore namespace). It's still useful
 // to instantiate multiple controllers in unit tests.
 type Controller struct {
-	// MapperQueue is a name of the GAE task queue to use for mapping jobs.
+	// MapperQueue is a name of the Cloud Tasks queue to use for mapping jobs.
 	//
 	// This queue will perform all "heavy" tasks. It should be configured
 	// appropriately to allow desired number of shards to run in parallel.
@@ -102,7 +102,7 @@ type Controller struct {
 	// If empty, "default" is used.
 	MapperQueue string
 
-	// ControlQueue is a name of the GAE task queue to use for control signals.
+	// ControlQueue is a name of the Cloud Tasks queue to use for control signals.
 	//
 	// This queue is used very lightly when starting and stopping jobs (roughly
 	// 2*Shards tasks overall per job). A default queue.yaml settings for such
@@ -755,7 +755,7 @@ func (ctl *Controller) requestJobStateUpdateHandler(ctx context.Context, payload
 	msg := payload.(*tasks.RequestJobStateUpdate)
 
 	// Throttle to once per 2 sec (and make sure it is always in the future). We
-	// rely here on a pretty good (< .5s maximum skew) clock sync on GAE.
+	// rely here on a pretty good (< .5s maximum skew) clock sync on servers.
 	eta := clock.Now(ctx).Unix()
 	eta = (eta/2 + 1) * 2
 	dedupKey := fmt.Sprintf("update-job-state-v1:%d:%d", msg.JobId, eta)
