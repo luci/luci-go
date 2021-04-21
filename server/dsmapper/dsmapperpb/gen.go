@@ -14,4 +14,4 @@
 
 //go:generate cproto
 
-package dsmapper
+package dsmapperpb
