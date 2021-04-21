@@ -102,6 +102,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ae7a4c75_c07ebe4b",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T00:30:56Z",
+      "side": 1,
+      "message": "still blocked. Do we need this call?",
+      "parentUuid": "8c10b259_9460d2ac",
+      "revId": "cbe52f64d404c47dc60fde5a559e3252637a4424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "32e0849a_d335ec4b",
         "filename": "resultdb/internal/invocations/history.go",
         "patchSetId": 1

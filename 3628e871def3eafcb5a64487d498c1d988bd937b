@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e457df9_6d828458",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T00:30:56Z",
+      "side": 1,
+      "message": "CL message is stale",
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "95bbabb8_4b1ec6cc",
+        "filename": "resultdb/internal/invocations/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T00:30:56Z",
+      "side": 1,
+      "message": "do we still need this func?",
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c54d34f_6f8121d9",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T00:30:56Z",
+      "side": 1,
+      "message": "`re` is validated in QueryTestResults, but this package is used in other places too. In those cases, this code might panic.\n\nShould we use regexp.Compile and return an error?",
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb75cbf6_2896794f",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T00:30:56Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 295,
+        "startChar": 0,
+        "endLine": 299,
+        "endChar": 2
+      },
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0db6515_50aca294",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T00:30:56Z",
+      "side": 1,
+      "message": "what if it is NULL because the inv is old?",
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c2089d8_df62e71c",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T00:30:56Z",
+      "side": 1,
+      "message": "the order of join between TestResults and variantsWithUnexpectedResults was changed. Note that the prev order was intentional and it even has a hint `FORCE_JOIN_ORDER\u003dTRUE`\n\ndoes this change performance? if not, maybe FORCE_JOIN_ORDER is incorrect?",
+      "range": {
+        "startLine": 367,
+        "startChar": 30,
+        "endLine": 368,
+        "endChar": 69
+      },
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "41ba12c0_b3eba1f0",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T00:30:56Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 396,
+        "startChar": 3,
+        "endLine": 396,
+        "endChar": 12
+      },
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
