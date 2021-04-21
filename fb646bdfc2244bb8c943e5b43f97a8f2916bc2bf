@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b30e0936_a5280b72",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-21T21:54:53Z",
+      "side": 1,
+      "message": "Previously, I thought variable declared with \"const\" could not be accessed in other scripts. This is not true.\n",
+      "revId": "fb646bdfc2244bb8c943e5b43f97a8f2916bc2bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
