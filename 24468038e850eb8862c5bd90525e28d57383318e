@@ -16,6 +16,24 @@
       "message": "I am curious why this comment was removed. It seems still relevant here (the 500 is specified here)",
       "revId": "24468038e850eb8862c5bd90525e28d57383318e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a01ea6f_45a82afb",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 0,
+      "message": "It no longer has to be \u003c\u003d 500, as uploadTaskSlicer() can slice tasks by 500.\nI added back the comment with additional descriptions. PTAL",
+      "parentUuid": "71183309_d4b11ee8",
+      "revId": "24468038e850eb8862c5bd90525e28d57383318e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb44ff38_fb95ebce",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6c94404_4640b47e",
+      "range": {
+        "startLine": 44,
+        "startChar": 4,
+        "endLine": 44,
+        "endChar": 8
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ac8d5cfe_dc36ab81",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-04-20T18:41:10Z",
       "side": 1,
       "message": "MaxBatchableArtifactSize is the maximum size of an artifact that can be batched, right? And it\u0027s also used here as the maximum size of a batch?\n\nOh this should be maxBatchable?",
+      "range": {
+        "startLine": 153,
+        "startChar": 6,
+        "endLine": 153,
+        "endChar": 30
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "532f5c52_8af779ad",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "Yes, it should be maxBatchable; fixed.",
+      "parentUuid": "ac8d5cfe_dc36ab81",
       "range": {
         "startLine": 153,
         "startChar": 6,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "596e7e19_702bdf55",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "updated.",
+      "parentUuid": "74f7b711_860998a8",
+      "range": {
+        "startLine": 159,
+        "startChar": 32,
+        "endLine": 159,
+        "endChar": 72
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c42c2c9b_def2b049",
@@ -100,6 +172,30 @@
       "writtenOn": "2021-04-20T17:25:17Z",
       "side": 1,
       "message": "there is no such symbol",
+      "range": {
+        "startLine": 160,
+        "startChar": 8,
+        "endLine": 160,
+        "endChar": 36
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ddb27762_788eb02f",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "c42c2c9b_def2b049",
       "range": {
         "startLine": 160,
         "startChar": 8,
@@ -133,6 +229,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "34803f06_936a7547",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "removed.",
+      "parentUuid": "1a391a44_9b293fb2",
+      "range": {
+        "startLine": 166,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 52
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2c288e84_0e0dc9be",
@@ -156,6 +276,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d0408ee_98e5a22b",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "uploadTaskSlicer handles a leased dispatcher.buffer.Batch{}, and Dispatcher doesn\u0027t add new items to a leased Batch{}. New items are added to unleased Batch{}es.",
+      "parentUuid": "2c288e84_0e0dc9be",
+      "range": {
+        "startLine": 176,
+        "startChar": 1,
+        "endLine": 179,
+        "endChar": 2
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6e654856_604fc72c",
@@ -169,6 +313,30 @@
       "writtenOn": "2021-04-20T18:41:10Z",
       "side": 1,
       "message": "So processed artifacts will be kept in buffer, right?",
+      "range": {
+        "startLine": 200,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 19
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f08a9a33_41528691",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "Processed artifacts will continue being referenced in the leased batch.Data, but they all will be de-referenced when the dispatcher batch is successfully processed.",
+      "parentUuid": "6e654856_604fc72c",
       "range": {
         "startLine": 200,
         "startChar": 1,
@@ -270,6 +438,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d5f6757d_29751b1d",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "I believe that most of the artifacts are small enough such that sum(500 of arts) will likely be \u003c 2MiB.  Even if the total size was \u003e 2MiB such that arfiactUploader.BatchUpload() calls 2 consecutive calls for each dispatcher batch, I think it\u0027s a still huge win, compared to StreamUpload().\n\nBatchCreateArtifacts(450 artifacts) + BatchCreateArtifacts(50 artifacts) vs 500 * StreamUpload()s.\n\nDispatcher with size limit sounds nice and I know Robbie is working on implementing the feature. However, as I described above, there are other factors, like BatchDuration and MaxLeases in dispatcher options, and it\u0027s not super clear that the overall performance will be greatly improved by dispatcher with size limit.\n\nhttps://paste.googleplex.com/5242766629011456 shows that result_adapter performed +5x better with BatchUpload. I\u0027d like to push this CL to enable BatchArtifactUploads in sink first, and then remove uploadTaskSlicer{} once size limit is supported in Dispatcher.\n\nWDYT?",
+      "parentUuid": "8711031c_110d9d08",
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d2861032_ffcdaab4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 4
@@ -281,6 +467,30 @@
       "writtenOn": "2021-04-20T17:25:17Z",
       "side": 1,
       "message": "public doc should not mention private impl details.",
+      "range": {
+        "startLine": 136,
+        "startChar": 4,
+        "endLine": 136,
+        "endChar": 16
+      },
+      "revId": "787aa44c83cb813750c67a017ee5a10a8d5919d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a87edb6_d7ff16e0",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T18:21:53Z",
+      "side": 1,
+      "message": "updated. PTAL",
+      "parentUuid": "d2861032_ffcdaab4",
       "range": {
         "startLine": 136,
         "startChar": 4,
