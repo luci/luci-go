@@ -93,6 +93,10 @@
 // scheme for HTTP routes based on encrypted cookies and user sessions in
 // some session store.
 //
+// • go.chromium.org/luci/server/dsmapper: provides a way to apply some function
+// to all datastore entities of some particular kind, in parallel, distributing
+// work via Cloud Tasks.
+//
 // • go.chromium.org/luci/server/gaeemulation: implements
 // go.chromium.org/luci/gae Datastore interface via Google Cloud Datastore API.
 // Named so because because it enables migration of GAEv1 apps to GAEv2 without
