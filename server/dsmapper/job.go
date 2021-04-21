@@ -18,14 +18,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 	"go.chromium.org/luci/server/dsmapper/internal/splitter"
@@ -324,7 +324,7 @@ type shard struct {
 // info returns a proto message with information about the shard.
 func (s *shard) info() *dsmapperpb.ShardInfo {
 	var rate float64
-	var eta *timestamp.Timestamp
+	var eta *timestamppb.Timestamp
 
 	if runtime := s.Updated.Sub(s.Created); runtime > 0 {
 		rate = float64(s.ProcessedCount) / runtime.Seconds()
