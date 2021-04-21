@@ -151,6 +151,42 @@ func validateNotificationConfig(n *pb.NotificationConfig) error {
 	}
 }
 
+// prohibitedProperties is used to prohibit properties from being set (see
+// validateProperties). Contains slices of path components forming a prohibited
+// path. For example, to prohibit a property "a.b", add an element ["a", "b"].
+var prohibitedProperties = [][]string{
+	{"$recipe_engine/buildbucket"},
+	{"$recipe_engine/runtime", "is_experimental"},
+	{"$recipe_engine/runtime", "is_luci"},
+	{"branch"},
+	{"buildbucket"},
+	{"buildername"},
+	{"repository"},
+}
+
+// structContains returns whether the struct contains a value at the given path.
+// An empty slice of path components always returns true.
+func structContains(s *structpb.Struct, path []string) bool {
+	for _, p := range path {
+		v, ok := s.GetFields()[p]
+		if !ok {
+			return false
+		}
+		s = v.GetStructValue()
+	}
+	return true
+}
+
+// validateProperties validates the given properties.
+func validateProperties(p *structpb.Struct) error {
+	for _, path := range prohibitedProperties {
+		if structContains(p, path) {
+			return errors.Reason("%q must not be specified", strings.Join(path, ".")).Err()
+		}
+	}
+	return nil
+}
+
 // validateSchedule validates the given request.
 func validateSchedule(req *pb.ScheduleBuildRequest) error {
 	var err error
@@ -173,6 +209,8 @@ func validateSchedule(req *pb.ScheduleBuildRequest) error {
 		return errors.Annotate(err, "notify").Err()
 	case req.Priority < 0 || req.Priority > 255:
 		return errors.Reason("priority must be in [0, 255]").Err()
+	case req.Properties != nil && teeErr(validateProperties(req.Properties), &err) != nil:
+		return errors.Annotate(err, "properties").Err()
 	case teeErr(validateTags(req.Tags, TagNew), &err) != nil:
 		return errors.Annotate(err, "tags").Err()
 	}
