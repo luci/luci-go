@@ -310,52 +310,6 @@ func TestMethod(t *testing.T) {
 	})
 }
 
-func TestNormalizeURL(t *testing.T) {
-	t.Parallel()
-
-	Convey("Normalizes good URLs", t, func(ctx C) {
-		cases := []struct {
-			in  string
-			out string
-		}{
-			{"", "/"},
-			{"/", "/"},
-			{"/?asd=def#blah", "/?asd=def#blah"},
-			{"/abc/def", "/abc/def"},
-			{"/blah//abc///def/", "/blah/abc/def/"},
-			{"/blah/..//./abc/", "/abc/"},
-			{"/abc/%2F/def", "/abc/def"},
-		}
-		for _, c := range cases {
-			out, err := normalizeURL(c.in)
-			if err != nil {
-				ctx.Printf("Failed while checking %q\n", c.in)
-				So(err, ShouldBeNil)
-			}
-			So(out, ShouldEqual, c.out)
-		}
-	})
-
-	Convey("Rejects bad URLs", t, func(ctx C) {
-		cases := []string{
-			"//",
-			"///",
-			"://",
-			":",
-			"http://another/abc/def",
-			"abc/def",
-			"//host.example.com",
-		}
-		for _, c := range cases {
-			_, err := normalizeURL(c)
-			if err == nil {
-				ctx.Printf("Didn't fail while testing %q\n", c)
-			}
-			So(err, ShouldNotBeNil)
-		}
-	})
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 const (
