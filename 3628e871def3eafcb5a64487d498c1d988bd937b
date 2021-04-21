@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f3c8c77_fec05a2b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T01:28:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e457df9_6d828458",
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "95bbabb8_4b1ec6cc",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb56378a_cbdf6840",
+        "filename": "resultdb/internal/invocations/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T01:28:46Z",
+      "side": 1,
+      "message": "No we don\u0027t.",
+      "parentUuid": "95bbabb8_4b1ec6cc",
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8c54d34f_6f8121d9",
@@ -48,6 +84,24 @@
       "writtenOn": "2021-04-21T00:30:56Z",
       "side": 1,
       "message": "`re` is validated in QueryTestResults, but this package is used in other places too. In those cases, this code might panic.\n\nShould we use regexp.Compile and return an error?",
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab96bd56_8a992a5d",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T01:28:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c54d34f_6f8121d9",
       "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -75,6 +129,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "157d74db_cdd1a265",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T01:28:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb75cbf6_2896794f",
+      "range": {
+        "startLine": 295,
+        "startChar": 0,
+        "endLine": 299,
+        "endChar": 2
+      },
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f0db6515_50aca294",
@@ -88,6 +166,24 @@
       "writtenOn": "2021-04-21T00:30:56Z",
       "side": 1,
       "message": "what if it is NULL because the inv is old?",
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c535c21_60d3f5ce",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T01:28:46Z",
+      "side": 1,
+      "message": "I thought thought it may be fine because there\u0027re no regular usages on QueryTestResults now (UI is using QueryTestVariant).\n\nAdded NULL check with a cut-off date.",
+      "parentUuid": "f0db6515_50aca294",
       "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -115,6 +211,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "587bc8cf_3926eed3",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T01:28:46Z",
+      "side": 1,
+      "message": "Retrieving one page of test results using this version of query is slightly faster than the version without (23 ms vs 28ms).\n\nBut I noticed that the returned results are also slightly different. the directive is removed.",
+      "parentUuid": "8c2089d8_df62e71c",
+      "range": {
+        "startLine": 367,
+        "startChar": 30,
+        "endLine": 368,
+        "endChar": 69
+      },
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "41ba12c0_b3eba1f0",
@@ -128,6 +248,30 @@
       "writtenOn": "2021-04-21T00:30:56Z",
       "side": 1,
       "message": "?",
+      "range": {
+        "startLine": 396,
+        "startChar": 3,
+        "endLine": 396,
+        "endChar": 12
+      },
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ba13ff6_d1940eaa",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T01:28:46Z",
+      "side": 1,
+      "message": "This is basically a placeholder when there\u0027s no extra where clause, so that  testIDAndVariantFilter can always start with \"AND\".\n\nAdded a comment.",
+      "parentUuid": "41ba12c0_b3eba1f0",
       "range": {
         "startLine": 396,
         "startChar": 3,
