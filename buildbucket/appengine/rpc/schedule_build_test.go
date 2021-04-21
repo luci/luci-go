@@ -3939,6 +3939,88 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
+	Convey("structContains", t, func() {
+		Convey("nil", func() {
+			So(structContains(nil, nil), ShouldBeTrue)
+		})
+
+		Convey("nil struct", func() {
+			path := []string{"path"}
+			So(structContains(nil, path), ShouldBeFalse)
+		})
+
+		Convey("nil path", func() {
+			s := &structpb.Struct{}
+			So(structContains(s, nil), ShouldBeTrue)
+		})
+
+		Convey("one component", func() {
+			s := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"key": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: "value",
+						},
+					},
+				},
+			}
+			path := []string{"key"}
+			So(structContains(s, path), ShouldBeTrue)
+		})
+
+		Convey("many components", func() {
+			s := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"key1": {
+						Kind: &structpb.Value_StructValue{
+							StructValue: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"key2": {
+										Kind: &structpb.Value_StructValue{
+											StructValue: &structpb.Struct{
+												Fields: map[string]*structpb.Value{
+													"key3": {
+														Kind: &structpb.Value_StringValue{
+															StringValue: "value",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			path := []string{"key1", "key2", "key3"}
+			So(structContains(s, path), ShouldBeTrue)
+		})
+
+		Convey("excess component", func() {
+			s := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"key1": {
+						Kind: &structpb.Value_StructValue{
+							StructValue: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"key2": {
+										Kind: &structpb.Value_StringValue{
+											StringValue: "value",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			path := []string{"key1"}
+			So(structContains(s, path), ShouldBeTrue)
+		})
+	})
+
 	Convey("validateSchedule", t, func() {
 		Convey("nil", func() {
 			err := validateSchedule(nil)
@@ -4370,6 +4452,38 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				err := validateSchedule(req)
 				So(err, ShouldErrLike, "priority must be in")
+			})
+		})
+
+		Convey("properties", func() {
+			Convey("prohibited", func() {
+				req := &pb.ScheduleBuildRequest{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"buildbucket": {
+								Kind: &structpb.Value_StringValue{},
+							},
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldErrLike, "must not be specified")
+			})
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key": {
+								Kind: &structpb.Value_StringValue{},
+							},
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req)
+				So(err, ShouldBeNil)
 			})
 		})
 
