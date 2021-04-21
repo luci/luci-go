@@ -35,7 +35,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
     const search = new URLSearchParams();
     search.set('actual_artifact_id', this.actual.artifactId);
     search.set('expected_artifact_id', this.expected.artifactId);
-    return `${router.urlForName('image-diff-artifact', { artifact_name: this.diff.name })}?${search}`;
+    return `${router.urlForName('artifact')}/image-diff/${this.diff.name}?${search}`;
   }
 
   protected render() {

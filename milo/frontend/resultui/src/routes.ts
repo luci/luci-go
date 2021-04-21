@@ -177,6 +177,7 @@ router.setRoutes({
     },
     {
       path: '/artifact',
+      name: 'artifact',
       action: async (_ctx, cmd) => {
         await import(
           /* webpackChunkName: "artifact_page" */
@@ -187,7 +188,6 @@ router.setRoutes({
       children: [
         {
           path: '/text-diff/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
-          name: 'text-diff-artifact',
           action: async (_ctx, cmd) => {
             await import(
               /* webpackChunkName: "text_diff_artifact_page" */
@@ -198,7 +198,6 @@ router.setRoutes({
         },
         {
           path: '/image-diff/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
-          name: 'image-diff-artifact',
           action: async (_ctx, cmd) => {
             await import(
               /* webpackChunkName: "image_diff_artifact_page" */
@@ -209,7 +208,6 @@ router.setRoutes({
         },
         {
           path: '/raw/invocations/:inv_id/(tests)?/:test_id?/(results)?/:result_id?/artifacts/:artifact_id',
-          name: 'raw-artifact',
           action: async (_ctx, cmd) => {
             await import(
               /* webpackChunkName: "raw_artifact_page" */
