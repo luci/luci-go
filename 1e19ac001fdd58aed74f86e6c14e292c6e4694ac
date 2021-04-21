@@ -97,6 +97,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e5c7aa80_ba894fe6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-21T02:13:37Z",
+      "side": 1,
+      "message": "I don\u0027t think HTML works: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/73/2830173/9/lucicfg/doc/README.md#resultdb.test_presentation. Maybe remove HTML and just use `...` to quote code fragments or something. It\u0027s not super important.",
+      "parentUuid": "c1287298_cdce3839",
+      "range": {
+        "startLine": 270,
+        "startChar": 4,
+        "endLine": 270,
+        "endChar": 8
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c390c23a_3c61c9a7",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 7
@@ -320,6 +344,30 @@
       "side": 1,
       "message": "I\u0027m not sure how to make luci.builder.defaults.test_presentation.set(...) work. Could you give me some idea?",
       "parentUuid": "96bac3cf_463047be",
+      "range": {
+        "startLine": 394,
+        "startChar": 9,
+        "endLine": 394,
+        "endChar": 26
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e547399_50b4178e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-21T02:13:37Z",
+      "side": 1,
+      "message": "I think the problem is that resultdb.validate_test_presentation(None) returns non-None. It makes the loop on line 257 treat it as a real defined value and not use the default from default.properties.\n\nI think the simplest approach would be to skip validation is test_presentation is None, to allow the merge loop to correct realize the value is missing:\n\n  if test_presentation !\u003d None:\n    test_presentation \u003d resultdb.validate_test_presentation(...)\n\n  props \u003d {\n    ...\n    \"test_presentation\" test_presentation\n  }\n\n  ...\n\n  if test_presentation and test_presentation !\u003d resultdb.test_presentation():\n     ...",
+      "parentUuid": "bc51e07f_3fbc5ecb",
       "range": {
         "startLine": 394,
         "startChar": 9,
