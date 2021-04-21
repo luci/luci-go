@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e696925f_9997788f",
+        "filename": "resultdb/internal/history/history_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T20:53:32Z",
+      "side": 1,
+      "message": "Yes some tests in this file are matching test results with variant predicate. So the results will be affected by the testresults query change.",
+      "parentUuid": "4a0430d3_775899ba",
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d8031de5_b3591e05",
@@ -81,6 +99,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a715a52_c58544e2",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T20:53:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d16fcd85_4ad2f8d6",
+      "range": {
+        "startLine": 334,
+        "startChar": 57,
+        "endLine": 334,
+        "endChar": 84
+      },
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62a2d94d_82783247",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T20:53:32Z",
+      "side": 1,
+      "message": "That\u0027s a great catch! Thanks!",
+      "parentUuid": "d8031de5_b3591e05",
+      "range": {
+        "startLine": 334,
+        "startChar": 5,
+        "endLine": 334,
+        "endChar": 7
+      },
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6d037710_b086a859",
@@ -94,6 +160,30 @@
       "writtenOn": "2021-04-21T03:23:01Z",
       "side": 1,
       "message": "TRUE",
+      "range": {
+        "startLine": 405,
+        "startChar": 9,
+        "endLine": 405,
+        "endChar": 12
+      },
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27180904_7b6cc3ca",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T20:53:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d037710_b086a859",
       "range": {
         "startLine": 405,
         "startChar": 9,

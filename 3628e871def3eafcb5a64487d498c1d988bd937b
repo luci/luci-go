@@ -259,6 +259,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc363402_5dd9c6b6",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-21T20:53:32Z",
+      "side": 1,
+      "message": "I ran some Spanner queries on luci-resultdb-dev and the results looked good to me. But yeah after I roll it to canary, I\u0027ll compare canary results with stable results to make sure.",
+      "parentUuid": "4d50b9eb_ca436267",
+      "range": {
+        "startLine": 367,
+        "startChar": 30,
+        "endLine": 368,
+        "endChar": 69
+      },
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "41ba12c0_b3eba1f0",
