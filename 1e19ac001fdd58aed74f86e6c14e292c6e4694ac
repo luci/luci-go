@@ -143,6 +143,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0102c6d3_8b41c1a3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-21T03:30:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f5ab13e5_f7600c53",
+      "range": {
+        "startLine": 270,
+        "startChar": 4,
+        "endLine": 270,
+        "endChar": 8
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c390c23a_3c61c9a7",
