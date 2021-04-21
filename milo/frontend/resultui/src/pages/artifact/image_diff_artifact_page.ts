@@ -89,7 +89,7 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
   }
 
   @computed get isLoading() {
-    return this.expectedArtifact || !this.actualArtifact || !this.diffArtifact;
+    return !this.expectedArtifact || !this.actualArtifact || !this.diffArtifact;
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
