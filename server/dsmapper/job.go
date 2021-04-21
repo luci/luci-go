@@ -280,7 +280,7 @@ func getJobInState(ctx context.Context, id JobID, states ...dsmapperpb.State) (*
 			return job, nil
 		}
 	}
-	logging.Warningf(ctx, "Skipping the job: its state is %s, expecting one of %q", job.State, states)
+	logging.Infof(ctx, "Skipping the job: its state is %s, expecting one of %q", job.State, states)
 	return nil, nil
 }
 
