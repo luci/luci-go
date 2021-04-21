@@ -15,10 +15,7 @@
 package invocations
 
 import (
-	"bytes"
 	"context"
-	"regexp"
-	"text/template"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -29,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -49,7 +45,6 @@ const (
 type HistoryQuery struct {
 	Realm     string
 	TimeRange *pb.TimeRange
-	Predicate *pb.TestResultPredicate
 }
 
 // ByTimestamp queries indexed invocations in a given time range.
@@ -76,50 +71,19 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 		}
 	}
 
-	literalPrefix := ""
-	if re := q.Predicate.GetTestIdRegexp(); re != "" && re != ".*" {
-		r := regexp.MustCompile(re)
-		// We're trying to match the invocation's CommonTestIDPrefix with re,
-		// so re should have a literal prefix, otherwise the match likely
-		// fails.
-		// For example if an invocation's CommonTestIDPrefix is "ninja://" and
-		// re is ".*browser_tests.*", we wouldn't know if that invocation contains
-		// any test results with matching test ids or not.
-		literalPrefix, _ = r.LiteralPrefix()
-	}
-
-	var variant []string
-	if q.Predicate.GetVariant() != nil {
-		switch p := q.Predicate.GetVariant().GetPredicate().(type) {
-		case *pb.VariantPredicate_Equals:
-			variant = pbutil.VariantToStrings(p.Equals)
-		case *pb.VariantPredicate_Contains:
-			variant = pbutil.VariantToStrings(p.Contains)
-		case nil:
-			// No filter.
-		default:
-			panic(errors.Reason("unexpected variant predicate %q", q.Predicate.GetVariant()).Err())
-		}
-	}
-
-	sql := &bytes.Buffer{}
-	if err = queryTmpl.Execute(sql, map[string]interface{}{
-		"MatchTestIdPrefix": literalPrefix != "",
-		"MatchVariant":      len(variant) != 0,
-	}); err != nil {
-		return err
-	}
-	st := spanner.NewStatement(sql.String())
-	st.Params["realm"] = q.Realm
-	st.Params["minTime"] = minTime
-	st.Params["maxTime"] = maxTime
-	// Use literalPrefix instead of q.Predicate.GetTestIdRegexp() to match all
-	// possible invocations.
-	// For example if an invocation's CommonTestIDPrefix is "ninja://chrome/test:browser_tests" and
-	// q.Predicate.GetTestIdRegexp() is "ninja://.*browser_tests.*", using literalPrefix
-	// would guarantee that this invocation will be included in the query results.
-	st.Params["literalPrefix"] = literalPrefix
-	st.Params["variant"] = variant
+	st := spanner.NewStatement(`
+		SELECT
+			i.InvocationId,
+			i.HistoryTime,
+		FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp, spanner_emulator.disable_query_null_filtered_index_check=true} i
+		WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
+		ORDER BY i.HistoryTime DESC
+	`)
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+		"realm":   q.Realm,
+		"minTime": minTime,
+		"maxTime": maxTime,
+	})
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -131,33 +95,3 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 		return callback(inv, ts)
 	})
 }
-
-var queryTmpl = template.Must(template.New("").Parse(`
-	SELECT
-		i.InvocationId,
-		i.HistoryTime,
-	FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp, spanner_emulator.disable_query_null_filtered_index_check=true} i
-	WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
-	{{if .MatchTestIdPrefix}}
-		AND (
-			-- For the cases where literalPrefix is long and specific, for example:
-			-- literalPrefix = "ninja://chrome/test:browser_tests/AutomationApiTest"
-			-- i.CommonTestIDPrefix = "ninja://chrome/test:browser_tests/"
-			STARTS_WITH(@literalPrefix, IFNULL(i.CommonTestIDPrefix, "")) OR
-			-- For the cases where literalPrefix is short, likely because q.Predicate.TestIdRegexp
-			-- contains non-literal regexp, for example:
-			-- q.Predicate.TestIdRegexp = "ninja://.*browser_tests/" which makes literalPrefix
-			-- to be "ninja://".
-			-- This condition is not very useful to improve the performance of test
-			-- result history API, but without it will make the results incomplete.
-			STARTS_WITH(i.CommonTestIDPrefix, @literalPrefix)
-		)
-	{{end}}
-	{{if .MatchVariant}}
-		AND (
-			TestResultVariantUnion IS NULL OR
-			(SELECT LOGICAL_AND(kv IN UNNEST(TestResultVariantUnion)) FROM UNNEST(@variant) kv)
-		)
-	{{end}}
-	ORDER BY i.HistoryTime DESC
-`))
