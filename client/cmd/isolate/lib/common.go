@@ -358,7 +358,7 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 			start := time.Now()
 			rootDg, entrs, stats, err := cl.ComputeMerkleTree(execRoot, is, fmCache)
 			if err != nil {
-				return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+				return errors.Annotate(err, "failed to call ComputeMerkleTree for %s", o.Isolate).Err()
 			}
 			logger.Infof("ComputeMerkleTree returns %d entries with total size %d for %s, took %s",
 				len(entrs), stats.TotalInputBytes, o.Isolate, time.Since(start))
