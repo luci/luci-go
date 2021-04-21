@@ -33,8 +33,9 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 
+	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
+	"go.chromium.org/luci/server/dsmapper/internal/splitter"
 	"go.chromium.org/luci/server/dsmapper/internal/tasks"
-	"go.chromium.org/luci/server/dsmapper/splitter"
 )
 
 // ID identifies a mapper registered in the controller.
@@ -227,7 +228,7 @@ func (ctl *Controller) LaunchJob(ctx context.Context, j *JobConfig) (JobID, erro
 		now := clock.Now(ctx).UTC()
 		job = Job{
 			Config:  *j,
-			State:   State_STARTING,
+			State:   dsmapperpb.State_STARTING,
 			Created: now,
 			Updated: now,
 		}
@@ -269,17 +270,17 @@ func (ctl *Controller) AbortJob(ctx context.Context, id JobID) (job *Job, err er
 		switch job, err = getJob(ctx, id); {
 		case err != nil:
 			return err
-		case isFinalState(job.State) || job.State == State_ABORTING:
+		case isFinalState(job.State) || job.State == dsmapperpb.State_ABORTING:
 			return nil // nothing to abort, already done
-		case job.State == State_STARTING:
+		case job.State == dsmapperpb.State_STARTING:
 			// Shards haven't been launched yet. Kill the job right away.
-			job.State = State_ABORTED
-		case job.State == State_RUNNING:
+			job.State = dsmapperpb.State_ABORTED
+		case job.State == dsmapperpb.State_RUNNING:
 			// Running shards will discover that the job is aborting and will
 			// eventually move into ABORTED state (notifying the job about it). Once
 			// all shards report they are done, the job itself will switch into
 			// ABORTED state.
-			job.State = State_ABORTING
+			job.State = dsmapperpb.State_ABORTING
 		}
 		job.Updated = clock.Now(ctx).UTC()
 		return errors.Annotate(datastore.Put(ctx, job), "failed to store Job entity").Tag(transient.Tag).Err()
@@ -306,7 +307,7 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 	now := clock.Now(ctx).UTC()
 
 	// Fetch job details. Make sure it isn't canceled and isn't running already.
-	job, err := getJobInState(ctx, JobID(msg.JobId), State_STARTING)
+	job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_STARTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in SplitAndLaunch").Err()
 	}
@@ -330,7 +331,7 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 		shards[idx] = &shard{
 			JobID:         job.ID,
 			Index:         idx,
-			State:         State_STARTING,
+			State:         dsmapperpb.State_STARTING,
 			Range:         rng,
 			ExpectedCount: -1,
 			Created:       now,
@@ -391,12 +392,12 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 	// orphaned Shard entities, no big deal.
 	logging.Infof(ctx, "Updating the job and launching the fan out task...")
 	return runTxn(ctx, func(ctx context.Context) error {
-		job, err := getJobInState(ctx, JobID(msg.JobId), State_STARTING)
+		job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_STARTING)
 		if err != nil || job == nil {
 			return errors.Annotate(err, "in SplitAndLaunch txn").Err()
 		}
 
-		job.State = State_RUNNING
+		job.State = dsmapperpb.State_RUNNING
 		job.Updated = now
 		if err := datastore.Put(ctx, job, &shardsEnt); err != nil {
 			return errors.Annotate(err,
@@ -447,7 +448,7 @@ func (ctl *Controller) fanOutShardsHandler(ctx context.Context, payload proto.Me
 	// to abort all shards right here and now, but it basically means implementing
 	// an alternative shard abort flow. Seems simpler just to let the regular flow
 	// to proceed.
-	job, err := getJobInState(ctx, JobID(msg.JobId), State_RUNNING, State_ABORTING)
+	job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_RUNNING, dsmapperpb.State_ABORTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in FanOutShards").Err()
 	}
@@ -493,7 +494,7 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 		clock.Now(ctx).Sub(sh.Created))
 
 	// Grab the job config, make sure the job is still active.
-	job, err := getJobInState(ctx, JobID(msg.JobId), State_RUNNING, State_ABORTING)
+	job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_RUNNING, dsmapperpb.State_ABORTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in ProcessShard").Err()
 	}
@@ -501,7 +502,7 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 	// If the job is being killed, kill the shard as well. This will eventually
 	// notify the job about shard's completion. Once all shards are done, the
 	// job will switch into ABORTED state.
-	if job.State == State_ABORTING {
+	if job.State == dsmapperpb.State_ABORTING {
 		return ctl.finishShard(ctx, sh.ID, 0, errJobAborted)
 	}
 
@@ -621,7 +622,7 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 			return false, nil // someone already claimed to process further, let them proceed
 		}
 
-		sh.State = State_RUNNING
+		sh.State = dsmapperpb.State_RUNNING
 		sh.ResumeFrom = lastKey
 		sh.ProcessedCount += itemCount
 
@@ -658,15 +659,15 @@ func (ctl *Controller) finishShard(ctx context.Context, shardID, processedCount 
 		switch {
 		case shardErr == errJobAborted:
 			logging.Warningf(ctx, "The job has been aborted, aborting the shard after it has been running %s", runtime)
-			sh.State = State_ABORTED
+			sh.State = dsmapperpb.State_ABORTED
 			sh.Error = errJobAborted.Error()
 		case shardErr != nil:
 			logging.Errorf(ctx, "The shard processing failed in %s with error: %s", runtime, shardErr)
-			sh.State = State_FAIL
+			sh.State = dsmapperpb.State_FAIL
 			sh.Error = shardErr.Error()
 		default:
 			logging.Infof(ctx, "The shard processing finished successfully in %s", runtime)
-			sh.State = State_SUCCESS
+			sh.State = dsmapperpb.State_SUCCESS
 		}
 		sh.ProcessedCount += processedCount
 		return true, ctl.requestJobStateUpdate(ctx, sh.JobID, sh.ID)
@@ -740,7 +741,7 @@ func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.
 	msg := payload.(*tasks.UpdateJobState)
 
 	// Get the job and all its shards in their most recent state.
-	job, err := getJobInState(ctx, JobID(msg.JobId), State_RUNNING, State_ABORTING)
+	job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_RUNNING, dsmapperpb.State_ABORTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in UpdateJobState").Err()
 	}
@@ -750,7 +751,7 @@ func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.
 	}
 
 	// Switch the job into a final state only when all shards are done running.
-	perState := make(map[State]int, len(State_name))
+	perState := make(map[dsmapperpb.State]int, len(dsmapperpb.State_name))
 	finished := 0
 	for _, sh := range shards {
 		logging.Infof(ctx, "Shard #%d (%d) is in state %s", sh.Index, sh.ID, sh.State)
@@ -763,16 +764,16 @@ func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.
 		return nil
 	}
 
-	jobState := State_SUCCESS
+	jobState := dsmapperpb.State_SUCCESS
 	switch {
-	case perState[State_ABORTED] != 0:
-		jobState = State_ABORTED
-	case perState[State_FAIL] != 0:
-		jobState = State_FAIL
+	case perState[dsmapperpb.State_ABORTED] != 0:
+		jobState = dsmapperpb.State_ABORTED
+	case perState[dsmapperpb.State_FAIL] != 0:
+		jobState = dsmapperpb.State_FAIL
 	}
 
 	return runTxn(ctx, func(ctx context.Context) error {
-		job, err := getJobInState(ctx, JobID(msg.JobId), State_RUNNING, State_ABORTING)
+		job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_RUNNING, dsmapperpb.State_ABORTING)
 		if err != nil || job == nil {
 			return errors.Annotate(err, "in UpdateJobState txn").Err()
 		}
@@ -780,8 +781,8 @@ func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.
 		// Make sure an aborting job ends up in aborted state, even if all its
 		// shards manged to finish. It looks weird when an ABORTING job moves
 		// into e.g. SUCCESS state.
-		if job.State == State_ABORTING {
-			job.State = State_ABORTED
+		if job.State == dsmapperpb.State_ABORTING {
+			job.State = dsmapperpb.State_ABORTED
 		} else {
 			job.State = jobState
 		}
@@ -789,18 +790,18 @@ func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.
 
 		runtime := job.Updated.Sub(job.Created)
 		switch job.State {
-		case State_SUCCESS:
+		case dsmapperpb.State_SUCCESS:
 			logging.Infof(ctx, "The job finished successfully in %s", runtime)
-		case State_FAIL:
-			logging.Errorf(ctx, "The job finished with %d shards failing in %s", perState[State_FAIL], runtime)
+		case dsmapperpb.State_FAIL:
+			logging.Errorf(ctx, "The job finished with %d shards failing in %s", perState[dsmapperpb.State_FAIL], runtime)
 			for _, sh := range shards {
-				if sh.State == State_FAIL {
+				if sh.State == dsmapperpb.State_FAIL {
 					logging.Errorf(ctx, "Shard #%d (%d) error - %s", sh.Index, sh.ID, sh.Error)
 				}
 			}
-		case State_ABORTED:
+		case dsmapperpb.State_ABORTED:
 			logging.Warningf(ctx, "The job has been aborted after %s: %d shards succeeded, %d shards failed, %d shards aborted",
-				runtime, perState[State_SUCCESS], perState[State_FAIL], perState[State_ABORTED])
+				runtime, perState[dsmapperpb.State_SUCCESS], perState[dsmapperpb.State_FAIL], perState[dsmapperpb.State_ABORTED])
 		}
 
 		return transient.Tag.Apply(datastore.Put(ctx, job))

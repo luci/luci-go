@@ -27,7 +27,8 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/server/dsmapper/splitter"
+	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
+	"go.chromium.org/luci/server/dsmapper/internal/splitter"
 )
 
 // ErrNoSuchJob is returned by GetJob if there's no Job with requested ID.
@@ -127,7 +128,7 @@ type Job struct {
 	// Config is the configuration of this job. Doesn't change once set.
 	Config JobConfig `gae:",noindex"`
 	// State is used to track job's lifecycle, see the enum.
-	State State
+	State dsmapperpb.State
 	// Created is when the job was created, FYI.
 	Created time.Time
 	// Updated is when the job was last touched, FYI.
@@ -180,8 +181,8 @@ func (j *Job) fetchShards(ctx context.Context) ([]shard, error) {
 }
 
 // FetchInfo fetches information about the job (including all shards).
-func (j *Job) FetchInfo(ctx context.Context) (*JobInfo, error) {
-	info := &JobInfo{
+func (j *Job) FetchInfo(ctx context.Context) (*dsmapperpb.JobInfo, error) {
+	info := &dsmapperpb.JobInfo{
 		Id:            int64(j.ID),
 		State:         j.State,
 		Created:       timestamppb.New(j.Created),
@@ -190,7 +191,7 @@ func (j *Job) FetchInfo(ctx context.Context) (*JobInfo, error) {
 	}
 
 	// Jobs in STARTING state have no shards yet.
-	if j.State == State_STARTING {
+	if j.State == dsmapperpb.State_STARTING {
 		return info, nil
 	}
 
@@ -202,7 +203,7 @@ func (j *Job) FetchInfo(ctx context.Context) (*JobInfo, error) {
 	haveProgress := true // false if at least one shard has unknown ETA
 	updated := j.Updated // will be max(Updated of each shard)
 
-	info.Shards = make([]*ShardInfo, len(shards))
+	info.Shards = make([]*dsmapperpb.ShardInfo, len(shards))
 	for i, s := range shards {
 		sh := s.info()
 		info.Shards[i] = sh
@@ -267,7 +268,7 @@ func getJob(ctx context.Context, id JobID) (*Job, error) {
 //   (nil, nil) if the job is there, but in a different state.
 //   (nil, transient error) on datastore fetch errors.
 //   (nil, fatal error) if there's no such job at all.
-func getJobInState(ctx context.Context, id JobID, states ...State) (*Job, error) {
+func getJobInState(ctx context.Context, id JobID, states ...dsmapperpb.State) (*Job, error) {
 	job, err := getJob(ctx, id)
 	if err != nil {
 		return nil, errors.Reason("failed to fetch job with ID %d", id).Err()
@@ -301,7 +302,7 @@ type shard struct {
 	// Index is the index of the shard in the job's shards list.
 	Index int `gae:",noindex"`
 	// State is used to track shard's lifecycle, see the enum.
-	State State
+	State dsmapperpb.State
 	// Error is an error message for failed shards.
 	Error string `gae:",noindex"`
 	// ProcessTaskNum is next expected ProcessShard task number.
@@ -321,7 +322,7 @@ type shard struct {
 }
 
 // info returns a proto message with information about the shard.
-func (s *shard) info() *ShardInfo {
+func (s *shard) info() *dsmapperpb.ShardInfo {
 	var rate float64
 	var eta *timestamp.Timestamp
 
@@ -333,7 +334,7 @@ func (s *shard) info() *ShardInfo {
 		}
 	}
 
-	return &ShardInfo{
+	return &dsmapperpb.ShardInfo{
 		Index:             int32(s.Index),
 		State:             s.State,
 		Error:             s.Error,
