@@ -2,7 +2,7 @@
 <head>
   <script>
     // Fallback to Date.now() if timeOrigin is not supported.
-    var TIME_ORIGIN = window.performance.timeOrigin || Date.now();
+    const TIME_ORIGIN = window.performance.timeOrigin || Date.now();
   </script>
 
   <meta charset="utf-8">
@@ -22,7 +22,7 @@
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-    var trackingId = 'UA-55762617-26'; // luci-milo-dev
+    const trackingId = 'UA-55762617-26'; // luci-milo-dev
     if (["luci-milo.appspot.com", "ci.chromium.org"].includes(window.location.hostname)) {
       trackingId = 'UA-55762617-24'; // luci-milo
     }
@@ -34,7 +34,7 @@
   <script src="/configs.js"></script>
   <script src="https://apis.google.com/js/api.js"></script>
   <script>
-    var VISIT_ID = Math.random().toString();
+    const VISIT_ID = Math.random().toString();
   </script>
   <script src="/ui/cached-auth-state.js"></script>
 </head>
