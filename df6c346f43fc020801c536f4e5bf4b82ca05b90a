@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c1a8bc4_6810b921",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-21T00:09:22Z",
+      "side": 1,
+      "message": "nice",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 37
+      },
+      "revId": "df6c346f43fc020801c536f4e5bf4b82ca05b90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ab2b2af_6ea01750",
+        "filename": "server/encryptedcookies/internal/fakecookies/fakecookies.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-21T00:09:22Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 116,
+        "startChar": 23,
+        "endLine": 116,
+        "endChar": 24
+      },
+      "revId": "df6c346f43fc020801c536f4e5bf4b82ca05b90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "894b06ab_27dc71d9",
+        "filename": "server/encryptedcookies/internal/fakecookies/fakecookies.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-21T00:09:22Z",
+      "side": 1,
+      "message": "👍 curious, where does this originate from? Google search gave me https://android.googlesource.com/platform/packages/apps/DocumentsUI/+/c1b6dc029599a9f2a4c7fee125344d664bd4812b%5E1..c1b6dc029599a9f2a4c7fee125344d664bd4812b/",
+      "range": {
+        "startLine": 203,
+        "startChar": 0,
+        "endLine": 206,
+        "endChar": 7
+      },
+      "revId": "df6c346f43fc020801c536f4e5bf4b82ca05b90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c200ff1c_693b6cb2",
+        "filename": "server/encryptedcookies/internal/fakecookies/fakecookies.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-21T00:09:22Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 224,
+        "startChar": 37,
+        "endLine": 224,
+        "endChar": 38
+      },
+      "revId": "df6c346f43fc020801c536f4e5bf4b82ca05b90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a410619e_8148b591",
+        "filename": "server/encryptedcookies/internal/fakecookies/fakecookies.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-21T00:09:22Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 389,
+        "startChar": 65,
+        "endLine": 389,
+        "endChar": 66
+      },
+      "revId": "df6c346f43fc020801c536f4e5bf4b82ca05b90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
