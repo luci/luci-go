@@ -131,6 +131,12 @@ type ServerConfig struct {
 	// ancestor directory) in the map and append the directory's tags to the
 	// test results' tags.
 	LocationTags *sinkpb.LocationTags
+
+	// MaxBatchableArtifactSize is the maximum size of an artifact that can be added to
+	// batchChannel.
+	//
+	// Must be < 10MiB, and NewServer panics, otherwise.
+	MaxBatchableArtifactSize int64
 }
 
 // Validate validates all the config fields.
@@ -196,6 +202,14 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	}
 	if cfg.TestResultChannelMaxLeases == 0 {
 		cfg.TestResultChannelMaxLeases = DefaultTestResultChannelMaxLeases
+	}
+	if cfg.MaxBatchableArtifactSize == 0 {
+		cfg.MaxBatchableArtifactSize = 2 * 1024 * 1024
+	} else if cfg.MaxBatchableArtifactSize > 10*1024*1024 {
+		panic(fmt.Sprintf(
+			"NewServer: ServerConfig.MaxBatchableArtifactSize is greater than 10MiB: %d",
+			cfg.MaxBatchableArtifactSize,
+		))
 	}
 
 	// extract the invocation ID from cfg.Invocation so that other modules don't need to
