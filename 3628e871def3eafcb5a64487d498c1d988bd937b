@@ -235,6 +235,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d50b9eb_ca436267",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T03:23:01Z",
+      "side": 1,
+      "message": "was this tested on a database or invocation that has lots of data?\n\nif not, we need to be very careful when rolling this out: at least re-test performance before rolling out to stable.",
+      "parentUuid": "587bc8cf_3926eed3",
+      "range": {
+        "startLine": 367,
+        "startChar": 30,
+        "endLine": 368,
+        "endChar": 69
+      },
+      "revId": "3628e871def3eafcb5a64487d498c1d988bd937b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "41ba12c0_b3eba1f0",

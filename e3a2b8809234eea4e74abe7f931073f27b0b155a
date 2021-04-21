@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0483387f_cc33d3fa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T03:23:01Z",
+      "side": 1,
+      "message": "LGTM, although the change in the JOIN order worries me. Need to be careful when rolling this out.",
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a0430d3_775899ba",
+        "filename": "resultdb/internal/history/history_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T03:23:01Z",
+      "side": 1,
+      "message": "do we still need changes in this file?",
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8031de5_b3591e05",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T03:23:01Z",
+      "side": 1,
+      "message": "parens missing around this OR expression and below.\nit is currently\n\n  AND expr1 OR expr2 AND expr3 OR expr4\n\nbut it should be\n\n  AND (expr1 OR expr2) AND (expr3 OR expr4)",
+      "range": {
+        "startLine": 334,
+        "startChar": 5,
+        "endLine": 334,
+        "endChar": 7
+      },
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d16fcd85_4ad2f8d6",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T03:23:01Z",
+      "side": 1,
+      "message": "nit: no need to write TIMESTAMP(). Just \n\n  i.CreateTime \u003c \"2014-4-13\"\n\nshould work",
+      "range": {
+        "startLine": 334,
+        "startChar": 57,
+        "endLine": 334,
+        "endChar": 84
+      },
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d037710_b086a859",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-21T03:23:01Z",
+      "side": 1,
+      "message": "TRUE",
+      "range": {
+        "startLine": 405,
+        "startChar": 9,
+        "endLine": 405,
+        "endChar": 12
+      },
+      "revId": "e3a2b8809234eea4e74abe7f931073f27b0b155a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
