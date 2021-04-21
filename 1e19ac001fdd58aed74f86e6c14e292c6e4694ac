@@ -121,6 +121,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f5ab13e5_f7600c53",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-21T02:52:42Z",
+      "side": 1,
+      "message": "Ahh, didn\u0027t know that. I used my local editor for viewing the markdown.\n\nI tried multiple approaches but can\u0027t find one that looks nice. I reverted it to the previous version.",
+      "parentUuid": "e5c7aa80_ba894fe6",
+      "range": {
+        "startLine": 270,
+        "startChar": 4,
+        "endLine": 270,
+        "endChar": 8
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c390c23a_3c61c9a7",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 7
@@ -368,6 +392,30 @@
       "side": 1,
       "message": "I think the problem is that resultdb.validate_test_presentation(None) returns non-None. It makes the loop on line 257 treat it as a real defined value and not use the default from default.properties.\n\nI think the simplest approach would be to skip validation is test_presentation is None, to allow the merge loop to correct realize the value is missing:\n\n  if test_presentation !\u003d None:\n    test_presentation \u003d resultdb.validate_test_presentation(...)\n\n  props \u003d {\n    ...\n    \"test_presentation\" test_presentation\n  }\n\n  ...\n\n  if test_presentation and test_presentation !\u003d resultdb.test_presentation():\n     ...",
       "parentUuid": "bc51e07f_3fbc5ecb",
+      "range": {
+        "startLine": 394,
+        "startChar": 9,
+        "endLine": 394,
+        "endChar": 26
+      },
+      "revId": "1e19ac001fdd58aed74f86e6c14e292c6e4694ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "152345d9_a3e803c1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-21T02:52:42Z",
+      "side": 1,
+      "message": "Ahh. That\u0027s how the default works. I thought it\u0027s the function params that will get populated.\n\nFixed this by not setting a default value in validate_test_presentation.",
+      "parentUuid": "6e547399_50b4178e",
       "range": {
         "startLine": 394,
         "startChar": 9,
