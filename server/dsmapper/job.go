@@ -27,12 +27,14 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 	"go.chromium.org/luci/server/dsmapper/internal/splitter"
 )
 
 // ErrNoSuchJob is returned by GetJob if there's no Job with requested ID.
-var ErrNoSuchJob = errors.New("no such mapping job")
+var ErrNoSuchJob = errors.New("no such mapping job", tq.Fatal)
 
 // Query is a representation of datastore queries supported by the
 // mapper.
@@ -154,7 +156,7 @@ func (j *Job) fetchShardIDs(ctx context.Context) ([]int64, error) {
 	l := shardList{Parent: datastore.KeyForObj(ctx, j)}
 	switch err := datastore.Get(ctx, &l); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Annotate(err, "broken state, no ShardList entity for job %d", j.ID).Err()
+		return nil, errors.Annotate(err, "broken state, no ShardList entity for job %d", j.ID).Tag(tq.Fatal).Err()
 	case err != nil:
 		return nil, errors.Annotate(err, "when fetching list of shards of job %d", j.ID).Tag(transient.Tag).Err()
 	default:
@@ -359,7 +361,7 @@ func getActiveShard(ctx context.Context, shardID, taskNum int64) (*shard, error)
 	sh := &shard{ID: shardID}
 	switch err := datastore.Get(ctx, sh); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Annotate(err, "no such shard, aborting").Err() // fatal, no retries
+		return nil, errors.Annotate(err, "no such shard, aborting").Tag(tq.Fatal).Err() // fatal, no retries
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch the shard").Tag(transient.Tag).Err()
 	case isFinalState(sh.State):
@@ -387,9 +389,9 @@ func shardTxn(ctx context.Context, shardID int64, cb shardTxnCb) error {
 		sh := shard{ID: shardID}
 		switch err := datastore.Get(ctx, &sh); {
 		case err == datastore.ErrNoSuchEntity:
-			return err
+			return errors.Annotate(err, "when fetching shard %d", shardID).Tag(tq.Fatal).Err()
 		case err != nil:
-			return transient.Tag.Apply(err)
+			return errors.Annotate(err, "when fetching shard %d", shardID).Tag(transient.Tag).Err()
 		case isFinalState(sh.State):
 			return nil // the shard is already marked as done
 		}
