@@ -18,6 +18,6 @@
  * auth state.
  */
 
-/* eslint-disable no-var, @typescript-eslint/no-unused-vars, no-unused-vars  */
+/* eslint-disable @typescript-eslint/no-unused-vars, no-unused-vars  */
 
-var CACHED_AUTH_STATE = null;
+const CACHED_AUTH_STATE = null;
