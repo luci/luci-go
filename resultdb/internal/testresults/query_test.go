@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
@@ -38,7 +39,10 @@ func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{
+			"CommonTestIDPrefix":     "",
+			"TestResultVariantUnion": []string{"a:b", "k:1", "k:2", "k2:1"},
+		}))
 
 		q := &Query{
 			Predicate:     &pb.TestResultPredicate{},
@@ -93,7 +97,10 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Expectancy filter`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+				"CommonTestIDPrefix":     "",
+				"TestResultVariantUnion": pbutil.Variant("a", "b"),
+			}))
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
 
 			Convey(`VARIANTS_WITH_UNEXPECTED_RESULTS`, func() {
@@ -122,7 +129,7 @@ func TestQueryTestResults(t *testing.T) {
 				})
 
 				Convey(`TestID filter`, func() {
-					q.Predicate.TestIdRegexp = "T4"
+					q.Predicate.TestIdRegexp = ".*T4"
 					So(mustFetchNames(q), ShouldResemble, []string{
 						"invocations/inv1/tests/T4/results/0",
 					})
@@ -138,6 +145,7 @@ func TestQueryTestResults(t *testing.T) {
 						"invocations/inv1/tests/T4/results/0",
 					})
 				})
+
 				Convey(`ExcludeExonerated`, func() {
 					q.Predicate.ExcludeExonerated = true
 					So(mustFetchNames(q), ShouldResemble, []string{
@@ -173,16 +181,24 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Test id filter`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx,
+				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+					"CommonTestIDPrefix": "1-",
+				}),
+				insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]interface{}{
+					"CreateTime": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+				}),
+			)
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.TestResults("inv0", "1-1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 				insert.TestResults("inv0", "1-2", nil, pb.TestStatus_PASS),
 				insert.TestResults("inv1", "1-1", nil, pb.TestStatus_PASS),
 				insert.TestResults("inv1", "2-1", nil, pb.TestStatus_PASS),
 				insert.TestResults("inv1", "2", nil, pb.TestStatus_FAIL),
+				insert.TestResults("inv2", "1-2", nil, pb.TestStatus_PASS),
 			)...)
 
-			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1", "inv2")
 			q.Predicate.TestIdRegexp = "1-.+"
 
 			So(mustFetchNames(q), ShouldResemble, []string{
@@ -190,22 +206,30 @@ func TestQueryTestResults(t *testing.T) {
 				"invocations/inv0/tests/1-1/results/1",
 				"invocations/inv0/tests/1-2/results/0",
 				"invocations/inv1/tests/1-1/results/0",
+				"invocations/inv2/tests/1-2/results/0",
 			})
 		})
 
 		Convey(`Variant equals`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
-
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
+			testutil.MustApply(ctx,
+				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+					"TestResultVariantUnion": []string{"k:1", "k:2"},
+				}),
+				insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]interface{}{
+					"CreateTime": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+				}),
+			)
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.TestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 				insert.TestResults("inv0", "1-2", v2, pb.TestStatus_PASS),
 				insert.TestResults("inv1", "1-1", v1, pb.TestStatus_PASS),
 				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
+				insert.TestResults("inv2", "1-1", v1, pb.TestStatus_PASS),
 			)...)
 
-			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1", "inv2")
 			q.Predicate.Variant = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_Equals{Equals: v1},
 			}
@@ -214,11 +238,14 @@ func TestQueryTestResults(t *testing.T) {
 				"invocations/inv0/tests/1-1/results/0",
 				"invocations/inv0/tests/1-1/results/1",
 				"invocations/inv1/tests/1-1/results/0",
+				"invocations/inv2/tests/1-1/results/0",
 			})
 		})
 
 		Convey(`Variant contains`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+				"TestResultVariantUnion": []string{"k:1", "k:2", "k2:1"},
+			}))
 
 			v1 := pbutil.Variant("k", "1")
 			v11 := pbutil.Variant("k", "1", "k2", "1")
@@ -362,6 +389,34 @@ func TestQueryTestResults(t *testing.T) {
 			})
 		})
 
+		Convey(`Filter invocations`, func() {
+			testutil.MustApply(ctx,
+				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+					"CommonTestIDPrefix": "ninja://browser_tests/",
+				}),
+				insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),
+			)
+
+			v1 := pbutil.Variant("k", "1")
+			v2 := pbutil.Variant("k", "2")
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insert.TestResults("inv0", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults("inv0", "1-2", v2, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
+				insert.TestResults("inv2", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS),
+			)...)
+
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
+			q.Predicate.TestIdRegexp = "ninja://browser_tests/.*"
+
+			results, _ := mustFetch(q)
+			for _, r := range results {
+				So(r.Name, ShouldNotStartWith, "invocations/inv2")
+				So(r.TestId, ShouldEqual, "ninja://browser_tests/1-1")
+			}
+		})
+
 		Convey(`Query statements`, func() {
 			Convey(`only unexpected exclude exonerated`, func() {
 				st := q.genStatement("testResults", map[string]interface{}{
@@ -379,10 +434,16 @@ func TestQueryTestResults(t *testing.T) {
 				expected := `
   				@{USE_ADDITIONAL_PARALLELISM=TRUE}
   				WITH
+						invs AS (
+							SELECT *
+							FROM UNNEST(@invIDs)
+							AS InvocationId
+						),
 						testVariants AS (
 							SELECT DISTINCT TestId, VariantHash
-							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
-							WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+							FROM invs
+							JOIN TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true} USING(InvocationId)
+							WHERE IsUnexpected
 						),
 						exonerated AS (
 							SELECT DISTINCT TestId, VariantHash
@@ -398,9 +459,9 @@ func TestQueryTestResults(t *testing.T) {
 						),
   					withUnexpected AS (
   						SELECT InvocationId, TestId, VariantHash
-							FROM variantsWithUnexpectedResults vur
-							JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-							WHERE InvocationId IN UNNEST(@invIDs)
+							FROM invs
+							JOIN TestResults tr USING(InvocationId)
+							JOIN@{JOIN_METHOD=HASH_JOIN} variantsWithUnexpectedResults vur USING (TestId, VariantHash)
 						) ,
 						withOnlyUnexpected AS (
 							SELECT ARRAY_AGG(tr) trs
@@ -438,17 +499,23 @@ func TestQueryTestResults(t *testing.T) {
 				expected := `
 					@{USE_ADDITIONAL_PARALLELISM=TRUE}
 					WITH
+						invs AS (
+							SELECT *
+							FROM UNNEST(@invIDs)
+							AS InvocationId
+						),
 						variantsWithUnexpectedResults AS (
 							SELECT DISTINCT TestId, VariantHash
-							FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
-							WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+							FROM invs
+							JOIN TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true} USING(InvocationId)
+							WHERE IsUnexpected
 							AND REGEXP_CONTAINS(TestId, @testIdRegexp)
 						),
 						withUnexpected AS (
 							SELECT InvocationId, TestId, VariantHash
-							FROM variantsWithUnexpectedResults vur
-							JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-							WHERE InvocationId IN UNNEST(@invIDs)
+							FROM invs
+							JOIN TestResults tr USING(InvocationId)
+							JOIN@{JOIN_METHOD=HASH_JOIN} variantsWithUnexpectedResults vur USING (TestId, VariantHash)
 						)
 					SELECT * FROM withUnexpected
 					WHERE true
