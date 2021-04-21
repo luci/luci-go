@@ -22,6 +22,30 @@
       },
       "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c7c7fe0_13d15ed5",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-21T19:11:01Z",
+      "side": 1,
+      "message": "max(batchable_arts) \u003d\u003d sum(batchable_arts)\n\nThere is no reason to have the limits with different values for BatchCreateArtifacts(), because the same size limit applies to sum(artifacts in BatchCreateArtifactsRequest)\n\nPlease let me know if I miss a use case where it\u0027d be useful to have MaxBatchable !\u003d MaxBatchableArtifactSize.",
+      "parentUuid": "d3ac4253_ac3d278c",
+      "range": {
+        "startLine": 155,
+        "startChar": 20,
+        "endLine": 155,
+        "endChar": 44
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
