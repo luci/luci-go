@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1f5488be_a08fbd86",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-21T21:42:32Z",
+      "side": 1,
+      "message": "I\u0027ll try to set up E2E test to catch bugs like this week.\n",
+      "revId": "83c6677aeba97502fbe1d15fc950a30daa8ba497",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
