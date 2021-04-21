@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "345b1be5_7e3ea282",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-21T23:40:17Z",
+      "side": 1,
+      "message": "PTAL\n\nI also tested it for real on localhost using server/tq fake task scheduler. Appears to be working. Fascinating.",
+      "revId": "411ce94c55ccddb0647ab8f639f833aabac7a0e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
