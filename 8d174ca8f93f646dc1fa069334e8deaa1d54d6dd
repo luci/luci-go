@@ -22,6 +22,30 @@
       },
       "revId": "8d174ca8f93f646dc1fa069334e8deaa1d54d6dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6dadd459_33ee6468",
+        "filename": "server/dsmapper/controller_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-21T21:40:48Z",
+      "side": 1,
+      "message": "\"go test\" seems to be failing correctly. I don\u0027t really care what goconvey web UI does.",
+      "parentUuid": "0dba3830_3a7c976b",
+      "range": {
+        "startLine": 95,
+        "startChar": 5,
+        "endLine": 95,
+        "endChar": 14
+      },
+      "revId": "8d174ca8f93f646dc1fa069334e8deaa1d54d6dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
