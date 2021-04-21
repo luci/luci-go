@@ -75,13 +75,15 @@ func TestSecretManagerSource(t *testing.T) {
 			So(<-events, ShouldEqual, "checking")
 			So(<-events, ShouldEqual, "reloaded "+secret)
 		}
-		expectSleep := func(dur string) {
+		expectSleeping := func() {
 			So(<-events, ShouldEqual, "sleeping")
+		}
+		expectFullSleep := func(dur string) {
+			expectSleeping()
 			ticks <- true // advance clock in the timer
 			So(<-events, ShouldEqual, "slept "+dur)
 		}
 		expectWoken := func(afterSleep bool) {
-			So(<-events, ShouldEqual, "sleeping")
 			So(<-events, ShouldEqual, "woken")
 			if afterSleep {
 				ticks <- false // the timer was aborted, don't advance clock in it
@@ -183,6 +185,7 @@ func TestSecretManagerSource(t *testing.T) {
 
 			gsm.createVersion("project", "secret", "zzz")
 
+			expectSleeping()
 			So(sm.LoadRootSecret(ctx, "sm://project/secret"), ShouldBeNil)
 			expectWoken(false)
 
@@ -197,7 +200,7 @@ func TestSecretManagerSource(t *testing.T) {
 
 			// Rotate the secret and make sure the change is picked up.
 			gsm.createVersion("project", "secret", "xxx")
-			expectSleep("2h16m23s")
+			expectFullSleep("2h16m23s")
 			expectReloaded("sm://project/secret")
 			<-rotated
 
@@ -218,6 +221,7 @@ func TestSecretManagerSource(t *testing.T) {
 				rotated <- struct{}{}
 			})
 
+			expectSleeping()
 			s, err := sm.StoredSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
 			So(s, ShouldResemble, Secret{Current: []byte("v1")})
@@ -225,7 +229,7 @@ func TestSecretManagerSource(t *testing.T) {
 
 			// Rotate the secret and make sure the change is picked up when expected.
 			gsm.createVersion("project", "secret", "v2")
-			expectSleep("2h16m23s")
+			expectFullSleep("2h16m23s")
 			expectReloaded("sm://project/secret")
 
 			s, err = sm.StoredSecret(ctx, "sm://project/secret")
@@ -238,6 +242,7 @@ func TestSecretManagerSource(t *testing.T) {
 		Convey("Stored secrets exponential back-off", func() {
 			gsm.createVersion("project", "secret", "v1")
 
+			expectSleeping()
 			s, err := sm.StoredSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
 			So(s, ShouldResemble, Secret{Current: []byte("v1")})
@@ -248,22 +253,22 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.setError(status.Errorf(codes.Internal, "boom"))
 
 			// Attempts to do a regular update first.
-			expectSleep("2h16m23s")
+			expectFullSleep("2h16m23s")
 			expectChecked("sm://project/secret")
 
 			// Notices the error and starts checking more often.
-			expectSleep("2s")
+			expectFullSleep("2s")
 			expectChecked("sm://project/secret")
-			expectSleep("6s")
+			expectFullSleep("6s")
 			expectChecked("sm://project/secret")
 
 			// "Fix" the backend.
 			gsm.setError(nil)
 
 			// The updated eventually succeeds and returns to the slow schedule.
-			expectSleep("14s")
+			expectFullSleep("14s")
 			expectReloaded("sm://project/secret")
-			expectSleep("2h17m45s")
+			expectFullSleep("2h17m45s")
 			expectChecked("sm://project/secret")
 		})
 
@@ -272,26 +277,28 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.createVersion("project", "secret2", "v1")
 
 			// Load the first one and let it be for a while to advance time.
+			expectSleeping()
 			sm.StoredSecret(ctx, "sm://project/secret1")
 			expectWoken(false)
-			expectSleep("2h16m23s")
+			expectFullSleep("2h16m23s")
 			expectChecked("sm://project/secret1")
 
 			// Load the second one, it wakes up the maintenance loop, but it finds
 			// there's nothing to reload yet.
+			expectSleeping()
 			sm.StoredSecret(ctx, "sm://project/secret2")
 			expectWoken(true)
 
 			// Starts waking up periodically to update one secret or another. Checks
 			// for secret1 and secret2 happened to be bunched relatively close to
 			// one another (~7m).
-			expectSleep("3h47m31s")
+			expectFullSleep("3h47m31s")
 			expectChecked("sm://project/secret2")
-			expectSleep("6m39s")
+			expectFullSleep("6m39s")
 			expectChecked("sm://project/secret1")
-			expectSleep("2h17m45s")
+			expectFullSleep("2h17m45s")
 			expectChecked("sm://project/secret1")
-			expectSleep("12m48s")
+			expectFullSleep("12m48s")
 			expectChecked("sm://project/secret2")
 		})
 	})
