@@ -21,6 +21,7 @@ luci.builder.defaults.experiments.set({
     "def-exp-1": 10,
 })
 luci.builder.defaults.task_template_canary_percentage.set(90)
+luci.builder.defaults.test_presentation.set(resultdb.test_presentation(column_keys = ["v.gpu"], grouping_keys = ["v.test_suite", "status"]))
 
 luci.recipe.defaults.cipd_package.set("cipd/default")
 luci.recipe.defaults.cipd_version.set("refs/default")
@@ -62,6 +63,7 @@ luci.builder(
         "def-exp-2": 0,  # will override the default
         "builder-exp": 100,
     },
+    test_presentation = resultdb.test_presentation(column_keys = ["v.os"], grouping_keys = ["v.test_suite", "status"]),
 )
 
 # Override various scalar values. In particular False, 0 and '' are treated as
@@ -86,6 +88,14 @@ luci.builder(
     task_template_canary_percentage = 0,
 )
 
+# Override test_presentation back to system default.
+luci.builder(
+    name = "b4",
+    bucket = "ci",
+    executable = luci.recipe(name = "recipe1"),
+    test_presentation = resultdb.test_presentation(),
+)
+
 # Expect configs:
 #
 # === cr-buildbucket.cfg
@@ -103,6 +113,7 @@ luci.builder(
 #         name: "recipe1"
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
+#         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.gpu\"],\"grouping_keys\":[\"v.test_suite\",\"status\"]}"
 #         properties_j: "base:\"base val\""
 #         properties_j: "overridden:\"original\""
 #       }
@@ -144,6 +155,7 @@ luci.builder(
 #         name: "recipe1"
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
+#         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.os\"],\"grouping_keys\":[\"v.test_suite\",\"status\"]}"
 #         properties_j: "base:\"base val\""
 #         properties_j: "extra:\"extra\""
 #         properties_j: "overridden:\"new\""
@@ -193,6 +205,7 @@ luci.builder(
 #         name: "recipe2"
 #         cipd_package: "cipd/another"
 #         cipd_version: "refs/another"
+#         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.gpu\"],\"grouping_keys\":[\"v.test_suite\",\"status\"]}"
 #         properties_j: "base:\"base val\""
 #         properties_j: "overridden:\"original\""
 #       }
@@ -211,6 +224,46 @@ luci.builder(
 #       service_account: "new@example.com"
 #       experimental: NO
 #       task_template_canary_percentage {}
+#       experiments {
+#         key: "def-exp-1"
+#         value: 10
+#       }
+#       experiments {
+#         key: "def-exp-2"
+#         value: 20
+#       }
+#       experiments {
+#         key: "def-exp-3"
+#         value: 30
+#       }
+#     }
+#     builders {
+#       name: "b4"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       swarming_tags: "base:tag"
+#       dimensions: "base:base val"
+#       dimensions: "overridden:original 1"
+#       dimensions: "overridden:original 2"
+#       recipe {
+#         name: "recipe1"
+#         cipd_package: "cipd/default"
+#         cipd_version: "refs/default"
+#         properties_j: "base:\"base val\""
+#         properties_j: "overridden:\"original\""
+#       }
+#       priority: 30
+#       execution_timeout_secs: 3600
+#       expiration_secs: 7200
+#       caches {
+#         name: "base"
+#         path: "base"
+#       }
+#       build_numbers: YES
+#       service_account: "default@example.com"
+#       experimental: YES
+#       task_template_canary_percentage {
+#         value: 90
+#       }
 #       experiments {
 #         key: "def-exp-1"
 #         value: 10
@@ -266,6 +319,19 @@ luci.builder(
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "b3"
+#   }
+# }
+# job {
+#   id: "b4"
+#   acl_sets: "ci"
+#   triggering_policy {
+#     kind: GREEDY_BATCHING
+#     max_batch_size: 5
+#   }
+#   buildbucket {
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "luci.project.ci"
+#     builder: "b4"
 #   }
 # }
 # acl_sets {

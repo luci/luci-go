@@ -19,7 +19,7 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "builder_ref", "keys", "triggerer")
 load("@stdlib//internal/luci/lib/realms.star", "realms")
-load("@stdlib//internal/luci/lib/resultdb.star", "resultdb")
+load("@stdlib//internal/luci/lib/resultdb.star", "resultdb", "resultdbimpl")
 load("@stdlib//internal/luci/lib/scheduler.star", "schedulerimpl")
 load("@stdlib//internal/luci/lib/swarming.star", "swarming")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
@@ -60,6 +60,7 @@ def _builder(
 
         # Results.
         resultdb_settings = None,
+        test_presentation = None,
 
         # Relations.
         triggers = None,
@@ -208,6 +209,8 @@ def _builder(
         with resultdb.settings(...). A configuration that defines if
         Buildbucket:ResultDB integration should be enabled for this builder and
         which results to export to BigQuery.
+      test_presentation: A resultdb.test_presentation(...) struct. A
+        configuration that defines how tests should be rendered in the UI.
 
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.
@@ -247,6 +250,7 @@ def _builder(
         "task_template_canary_percentage": validate.int("task_template_canary_percentage", task_template_canary_percentage, min = 0, max = 100, required = False),
         "repo": validate.repo_url("repo", repo, required = False),
         "resultdb": resultdb.validate_settings("settings", resultdb_settings),
+        "test_presentation": resultdb.validate_test_presentation("test_presentation", test_presentation),
     }
 
     # Merge explicitly passed properties with the module-scoped defaults.
@@ -261,6 +265,13 @@ def _builder(
             props[k] = _merge_lists(def_val, prop_val)
         elif prop_val == None:
             props[k] = def_val
+
+    test_presentation = props.pop("test_presentation")
+
+    # To reduce noise in the properties, set the test presentation config only
+    # when it's not the default value.
+    if test_presentation != None and test_presentation != resultdb.test_presentation():
+        props["properties"]["$recipe_engine/resultdb/test_presentation"] = resultdbimpl.test_presentation_to_dict(test_presentation)
 
     # Properties should be JSON-serializable. The only way to check is to try to
     # serialize. We do it here (instead of generators.star) to get a more
@@ -380,5 +391,6 @@ builder = lucicfg.rule(
         "experiments": _validate_experiments,
         "task_template_canary_percentage": lambda attr, val: validate.int(attr, val, min = 0, max = 100),
         "resultdb": resultdb.validate_settings,
+        "test_presentation": resultdb.validate_test_presentation,
     }),
 )

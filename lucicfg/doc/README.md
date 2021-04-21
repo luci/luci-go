@@ -1433,6 +1433,7 @@ luci.builder(
     task_template_canary_percentage = None,
     repo = None,
     resultdb_settings = None,
+    test_presentation = None,
     triggers = None,
     triggered_by = None,
     notifies = None,
@@ -1511,6 +1512,7 @@ Buildbucket.
 * **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles_poller) that trigger this builder if they all poll the same repo.
 * **resultdb_settings**: A buildbucket_pb.Builder.ResultDB, such as one created with [resultdb.settings(...)](#resultdb.settings). A configuration that defines if Buildbucket:ResultDB integration should be enabled for this builder and which results to export to BigQuery.
+* **test_presentation**: A [resultdb.test_presentation(...)](#resultdb.test_presentation) struct. A configuration that defines how tests should be rendered in the UI.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 * **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer).
@@ -2734,6 +2736,52 @@ Represents a predicate of text artifacts.
 #### Returns  {#resultdb.artifact_predicate-returns}
 
 A populated predicate_pb.ArtifactPredicate() proto.
+
+
+
+### resultdb.test_presentation {#resultdb.test_presentation}
+
+```python
+resultdb.test_presentation(column_keys = None, grouping_keys = None)
+```
+
+
+
+Specifies how test should be rendered.
+
+#### Arguments {#resultdb.test_presentation-args}
+
+* **column_keys**: list of string keys that will be rendered as 'columns'. status is always the first column and name is always the last column (you don't need to specify them). A key must be one of the following:   1. 'v.{variant_key}': variant.def[variant_key] of the test variant     (e.g. v.gpu). If None, defaults to [].
+* **grouping_keys**: list of string keys that will be used for grouping tests. A key must be one of the following:   1. 'status': status of the test variant.   2. 'name': name of the test variant.   3. 'v.{variant_key}': variant.def[variant_key] of the test variant     (e.g. v.gpu). If None, defaults to ['status']. Caveat: test variants with only expected results are not affected by   this setting and are always in their own group.
+
+
+#### Returns  {#resultdb.test_presentation-returns}
+
+test_presentation.config struct with fields `column_keys` and
+`grouping_keys`.
+
+
+
+### resultdb.validate_test_presentation {#resultdb.validate_test_presentation}
+
+```python
+resultdb.validate_test_presentation(attr, config = None, required = None)
+```
+
+
+
+Validates a test presentation config.
+
+#### Arguments {#resultdb.validate_test_presentation-args}
+
+* **attr**: field name with caches, for error messages. Required.
+* **config**: a test_presentation.config to validate.
+* **required**: if False, allow 'config' to be None, return None in this case.
+
+
+#### Returns  {#resultdb.validate_test_presentation-returns}
+
+A validated test_presentation.config.
 
 
 
