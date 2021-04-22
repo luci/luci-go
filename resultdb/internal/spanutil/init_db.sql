@@ -99,6 +99,10 @@ CREATE TABLE Invocations (
   -- Union of all variants of test results directly included by the invocation.
   TestResultVariantUnion ARRAY<STRING(MAX)>,
 
+  -- Union of all variants of test results included by the invocation,
+  -- directly and indirectly.
+  TestResultVariantUnionRecursive ARRAY<STRING(MAX)>,
+
 ) PRIMARY KEY (InvocationId);
 
 -- Used by test results history to find a history of test results ordered by
