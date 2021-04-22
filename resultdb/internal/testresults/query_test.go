@@ -460,8 +460,10 @@ func TestQueryTestResults(t *testing.T) {
   					withUnexpected AS (
   						SELECT InvocationId, TestId, VariantHash
 							FROM invs
-							JOIN TestResults tr USING(InvocationId)
-							JOIN@{JOIN_METHOD=HASH_JOIN} variantsWithUnexpectedResults vur USING (TestId, VariantHash)
+							JOIN (
+								variantsWithUnexpectedResults vur
+								JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+							) USING(InvocationId)
 						) ,
 						withOnlyUnexpected AS (
 							SELECT ARRAY_AGG(tr) trs
@@ -514,8 +516,10 @@ func TestQueryTestResults(t *testing.T) {
 						withUnexpected AS (
 							SELECT InvocationId, TestId, VariantHash
 							FROM invs
-							JOIN TestResults tr USING(InvocationId)
-							JOIN@{JOIN_METHOD=HASH_JOIN} variantsWithUnexpectedResults vur USING (TestId, VariantHash)
+							JOIN (
+								variantsWithUnexpectedResults vur
+								JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+							) USING(InvocationId)
 						)
 					SELECT * FROM withUnexpected
 					WHERE true
