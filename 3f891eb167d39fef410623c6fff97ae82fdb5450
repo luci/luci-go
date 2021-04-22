@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5983c950_6bc7f415",
+        "filename": "resultdb/internal/invocations/history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T18:49:44Z",
+      "side": 1,
+      "message": "do we need this condition? if it is null, then code will reach L86",
+      "revId": "3f891eb167d39fef410623c6fff97ae82fdb5450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
