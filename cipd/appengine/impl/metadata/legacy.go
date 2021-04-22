@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -50,7 +50,7 @@ var rootMeta = &api.PrefixMetadata{
 }
 
 func init() {
-	rootMeta.Fingerprint = CalculateFingerprint(*rootMeta)
+	CalculateFingerprint(rootMeta)
 }
 
 // legacyStorageImpl implements Storage on top of PackageACL entities inherited
@@ -473,7 +473,7 @@ func mergeIntoPrefixMetadata(ctx context.Context, prefix string, ents []*package
 	}
 
 	// Calculate the fingerprint now that we have assembled everything.
-	md.Fingerprint = CalculateFingerprint(md)
+	CalculateFingerprint(&md)
 	return &md
 }
 

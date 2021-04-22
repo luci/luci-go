@@ -20,7 +20,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
@@ -41,7 +41,8 @@ type MetadataStore struct {
 // prefix is bad or the given metadata is empty.
 func (s *MetadataStore) Populate(prefix string, m *api.PrefixMetadata) *api.PrefixMetadata {
 	meta, err := s.UpdateMetadata(context.Background(), prefix, func(e *api.PrefixMetadata) error {
-		*e = *m
+		proto.Reset(e)
+		proto.Merge(e, m)
 		return nil
 	})
 	if err != nil {
@@ -157,7 +158,7 @@ func (s *MetadataStore) UpdateMetadata(c context.Context, prefix string, cb func
 	}
 
 	// Calculate the new fingerprint and put the metadata into the storage.
-	meta.Fingerprint = metadata.CalculateFingerprint(*meta)
+	metadata.CalculateFingerprint(meta)
 	if s.metas == nil {
 		s.metas = make(map[string]*api.PrefixMetadata, 1)
 	}
