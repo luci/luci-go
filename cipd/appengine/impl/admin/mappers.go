@@ -20,9 +20,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/dsmapper"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 )
@@ -45,18 +45,18 @@ func initMapper(d mapperDef) {
 // It contains parameters for the mapper (what entity to map over, number of
 // shards, etc), and the actual mapping function.
 type mapperDef struct {
-	Kind   api.MapperKind // also used to derive mapper.ID
-	Func   func(context.Context, mapper.JobID, *api.JobConfig, []*datastore.Key) error
-	Config mapper.JobConfig // note: Params will be overwritten
+	Kind   api.MapperKind // also used to derive dsmapper.ID
+	Func   func(context.Context, dsmapper.JobID, *api.JobConfig, []*datastore.Key) error
+	Config dsmapper.JobConfig // note: Params will be overwritten
 }
 
 // mapperID returns an identifier for this mapper (to use cross-process).
-func (m *mapperDef) mapperID() mapper.ID {
-	return mapper.ID(fmt.Sprintf("cipd:v1:%s", m.Kind))
+func (m *mapperDef) mapperID() dsmapper.ID {
+	return dsmapper.ID(fmt.Sprintf("cipd:v1:%s", m.Kind))
 }
 
 // newMapper creates new instance of a mapping function.
-func (m *mapperDef) newMapper(ctx context.Context, j *mapper.Job, shardIdx int) (mapper.Mapper, error) {
+func (m *mapperDef) newMapper(ctx context.Context, j *dsmapper.Job, shardIdx int) (dsmapper.Mapper, error) {
 	cfg := &api.JobConfig{}
 	if err := proto.Unmarshal(j.Config.Params, cfg); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal JobConfig").Err()

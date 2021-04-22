@@ -20,11 +20,11 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/dsmapper"
 )
 
 // markedTag is a root entity created for each tag marked by some particular
@@ -43,8 +43,8 @@ type markedTag struct {
 	_kind  string                `gae:"$kind,mapper.MarkedTag"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
-	ID  string       `gae:"$id"` // see .genID()
-	Job mapper.JobID // ID of a mapping job that produced it, for queries
+	ID  string         `gae:"$id"` // see .genID()
+	Job dsmapper.JobID // ID of a mapping job that produced it, for queries
 
 	Key *datastore.Key `gae:",noindex"` // key of the corresponding Tag entity
 	Tag string         `gae:",noindex"` // the original tag string (k:v)
@@ -64,7 +64,7 @@ func (t *markedTag) genID() {
 }
 
 // queryMarkedTags returns a query for markedTags entities produced by a job.
-func queryMarkedTags(job mapper.JobID) *datastore.Query {
+func queryMarkedTags(job dsmapper.JobID) *datastore.Query {
 	return datastore.NewQuery("mapper.MarkedTag").Eq("Job", job)
 }
 
@@ -115,7 +115,7 @@ func multiGetTags(ctx context.Context, keys []*datastore.Key, cb func(*datastore
 // with the human-readable reason why the tag was marked.
 //
 // Such marked tags are then stored in the datastore and later can be queried.
-func visitAndMarkTags(ctx context.Context, job mapper.JobID, keys []*datastore.Key, cb func(*model.Tag) string) error {
+func visitAndMarkTags(ctx context.Context, job dsmapper.JobID, keys []*datastore.Key, cb func(*model.Tag) string) error {
 	var marked []*markedTag
 	err := multiGetTags(ctx, keys, func(key *datastore.Key, tag *model.Tag) error {
 		if why := cb(tag); why != "" {

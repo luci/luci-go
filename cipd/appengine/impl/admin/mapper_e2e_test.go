@@ -16,12 +16,16 @@ package admin
 
 import (
 	"context"
+	"time"
 
-	"go.chromium.org/luci/appengine/mapper"
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/dsmapper"
+	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
+	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
@@ -30,24 +34,32 @@ import (
 // SetupTest prepares a test environment for running mappers.
 //
 // Puts datastore mock into always consistent mode.
-func SetupTest() (context.Context, *adminImpl) {
-	ctx, _, _ := testutil.TestingContext()
+func SetupTest() (context.Context, *adminImpl, *tqtesting.Scheduler) {
+	ctx, tc, _ := testutil.TestingContext()
 	datastore.GetTestable(ctx).Consistent(true)
+
+	tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+		if testclock.HasTags(t, tqtesting.ClockTag) {
+			tc.Add(d)
+		}
+	})
+
+	dispatcher := &tq.Dispatcher{}
+	mapper := &dsmapper.Controller{}
+	mapper.Install(dispatcher)
+	ctx, sched := tq.TestingContext(ctx, dispatcher)
 
 	admin := &adminImpl{
 		acl: func(context.Context) error { return nil },
-		tq:  &tq.Dispatcher{BaseURL: "/internal/tq/"},
+		ctl: mapper,
 	}
 	admin.init()
 
-	tq := tqtesting.GetTestable(ctx, admin.tq)
-	tq.CreateQueues()
-
-	return ctx, admin
+	return ctx, admin, sched
 }
 
 // RunMapper launches a mapper and runs it till successful completion.
-func RunMapper(ctx context.Context, admin *adminImpl, cfg *api.JobConfig) (mapper.JobID, error) {
+func RunMapper(ctx context.Context, admin *adminImpl, sched *tqtesting.Scheduler, cfg *api.JobConfig) (dsmapper.JobID, error) {
 	// Launching the job creates an initial tq task.
 	jobID, err := admin.LaunchJob(ctx, cfg)
 	if err != nil {
@@ -55,11 +67,7 @@ func RunMapper(ctx context.Context, admin *adminImpl, cfg *api.JobConfig) (mappe
 	}
 
 	// Run the tq loop until there are no more pending tasks.
-	tq := tqtesting.GetTestable(ctx, admin.tq)
-	_, _, err = tq.RunSimulation(ctx, nil)
-	if err != nil {
-		return 0, err
-	}
+	sched.Run(ctx, tqtesting.StopWhenDrained())
 
 	// Collect the result. Should be successful, otherwise RunSimulation would
 	// have returned an error (it aborts on a first error from a tq task).
@@ -67,9 +75,9 @@ func RunMapper(ctx context.Context, admin *adminImpl, cfg *api.JobConfig) (mappe
 	if err != nil {
 		return 0, err
 	}
-	if state.Info.State != mapper.State_SUCCESS {
+	if state.Info.State != dsmapperpb.State_SUCCESS {
 		return 0, errors.Reason("expecting SUCCESS state, got %s", state.Info.State).Err()
 	}
 
-	return mapper.JobID(jobID.JobId), nil
+	return dsmapper.JobID(jobID.JobId), nil
 }

@@ -20,13 +20,13 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/dsmapper"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -37,8 +37,8 @@ func init() {
 	initMapper(mapperDef{
 		Kind: api.MapperKind_FIND_MALFORMED_TAGS,
 		Func: findMalformedTagsMapper,
-		Config: mapper.JobConfig{
-			Query:         mapper.Query{Kind: "InstanceTag"},
+		Config: dsmapper.JobConfig{
+			Query:         dsmapper.Query{Kind: "InstanceTag"},
 			ShardCount:    512,
 			PageSize:      256, // note: 500 is a strict limit imposed by GetMulti
 			TrackProgress: true,
@@ -46,7 +46,7 @@ func init() {
 	})
 }
 
-func findMalformedTagsMapper(ctx context.Context, job mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+func findMalformedTagsMapper(ctx context.Context, job dsmapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
 	return visitAndMarkTags(ctx, job, keys, func(t *model.Tag) string {
 		if err := common.ValidateInstanceTag(t.Tag); err != nil {
 			return err.Error()
@@ -55,7 +55,7 @@ func findMalformedTagsMapper(ctx context.Context, job mapper.JobID, _ *api.JobCo
 	})
 }
 
-func fixMarkedTags(ctx context.Context, job mapper.JobID) (fixed []*api.TagFixReport_Tag, err error) {
+func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*api.TagFixReport_Tag, err error) {
 	ctx, cancel := clock.WithTimeout(ctx, time.Minute)
 	defer cancel()
 

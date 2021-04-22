@@ -31,7 +31,7 @@ func TestEnumeratePackages(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		ctx, admin := SetupTest()
+		ctx, admin, sched := SetupTest()
 		ctx = memlogger.Use(ctx)
 		log := logging.Get(ctx).(*memlogger.MemLogger)
 
@@ -40,7 +40,7 @@ func TestEnumeratePackages(t *testing.T) {
 			{Name: "a/b/c"},
 		}), ShouldBeNil)
 
-		_, err := RunMapper(ctx, admin, &api.JobConfig{
+		_, err := RunMapper(ctx, admin, sched, &api.JobConfig{
 			Kind: api.MapperKind_ENUMERATE_PACKAGES,
 		})
 		So(err, ShouldBeNil)

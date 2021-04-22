@@ -19,7 +19,7 @@ package cipd;
 option go_package = "go.chromium.org/luci/cipd/api/admin/v1;api";
 
 import "google/protobuf/empty.proto";
-import "go.chromium.org/luci/appengine/mapper/messages.proto";
+import "go.chromium.org/luci/server/dsmapper/dsmapperpb/messages.proto";
 
 
 // Administrative API used by CIPD service administrators for internal needs.
@@ -70,7 +70,7 @@ message JobState {
   // Original job config, exactly as it was submitted to LaunchJob.
   JobConfig config = 1;
   // Current state of the job and all its shards.
-  appengine.mapper.messages.JobInfo info = 2;
+  luci.server.dsmapper.JobInfo info = 2;
 }
 
 

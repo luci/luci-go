@@ -140,11 +140,20 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 	}
 	ctl.disp = disp
 
+	controlQueue := ctl.ControlQueue
+	if controlQueue == "" {
+		controlQueue = "default"
+	}
+	mapperQueue := ctl.MapperQueue
+	if mapperQueue == "" {
+		mapperQueue = "default"
+	}
+
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "dsmapper-split-and-launch",
 		Prototype: &tasks.SplitAndLaunch{},
 		Kind:      tq.Transactional,
-		Queue:     ctl.ControlQueue,
+		Queue:     controlQueue,
 		Handler:   ctl.splitAndLaunchHandler,
 		Quiet:     true,
 	})
@@ -152,7 +161,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		ID:        "dsmapper-fan-out-shards",
 		Prototype: &tasks.FanOutShards{},
 		Kind:      tq.Transactional,
-		Queue:     ctl.ControlQueue,
+		Queue:     controlQueue,
 		Handler:   ctl.fanOutShardsHandler,
 		Quiet:     true,
 	})
@@ -160,7 +169,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		ID:        "dsmapper-process-shard",
 		Prototype: &tasks.ProcessShard{},
 		Kind:      tq.FollowsContext,
-		Queue:     ctl.MapperQueue,
+		Queue:     mapperQueue,
 		Handler:   ctl.processShardHandler,
 		Quiet:     true,
 	})
@@ -168,7 +177,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		ID:        "dsmapper-request-job-state-update",
 		Prototype: &tasks.RequestJobStateUpdate{},
 		Kind:      tq.Transactional,
-		Queue:     ctl.ControlQueue,
+		Queue:     controlQueue,
 		Handler:   ctl.requestJobStateUpdateHandler,
 		Quiet:     true,
 	})
@@ -176,7 +185,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		ID:        "dsmapper-update-job-state",
 		Prototype: &tasks.UpdateJobState{},
 		Kind:      tq.NonTransactional,
-		Queue:     ctl.ControlQueue,
+		Queue:     controlQueue,
 		Handler:   ctl.updateJobStateHandler,
 		Quiet:     true,
 	})
