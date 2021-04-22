@@ -17,10 +17,10 @@ package admin
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -105,7 +105,7 @@ func (impl *adminImpl) LaunchJob(ctx context.Context, cfg *api.JobConfig) (*api.
 }
 
 // AbortJob implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*empty.Empty, error) {
+func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*emptypb.Empty, error) {
 	if err := impl.acl(ctx); err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*empty.Empt
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // GetJobState implements the corresponding RPC method, see the proto doc.

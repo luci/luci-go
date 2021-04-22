@@ -19,10 +19,11 @@ import (
 	"compress/zlib"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -107,12 +108,16 @@ func (p *ProcessingResult) ReadResultIntoStruct(s *structpb.Struct) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to open the blob for zlib decompression").Err()
 	}
-	if err := (&jsonpb.Unmarshaler{}).Unmarshal(z, s); err != nil {
+	blob, err := ioutil.ReadAll(z)
+	if err != nil {
 		z.Close()
-		return errors.Annotate(err, "failed to decompress or deserialize the result").Err()
+		return errors.Annotate(err, "failed to decompress the result").Err()
 	}
 	if err := z.Close(); err != nil {
 		return errors.Annotate(err, "failed to close zlib reader").Err()
+	}
+	if err := protojson.Unmarshal(blob, s); err != nil {
+		return errors.Annotate(err, "failed to deserialize the result").Err()
 	}
 	return nil
 }
