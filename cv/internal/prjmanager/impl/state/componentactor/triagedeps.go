@@ -189,7 +189,7 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep) {
 	// dependent is guaranteed non-nil.
 	switch mode := run.Mode(tr.GetMode()); mode {
-	case run.DryRun:
+	case run.DryRun, run.QuickDryRun:
 		return // OK.
 	case run.FullRun:
 		// TODO(tandrii): find bug about better handling of stacks in single-CL Run case.
