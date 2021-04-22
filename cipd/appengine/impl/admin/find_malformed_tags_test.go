@@ -32,7 +32,7 @@ func TestFixMalformedTags(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		ctx, admin := SetupTest()
+		ctx, admin, sched := SetupTest()
 
 		iid := strings.Repeat("a", 40)
 		instanceKey := func(pkg string) *datastore.Key {
@@ -68,7 +68,7 @@ func TestFixMalformedTags(t *testing.T) {
 		// Make sure allTags actually works too.
 		So(allTags("a"), ShouldResemble, []string{"good_a:tag", "bad_a:", "bad_a:fixable\n"})
 
-		jobID, err := RunMapper(ctx, admin, &api.JobConfig{
+		jobID, err := RunMapper(ctx, admin, sched, &api.JobConfig{
 			Kind: api.MapperKind_FIND_MALFORMED_TAGS,
 		})
 		So(err, ShouldBeNil)

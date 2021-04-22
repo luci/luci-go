@@ -27,12 +27,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 
-	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/dsmapper"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 	cipdapi "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -43,8 +43,8 @@ func init() {
 	initMapper(mapperDef{
 		Kind: api.MapperKind_EXPORT_TAGS_TO_BQ,
 		Func: exportTagsToBQ,
-		Config: mapper.JobConfig{
-			Query:         mapper.Query{Kind: "InstanceTag"},
+		Config: dsmapper.JobConfig{
+			Query:         dsmapper.Query{Kind: "InstanceTag"},
 			ShardCount:    256,
 			PageSize:      256, // note: 500 is a strict limit imposed by GetMulti
 			TrackProgress: true,
@@ -52,7 +52,7 @@ func init() {
 	})
 }
 
-func exportTagsToBQ(ctx context.Context, job mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+func exportTagsToBQ(ctx context.Context, job dsmapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
 	rows := make([]bigquery.ValueSaver, 0, len(keys))
 	err := multiGetTags(ctx, keys, func(key *datastore.Key, tag *model.Tag) error {
 		// These checks should never be hit, but just in case...
@@ -86,14 +86,14 @@ func exportTagsToBQ(ctx context.Context, job mapper.JobID, _ *api.JobConfig, key
 }
 
 // bqInsertID returns a hash of its inputs.
-func bqInsertID(seed string, job mapper.JobID, key *datastore.Key) string {
+func bqInsertID(seed string, job dsmapper.JobID, key *datastore.Key) string {
 	h := sha256.New()
 	fmt.Fprintf(h, "%s\n%d\n%s", seed, job, key.Encode())
 	return hex.EncodeToString(h.Sum(nil))
 }
 
 // uploadToBQ makes insertAll RPC to push rows to BigQuery.
-func uploadToBQ(ctx context.Context, job mapper.JobID, rows []bigquery.ValueSaver) error {
+func uploadToBQ(ctx context.Context, job dsmapper.JobID, rows []bigquery.ValueSaver) error {
 	if len(rows) == 0 {
 		return nil
 	}
