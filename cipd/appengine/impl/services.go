@@ -49,5 +49,7 @@ var (
 
 	// AdminAPI is ACL-protected implementation of cipd.AdminServer that can be
 	// exposed as an external API to be used by administrators.
-	AdminAPI = admin.AdminAPI(&TQ)
+	//
+	// TODO(crbug.com/1201436): Pass correct dsmapper.Controller instance.
+	AdminAPI = admin.AdminAPI(nil)
 )

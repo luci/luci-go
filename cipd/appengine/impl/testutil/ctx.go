@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/auth"
@@ -33,6 +34,7 @@ var TestUser = identity.Identity("user:u@example.com")
 
 func TestingContext(mocks ...authtest.MockedDatum) (context.Context, testclock.TestClock, func(string) context.Context) {
 	ctx, _ := testclock.UseTime(gaetesting.TestingContext(), TestTime)
+	ctx = txndefer.FilterRDS(ctx)
 	datastore.GetTestable(ctx).AutoIndex(true)
 	taskqueue.GetTestable(ctx).CreatePullQueue("bqlog-events")
 	as := func(email string) context.Context {

@@ -24,9 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-
-	"go.chromium.org/luci/appengine/mapper"
-	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/server/dsmapper"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/rpcacl"
@@ -34,10 +32,10 @@ import (
 
 // AdminAPI returns an ACL-protected implementation of cipd.AdminServer that can
 // be exposed as a public API (i.e. admins can use it via external RPCs).
-func AdminAPI(d *tq.Dispatcher) api.AdminServer {
+func AdminAPI(ctl *dsmapper.Controller) api.AdminServer {
 	impl := &adminImpl{
 		acl: rpcacl.CheckAdmin,
-		tq:  d,
+		ctl: ctl,
 	}
 	impl.init()
 	return impl
@@ -48,28 +46,26 @@ type adminImpl struct {
 	api.UnimplementedAdminServer
 
 	acl func(context.Context) error
-	tq  *tq.Dispatcher
-	ctl *mapper.Controller
+	ctl *dsmapper.Controller
 }
 
 // init initializes mapper controller and registers mapping tasks.
 func (impl *adminImpl) init() {
-	impl.ctl = &mapper.Controller{
-		MapperQueue:  "mappers", // see queue.yaml
-		ControlQueue: "default",
+	// TODO(crbug.com/1201436): Remove this bypass.
+	if impl.ctl == nil {
+		return
 	}
 	for _, m := range mappers { // see mappers.go
 		impl.ctl.RegisterFactory(m.mapperID(), m.newMapper)
 	}
-	impl.ctl.Install(impl.tq)
 }
 
-// toStatus converts an error from mapper.Controller to an grpc status.
+// toStatus converts an error from dsmapper.Controller to an grpc status.
 //
 // Passes nil as is.
 func toStatus(err error) error {
 	switch {
-	case err == mapper.ErrNoSuchJob:
+	case err == dsmapper.ErrNoSuchJob:
 		return status.Errorf(codes.NotFound, "no such mapping job")
 	case transient.Tag.In(err):
 		return status.Errorf(codes.Internal, err.Error())
@@ -113,7 +109,7 @@ func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*empty.Empt
 	if err := impl.acl(ctx); err != nil {
 		return nil, err
 	}
-	_, err := impl.ctl.AbortJob(ctx, mapper.JobID(id.JobId))
+	_, err := impl.ctl.AbortJob(ctx, dsmapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -125,7 +121,7 @@ func (impl *adminImpl) GetJobState(ctx context.Context, id *api.JobID) (*api.Job
 	if err := impl.acl(ctx); err != nil {
 		return nil, err
 	}
-	job, err := impl.ctl.GetJob(ctx, mapper.JobID(id.JobId))
+	job, err := impl.ctl.GetJob(ctx, dsmapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -145,7 +141,7 @@ func (impl *adminImpl) FixMarkedTags(ctx context.Context, id *api.JobID) (*api.T
 	if err := impl.acl(ctx); err != nil {
 		return nil, err
 	}
-	tags, err := fixMarkedTags(ctx, mapper.JobID(id.JobId))
+	tags, err := fixMarkedTags(ctx, dsmapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)
 	}
