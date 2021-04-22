@@ -26,7 +26,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -42,6 +41,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
+	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
@@ -385,7 +385,7 @@ func storageMocks() (context.Context, *mockedGS, tqtesting.Testable, *storageImp
 		deleteCalls: []string{},
 	}
 
-	dispatcher := &tq.Dispatcher{BaseURL: "/internal/tq/"}
+	dispatcher := migration.NewAppengineTQ()
 
 	impl := &storageImpl{
 		tq:    dispatcher,
@@ -399,7 +399,7 @@ func storageMocks() (context.Context, *mockedGS, tqtesting.Testable, *storageImp
 	}
 	impl.registerTasks()
 
-	tq := tqtesting.GetTestable(ctx, dispatcher)
+	tq := tqtesting.GetTestable(ctx, &dispatcher.TQ)
 	tq.CreateQueues()
 
 	return ctx, gsMock, tq, impl
