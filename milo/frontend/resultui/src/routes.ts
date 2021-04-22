@@ -16,7 +16,7 @@ import { Router } from '@vaadin/router';
 
 import './components/page_layout';
 
-export const NOT_FOUND_URL = '/ui/not-found';
+export const NOT_FOUND_URL = '/not-found';
 
 const appRoot = document.getElementById('app-root');
 export const router = new Router(appRoot, { baseUrl: '/ui/' });
