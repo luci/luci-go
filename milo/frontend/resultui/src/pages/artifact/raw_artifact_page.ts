@@ -18,7 +18,7 @@ import { fromPromise } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
-import { reportError } from '../../components/error_handler';
+import { reportError, reportRenderError } from '../../components/error_handler';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeContext } from '../../libs/context';
@@ -63,16 +63,28 @@ export class RawArtifactPageElement extends MiloBaseElement {
     );
   }
 
-  protected render() {
-    return html`<div id="content">Loading artifact <milo-dot-spinner></milo-dot-spinner></div>`;
-  }
+  protected render = reportRenderError.bind(this)(() => {
+    if (!this.artifact) {
+      return html`<div id="content" class="active-text">Loading artifact <milo-dot-spinner></milo-dot-spinner></div>`;
+    }
+    // The page should've navigated to the artifact fetch URL, but the browser
+    // may decide to download it instead of rendering it as a page.
+    // Render a download link in that case.
+    return html`
+      <div id="content">
+        The artifact content can not be directly rendered as a page.<br />
+        The browser should start downloading the artifact momentarily.<br />
+        If not, you can use the following link to download the artifact.<br />
+        <a href=${this.artifact.fetchUrl}>${this.artifact.fetchUrl}</a>
+      </div>
+    `;
+  });
 
   static styles = [
     commonStyle,
     css`
       #content {
         margin: 20px;
-        color: var(--active-color);
       }
     `,
   ];
