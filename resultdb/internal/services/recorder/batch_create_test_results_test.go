@@ -239,18 +239,3 @@ func TestBatchCreateTestResults(t *testing.T) {
 		})
 	})
 }
-
-func TestLongestCommonPrefix(t *testing.T) {
-	t.Parallel()
-	Convey("empty", t, func() {
-		So(longestCommonPrefix("", "str"), ShouldEqual, "")
-	})
-
-	Convey("no common prefix", t, func() {
-		So(longestCommonPrefix("str", "other"), ShouldEqual, "")
-	})
-
-	Convey("common prefix", t, func() {
-		So(longestCommonPrefix("prefix_1", "prefix_2"), ShouldEqual, "prefix_")
-	})
-}

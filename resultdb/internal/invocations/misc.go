@@ -93,3 +93,16 @@ func cloneStatement(st spanner.Statement) spanner.Statement {
 	}
 	return clone
 }
+
+// LongestCommonPrefix returns the longest common prefix of the two strings.
+func LongestCommonPrefix(str1, str2 string) string {
+	for i := 0; i < len(str1) && i < len(str2); i++ {
+		if str1[i] != str2[i] {
+			return str1[:i]
+		}
+	}
+	if len(str1) <= len(str2) {
+		return str1
+	}
+	return str2
+}

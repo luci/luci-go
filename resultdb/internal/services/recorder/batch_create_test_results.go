@@ -106,7 +106,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		if i == 0 {
 			commonPrefix = r.TestResult.TestId
 		} else {
-			commonPrefix = longestCommonPrefix(commonPrefix, r.TestResult.TestId)
+			commonPrefix = invocations.LongestCommonPrefix(commonPrefix, r.TestResult.TestId)
 		}
 		varUnion.AddAll(pbutil.VariantToStrings(r.TestResult.GetVariant()))
 	}
@@ -128,7 +128,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 
 			newPrefix := commonPrefix
 			if !invCommonTestIdPrefix.IsNull() {
-				newPrefix = longestCommonPrefix(invCommonTestIdPrefix.String(), commonPrefix)
+				newPrefix = invocations.LongestCommonPrefix(invCommonTestIdPrefix.String(), commonPrefix)
 			}
 			varUnion.AddAll(invVars)
 
@@ -189,16 +189,4 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 	}
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
 	return ret, mutation
-}
-
-func longestCommonPrefix(str1, str2 string) string {
-	for i := 0; i < len(str1) && i < len(str2); i++ {
-		if str1[i] != str2[i] {
-			return str1[:i]
-		}
-	}
-	if len(str1) <= len(str2) {
-		return str1
-	}
-	return str2
 }

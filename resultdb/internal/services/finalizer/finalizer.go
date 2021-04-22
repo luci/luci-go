@@ -24,6 +24,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -246,10 +247,16 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			return err
 		}
 
-		return parallel.FanOutIn(func(work chan<- func() error) {
+		var reachPrefix string
+		var reachVarUnion stringset.Set
+		err := parallel.FanOutIn(func(work chan<- func() error) {
 			// Read all reachable invocations to cache them after the transaction.
 			work <- func() (err error) {
 				reach, err = invocations.ReachableSkipRootCache(ctx, invocations.NewIDSet(invID))
+				if err != nil {
+					return
+				}
+				reachPrefix, reachVarUnion, err = commonTestIdPrefixAndVariantUnion(ctx, reach)
 				return
 			}
 
@@ -270,17 +277,35 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 				}
 				return bqexporter.Schedule(ctx, invID)
 			}
-
-			// Update the invocation state.
-			work <- func() error {
-				span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
-					"InvocationId": invID,
-					"State":        pb.Invocation_FINALIZED,
-					"FinalizeTime": spanner.CommitTimestamp,
-				}))
-				return nil
-			}
 		})
+		if err != nil {
+			return err
+		}
+
+		// Update the invocation.
+		var prefix spanner.NullString
+		var variant []string
+		if err = invocations.ReadColumns(ctx, invID, map[string]interface{}{
+			"CommonTestIDPrefix":     &prefix,
+			"TestResultVariantUnion": &variant,
+		}); err != nil {
+			return err
+		}
+
+		newPrefix := reachPrefix
+		if !prefix.IsNull() {
+			newPrefix = invocations.LongestCommonPrefix(prefix.String(), reachPrefix)
+		}
+		reachVarUnion.AddAll(variant)
+
+		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+			"InvocationId":           invID,
+			"State":                  pb.Invocation_FINALIZED,
+			"FinalizeTime":           spanner.CommitTimestamp,
+			"CommonTestIDPrefix":     newPrefix,
+			"TestResultVariantUnion": reachVarUnion.ToSortedSlice(),
+		}))
+		return nil
 	})
 	switch {
 	case err == errAlreadyFinalized:
@@ -316,4 +341,45 @@ func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []
 		return nil
 	})
 	return ids, err
+}
+
+// commonTestIdPrefixAndVariantUnion computes the CommonTestIDPrefix and TestResultVariantUnion
+// of the invoations in reach.
+func commonTestIdPrefixAndVariantUnion(ctx context.Context, reach invocations.IDSet) (string, stringset.Set, error) {
+	st := spanner.NewStatement(`
+		SELECT CommonTestIDPrefix, TestResultVariantUnion
+		FROM Invocations
+		WHERE InvocationId IN UNNEST(@invIDs)
+	`)
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+		"invIDs": reach,
+	})
+
+	var b spanutil.Buffer
+	commonPrefix := ""
+	withCommonFix := true
+	varUnion := stringset.New(0)
+	err := span.Query(ctx, st).Do(func(row *spanner.Row) error {
+		var subPrefix spanner.NullString
+		var subVariant []string
+		if err := b.FromSpanner(row, &subPrefix, &subVariant); err != nil {
+			return err
+		}
+
+		if withCommonFix && !subPrefix.IsNull() {
+			if commonPrefix == "" {
+				commonPrefix = subPrefix.String()
+			} else {
+				commonPrefix = invocations.LongestCommonPrefix(commonPrefix, subPrefix.String())
+				if commonPrefix == "" {
+					// No common prefix is found, so we should stop look for common prefix
+					// from the remaining invocations.
+					withCommonFix = false
+				}
+			}
+		}
+		varUnion.AddAll(subVariant)
+		return nil
+	})
+	return commonPrefix, varUnion, err
 }
