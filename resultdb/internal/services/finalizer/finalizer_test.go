@@ -106,8 +106,7 @@ func TestFinalizeInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, sched := tq.TestingContext(ctx, nil)
 
-		// This is flaky https://crbug.com/1042602#c19
-		SkipConvey(`Changes the state and finalization time`, func() {
+		Convey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
 			)...)
@@ -125,8 +124,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(finalizeTime, ShouldNotResemble, time.Time{})
 		})
 
-		// This is flaky https://crbug.com/1042602#c21
-		SkipConvey(`Enqueues more finalizing tasks`, func() {
+		Convey(`Enqueues more finalizing tasks`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.InvocationWithInclusions("active", pb.Invocation_ACTIVE, nil, "x"),
 				insert.InvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, nil, "x"),
@@ -139,13 +137,12 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			// Enqueued TQ tasks.
 			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.TryFinalizeInvocation{
-				{InvocationId: "finalizing1"},
 				{InvocationId: "finalizing2"},
+				{InvocationId: "finalizing1"},
 			})
 		})
 
-		// This is flaky https://crbug.com/1042602#c17
-		SkipConvey(`Enqueues more bq_export tasks`, func() {
+		Convey(`Enqueues more bq_export tasks`, func() {
 			bq1, _ := proto.Marshal(&pb.BigQueryExport{
 				Dataset: "dataset",
 				Project: "project",
@@ -169,6 +166,37 @@ func TestFinalizeInvocation(t *testing.T) {
 				{InvocationId: "x", BqExport: &pb.BigQueryExport{Dataset: "dataset", Project: "project2", Table: "table1"}},
 				{InvocationId: "x", BqExport: &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table"}},
 			})
+		})
+
+		Convey(`CommonTestIDPrefix and TestResultVariantUnion updated`, func() {
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insert.InvocationWithInclusions("inv", pb.Invocation_FINALIZING,
+					map[string]interface{}{
+						"TestResultVariantUnion": []string{"k:v"},
+					},
+					"sub1", "sub2"),
+				insert.InvocationWithInclusions("sub1", pb.Invocation_FINALIZED, nil),
+				insert.InvocationWithInclusions("sub2", pb.Invocation_FINALIZED,
+					map[string]interface{}{
+						"TestResultVariantUnion": []string{"k:v", "k1:v1"},
+					},
+				),
+			)...)
+
+			err := finalizeInvocation(ctx, "inv")
+			So(err, ShouldBeNil)
+
+			var state pb.Invocation_State
+			var finalizeTime time.Time
+			var invVars []string
+			testutil.MustReadRow(ctx, "Invocations", invocations.ID("inv").Key(), map[string]interface{}{
+				"State":                           &state,
+				"FinalizeTime":                    &finalizeTime,
+				"TestResultVariantUnionRecursive": &invVars,
+			})
+			So(state, ShouldEqual, pb.Invocation_FINALIZED)
+			So(finalizeTime, ShouldNotResemble, time.Time{})
+			So(invVars, ShouldResemble, []string{"k1:v1", "k:v"})
 		})
 	})
 }
