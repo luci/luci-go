@@ -22,12 +22,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -35,11 +33,13 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/tq"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
+	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/common"
@@ -69,7 +69,7 @@ type StorageServer interface {
 // done.
 //
 // Registers some task queue tasks in the given dispatcher.
-func Internal(d *tq.Dispatcher) StorageServer {
+func Internal(d migration.TQ) StorageServer {
 	impl := &storageImpl{
 		tq:           d,
 		getGS:        gs.Get,
@@ -86,7 +86,7 @@ func Internal(d *tq.Dispatcher) StorageServer {
 type storageImpl struct {
 	api.UnimplementedStorageServer
 
-	tq *tq.Dispatcher
+	tq migration.TQ
 
 	// Mocking points for tests. See Internal() for real implementations.
 	getGS        func(ctx context.Context) gs.GoogleStorage
@@ -97,12 +97,24 @@ type storageImpl struct {
 // registerTasks adds tasks to the tq Dispatcher.
 func (s *storageImpl) registerTasks() {
 	// See queue.yaml for "cas-uploads" task queue definition.
-	s.tq.RegisterTask(&tasks.VerifyUpload{}, func(ctx context.Context, m proto.Message) error {
-		return s.verifyUploadTask(ctx, m.(*tasks.VerifyUpload))
-	}, "cas-uploads", nil)
-	s.tq.RegisterTask(&tasks.CleanupUpload{}, func(ctx context.Context, m proto.Message) error {
-		return s.cleanupUploadTask(ctx, m.(*tasks.CleanupUpload))
-	}, "cas-uploads", nil)
+	s.tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "verify-upload",
+		Prototype: &tasks.VerifyUpload{},
+		Kind:      tq.Transactional,
+		Queue:     "cas-uploads",
+		Handler: func(ctx context.Context, m proto.Message) error {
+			return s.verifyUploadTask(ctx, m.(*tasks.VerifyUpload))
+		},
+	})
+	s.tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "cleanup-upload",
+		Prototype: &tasks.CleanupUpload{},
+		Kind:      tq.Transactional,
+		Queue:     "cas-uploads",
+		Handler: func(ctx context.Context, m proto.Message) error {
+			return s.cleanupUploadTask(ctx, m.(*tasks.CleanupUpload))
+		},
+	})
 }
 
 // GetReader is part of StorageServer interface.
@@ -295,8 +307,8 @@ func (s *storageImpl) FinishUpload(ctx context.Context, r *api.FinishUploadReque
 	mutated, err := op.Advance(ctx, func(ctx context.Context, op *upload.Operation) error {
 		op.Status = api.UploadStatus_VERIFYING
 		return s.tq.AddTask(ctx, &tq.Task{
-			Payload: &tasks.VerifyUpload{UploadOperationId: op.ID},
 			Title:   fmt.Sprintf("%d", op.ID),
+			Payload: &tasks.VerifyUpload{UploadOperationId: op.ID},
 		})
 	})
 	if err != nil {
@@ -330,12 +342,12 @@ func (s *storageImpl) CancelUpload(ctx context.Context, r *api.CancelUploadReque
 	mutated, err := op.Advance(ctx, func(ctx context.Context, op *upload.Operation) error {
 		op.Status = api.UploadStatus_CANCELED
 		return s.tq.AddTask(ctx, &tq.Task{
+			Title: fmt.Sprintf("%d", op.ID),
 			Payload: &tasks.CleanupUpload{
 				UploadOperationId: op.ID,
 				UploadUrl:         op.UploadURL,
 				PathToCleanup:     op.TempGSPath,
 			},
-			Title: fmt.Sprintf("%d", op.ID),
 		})
 	})
 	if err != nil {

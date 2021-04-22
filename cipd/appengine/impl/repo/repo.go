@@ -23,17 +23,15 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -45,10 +43,12 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
+	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
@@ -62,7 +62,7 @@ const PrefixesViewers = "cipd-prefixes-viewers"
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) Server {
+func Public(internalCAS cas.StorageServer, d migration.TQ) Server {
 	impl := &repoImpl{
 		tq:   d,
 		meta: metadata.GetStorage(),
@@ -87,7 +87,7 @@ type Server interface {
 type repoImpl struct {
 	api.UnimplementedRepositoryServer
 
-	tq *tq.Dispatcher
+	tq migration.TQ
 
 	meta metadata.Storage  // storage for package prefix metadata
 	cas  cas.StorageServer // non-ACLed storage for instance package files
@@ -99,9 +99,15 @@ type repoImpl struct {
 // registerTasks adds tasks to the tq Dispatcher.
 func (impl *repoImpl) registerTasks() {
 	// See queue.yaml for "run-processors" task queue definition.
-	impl.tq.RegisterTask(&tasks.RunProcessors{}, func(c context.Context, m proto.Message) error {
-		return impl.runProcessorsTask(c, m.(*tasks.RunProcessors))
-	}, "run-processors", nil)
+	impl.tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "run-processors",
+		Prototype: &tasks.RunProcessors{},
+		Kind:      tq.Transactional,
+		Queue:     "run-processors",
+		Handler: func(ctx context.Context, m proto.Message) error {
+			return impl.runProcessorsTask(ctx, m.(*tasks.RunProcessors))
+		},
+	})
 }
 
 // registerProcessor adds a new processor.
@@ -490,17 +496,17 @@ func (impl *repoImpl) ListPrefix(c context.Context, r *api.ListPrefixRequest) (r
 // Hide/unhide package.
 
 // HidePackage implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) HidePackage(c context.Context, r *api.PackageRequest) (*empty.Empty, error) {
+func (impl *repoImpl) HidePackage(c context.Context, r *api.PackageRequest) (*emptypb.Empty, error) {
 	return impl.setPackageHidden(c, r, model.Hidden)
 }
 
 // UnhidePackage implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) UnhidePackage(c context.Context, r *api.PackageRequest) (*empty.Empty, error) {
+func (impl *repoImpl) UnhidePackage(c context.Context, r *api.PackageRequest) (*emptypb.Empty, error) {
 	return impl.setPackageHidden(c, r, model.Visible)
 }
 
 // setPackageHidden is common implementation of HidePackage and UnhidePackage.
-func (impl *repoImpl) setPackageHidden(c context.Context, r *api.PackageRequest, hidden bool) (resp *empty.Empty, err error) {
+func (impl *repoImpl) setPackageHidden(c context.Context, r *api.PackageRequest, hidden bool) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	if err := common.ValidatePackageName(r.Package); err != nil {
@@ -516,14 +522,14 @@ func (impl *repoImpl) setPackageHidden(c context.Context, r *api.PackageRequest,
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to update the package").Err()
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Package deletion.
 
 // DeletePackage implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DeletePackage(c context.Context, r *api.PackageRequest) (resp *empty.Empty, err error) {
+func (impl *repoImpl) DeletePackage(c context.Context, r *api.PackageRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	if err := common.ValidatePackageName(r.Package); err != nil {
@@ -545,7 +551,7 @@ func (impl *repoImpl) DeletePackage(c context.Context, r *api.PackageRequest) (r
 		return nil, err
 	}
 
-	return &empty.Empty{}, model.DeletePackage(c, r.Package)
+	return &emptypb.Empty{}, model.DeletePackage(c, r.Package)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -645,8 +651,8 @@ func (impl *repoImpl) onInstanceRegistration(c context.Context, inst *model.Inst
 
 	// Launch the TQ task that does the processing (see runProcessorsTask below).
 	return impl.tq.AddTask(c, &tq.Task{
-		Payload: &tasks.RunProcessors{Instance: inst.Proto()},
 		Title:   inst.InstanceID,
+		Payload: &tasks.RunProcessors{Instance: inst.Proto()},
 	})
 }
 
@@ -920,7 +926,7 @@ func (impl *repoImpl) SearchInstances(c context.Context, r *api.SearchInstancesR
 // Refs support.
 
 // CreateRef implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *empty.Empty, err error) {
+func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Validate the request.
@@ -948,11 +954,11 @@ func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *empty.Empt
 	if err := model.SetRef(c, r.Name, inst); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // DeleteRef implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DeleteRef(c context.Context, r *api.DeleteRefRequest) (resp *empty.Empty, err error) {
+func (impl *repoImpl) DeleteRef(c context.Context, r *api.DeleteRefRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Validate the request.
@@ -977,7 +983,7 @@ func (impl *repoImpl) DeleteRef(c context.Context, r *api.DeleteRefRequest) (res
 	if err := model.DeleteRef(c, r.Package, r.Name); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // ListRefs implements the corresponding RPC method, see the proto doc.
@@ -1038,7 +1044,7 @@ func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error
 }
 
 // AttachTags implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) AttachTags(c context.Context, r *api.AttachTagsRequest) (resp *empty.Empty, err error) {
+func (impl *repoImpl) AttachTags(c context.Context, r *api.AttachTagsRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Validate the request.
@@ -1060,11 +1066,11 @@ func (impl *repoImpl) AttachTags(c context.Context, r *api.AttachTagsRequest) (r
 	if err := model.AttachTags(c, inst, r.Tags); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // DetachTags implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (resp *empty.Empty, err error) {
+func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Validate the request.
@@ -1090,14 +1096,14 @@ func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (r
 	if err := model.DetachTags(c, inst, r.Tags); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Instance metadata support.
 
 // AttachMetadata implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) AttachMetadata(c context.Context, r *api.AttachMetadataRequest) (resp *empty.Empty, err error) {
+func (impl *repoImpl) AttachMetadata(c context.Context, r *api.AttachMetadataRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Validate the request.
@@ -1136,11 +1142,11 @@ func (impl *repoImpl) AttachMetadata(c context.Context, r *api.AttachMetadataReq
 	if err := model.AttachMetadata(c, inst, r.Metadata); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // DetachMetadata implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DetachMetadata(c context.Context, r *api.DetachMetadataRequest) (resp *empty.Empty, err error) {
+func (impl *repoImpl) DetachMetadata(c context.Context, r *api.DetachMetadataRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Validate the request.
@@ -1188,7 +1194,7 @@ func (impl *repoImpl) DetachMetadata(c context.Context, r *api.DetachMetadataReq
 	if err := model.DetachMetadata(c, inst, r.Metadata); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // ListMetadata implements the corresponding RPC method, see the proto doc.
