@@ -26,11 +26,13 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/cipd/appengine/impl"
-	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/migration/gae1"
 	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 )
 
 func main() {
+	gae1.Activate()
+
 	r := router.New()
 	base := standard.Base()
 	cron := base.Extend(gaemiddleware.RequireCron)
@@ -42,7 +44,7 @@ func main() {
 		func(c *router.Context) {
 			// FlushEventsToBQ logs errors inside. We also do not retry on errors.
 			// It's fine to wait and flush on the next iteration.
-			model.FlushEventsToBQ(c.Context)
+			gae1.FlushEventsToBQ(c.Context)
 			c.Writer.WriteHeader(http.StatusOK)
 		},
 	)

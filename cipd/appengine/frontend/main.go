@@ -34,10 +34,13 @@ import (
 	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
 	pubapi "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl"
+	"go.chromium.org/luci/cipd/appengine/impl/migration/gae1"
 	"go.chromium.org/luci/cipd/appengine/ui"
 )
 
 func main() {
+	gae1.Activate()
+
 	r := router.New()
 
 	// Install auth, config and tsmon handlers.
