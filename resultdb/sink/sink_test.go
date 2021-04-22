@@ -105,6 +105,29 @@ func TestNewServer(t *testing.T) {
 			_, err = NewServer(ctx, cfg)
 			So(err, ShouldErrLike, "key: unspecified")
 		})
+		Convey("with MaxBatchableArtifactSize", func() {
+			// default
+			cfg.MaxBatchableArtifactSize = 0
+			s, err := NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+			So(s.cfg.MaxBatchableArtifactSize, ShouldNotEqual, 0)
+
+			// valid
+			cfg.MaxBatchableArtifactSize = 512 * 1024
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+			So(cfg.MaxBatchableArtifactSize, ShouldNotEqual, 0)
+
+			cfg.MaxBatchableArtifactSize = 10 * 1024 * 1024
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+			So(cfg.MaxBatchableArtifactSize, ShouldNotEqual, 0)
+
+			// invalid - too big
+			cfg.MaxBatchableArtifactSize = 10*1024*1024 + 1
+			_, err = NewServer(ctx, cfg)
+			So(err, ShouldErrLike, "is greater than 10MiB")
+		})
 	})
 }
 
