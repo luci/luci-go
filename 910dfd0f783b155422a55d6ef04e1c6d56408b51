@@ -16,6 +16,23 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo.appspot.com/ui/artifact/raw/invocations/task-chromium-swarm.appspot.com-530f2a641242fb11/tests/ninja:%2F%2F:blink_web_tests%2Fexternal%2Fwpt%2FFileAPI%2Ffile%2Fsend-file-formdata-controls.html/results/43c6d628-05494/artifacts/actual_text\n",
       "revId": "910dfd0f783b155422a55d6ef04e1c6d56408b51",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c616347_5bcac49f",
+        "filename": "milo/frontend/resultui/src/pages/artifact/raw_artifact_page.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T00:54:05Z",
+      "side": 1,
+      "message": "i imagine the user would think something like \"why are you making me click this button. Why not redirect me\", although you have a reasonable explanation in the code comment.\n\nshould we turn the code comment into the text that the user sees? sort of a redirect notice like in https://www.google.com/url?u\u003dgoogle.com",
+      "revId": "910dfd0f783b155422a55d6ef04e1c6d56408b51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
