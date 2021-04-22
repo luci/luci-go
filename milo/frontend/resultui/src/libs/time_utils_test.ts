@@ -70,5 +70,13 @@ describe('Time Utils Tests', () => {
       const duration = Duration.fromMillis(999);
       assert.strictEqual(displayCompactDuration(duration), '999ms');
     });
+    it("should not display the duration in ms if it's no less than 999.5ms", async () => {
+      const duration = Duration.fromMillis(999.5);
+      assert.strictEqual(displayCompactDuration(duration), '1.0s');
+    });
+    it("should display the duration in ms if it's less than 999.5ms", async () => {
+      const duration = Duration.fromMillis(999.4999);
+      assert.strictEqual(displayCompactDuration(duration), '999ms');
+    });
   });
 });
