@@ -17,7 +17,7 @@ package model
 import (
 	"testing"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"

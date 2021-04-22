@@ -25,9 +25,14 @@ import (
 func TestCalculateFingerprint(t *testing.T) {
 	t.Parallel()
 
+	call := func(md *api.PrefixMetadata) string {
+		CalculateFingerprint(md)
+		return md.Fingerprint
+	}
+
 	Convey("Works", t, func() {
-		So(CalculateFingerprint(api.PrefixMetadata{}), ShouldEqual, "MvCPQuqSLssfbtMFiqBzZOdINQo")
-		So(CalculateFingerprint(api.PrefixMetadata{Fingerprint: "zzz"}), ShouldEqual, "MvCPQuqSLssfbtMFiqBzZOdINQo")
-		So(CalculateFingerprint(api.PrefixMetadata{Prefix: "a"}), ShouldEqual, "B96o1ElnpJUTe-Hf3dyT_S7KoTw")
+		So(call(&api.PrefixMetadata{}), ShouldEqual, "MvCPQuqSLssfbtMFiqBzZOdINQo")
+		So(call(&api.PrefixMetadata{Fingerprint: "zzz"}), ShouldEqual, "MvCPQuqSLssfbtMFiqBzZOdINQo")
+		So(call(&api.PrefixMetadata{Prefix: "a"}), ShouldEqual, "B96o1ElnpJUTe-Hf3dyT_S7KoTw")
 	})
 }
