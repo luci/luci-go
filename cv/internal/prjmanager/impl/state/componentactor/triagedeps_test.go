@@ -196,7 +196,7 @@ func TestDepsTriage(t *testing.T) {
 						So(td.OK(), ShouldBeTrue)
 					})
 
-					Convey("wrong config group", func() {
+					Convey("Wrong config group", func() {
 						sup.pb.Pcls = []*prjpb.PCL{
 							{Clid: 31, Trigger: dryRun(epoch.Add(3 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx}},
 							{Clid: 32, Trigger: dryRun(epoch.Add(2 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx, cgIdx}},
@@ -242,6 +242,14 @@ func TestDepsTriage(t *testing.T) {
 			}
 			Convey("dry run doesn't care about deps' triggers", func() {
 				pcl33 := sup.PCL(33)
+				td := triage(pcl33, singIdx)
+				So(td, shouldResembleTriagedDeps, &triagedDeps{
+					lastTriggered: epoch.Add(3 * time.Second),
+				})
+			})
+			Convey("quick dry run doesn't care about deps' triggers", func() {
+				pcl33 := sup.PCL(33)
+				pcl33.Trigger.Mode = string(run.QuickDryRun)
 				td := triage(pcl33, singIdx)
 				So(td, shouldResembleTriagedDeps, &triagedDeps{
 					lastTriggered: epoch.Add(3 * time.Second),
