@@ -20,11 +20,18 @@
 package impl
 
 import (
+	"context"
+
+	"cloud.google.com/go/bigquery"
+	"google.golang.org/appengine"
+
+	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/migration"
+	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo"
 
 	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
@@ -49,6 +56,9 @@ var (
 	AdminAPI adminapi.AdminServer
 )
 
+// eventsLog is used only on GAE1
+var eventsLog *bqlog.Log
+
 func InitForGAE1(r *router.Router, mw router.MiddlewareChain) {
 	tq := migration.NewAppengineTQ()
 	if r != nil {
@@ -58,4 +68,21 @@ func InitForGAE1(r *router.Router, mw router.MiddlewareChain) {
 	PublicCAS = cas.Public(InternalCAS)
 	PublicRepo = repo.Public(InternalCAS, tq)
 	AdminAPI = admin.AdminAPI(nil)
+
+	eventsLog = &bqlog.Log{
+		QueueName:           "bqlog-events", // see queue.yaml
+		DatasetID:           "cipd",         // see push_bq_schema.sh
+		TableID:             "events",
+		DumpEntriesToLogger: true,
+		DryRun:              appengine.IsDevAppServer(),
+	}
+	model.EnqueueEventsImpl = func(ctx context.Context, rows []bigquery.ValueSaver) error {
+		return eventsLog.Insert(ctx, rows...)
+	}
+}
+
+// FlushEventsToBQGAE1 sends all buffered events to BigQuery.
+func FlushEventsToBQGAE1(ctx context.Context) error {
+	_, err := eventsLog.Flush(ctx)
+	return err
 }
