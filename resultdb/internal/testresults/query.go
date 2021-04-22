@@ -376,8 +376,10 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		withUnexpected AS (
 			SELECT {{.columns}}
 			FROM invs
-			JOIN TestResults tr USING(InvocationId)
-			JOIN@{JOIN_METHOD=HASH_JOIN} variantsWithUnexpectedResults vur USING (TestId, VariantHash)
+			JOIN (
+				variantsWithUnexpectedResults vur
+				JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+			) USING(InvocationId)
 			{{/*
 				Don't have to use testIDAndVariantFilter because
 				variantsWithUnexpectedResults is already filtered
