@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo"
+	"go.chromium.org/luci/cipd/appengine/impl/settings"
 
 	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
 	cipdapi "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -64,7 +65,7 @@ func InitForGAE1(r *router.Router, mw router.MiddlewareChain) {
 	if r != nil {
 		tq.TQ.InstallRoutes(r, mw)
 	}
-	InternalCAS = cas.Internal(tq)
+	InternalCAS = cas.Internal(tq, settings.Get)
 	PublicCAS = cas.Public(InternalCAS)
 	PublicRepo = repo.Public(InternalCAS, tq)
 	AdminAPI = admin.AdminAPI(nil)

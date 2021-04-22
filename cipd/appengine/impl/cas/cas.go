@@ -66,17 +66,20 @@ type StorageServer interface {
 	GetReader(ctx context.Context, ref *api.ObjectRef) (gs.Reader, error)
 }
 
+// SettingsProvider returns current CAS settings.
+type SettingsProvider func(ctx context.Context) (*settings.Settings, error)
+
 // Internal returns non-ACLed implementation of StorageService.
 //
 // It can be used internally by the backend. Assumes ACL checks are already
 // done.
 //
 // Registers some task queue tasks in the given dispatcher.
-func Internal(d migration.TQ) StorageServer {
+func Internal(d migration.TQ, settings SettingsProvider) StorageServer {
 	impl := &storageImpl{
 		tq:           d,
 		getGS:        gs.Get,
-		settings:     settings.Get,
+		settings:     settings,
 		getSignedURL: getSignedURL,
 	}
 	impl.registerTasks()
@@ -165,11 +168,6 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *api.GetObjectURLReque
 	}
 
 	sigFactory := defaultSigner
-	if cfg.SignAs != "" {
-		sigFactory = func(ctx context.Context) (*signer, error) {
-			return iamSigner(ctx, cfg.SignAs)
-		}
-	}
 
 	url, size, err := s.getSignedURL(ctx, cfg.ObjectPath(r.Object), r.DownloadFilename, sigFactory, s.getGS(ctx))
 	if err != nil {
