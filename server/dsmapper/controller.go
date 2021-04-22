@@ -146,6 +146,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		Kind:      tq.Transactional,
 		Queue:     ctl.ControlQueue,
 		Handler:   ctl.splitAndLaunchHandler,
+		Quiet:     true,
 	})
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "dsmapper-fan-out-shards",
@@ -153,6 +154,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		Kind:      tq.Transactional,
 		Queue:     ctl.ControlQueue,
 		Handler:   ctl.fanOutShardsHandler,
+		Quiet:     true,
 	})
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "dsmapper-process-shard",
@@ -160,6 +162,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		Kind:      tq.FollowsContext,
 		Queue:     ctl.MapperQueue,
 		Handler:   ctl.processShardHandler,
+		Quiet:     true,
 	})
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "dsmapper-request-job-state-update",
@@ -167,6 +170,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		Kind:      tq.Transactional,
 		Queue:     ctl.ControlQueue,
 		Handler:   ctl.requestJobStateUpdateHandler,
+		Quiet:     true,
 	})
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "dsmapper-update-job-state",
@@ -174,6 +178,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 		Kind:      tq.NonTransactional,
 		Queue:     ctl.ControlQueue,
 		Handler:   ctl.updateJobStateHandler,
+		Quiet:     true,
 	})
 }
 
@@ -637,7 +642,11 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 		return ctl.finishShard(ctx, sh.ID, itemCount, err)
 	}
 
-	logging.Infof(ctx, "The shard processing will resume from %s", lastKey)
+	if lastKey != nil {
+		logging.Infof(ctx, "The shard processing will resume from %s", lastKey)
+	} else {
+		logging.Infof(ctx, "The shard processing will resume from scratch")
+	}
 
 	// If the shard isn't done and we made no progress at all, then we hit
 	// a transient error. Ask TQ to retry.
