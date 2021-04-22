@@ -31,7 +31,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/retry/transient"
@@ -41,6 +40,7 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
+	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
@@ -801,14 +801,16 @@ func TestRegisterInstance(t *testing.T) {
 			},
 		})
 
+		dispatcher := migration.NewAppengineTQ()
+
 		impl := repoImpl{
-			tq:   &tq.Dispatcher{BaseURL: "/internal/tq/"},
+			tq:   dispatcher,
 			meta: &meta,
 			cas:  &cas,
 		}
 		impl.registerTasks()
 
-		tq := tqtesting.GetTestable(ctx, impl.tq)
+		tq := tqtesting.GetTestable(ctx, &dispatcher.TQ)
 		tq.CreateQueues()
 
 		digest := strings.Repeat("a", 40)

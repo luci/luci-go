@@ -43,6 +43,7 @@ func main() {
 	// Install auth, config and tsmon handlers.
 	server.SwitchToEncryptedCookies()
 	standard.InstallHandlers(r)
+	impl.InitForGAE1(nil, router.MiddlewareChain{}) // don't install HTTP routes
 
 	// RPC Explorer UI.
 	rpcexplorer.Install(r)

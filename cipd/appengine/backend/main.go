@@ -36,7 +36,7 @@ func main() {
 	cron := base.Extend(gaemiddleware.RequireCron)
 
 	standard.InstallHandlers(r)
-	impl.TQ.InstallRoutes(r, base)
+	impl.InitForGAE1(r, base)
 
 	r.GET("/internal/cron/bqlog/events-flush", cron,
 		func(c *router.Context) {
