@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -67,9 +68,10 @@ func TestByTimestamp(t *testing.T) {
 				"Realm":       realm,
 			}),
 			insertInvocation("second", map[string]interface{}{
-				"CreateTime":  middle,
-				"HistoryTime": middle,
-				"Realm":       realm,
+				"CreateTime":                      middle,
+				"HistoryTime":                     middle,
+				"Realm":                           realm,
+				"TestResultVariantUnionRecursive": []string{"k:v"},
 			}),
 			insertInvocation("secondWrongRealm", map[string]interface{}{
 				"CreateTime":  middle,
@@ -82,9 +84,10 @@ func TestByTimestamp(t *testing.T) {
 				"Realm": realm,
 			}),
 			insertInvocation("third", map[string]interface{}{
-				"CreateTime":  end,
-				"HistoryTime": end,
-				"Realm":       realm,
+				"CreateTime":                      end,
+				"HistoryTime":                     end,
+				"Realm":                           realm,
+				"TestResultVariantUnionRecursive": []string{"a:b", "k:v"},
 			}),
 		)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -146,6 +149,22 @@ func TestByTimestamp(t *testing.T) {
 			err := q.ByTimestamp(ctx, ac.accumulate)
 			So(err, ShouldBeNil)
 			So(ac.invs, ShouldHaveLength, 0)
+		})
+
+		Convey(`matched variant`, func() {
+			ac := newHistoryAccumulator(2)
+			q.TimeRange = &pb.TimeRange{Earliest: startPB, Latest: afterPB}
+			q.Predicate = &pb.TestResultPredicate{
+				Variant: &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Equals{
+						Equals: pbutil.Variant("a", "b"),
+					},
+				},
+			}
+			err := q.ByTimestamp(ctx, ac.accumulate)
+			So(err, ShouldBeNil)
+			So(ac.invs, ShouldHaveLength, 1)
+			So(string(ac.invs[0]), ShouldEndWith, "third")
 		})
 	})
 }
