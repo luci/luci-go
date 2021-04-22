@@ -218,6 +218,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "76dd532d_7b3644f0",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T16:43:20Z",
+      "side": 1,
+      "message": "Added. PTAL",
+      "parentUuid": "61b60825_fe890318",
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "31bbb6ae_f830356f",
