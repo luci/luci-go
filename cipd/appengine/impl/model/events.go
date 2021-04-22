@@ -24,10 +24,8 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/appengine"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -41,12 +39,12 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 )
 
-var eventsLog = bqlog.Log{
-	QueueName:           "bqlog-events", // see queue.yaml
-	DatasetID:           "cipd",         // see push_bq_schema.sh
-	TableID:             "events",
-	DumpEntriesToLogger: true,
-	DryRun:              appengine.IsDevAppServer(),
+// EnqueueEventsImpl transactionally submits events to the event log.
+//
+// Exists only during GAEv1 => GAEv2 migration. The default value just ignores
+// events (useful for tests that don't care about them).
+var EnqueueEventsImpl = func(ctx context.Context, row []bigquery.ValueSaver) error {
+	return nil
 }
 
 // textContentTypes is a list of text-like content types (in addition to
@@ -189,7 +187,7 @@ func (t *Events) Flush(c context.Context) error {
 
 	err := parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error { return datastore.Put(c, entities) }
-		tasks <- func() error { return eventsLog.Insert(c, rows...) }
+		tasks <- func() error { return EnqueueEventsImpl(c, rows) }
 	})
 	if err != nil {
 		return transient.Tag.Apply(err)
@@ -219,15 +217,6 @@ func IsTextContentType(ct string) bool {
 		return true
 	}
 	return textContentTypes.Has(ct)
-}
-
-// FlushEventsToBQ sends all buffered events to BigQuery.
-//
-// It is fine to call FlushEventsToBQ concurrently from multiple request
-// handlers, if necessary (it will effectively parallelize the flush).
-func FlushEventsToBQ(c context.Context) error {
-	_, err := eventsLog.Flush(c)
-	return err
 }
 
 ////////////////////////////////////////////////////////////////////////////////
