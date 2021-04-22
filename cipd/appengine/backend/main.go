@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/cipd/appengine/impl"
-	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 )
 
@@ -40,9 +39,7 @@ func main() {
 
 	r.GET("/internal/cron/bqlog/events-flush", cron,
 		func(c *router.Context) {
-			// FlushEventsToBQ logs errors inside. We also do not retry on errors.
-			// It's fine to wait and flush on the next iteration.
-			model.FlushEventsToBQ(c.Context)
+			impl.FlushEventsToBQGAE1(c.Context)
 			c.Writer.WriteHeader(http.StatusOK)
 		},
 	)
