@@ -41,6 +41,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "abf04acf_fc0128ee",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T15:34:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a14b45e3_acbdde2d",
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c6e35dd3_d2ca480b",
@@ -54,6 +72,30 @@
       "writtenOn": "2021-04-22T06:18:16Z",
       "side": 1,
       "message": "a",
+      "range": {
+        "startLine": 166,
+        "startChar": 30,
+        "endLine": 166,
+        "endChar": 31
+      },
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c16a5fa_3c5a850d",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T15:34:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6e35dd3_d2ca480b",
       "range": {
         "startLine": 166,
         "startChar": 30,
@@ -83,6 +125,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0bb3a4d5_3431c1dd",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T15:34:23Z",
+      "side": 1,
+      "message": "done.",
+      "parentUuid": "bc043725_6f8dea38",
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "693d1e3b_f9f3287d",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -94,6 +154,24 @@
       "writtenOn": "2021-04-22T06:18:16Z",
       "side": 1,
       "message": "nit: it *feels* like this code could be even simpler :)\n\ncurrently this func has two deal with *two* states: Data and Meta, although it could be just one. \n\n  func (u *artifactUploader) makeBatches(maxSum int64, tasks []interface{}) (*pb.BatchCreateArtifactsRequest, error) {\n    ...\n  }\n\nand then this func could be\n\n\n  func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {\n    var err error\n    if b.Meta \u003d\u003d nil {\n      if b.Meta, err \u003d u.makeBatches(b.Data); err !\u003d nil {\n        return err...\n      }\n    }\n\n    reqs :\u003d b.Meta.([]*pb.BatchCreateArtifactsRequest)\n    for len(reqs) \u003e 0 {\n      if _, err :\u003d u.Recorder.BatchCreateArtifacts(ctx, reqs[0]); err !\u003d nil {\n        return err\n      }\n      reqs \u003d reqs[1:]\n      b.Meta \u003d reqs\n    }\n    return nil\n  }",
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f32d9ab_a56afb9c",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T15:34:23Z",
+      "side": 1,
+      "message": "The intent of taskUploadSlicer{} is to avoid having to load the contents of all the artifacts in memory, and that\u0027s why newBatchCreateArtifactsRequest() is also written in the same way.\n\nFor example, it\u0027s possible that a buffer.Batch{} could contain 500 of 1MB artifact files.",
+      "parentUuid": "693d1e3b_f9f3287d",
       "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
