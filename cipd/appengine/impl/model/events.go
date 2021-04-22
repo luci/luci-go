@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/bq"
