@@ -131,6 +131,14 @@ type ServerConfig struct {
 	// ancestor directory) in the map and append the directory's tags to the
 	// test results' tags.
 	LocationTags *sinkpb.LocationTags
+
+	// MaxBatchableArtifactSize is the maximum size of an artifact that can be uploaded
+	// in a batch.
+	//
+	// Artifacts smaller or equal to this size will be uploaded in a batch, whereas
+	// greater artifacts will be uploaded in a stream manner.
+	// Must be < 10MiB, and NewServer panics, otherwise.
+	MaxBatchableArtifactSize int64
 }
 
 // Validate validates all the config fields.
@@ -158,6 +166,8 @@ func (c *ServerConfig) Validate() error {
 		return errors.Annotate(err, "TestIDPrefix").Err()
 	case c.TestLocationBase != "" && isErr(pbutil.ValidateFilePath(c.TestLocationBase)):
 		return errors.Annotate(err, "TestLocationBase").Err()
+	case c.MaxBatchableArtifactSize > 10*1024*1024:
+		return errors.Reason("MaxBatchableArtifactSize: %d is greater than 10MiB", c.MaxBatchableArtifactSize).Err()
 	}
 	return nil
 }
@@ -196,6 +206,9 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	}
 	if cfg.TestResultChannelMaxLeases == 0 {
 		cfg.TestResultChannelMaxLeases = DefaultTestResultChannelMaxLeases
+	}
+	if cfg.MaxBatchableArtifactSize == 0 {
+		cfg.MaxBatchableArtifactSize = 2 * 1024 * 1024
 	}
 
 	// extract the invocation ID from cfg.Invocation so that other modules don't need to

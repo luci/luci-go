@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -40,8 +41,11 @@ type artifactUploader struct {
 	// StreamClient is an HTTP client used to upload artifacts that are too large
 	// to be batched.
 	StreamClient *http.Client
-	// Host is the host of a ResultDB service instance, to which artifacts are streamed.
+	// StreamHost is the host of a ResultDB service instance, to which artifacts are streamed.
 	StreamHost string
+
+	// MaxBatchable is the maximum size of an artifact that can be batched.
+	MaxBatchable int64
 }
 
 // StreamUpload uploads the artifact in a streaming manner via HTTP..
@@ -142,7 +146,70 @@ func calculateHash(input io.Reader) (string, error) {
 	return "sha256:" + hex.EncodeToString(hash.Sum(nil)), nil
 }
 
+// newBatchCreateArtifactsRequest returns a BatchCreateArtifactsRequest with
+// at most 500 items with capping the sum of the artifact sizes by maxSum.
+//
+// Panics if tasks an item with an artifact larger than maxSum.
+func newBatchCreateArtifactsRequest(maxSum int64, tasks []interface{}) (*pb.BatchCreateArtifactsRequest, error) {
+	l := len(tasks)
+	if l > 500 {
+		l = 500
+	}
+
+	var sum int64
+	reqs := make([]*pb.CreateArtifactRequest, 0, l)
+	for i := 0; i < l; i++ {
+		ut := tasks[i].(*uploadTask)
+
+		// artifactChannel.schedule() should have sent it to streamChannel.
+		if ut.size > maxSum {
+			return nil, errors.Reason("an artifact is greater than %d", maxSum).Err()
+		}
+		// if the sum is going to be too big, stop the iteration.
+		if sum+ut.size > maxSum {
+			break
+		}
+
+		r, err := ut.CreateRequest()
+		if err != nil {
+			return nil, errors.Annotate(err, "CreateRequest").Err()
+		}
+		reqs = append(reqs, r)
+		sum += ut.size
+	}
+	return &pb.BatchCreateArtifactsRequest{Requests: reqs}, nil
+}
+
 func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {
-	// TODO(ddoman): implement me
+	var req *pb.BatchCreateArtifactsRequest
+	var err error
+	if b.Meta != nil {
+		req = b.Meta.(*pb.BatchCreateArtifactsRequest)
+		if _, err = u.Recorder.BatchCreateArtifacts(ctx, req); err != nil {
+			return err
+		}
+	}
+
+	// There are the following conditions this loop handles.
+	//
+	// 1) pb.BatchCreateArtifactsRequest can contain at most 500 artifacts.
+	// 2) The sum of the artifact content sizes must be <= u.MaxBatchable.
+	// 3) The size of input artifacts varies.
+	//
+	// It's possible that a buffer.Batch contains 500 of large artifact files, like 1MiB.
+	// To avoid loading the contents of all the artifacts unnecessarily, this loop slices
+	// b.Data by 500 or u.MaxBatchable, and creates a batch request only for the tasks,
+	// handled in the current iteration.
+	for len(b.Data) > 0 {
+		if req, err = newBatchCreateArtifactsRequest(u.MaxBatchable, b.Data); err != nil {
+			return errors.Annotate(err, "newBatchCreateArtifactRequest").Err()
+		}
+
+		b.Meta = req
+		if _, err := u.Recorder.BatchCreateArtifacts(ctx, req); err != nil {
+			return err
+		}
+		b.Data = b.Data[len(req.Requests):]
+	}
 	return nil
 }
