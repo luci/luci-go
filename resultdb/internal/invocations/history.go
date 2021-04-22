@@ -15,7 +15,9 @@
 package invocations
 
 import (
+	"bytes"
 	"context"
+	"text/template"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -26,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -45,6 +48,7 @@ const (
 type HistoryQuery struct {
 	Realm     string
 	TimeRange *pb.TimeRange
+	Predicate *pb.TestResultPredicate
 }
 
 // ByTimestamp queries indexed invocations in a given time range.
@@ -71,19 +75,29 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 		}
 	}
 
-	st := spanner.NewStatement(`
-		SELECT
-			i.InvocationId,
-			i.HistoryTime,
-		FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp, spanner_emulator.disable_query_null_filtered_index_check=true} i
-		WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
-		ORDER BY i.HistoryTime DESC
-	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"realm":   q.Realm,
-		"minTime": minTime,
-		"maxTime": maxTime,
-	})
+	var variant []string
+	switch p := q.Predicate.GetVariant().GetPredicate().(type) {
+	case *pb.VariantPredicate_Equals:
+		variant = pbutil.VariantToStrings(p.Equals)
+	case *pb.VariantPredicate_Contains:
+		variant = pbutil.VariantToStrings(p.Contains)
+	case nil:
+		// No filter.
+	default:
+		panic(errors.Reason("unexpected variant predicate %q", q.Predicate.GetVariant()).Err())
+	}
+
+	sql := &bytes.Buffer{}
+	if err = queryTmpl.Execute(sql, map[string]interface{}{
+		"MatchVariant": len(variant) != 0,
+	}); err != nil {
+		return err
+	}
+	st := spanner.NewStatement(sql.String())
+	st.Params["realm"] = q.Realm
+	st.Params["minTime"] = minTime
+	st.Params["maxTime"] = maxTime
+	st.Params["variant"] = variant
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -95,3 +109,15 @@ func (q *HistoryQuery) ByTimestamp(ctx context.Context, callback func(inv ID, ts
 		return callback(inv, ts)
 	})
 }
+
+var queryTmpl = template.Must(template.New("").Parse(`
+	SELECT
+		i.InvocationId,
+		i.HistoryTime,
+	FROM Invocations@{FORCE_INDEX=InvocationsByTimestamp, spanner_emulator.disable_query_null_filtered_index_check=true} i
+	WHERE i.Realm = @realm AND i.HistoryTime BETWEEN @minTime AND @maxTime
+	{{if .MatchVariant}}
+		AND (SELECT LOGICAL_AND(kv IN UNNEST(TestResultVariantUnionRecursive)) FROM UNNEST(@variant) kv)
+	{{end}}
+	ORDER BY i.HistoryTime DESC
+`))
