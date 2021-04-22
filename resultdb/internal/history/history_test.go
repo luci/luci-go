@@ -169,9 +169,9 @@ func insertResultHistoryData(ms []*spanner.Mutation, id string, offset time.Dura
 // and, also optionally, adds some test results contained by it.
 func insertOneResultsInv(ms []*spanner.Mutation, id string, ts time.Time, indexed bool, results int) []*spanner.Mutation {
 	extraArgs := map[string]interface{}{
-		"CreateTime":             ts,
-		"Realm":                  "testproject:testrealm",
-		"TestResultVariantUnion": pbutil.Variant("dummy", "true"),
+		"CreateTime":                      ts,
+		"Realm":                           "testproject:testrealm",
+		"TestResultVariantUnionRecursive": pbutil.Variant("dummy", "true"),
 	}
 	if indexed {
 		extraArgs["HistoryTime"] = ts
