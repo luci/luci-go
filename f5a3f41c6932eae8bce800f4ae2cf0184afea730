@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0a3b794a_0df0967c",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T16:01:06Z",
+      "side": 1,
+      "message": "not sure what this has code has to do with invocations.\nlongest common prefix is very generic thing.\nconsider https://pkg.go.dev/go.chromium.org/luci/common/data/text instead\n\nbut see the other comments: I don\u0027t think recursive common longest prefix would help.",
+      "revId": "f5a3f41c6932eae8bce800f4ae2cf0184afea730",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b6a2a09e_bb09fadb",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T16:01:06Z",
+      "side": 1,
+      "message": "reachable already includes the root invocation, so I am not sure this is necessary",
+      "range": {
+        "startLine": 285,
+        "startChar": 0,
+        "endLine": 299,
+        "endChar": 31
+      },
+      "revId": "f5a3f41c6932eae8bce800f4ae2cf0184afea730",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc8b5d5d_e5e9bb78",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T16:01:06Z",
+      "side": 1,
+      "message": "I don\u0027t think we can reuse the same fields for these values.\nThese values span reachable invocations, while these fields are documented as for \"directly included  by this invocation\".\n\nbesides, this might interfere with finalization of other invocations that read this column in L350\n\nI suggest to create new fields, e.g. TestResultVariantUnionRecursive.",
+      "range": {
+        "startLine": 305,
+        "startChar": 0,
+        "endLine": 306,
+        "endChar": 57
+      },
+      "revId": "f5a3f41c6932eae8bce800f4ae2cf0184afea730",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "73d8910a_a7a04b4a",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T16:01:06Z",
+      "side": 1,
+      "message": "i don\u0027t think recursive common prefix would help because it is going to be \"ninja://\" in pretty much all invocations in Chromium. So it would satisfy any request.\n\nsince the only purpose is optimization, I\u0027d prefer to keep only the things that actually improve performance, to minimize complexity",
+      "revId": "f5a3f41c6932eae8bce800f4ae2cf0184afea730",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
