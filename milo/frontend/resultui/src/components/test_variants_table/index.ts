@@ -317,6 +317,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
         cursor: pointer;
         user-select: none;
         line-height: 24px;
+        z-index: 1;
       }
       .group-header:first-child {
         top: 0px;
