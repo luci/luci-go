@@ -52,10 +52,14 @@ export function displayCompactDuration(duration: Duration) {
   if (shifted.minutes >= 1) {
     return `${(shifted.minutes + shifted.seconds / 60).toPrecision(2)}m`;
   }
-  if (shifted.seconds >= 1) {
-    return `${shifted.seconds}s`;
+
+  // Unlike other units, shifted.milliseconds may not be an integer.
+  // shifted.milliseconds.toFixed(0) may give us 1000 when
+  // shifted.milliseconds >= 999.5. We should display it as 1.0s in that case.
+  if (shifted.seconds >= 1 || shifted.milliseconds >= 999.5) {
+    return `${(shifted.seconds + shifted.milliseconds / 1000).toPrecision(2)}s`;
   }
-  return `${shifted.milliseconds}ms`;
+  return `${shifted.milliseconds.toFixed(0)}ms`;
 }
 
 /* eslint-disable max-len */
