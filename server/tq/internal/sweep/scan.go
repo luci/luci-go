@@ -55,7 +55,8 @@ func Scan(ctx context.Context, p *ScanParams) ([]*reminder.Reminder, partition.S
 
 	startedAt := clock.Now(ctx)
 	rs, err := p.DB.FetchRemindersMeta(ctx, l, h, p.TasksPerScan)
-	durMS := float64(clock.Now(ctx).Sub(startedAt).Milliseconds())
+	// TODO(crbug.com/1201436): Use .Milliseconds() instead.
+	durMS := float64(int64(clock.Now(ctx).Sub(startedAt)) / 1e6)
 
 	status := ""
 	needMoreScans := false
@@ -141,7 +142,8 @@ func filterOutTooFresh(ctx context.Context, reminders []*reminder.Reminder, lvl 
 	filtered := reminders[:0]
 	for _, r := range reminders {
 		staleness := now.Sub(r.FreshUntil)
-		metrics.ReminderStalenessMS.Add(ctx, float64(staleness.Milliseconds()), lvl, db)
+		// TODO(crbug.com/1201436): Use staleness.Milliseconds() instead.
+		metrics.ReminderStalenessMS.Add(ctx, float64(int64(staleness)/1e6), lvl, db)
 		if staleness >= 0 {
 			filtered = append(filtered, r)
 		}
