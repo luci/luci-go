@@ -89,6 +89,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7aa27956_0d8d7532",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T00:19:49Z",
+      "side": 1,
+      "message": "It was not a nit. thanks for a good point. done.",
+      "parentUuid": "ca0a95d5_1965638d",
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "77f7f38c_e5427759",
@@ -106,6 +124,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c9a6721_ce58cab0",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T00:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77f7f38c_e5427759",
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6cc43f0d_2e04f02f",
@@ -119,6 +155,30 @@
       "writtenOn": "2021-04-21T21:01:35Z",
       "side": 1,
       "message": "did you mean CreateRequest?\n\nusually the annotation contains info that the callsite doesn\u0027t know. They already know that this is BatchCreateRequest.",
+      "range": {
+        "startLine": 183,
+        "startChar": 37,
+        "endLine": 183,
+        "endChar": 55
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e59b6a35_d1e0c2d2",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T00:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6cc43f0d_2e04f02f",
       "range": {
         "startLine": 183,
         "startChar": 37,
@@ -152,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8aa7d50d_a7644be2",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T00:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "225f7120_00c5c15c",
+      "range": {
+        "startLine": 191,
+        "startChar": 53,
+        "endLine": 191,
+        "endChar": 54
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9cda1367_58304246",
@@ -165,6 +249,30 @@
       "writtenOn": "2021-04-21T21:01:35Z",
       "side": 1,
       "message": "is there a reason this isn\u0027t standard `err`?",
+      "range": {
+        "startLine": 217,
+        "startChar": 8,
+        "endLine": 217,
+        "endChar": 9
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19afa291_42e818c4",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T00:19:49Z",
+      "side": 1,
+      "message": "It was due to a stupid reasons. 😞\n\nI personally don\u0027t like gerrit wrapping and breaking up a single line into 2 lines, From my personal experience, I knew that gerrit tended to break up lines, if len() \u003e 100, and tried to use as short variable names as possible, to avoid line-wrap, if necessary. \n\nI just found that I can change the column limit on Gerrit personal settings...",
+      "parentUuid": "9cda1367_58304246",
       "range": {
         "startLine": 217,
         "startChar": 8,
