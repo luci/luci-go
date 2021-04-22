@@ -246,10 +246,15 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			return err
 		}
 
-		return parallel.FanOutIn(func(work chan<- func() error) {
+		var reachVarUnion []string
+		err := parallel.FanOutIn(func(work chan<- func() error) {
 			// Read all reachable invocations to cache them after the transaction.
 			work <- func() (err error) {
 				reach, err = invocations.ReachableSkipRootCache(ctx, invocations.NewIDSet(invID))
+				if err != nil {
+					return
+				}
+				reachVarUnion, err = variantUnion(ctx, reach)
 				return
 			}
 
@@ -270,17 +275,19 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 				}
 				return bqexporter.Schedule(ctx, invID)
 			}
-
-			// Update the invocation state.
-			work <- func() error {
-				span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
-					"InvocationId": invID,
-					"State":        pb.Invocation_FINALIZED,
-					"FinalizeTime": spanner.CommitTimestamp,
-				}))
-				return nil
-			}
 		})
+		if err != nil {
+			return err
+		}
+
+		// Update the invocation.
+		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+			"InvocationId":                    invID,
+			"State":                           pb.Invocation_FINALIZED,
+			"FinalizeTime":                    spanner.CommitTimestamp,
+			"TestResultVariantUnionRecursive": reachVarUnion,
+		}))
+		return nil
 	})
 	switch {
 	case err == errAlreadyFinalized:
@@ -316,4 +323,29 @@ func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []
 		return nil
 	})
 	return ids, err
+}
+
+// variantUnion computes the variant union of the invocations in reach.
+func variantUnion(ctx context.Context, reach invocations.IDSet) ([]string, error) {
+	st := spanner.NewStatement(`
+		SELECT DISTINCT tv
+		FROM Invocations inv, inv.TestResultVariantUnion tv
+		WHERE InvocationId IN UNNEST(@invIDs)
+		ORDER BY tv
+	`)
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+		"invIDs": reach,
+	})
+
+	varUnion := make([]string, 0)
+	err := spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		var subVariant string
+		if err := spanutil.FromSpanner(row, &subVariant); err != nil {
+			return err
+		}
+
+		varUnion = append(varUnion, subVariant)
+		return nil
+	})
+	return varUnion, err
 }
