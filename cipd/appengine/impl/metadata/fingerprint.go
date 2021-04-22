@@ -19,7 +19,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
@@ -34,10 +34,11 @@ import (
 // care about exact meaning of the fingerprint, as long as it changes each time
 // we update the metadata (so strictly speaking we can just generate random
 // strings and call them fingerprints).
-func CalculateFingerprint(m api.PrefixMetadata) string {
+func CalculateFingerprint(m *api.PrefixMetadata) string {
+	fp := m.Fingerprint
 	m.Fingerprint = ""
-
-	blob, err := proto.Marshal(&m)
+	blob, err := proto.Marshal(m)
+	m.Fingerprint = fp
 	if err != nil {
 		panic(fmt.Sprintf("failed to proto-marshal PrefixMetadata for prefix %q - %s", m.Prefix, err))
 	}
