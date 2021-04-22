@@ -33,6 +33,24 @@
       "message": "i imagine the user would think something like \"why are you making me click this button. Why not redirect me\", although you have a reasonable explanation in the code comment.\n\nshould we turn the code comment into the text that the user sees? sort of a redirect notice like in https://www.google.com/url?u\u003dgoogle.com",
       "revId": "910dfd0f783b155422a55d6ef04e1c6d56408b51",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29b65744_a3d12705",
+        "filename": "milo/frontend/resultui/src/pages/artifact/raw_artifact_page.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-22T01:07:59Z",
+      "side": 1,
+      "message": "Added explanation in the HTML.",
+      "parentUuid": "9c616347_5bcac49f",
+      "revId": "910dfd0f783b155422a55d6ef04e1c6d56408b51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
