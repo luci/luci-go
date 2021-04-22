@@ -15,12 +15,15 @@
 package upload
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -30,7 +33,8 @@ func TestIDs(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx := memory.Use(context.Background())
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
 		ctx, clk := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		Convey("NewOpID works", func() {
