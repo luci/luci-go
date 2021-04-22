@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -91,7 +91,7 @@ func TestGetClientPackage(t *testing.T) {
 func TestClientExtractor(t *testing.T) {
 	t.Parallel()
 
-	ctx := gaetesting.TestingContext()
+	ctx := memory.Use(context.Background())
 
 	originalBody := strings.Repeat("01234567", 8960)
 	expectedDigests := map[string]string{
@@ -222,7 +222,7 @@ func TestGetResult(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx := memory.Use(context.Background())
 
 		instRef := &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
