@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e077613a_171f9db3",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T06:18:16Z",
+      "side": 1,
+      "message": "maybe just `if`? :)",
+      "range": {
+        "startLine": 155,
+        "startChar": 1,
+        "endLine": 156,
+        "endChar": 5
+      },
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a14b45e3_acbdde2d",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T06:18:16Z",
+      "side": 1,
+      "message": "nit: since sum isn\u0027t checked in condition or incremented, maybe move it out to its own line?\n\ncode looks esoteric :)",
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6e35dd3_d2ca480b",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T06:18:16Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 166,
+        "startChar": 30,
+        "endLine": 166,
+        "endChar": 31
+      },
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc043725_6f8dea38",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T06:18:16Z",
+      "side": 1,
+      "message": "sum +\u003d ut.size",
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "693d1e3b_f9f3287d",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T06:18:16Z",
+      "side": 1,
+      "message": "nit: it *feels* like this code could be even simpler :)\n\ncurrently this func has two deal with *two* states: Data and Meta, although it could be just one. \n\n  func (u *artifactUploader) makeBatches(maxSum int64, tasks []interface{}) (*pb.BatchCreateArtifactsRequest, error) {\n    ...\n  }\n\nand then this func could be\n\n\n  func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {\n    var err error\n    if b.Meta \u003d\u003d nil {\n      if b.Meta, err \u003d u.makeBatches(b.Data); err !\u003d nil {\n        return err...\n      }\n    }\n\n    reqs :\u003d b.Meta.([]*pb.BatchCreateArtifactsRequest)\n    for len(reqs) \u003e 0 {\n      if _, err :\u003d u.Recorder.BatchCreateArtifacts(ctx, reqs[0]); err !\u003d nil {\n        return err\n      }\n      reqs \u003d reqs[1:]\n      b.Meta \u003d reqs\n    }\n    return nil\n  }",
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31bbb6ae_f830356f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T06:18:16Z",
+      "side": 1,
+      "message": "nit: greater\n\nsame in another file",
+      "range": {
+        "startLine": 170,
+        "startChar": 56,
+        "endLine": 170,
+        "endChar": 62
+      },
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
