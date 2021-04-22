@@ -42,6 +42,9 @@ const (
 	// CIPDServiceURL is URL of a CIPD backend to connect to by default.
 	CIPDServiceURL = "https://chrome-infra-packages.appspot.com"
 
+	// ConfigServiceHost is the default host of LUCI config service.
+	ConfigServiceHost = "luci-config.appspot.com"
+
 	// LogDogHost is the default host of the production LogDog service in Chrome
 	// Operations.
 	LogDogHost = "logs.chromium.org"
@@ -53,17 +56,17 @@ const (
 	// Chrome Operations.
 	LogDogDevHost = "luci-logdog-dev.appspot.com"
 
-	// TokenServerHost is the default host to use in auth.Options.TokenServerHost.
-	TokenServerHost = "luci-token-server.appspot.com"
-
-	// TokenServerDevHost is the host of the LUCI Token Server dev instance.
-	TokenServerDevHost = "luci-token-server-dev.appspot.com"
-
 	// MachineDatabaseHost is the URL of the Machine Database.
 	MachineDatabaseHost = "machine-db.appspot.com"
 
 	// MachineDatabaseDevHost is the URL of the Machine Database dev instance.
 	MachineDatabaseDevHost = "machine-db-dev.appspot.com"
+
+	// MiloHost is the hostname of the production Milo service.
+	MiloHost = "luci-milo.appspot.com"
+
+	// MiloDevHost is the hostname of the development Milo service.
+	MiloDevHost = "luci-milo-dev.appspot.com"
 
 	// UFSProdHost is the URL of the ufs service.
 	UFSProdHost = "ufs.api.cr.dev"
@@ -71,14 +74,20 @@ const (
 	// UFSStagingHost is the URL of the staging ufs service.
 	UFSStagingHost = "staging.ufs.api.cr.dev"
 
-	// ConfigServiceHost is the default host of LUCI config service.
-	ConfigServiceHost = "luci-config.appspot.com"
-
 	// ResultDBHost is the hostname of the production ResultDB service.
 	ResultDBHost = "results.api.cr.dev"
 
+	// ResultDBStagingHost is the hostname of the staging ResultDB service.
+	ResultDBStagingHost = "staging.results.api.cr.dev"
+
 	// TestSpannerInstance is the name of the Spanner instance used for testing.
 	TestSpannerInstance = "projects/chops-spanner-testing/instances/testing"
+
+	// TokenServerHost is the default host to use in auth.Options.TokenServerHost.
+	TokenServerHost = "luci-token-server.appspot.com"
+
+	// TokenServerDevHost is the host of the LUCI Token Server dev instance.
+	TokenServerDevHost = "luci-token-server-dev.appspot.com"
 )
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
