@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "037bf980_114618ae",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-22T19:00:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "237a583a_b4f44d41",
+      "range": {
+        "startLine": 7,
+        "startChar": 19,
+        "endLine": 7,
+        "endChar": 37
+      },
+      "revId": "79ed1adef5b248ec770d912066fa6a3c36da93f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a7080479_c6edb8df",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a6cecee_c5727706",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-22T19:00:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7080479_c6edb8df",
+      "range": {
+        "startLine": 329,
+        "startChar": 50,
+        "endLine": 329,
+        "endChar": 60
+      },
+      "revId": "79ed1adef5b248ec770d912066fa6a3c36da93f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ae81e7c7_f6e9ab5b",
@@ -60,6 +108,24 @@
       "writtenOn": "2021-04-22T18:42:24Z",
       "side": 1,
       "message": "nit: i expect many invocations to have same test variant key-value pairs, so it would be better to dedupe them at the spanner level (rather than fetching duplicates and deduping on the client). Then we don\u0027t need a stringset\n\n\t\tSELECT DISTINCT tv\n\t\tFROM Invocations inv, inv. TestResultVariantUnion tv\n\t\tWHERE InvocationId IN UNNEST(@invIDs)\n                ORDER BY tv\n\nwe also don\u0027t need spanutil.Buffer in this case, since it is a simple string",
+      "revId": "79ed1adef5b248ec770d912066fa6a3c36da93f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "91bc0e2e_85dabaf3",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-22T19:00:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae81e7c7_f6e9ab5b",
       "revId": "79ed1adef5b248ec770d912066fa6a3c36da93f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
