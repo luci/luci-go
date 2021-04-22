@@ -304,6 +304,30 @@
       },
       "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ceef7ba2_efdbce1d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-22T01:20:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d2c41c8_780c5393",
+      "range": {
+        "startLine": 211,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 4
+      },
+      "revId": "913788c1487fdda1745133e27f28a2b55c46acd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
