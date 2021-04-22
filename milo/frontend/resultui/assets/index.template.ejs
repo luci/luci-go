@@ -22,10 +22,9 @@
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-    const trackingId = 'UA-55762617-26'; // luci-milo-dev
-    if (["luci-milo.appspot.com", "ci.chromium.org"].includes(window.location.hostname)) {
-      trackingId = 'UA-55762617-24'; // luci-milo
-    }
+    const trackingId = ['luci-milo.appspot.com', 'ci.chromium.org'].includes(window.location.hostname)
+      ? 'UA-55762617-24' // luci-milo
+      : 'UA-55762617-26'; // luci-milo-dev
     ga('create', trackingId, 'auto');
     ga('send', 'pageview');
   </script>
