@@ -1163,7 +1163,8 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	}
 
 	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, result, retry)
-	metrics.ServerDurationMS.Add(ctx, float64(dur.Milliseconds()), cls.ID, result)
+	// TODO(crbug.com/1201436): Use dur.Milliseconds() instead.
+	metrics.ServerDurationMS.Add(ctx, float64(int64(dur)/1e6), cls.ID, result)
 	if !info.expectedETA.IsZero() {
 		latency := clock.Since(ctx, info.expectedETA).Milliseconds()
 		if latency < 0 {
