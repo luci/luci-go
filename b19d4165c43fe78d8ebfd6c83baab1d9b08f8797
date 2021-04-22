@@ -200,6 +200,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "61b60825_fe890318",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-22T15:49:19Z",
+      "side": 1,
+      "message": "ah, that\u0027s a good reason.\n\nwasn\u0027t obvious from reading the code though, so a future programmer might try to \"improve\" this code. I suggest a code comment explaining this.",
+      "parentUuid": "2f32d9ab_a56afb9c",
+      "revId": "b19d4165c43fe78d8ebfd6c83baab1d9b08f8797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "31bbb6ae_f830356f",
