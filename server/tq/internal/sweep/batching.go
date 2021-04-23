@@ -49,10 +49,10 @@ func (p *BatchProcessor) Start() error {
 		p.Context,
 		&dispatcher.Options{
 			Buffer: buffer.Options{
-				MaxLeases: p.ConcurrentBatches,
-				BatchSize: p.BatchSize,
+				MaxLeases:     p.ConcurrentBatches,
+				BatchItemsMax: p.BatchSize,
 				// Max waiting time to fill the batch.
-				BatchDuration: 10 * time.Millisecond,
+				BatchAgeMax: 10 * time.Millisecond,
 				FullBehavior: &buffer.BlockNewItems{
 					// If all workers are busy, block Enqueue.
 					MaxItems: p.ConcurrentBatches * p.BatchSize,

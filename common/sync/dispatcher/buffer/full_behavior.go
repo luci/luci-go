@@ -45,8 +45,8 @@ type BlockNewItems struct {
 	// The maximum number of items that this Buffer is allowed to house (including
 	// both leased and unleased items).
 	//
-	// Default: max(1000, BatchSize)
-	// Required: Must be >= BatchSize
+	// Default: max(1000, BatchItemsMax)
+	// Required: Must be >= BatchItemsMax
 	MaxItems int
 }
 
@@ -62,15 +62,15 @@ func (b *BlockNewItems) ComputeState(stats Stats) (okToInsert, dropBatch bool) {
 func (b *BlockNewItems) Check(opts Options) (err error) {
 	if b.MaxItems == 0 {
 		b.MaxItems = 1000
-		if opts.BatchSize > b.MaxItems {
-			b.MaxItems = opts.BatchSize
+		if opts.BatchItemsMax > b.MaxItems {
+			b.MaxItems = opts.BatchItemsMax
 		}
 	}
 	switch {
-	case b.MaxItems >= opts.BatchSize:
+	case b.MaxItems >= opts.BatchItemsMax:
 	default:
-		err = errors.Reason("BlockNewItems.MaxItems must be >= BatchSize[%d]: got %d",
-			opts.BatchSize, b.MaxItems).Err()
+		err = errors.Reason("BlockNewItems.MaxItems must be >= BatchItemsMax[%d]: got %d",
+			opts.BatchItemsMax, b.MaxItems).Err()
 	}
 	return
 }
@@ -89,10 +89,10 @@ type DropOldestBatch struct {
 	// NOTE: The maximum Stats.Total number of items the Buffer could have at
 	// a given time is:
 	//
-	//     MaxLiveItems + (BatchSize * MaxLeases)
+	//     MaxLiveItems + (BatchItemsMax * MaxLeases)
 	//
-	// Default: max(1000, BatchSize)
-	// Required: Must be >= BatchSize
+	// Default: max(1000, BatchItemsMax)
+	// Required: Must be >= BatchItemsMax
 	MaxLiveItems int
 }
 
@@ -111,15 +111,15 @@ func (d *DropOldestBatch) ComputeState(stats Stats) (okToInsert, dropBatch bool)
 func (d *DropOldestBatch) Check(opts Options) (err error) {
 	if d.MaxLiveItems == 0 {
 		d.MaxLiveItems = 1000
-		if opts.BatchSize > d.MaxLiveItems {
-			d.MaxLiveItems = opts.BatchSize
+		if opts.BatchItemsMax > d.MaxLiveItems {
+			d.MaxLiveItems = opts.BatchItemsMax
 		}
 	}
 	switch {
-	case d.MaxLiveItems >= opts.BatchSize:
+	case d.MaxLiveItems >= opts.BatchItemsMax:
 	default:
-		err = errors.Reason("DropOldestBatch.MaxLiveItems must be >= BatchSize[%d]: got %d",
-			opts.BatchSize, d.MaxLiveItems).Err()
+		err = errors.Reason("DropOldestBatch.MaxLiveItems must be >= BatchItemsMax[%d]: got %d",
+			opts.BatchItemsMax, d.MaxLiveItems).Err()
 	}
 	return
 }
