@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "21f3a208_433c7121",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-23T16:35:26Z",
+      "side": 1,
+      "message": "Nit: could be slightly phrased as:\n\nCopy Tricium project config schema to luci-go and simplify",
+      "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "784486ba_a6b7a527",
