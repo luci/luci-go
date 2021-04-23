@@ -119,7 +119,7 @@ func ArchiveFiles(ctx context.Context, arch *pipeline.Archiver, baseDir string, 
 // Convenience type to track pending items and their corresponding filepaths.
 type itemToPathMap map[*pipeline.PendingItem]string
 
-func archive(c context.Context, arch *pipeline.Archiver, opts *ArchiveOptions) (*pipeline.PendingItem, error) {
+func archive(ctx context.Context, arch *pipeline.Archiver, opts *ArchiveOptions) (*pipeline.PendingItem, error) {
 	// Archive all files.
 	fItems := make(itemToPathMap, len(opts.Files))
 	for file, wd := range opts.Files {
@@ -164,7 +164,7 @@ func archive(c context.Context, arch *pipeline.Archiver, opts *ArchiveOptions) (
 		}
 		mode := info.Mode()
 		composite.Files[file] = isolated.BasicFile(digest, int(mode.Perm()), info.Size())
-		logging.Infof(c, "%s %s", digest, file)
+		logging.Infof(ctx, "%s %s", digest, file)
 		return nil
 	})
 	if err != nil {
