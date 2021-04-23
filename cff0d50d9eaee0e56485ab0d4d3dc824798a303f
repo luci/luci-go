@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ca63902_c6c82807",
+        "filename": "cv/api/config/legacy/tricium.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-23T21:55:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ebae9bb5_d043c10a",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "cff0d50d9eaee0e56485ab0d4d3dc824798a303f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "afbee6bb_0d162648",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6da97027_89720a20",
+        "filename": "cv/api/config/legacy/tricium.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-23T21:55:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afbee6bb_0d162648",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 23
+      },
+      "revId": "cff0d50d9eaee0e56485ab0d4d3dc824798a303f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b7559c05_90b4b5df",
@@ -60,6 +108,30 @@
       "writtenOn": "2021-04-23T20:17:34Z",
       "side": 1,
       "message": "del, migration already happened.\n\nAnd the same above. (ie I like what `Type type` says)",
+      "range": {
+        "startLine": 69,
+        "startChar": 5,
+        "endLine": 69,
+        "endChar": 49
+      },
+      "revId": "cff0d50d9eaee0e56485ab0d4d3dc824798a303f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0bbaec6a_5a0e3452",
+        "filename": "cv/api/config/legacy/tricium.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-23T21:55:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7559c05_90b4b5df",
       "range": {
         "startLine": 69,
         "startChar": 5,
