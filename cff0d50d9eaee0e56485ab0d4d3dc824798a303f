@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ebae9bb5_d043c10a",
+        "filename": "cv/api/config/legacy/tricium.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-23T20:17:34Z",
+      "side": 1,
+      "message": "this should be whatever year tricium proto you copied from says.",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "cff0d50d9eaee0e56485ab0d4d3dc824798a303f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "afbee6bb_0d162648",
+        "filename": "cv/api/config/legacy/tricium.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-23T20:17:34Z",
+      "side": 1,
+      "message": "nit: I think should be `cv.legacy.tricium`\n(at least other CV packages we named like this)",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 23
+      },
+      "revId": "cff0d50d9eaee0e56485ab0d4d3dc824798a303f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7559c05_90b4b5df",
+        "filename": "cv/api/config/legacy/tricium.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-23T20:17:34Z",
+      "side": 1,
+      "message": "del, migration already happened.\n\nAnd the same above. (ie I like what `Type type` says)",
+      "range": {
+        "startLine": 69,
+        "startChar": 5,
+        "endLine": 69,
+        "endChar": 49
+      },
+      "revId": "cff0d50d9eaee0e56485ab0d4d3dc824798a303f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
