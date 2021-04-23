@@ -43,6 +43,9 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/common"
+
+	// Using transactional datastore TQ tasks.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 // readBufferSize is size of a buffer used to read Google Storage files.
