@@ -179,9 +179,9 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 	} else {
 		ret.work, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
 			Buffer: buffer.Options{
-				MaxLeases:    1,
-				BatchSize:    1,
-				FullBehavior: &buffer.DropOldestBatch{},
+				MaxLeases:     1,
+				BatchItemsMax: 1,
+				FullBehavior:  &buffer.DropOldestBatch{},
 			},
 			DropFn:    dispatcher.DropFnQuiet,
 			DrainedFn: ret.finalize,

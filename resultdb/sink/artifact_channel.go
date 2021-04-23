@@ -77,12 +77,12 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	// batchChannel
 	bcOpts := &dispatcher.Options{
 		Buffer: buffer.Options{
-			// BatchRequest can include up to 500 requests. KEEP BatchSize <= 500
+			// BatchRequest can include up to 500 requests. KEEP BatchItemsMax <= 500
 			// For more details, visit
 			// https://godoc.org/go.chromium.org/luci/resultdb/proto/v1#BatchCreateArtifactsRequest
-			BatchSize:    500,
-			MaxLeases:    int(cfg.ArtChannelMaxLeases),
-			FullBehavior: &buffer.BlockNewItems{MaxItems: 8000},
+			BatchItemsMax: 500,
+			MaxLeases:     int(cfg.ArtChannelMaxLeases),
+			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
 	c.batchChannel, err = dispatcher.NewChannel(ctx, bcOpts, func(b *buffer.Batch) error {
@@ -96,10 +96,10 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	// streamChannel
 	stOpts := &dispatcher.Options{
 		Buffer: buffer.Options{
-			// BatchSize MUST be 1.
-			BatchSize:    1,
-			MaxLeases:    int(cfg.ArtChannelMaxLeases),
-			FullBehavior: &buffer.BlockNewItems{MaxItems: 4000},
+			// BatchItemsMax MUST be 1.
+			BatchItemsMax: 1,
+			MaxLeases:     int(cfg.ArtChannelMaxLeases),
+			FullBehavior:  &buffer.BlockNewItems{MaxItems: 4000},
 		},
 	}
 	c.streamChannel, err = dispatcher.NewChannel(ctx, stOpts, func(b *buffer.Batch) error {
