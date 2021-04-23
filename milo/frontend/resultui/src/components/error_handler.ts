@@ -66,9 +66,9 @@
  *         .intercept=${(e: ErrorEvent) => {
  *            // Handle errors.
  *            if (recoveredFromTheError) {
- *              return true;
+ *              return null;
  *            }
- *            return false;
+ *            return e;
  *         }}
  *       >
  *         <some-component-that-may-throw></some-component-that-may-throw>
