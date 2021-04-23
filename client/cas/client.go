@@ -87,6 +87,8 @@ func ClientOptions(creds credentials.PerRPCCredentials) []client.Opt {
 	}
 }
 
+// ContextWithMetadata attaches RBE related metadata with tool name to the
+// given context.
 func ContextWithMetadata(ctx context.Context, toolName string) (context.Context, error) {
 	ctx, err := client.ContextWithMetadata(ctx, &client.ContextMetadata{
 		ToolName: toolName,
