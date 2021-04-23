@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dac0405c_7d70943f",
+        "filename": "lucicfg/testdata/cq/invalid_mode_names.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-23T20:21:52Z",
+      "side": 1,
+      "message": "this might be my own weirdness, but sharing as FYI:\nI\u0027d leave this as \"FULL_RUN\" just for coverage\u0027s sake s.t. the if the constants become somehow non-string type, user written \"DRY_RUN\" doesn\u0027t accidentally work.",
+      "range": {
+        "startLine": 8,
+        "startChar": 31,
+        "endLine": 8,
+        "endChar": 47
+      },
+      "revId": "37ce805e28c3838fb4178df88775bea82e2fcce8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
