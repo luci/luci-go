@@ -16,6 +16,63 @@
       "message": "PTAL",
       "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9253d76_3d31b029",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-23T16:27:23Z",
+      "side": 1,
+      "message": "The proto LGTM as far as correctness for generating configs",
+      "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f728ffc1_ddceacda",
+        "filename": "cv/api/config/legacy/gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-23T16:27:23Z",
+      "side": 1,
+      "message": "\"slimmed-down\", or just \"simplified\"",
+      "range": {
+        "startLine": 17,
+        "startChar": 30,
+        "endLine": 17,
+        "endChar": 40
+      },
+      "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4b0ed302_6ccd65a3",
+        "filename": "cv/api/config/legacy/tricium.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-23T16:27:23Z",
+      "side": 1,
+      "message": "For the purposes of generating project configs, FILES is not necessary and shouldn\u0027t be used.",
+      "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
