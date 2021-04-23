@@ -16,6 +16,46 @@
       "message": "PTAL",
       "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d072827_1775dfde",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-23T20:40:38Z",
+      "side": 1,
+      "message": "Structurally looks fine, but I\u0027m not familiar with Tricium configs, so I haven\u0027t looked at the details.\n\nMake sure to run https://chromium.googlesource.com/infra/luci/luci-go/+/master/lucicfg/fmt-lint.sh",
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ecf017e7_f0bebdde",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-23T20:40:38Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be a real regexp check? What if mode_regexp is [\"A.A.Y.ER_RUN\"]?\n\n`mode_regexp` is a weird API...",
+      "range": {
+        "startLine": 285,
+        "startChar": 7,
+        "endLine": 285,
+        "endChar": 42
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
