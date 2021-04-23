@@ -17,24 +17,31 @@ package config
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/cfgclient"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/server/cfgcache"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+// Cached settings config.
+var cachedSettingsCfg = cfgcache.Register(&cfgcache.Entry{
+	Path: "settings.cfg",
+	Type: (*pb.SettingsCfg)(nil),
+})
+
+// UpdateSettingsCfg is called from a cron periodically to import settings.cfg into datastore.
+func UpdateSettingsCfg(ctx context.Context) error {
+	_, err := cachedSettingsCfg.Update(ctx, nil)
+	return err
+}
+
 // GetSettingsCfg fetches the settings.cfg from luci-config.
 func GetSettingsCfg(ctx context.Context) (*pb.SettingsCfg, error) {
-	lucicfg := cfgclient.Client(ctx)
-	cfg, err := lucicfg.GetConfig(ctx, "services/${appid}", "settings.cfg", false)
-	if err != nil {
-		return nil, errors.Annotate(err, "loading settings.cfg from luci-config").Err()
-	}
-	settingsCfg := &pb.SettingsCfg{}
-	if err := proto.UnmarshalText(cfg.Content, settingsCfg); err != nil {
-		return nil, errors.Annotate(err, "unmarshalling Buildbucket SettingsCfg proto").Err()
-	}
-	return settingsCfg, nil
+	cfg, err := cachedSettingsCfg.Get(ctx, nil)
+	return cfg.(*pb.SettingsCfg), err
+}
+
+// SetTestSettingsCfg is used in tests only.
+func SetTestSettingsCfg(ctx context.Context, cfg *pb.SettingsCfg) error {
+	return cachedSettingsCfg.Set(ctx, cfg, &config.Meta{})
 }
