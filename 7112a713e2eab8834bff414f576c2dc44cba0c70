@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "8adcfe72_a4bb8f1b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-23T19:35:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "21f3a208_433c7121",
+      "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "784486ba_a6b7a527",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -75,6 +93,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5b1b986d_055e8b0b",
+        "filename": "cv/api/config/legacy/gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-23T19:35:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f728ffc1_ddceacda",
+      "range": {
+        "startLine": 17,
+        "startChar": 30,
+        "endLine": 17,
+        "endChar": 40
+      },
+      "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4b0ed302_6ccd65a3",
@@ -88,6 +130,24 @@
       "writtenOn": "2021-04-23T16:27:23Z",
       "side": 1,
       "message": "For the purposes of generating project configs, FILES is not necessary and shouldn\u0027t be used.",
+      "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "833bdb69_10d268e9",
+        "filename": "cv/api/config/legacy/tricium.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-23T19:35:51Z",
+      "side": 1,
+      "message": "oh true, this is also not needed. Removed.",
+      "parentUuid": "4b0ed302_6ccd65a3",
       "revId": "7112a713e2eab8834bff414f576c2dc44cba0c70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
