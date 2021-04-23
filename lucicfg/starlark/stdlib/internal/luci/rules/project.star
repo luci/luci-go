@@ -36,6 +36,7 @@ def _project(
         notify = None,
         scheduler = None,
         swarming = None,
+        tricium = None,
         acls = None,
         bindings = None,
         enforce_realms_in = None):
@@ -63,6 +64,8 @@ def _project(
       scheduler: appspot hostname of a LUCI Scheduler service to use (if any).
       swarming: appspot hostname of a Swarming service to use by default
         (if any).
+      tricium: appspot hostname of a Tricium service to use by default
+        (if any).
       acls: list of acl.entry(...) objects, will be inherited by all buckets.
       bindings: a list of luci.binding(...) to add to the root realm. They will
         be inherited by all realms in the project. Experimental. Will eventually
@@ -83,6 +86,7 @@ def _project(
         "notify": service.from_host("notify", notify),
         "scheduler": service.from_host("scheduler", scheduler),
         "swarming": service.from_host("swarming", swarming),
+        "tricium": service.from_host("tricium", tricium),
         "acls": aclimpl.validate_acls(acls, project_level = True),
         "realms_enabled": realms.experiment.is_enabled(),
     })
