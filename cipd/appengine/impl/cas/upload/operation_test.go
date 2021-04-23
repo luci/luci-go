@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -37,7 +37,7 @@ func TestOperation(t *testing.T) {
 	Convey("With mocks", t, func() {
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 
-		ctx := gaetesting.TestingContext()
+		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, testTime)
 
 		Convey("ToProto", func() {

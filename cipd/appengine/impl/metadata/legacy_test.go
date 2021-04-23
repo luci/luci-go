@@ -15,6 +15,7 @@
 package metadata
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -23,7 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -39,7 +40,7 @@ func TestLegacyMetadata(t *testing.T) {
 	Convey("With legacy entities", t, func() {
 		impl := legacyStorageImpl{}
 
-		ctx := gaetesting.TestingContext()
+		ctx := memory.Use(context.Background())
 		ts := time.Unix(1525136124, 0).UTC()
 
 		root := rootKey(ctx)
@@ -339,7 +340,7 @@ func TestVisitMetadata(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx := memory.Use(context.Background())
 		ts := time.Unix(1525136124, 0).UTC()
 
 		impl := legacyStorageImpl{}
@@ -529,7 +530,7 @@ func TestListACLsByPrefix(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx := memory.Use(context.Background())
 
 		add := func(role, pfx string) {
 			So(datastore.Put(ctx, &packageACL{
@@ -583,7 +584,7 @@ func TestMetadataGraph(t *testing.T) {
 	t.Parallel()
 
 	Convey("With metadataGraph", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx := memory.Use(context.Background())
 		ts := time.Unix(1525136124, 0).UTC()
 
 		gr := metadataGraph{}

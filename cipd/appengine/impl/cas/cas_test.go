@@ -25,23 +25,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
+	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
-	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
@@ -246,21 +243,7 @@ func TestBeginUpload(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		uploaderID := identity.Identity("user:uploader@example.com")
-
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testTime)
-		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderID})
-
-		gsMock := &mockedGS{}
-
-		impl := storageImpl{
-			getGS: func(context.Context) gs.GoogleStorage { return gsMock },
-			settings: func(context.Context) (*settings.Settings, error) {
-				return &settings.Settings{TempGSPath: "/bucket/tmp_path"}, nil
-			},
-		}
+		ctx, gsMock, _, impl := storageMocks()
 
 		Convey("Success (no Object)", func() {
 			resp, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
@@ -269,7 +252,7 @@ func TestBeginUpload(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// ID can be decoded back.
-			opID, err := upload.UnwrapOpID(ctx, resp.OperationId, uploaderID)
+			opID, err := upload.UnwrapOpID(ctx, resp.OperationId, testutil.TestUser)
 			So(err, ShouldBeNil)
 			So(opID, ShouldEqual, 1)
 
@@ -284,9 +267,9 @@ func TestBeginUpload(t *testing.T) {
 			op := upload.Operation{ID: 1}
 			So(datastore.Get(ctx, &op), ShouldBeNil)
 
-			So(op.CreatedTS.Equal(testTime), ShouldBeTrue)
+			So(op.CreatedTS.Equal(testutil.TestTime), ShouldBeTrue)
 			op.CreatedTS = time.Time{}
-			So(op.UpdatedTS.Equal(testTime), ShouldBeTrue)
+			So(op.UpdatedTS.Equal(testutil.TestTime), ShouldBeTrue)
 			op.UpdatedTS = time.Time{}
 
 			So(op, ShouldResemble, upload.Operation{
@@ -295,7 +278,7 @@ func TestBeginUpload(t *testing.T) {
 				TempGSPath: "/bucket/tmp_path/1454472306_1",
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				HashAlgo:   api.HashAlgo_SHA256,
-				CreatedBy:  uploaderID,
+				CreatedBy:  testutil.TestUser,
 			})
 		})
 
@@ -323,7 +306,7 @@ func TestBeginUpload(t *testing.T) {
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				HashAlgo:   api.HashAlgo_SHA256,
 				HexDigest:  strings.Repeat("a", 64),
-				CreatedBy:  uploaderID,
+				CreatedBy:  testutil.TestUser,
 				CreatedTS:  op.CreatedTS,
 				UpdatedTS:  op.UpdatedTS,
 			})
@@ -372,20 +355,18 @@ func TestBeginUpload(t *testing.T) {
 	})
 }
 
-func storageMocks() (context.Context, *mockedGS, tqtesting.Testable, *storageImpl) {
-	testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-	uploaderID := identity.Identity("user:uploader@example.com")
-	ctx := gaetesting.TestingContext()
-	ctx, _ = testclock.UseTime(ctx, testTime)
-	ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderID})
+func storageMocks() (context.Context, *mockedGS, *tqtesting.Scheduler, *storageImpl) {
+	ctx, _, _ := testutil.TestingContext()
+	ctx = secrets.Use(ctx, &testsecrets.Store{})
+
+	dispatcher := &tq.Dispatcher{}
+	ctx, sched := tq.TestingContext(ctx, dispatcher)
 
 	gsMock := &mockedGS{
 		files:       map[string]string{},
 		publisCalls: []publishCall{},
 		deleteCalls: []string{},
 	}
-
-	dispatcher := migration.NewAppengineTQ()
 
 	impl := &storageImpl{
 		tq:    dispatcher,
@@ -399,10 +380,7 @@ func storageMocks() (context.Context, *mockedGS, tqtesting.Testable, *storageImp
 	}
 	impl.registerTasks()
 
-	tq := tqtesting.GetTestable(ctx, &dispatcher.TQ)
-	tq.CreateQueues()
-
-	return ctx, gsMock, tq, impl
+	return ctx, gsMock, sched, impl
 }
 
 func TestFinishUpload(t *testing.T) {
@@ -519,8 +497,8 @@ func TestFinishUpload(t *testing.T) {
 			})
 
 			// Posted the verification task.
-			t := tq.GetScheduledTasks()
-			So(len(t), ShouldEqual, 1)
+			t := tq.Tasks()
+			So(t, ShouldHaveLength, 1)
 			So(t[0].Payload, ShouldResembleProto, &tasks.VerifyUpload{UploadOperationId: 1})
 
 			Convey("Retrying FinishUpload does nothing", func() {
@@ -532,8 +510,7 @@ func TestFinishUpload(t *testing.T) {
 				So(op.Status, ShouldEqual, api.UploadStatus_VERIFYING)
 
 				// Still only 1 task in the queue.
-				t = tq.GetScheduledTasks()
-				So(len(t), ShouldEqual, 1)
+				So(tq.Tasks(), ShouldHaveLength, 1)
 			})
 
 			Convey("Successful verification", func() {
@@ -643,8 +620,8 @@ func TestFinishUpload(t *testing.T) {
 			})
 
 			// Posted the verification task.
-			t := tq.GetScheduledTasks()
-			So(len(t), ShouldEqual, 1)
+			t := tq.Tasks()
+			So(t, ShouldHaveLength, 1)
 			So(t[0].Payload, ShouldResembleProto, &tasks.VerifyUpload{UploadOperationId: 1})
 
 			Convey("Successful verification", func() {
@@ -785,7 +762,7 @@ func TestCancelUpload(t *testing.T) {
 			})
 
 			// Should create the TQ task to cleanup.
-			t := tq.GetScheduledTasks()
+			t := tq.Tasks()
 			So(t, ShouldHaveLength, 1)
 			So(t[0].Payload, ShouldResembleProto, &tasks.CleanupUpload{
 				UploadOperationId: 1,
@@ -799,7 +776,7 @@ func TestCancelUpload(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(op2, ShouldResembleProto, op)
-			So(tq.GetScheduledTasks(), ShouldHaveLength, 1)
+			So(tq.Tasks(), ShouldHaveLength, 1)
 
 			// Execute the pending task.
 			So(impl.cleanupUploadTask(ctx, t[0].Payload.(*tasks.CleanupUpload)), ShouldBeNil)
