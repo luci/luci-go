@@ -18,8 +18,7 @@ import (
 	"context"
 	"testing"
 
-	luciconfig "go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/cfgclient"
+	"go.chromium.org/luci/gae/impl/memory"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -27,38 +26,14 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-const settingsContent = `
-resultdb {
-  hostname: "testing.results.api.cr.dev"
-}
-`
-
-// fakeCfgClient mocks the luciconfig.Interface.
-type fakeCfgClient struct {
-	luciconfig.Interface
-}
-
-func (*fakeCfgClient) GetConfig(ctx context.Context, configSet luciconfig.Set, path string, metaOnly bool) (*luciconfig.Config, error) {
-	if path == "settings.cfg" {
-		return &luciconfig.Config{Content: settingsContent}, nil
-	}
-	return nil, nil
-}
-
 func TestConfig(t *testing.T) {
 	t.Parallel()
-	Convey("GetSettingsCfg", t, func() {
-		ctx := context.Background()
-		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
-		Convey("success", func() {
-			settingsCfg, err := GetSettingsCfg(ctx)
-			So(err, ShouldBeNil)
-			So(settingsCfg, ShouldResembleProto, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "testing.results.api.cr.dev"}})
-		})
-		Convey("error", func() {
-			ctx = context.Background()
-			_, err := GetSettingsCfg(ctx)
-			So(err, ShouldErrLike, "loading settings.cfg from luci-config")
-		})
+	Convey("get settings.cfg", t, func() {
+		settingsCfg := &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "testing.results.api.cr.dev"}}
+		ctx := memory.Use(context.Background())
+		SetTestSettingsCfg(ctx, settingsCfg)
+		cfg, err := GetSettingsCfg(ctx)
+		So(err, ShouldBeNil)
+		So(cfg, ShouldResembleProto, settingsCfg)
 	})
 }
