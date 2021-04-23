@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e0cab565_9ba4712f",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-23T19:35:39Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 311,
+        "startChar": 36,
+        "endLine": 311,
+        "endChar": 38
+      },
+      "revId": "30b78d56f252aefcff743349d0cb6e3267426904",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ac323a4_823dff98",
+        "filename": "cv/internal/run/impl/handler/cl_update.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-23T19:35:39Z",
+      "side": 1,
+      "message": "Note: this check is incomplete, we also need to handle the case where trigger mode has changed. Discussing this over chat.",
+      "revId": "30b78d56f252aefcff743349d0cb6e3267426904",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
