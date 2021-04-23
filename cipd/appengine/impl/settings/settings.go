@@ -20,6 +20,7 @@ package settings
 
 import (
 	"context"
+	"flag"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -47,14 +48,39 @@ type Settings struct {
 	// It contains unverified files uploaded by clients before they pass the
 	// hash verification check and copied to the CAS storage area.
 	TempGSPath string `json:"temp_gs_path"`
+}
 
-	// SignAs is a name of a service account whose private key to use for
-	// generating signed Google Storage URLs (through signBlob IAM API) instead of
-	// the default service account.
-	//
-	// This is mostly useful on dev_server running under developer's account. It
-	// doesn't have private keys for signing, but can still call signBlob API.
-	SignAs string `json:"sign_as"`
+// Register registers settings as CLI flags.
+func (s *Settings) Register(f *flag.FlagSet) {
+	f.StringVar(
+		&s.StorageGSPath,
+		"cipd-storage-gs-path",
+		s.StorageGSPath,
+		"The root of the content-addressable storage area in Google Storage as a '/bucket/path' string.",
+	)
+	f.StringVar(
+		&s.TempGSPath,
+		"cipd-temp-gs-path",
+		s.TempGSPath,
+		"The root of the pending uploads storage area in Google Storage as a '/bucket/path' string.",
+	)
+}
+
+// Validate validates settings format.
+func (s *Settings) Validate() error {
+	if s.StorageGSPath == "" {
+		return errors.Reason("-cipd-storage-gs-path is required").Err()
+	}
+	if err := gs.ValidatePath(s.StorageGSPath); err != nil {
+		return errors.Annotate(err, "bad -cipd-storage-gs-path").Err()
+	}
+	if s.TempGSPath == "" {
+		return errors.Reason("-cipd-temp-gs-path is required").Err()
+	}
+	if err := gs.ValidatePath(s.TempGSPath); err != nil {
+		return errors.Annotate(err, "bad -cipd-temp-gs-path").Err()
+	}
+	return nil
 }
 
 // Get returns the settings from the local cache, checking they are populated.
@@ -120,17 +146,6 @@ func (*settingsPage) Fields(context.Context) ([]portal.Field, error) {
 				return gs.ValidatePath(p)
 			},
 		},
-		{
-			ID:    "SignAs",
-			Title: "Sign as",
-			Type:  portal.FieldText,
-			Help: "<p>A name of a service account whose private key to use for " +
-				"generating signed Google Storage URLs (through signBlob IAM API) " +
-				"instead of the default service account. This is mostly useful on " +
-				"dev_server running under developer's account. It doesn't have private " +
-				"keys for signing, but can still call signBlob API.</p>",
-			Placeholder: "<email>",
-		},
 	}, nil
 }
 
@@ -142,7 +157,6 @@ func (*settingsPage) ReadSettings(ctx context.Context) (map[string]string, error
 	return map[string]string{
 		"StorageGSPath": c.StorageGSPath,
 		"TempGSPath":    c.TempGSPath,
-		"SignAs":        c.SignAs,
 	}, nil
 }
 
@@ -150,7 +164,6 @@ func (*settingsPage) WriteSettings(ctx context.Context, values map[string]string
 	return settings.SetIfChanged(ctx, settingsKey, &Settings{
 		StorageGSPath: values["StorageGSPath"],
 		TempGSPath:    values["TempGSPath"],
-		SignAs:        values["SignAs"],
 	}, who, why)
 }
 

@@ -16,10 +16,8 @@ package cas
 
 import (
 	"context"
-	"net/http"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -27,12 +25,14 @@ import (
 type signerFactory func(context.Context) (*signer, error)
 
 // signer can RSA-sign blobs the way Google Storage likes it.
+//
+// Mocked in tests.
 type signer struct {
 	Email     string
 	SignBytes func(context.Context, []byte) (key string, sig []byte, err error)
 }
 
-// defaultSigner uses the default app account for signing.
+// defaultSigner uses the default server account for signing.
 func defaultSigner(ctx context.Context) (*signer, error) {
 	s := auth.GetSigner(ctx)
 	if s == nil {
@@ -44,22 +44,6 @@ func defaultSigner(ctx context.Context) (*signer, error) {
 	}
 	return &signer{
 		Email:     info.ServiceAccountName,
-		SignBytes: s.SignBytes,
-	}, nil
-}
-
-// iamSigner uses SignBytes IAM API for signing.
-func iamSigner(ctx context.Context, actAs string) (*signer, error) {
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to grab RPC transport").Err()
-	}
-	s := &iam.Signer{
-		Client:         &iam.CredentialsClient{Client: &http.Client{Transport: t}},
-		ServiceAccount: actAs,
-	}
-	return &signer{
-		Email:     actAs,
 		SignBytes: s.SignBytes,
 	}, nil
 }
