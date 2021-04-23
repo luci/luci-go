@@ -14,3 +14,8 @@ cron:
   target: backend
   url: /internal/cron/import-config
   schedule: every 10 minutes
+
+- description: Sweeper for server/tq
+  target: backend
+  url: /internal/tasks/c/sweep
+  schedule: every 1 minutes
