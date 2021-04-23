@@ -26,6 +26,7 @@ import (
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/bqlog"
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
@@ -77,7 +78,11 @@ func InitForGAE1(r *router.Router, mw router.MiddlewareChain) {
 		DumpEntriesToLogger: true,
 		DryRun:              appengine.IsDevAppServer(),
 	}
-	model.EnqueueEventsImpl = func(ctx context.Context, rows []bigquery.ValueSaver) error {
+	model.EnqueueEventsImpl = func(ctx context.Context, ev []*cipdapi.Event) error {
+		rows := make([]bigquery.ValueSaver, len(ev))
+		for idx, e := range ev {
+			rows[idx] = &bq.Row{Message: e}
+		}
 		return eventsLog.Insert(ctx, rows...)
 	}
 }

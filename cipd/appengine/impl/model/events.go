@@ -22,11 +22,9 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/bigquery"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -43,7 +41,7 @@ import (
 //
 // Exists only during GAEv1 => GAEv2 migration. The default value just ignores
 // events (useful for tests that don't care about them).
-var EnqueueEventsImpl = func(ctx context.Context, row []bigquery.ValueSaver) error {
+var EnqueueEventsImpl = func(ctx context.Context, ev []*api.Event) error {
 	return nil
 }
 
@@ -176,18 +174,16 @@ func (t *Events) Flush(c context.Context) error {
 	who := string(auth.CurrentIdentity(c))
 
 	entities := make([]*Event, len(t.ev))
-	rows := make([]bigquery.ValueSaver, len(t.ev))
 	for idx, e := range t.ev {
 		// Make events in a batch ordered by time by abusing nanoseconds precision.
 		e.When = timestamppb.New(when.Add(time.Duration(idx)))
 		e.Who = who
 		entities[idx] = (&Event{}).FromProto(c, e)
-		rows[idx] = &bq.Row{Message: e}
 	}
 
 	err := parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error { return datastore.Put(c, entities) }
-		tasks <- func() error { return EnqueueEventsImpl(c, rows) }
+		tasks <- func() error { return EnqueueEventsImpl(c, t.ev) }
 	})
 	if err != nil {
 		return transient.Tag.Apply(err)
