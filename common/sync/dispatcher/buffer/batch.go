@@ -63,8 +63,8 @@ type Batch struct {
 	// represents the deadline for cutting this batch.
 	nextSend time.Time
 
-	// countedSize is the length of this Batch as the Buffer counts it. It starts
-	// as the original value of len(Batch.Data) and can decrease if
+	// countedItems is the number of items in this Batch as the Buffer counts it.
+	// It starts as the original value of len(Batch.Data) and can decrease if
 	// len(Batch.Data) is smaller on a NACK().
-	countedSize int
+	countedItems int
 }
