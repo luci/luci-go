@@ -16,42 +16,63 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 
-	"google.golang.org/appengine"
-
 	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/dsmapper"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
+	"go.chromium.org/luci/cipd/appengine/impl/settings"
 )
 
 func main() {
-	r := router.New()
-	base := standard.Base()
-	cron := base.Extend(gaemiddleware.RequireCron)
+	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
+		dsmapper.NewModuleFromFlags(),
+	}
 
-	standard.InstallHandlers(r)
-	impl.InitForGAE1(r, base)
+	s := &settings.Settings{}
+	s.Register(flag.CommandLine)
 
-	r.GET("/internal/cron/bqlog/events-flush", cron,
-		func(c *router.Context) {
-			impl.FlushEventsToBQGAE1(c.Context)
-			c.Writer.WriteHeader(http.StatusOK)
-		},
-	)
-	r.GET("/internal/cron/import-config", cron,
-		func(c *router.Context) {
-			if err := monitoring.ImportConfig(c.Context); err != nil {
-				errors.Log(c.Context, err)
-			}
-			c.Writer.WriteHeader(http.StatusOK)
-		},
-	)
+	server.Main(nil, modules, func(srv *server.Server) error {
+		if err := s.Validate(); err != nil {
+			return err
+		}
+		impl.InitForGAE2(s)
 
-	http.DefaultServeMux.Handle("/", r)
-	appengine.Main()
+		// Needed when using manual scaling.
+		srv.Routes.GET("/_ah/start", router.MiddlewareChain{}, func(ctx *router.Context) {
+			ctx.Writer.Write([]byte("OK"))
+		})
+		srv.Routes.GET("/_ah/stop", router.MiddlewareChain{}, func(ctx *router.Context) {
+			ctx.Writer.Write([]byte("OK"))
+		})
+
+		srv.Routes.GET("/internal/cron/import-config",
+			router.NewMiddlewareChain(gaemiddleware.RequireCron),
+			func(ctx *router.Context) {
+				if err := monitoring.ImportConfig(ctx.Context); err != nil {
+					errors.Log(ctx.Context, err)
+				}
+				ctx.Writer.WriteHeader(http.StatusOK)
+			},
+		)
+
+		return nil
+	})
 }
