@@ -51,7 +51,7 @@ type Buffer struct {
 	// batch.
 	//
 	// NOTE: It is possible for this to be nil; if AddNoBlock fills this Batch up
-	// to the maximum permitted size (Options.BatchSize), it will be removed and
+	// to the maximum permitted size (Options.BatchItemsMax), it will be removed and
 	// pushed into `unleased`.
 	currentBatch *Batch
 
@@ -159,7 +159,7 @@ func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch) 
 			Data:     make([]interface{}, 0, int(buf.batchSizeGuess.get()*1.2)),
 			id:       buf.lastBatchID + 1,
 			retry:    buf.opts.Retry(),
-			nextSend: now.Add(buf.opts.BatchDuration),
+			nextSend: now.Add(buf.opts.BatchAgeMax),
 		}
 		buf.lastBatchID++
 	}
@@ -168,7 +168,7 @@ func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch) 
 	buf.currentBatch.countedSize++
 	buf.stats.addOneUnleased()
 
-	if buf.opts.BatchSize != -1 && len(buf.currentBatch.Data) == int(buf.opts.BatchSize) {
+	if buf.opts.BatchItemsMax != -1 && len(buf.currentBatch.Data) == int(buf.opts.BatchItemsMax) {
 		buf.Flush(now)
 	}
 	return
