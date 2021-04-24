@@ -38,10 +38,10 @@ type Buffer struct {
 	// User-provided Options block; dictates all policy for this Buffer.
 	opts Options
 
-	// A moving average of batch sizes so far; Helps reduce the number of spurious
-	// re-allocations if the average batch size is roughly (within 20%) of a
-	// constant size.
-	batchSizeGuess *movingAverage
+	// A moving average of the number of batch items so far; Helps reduce the
+	// number of spurious re-allocations if the average number of batch items is
+	// roughly (within 20%) of a constant amount.
+	batchItemsGuess *movingAverage
 
 	// Current statistics for this Buffer. Can be read with the Stats() method,
 	// and is kept up to date by various functions in the Buffer.
@@ -51,7 +51,7 @@ type Buffer struct {
 	// batch.
 	//
 	// NOTE: It is possible for this to be nil; if AddNoBlock fills this Batch up
-	// to the maximum permitted size (Options.BatchSize), it will be removed and
+	// to the maximum permitted size (Options.BatchItemsMax), it will be removed and
 	// pushed into `unleased`.
 	currentBatch *Batch
 
@@ -92,7 +92,7 @@ func NewBuffer(o *Options) (*Buffer, error) {
 	}
 
 	ret.unleased.onlyID = o.FIFO
-	ret.batchSizeGuess = newMovingAverage(10, ret.opts.batchSizeGuess())
+	ret.batchItemsGuess = newMovingAverage(10, ret.opts.batchItemsGuess())
 	ret.liveLeases = map[*Batch]struct{}{}
 	ret.unAckedLeases = map[*Batch]struct{}{}
 	return ret, nil
@@ -156,19 +156,19 @@ func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch) 
 		buf.currentBatch = &Batch{
 			// Try to minimize allocations by allocating 20% more slots in Data than
 			// the moving average for the last 10 batches' actual use.
-			Data:     make([]interface{}, 0, int(buf.batchSizeGuess.get()*1.2)),
+			Data:     make([]interface{}, 0, int(buf.batchItemsGuess.get()*1.2)),
 			id:       buf.lastBatchID + 1,
 			retry:    buf.opts.Retry(),
-			nextSend: now.Add(buf.opts.BatchDuration),
+			nextSend: now.Add(buf.opts.BatchAgeMax),
 		}
 		buf.lastBatchID++
 	}
 
 	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
-	buf.currentBatch.countedSize++
+	buf.currentBatch.countedItems++
 	buf.stats.addOneUnleased()
 
-	if buf.opts.BatchSize != -1 && buf.currentBatch.countedSize == int(buf.opts.BatchSize) {
+	if buf.opts.BatchItemsMax != -1 && buf.currentBatch.countedItems == int(buf.opts.BatchItemsMax) {
 		buf.Flush(now)
 	}
 	return
@@ -186,7 +186,7 @@ func (buf *Buffer) Flush(now time.Time) {
 
 	batch.nextSend = now // immediately make available to send
 	buf.unleased.PushBatch(batch)
-	buf.batchSizeGuess.record(batch.countedSize)
+	buf.batchItemsGuess.record(batch.countedItems)
 	buf.currentBatch = nil
 	return
 }
@@ -336,7 +336,7 @@ func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
 		leased.nextSend = clock.Now(ctx).Add(toWait)
 	}
 
-	leased.countedSize = intMin(len(leased.Data), leased.countedSize)
+	leased.countedItems = intMin(len(leased.Data), leased.countedItems)
 	buf.unleased.PushBatch(leased)
 	buf.stats.add(leased, categoryUnleased)
 
