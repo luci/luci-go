@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "732e4182_6f59124e",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-24T00:27:58Z",
+      "side": 1,
+      "message": "Ah, sure; I can remove the action enum in that case, too... new patchset is much better, thanks 😊",
+      "parentUuid": "ebe9fce0_71e34819",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 99,
+        "endChar": 46
+      },
+      "revId": "400441d78773e262c69a2f042d79a3be5ba06ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9bdb326d_b96ff6b7",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-24T00:19:42Z",
       "side": 1,
       "message": "why is this a slice if L113 is hard-coded with to[0]?",
+      "range": {
+        "startLine": 102,
+        "startChar": 64,
+        "endLine": 102,
+        "endChar": 66
+      },
+      "revId": "400441d78773e262c69a2f042d79a3be5ba06ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f46177d4_bfd1015f",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-24T00:27:58Z",
+      "side": 1,
+      "message": "To make it an optional argument; There\u0027s no single optional argument form in go (gone in new patchset!)",
+      "parentUuid": "9bdb326d_b96ff6b7",
       "range": {
         "startLine": 102,
         "startChar": 64,
