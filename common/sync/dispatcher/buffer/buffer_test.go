@@ -69,7 +69,7 @@ func TestBuffer(t *testing.T) {
 						So(b.AddNoBlock(clock.Now(ctx), i), ShouldBeNil)
 					}
 
-					So(b.stats, ShouldResemble, Stats{20, 0, 0})
+					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 20})
 					So(b.Stats().Total(), ShouldResemble, 20)
 					So(b.Stats().Empty(), ShouldResemble, false)
 					// The next send time should be when the current batch is available to
@@ -83,7 +83,7 @@ func TestBuffer(t *testing.T) {
 					batch := b.LeaseOne(clock.Now(ctx))
 					So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil)
 
-					So(b.stats, ShouldResemble, Stats{0, 20, 0})
+					So(b.stats, ShouldResemble, Stats{LeasedItemCount: 20})
 					So(batch.Data, ShouldHaveLength, b.opts.BatchSize)
 					for i := range batch.Data {
 						So(batch.Data[i], ShouldEqual, i)
@@ -107,7 +107,7 @@ func TestBuffer(t *testing.T) {
 
 						b.NACK(ctx, nil, batch)
 
-						So(b.stats, ShouldResemble, Stats{10, 0, 0})
+						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 10})
 						So(b.unleased.Len(), ShouldEqual, 1)
 
 						Convey(`Adding Data does nothing`, func() {
@@ -121,7 +121,7 @@ func TestBuffer(t *testing.T) {
 
 							b.NACK(ctx, nil, newBatch)
 
-							So(b.stats, ShouldResemble, Stats{10, 0, 0})
+							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 10})
 							So(b.unleased.Len(), ShouldEqual, 1)
 						})
 					})
@@ -129,12 +129,12 @@ func TestBuffer(t *testing.T) {
 					Convey(`Full NACK`, func() {
 						b.NACK(ctx, nil, batch)
 
-						So(b.stats, ShouldResemble, Stats{20, 0, 0})
+						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 20})
 						So(b.unleased.Len(), ShouldEqual, 1)
 
 						Convey(`double NACK panic`, func() {
 							So(func() { b.NACK(ctx, nil, batch) }, ShouldPanicLike, "unknown *Batch")
-							So(b.stats, ShouldResemble, Stats{20, 0, 0})
+							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 20})
 							So(b.unleased.Len(), ShouldEqual, 1)
 						})
 					})
@@ -188,25 +188,25 @@ func TestBuffer(t *testing.T) {
 
 				Convey(`batch cut by flush`, func() {
 					So(b.AddNoBlock(clock.Now(ctx), "bobbie"), ShouldBeNil)
-					So(b.stats, ShouldResemble, Stats{1, 0, 0})
+					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 
 					So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil)
 
 					b.Flush(start)
-					So(b.stats, ShouldResemble, Stats{1, 0, 0})
+					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 					So(b.currentBatch, ShouldBeNil)
 					So(b.unleased.data, ShouldHaveLength, 1)
 
 					Convey(`double flush is noop`, func() {
 						b.Flush(start)
-						So(b.stats, ShouldResemble, Stats{1, 0, 0})
+						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 						So(b.currentBatch, ShouldBeNil)
 						So(b.unleased.data, ShouldHaveLength, 1)
 					})
 
 					batch := b.LeaseOne(clock.Now(ctx))
 					So(batch, ShouldNotBeNil)
-					So(b.stats, ShouldResemble, Stats{0, 1, 0})
+					So(b.stats, ShouldResemble, Stats{LeasedItemCount: 1})
 
 					b.ACK(batch)
 
@@ -226,7 +226,7 @@ func TestBuffer(t *testing.T) {
 				So(b.AddNoBlock(clock.Now(ctx), 1), ShouldBeNil)
 
 				b.NACK(ctx, nil, b.LeaseOne(clock.Now(ctx)))
-				So(b.stats, ShouldResemble, Stats{1, 0, 0})
+				So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 				b.NACK(ctx, nil, b.LeaseOne(clock.Now(ctx)))
 				// only one retry was allowed, start it's gone.
 				So(b.stats, ShouldResemble, Stats{})
@@ -283,12 +283,12 @@ func TestBuffer(t *testing.T) {
 					So(b.AddNoBlock(clock.Now(ctx), 0), ShouldBeNil)
 					So(b.AddNoBlock(clock.Now(ctx), 1), ShouldNotBeNil) // drops 0
 
-					So(b.stats, ShouldResemble, Stats{1, 0, 0}) // full!
+					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1}) // full!
 					So(b.CanAddItem(), ShouldBeTrue)
 
 					Convey(`via new data`, func() {
-						So(b.AddNoBlock(clock.Now(ctx), 100), ShouldNotBeNil) // drops 1
-						So(b.stats, ShouldResemble, Stats{1, 0, 0})           // still full
+						So(b.AddNoBlock(clock.Now(ctx), 100), ShouldNotBeNil)    // drops 1
+						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1}) // still full
 
 						tclock.Set(b.NextSendTime())
 
@@ -302,19 +302,25 @@ func TestBuffer(t *testing.T) {
 					Convey(`via NACK`, func() {
 						leased := b.LeaseOne(clock.Now(ctx))
 						So(leased, ShouldNotBeNil)
-						So(b.stats, ShouldResemble, Stats{0, 1, 0})
+						So(b.stats, ShouldResemble, Stats{LeasedItemCount: 1})
 
 						dropped := b.AddNoBlock(clock.Now(ctx), 100)
 						So(dropped, ShouldResemble, leased)
-						So(b.stats, ShouldResemble, Stats{1, 0, 1})
+						So(b.stats, ShouldResemble, Stats{
+							UnleasedItemCount:      1,
+							DroppedLeasedItemCount: 1,
+						})
 
 						dropped = b.AddNoBlock(clock.Now(ctx), 200)
 						So(dropped.Data, ShouldResemble, []interface{}{100})
-						So(b.stats, ShouldResemble, Stats{1, 0, 1})
+						So(b.stats, ShouldResemble, Stats{
+							UnleasedItemCount:      1,
+							DroppedLeasedItemCount: 1,
+						})
 
 						b.NACK(ctx, nil, leased)
 
-						So(b.stats, ShouldResemble, Stats{1, 0, 0})
+						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 					})
 				})
 
@@ -326,9 +332,9 @@ func TestBuffer(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					So(b.AddNoBlock(clock.Now(ctx), 0), ShouldBeNil)
-					So(b.stats, ShouldResemble, Stats{1, 0, 0})
+					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 					So(b.AddNoBlock(clock.Now(ctx), 1), ShouldNotBeNil)
-					So(b.stats, ShouldResemble, Stats{1, 0, 0})
+					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 				})
 
 				Convey(`BlockNewItems`, func() {
@@ -342,7 +348,7 @@ func TestBuffer(t *testing.T) {
 						So(b.AddNoBlock(clock.Now(ctx), i), ShouldBeNil)
 					}
 
-					So(b.stats, ShouldResemble, Stats{21, 0, 0})
+					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 21})
 					So(b.CanAddItem(), ShouldBeFalse)
 
 					Convey(`Adding more panics`, func() {
@@ -351,7 +357,7 @@ func TestBuffer(t *testing.T) {
 
 					Convey(`Leasing a batch still rejects Adds`, func() {
 						batch := b.LeaseOne(clock.Now(ctx))
-						So(b.stats, ShouldResemble, Stats{1, 20, 0})
+						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1, LeasedItemCount: 20})
 
 						So(b.CanAddItem(), ShouldBeFalse)
 						So(func() { b.AddNoBlock(clock.Now(ctx), 100) }, ShouldPanic)
@@ -359,9 +365,9 @@ func TestBuffer(t *testing.T) {
 						Convey(`ACK`, func() {
 							b.ACK(batch)
 							So(b.CanAddItem(), ShouldBeTrue)
-							So(b.stats, ShouldResemble, Stats{1, 0, 0})
+							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 							So(b.AddNoBlock(clock.Now(ctx), 100), ShouldBeNil)
-							So(b.stats, ShouldResemble, Stats{2, 0, 0})
+							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 2})
 						})
 
 						Convey(`partial NACK`, func() {
@@ -369,7 +375,7 @@ func TestBuffer(t *testing.T) {
 							b.NACK(ctx, nil, batch)
 
 							So(b.CanAddItem(), ShouldBeTrue)
-							So(b.stats, ShouldResemble, Stats{11, 0, 0})
+							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 11})
 
 							for i := 0; i < 10; i++ {
 								So(b.AddNoBlock(clock.Now(ctx), 100+i), ShouldBeNil)
@@ -384,7 +390,7 @@ func TestBuffer(t *testing.T) {
 
 						Convey(`NACK`, func() {
 							b.NACK(ctx, nil, batch)
-							So(b.stats, ShouldResemble, Stats{21, 0, 0})
+							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 21})
 							So(b.CanAddItem(), ShouldBeFalse)
 						})
 

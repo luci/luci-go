@@ -30,37 +30,6 @@ import (
 	"go.chromium.org/luci/common/retry"
 )
 
-// Stats is a block of information about the Buffer's present state.
-type Stats struct {
-	// UnleasedItemCount is the total number of items (i.e. objects passed to
-	// AddNoBlock) which are currently owned by the Buffer but are not currently
-	// leased. This includes:
-	//    * Items buffered, but not yet cut into a Batch.
-	//    * Items in unleased Batches.
-	UnleasedItemCount int
-
-	// LeasedItemCount is the total number of items (i.e. objects passed to
-	// AddNoBlock) which are currently owned by the Buffer and are in active
-	// leases.
-	LeasedItemCount int
-
-	// DroppedLeasedItemCount is the total number of items (i.e. objects passed to
-	// AddNoBlock) which were part of leases, but where those leases have been
-	// dropped (due to FullBehavior policy).
-	DroppedLeasedItemCount int
-}
-
-// Empty returns true iff the Buffer is totally empty (has zero user-provided
-// items).
-func (s Stats) Empty() bool {
-	return s.Total() == 0
-}
-
-// Total returns the total number of items currently referenced by the Buffer.
-func (s Stats) Total() int {
-	return s.UnleasedItemCount + s.LeasedItemCount + s.DroppedLeasedItemCount
-}
-
 // Buffer batches individual data items into Batch objects.
 //
 // All access to the Buffer (as well as invoking ACK/NACK on LeasedBatches) must
@@ -149,13 +118,12 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 	switch {
 	case unleased != nil && (leased == nil || unleased.id < leased.id):
 		buf.unleased.RemoveAt(unleasedIdx)
-		buf.stats.UnleasedItemCount -= unleased.countedSize
+		buf.stats.del(unleased, categoryUnleased)
 		return unleased
 
 	case leased != nil:
 		delete(buf.liveLeases, leased)
-		buf.stats.LeasedItemCount -= leased.countedSize
-		buf.stats.DroppedLeasedItemCount += leased.countedSize
+		buf.stats.mv(leased, categoryLeased, categoryDropped)
 		return leased
 
 	default:
@@ -166,7 +134,7 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 				"impossible; must drop Batch, but there's NO undropped data"))
 		}
 		buf.currentBatch = nil
-		buf.stats.UnleasedItemCount -= current.countedSize
+		buf.stats.del(current, categoryUnleased)
 		return current
 	}
 }
@@ -198,7 +166,7 @@ func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch) 
 
 	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
 	buf.currentBatch.countedSize++
-	buf.stats.UnleasedItemCount++
+	buf.stats.addOneUnleased()
 
 	if buf.opts.BatchSize != -1 && buf.currentBatch.countedSize == int(buf.opts.BatchSize) {
 		buf.Flush(now)
@@ -295,8 +263,7 @@ func (buf *Buffer) forceLeaseOne() (leased *Batch) {
 	leased = buf.unleased.PopBatch()
 	buf.unAckedLeases[leased] = struct{}{}
 	buf.liveLeases[leased] = struct{}{}
-	buf.stats.UnleasedItemCount -= leased.countedSize
-	buf.stats.LeasedItemCount += leased.countedSize
+	buf.stats.mv(leased, categoryUnleased, categoryLeased)
 	return
 }
 
@@ -337,9 +304,9 @@ func (buf *Buffer) removeLease(leased *Batch) (live bool) {
 
 	if _, live = buf.liveLeases[leased]; live {
 		delete(buf.liveLeases, leased)
-		buf.stats.LeasedItemCount -= leased.countedSize
+		buf.stats.del(leased, categoryLeased)
 	} else {
-		buf.stats.DroppedLeasedItemCount -= leased.countedSize
+		buf.stats.del(leased, categoryDropped)
 	}
 	return
 }
@@ -371,7 +338,7 @@ func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
 
 	leased.countedSize = intMin(len(leased.Data), leased.countedSize)
 	buf.unleased.PushBatch(leased)
-	buf.stats.UnleasedItemCount += leased.countedSize
+	buf.stats.add(leased, categoryUnleased)
 
 	return
 }
