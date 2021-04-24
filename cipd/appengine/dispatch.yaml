@@ -1,6 +1,4 @@
 dispatch:
-  - url: "*/internal/tq/*"
-    service: backend-old
   - url: "*/internal/tasks/*"
     service: backend
   - url: "*/internal/pubsub/*"

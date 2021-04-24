@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,18 +20,19 @@
 package impl
 
 import (
-	"context"
+	"flag"
 
-	"cloud.google.com/go/bigquery"
-	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/appengine/bqlog"
-	"go.chromium.org/luci/common/bq"
-	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/dsmapper"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
-	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
@@ -61,39 +62,37 @@ var (
 	EventLogger *model.BigQueryEventLogger
 )
 
-// eventsLog is used only on GAE1
-var eventsLog *bqlog.Log
+// Main initializes the core server modules and launches the callback.
+func Main(extra []module.Module, cb func(srv *server.Server) error) {
+	modules := append([]module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		dsmapper.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
+	}, extra...)
 
-func InitForGAE1(r *router.Router, mw router.MiddlewareChain) {
-	tq := migration.NewAppengineTQ()
-	InternalCAS = cas.Internal(tq, settings.Get)
-	PublicCAS = cas.Public(InternalCAS)
-	PublicRepo = repo.Public(InternalCAS, tq)
-	AdminAPI = admin.AdminAPI(nil)
+	s := &settings.Settings{}
+	s.Register(flag.CommandLine)
 
-	eventsLog = &bqlog.Log{
-		QueueName:           "bqlog-events", // see queue.yaml
-		DatasetID:           "cipd",         // see push_bq_schema.sh
-		TableID:             "events",
-		DumpEntriesToLogger: true,
-		DryRun:              appengine.IsDevAppServer(),
-	}
-	model.EnqueueEventsImpl = func(ctx context.Context, ev []*cipdapi.Event) error {
-		rows := make([]bigquery.ValueSaver, len(ev))
-		for idx, e := range ev {
-			rows[idx] = &bq.Row{Message: e}
+	server.Main(nil, modules, func(srv *server.Server) error {
+		if err := s.Validate(); err != nil {
+			return err
 		}
-		return eventsLog.Insert(ctx, rows...)
-	}
 
-	// InstallRoutes must be called after all handlers are registered.
-	if r != nil {
-		tq.TQ.InstallRoutes(r, mw)
-	}
-}
+		ev, err := model.NewBigQueryEventLogger(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return err
+		}
+		srv.Context = ev.RegisterSink(srv.Context, &tq.Default, srv.Options.Prod)
 
-// FlushEventsToBQGAE1 sends all buffered events to BigQuery.
-func FlushEventsToBQGAE1(ctx context.Context) error {
-	_, err := eventsLog.Flush(ctx)
-	return err
+		EventLogger = ev
+		InternalCAS = cas.Internal(&tq.Default, s)
+		PublicCAS = cas.Public(InternalCAS)
+		PublicRepo = repo.Public(InternalCAS, &tq.Default)
+		AdminAPI = admin.AdminAPI(&dsmapper.Default)
+
+		return cb(srv)
+	})
 }

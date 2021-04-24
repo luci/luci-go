@@ -1,7 +1,7 @@
 # CIPD backend
 
 Code layout:
-  * `frontend`, `backend`, `static` - entry points for GAE modules.
+  * `frontend`, `backend` - entry points for GAE modules.
   * `impl` - the root package with implementation guts of all APIs.
   * `ui` - web UI implementation.
 

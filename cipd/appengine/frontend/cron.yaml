@@ -1,15 +1,5 @@
 cron:
 
-- description: tsmon house keeping
-  target: backend-old
-  url: /internal/cron/ts_mon/housekeeping
-  schedule: every 1 minutes
-
-- description: Uploads event log to BigQuery
-  target: backend-old
-  url: /internal/cron/bqlog/events-flush
-  schedule: every 1 minutes
-
 - description: Imports latest service configuration
   target: backend
   url: /internal/cron/import-config

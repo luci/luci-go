@@ -59,10 +59,8 @@ func TestGetReader(t *testing.T) {
 	}
 
 	impl := storageImpl{
-		getGS: func(context.Context) gs.GoogleStorage { return gsMock },
-		settings: func(context.Context) (*settings.Settings, error) {
-			return &settings.Settings{StorageGSPath: "/bucket/path"}, nil
-		},
+		settings: &settings.Settings{StorageGSPath: "/bucket/path"},
+		getGS:    func(context.Context) gs.GoogleStorage { return gsMock },
 	}
 
 	Convey("OK", t, func() {
@@ -106,10 +104,8 @@ func TestGetObjectURL(t *testing.T) {
 
 	var signErr error
 	impl := storageImpl{
-		getGS: func(context.Context) gs.GoogleStorage { return &testutil.NoopGoogleStorage{} },
-		settings: func(context.Context) (*settings.Settings, error) {
-			return &settings.Settings{StorageGSPath: "/bucket/path"}, nil
-		},
+		settings: &settings.Settings{StorageGSPath: "/bucket/path"},
+		getGS:    func(context.Context) gs.GoogleStorage { return &testutil.NoopGoogleStorage{} },
 		getSignedURL: func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error) {
 			return "http//signed.example.com" + gsPath + "?f=" + filename, 123, signErr
 		},
@@ -369,14 +365,12 @@ func storageMocks() (context.Context, *mockedGS, *tqtesting.Scheduler, *storageI
 	}
 
 	impl := &storageImpl{
-		tq:    dispatcher,
-		getGS: func(context.Context) gs.GoogleStorage { return gsMock },
-		settings: func(context.Context) (*settings.Settings, error) {
-			return &settings.Settings{
-				StorageGSPath: "/bucket/store",
-				TempGSPath:    "/bucket/tmp_path",
-			}, nil
+		tq: dispatcher,
+		settings: &settings.Settings{
+			StorageGSPath: "/bucket/store",
+			TempGSPath:    "/bucket/tmp_path",
 		},
+		getGS: func(context.Context) gs.GoogleStorage { return gsMock },
 	}
 	impl.registerTasks()
 
