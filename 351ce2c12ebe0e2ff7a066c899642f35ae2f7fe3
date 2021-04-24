@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "588f1c87_e1ad2939",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-24T01:05:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd3676a7_0e6216f9",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 31
+      },
+      "revId": "351ce2c12ebe0e2ff7a066c899642f35ae2f7fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f43860b2_147094c0",
@@ -85,6 +109,30 @@
       "side": 1,
       "message": "Ah, oops; I didn\u0027t mean to include them here :(",
       "parentUuid": "f43860b2_147094c0",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 25
+      },
+      "revId": "351ce2c12ebe0e2ff7a066c899642f35ae2f7fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8e01692_9492bcf6",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-24T01:05:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a26e5f9_54778329",
       "range": {
         "startLine": 27,
         "startChar": 4,
