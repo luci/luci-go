@@ -179,9 +179,9 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 	var err error
 	ret.mergeCh, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
 		Buffer: buffer.Options{
-			MaxLeases:    1,
-			BatchSize:    1,
-			FullBehavior: &buffer.DropOldestBatch{},
+			MaxLeases:     1,
+			BatchItemsMax: 1,
+			FullBehavior:  &buffer.DropOldestBatch{},
 		},
 		DropFn:    dispatcher.DropFnQuiet,
 		DrainedFn: ret.finalize,

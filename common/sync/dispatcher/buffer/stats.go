@@ -76,12 +76,12 @@ func (s *Stats) addOneUnleased() {
 
 func (s *Stats) add(b *Batch, to category) {
 	count := s.getCategoryVars(to)
-	*count += b.countedSize
+	*count += b.countedItems
 }
 
 func (s *Stats) del(b *Batch, to category) {
 	count := s.getCategoryVars(to)
-	*count -= b.countedSize
+	*count -= b.countedItems
 }
 
 func (s *Stats) mv(b *Batch, from, to category) {
