@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "bd3676a7_0e6216f9",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-24T00:53:07Z",
+      "side": 1,
+      "message": "This actually doesn\u0027t change the semantics of dispatcher, just changes where we account for this; I\u0027ll make a separate CL to make it clearer.",
+      "parentUuid": "ff512e49_731d6de2",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 31
+      },
+      "revId": "351ce2c12ebe0e2ff7a066c899642f35ae2f7fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f43860b2_147094c0",
         "filename": "common/sync/dispatcher/buffer/stats.go",
         "patchSetId": 5
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-24T00:47:09Z",
       "side": 1,
       "message": "I believe {Unleased,Leased,DroppedLeased}SizeBytes will be added in the future CL? I think it\u0027s ok to add these descriptions in this CL, if they are going to be added in very next CLs, but just double-checking.",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 25
+      },
+      "revId": "351ce2c12ebe0e2ff7a066c899642f35ae2f7fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a26e5f9_54778329",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-24T00:53:07Z",
+      "side": 1,
+      "message": "Ah, oops; I didn\u0027t mean to include them here :(",
+      "parentUuid": "f43860b2_147094c0",
       "range": {
         "startLine": 27,
         "startChar": 4,
