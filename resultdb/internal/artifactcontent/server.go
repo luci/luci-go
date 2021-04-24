@@ -17,7 +17,6 @@ package artifactcontent
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -33,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
@@ -72,33 +70,6 @@ type Server struct {
 	// Full name of the RBE-CAS instance used to store artifacts,
 	// e.g. "projects/luci-resultdb/instances/artifacts".
 	RBECASInstanceName string
-
-	// used for isolate client
-	anonClient, authClient *http.Client
-
-	// mock for isolate fetching
-	testFetchIsolate func(ctx context.Context, isolateURL string, w io.Writer) error
-}
-
-// Init initializes the server.
-// It must be called before calling other methods.
-func (s *Server) Init(ctx context.Context) error {
-	if s.anonClient != nil {
-		panic("already initialized")
-	}
-
-	anonTransport, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		return err
-	}
-	selfTransport, err := auth.GetRPCTransport(ctx, auth.AsSelf)
-	if err != nil {
-		return err
-	}
-
-	s.anonClient = &http.Client{Transport: anonTransport}
-	s.authClient = &http.Client{Transport: selfTransport}
-	return nil
 }
 
 // InstallHandlers installs handlers to serve artifact content.
@@ -174,13 +145,11 @@ func (r *contentRequest) handle(c *router.Context) {
 	}
 
 	// Read the state from database.
-	var isolateURL spanner.NullString
 	var rbeCASHash spanner.NullString
 	key := r.invID.Key(r.parentID, r.artifactID)
 	err := spanutil.ReadRow(span.Single(c.Context), "Artifacts", key, map[string]interface{}{
 		"ContentType": &r.contentType,
 		"Size":        &r.size,
-		"IsolateURL":  &isolateURL,
 		"RBECASHash":  &rbeCASHash,
 	})
 
@@ -198,13 +167,9 @@ func (r *contentRequest) handle(c *router.Context) {
 		defer mw.Download(c.Context, r.size.Int64)
 		r.handleRBECASContent(c, rbeCASHash.StringVal)
 
-	case isolateURL.Valid:
-		// Isolate is deprecated, do not read content from there.
+	default:
 		err = appstatus.Attachf(err, codes.NotFound, "%s not found", r.artifactName)
 		r.sendError(c.Context, err)
-
-	default:
-		r.sendError(c.Context, errors.Reason("neither RBECASHash nor IsolateURL is initialized in %q", key).Err())
 	}
 }
 
