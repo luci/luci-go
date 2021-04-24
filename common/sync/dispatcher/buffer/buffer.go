@@ -166,7 +166,7 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 				"impossible; must drop Batch, but there's NO undropped data"))
 		}
 		buf.currentBatch = nil
-		buf.stats.UnleasedItemCount -= len(current.Data)
+		buf.stats.UnleasedItemCount -= current.countedSize
 		return current
 	}
 }
@@ -197,9 +197,10 @@ func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch) 
 	}
 
 	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
+	buf.currentBatch.countedSize++
 	buf.stats.UnleasedItemCount++
 
-	if buf.opts.BatchSize != -1 && len(buf.currentBatch.Data) == int(buf.opts.BatchSize) {
+	if buf.opts.BatchSize != -1 && buf.currentBatch.countedSize == int(buf.opts.BatchSize) {
 		buf.Flush(now)
 	}
 	return
@@ -215,7 +216,6 @@ func (buf *Buffer) Flush(now time.Time) {
 		return
 	}
 
-	batch.countedSize = len(batch.Data)
 	batch.nextSend = now // immediately make available to send
 	buf.unleased.PushBatch(batch)
 	buf.batchSizeGuess.record(batch.countedSize)
@@ -369,11 +369,16 @@ func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
 		leased.nextSend = clock.Now(ctx).Add(toWait)
 	}
 
-	if dataSize := len(leased.Data); dataSize < leased.countedSize {
-		leased.countedSize = dataSize
-	}
+	leased.countedSize = intMin(len(leased.Data), leased.countedSize)
 	buf.unleased.PushBatch(leased)
 	buf.stats.UnleasedItemCount += leased.countedSize
 
 	return
+}
+
+func intMin(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
