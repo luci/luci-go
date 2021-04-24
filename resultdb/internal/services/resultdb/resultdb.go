@@ -117,7 +117,7 @@ func newArtifactContentServer(ctx context.Context, opts Options) (*artifactconte
 	}
 	bs := bytestream.NewByteStreamClient(conn)
 
-	contentServer := &artifactcontent.Server{
+	return &artifactcontent.Server{
 		InsecureURLs: opts.InsecureSelfURLs,
 		HostnameProvider: func(requestHost string) string {
 			if host, ok := opts.ContentHostnameMap[requestHost]; ok {
@@ -130,10 +130,5 @@ func newArtifactContentServer(ctx context.Context, opts Options) (*artifactconte
 			return bs.Read(ctx, req)
 		},
 		RBECASInstanceName: opts.ArtifactRBEInstance,
-	}
-
-	if err := contentServer.Init(ctx); err != nil {
-		return nil, err
-	}
-	return contentServer, nil
+	}, nil
 }

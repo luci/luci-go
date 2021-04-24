@@ -48,9 +48,6 @@ message Artifact {
 
   // A signed short-lived URL to fetch the contents of the artifact.
   // See also fetch_url_expiration.
-  //
-  // Internally, this may have format "isolate://{host}/{ns}/{digest}" at the
-  // storage level, but it is converted to an HTTPS URL before serving.
   string fetch_url = 3;
 
   // When fetch_url expires. If expired, re-request this Artifact.
