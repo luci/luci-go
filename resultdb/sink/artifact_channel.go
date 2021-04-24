@@ -165,7 +165,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			// of artifact contents. uploadTaskSlicer slices tasks, as the number of size
 			// limits apply.
 			//
-			// It's recommended to keep BatchSize >= 500 to increase the chance of
+			// It's recommended to keep BatchItemsMax >= 500 to increase the chance of
 			// BatchCreateArtifactRequest to contain 500 artifacts.
 			//
 			// Depending on the estimated pattern of artifact size distribution, consider
@@ -174,9 +174,9 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			//
 			// For more details, visit
 			// https://godoc.org/go.chromium.org/luci/resultdb/proto/v1#BatchCreateArtifactsRequest
-			BatchSize:    500,
-			MaxLeases:    int(cfg.ArtChannelMaxLeases),
-			FullBehavior: &buffer.BlockNewItems{MaxItems: 8000},
+			BatchItemsMax: 500,
+			MaxLeases:     int(cfg.ArtChannelMaxLeases),
+			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
 	c.batchChannel, err = dispatcher.NewChannel(ctx, bcOpts, func(b *buffer.Batch) error {
@@ -189,10 +189,10 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	// streamChannel
 	stOpts := &dispatcher.Options{
 		Buffer: buffer.Options{
-			// BatchSize MUST be 1.
-			BatchSize:    1,
-			MaxLeases:    int(cfg.ArtChannelMaxLeases),
-			FullBehavior: &buffer.BlockNewItems{MaxItems: 4000},
+			// BatchItemsMax MUST be 1.
+			BatchItemsMax: 1,
+			MaxLeases:     int(cfg.ArtChannelMaxLeases),
+			FullBehavior:  &buffer.BlockNewItems{MaxItems: 4000},
 		},
 	}
 	c.streamChannel, err = dispatcher.NewChannel(ctx, stOpts, func(b *buffer.Batch) error {

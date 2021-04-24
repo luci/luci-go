@@ -51,7 +51,7 @@ type Buffer struct {
 	// batch.
 	//
 	// NOTE: It is possible for this to be nil; if AddNoBlock fills this Batch up
-	// to the maximum permitted size (Options.BatchSize), it will be removed and
+	// to the maximum permitted size (Options.BatchItemsMax), it will be removed and
 	// pushed into `unleased`.
 	currentBatch *Batch
 
@@ -159,16 +159,16 @@ func (buf *Buffer) AddNoBlock(now time.Time, item interface{}) (dropped *Batch) 
 			Data:     make([]interface{}, 0, int(buf.batchSizeGuess.get()*1.2)),
 			id:       buf.lastBatchID + 1,
 			retry:    buf.opts.Retry(),
-			nextSend: now.Add(buf.opts.BatchDuration),
+			nextSend: now.Add(buf.opts.BatchAgeMax),
 		}
 		buf.lastBatchID++
 	}
 
 	buf.currentBatch.Data = append(buf.currentBatch.Data, item)
-	buf.currentBatch.countedSize++
+	buf.currentBatch.countedItems++
 	buf.stats.addOneUnleased()
 
-	if buf.opts.BatchSize != -1 && buf.currentBatch.countedSize == int(buf.opts.BatchSize) {
+	if buf.opts.BatchItemsMax != -1 && buf.currentBatch.countedItems == int(buf.opts.BatchItemsMax) {
 		buf.Flush(now)
 	}
 	return
@@ -186,7 +186,7 @@ func (buf *Buffer) Flush(now time.Time) {
 
 	batch.nextSend = now // immediately make available to send
 	buf.unleased.PushBatch(batch)
-	buf.batchSizeGuess.record(batch.countedSize)
+	buf.batchSizeGuess.record(batch.countedItems)
 	buf.currentBatch = nil
 	return
 }
@@ -336,7 +336,7 @@ func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
 		leased.nextSend = clock.Now(ctx).Add(toWait)
 	}
 
-	leased.countedSize = intMin(len(leased.Data), leased.countedSize)
+	leased.countedItems = intMin(len(leased.Data), leased.countedItems)
 	buf.unleased.PushBatch(leased)
 	buf.stats.add(leased, categoryUnleased)
 
