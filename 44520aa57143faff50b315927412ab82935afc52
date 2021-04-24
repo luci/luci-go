@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0429efd6_e96c1f56",
+        "filename": "cipd/appengine/backend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-24T21:56:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f051695_251014e4",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 52
+      },
+      "revId": "44520aa57143faff50b315927412ab82935afc52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "347e52bb_03f9c308",
         "filename": "cipd/appengine/backend/service-backend.yaml",
         "patchSetId": 7
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-24T20:11:24Z",
       "side": 1,
       "message": "Ah, this is var s.t. you can easily re-enable it in  infradata/gae itself. 👍\n\nI assume you\u0027ll be disabling GAEv1 dscache using settings page by hand, right?",
+      "range": {
+        "startLine": 13,
+        "startChar": 4,
+        "endLine": 13,
+        "endChar": 21
+      },
+      "revId": "44520aa57143faff50b315927412ab82935afc52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47f71be7_d5817873",
+        "filename": "cipd/appengine/backend/service-backend.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-24T21:56:20Z",
+      "side": 1,
+      "message": "Yes to both questions.",
+      "parentUuid": "347e52bb_03f9c308",
       "range": {
         "startLine": 13,
         "startChar": 4,
