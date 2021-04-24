@@ -365,8 +365,8 @@ func (t *Test) startTQSweeping(ctx context.Context) (deferme func()) {
 		ctx,
 		&dispatcher.Options{
 			Buffer: buffer.Options{
-				BatchSize: 1, // incoming event => sweep ASAP.
-				MaxLeases: 1, // at most 1 sweep concurrently
+				BatchItemsMax: 1, // incoming event => sweep ASAP.
+				MaxLeases:     1, // at most 1 sweep concurrently
 				// 2+ outstanding requests to sweep should result in just 1 sweep.
 				FullBehavior: &buffer.DropOldestBatch{MaxLiveItems: 1},
 				// This is only useful if something is misconfigured to avoid pointless

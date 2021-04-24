@@ -60,8 +60,8 @@ var (
 	ackChannelOptions = &dispatcher.Options{
 		Buffer: buffer.Options{
 			MaxLeases:     10,
-			BatchSize:     500,
-			BatchDuration: 10 * time.Minute,
+			BatchItemsMax: 500,
+			BatchAgeMax:   10 * time.Minute,
 			FullBehavior: &buffer.BlockNewItems{
 				MaxItems: 10 * 500,
 			},
@@ -81,8 +81,8 @@ var (
 	mkJobChannelOptions = func(maxWorkers int) *dispatcher.Options {
 		return &dispatcher.Options{
 			Buffer: buffer.Options{
-				MaxLeases: maxWorkers,
-				BatchSize: 1,
+				MaxLeases:     maxWorkers,
+				BatchItemsMax: 1,
 				FullBehavior: &buffer.BlockNewItems{
 					// Currently (2020Q2) it takes ~4s on average to process a task, and
 					// ~60s to lease a new batch. We never want to starve our job workers

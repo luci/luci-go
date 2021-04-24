@@ -84,7 +84,7 @@ func TestChannelConstruction(t *testing.T) {
 				Convey(`bad Options.Buffer`, func() {
 					_, err := NewChannel(ctx, &Options{
 						Buffer: buffer.Options{
-							BatchSize: -3,
+							BatchItemsMax: -3,
 						},
 					}, dummySendFn)
 					So(err, ShouldErrLike, "allocating Buffer")
@@ -109,9 +109,9 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 			DropFn:   noDrop,
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			Buffer: buffer.Options{
-				MaxLeases:    1,
-				BatchSize:    1,
-				FullBehavior: &buffer.BlockNewItems{MaxItems: 10},
+				MaxLeases:     1,
+				BatchItemsMax: 1,
+				FullBehavior:  &buffer.BlockNewItems{MaxItems: 10},
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
@@ -184,9 +184,9 @@ func TestContextShutdown(t *testing.T) {
 				droppedBatches = append(droppedBatches, dropped.Data[0].(string))
 			},
 			Buffer: buffer.Options{
-				MaxLeases:    1,
-				BatchSize:    1,
-				FullBehavior: &buffer.BlockNewItems{MaxItems: 2},
+				MaxLeases:     1,
+				BatchItemsMax: 1,
+				FullBehavior:  &buffer.BlockNewItems{MaxItems: 2},
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
@@ -227,9 +227,9 @@ func TestQPSLimit(t *testing.T) {
 			QPSLimit: rate.NewLimiter(rate.Every(10*time.Millisecond), 1),
 			DropFn:   noDrop,
 			Buffer: buffer.Options{
-				MaxLeases:    1,
-				BatchSize:    1,
-				FullBehavior: &buffer.BlockNewItems{MaxItems: 20},
+				MaxLeases:     1,
+				BatchItemsMax: 1,
+				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
@@ -268,9 +268,9 @@ func TestQPSLimitParallel(t *testing.T) {
 			QPSLimit: rate.NewLimiter(rate.Every(10*time.Millisecond), 10),
 			DropFn:   noDrop,
 			Buffer: buffer.Options{
-				MaxLeases:    4,
-				BatchSize:    1,
-				FullBehavior: &buffer.BlockNewItems{MaxItems: 20},
+				MaxLeases:     4,
+				BatchItemsMax: 1,
+				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
@@ -318,9 +318,9 @@ func TestExplicitDrops(t *testing.T) {
 				return false
 			},
 			Buffer: buffer.Options{
-				MaxLeases:    1,
-				BatchSize:    1,
-				FullBehavior: &buffer.BlockNewItems{MaxItems: 20},
+				MaxLeases:     1,
+				BatchItemsMax: 1,
+				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
@@ -356,9 +356,9 @@ func TestImplicitDrops(t *testing.T) {
 		ch, err := NewChannel(ctx, &Options{
 			QPSLimit: limiter,
 			Buffer: buffer.Options{
-				MaxLeases:    1,
-				BatchSize:    1,
-				FullBehavior: &buffer.DropOldestBatch{MaxLiveItems: 1},
+				MaxLeases:     1,
+				BatchItemsMax: 1,
+				FullBehavior:  &buffer.DropOldestBatch{MaxLiveItems: 1},
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
@@ -398,9 +398,9 @@ func TestContextCancel(t *testing.T) {
 		ch, err := NewChannel(ctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			Buffer: buffer.Options{
-				MaxLeases:    1,
-				BatchSize:    1,
-				FullBehavior: &buffer.BlockNewItems{MaxItems: 20},
+				MaxLeases:     1,
+				BatchItemsMax: 1,
+				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
@@ -478,8 +478,8 @@ func TestCloseDeadlockRegression(t *testing.T) {
 			ch, err := NewChannel(ctx, &Options{
 				testingDbg: dbg,
 				Buffer: buffer.Options{
-					MaxLeases: 1,
-					BatchSize: 1,
+					MaxLeases:     1,
+					BatchItemsMax: 1,
 					FullBehavior: &buffer.DropOldestBatch{
 						MaxLiveItems: 1,
 					},
@@ -533,8 +533,8 @@ func TestCorrectTimerUsage(t *testing.T) {
 			DropFn: noDrop,
 			Buffer: buffer.Options{
 				MaxLeases:     10,
-				BatchSize:     3,
-				BatchDuration: time.Second,
+				BatchItemsMax: 3,
+				BatchAgeMax:   time.Second,
 				FullBehavior:  &buffer.BlockNewItems{MaxItems: 15},
 			},
 			testingDbg: dbg,

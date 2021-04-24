@@ -55,12 +55,12 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 	c := &testResultChannel{cfg: cfg}
 	opts := &dispatcher.Options{
 		Buffer: buffer.Options{
-			// BatchRequest can include up to 500 requests. KEEP BatchSize <= 500
+			// BatchRequest can include up to 500 requests. KEEP BatchItemsMax <= 500
 			// to keep report() simple. For more details, visit
 			// https://godoc.org/go.chromium.org/luci/resultdb/proto/v1#BatchCreateTestResultsRequest
-			BatchSize:     500,
+			BatchItemsMax: 500,
 			MaxLeases:     int(cfg.TestResultChannelMaxLeases),
-			BatchDuration: time.Second,
+			BatchAgeMax:   time.Second,
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
