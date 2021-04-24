@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "25618f10_2cc63893",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 569,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-24T22:07:49Z",
+      "side": 0,
+      "message": "Cloud Datastore wants valid UTF-8 as keys.",
+      "range": {
+        "startLine": 569,
+        "startChar": 20,
+        "endLine": 569,
+        "endChar": 24
+      },
+      "revId": "442b5f5b4fda08adb6c0f18a1693b19ded281f99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
