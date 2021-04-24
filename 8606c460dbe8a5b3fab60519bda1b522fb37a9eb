@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ddf4715e_04361114",
+        "filename": "cipd/appengine/impl/servicesv2.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-24T22:30:24Z",
+      "side": 1,
+      "message": "some imported code uses go113 features and fails to compile when linked into \"backend-old\" that runs go111.",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "8606c460dbe8a5b3fab60519bda1b522fb37a9eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
