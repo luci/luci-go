@@ -127,9 +127,9 @@ func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
 	opts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
 		Buffer: buffer.Options{
-			BatchSize:    1,
-			MaxLeases:    1,
-			FullBehavior: &buffer.DropOldestBatch{MaxLiveItems: 1},
+			MaxLeases:     1,
+			BatchItemsMax: 1,
+			FullBehavior:  &buffer.DropOldestBatch{MaxLiveItems: 1},
 			Retry: func() retry.Iterator {
 				return &retry.ExponentialBackoff{
 					Limited: retry.Limited{

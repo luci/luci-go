@@ -37,15 +37,15 @@ type Options struct {
 	// available to lease.
 	//
 	// Special value -1: unlimited
-	// Requirement: Must be == -1 (i.e. cut batches based on BatchDuration), or > 0
-	BatchSize int
+	// Requirement: Must be == -1 (i.e. cut batches based on BatchAgeMax), or > 0
+	BatchItemsMax int
 
 	// [OPTIONAL] The maximum amount of time to wait before queuing a Batch for
 	// transmission. Note that batches are only cut by time when a worker is ready
 	// to process them (i.e. LeaseOne is invoked).
 	//
 	// Requirement: Must be > 0
-	BatchDuration time.Duration
+	BatchAgeMax time.Duration
 
 	// [OPTIONAL] Sets the policy for the Buffer around how many items the Buffer
 	// is allowed to hold, and what happens when that number is reached.
@@ -82,8 +82,8 @@ type Options struct {
 // DO NOT ASSIGN/WRITE TO THIS STRUCT.
 var Defaults = Options{
 	MaxLeases:     4,
-	BatchSize:     20,
-	BatchDuration: 10 * time.Second,
+	BatchItemsMax: 20,
+	BatchAgeMax:   10 * time.Second,
 	FullBehavior: &BlockNewItems{
 		MaxItems: 1000,
 	},
@@ -111,20 +111,20 @@ func (o *Options) normalize() error {
 	}
 
 	switch {
-	case o.BatchSize == 0:
-		o.BatchSize = Defaults.BatchSize
-	case o.BatchSize == -1:
-	case o.BatchSize > 0:
+	case o.BatchItemsMax == 0:
+		o.BatchItemsMax = Defaults.BatchItemsMax
+	case o.BatchItemsMax == -1:
+	case o.BatchItemsMax > 0:
 	default:
-		return errors.Reason("BatchSize must be > 0 or == -1: got %d", o.BatchSize).Err()
+		return errors.Reason("BatchItemsMax must be > 0 or == -1: got %d", o.BatchItemsMax).Err()
 	}
 
 	switch {
-	case o.BatchDuration == 0:
-		o.BatchDuration = Defaults.BatchDuration
-	case o.BatchDuration > 0:
+	case o.BatchAgeMax == 0:
+		o.BatchAgeMax = Defaults.BatchAgeMax
+	case o.BatchAgeMax > 0:
 	default:
-		return errors.Reason("BatchDuration must be > 0: got %s", o.BatchDuration).Err()
+		return errors.Reason("BatchAgeMax must be > 0: got %s", o.BatchAgeMax).Err()
 	}
 
 	if o.FIFO && o.MaxLeases != 1 {
@@ -142,9 +142,9 @@ func (o *Options) normalize() error {
 	return errors.Annotate(o.FullBehavior.Check(*o), "FullBehavior.Check").Err()
 }
 
-func (o *Options) batchSizeGuess() int {
-	if o.BatchSize > 0 {
-		return o.BatchSize
+func (o *Options) batchItemsGuess() int {
+	if o.BatchItemsMax > 0 {
+		return o.BatchItemsMax
 	}
 	return 10
 }
