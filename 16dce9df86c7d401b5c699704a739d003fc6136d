@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2fea763_ff26c634",
+        "filename": "examples/appengine/helloworld_v2/app.yaml",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-24T01:51:59Z",
+      "side": 1,
+      "message": "Hm... doesn\u0027t this defeat the purpose?",
+      "revId": "16dce9df86c7d401b5c699704a739d003fc6136d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
