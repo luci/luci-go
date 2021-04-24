@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff512e49_731d6de2",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-24T00:47:09Z",
+      "side": 1,
+      "message": "nit; I am curious if this is a bug fix.\nI\u0027m wondering about it just in case if it may introduce a different behaviour to Dispatcher, and this may not be super easy to find when engineers looking back commit logs to find possible culprits.\n\nIt\u0027d be great if the description mentions about this shortly.",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 31
+      },
+      "revId": "351ce2c12ebe0e2ff7a066c899642f35ae2f7fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f43860b2_147094c0",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-24T00:47:09Z",
+      "side": 1,
+      "message": "I believe {Unleased,Leased,DroppedLeased}SizeBytes will be added in the future CL? I think it\u0027s ok to add these descriptions in this CL, if they are going to be added in very next CLs, but just double-checking.",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 25
+      },
+      "revId": "351ce2c12ebe0e2ff7a066c899642f35ae2f7fe3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
