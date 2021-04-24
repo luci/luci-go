@@ -21,14 +21,21 @@ package impl
 
 import (
 	"context"
+	"flag"
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/dsmapper"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
@@ -58,6 +65,9 @@ var (
 	// AdminAPI is ACL-protected implementation of cipd.AdminServer that can be
 	// exposed as an external API to be used by administrators.
 	AdminAPI adminapi.AdminServer
+
+	// EventLogger can flush events to BigQuery.
+	EventLogger *model.BigQueryEventLogger
 )
 
 // eventsLog is used only on GAE1
@@ -97,14 +107,38 @@ func FlushEventsToBQGAE1(ctx context.Context) error {
 	return err
 }
 
-func InitForGAE2(ctx context.Context, s *settings.Settings, projectID string, prod bool) (*model.BigQueryEventLogger, error) {
-	InternalCAS = cas.Internal(&tq.Default, func(context.Context) (*settings.Settings, error) {
-		return s, nil
+// Main initializes the core server modules and launches the callback.
+func Main(extra []module.Module, cb func(srv *server.Server) error) {
+	modules := append([]module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		dsmapper.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
+	}, extra...)
+
+	s := &settings.Settings{}
+	s.Register(flag.CommandLine)
+
+	server.Main(nil, modules, func(srv *server.Server) error {
+		if err := s.Validate(); err != nil {
+			return err
+		}
+		ev, err := model.NewBigQueryEventLogger(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return err
+		}
+
+		EventLogger = ev
+		model.RegisterTasks(&tq.Default)
+		model.EnqueueEventsImpl = model.NewEnqueueEventsCallback(&tq.Default, srv.Options.Prod)
+
+		InternalCAS = cas.Internal(&tq.Default, func(context.Context) (*settings.Settings, error) { return s, nil })
+		PublicCAS = cas.Public(InternalCAS)
+		PublicRepo = repo.Public(InternalCAS, &tq.Default)
+		AdminAPI = admin.AdminAPI(&dsmapper.Default)
+
+		return cb(srv)
 	})
-	PublicCAS = cas.Public(InternalCAS)
-	PublicRepo = repo.Public(InternalCAS, &tq.Default)
-	AdminAPI = admin.AdminAPI(&dsmapper.Default)
-	model.RegisterTasks(&tq.Default)
-	model.EnqueueEventsImpl = model.NewEnqueueEventsCallback(&tq.Default, prod)
-	return model.NewBigQueryEventLogger(ctx, projectID)
 }
