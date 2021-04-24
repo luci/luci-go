@@ -16,6 +16,23 @@
       "message": "maybe, we could drop the following column, too?\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/spanutil/init_db.sql;l\u003d230-233\n",
       "revId": "42f18fed8e61170a0b46da2273a6426259e2f461",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "76172637_cec511de",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-24T04:44:01Z",
+      "side": 1,
+      "message": "nice cleanup! Thanks!",
+      "revId": "42f18fed8e61170a0b46da2273a6426259e2f461",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
