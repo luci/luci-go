@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ebe9fce0_71e34819",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-24T00:19:42Z",
+      "side": 1,
+      "message": "nit;\n\nI see that update() performs the following operations.\n: 2 * var-lookup(s) + 2 * count_value_change\n\nwouldn\u0027t be the same as s.update(actionAdd) + s.update(actionDel)? It saves one s.update() call though but removes lines.",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 99,
+        "endChar": 46
+      },
+      "revId": "400441d78773e262c69a2f042d79a3be5ba06ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9bdb326d_b96ff6b7",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-24T00:19:42Z",
+      "side": 1,
+      "message": "why is this a slice if L113 is hard-coded with to[0]?",
+      "range": {
+        "startLine": 102,
+        "startChar": 64,
+        "endLine": 102,
+        "endChar": 66
+      },
+      "revId": "400441d78773e262c69a2f042d79a3be5ba06ac3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
