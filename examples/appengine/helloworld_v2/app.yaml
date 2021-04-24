@@ -8,8 +8,16 @@ luci_gae_vars:
   example-app-id-prod:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
 
-entrypoint: >
-  main -auth-service-host ${AUTH_SERVICE_HOST}
+handlers:
+- url: /static
+  static_dir: static
+  secure: always
+- url: /.*
+  script: auto
+  secure: always
 
 inbound_services:
 - warmup
+
+entrypoint: >
+  main -auth-service-host ${AUTH_SERVICE_HOST}
