@@ -16,8 +16,6 @@ package artifactcontent
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -58,8 +56,6 @@ func TestGenerateSignedURL(t *testing.T) {
 				return "results.usercontent.example.com"
 			},
 		}
-		So(s.Init(ctx), ShouldBeNil)
-
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.AnonymousIdentity,
 		})
@@ -103,11 +99,6 @@ func TestServeContent(t *testing.T) {
 				return casReader, casReadErr
 			},
 		}
-		So(s.Init(ctx), ShouldBeNil)
-		s.testFetchIsolate = func(ctx context.Context, isolateURL string, w io.Writer) error {
-			return fmt.Errorf("unexpected")
-		}
-
 		r := router.NewWithRootContext(ctx)
 		s.InstallHandlers(r)
 
@@ -136,7 +127,6 @@ func TestServeContent(t *testing.T) {
 			insert.Artifact("inv", "", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        64,
-				"IsolateURL":  "isolate://isolate.example.com/default-gzip/deadbeef",
 			}),
 			insert.Artifact("inv", "", "rbe", map[string]interface{}{
 				"ContentType": "text/plain",
@@ -149,11 +139,6 @@ func TestServeContent(t *testing.T) {
 				"RBECASHash":  "sha256:deadbeef",
 			}),
 		)
-
-		s.testFetchIsolate = func(ctx context.Context, isolateURL string, w io.Writer) error {
-			_, err := w.Write([]byte("contents"))
-			return err
-		}
 
 		Convey(`Invalid resource name`, func() {
 			res, _ := fetch("https://results.usercontent.example.com/invocations/inv")
