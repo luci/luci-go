@@ -27,7 +27,9 @@ import (
 
 	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
@@ -63,9 +65,6 @@ var eventsLog *bqlog.Log
 
 func InitForGAE1(r *router.Router, mw router.MiddlewareChain) {
 	tq := migration.NewAppengineTQ()
-	if r != nil {
-		tq.TQ.InstallRoutes(r, mw)
-	}
 	InternalCAS = cas.Internal(tq, settings.Get)
 	PublicCAS = cas.Public(InternalCAS)
 	PublicRepo = repo.Public(InternalCAS, tq)
@@ -85,10 +84,28 @@ func InitForGAE1(r *router.Router, mw router.MiddlewareChain) {
 		}
 		return eventsLog.Insert(ctx, rows...)
 	}
+
+	// InstallRoutes must be called after all handlers are registered.
+	if r != nil {
+		tq.TQ.InstallRoutes(r, mw)
+	}
 }
 
 // FlushEventsToBQGAE1 sends all buffered events to BigQuery.
 func FlushEventsToBQGAE1(ctx context.Context) error {
 	_, err := eventsLog.Flush(ctx)
 	return err
+}
+
+func InitForGAE2(s *settings.Settings) {
+	InternalCAS = cas.Internal(&tq.Default, func(context.Context) (*settings.Settings, error) {
+		return s, nil
+	})
+	PublicCAS = cas.Public(InternalCAS)
+	PublicRepo = repo.Public(InternalCAS, &tq.Default)
+	AdminAPI = admin.AdminAPI(&dsmapper.Default)
+	model.EnqueueEventsImpl = func(ctx context.Context, ev []*cipdapi.Event) error {
+		// TODO(crbug.com/1201436): Implement.
+		return nil
+	}
 }
