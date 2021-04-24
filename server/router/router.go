@@ -148,6 +148,21 @@ func (r *Router) NotFound(mc MiddlewareChain, h Handler) {
 	})
 }
 
+// Static installs handlers that serve static files.
+func (r *Router) Static(prefix string, mc MiddlewareChain, root http.FileSystem) {
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	h := http.FileServer(root)
+	p := makeBasePath(r.BasePath, prefix+"*static")
+	handle := r.adapt(mc, func(ctx *Context) {
+		ctx.Request.URL.Path = ctx.Params.ByName("static")
+		h.ServeHTTP(ctx.Writer, ctx.Request)
+	}, p)
+	r.hrouter.Handle("GET", p, handle)
+	r.hrouter.Handle("HEAD", p, handle)
+}
+
 // adapt adapts given middleware chain and handler into a httprouter-style handle.
 func (r *Router) adapt(mc MiddlewareChain, h Handler, path string) httprouter.Handle {
 	return httprouter.Handle(func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {

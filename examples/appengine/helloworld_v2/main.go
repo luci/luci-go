@@ -57,6 +57,11 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
+		// When running locally, serve static files ourself.
+		if !srv.Options.Prod {
+			srv.Routes.Static("/static", router.MiddlewareChain{}, http.Dir("./static"))
+		}
+
 		// pRPC example.
 		apipb.RegisterGreeterServer(srv.PRPC, &greeterServer{})
 
