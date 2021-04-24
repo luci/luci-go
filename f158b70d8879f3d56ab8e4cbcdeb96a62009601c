@@ -16,6 +16,29 @@
       "message": "Tested and worked on Dev. Can you help to review it? Thanks.",
       "revId": "f158b70d8879f3d56ab8e4cbcdeb96a62009601c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a656a0b2_b3916b0d",
+        "filename": "buildbucket/appengine/internal/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-24T00:49:10Z",
+      "side": 1,
+      "message": "This will panic on errors because `cfg` will be nil and nil.(type) is a panic.",
+      "range": {
+        "startLine": 43,
+        "startChar": 1,
+        "endLine": 43,
+        "endChar": 34
+      },
+      "revId": "f158b70d8879f3d56ab8e4cbcdeb96a62009601c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
