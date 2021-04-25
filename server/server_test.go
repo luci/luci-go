@@ -87,10 +87,10 @@ func TestServer(t *testing.T) {
 		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
 
 		Convey("VirtualHost", func() {
-			srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
+			srv.Routes.GET("/test", nil, func(c *router.Context) {
 				c.Writer.Write([]byte("default-router"))
 			})
-			srv.VirtualHost("test-host.example.com").GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
+			srv.VirtualHost("test-host.example.com").GET("/test", nil, func(c *router.Context) {
 				c.Writer.Write([]byte("test-host-router"))
 			})
 
@@ -117,7 +117,7 @@ func TestServer(t *testing.T) {
 		})
 
 		Convey("Logging", func() {
-			srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
+			srv.Routes.GET("/test", nil, func(c *router.Context) {
 				logging.Infof(c.Context, "Info log")
 				tc.Add(time.Second)
 				logging.Warningf(c.Context, "Warn log")
@@ -173,7 +173,7 @@ func TestServer(t *testing.T) {
 
 		Convey("Context features", func() {
 			So(testContextFeatures(srv.Context), ShouldBeNil)
-			srv.Routes.GET("/request", router.MiddlewareChain{}, func(c *router.Context) {
+			srv.Routes.GET("/request", nil, func(c *router.Context) {
 				if err := testContextFeatures(c.Context); err != nil {
 					http.Error(c.Writer, err.Error(), 500)
 				}
@@ -254,7 +254,7 @@ func TestServer(t *testing.T) {
 		})
 
 		Convey("Client auth", func() {
-			srv.Routes.GET("/client-auth", router.MiddlewareChain{}, func(c *router.Context) {
+			srv.Routes.GET("/client-auth", nil, func(c *router.Context) {
 				scopes := strings.Split(c.Request.Header.Get("Ask-Scope"), " ")
 				ts, err := auth.GetTokenSource(c.Context, auth.AsSelf, auth.WithScopes(scopes...))
 				if err != nil {
@@ -327,7 +327,7 @@ func TestServer(t *testing.T) {
 			}))
 			defer ts.Close()
 
-			srv.Routes.GET("/test-egress", router.MiddlewareChain{}, func(rc *router.Context) {
+			srv.Routes.GET("/test-egress", nil, func(rc *router.Context) {
 				req, _ := http.NewRequest("GET", ts.URL, nil)
 				req.Header.Add("User-Agent", "zzz")
 
@@ -554,7 +554,7 @@ func BenchmarkServer(b *testing.B) {
 	defer srv.cleanup()
 
 	// The route we are going to hit from the benchmark.
-	srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
+	srv.Routes.GET("/test", nil, func(c *router.Context) {
 		logging.Infof(c.Context, "Hello, world")
 		for i := 0; i < 10; i++ {
 			// E.g. calling bunch of Cloud APIs.
@@ -784,7 +784,7 @@ func testRequestHandler(o *Options, handler func(rc *router.Context)) {
 	srv.ServeInBackground()
 	defer srv.StopBackgroundServing()
 
-	srv.Routes.GET("/test", router.MiddlewareChain{}, handler)
+	srv.Routes.GET("/test", nil, handler)
 	_, err = srv.GetMain("/test", nil)
 	So(err, ShouldBeNil)
 }

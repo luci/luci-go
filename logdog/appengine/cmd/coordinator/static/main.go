@@ -31,8 +31,7 @@ import (
 func main() {
 	r := router.New()
 
-	base := router.NewMiddlewareChain()
-	warmup.InstallHandlersDeprecated(r, base)
+	warmup.InstallHandlersDeprecated(r, nil)
 
 	http.Handle("/", r)
 	appengine.Main()
