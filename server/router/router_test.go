@@ -72,9 +72,9 @@ func TestRouter(t *testing.T) {
 
 		Convey("Use", func() {
 			Convey("Should append middleware", func() {
-				So(len(r.middleware.middleware), ShouldEqual, 0)
+				So(len(r.middleware), ShouldEqual, 0)
 				r.Use(NewMiddlewareChain(a, b))
-				So(len(r.middleware.middleware), ShouldEqual, 2)
+				So(len(r.middleware), ShouldEqual, 2)
 			})
 		})
 
@@ -85,22 +85,22 @@ func TestRouter(t *testing.T) {
 				r2 := r.Subrouter("bar")
 				So(r.hrouter, ShouldPointTo, r2.hrouter)
 				So(r2.BasePath, ShouldEqual, "/foo/bar")
-				So(r.middleware.middleware, ShouldResemble, r2.middleware.middleware)
+				So(r.middleware, ShouldResemble, r2.middleware)
 			})
 		})
 
 		Convey("Handle", func() {
 			Convey("Should not modify existing empty r.middleware slice", func() {
-				So(len(r.middleware.middleware), ShouldEqual, 0)
+				So(len(r.middleware), ShouldEqual, 0)
 				r.Handle("GET", "/bar", NewMiddlewareChain(b, c), handler)
-				So(len(r.middleware.middleware), ShouldEqual, 0)
+				So(len(r.middleware), ShouldEqual, 0)
 			})
 
 			Convey("Should not modify existing r.middleware slice", func() {
 				r.Use(NewMiddlewareChain(a))
-				So(len(r.middleware.middleware), ShouldEqual, 1)
+				So(len(r.middleware), ShouldEqual, 1)
 				r.Handle("GET", "/bar", NewMiddlewareChain(b, c), handler)
-				So(len(r.middleware.middleware), ShouldEqual, 1)
+				So(len(r.middleware), ShouldEqual, 1)
 			})
 		})
 
@@ -115,7 +115,7 @@ func TestRouter(t *testing.T) {
 			Convey("Should execute middlewares and handler in order", func() {
 				m := NewMiddlewareChain(a, b, c)
 				n := NewMiddlewareChain(d)
-				runChains(ctx, m, n, handler)
+				run(ctx, m, n, handler)
 				So(ctx.Context.Value(outputKey), ShouldResemble,
 					[]string{"a:before", "b:before", "c", "handler", "d", "b:after", "a:after"},
 				)
@@ -123,25 +123,25 @@ func TestRouter(t *testing.T) {
 
 			Convey("Should not execute upcoming middleware/handlers if next is not called", func() {
 				mc := NewMiddlewareChain(a, stop, b)
-				runChains(ctx, mc, NewMiddlewareChain(), handler)
+				run(ctx, mc, NewMiddlewareChain(), handler)
 				So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "a:after"})
 			})
 
 			Convey("Should execute next middleware when it encounters nil middleware", func() {
 				Convey("At start of first chain", func() {
-					runChains(ctx, NewMiddlewareChain(nil, a), NewMiddlewareChain(b), handler)
+					run(ctx, NewMiddlewareChain(nil, a), NewMiddlewareChain(b), handler)
 					So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
 				})
 				Convey("At start of second chain", func() {
-					runChains(ctx, NewMiddlewareChain(a), NewMiddlewareChain(nil, b), handler)
+					run(ctx, NewMiddlewareChain(a), NewMiddlewareChain(nil, b), handler)
 					So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
 				})
 				Convey("At end of first chain", func() {
-					runChains(ctx, NewMiddlewareChain(a, nil), NewMiddlewareChain(b), handler)
+					run(ctx, NewMiddlewareChain(a, nil), NewMiddlewareChain(b), handler)
 					So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
 				})
 				Convey("At end of second chain", func() {
-					runChains(ctx, NewMiddlewareChain(a), NewMiddlewareChain(b, nil), handler)
+					run(ctx, NewMiddlewareChain(a), NewMiddlewareChain(b, nil), handler)
 					So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
 				})
 			})

@@ -67,7 +67,7 @@ func NewWithRootContext(root context.Context) *Router {
 // all handlers registered on the router and to all handlers registered on
 // routers that may be derived from the router (using Subrouter).
 func (r *Router) Use(mc MiddlewareChain) {
-	r.middleware = r.middleware.ExtendFrom(mc)
+	r.middleware = r.middleware.Extend(mc...)
 }
 
 // Subrouter creates a new router with an updated base path.
@@ -168,7 +168,7 @@ func (r *Router) Static(prefix string, mc MiddlewareChain, root http.FileSystem)
 // adapt adapts given middleware chain and handler into a httprouter-style handle.
 func (r *Router) adapt(mc MiddlewareChain, h Handler, path string) httprouter.Handle {
 	return httprouter.Handle(func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {
-		runChains(&Context{
+		run(&Context{
 			Context:     r.rootCtx,
 			Writer:      rw,
 			Request:     req,
