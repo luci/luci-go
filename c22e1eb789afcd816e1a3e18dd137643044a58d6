@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8236f983_417cfcd2",
+        "filename": "cipd/appengine/impl/model/tasks/gen.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-25T19:43:48Z",
+      "side": 1,
+      "message": "why?",
+      "range": {
+        "startLine": 15,
+        "startChar": 21,
+        "endLine": 15,
+        "endChar": 37
+      },
+      "revId": "c22e1eb789afcd816e1a3e18dd137643044a58d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
