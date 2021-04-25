@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/milo/backend"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
-	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
@@ -53,7 +52,7 @@ func Run(templatePath string) {
 
 	baseMW := standard.Base()
 	htmlMW := baseMW.Extend(
-		middleware.WithContextTimeout(time.Minute),
+		router.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
 		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		withGitMiddleware,
@@ -65,7 +64,7 @@ func Run(templatePath string) {
 	projectMW := htmlMW.Extend(buildProjectACLMiddleware(false))
 	optionalProjectMW := htmlMW.Extend(buildProjectACLMiddleware(true))
 	backendMW := baseMW.Extend(
-		middleware.WithContextTimeout(10*time.Minute),
+		router.WithContextTimeout(10*time.Minute),
 		withBuildbucketBuildsClient)
 	cronMW := backendMW.Extend(gaemiddleware.RequireCron, withBuildbucketBuildsClient)
 

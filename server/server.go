@@ -228,7 +228,6 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/internal"
-	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/router"
@@ -966,8 +965,8 @@ func (s *Server) newRouter(opts PortOptions) *router.Router {
 	}
 
 	mw := router.NewMiddlewareChain(
-		s.rootMiddleware,            // prepares the per-request context
-		middleware.WithPanicCatcher, // transforms panics into HTTP 500
+		s.rootMiddleware,        // prepares the per-request context
+		router.WithPanicCatcher, // transforms panics into HTTP 500
 	)
 	if s.tsmon != nil && !opts.DisableMetrics {
 		mw = mw.Extend(s.tsmon.Middleware) // collect HTTP requests metrics
