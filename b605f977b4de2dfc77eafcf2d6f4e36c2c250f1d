@@ -16,6 +16,24 @@
       "message": "Unfortunately \"appengine/bqlog\" is still used by Tricium. I wanted to delete it too.",
       "revId": "b605f977b4de2dfc77eafcf2d6f4e36c2c250f1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4da7e03_c34c3374",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-25T23:51:35Z",
+      "side": 1,
+      "message": "+qyearsley@ FYI. We ought to delete it, too.",
+      "parentUuid": "598daf18_5e0418c6",
+      "revId": "b605f977b4de2dfc77eafcf2d6f4e36c2c250f1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
