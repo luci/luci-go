@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c77f17a0_0445db52",
+        "filename": "cipd/appengine/impl/services.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-25T23:47:52Z",
+      "side": 1,
+      "message": "btw, wanted to ask for a while, but kept forgetting: what\u0027s the advantage of sticking these as public vars *here* as opposed to just passing to whatever needs it as you do in InitForGAE / v2 Main()?",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 63,
+        "endChar": 0
+      },
+      "revId": "d849c6d42b0ac6f1158e7d762d13ba1a1f03d82f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
