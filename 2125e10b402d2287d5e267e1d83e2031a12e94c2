@@ -16,6 +16,46 @@
       "message": "It has been bothering me for a long time...",
       "revId": "2125e10b402d2287d5e267e1d83e2031a12e94c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cde5acd9_754038a4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-25T23:49:43Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "2125e10b402d2287d5e267e1d83e2031a12e94c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "74f1ccfe_98015102",
+        "filename": "server/router/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-25T23:49:43Z",
+      "side": 1,
+      "message": "fwiw, I find this middleware definition strange and would find\n\n   type Middleware func(c *Context)  (after func(*Context))\n\nTo be more difficult to mess up, where if the http.ResponseWriter had any of its methods called, then the middleware chain is \u0027done\u0027, and no further links in the chain would be called, but `after` funcs would be called on the way back up (maybe with ResponseWriter nil\u0027d out?).\n   * can\u0027t forget to call next\n   * can\u0027t call next after writing some response\n   * context modification is the same\n   * if you want to do stuff after, return that as a function (but most things probably will return nil)\n\nMy unhelpful $0.02",
+      "range": {
+        "startLine": 32,
+        "startChar": 26,
+        "endLine": 32,
+        "endChar": 35
+      },
+      "revId": "2125e10b402d2287d5e267e1d83e2031a12e94c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
