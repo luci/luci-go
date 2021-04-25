@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
-	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -303,7 +302,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	// create an HTTP server with a pRPC service.
 	routes := router.NewWithRootContext(ctx)
-	routes.Use(router.NewMiddlewareChain(middleware.WithPanicCatcher))
+	routes.Use(router.NewMiddlewareChain(router.WithPanicCatcher))
 	s.httpSrv.Handler = routes
 	ss, err := newSinkServer(ctx, s.cfg)
 	if err != nil {

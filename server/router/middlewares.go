@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package middleware
+package router
 
 import (
+	"context"
 	"net/http"
+	"time"
 
-	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
-	"go.chromium.org/luci/server/router"
 )
+
+// WithContextTimeout returns a middleware that adds a timeout to the context.
+func WithContextTimeout(timeout time.Duration) Middleware {
+	return func(c *Context, next Handler) {
+		var cancel context.CancelFunc
+		c.Context, cancel = clock.WithTimeout(c.Context, timeout)
+		defer cancel()
+		next(c)
+	}
+}
 
 // WithPanicCatcher is a middleware that catches panics, dumps stack trace to
 // logging and returns HTTP 500.
-func WithPanicCatcher(c *router.Context, next router.Handler) {
+func WithPanicCatcher(c *Context, next Handler) {
 	ctx := c.Context
 	w := c.Writer
-	req := c.Request
+	uri := c.Request.RequestURI
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 		// Log the reason before the stack in case appengine cuts entire log
 		// message due to size limitations.
-		log.Fields{
+		logging.Fields{
 			"panic.error": p.Reason,
-		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", req.RequestURI, p.Reason, p.Stack)
+		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", uri, p.Reason, p.Stack)
 
 		// Note: it may be too late to send HTTP 500 if `next` already sent
 		// headers. But there's nothing else we can do at this point anyway.

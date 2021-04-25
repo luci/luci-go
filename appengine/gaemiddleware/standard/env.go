@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
-	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/pprof"
 	"go.chromium.org/luci/server/router"
@@ -105,7 +104,7 @@ var classicEnv = gaemiddleware.Environment{
 	ExtraMiddleware: func() router.MiddlewareChain {
 		mw := make([]router.Middleware, 0, 2)
 		if !appengine.IsDevAppServer() {
-			mw = append(mw, middleware.WithPanicCatcher)
+			mw = append(mw, router.WithPanicCatcher)
 		}
 		mw = append(mw, globalTsMonState.Middleware)
 		return router.NewMiddlewareChain(mw...)
