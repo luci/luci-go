@@ -26,28 +26,24 @@ import './pin_toggle';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
+import { enterViewObserver, OnEnterView } from '../libs/enter_view_observer';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { StepExt } from '../models/step_ext';
 import colorClasses from '../styles/color_classes.css';
 import commonStyle from '../styles/common_style.css';
-import { OnEnterList } from './lazy_list';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
 /**
  * Renders a step.
  */
 @customElement('milo-build-step-entry')
+@enterViewObserver()
 @consumeConfigsStore
-export class BuildStepEntryElement extends MobxLitElement implements OnEnterList {
+export class BuildStepEntryElement extends MobxLitElement implements OnEnterView {
   @observable.ref configsStore!: UserConfigsStore;
 
   @observable.ref number = 0;
   @observable.ref step!: StepExt;
-
-  /**
-   * If set to true, render a place holder until onEnterList is called.
-   */
-  @observable.ref prerender = false;
 
   @observable.ref private _expanded = false;
   get expanded() {
@@ -75,7 +71,9 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterList
     );
   }
 
-  onEnterList() {
+  @observable.ref private prerender = true;
+
+  onEnterView() {
     this.prerender = false;
   }
 
