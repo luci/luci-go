@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b200fbb9_58891e64",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-26T22:47:05Z",
+      "side": 1,
+      "message": "lgtm % assuming we are in agreement wrt CQ config groups with just analizing tryjobs.",
+      "revId": "f5167e527c478b666d121e0978563fb2702a4974",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

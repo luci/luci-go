@@ -160,6 +160,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "67759b0b_920bd5f5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-26T22:47:05Z",
+      "side": 1,
+      "message": "\u003e Also, to clarify, we would still keep `modes_exclude`\n\nyes, good.",
+      "parentUuid": "31336289_d43ac35d",
+      "range": {
+        "startLine": 285,
+        "startChar": 7,
+        "endLine": 285,
+        "endChar": 42
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bfea7a2a_12a7b3cf",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 2
@@ -242,6 +266,30 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "541b10cb_cd89e86b",
+      "range": {
+        "startLine": 294,
+        "startChar": 35,
+        "endLine": 294,
+        "endChar": 36
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "06f2f81d_a44d06c3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-26T22:47:05Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "6653c1a3_255a6188",
       "range": {
         "startLine": 294,
         "startChar": 35,
@@ -430,6 +478,30 @@
       "side": 1,
       "message": "\u003e AFAIR, we didn\u0027t discuss this on design doc. So, are you emitting Tricium analyzers into cq.cfg *immediately* intentionally?\n\nYes.\n\n\u003e Con:\n\u003e   we now have to ensure CQD/CV doesn\u0027t totally ignores *config_groups* with Tricium analyzers in them (else: users will get noise).\n\u003e Pro:\n\u003e   users wouldn\u0027t need to re-generate their luci configs once we merge Tricium into CV.\n\u003e TBH, I given few Tricium users today, my initial take is to ask users to generate their lucicfg once in ~Q3 as less risky than adding extra code into CQD and CV to ignore such groups. WDYT?\n\nI don\u0027t think I\u0027m following why CQ/CV would need extra code to intentionally ignore groups with Tricium Analyzers. For the majority of the existing LUCI Projects onboarded with Tricium, they will declare their Tricium analyzer inside one of the existing ConfigGroup in the CQ Config. Therefore, as long as the CQ/CV supports mode selection for tryjobs correctly, we are good on that front.\n\nThe only outliers are those auxiliary LUCI Projects for defining Tricium config. I think we agreed on using to `lucifg.tracked_files` feature to emit only tricium config and expect full migration to main repo after Tricium is merged into CV. So no CQ config will be created meaning CQ/CV wouldn\u0027t be aware of those config groups.",
       "parentUuid": "bef5ee18_6b06a0da",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fffa7064_9403467e",
+        "filename": "lucicfg/testdata/tricium/multi_cq_groups.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-26T22:47:05Z",
+      "side": 1,
+      "message": "OK, I agree with the above % so long as we prohibit in CQ config validator (doesn\u0027t have to be lucicfg, can be in commit-queue app validator) config groups which contain *only* analyzer-tryjobs.",
+      "parentUuid": "7ee4b9ec_ae43a8b4",
       "range": {
         "startLine": 73,
         "startChar": 0,
