@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2021 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+syntax = "proto3";
 
-// Package tasks contains task queue tasks definitions.
-package tasks
+package tasks;
+
+option go_package = "go.chromium.org/luci/cipd/appengine/impl/model/tasks";
+
+import "go.chromium.org/luci/cipd/api/cipd/v1/events.proto";
+
+// LogEvents task submits events to the BQ event log.
+message LogEvents {
+  repeated cipd.Event events = 1;
+}
