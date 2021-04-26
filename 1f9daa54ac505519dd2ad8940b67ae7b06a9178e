@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f40fc955_e11004ce",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-26T08:32:11Z",
+      "side": 1,
+      "message": "\"... \u0026\u0026 newSmallFileCache !\u003d nil\"",
+      "range": {
+        "startLine": 359,
+        "startChar": 4,
+        "endLine": 359,
+        "endChar": 15
+      },
+      "revId": "1f9daa54ac505519dd2ad8940b67ae7b06a9178e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a2a30dab_820d036b",
+        "filename": "client/cmd/cas/lib/kvs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-26T08:32:11Z",
+      "side": 1,
+      "message": "nit: add the crbug for the context why we want to do this.",
+      "revId": "1f9daa54ac505519dd2ad8940b67ae7b06a9178e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
