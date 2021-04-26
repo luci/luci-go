@@ -25,10 +25,12 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
+import { errorHandler, FORWARD_WITHOUT_MSG, reportRenderError } from '../../libs/error_handler';
 import { displayDuration } from '../../libs/time_utils';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-timeline-tab')
+@errorHandler(FORWARD_WITHOUT_MSG)
 @consumeBuildState
 @consumeAppState
 export class TimelineTabElement extends MiloBaseElement {
@@ -104,9 +106,9 @@ export class TimelineTabElement extends MiloBaseElement {
     });
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     return html` <div id="timeline"></div> `;
-  }
+  });
 
   protected firstUpdated() {
     this.rendered = true;
