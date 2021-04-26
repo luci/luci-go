@@ -21,6 +21,7 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/time.star", "time")
 load("@stdlib//internal/luci/common.star", "builder_ref", "keys", "kinds", "triggerer")
 load("@stdlib//internal/luci/lib/acl.star", "acl", "aclimpl")
+load("@stdlib//internal/luci/lib/cq.star", "cq")
 load("@stdlib//internal/luci/lib/realms.star", "realms")
 load(
     "@stdlib//internal/luci/proto.star",
@@ -32,6 +33,7 @@ load(
     "milo_pb",
     "notify_pb",
     "scheduler_pb",
+    "tricium_pb",
 )
 load("@proto//google/protobuf/duration.proto", duration_pb = "google.protobuf")
 load("@proto//google/protobuf/wrappers.proto", wrappers_pb = "google.protobuf")
@@ -46,6 +48,7 @@ def register():
     lucicfg.generator(impl = gen_milo_cfg)
     lucicfg.generator(impl = gen_cq_cfg)
     lucicfg.generator(impl = gen_notify_cfg)
+    lucicfg.generator(impl = gen_tricium_cfg)
 
 ################################################################################
 ## Utilities to be used from generators.
@@ -1188,3 +1191,131 @@ def _notify_builder_repo(builder, pollers_map):
     if len(repos) == 1:
         return list(repos)[0]
     return None
+
+################################################################################
+## tricium.cfg.
+
+def gen_tricium_cfg(ctx):
+    """Generates tricium.cfg.
+
+    Args:
+      ctx: the generator context.
+    """
+    cq_groups = graph.children(keys.project(), kind = kinds.CQ_GROUP)
+    if not cq_groups:
+        return
+
+    project = get_project()
+    result = None
+    for cq_group in cq_groups:
+        tricium_config = _tricium_config(
+            graph.children(cq_group.key, kind = kinds.CQ_TRYJOB_VERIFIER),
+            cq_group,
+            project,
+        )
+        if tricium_config == None:
+            continue
+        elif result == None:
+            result = struct(cfg = tricium_config, mapping_cq_group = cq_group)
+        elif result.cfg != tricium_config:
+            # if multiple config groups have defined Tricium analyzers, they
+            # MUST generate the same Tricium project config.
+            error(
+                "%s is watching different set of Gerrit repos or defining different analyzers from %s" % (cq_group, result.mapping_cq_group),
+                trace = cq_group.trace,
+            )
+
+    if result:
+        service = get_service("tricium", "defining Tricium project config")
+        result.cfg.service_account = "%s@appspot.gserviceaccount.com" % service.app_id
+        set_config(ctx, service.cfg_file, result.cfg)
+
+def _tricium_config(verifiers, cq_group, project):
+    """Returns tricium_pb.ProjectConfig.
+
+    Returns None if none of the provided verifiers is a Tricium analyzer.
+
+    Args:
+      verifiers: a list of luci.cq_tryjob_verifier nodes.
+      cq_group: a luci.cq_group node.
+      project: a luci.project node.
+    """
+    ret = tricium_pb.ProjectConfig()
+    whitelisted_group = None
+    for verifier in verifiers:
+        if verifier.props.mode_regexp != [cq.MODE_ANALYZER_RUN]:
+            continue
+        recipe = _tricium_recipe(verifier, project)
+        func_name = _compute_func_name(recipe)
+        ret.functions.append(tricium_pb.Function(
+            type = tricium_pb.Function.ANALYZER,
+            name = func_name,
+            needs = tricium_pb.GIT_FILE_DETAILS,
+            provides = tricium_pb.RESULTS,
+            path_filters = [
+                "*.%s" % location_regexp.lstrip(r".+\.")
+                for location_regexp in verifier.props.location_regexp
+            ] if verifier.props.location_regexp else [],
+            impls = [
+                tricium_pb.Impl(
+                    provides_for_platform = tricium_pb.LINUX,
+                    runtime_platform = tricium_pb.LINUX,
+                    recipe = recipe,
+                ),
+            ],
+        ))
+        ret.selections.append(tricium_pb.Selection(
+            function = func_name,
+            platform = tricium_pb.LINUX,
+        ))
+        owner_whitelist = sorted(verifier.props.owner_whitelist) if verifier.props.owner_whitelist else []
+        if whitelisted_group == None:
+            whitelisted_group = owner_whitelist
+        elif whitelisted_group != owner_whitelist:
+            error(
+                "analyzer %s has different owner_whitelist from other analyzers in the config group %s" % (verifier, cq_group),
+                trace = verifier.trace,
+            )
+
+    if not ret.functions:
+        return None
+
+    ret.functions = sorted(ret.functions, key = lambda f: f.name)
+    ret.selections = sorted(ret.selections, key = lambda f: f.function)
+    watched_gerrit_projects = sorted(set([
+        (w.__gob_host, w.__gob_proj)
+        for w in cq_group.props.watch
+    ]))
+    ret.repos = [
+        tricium_pb.RepoDetails(
+            gerrit_project = tricium_pb.RepoDetails.GerritProject(
+                host = "%s-review.googlesource.com" % host,
+                project = proj,
+                git_url = "https://%s.googlesource.com/%s" % (host, proj),
+            ),
+            whitelisted_group = whitelisted_group,
+        )
+        for host, proj in watched_gerrit_projects
+    ]
+    return ret
+
+def _tricium_recipe(verifier, project):
+    """(luci.cq_tryjob_verifier, luci.project) => tricium_pb.Recipe."""
+    builder = _cq_builder_from_node(verifier)
+    return tricium_pb.Recipe(
+        project = builder.props.project or project.props.name,
+        bucket = builder.props.bucket,
+        builder = builder.props.name,
+    )
+
+def _compute_func_name(recipe):
+    """ Returns an alphanumeric function name."""
+
+    def normalize(s):
+        return "".join([ch for ch in s.title().elems() if ch.isalnum()])
+
+    return "".join([
+        normalize(recipe.project),
+        normalize(recipe.bucket),
+        normalize(recipe.builder),
+    ])

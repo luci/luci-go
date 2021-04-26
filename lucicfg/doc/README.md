@@ -1040,6 +1040,7 @@ luci.project(
     notify = None,
     scheduler = None,
     swarming = None,
+    tricium = None,
     acls = None,
     bindings = None,
     enforce_realms_in = None,
@@ -1067,6 +1068,7 @@ be used to setup permissions that apply to all resources in the project. See
 * **notify**: appspot hostname of a LUCI Notify service to use (if any).
 * **scheduler**: appspot hostname of a LUCI Scheduler service to use (if any).
 * **swarming**: appspot hostname of a Swarming service to use by default (if any).
+* **tricium**: appspot hostname of a Tricium service to use by default (if any).
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the root realm. They will be inherited by all realms in the project. Experimental. Will eventually replace `acls`.
 * **enforce_realms_in**: a list of LUCI service IDs that should enforce realms permissions across all realms. Used only during Realms migration to gradually roll out the enforcement. Can also be enabled realm-by-realm via `enforce_in` in [luci.realm(...)](#luci.realm).
