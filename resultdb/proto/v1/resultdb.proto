@@ -92,6 +92,10 @@ service ResultDB {
 
   // Retrieves test results in a given range of either time or commit position.
   // Accepts test variant predicate to filter the results.
+  //
+  // Note, testIdRegexp and variantPredicate SHOULD be specified to get the
+  // results in a timely manner. Queries without either of the predicates will
+  // be slow.
   rpc GetTestResultHistory (GetTestResultHistoryRequest) returns (
     GetTestResultHistoryResponse) {};
 }

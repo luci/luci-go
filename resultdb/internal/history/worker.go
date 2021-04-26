@@ -181,7 +181,7 @@ func (q *Query) collect(ctx context.Context) error {
 			}
 		}
 
-		sortEntries(entries)
+		//sortEntries(entries)
 		for i, entry := range entries {
 			if i < q.resultOffset {
 				continue

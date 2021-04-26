@@ -15,6 +15,7 @@
 package invocations
 
 import (
+	"fmt"
 	"testing"
 
 	"cloud.google.com/go/spanner"
@@ -56,6 +57,7 @@ func TestSpannerConversion(t *testing.T) {
 			So(id.ToSpanner(), ShouldEqual, "ca978112:a")
 
 			row, err := spanner.NewRow([]string{"a"}, []interface{}{id.ToSpanner()})
+			fmt.Println(ID("build-8849118960733729472").ToSpanner())
 			So(err, ShouldBeNil)
 			var actual ID
 			err = b.FromSpanner(row, &actual)
