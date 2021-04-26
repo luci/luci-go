@@ -28,8 +28,10 @@ def test_validate_hostname():
     assert.fails(lambda: call("a", []), 'bad "a": got list, want string')
     assert.fails(lambda: call("a", None, default = 1, required = False), 'bad "a": got int, want string')
     assert.fails(lambda: call("a", "!notdomain"), r'bad "a": "!notdomain" is not valid RFC1123 hostname')
-    assert.fails(lambda: call("a", "https://i.am.a.url.example.com"),
-      r'bad "a": "https://i.am.a.url.example.com" is not valid RFC1123 hostname')
+    assert.fails(
+        lambda: call("a", "https://i.am.a.url.example.com"),
+        r'bad "a": "https://i.am.a.url.example.com" is not valid RFC1123 hostname',
+    )
     assert.fails(lambda: call("a", "", default = "zzz", required = False), 'bad "a": must not be empty')
 
 def test_validate_int():

@@ -54,6 +54,7 @@ def _hostname(attr, val, *, allow_empty = False, default = None, required = True
     Args:
       attr: field name with this value, for error messages.
       val: a value to validate.
+      allow_empty: if True, accept empty string as valid.
       default: a value to use if 'val' is None, ignored if required is True.
       required: if False, allow 'val' to be None, return 'default' in this case.
 
@@ -72,8 +73,8 @@ def _hostname(attr, val, *, allow_empty = False, default = None, required = True
     if not val:
         fail("bad %r: must not be empty" % (attr,))
 
-    hostnameRE = r"^(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*(?:[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$"
-    if not re.submatches(hostnameRE, val):
+    hostname_regexp = r"^(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*(?:[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$"
+    if not re.submatches(hostname_regexp, val):
         fail("bad %r: %r is not valid RFC1123 hostname" % (attr, val))
 
     return val
