@@ -16,6 +16,40 @@
       "message": "PTAL",
       "revId": "bab82d6981892ce71922a13c5be8285a21a428b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0395d2ef_823f958d",
+        "filename": "resultdb/internal/history/worker.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-26T23:25:18Z",
+      "side": 1,
+      "message": "undo",
+      "revId": "bab82d6981892ce71922a13c5be8285a21a428b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb7449f4_4aa0db0b",
+        "filename": "resultdb/internal/invocations/id_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-26T23:25:18Z",
+      "side": 1,
+      "message": "undo",
+      "revId": "bab82d6981892ce71922a13c5be8285a21a428b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
