@@ -27,7 +27,9 @@ import (
 
 	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
@@ -56,9 +58,6 @@ var (
 	// AdminAPI is ACL-protected implementation of cipd.AdminServer that can be
 	// exposed as an external API to be used by administrators.
 	AdminAPI adminapi.AdminServer
-
-	// EventLogger can flush events to BigQuery.
-	EventLogger *model.BigQueryEventLogger
 )
 
 // eventsLog is used only on GAE1
@@ -96,4 +95,16 @@ func InitForGAE1(r *router.Router, mw router.MiddlewareChain) {
 func FlushEventsToBQGAE1(ctx context.Context) error {
 	_, err := eventsLog.Flush(ctx)
 	return err
+}
+
+func InitForGAE2(ctx context.Context, s *settings.Settings, projectID string, prod bool) (*model.BigQueryEventLogger, error) {
+	InternalCAS = cas.Internal(&tq.Default, func(context.Context) (*settings.Settings, error) {
+		return s, nil
+	})
+	PublicCAS = cas.Public(InternalCAS)
+	PublicRepo = repo.Public(InternalCAS, &tq.Default)
+	AdminAPI = admin.AdminAPI(&dsmapper.Default)
+	model.RegisterTasks(&tq.Default)
+	model.EnqueueEventsImpl = model.NewEnqueueEventsCallback(&tq.Default, prod)
+	return model.NewBigQueryEventLogger(ctx, projectID)
 }

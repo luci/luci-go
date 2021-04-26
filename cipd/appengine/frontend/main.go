@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,48 +19,61 @@ package main
 import (
 	"net/http"
 
-	"go.chromium.org/luci/server"
+	"google.golang.org/appengine"
+
+	"go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/encryptedcookies"
-	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
 	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
 	pubapi "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/appengine/ui"
-
-	// Using datastore for user sessions.
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
 func main() {
-	// Extra modules used by the frontend server only.
-	extra := []module.Module{
-		encryptedcookies.NewModuleFromFlags(),
+	r := router.New()
+
+	// Install auth, config and tsmon handlers.
+	server.SwitchToEncryptedCookies()
+	standard.InstallHandlers(r)
+	impl.InitForGAE1(nil, router.MiddlewareChain{}) // don't install HTTP routes
+
+	// RPC Explorer UI.
+	rpcexplorer.Install(r)
+
+	// Register non-pRPC routes, such as the client bootstrap handler and routes
+	// to support minimal subset of legacy API required to let old CIPD clients
+	// fetch packages and self-update.
+	impl.PublicRepo.InstallHandlers(r, standard.Base().Extend(
+		auth.Authenticate(&server.OAuth2Method{
+			Scopes: []string{server.EmailScope},
+		}),
+	))
+
+	// UI pages.
+	ui.InstallHandlers(r, standard.Base(), "templates")
+
+	// Install all RPC servers. Catch panics, report metrics to tsmon (including
+	// panics themselves, as Internal errors).
+	srv := &prpc.Server{
+		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
+			grpcmon.UnaryServerInterceptor,
+			grpcutil.UnaryServerPanicCatcherInterceptor,
+		),
 	}
+	adminapi.RegisterAdminServer(srv, impl.AdminAPI)
+	pubapi.RegisterStorageServer(srv, impl.PublicCAS)
+	pubapi.RegisterRepositoryServer(srv, impl.PublicRepo)
+	discovery.Enable(srv)
 
-	impl.Main(extra, func(srv *server.Server) error {
-		// Register non-pRPC routes, such as the client bootstrap handler and routes
-		// to support minimal subset of legacy API required to let old CIPD clients
-		// fetch packages and self-update.
-		impl.PublicRepo.InstallHandlers(srv.Routes, router.NewMiddlewareChain(
-			auth.Authenticate(&auth.GoogleOAuth2Method{
-				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-			}),
-		))
-
-		// UI pages. When running locally, serve static files ourself as well.
-		ui.InstallHandlers(srv, "templates")
-		if !srv.Options.Prod {
-			srv.Routes.Static("/static", router.MiddlewareChain{}, http.Dir("./static"))
-		}
-
-		// All pRPC services.
-		adminapi.RegisterAdminServer(srv.PRPC, impl.AdminAPI)
-		pubapi.RegisterStorageServer(srv.PRPC, impl.PublicCAS)
-		pubapi.RegisterRepositoryServer(srv.PRPC, impl.PublicRepo)
-
-		return nil
-	})
+	srv.InstallHandlers(r, standard.Base())
+	http.DefaultServeMux.Handle("/", r)
+	appengine.Main()
 }

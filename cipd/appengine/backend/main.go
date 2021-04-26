@@ -16,6 +16,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 
@@ -23,17 +24,45 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/dsmapper"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
+	"go.chromium.org/luci/cipd/appengine/impl/settings"
 )
 
 func main() {
-	impl.Main(nil, func(srv *server.Server) error {
+	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
+		dsmapper.NewModuleFromFlags(),
+	}
+
+	s := &settings.Settings{}
+	s.Register(flag.CommandLine)
+
+	server.Main(nil, modules, func(srv *server.Server) error {
+		if err := s.Validate(); err != nil {
+			return err
+		}
+		eventLogger, err := impl.InitForGAE2(srv.Context, s, srv.Options.CloudProject, srv.Options.Prod)
+		if err != nil {
+			return err
+		}
+
 		// Needed when using manual scaling.
 		srv.Routes.GET("/_ah/start", router.MiddlewareChain{}, func(ctx *router.Context) {
 			ctx.Writer.Write([]byte("OK"))
@@ -65,7 +94,7 @@ func main() {
 				logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", pusherID, got)
 				ctx.Writer.WriteHeader(403)
 			} else {
-				err := impl.EventLogger.HandlePubSubPush(ctx.Context, ctx.Request.Body)
+				err := eventLogger.HandlePubSubPush(ctx.Context, ctx.Request.Body)
 				if err != nil {
 					logging.Errorf(ctx.Context, "Failed to process the message: %s", err)
 					ctx.Writer.WriteHeader(500)

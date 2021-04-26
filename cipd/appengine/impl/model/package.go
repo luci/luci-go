@@ -76,8 +76,8 @@ func ListPackages(c context.Context, prefix string, includeHidden bool) (out []s
 	// Note: __key__ queries are already ordered by key.
 	q := datastore.NewQuery("Package")
 	if prefix != "" {
-		q = q.Gt("__key__", PackageKey(c, prefix+"/ "))
-		q = q.Lt("__key__", PackageKey(c, prefix+"/~"))
+		q = q.Gt("__key__", PackageKey(c, prefix+"/\x00"))
+		q = q.Lt("__key__", PackageKey(c, prefix+"/\xff"))
 	}
 
 	err = datastore.Run(c, q, func(p *Package) error {
