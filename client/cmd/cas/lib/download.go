@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
-	"go.chromium.org/luci/common/data/embeddedkvs"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	isol "go.chromium.org/luci/common/isolated"
@@ -62,7 +61,10 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
 			c.Flags.StringVar(&c.dir, "dir", "", "Directory to download tree.")
 			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump download stats to json file.")
-			c.Flags.StringVar(&c.kvs, "kvs-dir", "", "Cache dir for small files.")
+
+			if newSmallFileCache != nil {
+				c.Flags.StringVar(&c.kvs, "kvs-dir", "", "Cache dir for small files.")
+			}
 			return &c
 		},
 	}
@@ -179,7 +181,15 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 	return eg.Wait()
 }
 
-func copySmallFilesFromCache(ctx context.Context, kvs *embeddedkvs.KVS, smallFiles map[string][]*client.TreeOutput) error {
+type smallFileCache interface {
+	Close() error
+	GetMulti(context.Context, []string, func(string, []byte) error) error
+	SetMulti(func(func(string, []byte) error) error) error
+}
+
+var newSmallFileCache func(context.Context, string) (smallFileCache, error)
+
+func copySmallFilesFromCache(ctx context.Context, kvs smallFileCache, smallFiles map[string][]*client.TreeOutput) error {
 	smallFileHashes := make([]string, 0, len(smallFiles))
 	for smallFile := range smallFiles {
 		smallFileHashes = append(smallFileHashes, smallFile)
@@ -221,7 +231,7 @@ func copySmallFilesFromCache(ctx context.Context, kvs *embeddedkvs.KVS, smallFil
 	})
 }
 
-func cacheSmallFiles(ctx context.Context, kvs *embeddedkvs.KVS, outputs []*client.TreeOutput) error {
+func cacheSmallFiles(ctx context.Context, kvs smallFileCache, outputs []*client.TreeOutput) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent I/O operations.
@@ -249,7 +259,7 @@ func cacheSmallFiles(ctx context.Context, kvs *embeddedkvs.KVS, outputs []*clien
 	})
 }
 
-func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs *embeddedkvs.KVS, outputs map[digest.Digest]*client.TreeOutput) error {
+func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFileCache, outputs map[digest.Digest]*client.TreeOutput) error {
 	var smallOutputs, largeOutputs []*client.TreeOutput
 
 	for _, output := range outputs {
@@ -345,7 +355,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		defer diskcache.Close()
 	}
 
-	var kvs *embeddedkvs.KVS
+	var kvs smallFileCache
 	if r.kvs != "" {
 		if err := filepath.Walk(r.kvs, func(path string, info os.FileInfo, err error) error {
 			if os.IsNotExist(err) {
@@ -360,7 +370,7 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		}); err != nil {
 			return errors.Annotate(err, "failed to walk dir: %s", r.kvs).Err()
 		}
-		kvs, err = embeddedkvs.New(ctx, r.kvs)
+		kvs, err = newSmallFileCache(ctx, r.kvs)
 		if err != nil {
 			return err
 		}
