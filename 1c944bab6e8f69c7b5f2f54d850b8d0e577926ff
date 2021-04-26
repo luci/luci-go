@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a1ae567_b251dac6",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-26T22:47:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc73db82_63f91d5e",
+      "revId": "1c944bab6e8f69c7b5f2f54d850b8d0e577926ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e2d35ef0_6f2a77b1",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-04-26T19:46:47Z",
       "side": 1,
       "message": "why call this each time, as opposed to making it global, and perhaps anonymous (no name). Or do other files also need to access this field?",
+      "revId": "1c944bab6e8f69c7b5f2f54d850b8d0e577926ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6bc40fde_0539cc93",
+        "filename": "milo/frontend/resultui/src/libs/enter_view_observer.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-26T22:47:09Z",
+      "side": 1,
+      "message": "It can\u0027t be global because nothing prevents the downstream from calling enterViewObserver() multiple times on the same component.\nMade it anonymous instead.",
+      "parentUuid": "e2d35ef0_6f2a77b1",
       "revId": "1c944bab6e8f69c7b5f2f54d850b8d0e577926ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
