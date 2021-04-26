@@ -13,6 +13,7 @@
     "dev": "webpack-dev-server --config webpack.dev.ts",
     "dev:sw": "DEBUG_SW=true npm run dev",
     "test": "karma start --single-run",
+    "cypress:open": "CYPRESS_CRASH_REPORTS=0 cypress open",
     "test:watch": "karma start",
     "postinstall": "patch-package"
   },
@@ -70,6 +71,7 @@
     "chai": "^4.3.4",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^8.0.0",
+    "cypress": "^7.1.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "gts": "^3.1.0",
     "html-webpack-harddisk-plugin": "^2.0.0",
