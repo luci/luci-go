@@ -16,6 +16,40 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/win-rel-swarming-staging/19058/test-results\n",
       "revId": "1c944bab6e8f69c7b5f2f54d850b8d0e577926ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc73db82_63f91d5e",
+        "filename": "milo/frontend/resultui/src/components/build_step_entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-26T19:46:47Z",
+      "side": 1,
+      "message": "could you add a blank line after this one?\nit reads like @observable.ref applies to onEnterView, but actually this declares a new field.",
+      "revId": "1c944bab6e8f69c7b5f2f54d850b8d0e577926ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2d35ef0_6f2a77b1",
+        "filename": "milo/frontend/resultui/src/libs/enter_view_observer.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-26T19:46:47Z",
+      "side": 1,
+      "message": "why call this each time, as opposed to making it global, and perhaps anonymous (no name). Or do other files also need to access this field?",
+      "revId": "1c944bab6e8f69c7b5f2f54d850b8d0e577926ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
