@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -127,7 +128,7 @@ func makePCL(cl *changelist.CL) *prjpb.PCL {
 	deps := make([]*changelist.Dep, len(cl.Snapshot.GetDeps()))
 	copy(deps, cl.Snapshot.GetDeps())
 
-	tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo())
+	tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), &cfgpb.ConfigGroup{})
 	// Copy trigger email string for realism of allocations.
 	tr.Email = tr.Email + " "
 	return &prjpb.PCL{

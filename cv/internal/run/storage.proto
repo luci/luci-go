@@ -71,6 +71,9 @@ message Trigger {
   google.protobuf.Timestamp time = 1;
   // Mode is string value of run.Mode.
   string mode = 2;
+  // Additional label is recorded in case applicable ConfigGroup had additional
+  // modes, e.g. for QUICK_DRY_RUN mode.
+  string additional_label = 5;
   // Triggering user email if known.
   //
   // Gerrit doesn't guarantee that every user has set their preferred email,

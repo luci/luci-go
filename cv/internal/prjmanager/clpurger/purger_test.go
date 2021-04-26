@@ -73,7 +73,8 @@ func TestPurgeCL(t *testing.T) {
 		}
 		So(servicecfg.SetTestMigrationConfig(ctx, settings), ShouldBeNil)
 
-		ct.Cfg.Create(ctx, lProject, makeConfig(gHost, gRepo))
+		cfg := makeConfig(gHost, gRepo)
+		ct.Cfg.Create(ctx, lProject, cfg)
 		So(gobmap.Update(ctx, lProject), ShouldBeNil)
 
 		// Fake 1 CL in gerrit & import it to Datastore.
@@ -116,7 +117,7 @@ func TestPurgeCL(t *testing.T) {
 				Clid:        int64(clBefore.ID),
 				Deadline:    timestamppb.New(ct.Clock.Now().Add(10 * time.Minute)),
 			},
-			Trigger: trigger.Find(ci),
+			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]),
 			Reason: &prjpb.PurgeCLTask_Reason{
 				Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
 					OwnerLacksEmail: true,
@@ -140,7 +141,7 @@ func TestPurgeCL(t *testing.T) {
 			clAfter := loadCL()
 			So(clAfter.EVersion, ShouldBeGreaterThan, clBefore.EVersion)
 			ciAfter := clAfter.Snapshot.GetGerrit().GetInfo()
-			So(trigger.Find(ciAfter), ShouldBeNil)
+			So(trigger.Find(ciAfter, cfg.GetConfigGroups()[0]), ShouldBeNil)
 			So(ciAfter, gf.ShouldLastMessageContain, "owner doesn't have a preferred email")
 			assertPMNotified("op")
 
@@ -169,7 +170,7 @@ func TestPurgeCL(t *testing.T) {
 			Convey("Trigger is no longer matching latest CL Snapshot", func() {
 				// Simulate old trigger for CQ+1, while snapshot contains CQ+2.
 				gf.CQ(+1, ct.Clock.Now().Add(-time.Hour), gf.U("user-1"))(ci)
-				task.Trigger = trigger.Find(ci)
+				task.Trigger = trigger.Find(ci, cfg.GetConfigGroups()[0])
 
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
