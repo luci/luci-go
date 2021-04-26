@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d5e57f31_13d65d0d",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-26T08:36:58Z",
+      "side": 1,
+      "message": "This shouldn\u0027t be `r.kvs !\u003d \"\"` if `newSmallFileCache \u003d\u003d nil`.",
+      "parentUuid": "f40fc955_e11004ce",
+      "range": {
+        "startLine": 359,
+        "startChar": 4,
+        "endLine": 359,
+        "endChar": 15
+      },
+      "revId": "1f9daa54ac505519dd2ad8940b67ae7b06a9178e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a2a30dab_820d036b",
         "filename": "client/cmd/cas/lib/kvs.go",
         "patchSetId": 3
@@ -37,6 +61,24 @@
       "writtenOn": "2021-04-26T08:32:11Z",
       "side": 1,
       "message": "nit: add the crbug for the context why we want to do this.",
+      "revId": "1f9daa54ac505519dd2ad8940b67ae7b06a9178e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7964aa8f_c7513c47",
+        "filename": "client/cmd/cas/lib/kvs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-26T08:36:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2a30dab_820d036b",
       "revId": "1f9daa54ac505519dd2ad8940b67ae7b06a9178e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
