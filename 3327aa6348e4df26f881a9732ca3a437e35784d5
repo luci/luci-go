@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af48e942_82678129",
+        "filename": "common/sync/dispatcher/buffer/stats.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-26T00:03:25Z",
+      "side": 1,
+      "message": "can you remind me why we are tracking this? Is this pure fYI?",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 27
+      },
+      "revId": "3327aa6348e4df26f881a9732ca3a437e35784d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
