@@ -23,9 +23,11 @@ import (
 	"net/url"
 	"strings"
 
+	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/access"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -36,6 +38,7 @@ import (
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -54,6 +57,7 @@ func main() {
 	mods := []module.Module{
 		gaeemulation.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		cfgmodule.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
@@ -127,6 +131,11 @@ func main() {
 
 		// makeOverride(prod % -> Go, dev % -> Go).
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 0))
+
+		cronMW := router.NewMiddlewareChain(gaemiddleware.RequireCron)
+		srv.Routes.GET("/internal/cron/update_config", cronMW, func(c *router.Context) {
+			config.UpdateSettingsCfg(c.Context)
+		})
 		return nil
 	})
 }
