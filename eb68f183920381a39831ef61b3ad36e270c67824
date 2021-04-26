@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97a17582_14f96371",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2021-04-26T10:58:04Z",
+      "side": 0,
+      "message": "Just let me confirm but you do not use this context for cancel or timeout, right?",
+      "range": {
+        "startLine": 235,
+        "startChar": 33,
+        "endLine": 235,
+        "endChar": 36
+      },
+      "revId": "eb68f183920381a39831ef61b3ad36e270c67824",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
