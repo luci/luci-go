@@ -173,12 +173,6 @@ func TestCancel(t *testing.T) {
 				gf.CQ(2, clock.Now(ctx).Add(-110*time.Second), gf.U("user-102"))(c.Info)
 				gf.CQ(1, clock.Now(ctx).Add(-100*time.Second), gf.U("user-103"))(c.Info)
 			})
-			// Voting status:
-			//  now-130s: +1 from user-101
-			//  now-120s: +2 from user-100
-			//  now-110s: +2 from user-102
-			//  now-100s: +1 from user-103
-			expectedRemovingOrder := []int64{103, 102, 101, 100}
 
 			err := Cancel(ctx, input)
 			So(err, ShouldBeNil)
@@ -186,10 +180,10 @@ func TestCancel(t *testing.T) {
 			So(resultCI.Info.GetMessages(), ShouldHaveLength, 1)
 			So(resultCI.Info.GetMessages()[0].GetMessage(), ShouldEqual, input.Message)
 			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
-			actualRemovingOrder := []int64{}
+			orderedRemovals := []int{}
 			for _, req := range ct.GFake.Requests() {
 				if r, ok := req.(*gerritpb.SetReviewRequest); ok {
-					actualRemovingOrder = append(actualRemovingOrder, r.OnBehalfOf)
+					orderedRemovals = append(orderedRemovals, int(r.OnBehalfOf))
 					if r.OnBehalfOf != user.GetAccountId() {
 						So(r.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
 						So(r.GetNotifyDetails(), ShouldBeNil)
@@ -209,7 +203,9 @@ func TestCancel(t *testing.T) {
 					}
 				}
 			}
-			So(actualRemovingOrder, ShouldResemble, expectedRemovingOrder)
+			// The triggering vote(s) must have been removed last, the order of
+			// removals for the rest doesn't matter so long as it does the job.
+			So(orderedRemovals[len(orderedRemovals)-1], ShouldEqual, 100)
 		})
 
 		Convey("Skips zero votes", func() {
