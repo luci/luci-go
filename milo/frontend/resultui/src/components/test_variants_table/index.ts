@@ -182,7 +182,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .variant=${v}
             .columnGetters=${this.invocationState.displayedColumnGetters}
             .expanded=${this.invocationState.testLoader?.testVariantCount === 1}
-            .prerender=${true}
             .expandedCallback=${this.variantExpandedCallback}
             .renderedCallback=${this.sendLoadingTimeToGA}
           ></milo-test-variant-entry>
@@ -257,7 +256,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
         <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
         </milo-tvt-column-header>
       </div>
-      <milo-lazy-list id="test-variant-list" .growth=${300} tabindex="-1">${this.renderAllVariants()}</milo-lazy-list>
+      <div id="test-variant-list">${this.renderAllVariants()}</div>
     `;
   }
 
@@ -285,15 +284,15 @@ export class TestVariantsTableElement extends MiloBaseElement {
       #table-body {
         overflow-y: hidden;
       }
-      milo-lazy-list > * {
-        padding-left: 10px;
-      }
       #no-invocation {
         padding: 10px;
       }
       #test-variant-list {
         overflow-y: auto;
         outline: none;
+      }
+      #test-variant-list > * {
+        padding-left: 10px;
       }
       milo-test-variant-entry {
         margin: 2px 0px;

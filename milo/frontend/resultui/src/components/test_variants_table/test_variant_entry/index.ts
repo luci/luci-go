@@ -20,15 +20,14 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import '../../expandable_entry';
-import '../../lazy_list';
 import '../../copy_to_clipboard';
 import './result_entry';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
+import { enterViewObserver, OnEnterView } from '../../../libs/enter_view_observer';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { TestVariant } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
-import { OnEnterList } from '../../lazy_list';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -38,7 +37,8 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
  * Renders an expandable entry of the given test variant.
  */
 @customElement('milo-test-variant-entry')
-export class TestVariantEntryElement extends MobxLitElement implements OnEnterList {
+@enterViewObserver()
+export class TestVariantEntryElement extends MobxLitElement implements OnEnterView {
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
   @observable.ref expandedCallback = () => {};
@@ -59,12 +59,9 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterLi
     }
   }
 
-  /**
-   * If set to true, render a place holder until onEnterList is called.
-   */
-  @observable.ref prerender = false;
+  @observable.ref private prerender = true;
 
-  onEnterList() {
+  onEnterView() {
     this.prerender = false;
   }
 
