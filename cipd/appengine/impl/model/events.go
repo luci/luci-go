@@ -16,32 +16,47 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"mime"
+	"net/http"
 	"sort"
 	"strings"
 	"time"
 
+	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/option"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/tq"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
+	"go.chromium.org/luci/cipd/appengine/impl/model/tasks"
 )
+
+// EnqueueEventsCB is a signature of EnqueueEventsImpl.
+type EnqueueEventsCB func(ctx context.Context, ev []*api.Event) error
 
 // EnqueueEventsImpl transactionally submits events to the event log.
 //
 // Exists only during GAEv1 => GAEv2 migration. The default value just ignores
 // events (useful for tests that don't care about them).
-var EnqueueEventsImpl = func(ctx context.Context, ev []*api.Event) error {
+var EnqueueEventsImpl EnqueueEventsCB = func(ctx context.Context, ev []*api.Event) error {
 	return nil
 }
 
@@ -213,6 +228,98 @@ func IsTextContentType(ct string) bool {
 		return true
 	}
 	return textContentTypes.Has(ct)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// RegisterTasks registers TQ task classes.
+func RegisterTasks(disp *tq.Dispatcher) {
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "log-events",
+		Prototype: &tasks.LogEvents{},
+		Kind:      tq.Transactional,
+		Topic:     "bigquery-log",
+		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(m)
+			if err != nil {
+				return nil, err
+			}
+			return &tq.CustomPayload{Body: blob}, nil
+		},
+	})
+}
+
+// NewEnqueueEventsCallback constructs EnqueueEventsCB sending events to PubSub.
+func NewEnqueueEventsCallback(disp *tq.Dispatcher, prod bool) EnqueueEventsCB {
+	return func(ctx context.Context, ev []*api.Event) error {
+		task := &tasks.LogEvents{Events: ev}
+		if logging.IsLogging(ctx, logging.Debug) {
+			blob, err := (prototext.MarshalOptions{Indent: "\t"}).Marshal(task)
+			if err != nil {
+				logging.Errorf(ctx, "Failed to marshal events to proto text: %s", err)
+			} else {
+				logging.Debugf(ctx, "Logged events:\n%s", blob)
+			}
+		}
+		if !prod {
+			return nil
+		}
+		return disp.AddTask(ctx, &tq.Task{Payload: task})
+	}
+}
+
+// BigQueryEventLogger moves events from PubSub to BQ.
+type BigQueryEventLogger struct {
+	bq *bigquery.Client
+}
+
+// NewBigQueryEventLogger constructs a logger that writes to the given project.
+func NewBigQueryEventLogger(ctx context.Context, projectID string) (*BigQueryEventLogger, error) {
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	if err != nil {
+		return nil, err
+	}
+	bq, err := bigquery.NewClient(ctx, projectID, option.WithHTTPClient(&http.Client{Transport: tr}))
+	if err != nil {
+		return nil, err
+	}
+	return &BigQueryEventLogger{bq: bq}, nil
+}
+
+// HandlePubSubPush handles incoming PubSub push request.
+func (l *BigQueryEventLogger) HandlePubSubPush(ctx context.Context, body io.Reader) error {
+	blob, err := ioutil.ReadAll(body)
+	if err != nil {
+		return errors.Annotate(err, "failed to read the request body").Err()
+	}
+	// See https://cloud.google.com/pubsub/docs/push#receiving_messages
+	var msg struct {
+		Message struct {
+			Attributes map[string]string `json:"attributes"`
+			Data       []byte            `json:"data"`
+			MessageID  string            `json:"messageId"`
+		} `json:"message"`
+	}
+	if json.Unmarshal(blob, &msg); err != nil {
+		return errors.Annotate(err, "failed to unmarshal PubSub message").Err()
+	}
+	task := &tasks.LogEvents{}
+	if err := protojson.Unmarshal(msg.Message.Data, task); err != nil {
+		return errors.Annotate(err, "failed to unmarshal the task").Err()
+	}
+	return l.insert(ctx, task.Events, msg.Message.MessageID)
+}
+
+// insert inserts rows into the BQ table.
+func (l *BigQueryEventLogger) insert(ctx context.Context, ev []*api.Event, dedupID string) error {
+	rows := make([]bigquery.ValueSaver, len(ev))
+	for idx, e := range ev {
+		rows[idx] = &bq.Row{
+			Message:  e,
+			InsertID: fmt.Sprintf("v1:%s:%d", dedupID, idx),
+		}
+	}
+	return l.bq.Dataset("cipd").Table("events").Inserter().Put(ctx, rows)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

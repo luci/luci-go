@@ -97,15 +97,14 @@ func FlushEventsToBQGAE1(ctx context.Context) error {
 	return err
 }
 
-func InitForGAE2(s *settings.Settings) {
+func InitForGAE2(ctx context.Context, s *settings.Settings, projectID string, prod bool) (*model.BigQueryEventLogger, error) {
 	InternalCAS = cas.Internal(&tq.Default, func(context.Context) (*settings.Settings, error) {
 		return s, nil
 	})
 	PublicCAS = cas.Public(InternalCAS)
 	PublicRepo = repo.Public(InternalCAS, &tq.Default)
 	AdminAPI = admin.AdminAPI(&dsmapper.Default)
-	model.EnqueueEventsImpl = func(ctx context.Context, ev []*cipdapi.Event) error {
-		// TODO(crbug.com/1201436): Implement.
-		return nil
-	}
+	model.RegisterTasks(&tq.Default)
+	model.EnqueueEventsImpl = model.NewEnqueueEventsCallback(&tq.Default, prod)
+	return model.NewBigQueryEventLogger(ctx, projectID)
 }

@@ -17,12 +17,17 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -53,7 +58,10 @@ func main() {
 		if err := s.Validate(); err != nil {
 			return err
 		}
-		impl.InitForGAE2(s)
+		eventLogger, err := impl.InitForGAE2(srv.Context, s, srv.Options.CloudProject, srv.Options.Prod)
+		if err != nil {
+			return err
+		}
 
 		// Needed when using manual scaling.
 		srv.Routes.GET("/_ah/start", router.MiddlewareChain{}, func(ctx *router.Context) {
@@ -72,6 +80,27 @@ func main() {
 				ctx.Writer.WriteHeader(http.StatusOK)
 			},
 		)
+
+		// PubSub push handler processing messages produced by events.go.
+		oidcMW := router.NewMiddlewareChain(
+			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
+				AudienceCheck: openid.AudienceMatchesHost,
+			}),
+		)
+		// bigquery-log-pubsub@ is a part of the PubSub Push subscription config.
+		pusherID := identity.Identity(fmt.Sprintf("user:bigquery-log-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
+		srv.Routes.POST("/internal/pubsub/bigquery-log", oidcMW, func(ctx *router.Context) {
+			if got := auth.CurrentIdentity(ctx.Context); got != pusherID {
+				logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", pusherID, got)
+				ctx.Writer.WriteHeader(403)
+			} else {
+				err := eventLogger.HandlePubSubPush(ctx.Context, ctx.Request.Body)
+				if err != nil {
+					logging.Errorf(ctx.Context, "Failed to process the message: %s", err)
+					ctx.Writer.WriteHeader(500)
+				}
+			}
+		})
 
 		return nil
 	})
