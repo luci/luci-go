@@ -194,5 +194,101 @@ func TestTrigger(t *testing.T) {
 				Email:           user1.GetEmail(),
 			})
 		})
+		Convey("Additional modes", func() {
+			const quickLabel = "Quick"
+			cg.AdditionalModes = []*cfgpb.Mode{
+				{
+					Name:            string(run.QuickDryRun),
+					CqLabelValue:    +1,
+					TriggeringLabel: quickLabel,
+					TriggeringValue: +1,
+				},
+			}
+			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{
+				{
+					User:  user1,
+					Value: dryRunVote,
+					Date:  timestamppb.New(now.Add(-15 * time.Minute)),
+				},
+			}
+			ci.Labels[quickLabel] = &gerritpb.LabelInfo{All: []*gerritpb.ApprovalInfo{
+				{
+					User:  user1,
+					Value: +1,
+					Date:  timestamppb.New(now.Add(-15 * time.Minute)),
+				},
+			}}
+			Convey("Simplest possible QuickDryRun", func() {
+				trigger := Find(ci, cg)
+				So(trigger, ShouldResembleProto, &run.Trigger{
+					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
+					Mode:            string(run.QuickDryRun),
+					GerritAccountId: user1.GetAccountId(),
+					Email:           user1.GetEmail(),
+					AdditionalLabel: quickLabel,
+				})
+			})
+			Convey("QuickDryRun despite other users' votes", func() {
+				ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{
+					{
+						User:  user1,
+						Value: dryRunVote,
+						Date:  timestamppb.New(now.Add(-15 * time.Minute)),
+					},
+					{
+						User:  user2,
+						Value: dryRunVote,
+						Date:  timestamppb.New(now.Add(-10 * time.Minute)),
+					},
+				}
+				ci.Labels[quickLabel] = &gerritpb.LabelInfo{All: []*gerritpb.ApprovalInfo{
+					{
+						User:  user2,
+						Value: +2,
+						Date:  timestamppb.New(now.Add(-20 * time.Minute)),
+					},
+					{
+						User:  user1,
+						Value: +1,
+						Date:  timestamppb.New(now.Add(-15 * time.Minute)),
+					},
+				}}
+				trigger := Find(ci, cg)
+				So(trigger.GetMode(), ShouldEqual, run.QuickDryRun)
+			})
+			Convey("Not applicable cases", func() {
+				Convey("Additional vote must have the same timestamp", func() {
+					Convey("before", func() {
+						ci.Labels[quickLabel].GetAll()[0].Date.Seconds++
+						So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
+					})
+					Convey("after", func() {
+						ci.Labels[quickLabel].GetAll()[0].Date.Seconds--
+						So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
+					})
+				})
+				Convey("Additional vote be from the same account", func() {
+					ci.Labels[quickLabel].GetAll()[0].User = user2
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
+				})
+				Convey("Additional vote must have expected value", func() {
+					ci.Labels[quickLabel].GetAll()[0].Value = 100
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
+				})
+				Convey("Additional vote must be for the correct label", func() {
+					ci.Labels[quickLabel+"-Other"] = ci.Labels[quickLabel]
+					delete(ci.Labels, quickLabel)
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
+				})
+				Convey("CQ vote must have correct value", func() {
+					ci.Labels[CQLabelName].GetAll()[0].Value = fullRunVote
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.FullRun)
+				})
+				Convey("Only QuickDryRun is *currently* supported", func() {
+					cg.GetAdditionalModes()[0].Name = "Custom-Run"
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
+				})
+			})
+		})
 	})
 }

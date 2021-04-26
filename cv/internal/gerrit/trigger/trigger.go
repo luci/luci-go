@@ -33,16 +33,23 @@ var voteToMode = map[int32]run.Mode{
 	1: run.DryRun,
 	2: run.FullRun,
 }
+var modeToVote = map[run.Mode]int32{
+	run.DryRun:  1,
+	run.FullRun: 2,
+}
 
 // Find computes the latest trigger based on CQ+1 and CQ+2 votes.
 //
 // CQ+2 a.k.a. Full Run takes priority of CQ+1 a.k.a Dry Run,
 // even if CQ+1 vote is newer. Among several equal votes, the earliest is
-// selected.
+// selected as the *triggering* CQ vote.
+//
+// If the applicable ConfigGroup specifies additional modes AND user who voted
+// on the *triggering* CQ vote also voted on the additional label, then the
+// additional mode is selected instead of standard Dry/Full Run.
 //
 // Returns nil if CL is not triggered.
 func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Trigger {
-	// TODO(tandrii): support cg.GetAdditionalModes().
 	if ci.GetStatus() != gerritpb.ChangeStatus_NEW {
 		return nil
 	}
@@ -105,6 +112,13 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Trigger {
 		return nil
 	}
 
+	for _, mode := range cg.GetAdditionalModes() {
+		if applyAdditionalMode(ci, mode, ret) {
+			// first one wins
+			break
+		}
+	}
+
 	// Gerrit may copy CQ vote(s) to next patchset in some project configurations.
 	// In such cases, CQ vote timestamp will be *before* new patchset creation,
 	// and yet *this* CQ attempt started only when new patchset was created.
@@ -115,4 +129,39 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Trigger {
 		ret.Time = revisionTs
 	}
 	return ret
+}
+
+func applyAdditionalMode(ci *gerritpb.ChangeInfo, mode *cfgpb.Mode, res *run.Trigger) bool {
+	labelVotes := ci.GetLabels()[mode.GetTriggeringLabel()]
+	switch {
+	case labelVotes == nil:
+		return false
+	case mode.GetCqLabelValue() != modeToVote[run.Mode(res.GetMode())]:
+		return false
+	case mode.GetName() != string(run.QuickDryRun):
+		// Only QUICK_DRY_RUN is supported until CQDaemon is decomissionned.
+		return false
+	}
+
+	matchesVote := func(vote *gerritpb.ApprovalInfo) bool {
+		switch {
+		case vote.GetValue() != mode.GetTriggeringValue():
+			return false
+		case vote.GetUser().GetAccountId() != res.GetGerritAccountId():
+			return false
+		case !vote.GetDate().AsTime().Equal(res.GetTime().AsTime()):
+			return false
+		default:
+			return true
+		}
+	}
+
+	for _, vote := range labelVotes.GetAll() {
+		if matchesVote(vote) {
+			res.AdditionalLabel = mode.GetTriggeringLabel()
+			res.Mode = mode.GetName()
+			return true
+		}
+	}
+	return false
 }
