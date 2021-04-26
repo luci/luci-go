@@ -86,6 +86,24 @@
       "parentUuid": "e2d35ef0_6f2a77b1",
       "revId": "1c944bab6e8f69c7b5f2f54d850b8d0e577926ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7650261_3dfe629c",
+        "filename": "milo/frontend/resultui/src/libs/enter_view_observer.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-26T23:55:08Z",
+      "side": 1,
+      "message": "ah, somehow I thought Symbol(\"a\") \u003d\u003d Symbol(\"a\")",
+      "parentUuid": "6bc40fde_0539cc93",
+      "revId": "1c944bab6e8f69c7b5f2f54d850b8d0e577926ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
