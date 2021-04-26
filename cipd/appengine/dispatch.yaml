@@ -5,3 +5,5 @@ dispatch:
     module: backend-old
   - url: "*/internal/tasks/*"
     module: backend
+  - url: "*/internal/pubsub/*"
+    module: backend

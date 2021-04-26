@@ -18,7 +18,9 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -34,6 +36,10 @@ var cachedCfg = cfgcache.Register(&cfgcache.Entry{
 // ImportConfig is called from a cron to import monitoring.cfg into datastore.
 func ImportConfig(ctx context.Context) error {
 	_, err := cachedCfg.Update(ctx, nil)
+	if errors.Unwrap(err) == config.ErrNoConfig {
+		logging.Warningf(ctx, "No monitoring.cfg config file")
+		return nil
+	}
 	return err
 }
 

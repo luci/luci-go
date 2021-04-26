@@ -46,7 +46,7 @@ func TestConfig(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx)
 
 		Convey("No config", func() {
-			So(ImportConfig(ctx), ShouldErrLike, "no such config")
+			So(ImportConfig(ctx), ShouldBeNil)
 
 			cfg, err := monitoringConfig(ctx)
 			So(err, ShouldBeNil)
