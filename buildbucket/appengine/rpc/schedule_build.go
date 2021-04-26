@@ -816,7 +816,7 @@ func scheduleBuilds(ctx context.Context, reqs ...*pb.ScheduleBuildRequest) ([]*m
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
-			exp[d.Expiration.Seconds] = struct{}{}
+			exp[d.Expiration.GetSeconds()] = struct{}{}
 		}
 		if len(exp) > 6 {
 			return nil, appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", i).Err())
