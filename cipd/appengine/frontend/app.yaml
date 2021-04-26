@@ -4,6 +4,10 @@ runtime: go111
 instance_class: F4
 
 handlers:
+- url: /static/bootstrap
+  static_dir: static/bootstrap
+  secure: always
+
 - url: /_ah/start
   script: auto
   secure: always

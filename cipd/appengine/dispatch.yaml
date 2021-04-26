@@ -1,6 +1,4 @@
 dispatch:
-  - url: "*/static/*"
-    module: static
   - url: "*/internal/tq/*"
     module: backend-old
   - url: "*/internal/tasks/*"
