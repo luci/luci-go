@@ -23,6 +23,7 @@ entrypoint: >
   -auth-service-host ${AUTH_SERVICE_HOST}
   -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
   -cloud-error-reporting
+  -config-service-host luci-config.appspot.com
 
 handlers:
 - url: /.*

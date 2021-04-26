@@ -25,8 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -35,20 +33,13 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-type mockInterface struct {
-	config.Interface
-}
-
-func (*mockInterface) GetConfig(ctx context.Context, configSet config.Set, path string, metaOnly bool) (*config.Config, error) {
-	return &config.Config{Content: `resultdb {hostname: "rdbHost"}`}, nil
-}
 
 func TestScheduleBuild(t *testing.T) {
 	t.Parallel()
@@ -264,12 +255,12 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("scheduleBuilds", t, func() {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
-		ctx = cfgclient.Use(ctx, &mockInterface{})
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
+		config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}})
 
 		// stripProtos strips the Proto field from each of the given *model.Builds,
 		// returning a slice whose ith index is the stripped *pb.Build value.
@@ -3627,7 +3618,6 @@ func TestScheduleBuild(t *testing.T) {
 	Convey("ScheduleBuild", t, func() {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
-		ctx = cfgclient.Use(ctx, &mockInterface{})
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -3636,6 +3626,7 @@ func TestScheduleBuild(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:caller@example.com",
 		})
+		config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{Resultdb: &pb.ResultDBSettings{Hostname: "rdbHost"}})
 
 		Convey("builder", func() {
 			Convey("not found", func() {
