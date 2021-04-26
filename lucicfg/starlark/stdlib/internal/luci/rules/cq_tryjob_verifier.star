@@ -282,6 +282,19 @@ def _cq_tryjob_verifier(
     if mode_regexp_exclude and not mode_regexp:
         mode_regexp = [".+"]
 
+    if cq.MODE_ANALYZER_RUN in mode_regexp:
+        if len(mode_regexp) > 1:
+            fail('"ANALYZER_RUN" must be the only mode in "mode_regexp"')
+        if location_regexp:
+            prefix = r".+\."
+            for r in location_regexp:
+                if not r.startswith(prefix):
+                    fail(r'"location_regexp" of an analyzer MUST start with ".+\." and followed by file extension')
+        if location_regexp_exclude:
+            # (TODO:crbug/1202952): Remove this restriction after tricium is
+            # folded into CV.
+            fail('"analyzer currently can not be used together with  "location_regexp_exclude"')
+
     if not equivalent_builder:
         if equivalent_builder_percentage != None:
             fail('"equivalent_builder_percentage" can be used only together with "equivalent_builder"')
