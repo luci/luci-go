@@ -232,12 +232,12 @@ func copySmallFilesFromCache(ctx context.Context, kvs smallFileCache, smallFiles
 }
 
 func cacheSmallFiles(ctx context.Context, kvs smallFileCache, outputs []*client.TreeOutput) error {
-	eg, ctx := errgroup.WithContext(ctx)
-
 	// limit the number of concurrent I/O operations.
 	ch := make(chan struct{}, runtime.NumCPU())
 
 	return kvs.SetMulti(func(set func(key string, value []byte) error) error {
+		var eg errgroup.Group
+
 		for _, output := range outputs {
 			output := output
 
