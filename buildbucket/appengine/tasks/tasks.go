@@ -73,7 +73,7 @@ func init() {
 			task := m.(*taskdefs.CreateSwarmingTask)
 			body, err := json.Marshal(map[string]interface{}{
 				"generation": 0,
-				"id":    task.BuildId,
+				"id":         task.BuildId,
 			})
 			if err != nil {
 				return nil, errors.Annotate(err, "error marshaling payload").Err()
@@ -87,7 +87,7 @@ func init() {
 		Handler:   rejectionHandler("create-swarming-task"),
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.CreateSwarmingTask)(nil),
-		Queue:     "backend-default",
+		Queue:     "swarming-build-create",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
