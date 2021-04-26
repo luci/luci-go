@@ -28,10 +28,10 @@ import { consumeInvocationState, InvocationState } from '../../context/invocatio
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
+import { reportErrorAsync } from '../../libs/error_handler';
 import { TestVariant, TestVariantStatus } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
-import { reportErrorAsync } from '../error_handler';
 import { MiloBaseElement } from '../milo_base';
 import { TestVariantEntryElement } from './test_variant_entry';
 
