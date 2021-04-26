@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'cypress';
 import fs from 'fs';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
@@ -20,6 +21,7 @@ import merge from 'webpack-merge';
 import Workbox from 'workbox-webpack-plugin';
 
 import common from './webpack.common';
+const cypressConfig: Cypress.ConfigOptions = require('./cypress.json');
 
 const DEBUG_SW = process.env.DEBUG_SW === 'true';
 
@@ -55,6 +57,7 @@ export default merge(common, {
     historyApiFallback: {
       index: '/ui/index.html',
     },
+    port: Number(new URL(cypressConfig.baseUrl || 'https://localhost:8080').port),
     https: {
       key: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.key')),
       cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),

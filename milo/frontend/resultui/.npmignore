@@ -1,3 +1,4 @@
 *_test.ts
 webpack.*.ts
 karma.conf.ts
+cypress
