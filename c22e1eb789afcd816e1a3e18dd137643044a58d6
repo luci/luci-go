@@ -22,6 +22,30 @@
       },
       "revId": "c22e1eb789afcd816e1a3e18dd137643044a58d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f3a8b28_ceee9ffb",
+        "filename": "cipd/appengine/impl/model/tasks/gen.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-26T19:14:45Z",
+      "side": 1,
+      "message": "Copy-pasted.",
+      "parentUuid": "8236f983_417cfcd2",
+      "range": {
+        "startLine": 15,
+        "startChar": 21,
+        "endLine": 15,
+        "endChar": 37
+      },
+      "revId": "c22e1eb789afcd816e1a3e18dd137643044a58d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
