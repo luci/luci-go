@@ -1,7 +1,7 @@
 dispatch:
   - url: "*/internal/tq/*"
-    module: backend-old
+    service: backend-old
   - url: "*/internal/tasks/*"
-    module: backend
+    service: backend
   - url: "*/internal/pubsub/*"
-    module: backend
+    service: backend
