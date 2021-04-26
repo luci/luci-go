@@ -23,7 +23,6 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -55,12 +54,12 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		)
 		ci.GetOwner().Email = ""
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
-		So(trigger.Find(ct.GFake.GetChange(gHost, gChange).Info), ShouldNotBeNil)
+		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 2)
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
-			return trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil
+			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
@@ -69,7 +68,6 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		})
 
 		ct.LogPhase(ctx, "Verify")
-		So(trigger.Find(ct.GFake.GetChange(gHost, gChange).Info), ShouldBeNil)
 		p := ct.LoadProject(ctx, lProject)
 		So(p.State.GetPcls(), ShouldBeEmpty)
 		So(p.State.GetComponents(), ShouldBeEmpty)
@@ -126,7 +124,7 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
-			return trigger.Find(ct.GFake.GetChange(gHost, gChange).Info) == nil
+			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
@@ -136,7 +134,7 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 
 		ct.LogPhase(ctx, "Verify")
 		ci := ct.GFake.GetChange(gHost, gChange).Info
-		So(trigger.Find(ci), ShouldBeNil)
+		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		So(ci.GetMessages(), ShouldHaveLength, 1)
 		So(gf.LastMessage(ci).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
 

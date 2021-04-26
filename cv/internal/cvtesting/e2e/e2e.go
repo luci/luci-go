@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/diagnostic"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -193,7 +194,7 @@ func (t *Test) RunUntil(ctx context.Context, stopIf func() bool) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Methods to examine state examiners.
+// Methods to examine state.
 
 // Now returns test clock time in UTC.
 func (t *Test) Now() time.Time {
@@ -270,6 +271,24 @@ func (t *Test) LoadGerritCL(ctx context.Context, gHost string, gChange int64) *c
 	default:
 		return cl
 	}
+}
+
+// MaxCQVote returns max CQ vote of a Gerrit CL loaded from Gerrit fake.
+//
+// Returns 0 if there are no votes.
+// Panics if CL doesn't exist.
+func (t *Test) MaxCQVote(ctx context.Context, gHost string, gChange int64) int32 {
+	c := t.GFake.GetChange(gHost, int(gChange))
+	if c == nil {
+		panic(fmt.Errorf("%s/%d doesn't exist", gHost, gChange))
+	}
+	max := int32(0)
+	for _, v := range c.Info.GetLabels()[trigger.CQLabelName].GetAll() {
+		if v.GetValue() > max {
+			max = v.GetValue()
+		}
+	}
+	return max
 }
 
 // LogPhase emits easy to recognize log like

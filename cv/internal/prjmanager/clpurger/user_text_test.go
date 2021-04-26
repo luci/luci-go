@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -57,7 +58,7 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 		task := &prjpb.PurgeCLTask{
 			LuciProject: "luci-prj",
 			PurgingCl:   nil, // not relevant to this test.
-			Trigger:     trigger.Find(ci),
+			Trigger:     trigger.Find(ci, &cfgpb.ConfigGroup{}),
 			Reason: &prjpb.PurgeCLTask_Reason{
 				Reason: nil, // Set below.
 			},

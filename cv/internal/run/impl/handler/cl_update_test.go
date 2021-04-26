@@ -25,6 +25,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -41,15 +42,22 @@ func TestOnCLUpdated(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		cfg := &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{Name: "main"},
+			},
+		}
+		ct.Cfg.Create(ctx, "chromium", cfg)
 		h := &Impl{}
 
 		// initial state
 		triggerTime := clock.Now(ctx).UTC()
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:        common.RunID("chromium/111-2-deadbeef"),
-				StartTime: triggerTime.Add(1 * time.Minute),
-				Status:    run.Status_RUNNING,
+				ID:            common.RunID("chromium/111-2-deadbeef"),
+				StartTime:     triggerTime.Add(1 * time.Minute),
+				Status:        run.Status_RUNNING,
+				ConfigGroupID: ct.Cfg.MustExist(ctx, "chromium").ConfigGroupIDs[0],
 			},
 		}
 		UpdateCL := func(ci *gerritpb.ChangeInfo) changelist.CL {
@@ -75,7 +83,7 @@ func TestOnCLUpdated(t *testing.T) {
 			ID:      1,
 			Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID)),
 			Detail:  cl.Snapshot,
-			Trigger: trigger.Find(ci),
+			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]),
 		}
 		So(rcl.Trigger, ShouldNotBeNil) // ensure trigger find is working fine.
 		So(datastore.Put(ctx, &rcl), ShouldBeNil)

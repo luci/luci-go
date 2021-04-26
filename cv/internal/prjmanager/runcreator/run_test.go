@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
@@ -139,7 +140,7 @@ func TestRunBuilder(t *testing.T) {
 			return cl
 		}
 		triggerOf := func(cl *changelist.CL) *run.Trigger {
-			t := trigger.Find(cl.Snapshot.GetGerrit().GetInfo())
+			t := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), &cfgpb.ConfigGroup{})
 			So(t, ShouldNotBeNil)
 			return t
 		}

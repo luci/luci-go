@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
@@ -161,12 +162,21 @@ func needsPurging(ctx context.Context, cl *changelist.CL, task *prjpb.PurgeCLTas
 		panic(fmt.Errorf("CL %d has non-Gerrit snapshot", cl.ID))
 	}
 	ci := cl.Snapshot.GetGerrit().GetInfo()
-	switch t := trigger.Find(ci); {
+	// We can't avoid entirely races with users modifying the CL (e.g. removing CQ
+	// votes). But do a best effort check that Trigger's timestamp is still the
+	// same to the best of CV's knowledge. Note that this ignores potentially
+	// configured additional modes such as run.QuickDryRun.
+	switch t := trigger.Find(ci, &cfgpb.ConfigGroup{}); {
 	case t == nil:
 		logging.Debugf(ctx, "CL is no longer triggered")
 		return false
-	case !proto.Equal(t, task.GetTrigger()):
-		logging.Debugf(ctx, "CL has different trigger \n%s\n, but expected\n %s", t, task.GetTrigger())
+	case !proto.Equal(t.GetTime(), task.GetTrigger().GetTime()):
+		logging.Debugf(
+			ctx,
+			"CL has different trigger time \n%s\n, but expected\n %s",
+			t.GetTime().AsTime(),
+			task.GetTrigger().GetTime().AsTime(),
+		)
 		return false
 	}
 	return true

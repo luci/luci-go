@@ -195,6 +195,7 @@ func Cancel(ctx context.Context, in Input) error {
 	return cancelLeased(leaseCtx, c, in)
 }
 
+// TODO(tandrii): merge with prjmanager/purger's error messages.
 var failMessage = "CV failed to unset the " + trigger.CQLabelName +
 	" label on your behalf. Please unvote and revote on the " +
 	trigger.CQLabelName + " label to retry."
@@ -301,6 +302,7 @@ func (c *change) getLatest(ctx context.Context) (*gerritpb.ChangeInfo, error) {
 }
 
 func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify Notify) error {
+	// TODO(tandrii): support cg.GetAdditionalModes().
 	votes := ci.GetLabels()[trigger.CQLabelName].GetAll()
 	sort.Slice(votes, func(i, j int) bool {
 		return votes[i].GetDate().AsTime().After(votes[j].GetDate().AsTime())

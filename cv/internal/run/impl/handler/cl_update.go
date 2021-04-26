@@ -62,17 +62,23 @@ func (impl *Impl) OnCLUpdated(ctx context.Context, rs *state.RunState, clids com
 		return nil, err
 	}
 
+	cg, err := rs.LoadConfigGroup(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	for i := range clids {
 		switch cl, runCL := cls[i], runCLs[i]; {
 		case cl.Snapshot.GetPatchset() > runCL.Detail.GetPatchset():
 			// New PS discovered.
 			return impl.Cancel(ctx, rs)
-		case trigger.Find(cl.Snapshot.GetGerrit().GetInfo()) == nil:
-			// TODO(yiwzhang): Revisit this after milestone 1, we may need
-			// to cancel the run not only when trigger is removed, but also
-			// when trigger is changed (e.g. switch user).
+		case trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content) == nil:
 			// Trigger has been removed.
 			return impl.Cancel(ctx, rs)
+
+		default:
+			// TODO(crbug/1202270): handle some or all cases of changing trigger,
+			// e.g. changing mode OR changing user.
 		}
 	}
 	return &Result{State: rs}, nil

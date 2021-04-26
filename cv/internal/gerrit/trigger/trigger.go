@@ -20,6 +20,7 @@ import (
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -40,7 +41,8 @@ var voteToMode = map[int32]run.Mode{
 // selected.
 //
 // Returns nil if CL is not triggered.
-func Find(ci *gerritpb.ChangeInfo) *run.Trigger {
+func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Trigger {
+	// TODO(tandrii): support cg.GetAdditionalModes().
 	if ci.GetStatus() != gerritpb.ChangeStatus_NEW {
 		return nil
 	}

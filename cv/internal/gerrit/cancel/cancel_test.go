@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -53,7 +54,7 @@ func TestCancel(t *testing.T) {
 			10001, gf.PS(2),
 			gf.CQ(2, triggerTime, user),
 			gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
-		So(trigger.Find(ci).GerritAccountId, ShouldEqual, 100)
+		So(trigger.Find(ci, &cfgpb.ConfigGroup{}).GerritAccountId, ShouldEqual, 100)
 		cl := &changelist.CL{
 			ID:         99999,
 			ExternalID: changelist.MustGobID(gHost, int64(changeNum)),
@@ -83,7 +84,7 @@ func TestCancel(t *testing.T) {
 
 		input := Input{
 			CL:            cl,
-			Trigger:       trigger.Find(ci),
+			Trigger:       trigger.Find(ci, &cfgpb.ConfigGroup{}),
 			LUCIProject:   lProject,
 			Message:       "Full Run has passed",
 			Requester:     "test",

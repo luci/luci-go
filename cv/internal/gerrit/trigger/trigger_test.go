@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
@@ -40,6 +41,7 @@ func TestTrigger(t *testing.T) {
 	user4 := gf.U("u-4")
 	const dryRunVote = 1
 	const fullRunVote = 2
+	cg := &cfgpb.ConfigGroup{}
 	Convey("Find", t, func() {
 		now := testclock.TestRecentTimeUTC
 		ci := &gerritpb.ChangeInfo{
@@ -64,18 +66,18 @@ func TestTrigger(t *testing.T) {
 
 		Convey("Abandoned CL", func() {
 			ci.Status = gerritpb.ChangeStatus_ABANDONED
-			So(Find(ci), ShouldBeNil)
+			So(Find(ci, cg), ShouldBeNil)
 		})
 		Convey("Merged CL", func() {
 			ci.Status = gerritpb.ChangeStatus_MERGED
-			So(Find(ci), ShouldBeNil)
+			So(Find(ci, cg), ShouldBeNil)
 		})
 		Convey("No votes", func() {
-			So(Find(ci), ShouldBeNil)
+			So(Find(ci, cg), ShouldBeNil)
 		})
 		Convey("No Commit-Queue label info", func() {
 			ci.Labels = nil
-			So(Find(ci), ShouldBeNil)
+			So(Find(ci, cg), ShouldBeNil)
 		})
 		Convey("Single vote", func() {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{{
@@ -83,7 +85,7 @@ func TestTrigger(t *testing.T) {
 				Value: dryRunVote,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
-			trigger := Find(ci)
+			trigger := Find(ci, cg)
 			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
@@ -97,7 +99,7 @@ func TestTrigger(t *testing.T) {
 				Value: 3,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
-			trigger := Find(ci)
+			trigger := Find(ci, cg)
 			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.FullRun),
@@ -118,7 +120,7 @@ func TestTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-5 * time.Minute)),
 				},
 			}
-			trigger := Find(ci)
+			trigger := Find(ci, cg)
 			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
@@ -133,7 +135,7 @@ func TestTrigger(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
-				trigger := Find(ci)
+				trigger := Find(ci, cg)
 				So(trigger, ShouldResembleProto, &run.Trigger{
 					Time:            timestamppb.New(now.Add(-5 * time.Minute)),
 					Mode:            string(run.DryRun),
@@ -165,7 +167,7 @@ func TestTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-1 * time.Minute)),
 				},
 			}
-			trigger := Find(ci)
+			trigger := Find(ci, cg)
 			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
@@ -184,7 +186,7 @@ func TestTrigger(t *testing.T) {
 				Number:  3,
 				Created: timestamppb.New(now.Add(-10 * time.Minute)),
 			}
-			trigger := Find(ci)
+			trigger := Find(ci, cg)
 			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),

@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/proto"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/config"
@@ -250,7 +251,7 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		return pcl
 	}
 	// TODO(tandrii): stop storing triggering user's email
-	pcl.Trigger = trigger.Find(ci)
+	s.setTrigger(ci, pcl)
 	if ci.GetOwner().GetEmail() == "" {
 		pcl.OwnerLacksEmail = true
 	}
@@ -298,6 +299,24 @@ func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_P
 		pcl.ConfigGroupIndexes = append(pcl.ConfigGroupIndexes, index)
 	}
 	return true
+}
+
+// setTrigger sets a .Trigger of a PCL.
+func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
+	// Trigger is a function of a CL and applicable ConfigGroup, which may define
+	// additional modes.
+	// In case of misconfiguratiuon, they may be 0 or 2+ applicable ConfigGroups,
+	// in which case we use empty ConfigGroup{}. This doesn't matter much,
+	// since such CLs will be soon purged. In the very worst case, CL purger will
+	// remove just the CQ vote and not the additional label's vote defined in
+	// actually intended ConfigGroup, which isn't a big deal.
+	var cg *cfgpb.ConfigGroup
+	if idxs := pcl.GetConfigGroupIndexes(); len(idxs) == 1 {
+		cg = s.configGroups[idxs[0]].Content
+	} else {
+		cg = &cfgpb.ConfigGroup{}
+	}
+	pcl.Trigger = trigger.Find(ci, cg)
 }
 
 // loadCLsForPCLs loads CLs from Datastore corresponding to PCLs.
