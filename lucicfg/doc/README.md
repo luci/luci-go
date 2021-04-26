@@ -3120,6 +3120,15 @@ field of [luci.cq_group(...)](#luci.cq_group):
   * **cq.COMMENT_LEVEL_RESTRICTED**: The CQ reports a generic "Build failed:
     https://ci.chromium.org/b/1234" with no summary markdown.
 
+`cq.MODE_*` constants define common values for cq run modes.
+  * **cq.MODE_DRY_RUN**: Run all tests but do not submit.
+  * **cq.MODE_QUICK_DRY_RUN**: Run some tests but do not submit.
+    See https://crbug.com/1189817.
+  * **cq.MODE_FULL_RUN**: Run all tests and potentially submit.
+  * **cq.MODE_ANALYZER_RUN**: Run code analyzers on patchset upload.
+    As of April 2021, all such runs are launched by Tricium. Eventually,
+    Change Verifier(CV) will launch and manage all analyzer runs.
+
 
 ### cq.refset {#cq.refset}
 
