@@ -16,6 +16,40 @@
       "message": "Demo: https://weiweilin-0-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/win-rel-swarming-staging/19058\n",
       "revId": "eb9ff982ef7c399b81d8368831873f91a5a5cde3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "59ac9c4f_d00ef12e",
+        "filename": "milo/frontend/resultui/src/components/property_viewer.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-26T19:48:43Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "eb9ff982ef7c399b81d8368831873f91a5a5cde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3504f689_59afadbb",
+        "filename": "milo/frontend/resultui/src/components/property_viewer.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-26T19:48:43Z",
+      "side": 1,
+      "message": "seems like this pattern is repeated.\n\nWDYT about a mixin where this is taken care of, and you only need to implement `protected lazyRender()` or something like this?",
+      "revId": "eb9ff982ef7c399b81d8368831873f91a5a5cde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
