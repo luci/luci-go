@@ -57,6 +57,30 @@
       },
       "revId": "866aa968b8d123cdd2b5b4eb44acd785ffd05212",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79992356_4fd6ba34",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-26T23:21:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f26c1de_56454a8a",
+      "range": {
+        "startLine": 80,
+        "startChar": 36,
+        "endLine": 80,
+        "endChar": 44
+      },
+      "revId": "866aa968b8d123cdd2b5b4eb44acd785ffd05212",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
