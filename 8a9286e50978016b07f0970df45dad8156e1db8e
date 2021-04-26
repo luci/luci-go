@@ -184,6 +184,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "fb8346be_48ff9a2d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T23:04:34Z",
+      "side": 1,
+      "message": "Sweet. I can send a follow up CL to change that.",
+      "parentUuid": "67759b0b_920bd5f5",
+      "range": {
+        "startLine": 285,
+        "startChar": 7,
+        "endLine": 285,
+        "endChar": 42
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bfea7a2a_12a7b3cf",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 2
@@ -502,6 +526,30 @@
       "side": 1,
       "message": "OK, I agree with the above % so long as we prohibit in CQ config validator (doesn\u0027t have to be lucicfg, can be in commit-queue app validator) config groups which contain *only* analyzer-tryjobs.",
       "parentUuid": "7ee4b9ec_ae43a8b4",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6e53cf7_5f824154",
+        "filename": "lucicfg/testdata/tricium/multi_cq_groups.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T23:04:34Z",
+      "side": 1,
+      "message": "sgtm. config validator sounds like a better place for this logic.",
+      "parentUuid": "fffa7064_9403467e",
       "range": {
         "startLine": 73,
         "startChar": 0,
