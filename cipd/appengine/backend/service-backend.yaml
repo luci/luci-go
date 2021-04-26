@@ -3,7 +3,7 @@ runtime: go113
 
 luci_gae_vars:
   chrome-infra-packages-dev:
-    INSTANCE_CLASS: B2
+    BACKEND_INSTANCE_CLASS: B2
     GCS_BUCKET: chrome-infra-packages-dev.appspot.com
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     CONFIG_SERVICE_HOST: luci-config.appspot.com
@@ -12,7 +12,7 @@ luci_gae_vars:
     REDIS_ADDR: 10.248.220.35:6379
     DS_CACHE: disable
 
-instance_class: ${INSTANCE_CLASS}
+instance_class: ${BACKEND_INSTANCE_CLASS}
 basic_scaling:
   max_instances: 10
   idle_timeout: 10m
