@@ -69,6 +69,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9f6a364_8672e11d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 1236,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T21:42:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c8d8b4a_65cd0f4f",
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ecf017e7_f0bebdde",
@@ -118,6 +136,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "31336289_d43ac35d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T21:42:13Z",
+      "side": 1,
+      "message": "I think it\u0027s a valid point. I had a same feeling that `mode_regexp` might be an overkill for the feature we want to support.\n\nI would use mode*s* instead of mode to emphasize this is a repeated field. \n\nAlso, to clarify, we would still keep `modes_exclude` so that user is able to declare something like this tryjob should not be launched in full run but can be launched in any other modes.",
+      "parentUuid": "6a01d488_cf05cbe1",
+      "range": {
+        "startLine": 285,
+        "startChar": 7,
+        "endLine": 285,
+        "endChar": 42
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bfea7a2a_12a7b3cf",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 2
@@ -129,6 +171,30 @@
       "writtenOn": "2021-04-26T18:00:14Z",
       "side": 1,
       "message": "just `.+\\.` should suffice. CQ itself supports `.+\\.py`, too.",
+      "range": {
+        "startLine": 289,
+        "startChar": 23,
+        "endLine": 289,
+        "endChar": 34
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d999cb5_7f3f3d6e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T21:42:13Z",
+      "side": 1,
+      "message": "ah true, it\u0027s an oversight.",
+      "parentUuid": "bfea7a2a_12a7b3cf",
       "range": {
         "startLine": 289,
         "startChar": 23,
@@ -162,6 +228,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6653c1a3_255a6188",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T21:42:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "541b10cb_cd89e86b",
+      "range": {
+        "startLine": 294,
+        "startChar": 35,
+        "endLine": 294,
+        "endChar": 36
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a6b1cf71_f2445500",
@@ -175,6 +265,30 @@
       "writtenOn": "2021-04-26T18:00:14Z",
       "side": 1,
       "message": "nit: nothing else uses -dev above",
+      "range": {
+        "startLine": 13,
+        "startChar": 23,
+        "endLine": 13,
+        "endChar": 26
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9841473_cc524900",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T21:42:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6b1cf71_f2445500",
       "range": {
         "startLine": 13,
         "startChar": 23,
@@ -208,6 +322,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c73c8d90_30a78a32",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 507,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T21:42:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "23e94a59_7f5da677",
+      "range": {
+        "startLine": 507,
+        "startChar": 25,
+        "endLine": 507,
+        "endChar": 34
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f9da9bb5_57acc5f0",
@@ -231,6 +369,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "af632d99_01186ccb",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 508,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T21:42:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9da9bb5_57acc5f0",
+      "range": {
+        "startLine": 508,
+        "startChar": 32,
+        "endLine": 508,
+        "endChar": 43
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bef5ee18_6b06a0da",
@@ -244,6 +406,30 @@
       "writtenOn": "2021-04-26T18:00:14Z",
       "side": 1,
       "message": "AFAIR, we didn\u0027t discuss this on design doc. So, are you emitting Tricium analyzers into cq.cfg *immediately* intentionally?\n\nCon:\n  we now have to ensure CQD/CV doesn\u0027t totally ignores *config_groups* with Tricium analyzers in them (else: users will get noise).\n\nPro:\n  users wouldn\u0027t need to re-generate their luci configs once we merge Tricium into CV.\n\n\nTBH, I given few Tricium users today, my initial take is to ask users to generate their lucicfg once in ~Q3 as less risky than adding extra code into CQD and CV to ignore such groups. WDYT?",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ee4b9ec_ae43a8b4",
+        "filename": "lucicfg/testdata/tricium/multi_cq_groups.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T21:42:13Z",
+      "side": 1,
+      "message": "\u003e AFAIR, we didn\u0027t discuss this on design doc. So, are you emitting Tricium analyzers into cq.cfg *immediately* intentionally?\n\nYes.\n\n\u003e Con:\n\u003e   we now have to ensure CQD/CV doesn\u0027t totally ignores *config_groups* with Tricium analyzers in them (else: users will get noise).\n\u003e Pro:\n\u003e   users wouldn\u0027t need to re-generate their luci configs once we merge Tricium into CV.\n\u003e TBH, I given few Tricium users today, my initial take is to ask users to generate their lucicfg once in ~Q3 as less risky than adding extra code into CQD and CV to ignore such groups. WDYT?\n\nI don\u0027t think I\u0027m following why CQ/CV would need extra code to intentionally ignore groups with Tricium Analyzers. For the majority of the existing LUCI Projects onboarded with Tricium, they will declare their Tricium analyzer inside one of the existing ConfigGroup in the CQ Config. Therefore, as long as the CQ/CV supports mode selection for tryjobs correctly, we are good on that front.\n\nThe only outliers are those auxiliary LUCI Projects for defining Tricium config. I think we agreed on using to `lucifg.tracked_files` feature to emit only tricium config and expect full migration to main repo after Tricium is merged into CV. So no CQ config will be created meaning CQ/CV wouldn\u0027t be aware of those config groups.",
+      "parentUuid": "bef5ee18_6b06a0da",
       "range": {
         "startLine": 73,
         "startChar": 0,
