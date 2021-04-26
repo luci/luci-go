@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5fcfa28_ed8c8730",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-26T08:46:43Z",
+      "side": 1,
+      "message": "Ok, and I rethought that it should return an error if that happens.",
+      "parentUuid": "d5e57f31_13d65d0d",
+      "range": {
+        "startLine": 359,
+        "startChar": 4,
+        "endLine": 359,
+        "endChar": 15
+      },
+      "revId": "1f9daa54ac505519dd2ad8940b67ae7b06a9178e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a2a30dab_820d036b",
