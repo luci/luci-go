@@ -22,6 +22,30 @@
       },
       "revId": "eb68f183920381a39831ef61b3ad36e270c67824",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "37655ec8_d530322f",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-26T11:37:35Z",
+      "side": 0,
+      "message": "Yes in this function.\nAnd if returned context is not used, errgroup.WithContext is noop.",
+      "parentUuid": "97a17582_14f96371",
+      "range": {
+        "startLine": 235,
+        "startChar": 33,
+        "endLine": 235,
+        "endChar": 36
+      },
+      "revId": "eb68f183920381a39831ef61b3ad36e270c67824",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
