@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "321eda4d_87511d5e",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1367998
+      },
+      "writtenOn": "2021-04-26T22:36:05Z",
+      "side": 0,
+      "message": "nit: is this intentional?",
+      "revId": "78b6f40736ee5d1b2bccb40debbd833d0f289e11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
