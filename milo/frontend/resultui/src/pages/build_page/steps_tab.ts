@@ -20,7 +20,6 @@ import { computed, observable, reaction } from 'mobx';
 import '../../components/build_step_entry';
 import '../../components/dot_spinner';
 import '../../components/hotkey';
-import '../../components/lazy_list';
 import { BuildStepEntryElement } from '../../components/build_step_entry';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -150,7 +149,7 @@ export class StepsTabElement extends MiloBaseElement {
         style="display: none;"
         .handler=${() => this.shadowRoot!.getElementById('main')!.focus()}
       ></milo-hotkey>
-      <milo-lazy-list id="main" .growth=${300} tabindex="-1">
+      <div id="main">
         ${this.buildState.build?.rootSteps.map(
           (step, i) => html`
             <milo-build-step-entry
@@ -164,7 +163,6 @@ export class StepsTabElement extends MiloBaseElement {
               })}
               .number=${i + 1}
               .step=${step}
-              .prerender=${true}
             ></milo-build-step-entry>
           `
         ) || ''}
@@ -174,7 +172,7 @@ export class StepsTabElement extends MiloBaseElement {
         <div id="load" class="list-entry" style=${styleMap({ display: this.loaded ? 'none' : '' })}>
           Loading <milo-dot-spinner></milo-dot-spinner>
         </div>
-      </milo-lazy-list>
+      </div>
     `;
   }
 
@@ -222,6 +220,7 @@ export class StepsTabElement extends MiloBaseElement {
       }
 
       #main {
+        overflow-y: auto;
         padding-top: 5px;
         padding-left: 10px;
         border-top: 1px solid var(--divider-color);
