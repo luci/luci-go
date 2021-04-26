@@ -20,12 +20,12 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../expandable_entry';
+import { reportRenderError } from '../../../libs/error_handler';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { unwrapObservable } from '../../../libs/utils';
 import { router } from '../../../routes';
 import { Artifact } from '../../../services/resultdb';
 import commonStyle from '../../../styles/common_style.css';
-import { reportRenderError } from '../../error_handler';
 
 /**
  * Renders a text diff artifact.
