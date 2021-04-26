@@ -22,6 +22,30 @@
       },
       "revId": "37ce805e28c3838fb4178df88775bea82e2fcce8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8dfabe3d_dc9e7ee4",
+        "filename": "lucicfg/testdata/cq/invalid_mode_names.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-26T18:06:29Z",
+      "side": 1,
+      "message": "I think it makes sense. Done.",
+      "parentUuid": "dac0405c_7d70943f",
+      "range": {
+        "startLine": 8,
+        "startChar": 31,
+        "endLine": 8,
+        "endChar": 47
+      },
+      "revId": "37ce805e28c3838fb4178df88775bea82e2fcce8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
