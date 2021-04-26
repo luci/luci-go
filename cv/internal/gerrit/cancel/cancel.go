@@ -77,22 +77,15 @@ func (notify Notify) validate() error {
 	return nil
 }
 
-func (notify Notify) toGerritNotify(voters []*gerritpb.ApprovalInfo) (n gerritpb.Notify, nd *gerritpb.NotifyDetails) {
+func (notify Notify) toGerritNotify(voterAccounts []int64) (n gerritpb.Notify, nd *gerritpb.NotifyDetails) {
 	n = gerritpb.Notify_NOTIFY_NONE
-	if len(voters) > 0 && notify&VOTERS == VOTERS {
-		accounts := make([]int64, len(voters))
-		for i, v := range voters {
-			accounts[i] = v.GetUser().GetAccountId()
-		}
-		sort.Slice(accounts, func(i, j int) bool {
-			return accounts[i] < accounts[j]
-		})
+	if len(voterAccounts) > 0 && notify&VOTERS == VOTERS {
 		nd = &gerritpb.NotifyDetails{
 			Recipients: []*gerritpb.NotifyDetails_Recipient{
 				{
 					RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
 					Info: &gerritpb.NotifyDetails_Info{
-						Accounts: accounts,
+						Accounts: voterAccounts,
 					},
 				},
 			},
@@ -192,7 +185,7 @@ func Cancel(ctx context.Context, in Input) error {
 		return err
 	}
 	defer close()
-	return cancelLeased(leaseCtx, c, in)
+	return cancelLeased(leaseCtx, &c, &in)
 }
 
 // TODO(tandrii): merge with prjmanager/purger's error messages.
@@ -200,7 +193,7 @@ var failMessage = "CV failed to unset the " + trigger.CQLabelName +
 	" label on your behalf. Please unvote and revote on the " +
 	trigger.CQLabelName + " label to retry."
 
-func cancelLeased(ctx context.Context, c change, in Input) error {
+func cancelLeased(ctx context.Context, c *change, in *Input) error {
 	ci, err := c.getLatest(ctx)
 	switch {
 	case err != nil:
@@ -210,6 +203,9 @@ func cancelLeased(ctx context.Context, c change, in Input) error {
 	case ci.GetCurrentRevision() != c.Revision:
 		return errors.Reason("failed to cancel because ps %d is not current for %s/%d", in.CL.Snapshot.GetPatchset(), c.Host, c.Number).Tag(ErrPreconditionFailedTag).Err()
 	}
+
+	// TODO(tandrii): support cg.GetAdditionalModes().
+	c.recordVotesToRemove(trigger.CQLabelName, ci)
 
 	removeErr := c.removeVotesAndPostMsg(ctx, ci, in.Trigger, in.Message, in.Notify)
 	if removeErr == nil || !ErrPermanentTag.In(removeErr) {
@@ -277,6 +273,10 @@ type change struct {
 	Revision    string
 
 	gc gerrit.Client
+	// votesToRemove maps accountID to a set of labels.
+	//
+	// For ease of passing to SetReview API, each label maps to 0.
+	votesToRemove map[int64]map[string]int32
 }
 
 func (c *change) initGerritClient(ctx context.Context) (err error) {
@@ -301,35 +301,55 @@ func (c *change) getLatest(ctx context.Context) (*gerritpb.ChangeInfo, error) {
 	return ci, c.annotateGerritErr(ctx, err, "get")
 }
 
-func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify Notify) error {
-	// TODO(tandrii): support cg.GetAdditionalModes().
-	votes := ci.GetLabels()[trigger.CQLabelName].GetAll()
-	sort.Slice(votes, func(i, j int) bool {
-		return votes[i].GetDate().AsTime().After(votes[j].GetDate().AsTime())
-	})
-
-	errs := errors.NewLazyMultiError(len(votes))
-	needRemoveTriggerVote := false
-	for i, vote := range votes {
-		switch accountID := vote.GetUser().GetAccountId(); {
-		case vote.GetValue() == 0:
-			// no-op
-		case accountID == t.GetGerritAccountId():
-			needRemoveTriggerVote = true
-		default:
-			errs.Assign(i, c.removeVote(ctx, accountID, "", gerritpb.Notify_NOTIFY_NONE, nil))
+func (c *change) recordVotesToRemove(label string, ci *gerritpb.ChangeInfo) {
+	for _, vote := range ci.GetLabels()[label].GetAll() {
+		if vote.GetValue() == 0 {
+			continue
+		}
+		if c.votesToRemove == nil {
+			c.votesToRemove = make(map[int64]map[string]int32, 1)
+		}
+		accountID := vote.GetUser().GetAccountId()
+		if labels, exists := c.votesToRemove[accountID]; exists {
+			labels[label] = 0
+		} else {
+			c.votesToRemove[accountID] = map[string]int32{label: 0}
 		}
 	}
+}
 
-	switch n, nd := notify.toGerritNotify(votes); {
-	case errs.Get() != nil:
-		return common.MostSevereError(errs.Get())
-	case !needRemoveTriggerVote:
+func (c *change) sortedAccountIDs() []int64 {
+	ids := make([]int64, 0, len(c.votesToRemove))
+	for id := range c.votesToRemove {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	return ids
+}
+
+func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify Notify) error {
+	accounts := c.sortedAccountIDs()
+	var errs errors.MultiError
+	needRemoveTriggerVote := false
+	for _, accountID := range accounts {
+		if accountID == t.GetGerritAccountId() {
+			needRemoveTriggerVote = true
+			continue
+		}
+		if err := c.removeVote(ctx, accountID, "", gerritpb.Notify_NOTIFY_NONE, nil); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) != 0 {
+		return common.MostSevereError(errs)
+	}
+
+	n, nd := notify.toGerritNotify(accounts)
+	if !needRemoveTriggerVote {
 		// No need to remove triggering votes, post message only.
 		return c.annotateGerritErr(ctx, c.postGerritMsg(ctx, ci, msg, t, n, nd), "post message")
-	default:
-		return c.removeVote(ctx, t.GetGerritAccountId(), msg, n, nd)
 	}
+	return c.removeVote(ctx, t.GetGerritAccountId(), msg, n, nd)
 }
 
 func (c *change) removeVote(ctx context.Context, accountID int64, msg string, n gerritpb.Notify, nd *gerritpb.NotifyDetails) error {
@@ -368,7 +388,7 @@ func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo,
 	if msg, err = botdata.Append(msg, bd); err != nil {
 		return err
 	}
-	n, nd := notify.toGerritNotify(ci.GetLabels()[trigger.CQLabelName].GetAll())
+	n, nd := notify.toGerritNotify(c.sortedAccountIDs())
 	if err := c.postGerritMsg(ctx, ci, msg, t, n, nd); err != nil {
 		return c.annotateGerritErr(ctx, err, "post message")
 	}
