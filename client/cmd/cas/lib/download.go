@@ -301,7 +301,7 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFile
 }
 
 // doDownload downloads directory tree from the CAS server.
-func (r *downloadRun) doDownload(ctx context.Context) error {
+func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer signals.HandleInterrupt(cancel)()
@@ -374,7 +374,14 @@ func (r *downloadRun) doDownload(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		defer kvs.Close()
+		defer func() {
+			if err := kvs.Close(); err != nil {
+				logger.Errorf("failed to close kvs cache: %v", err)
+				if rerr == nil {
+					rerr = errors.Annotate(err, "failed to close kvs cache").Err()
+				}
+			}
+		}()
 	}
 
 	if err := createDirectories(ctx, r.dir, outputs); err != nil {
