@@ -566,11 +566,11 @@ func listACLsByPrefix(ctx context.Context, role, prefix string) (acls []*package
 	// Note: __key__ queries are already ordered by key.
 	q := datastore.NewQuery("PackageACL").Ancestor(root)
 	q = q.Gt("__key__", datastore.KeyForObj(ctx, &packageACL{
-		ID:     keyPfx + "\x00",
+		ID:     keyPfx + " ",
 		Parent: root,
 	}))
 	q = q.Lt("__key__", datastore.KeyForObj(ctx, &packageACL{
-		ID:     keyPfx + "\xff",
+		ID:     keyPfx + "~",
 		Parent: root,
 	}))
 

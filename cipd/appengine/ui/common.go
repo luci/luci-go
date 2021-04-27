@@ -24,11 +24,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/gae/service/info"
-
-	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
@@ -36,17 +34,17 @@ import (
 )
 
 // InstallHandlers adds HTTP handlers that render HTML pages.
-func InstallHandlers(r *router.Router, base router.MiddlewareChain, templatesPath string) {
-	m := base.Extend(func(c *router.Context, next router.Handler) {
-		c.Context = context.WithValue(c.Context, startTimeContextKey(0), clock.Now(c.Context))
-		next(c)
-	}).Extend(
-		templates.WithTemplates(prepareTemplates(templatesPath)),
-		auth.Authenticate(server.CookieAuth),
+func InstallHandlers(srv *server.Server, templatesPath string) {
+	m := router.NewMiddlewareChain(
+		func(c *router.Context, next router.Handler) {
+			c.Context = context.WithValue(c.Context, startTimeContextKey(0), clock.Now(c.Context))
+			next(c)
+		},
+		templates.WithTemplates(prepareTemplates(&srv.Options, templatesPath)),
+		auth.Authenticate(srv.CookieAuth),
 	)
-
-	r.GET("/", m, renderErr(routeToPage))
-	r.GET("/p/*path", m, renderErr(routeToPage))
+	srv.Routes.GET("/", m, renderErr(routeToPage))
+	srv.Routes.GET("/p/*path", m, renderErr(routeToPage))
 }
 
 func prefixPageURL(pfx string) string {
@@ -86,8 +84,8 @@ func routeToPage(c *router.Context) error {
 type startTimeContextKey int
 
 // startTime returns timestamp when we started handling the request.
-func startTime(c context.Context) time.Time {
-	ts, ok := c.Value(startTimeContextKey(0)).(time.Time)
+func startTime(ctx context.Context) time.Time {
+	ts, ok := ctx.Value(startTimeContextKey(0)).(time.Time)
 	if !ok {
 		panic("impossible, startTimeContextKey is not set")
 	}
@@ -97,33 +95,37 @@ func startTime(c context.Context) time.Time {
 // prepareTemplates configures templates.Bundle used by all UI handlers.
 //
 // In particular it includes a set of default arguments passed to all templates.
-func prepareTemplates(templatesPath string) *templates.Bundle {
+func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bundle {
+	versionID := "unknown"
+	if idx := strings.LastIndex(opts.ContainerImageID, ":"); idx != -1 {
+		versionID = opts.ContainerImageID[idx+1:]
+	}
 	return &templates.Bundle{
 		Loader:          templates.FileSystemLoader(templatesPath),
-		DebugMode:       info.IsDevAppServer,
+		DebugMode:       func(context.Context) bool { return !opts.Prod },
 		DefaultTemplate: "base",
-		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
-			loginURL, err := auth.LoginURL(c, e.Request.URL.RequestURI())
+		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {
+			loginURL, err := auth.LoginURL(ctx, e.Request.URL.RequestURI())
 			if err != nil {
 				return nil, err
 			}
-			logoutURL, err := auth.LogoutURL(c, e.Request.URL.RequestURI())
+			logoutURL, err := auth.LogoutURL(ctx, e.Request.URL.RequestURI())
 			if err != nil {
 				return nil, err
 			}
-			token, err := xsrf.Token(c)
+			token, err := xsrf.Token(ctx)
 			if err != nil {
 				return nil, err
 			}
 			return templates.Args{
-				"AppVersion":  strings.Split(info.VersionID(c), ".")[0],
-				"IsAnonymous": auth.CurrentIdentity(c) == identity.AnonymousIdentity,
-				"User":        auth.CurrentUser(c),
+				"AppVersion":  versionID,
+				"IsAnonymous": auth.CurrentIdentity(ctx) == identity.AnonymousIdentity,
+				"User":        auth.CurrentUser(ctx),
 				"LoginURL":    loginURL,
 				"LogoutURL":   logoutURL,
 				"XsrfToken":   token,
 				"HandlerDuration": func() time.Duration {
-					return clock.Now(c).Sub(startTime(c))
+					return clock.Now(ctx).Sub(startTime(ctx))
 				},
 			}, nil
 		},

@@ -1,31 +1,51 @@
 service: default
-runtime: go111
+runtime: go113
 
-instance_class: F4
+luci_gae_vars:
+  chrome-infra-packages-dev:
+    FRONTEND_INSTANCE_CLASS: F1
+    GCS_BUCKET: chrome-infra-packages-dev.appspot.com
+    AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    CONFIG_SERVICE_HOST: luci-config.appspot.com
+    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+    VPC_CONNECTOR: projects/chrome-infra-packages-dev/locations/us-central1/connectors/connector
+    REDIS_ADDR: 10.248.220.35:6379
+    DS_CACHE: disable
+    OAUTH_CLIENT_ID: 415950430802-8bbceg2p7hsifq0ub80slvtc6i7kn1ec.apps.googleusercontent.com
+    OAUTH_CLIENT_SECRET: sm://oauth-client-secret
+    OAUTH_REDIRECT_URL: https://chrome-infra-packages-dev.appspot.com/auth/openid/callback
+    TINK_AEAD_KEY: sm://tink-aead-primary
+
+instance_class: ${FRONTEND_INSTANCE_CLASS}
+
+vpc_access_connector:
+  name: ${VPC_CONNECTOR}
+
+inbound_services:
+- warmup
 
 handlers:
 - url: /static/bootstrap
   static_dir: static/bootstrap
   secure: always
-
-- url: /_ah/start
-  script: auto
-  secure: always
-  login: admin
-
-- url: /_ah/warmup
-  script: auto
-  secure: always
-  login: admin
-
-- url: /internal.*
-  script: auto
-  secure: always
-  login: admin
-
 - url: /.*
   script: auto
   secure: always
 
-inbound_services:
-- warmup
+entrypoint: >
+  main
+  -auth-service-host ${AUTH_SERVICE_HOST}
+  -config-service-host ${CONFIG_SERVICE_HOST}
+  -ts-mon-account ${TS_MON_ACCOUNT}
+  -redis-addr ${REDIS_ADDR}
+  -ds-cache ${DS_CACHE}
+  -dsmapper-mapper-queue mappers
+  -dsmapper-control-queue default
+  -cipd-storage-gs-path /${GCS_BUCKET}/store
+  -cipd-temp-gs-path /${GCS_BUCKET}/temp
+  -random-secrets-in-datastore
+  -cloud-error-reporting
+  -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
+  -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
+  -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
+  -encrypted-cookies-tink-aead-key ${TINK_AEAD_KEY}
