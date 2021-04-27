@@ -47,6 +47,54 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1015543f_b72098ad",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-27T04:27:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70daa56f_26003628",
+      "range": {
+        "startLine": 7,
+        "startChar": 9,
+        "endLine": 7,
+        "endChar": 11
+      },
+      "revId": "042b8f34f8d27611f70bebd78ceef856712c6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0d3414bd_9c48a98f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-27T04:27:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0867f4d1_26066dee",
+      "range": {
+        "startLine": 7,
+        "startChar": 1,
+        "endLine": 7,
+        "endChar": 9
+      },
+      "revId": "042b8f34f8d27611f70bebd78ceef856712c6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e282f616_01eeca0a",
@@ -64,6 +112,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "16764e3b_96737573",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-27T04:27:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e282f616_01eeca0a",
+      "revId": "042b8f34f8d27611f70bebd78ceef856712c6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc789479_81ee1970",
@@ -77,6 +143,24 @@
       "writtenOn": "2021-04-27T03:57:42Z",
       "side": 1,
       "message": "better to remove this?",
+      "revId": "042b8f34f8d27611f70bebd78ceef856712c6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bbc38bb4_d9629cfd",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-27T04:27:39Z",
+      "side": 1,
+      "message": "What do you mean?\nisn\u0027t workdir needed for cmd.Dir\nand couldn\u0027t RelativeCwd be empty?",
+      "parentUuid": "dc789479_81ee1970",
       "revId": "042b8f34f8d27611f70bebd78ceef856712c6604",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
