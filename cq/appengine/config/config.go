@@ -127,6 +127,7 @@ type refKey struct {
 var (
 	configGroupNameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	modeNameRegexp        = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
+	standardModes         = stringset.NewFromSlice("DRY_RUN", "FULL_RUN")
 )
 
 func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNames stringset.Set) {
@@ -174,17 +175,9 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNa
 		ctx.Exit()
 	}
 
-	if group.Verifiers == nil {
-		ctx.Errorf("verifiers are required")
-	} else {
-		ctx.Enter("verifiers")
-		validateVerifiers(ctx, group.Verifiers)
-		ctx.Exit()
-	}
-
-	if l := len(group.AdditionalModes); l > 0 {
+	additionalModes := stringset.New(len(group.AdditionalModes))
+	if len(group.AdditionalModes) > 0 {
 		ctx.Enter("additional_modes")
-		nameSet := stringset.New(l)
 		for _, m := range group.AdditionalModes {
 			switch name := m.Name; {
 			case name == "":
@@ -193,10 +186,10 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNa
 				ctx.Errorf("`name` MUST not be DRY_RUN or FULL_RUN")
 			case !modeNameRegexp.MatchString(name):
 				ctx.Errorf("`name` must match %q but %q is given", modeNameRegexp, name)
-			case nameSet.Has(name):
+			case additionalModes.Has(name):
 				ctx.Errorf("duplicate `name` %q not allowed", name)
 			default:
-				nameSet.Add(name)
+				additionalModes.Add(name)
 			}
 			if val := m.CqLabelValue; val < 1 || val > 2 {
 				ctx.Errorf("`cq_label_value` must be either 1 or 2, got %d", val)
@@ -211,6 +204,14 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNa
 				ctx.Errorf("`triggering_value` must be > 0")
 			}
 		}
+		ctx.Exit()
+	}
+
+	if group.Verifiers == nil {
+		ctx.Errorf("verifiers are required")
+	} else {
+		ctx.Enter("verifiers")
+		validateVerifiers(ctx, group.Verifiers, additionalModes.Union(standardModes))
 		ctx.Exit()
 	}
 }
@@ -299,7 +300,7 @@ func validateGerritProject(ctx *validation.Context, gp *v2.ConfigGroup_Gerrit_Pr
 	}
 }
 
-func validateVerifiers(ctx *validation.Context, v *v2.Verifiers) {
+func validateVerifiers(ctx *validation.Context, v *v2.Verifiers, supportedModes stringset.Set) {
 	if v.Cqlinter != nil {
 		ctx.Errorf("cqlinter verifier is not allowed (internal use only)")
 	}
@@ -346,12 +347,12 @@ func validateVerifiers(ctx *validation.Context, v *v2.Verifiers) {
 	}
 	if v.Tryjob != nil {
 		ctx.Enter("tryjob")
-		validateTryjobVerifier(ctx, v.Tryjob)
+		validateTryjobVerifier(ctx, v.Tryjob, supportedModes)
 		ctx.Exit()
 	}
 }
 
-func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
+func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, supportedModes stringset.Set) {
 	if v.RetryConfig != nil {
 		ctx.Enter("retry_config")
 		validateTryjobRetry(ctx, v.RetryConfig)
@@ -441,16 +442,26 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 				}
 			}
 		}
-		if len(b.ModeRegexp)+len(b.ModeRegexpExclude) > 0 {
-			validateRegexp(ctx, "mode_regexp", b.ModeRegexp)
-			validateRegexp(ctx, "mode_regexp_exclude", b.ModeRegexpExclude)
+		if len(b.ModeAllowlist) > 0 {
+			for i, m := range b.ModeAllowlist {
+				if !supportedModes.Has(m) {
+					ctx.Enter("mode_allowlist #%d", i+1)
+					ctx.Errorf("must be one of %s", supportedModes.ToSortedSlice())
+					ctx.Exit()
+				}
+			}
 			// TODO(crbug/1191855): See if CV should loose the following restrictions.
 			if b.TriggeredBy != "" {
-				ctx.Errorf("triggered_by is not combinable with mode_regexp[_exclude]")
+				ctx.Errorf("triggered_by is not combinable with mode_allowlist")
 			}
 			if b.IncludableOnly {
-				ctx.Errorf("includable_only is not combinable with mode_regexp[_exclude]")
+				ctx.Errorf("includable_only is not combinable with mode_allowlist")
 			}
+		}
+		if len(b.ModeRegexp)+len(b.ModeRegexpExclude) > 0 {
+			// TODO(crbug/1203137): Delete this check after mode_regexp* field
+			// is removed.
+			ctx.Errorf("mode_regexp and mode_regexp_exclude are deprecated, please use mode_allowlist instead")
 		}
 		if b.ExperimentPercentage == 0 && b.TriggeredBy == "" && b.EquivalentTo == nil {
 			canStartTriggeringTree = append(canStartTriggeringTree, b.Name)
