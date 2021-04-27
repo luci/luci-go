@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os"
 	"runtime/pprof"
 	"strings"
@@ -34,12 +33,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
 )
-
-const maxUint = ^uint(0)
-const maxInt = int(maxUint >> 1)
-
-const cacheMaxSizeDefault = math.MaxInt64
-const cacheMaxItemsDefault = maxInt
 
 // CmdDownload returns an object for the `download` subcommand.
 func CmdDownload(options CommandOptions) *subcommands.Command {
