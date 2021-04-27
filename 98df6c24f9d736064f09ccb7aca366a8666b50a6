@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "99f5c29e_c77b195a",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-27T23:29:22Z",
+      "side": 1,
+      "message": "Copied over from \nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cli/cmd_stream.go;l\u003d382\n\nchanli said it was fine to just copy over and could not think of a common play to put `getInvID` for sharing.",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "79139695_8658ebca",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-27T23:29:22Z",
+      "side": 1,
+      "message": "Based on https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cli/cmd_stream.go;l\u003d332",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
