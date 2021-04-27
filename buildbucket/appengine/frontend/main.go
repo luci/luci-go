@@ -130,7 +130,7 @@ func main() {
 		srv.PRPC.HackFixFieldMasksForJSON = true
 
 		// makeOverride(prod % -> Go, dev % -> Go).
-		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 0))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 50))
 
 		cronMW := router.NewMiddlewareChain(gaemiddleware.RequireCron)
 		srv.Routes.GET("/internal/cron/update_config", cronMW, func(c *router.Context) {
