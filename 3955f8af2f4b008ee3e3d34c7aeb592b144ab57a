@@ -22,6 +22,30 @@
       },
       "revId": "3955f8af2f4b008ee3e3d34c7aeb592b144ab57a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "295079e1_e42de8ee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1367998
+      },
+      "writtenOn": "2021-04-27T18:43:02Z",
+      "side": 1,
+      "message": "just a guess, but maybe gerrit only checks \"user@chromium\" instead of \"user@google\" if \"user\" is supplied without an email?",
+      "parentUuid": "20ef6159_5060be71",
+      "range": {
+        "startLine": 12,
+        "startChar": 2,
+        "endLine": 12,
+        "endChar": 21
+      },
+      "revId": "3955f8af2f4b008ee3e3d34c7aeb592b144ab57a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
