@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e90bd2a_47f9222b",
+        "filename": "cv/internal/gerrit/trigger/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-27T05:40:17Z",
+      "side": 1,
+      "message": "sgtm. I came in with the question \"does QUICK_DRY_RUN takes precedence over DRY_RUN even if the CQ vote timestamp is larger?\".",
+      "range": {
+        "startLine": 48,
+        "startChar": 10,
+        "endLine": 48,
+        "endChar": 30
+      },
+      "revId": "6cc6e62b671edc9fae84bc2332c0555f687e5c12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
