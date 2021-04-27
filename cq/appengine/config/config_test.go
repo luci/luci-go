@@ -495,7 +495,7 @@ func TestTryjobValidation(t *testing.T) {
 			if err := proto.UnmarshalText(textPB, &cfg); err != nil {
 				panic(err)
 			}
-			validateTryjobVerifier(vctx, &cfg)
+			validateTryjobVerifier(vctx, &cfg, standardModes)
 			return vctx.Finalize()
 		}
 
@@ -631,22 +631,37 @@ func TestTryjobValidation(t *testing.T) {
 				"must not be empty string")
 		})
 
-		Convey("mode_regexps", func() {
-			So(validate(`builders {name: "a/b/c" mode_regexp: ""}`), ShouldErrLike, "must not be empty")
-			So(validate(`builders {name: "a/b/c" mode_regexp_exclude: "*"}`), ShouldErrLike, "error parsing regexp")
+		Convey("mode_allowlist", func() {
+			So(validate(`builders {name: "a/b/c" mode_allowlist: "DRY_RUN"}`), ShouldBeNil)
 			So(validate(`
 				builders {
 					name: "a/b/c"
-					mode_regexp: ".+"
-					mode_regexp: ".+"
-				}`), ShouldErrLike, "duplicate")
+					mode_allowlist: "DRY_RUN"
+					mode_allowlist: "FULL_RUN"
+				}`), ShouldBeNil)
 
 			So(validate(`
 				builders {
 					name: "a/b/c"
+					mode_allowlist: "DRY"
+					mode_allowlist: "FULL_RUN"
+				}`), ShouldErrLike,
+				"must be one of")
+		})
+
+		Convey("disallow mode_regexp", func() {
+			So(validate(`
+				builders {
+					name: "a/b/c"
 					mode_regexp: "\\w*DRY\\w+"
-					mode_regexp_exclude: "\\w*FULL\\w+"
-				}`), ShouldBeNil)
+				}`), ShouldErrLike,
+				"mode_regexp and mode_regexp_exclude are deprecated, please use mode_allowlist instead")
+			So(validate(`
+			builders {
+				name: "a/b/c"
+				mode_regexp_exclude: "\\w*FULL\\w+"
+			}`), ShouldErrLike,
+				"mode_regexp and mode_regexp_exclude are deprecated, please use mode_allowlist instead")
 		})
 
 		Convey("allowed combinations", func() {
@@ -708,11 +723,11 @@ func TestTryjobValidation(t *testing.T) {
 			So(validate(`
 				builders {
 					name: "a/b/c"
-					mode_regexp: "\\w*DRY\\w+"
+					mode_allowlist: "DRY_RUN"
 					includable_only: true
 				}`),
 				ShouldErrLike,
-				"includable_only is not combinable with mode_regexp[_exclude]")
+				"includable_only is not combinable with mode_allowlist")
 
 			So(validate(`builders {name: "one/is/enough" includable_only: true}`), ShouldBeNil)
 		})
@@ -737,10 +752,10 @@ func TestTryjobValidation(t *testing.T) {
 			So(validate(`
 				builders {
 					name: "a/b/c"
-					mode_regexp: "\\w*DRY\\w+"
+					mode_allowlist: "DRY_RUN"
 					triggered_by: "a/b/0"
 				}`), ShouldErrLike,
-				"triggered_by is not combinable with mode_regexp[_exclude]")
+				"triggered_by is not combinable with mode_allowlist")
 
 			Convey("doesn't form loops", func() {
 				So(validate(`
