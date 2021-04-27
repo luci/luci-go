@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8cbbd02f_19a9d33b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-27T05:27:34Z",
+      "side": 1,
+      "message": "ptal",
+      "revId": "2474bf443804cbd2d60b970b0c5f151f0da6a8cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c6e5e00_c28b1b75",
+        "filename": "lucicfg/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-27T05:27:34Z",
+      "side": 1,
+      "message": "since 1.24.0 is never released. so I just increase the patch version here.",
+      "revId": "2474bf443804cbd2d60b970b0c5f151f0da6a8cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
