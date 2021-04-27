@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6009da1d_5cf7da1b",
+        "filename": "cv/internal/gerrit/cancel/cancel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 362,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-27T05:43:36Z",
+      "side": 0,
+      "message": "ah. didn\u0027t catch it in previous CL.",
+      "range": {
+        "startLine": 360,
+        "startChar": 0,
+        "endLine": 362,
+        "endChar": 4
+      },
+      "revId": "6cc6e62b671edc9fae84bc2332c0555f687e5c12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
