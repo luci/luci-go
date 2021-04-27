@@ -24,10 +24,10 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	luciproto "go.chromium.org/luci/common/proto"
 )
 
@@ -89,54 +89,32 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 // the latter is copied.
 //
 // If host is not empty, sets "host" metadata.
-//
-// In case of an error, returns ctx unmodified.
-func parseHeader(ctx context.Context, header http.Header, host string) (context.Context, error) {
-	origC := ctx
-
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		md = md.Copy()
-	} else {
-		md = metadata.MD{}
+func parseHeader(ctx context.Context, header http.Header, host string) (context.Context, context.CancelFunc, error) {
+	// Parse headers into a metadata map. This skips all reserved headers to avoid
+	// leaking pRPC protocol implementation details to gRPC servers.
+	parsed, err := headersIntoMetadata(header)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	addedMeta := false
-	for name, values := range header {
-		if len(values) == 0 {
-			continue
+	// Modify metadata.MD in the context only if we have something to add.
+	if parsed != nil || host != "" {
+		existing, _ := metadata.FromIncomingContext(ctx)
+		merged := metadata.Join(existing, parsed)
+		if host != "" {
+			merged["host"] = []string{host}
 		}
-		name = http.CanonicalHeaderKey(name)
-		switch {
+		ctx = metadata.NewIncomingContext(ctx, merged)
+	}
 
-		case name == HeaderTimeout:
-			// Decode only first value, ignore the rest
-			// to be consistent with http.Header.Get.
-			timeout, err := DecodeTimeout(values[0])
-			if err != nil {
-				return origC, fmt.Errorf("%s header: %s", HeaderTimeout, err)
-			}
-			// TODO(crbug/1006920): Do not leak the cancel context.
-			ctx, _ = clock.WithTimeout(ctx, timeout)
-
-		case isReservedMetadataKey(name):
-		// do not leak details of pRPC protocol to gRPC server implementations
-
-		default:
-			addedMeta = true
-			if err := headerIntoMeta(name, values, md); err != nil {
-				return origC, fmt.Errorf("can't decode header %q: %s", name, err)
-			}
+	// Parse the reserved timeout header, if any. Apply to the context.
+	if timeoutStr := header.Get(HeaderTimeout); timeoutStr != "" {
+		timeout, err := DecodeTimeout(timeoutStr)
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "%q header", HeaderTimeout).Err()
 		}
+		ctx, cancel := clock.WithTimeout(ctx, timeout)
+		return ctx, cancel, nil
 	}
-
-	if host != "" {
-		md.Set("host", host)
-		addedMeta = true
-	}
-
-	if addedMeta {
-		ctx = metadata.NewIncomingContext(ctx, md)
-	}
-	return ctx, nil
+	return ctx, func() {}, nil
 }
