@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	luciproto "go.chromium.org/luci/common/proto"
 )
 
@@ -91,52 +92,43 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 // If host is not empty, sets "host" metadata.
 //
 // In case of an error, returns ctx unmodified.
-func parseHeader(ctx context.Context, header http.Header, host string) (context.Context, error) {
-	origC := ctx
+func parseHeader(ctx context.Context, header http.Header, host string) (context.Context, context.CancelFunc, error) {
+	// Parse headers into a metadata map. This skips all reserved headers to avoid
+	// leaking pRPC protocol implementation details to gRPC servers.
+	parsed, err := headersIntoMetadata(header)
+	if err != nil {
+		return ctx, nil, err
+	}
 
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		md = md.Copy()
+	// Parse the reserved timeout header, if any. Apply to the context.
+	var cancel context.CancelFunc
+	if durStr := header.Get(HeaderTimeout); durStr != "" {
+		timeout, err := DecodeTimeout(durStr)
+		if err != nil {
+			return ctx, nil, errors.Annotate(err, "%q header", HeaderTimeout).Err()
+		}
+		ctx, cancel = clock.WithTimeout(ctx, timeout)
+	}
+
+	// Merge the parsed metadata on top of whatever we have in the context.
+	var merged metadata.MD
+	if existing, ok := metadata.FromIncomingContext(ctx); ok {
+		merged = metadata.Join(existing, parsed)
 	} else {
-		md = metadata.MD{}
+		merged = parsed
 	}
 
-	addedMeta := false
-	for name, values := range header {
-		if len(values) == 0 {
-			continue
-		}
-		name = http.CanonicalHeaderKey(name)
-		switch {
-
-		case name == HeaderTimeout:
-			// Decode only first value, ignore the rest
-			// to be consistent with http.Header.Get.
-			timeout, err := DecodeTimeout(values[0])
-			if err != nil {
-				return origC, fmt.Errorf("%s header: %s", HeaderTimeout, err)
-			}
-			// TODO(crbug/1006920): Do not leak the cancel context.
-			ctx, _ = clock.WithTimeout(ctx, timeout)
-
-		case isReservedMetadataKey(name):
-		// do not leak details of pRPC protocol to gRPC server implementations
-
-		default:
-			addedMeta = true
-			if err := headerIntoMeta(name, values, md); err != nil {
-				return origC, fmt.Errorf("can't decode header %q: %s", name, err)
-			}
-		}
-	}
-
+	// Replace the special "host" metadata with the server hostname.
 	if host != "" {
-		md.Set("host", host)
-		addedMeta = true
+		if merged == nil {
+			merged = make(metadata.MD, 1)
+		}
+		merged["host"] = []string{host}
 	}
 
-	if addedMeta {
-		ctx = metadata.NewIncomingContext(ctx, md)
+	// If we really have a new metadata, put it into the context.
+	if merged != nil {
+		ctx = metadata.NewIncomingContext(ctx, merged)
 	}
-	return ctx, nil
+	return ctx, cancel, nil
 }
