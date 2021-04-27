@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2dce3393_c7f5a2ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-27T02:31:10Z",
+      "side": 1,
+      "message": "It also would be worth posting error from the bot around.\nhttps://source.chromium.org/chromium/infra/infra/+/master:luci/client/run_isolated.py;l\u003d627?q\u003df:run_isolated.py\u0026ss\u003dchromium",
+      "revId": "6ccbadf1da642b2fe8df2028f4babae1923cbcfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
