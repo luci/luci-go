@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e5860f5_70841541",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-27T04:55:26Z",
+      "side": 1,
+      "message": "https://github.com/GoogleCloudPlatform/stackdriver-errors-js\n\nstackdriver-errors-js is an experimental project. But this is the best lib I can find to support client-error collection.\nSince the lib is pretty small, and it is a google owned project (although unofficial), we can just submit CLs if we need to patch something.\n",
+      "revId": "54929250b0025c3d86d0389f56c5798bc147df92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
