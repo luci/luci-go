@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39550c2e_4a8c88b7",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-27T05:18:18Z",
+      "side": 0,
+      "message": "arg... 😞",
+      "range": {
+        "startLine": 119,
+        "startChar": 11,
+        "endLine": 119,
+        "endChar": 24
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

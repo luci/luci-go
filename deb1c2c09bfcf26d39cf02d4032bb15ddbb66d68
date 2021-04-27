@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ec89351_9b16effd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-27T05:18:18Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2329e4c7_865f3a8d",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-27T05:18:18Z",
+      "side": 1,
+      "message": "wdyt about returning `func(){}` so callers can always defer?",
+      "range": {
+        "startLine": 135,
+        "startChar": 21,
+        "endLine": 135,
+        "endChar": 24
+      },
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a848a76b_9039e228",
+        "filename": "grpc/prpc/metadata.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-27T05:18:18Z",
+      "side": 1,
+      "message": "if you want to be extra fancy you can name the return parameters...",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cce1cce7_56868ade",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-27T05:18:18Z",
+      "side": 1,
+      "message": "because this is weird",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
