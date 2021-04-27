@@ -206,6 +206,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0dba522_ec30de64",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-27T13:07:37Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "fb8346be_48ff9a2d",
+      "range": {
+        "startLine": 285,
+        "startChar": 7,
+        "endLine": 285,
+        "endChar": 42
+      },
+      "revId": "8a9286e50978016b07f0970df45dad8156e1db8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bfea7a2a_12a7b3cf",
