@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ae3a369_a368282c",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T21:04:41Z",
+      "side": 1,
+      "message": "this is much better, thanks",
+      "revId": "b81955af90b0498b2d72af01d2e3e3ebe8a998d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
