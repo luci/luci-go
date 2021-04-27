@@ -16,7 +16,10 @@ package prpc
 
 import (
 	"encoding/base64"
+	"net/http"
 	"testing"
+
+	"google.golang.org/grpc/metadata"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -27,38 +30,77 @@ func TestBinaryHeader(t *testing.T) {
 
 	Convey("from headers", t, func() {
 		Convey("regular", func() {
-			k, v, err := headerToMeta("K", "V")
+			md, err := headersIntoMetadata(http.Header{
+				"Key":         {"v1", "v2"},
+				"Another-Key": {"v3"},
+			})
 			So(err, ShouldBeNil)
-			So(k, ShouldEqual, "k")
-			So(v, ShouldEqual, "V")
+			So(md, ShouldResemble, metadata.MD{
+				"key":         {"v1", "v2"},
+				"another-key": {"v3"},
+			})
 		})
 
 		Convey("binary", func() {
 			data := []byte{10}
-			k, v, err := headerToMeta("K-Bin", base64.StdEncoding.EncodeToString(data))
+			md, err := headersIntoMetadata(http.Header{
+				"Key-Bin": {base64.StdEncoding.EncodeToString(data)},
+			})
 			So(err, ShouldBeNil)
-			So(k, ShouldEqual, "k-bin")
-			So(v, ShouldEqual, string(data))
+			So(md, ShouldResemble, metadata.MD{
+				"key-bin": {string(data)},
+			})
 		})
 
 		Convey("binary invalid", func() {
-			_, _, err := headerToMeta("k-bin", "Z")
+			_, err := headersIntoMetadata(http.Header{
+				"Key-Bin": {"Z"},
+			})
 			So(err, ShouldErrLike, "illegal base64 data at input byte 0")
+		})
+
+		Convey("reserved", func() {
+			md, err := headersIntoMetadata(http.Header{
+				"Content-Type": {"zzz"},
+				"X-Prpc-Zzz":   {"zzz"},
+			})
+			So(err, ShouldBeNil)
+			So(md, ShouldResemble, metadata.MD{})
 		})
 	})
 
 	Convey("to headers", t, func() {
 		Convey("regular", func() {
-			k, v := metaToHeader("k", "V")
-			So(k, ShouldEqual, "K")
-			So(v, ShouldEqual, "V")
+			h := http.Header{}
+			err := metaIntoHeaders(metadata.MD{
+				"key":         {"v1", "v2"},
+				"another-key": {"v3"},
+			}, h)
+			So(err, ShouldBeNil)
+			So(h, ShouldResemble, http.Header{
+				"Key":         {"v1", "v2"},
+				"Another-Key": {"v3"},
+			})
 		})
 
 		Convey("binary", func() {
 			data := []byte{10}
-			k, v := metaToHeader("k-bin", string(data))
-			So(k, ShouldEqual, "K-Bin")
-			So(v, ShouldEqual, base64.StdEncoding.EncodeToString(data))
+			h := http.Header{}
+			err := metaIntoHeaders(metadata.MD{
+				"key-bin": {string(data)},
+			}, h)
+			So(err, ShouldBeNil)
+			So(h, ShouldResemble, http.Header{
+				"Key-Bin": {base64.StdEncoding.EncodeToString(data)},
+			})
+		})
+
+		Convey("reserved", func() {
+			h := http.Header{}
+			err := metaIntoHeaders(metadata.MD{
+				"content-type": {"zzz"},
+			}, h)
+			So(err, ShouldErrLike, "using reserved metadata key")
 		})
 	})
 }

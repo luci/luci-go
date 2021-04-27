@@ -41,6 +41,22 @@
 //
 // Protocol
 //
+// ## v1.4
+//
+// v1.4 hides some leaking HTTP v1 transport implementation details from gRPC
+// services and clients by stopping exposing values of the following headers in
+// metadata.MD: "Accept", "Accept-Encoding", "Content-Encoding",
+// "Content-Length", "Content-Type", "X-Content-Type-Options", all "X-Prpc-*"
+// headers.
+//
+// Note that "X-Prpc-Grpc-Timeout", "X-Prpc-Status-Details-Bin", "Content-Type"
+// and "Accept" headers were already hidden in the previous version of
+// the protocol.
+//
+// Also note that such commonly present headers as "Host" and "User-Agent" are
+// still exposed as metadata, since they are already used in the wild and
+// the protocol does not depend on them significantly.
+//
 // ## v1.3
 //
 // v1.3 adds request/response body compression support using GZIP (RFC-1952).
@@ -64,7 +80,7 @@
 //
 // Response header "X-Prpc-Status-Details-Bin" contains elements of
 // google.rpc.Status.details field, one value per element, in the same order.
-// The header value is a standard base64 string of the encoded
+// The header value is a standard base64 string with padding of the encoded
 // google.protobuf.Any, where the message encoding is the same as the response
 // message encoding, i.e. depends on Accept request header.
 //
@@ -102,7 +118,7 @@
 // A pRPC server MUST support Binary and SHOULD support JSON and Text.
 //
 // Request headers:
-//  - "X-Prpc-Timeout": specifies request timeout.
+//  - "X-Prpc-Grpc-Timeout": specifies request timeout.
 //    A client MAY specify it.
 //    If a service hits the timeout, a server MUST respond with HTTP 503 and
 //    DeadlineExceed gRPC code.
@@ -119,9 +135,11 @@
 //  - "Accept": specifies the output message encoding for the response.
 //    A client MAY specify it, a server MUST support it.
 //  - Any other headers MUST be added to metadata.MD in the context that is
-//    passed to the service method implementation.
-//    - If a header name has "-Bin" suffix, the server must treat it as
-//      standard-base64-encoded.
+//    passed to the service method implementation (note this behavior was
+//    amended in v1.4).
+//  - If a header name has "-Bin" suffix, the server must treat it as
+//    standard-base64-encoded with padding and put the decoded binary blob into
+//    the metadata under the original key (i.e. the one ending with "-bin").
 //
 // Response headers:
 //  - "X-Prpc-Grpc-Code": specifies the gRPC code.

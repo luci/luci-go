@@ -232,12 +232,17 @@ func TestClient(t *testing.T) {
 				})
 				defer server.Close()
 
-				ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("key", "value"))
+				ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
+					"key", "value 1",
+					"key", "value 2",
+					"data-bin", string([]byte{0, 1, 2, 3}),
+				))
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				So(err, ShouldBeNil)
 
-				So(receivedHeader.Get("key"), ShouldEqual, "value")
+				So(receivedHeader["Key"], ShouldResemble, []string{"value 1", "value 2"})
+				So(receivedHeader["Data-Bin"], ShouldResemble, []string{"AAECAw=="})
 			})
 
 			Convey("Works with compression", func(c C) {
