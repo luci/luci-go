@@ -69,6 +69,11 @@ func (c *reproduceRun) parse(args []string) error {
 	if len(args) != 1 {
 		return errors.Reason("must specify exactly one task id.").Err()
 	}
+	var err error
+	c.work, err = filepath.Abs(c.work)
+	if err != nil {
+		return errors.Annotate(err, "failed to get absolute representation of work directory").Err()
+	}
 	return nil
 }
 
@@ -121,11 +126,11 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 	// that is not available locally.
 	properties := tr.TaskSlices[len(tr.TaskSlices)-1].Properties
 
-	workdir := c.work
+	execDir := c.work
 	if properties.RelativeCwd != "" {
-		workdir = filepath.Join(workdir, properties.RelativeCwd)
+		execDir = filepath.Join(execDir, properties.RelativeCwd)
 	}
-	if err := prepareDir(workdir); err != nil {
+	if err := prepareDir(execDir); err != nil {
 		return nil, err
 	}
 
@@ -143,7 +148,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 	for _, prefix := range properties.EnvPrefixes {
 		paths := make([]string, 0, len(prefix.Value)+1)
 		for _, value := range prefix.Value {
-			paths = append(paths, filepath.Clean(filepath.Join(workdir, value)))
+			paths = append(paths, filepath.Clean(filepath.Join(c.work, value)))
 		}
 		cur, ok := cmdEnvMap.Get(prefix.Key)
 		if ok {
@@ -159,7 +164,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 
 	// Support isolated input in task request.
 	if properties.InputsRef != nil && properties.InputsRef.Isolated != "" {
-		if _, err := service.GetFilesFromIsolate(ctx, workdir, properties.InputsRef); err != nil {
+		if _, err := service.GetFilesFromIsolate(ctx, c.work, properties.InputsRef); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch files from isolate").Err()
 		}
 	}
@@ -170,7 +175,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
 		}
-		if _, err := service.GetFilesFromCAS(ctx, workdir, cascli, properties.CasInputRoot); err != nil {
+		if _, err := service.GetFilesFromCAS(ctx, c.work, cascli, properties.CasInputRoot); err != nil {
 			return nil, errors.Annotate(err, "failed to fetched friles from RBE-CAS").Err()
 		}
 	}
@@ -192,19 +197,20 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 				slicesByPath[path], ensure.PackageDef{UnresolvedVersion: pkg.Version, PackageTemplate: pkg.PackageName})
 		}
 
-		if err := c.cipdDownloader(ctx, workdir, slicesByPath); err != nil {
+		if err := c.cipdDownloader(ctx, c.work, slicesByPath); err != nil {
 			return nil, err
 		}
 	}
 
 	// Create a Comand that can run the task request.
-	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, workdir, "")
+	// TODO(crbug.com/1188473): Use a separate c.out directory instead of c.work.
+	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, c.work, "")
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to process command in properties").Err()
 	}
 	cmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
 	cmd.Env = cmdEnvMap.Sorted()
-	cmd.Dir = workdir
+	cmd.Dir = execDir
 	return cmd, nil
 }
 
