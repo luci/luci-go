@@ -14,8 +14,7 @@
 
 /**
  * @fileoverview This file contains helper functions for constructing elements
- * that can react to EnterView event. This is useful for building elements that
- * supports lazy rendering.
+ * that can react to EnterView event.
  *
  * Example:
  * ```
@@ -36,9 +35,25 @@
  *   }
  * }
  * ```
+ *
+ * @enterViewObserver() can be used to build components that supports lazy
+ * rendering. Alternatively, you can use @lazyRendering() directly.
+ * ```
+ * @customElement('lazy-loading-element')
+ * @lazyRendering()
+ * class LazyLoadingElement extends LitElement implements RenderPlaceHolder {
+ *   renderPlaceHolder() {
+ *     return html`Placeholder`;
+ *   }
+ *
+ *   protected render() {
+ *     return html`Actual content`;
+ *   }
+ * }
+ * ```
  */
 
-import { LitElement } from 'lit-element';
+import { LitElement, property } from 'lit-element';
 
 export interface OnEnterView extends LitElement {
   onEnterView(): void;
@@ -98,5 +113,47 @@ export function enterViewObserver<T extends OnEnterView>(getNotifier = (_ele: T)
     }
     // Recover the type information that lost in the down-casting above.
     return (EnterViewObserverElement as Constructor<LitElement>) as C;
+  };
+}
+
+export interface RenderPlaceHolder extends LitElement {
+  /**
+   * Renders a placeholder. The placeholder should have roughly the same size
+   * as the actual content.
+   */
+  renderPlaceHolder(): unknown;
+}
+
+/**
+ * Builds a lazyRenderingMixin, which is a mixin function that takes a
+ * constructor that implements RenderPlaceHolder and make the component only
+ * renders a placeholder until it intersects with the root element. See
+ * @fileoverview for examples.
+ */
+export function lazyRendering<T extends RenderPlaceHolder>(getNotifier = (_ele: T) => DEFAULT_NOTIFIER) {
+  return function lazyRenderingMixin<C extends Constructor<T>>(cls: C) {
+    const prerenderSymbol = Symbol('prerender');
+
+    // Recover the type information that lost in the down-casting below.
+    @enterViewObserver<LazilyRenderedElement>(getNotifier as (ele: RenderPlaceHolder) => EnterViewNotifier)
+    // TypeScript doesn't allow type parameter in extends or implements
+    // position. Cast to Constructor<LitElement> to stop tsc complaining.
+    class LazilyRenderedElement extends (cls as Constructor<RenderPlaceHolder>) {
+      @property() [prerenderSymbol] = true;
+
+      onEnterView() {
+        this[prerenderSymbol] = false;
+        return true;
+      }
+
+      protected render() {
+        if (this[prerenderSymbol]) {
+          return this.renderPlaceHolder();
+        }
+        return super.render();
+      }
+    }
+    // Recover the type information that lost in the down-casting above.
+    return (LazilyRenderedElement as Constructor<LitElement>) as C;
   };
 }
