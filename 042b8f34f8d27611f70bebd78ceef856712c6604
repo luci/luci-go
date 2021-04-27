@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e282f616_01eeca0a",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-27T03:57:42Z",
+      "side": 1,
+      "message": "do this in parse function?",
+      "revId": "042b8f34f8d27611f70bebd78ceef856712c6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc789479_81ee1970",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-27T03:57:42Z",
+      "side": 1,
+      "message": "better to remove this?",
+      "revId": "042b8f34f8d27611f70bebd78ceef856712c6604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
