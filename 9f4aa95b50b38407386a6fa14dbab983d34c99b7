@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24ea632a_3e99dc21",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-27T20:37:50Z",
+      "side": 1,
+      "message": "Hi all,\n\nThis CL is just to ignore the artifact file error and unblock the rollout of BatchCreateArtifacts().\n\nHere are my plans.\n1) Land this CL and roll out a new rdb binary with this patch\n2) If nothing breaks, roll out the result_adapter binary to finish the rollouts.\n3) Update artifact_channel and test_result_channel such that they will exit on errors, if cfg.ExitOnFailures is set\n4) Set up a new monitoring pipeline to monitor how many test-results/artifacts are being dropped.\n5) gradually set cfg.ExitOnFailures\u003dtrue builder by builder using recipes.\n6) clean up..\n\nbasically, do (1) and (2) first to ship the feature first, and then do (3), (4), (5), (6) afterwards.\nWDYT?",
+      "revId": "9f4aa95b50b38407386a6fa14dbab983d34c99b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
