@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4462075c_ad2863ac",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 625,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:41:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1cc56672_4bf5c15f",
+      "range": {
+        "startLine": 625,
+        "startChar": 68,
+        "endLine": 625,
+        "endChar": 76
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a5d08de5_b078fad6",
         "filename": "grpc/prpc/decoding.go",
         "patchSetId": 1
@@ -111,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "13a903bb_e684bcde",
+        "filename": "grpc/prpc/decoding_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:41:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90c3b549_c48df9d6",
+      "range": {
+        "startLine": 233,
+        "startChar": 28,
+        "endLine": 233,
+        "endChar": 29
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9c4e3a9a_af92a226",
@@ -124,6 +172,30 @@
       "writtenOn": "2021-04-27T05:29:41Z",
       "side": 1,
       "message": "this versioning is for protocol, not its impl. \n\nThis paragraph isn\u0027t a part of the protocol. This is a part of the implementation of the protocol. I don\u0027t think it shouldn\u0027t be here.",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 2
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b621878a_2ceac24b",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:41:44Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "9c4e3a9a_af92a226",
       "range": {
         "startLine": 52,
         "startChar": 0,
@@ -180,6 +252,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f132f673_a7be4a0a",
+        "filename": "grpc/prpc/metadata.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:41:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d43047d4_8f1ac15e",
+      "range": {
+        "startLine": 53,
+        "startChar": 47,
+        "endLine": 53,
+        "endChar": 49
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f1084d46_2ac09c54",
@@ -217,6 +313,30 @@
       "side": 1,
       "message": "sgtm; I can\u0027t imagine anything depending on that.... but even if something did, somehow, we could always add it in to the protocol explicitly...",
       "parentUuid": "f1084d46_2ac09c54",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 243,
+        "endChar": 26
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ac3bb93_fc36b9d1",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:41:44Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "bb3227c3_ac85ceec",
       "range": {
         "startLine": 243,
         "startChar": 1,
