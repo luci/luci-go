@@ -88,6 +88,7 @@ func getApplication() *subcommands.DefaultApplication {
 			lib.CmdSpawnTasks(af),
 			lib.CmdTasks(af),
 			lib.CmdTrigger(af),
+			lib.CmdReproduce(af),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(authOpts, "whoami", false),
 			authcli.SubcommandLogin(authOpts, "login", false),
