@@ -14,31 +14,32 @@
 
 import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
-import { css, customElement, LitElement } from 'lit-element';
+import { css, customElement, LitElement, property } from 'lit-element';
 
 import { EnterViewNotifier, enterViewObserver, OnEnterView } from './enter_view_observer';
 
 @customElement('milo-enter-view-observer-test-entry')
 @enterViewObserver((e: EnterViewObserverTestEntryElement) => new EnterViewNotifier({ root: e.parentElement }))
 class EnterViewObserverTestEntryElement extends LitElement implements OnEnterView {
-  onEnterCallCount = 0;
+  @property() onEnterCallCount = 0;
 
   onEnterView() {
     this.onEnterCallCount++;
   }
 
   protected render() {
-    return html` <div id="placeholder">A</div> `;
+    return html`content`;
   }
 
   static styles = css`
-    #placeholder {
+    :host {
+      display: block;
       height: 10px;
     }
   `;
 }
 
-describe('enter_view_observer', () => {
+describe('enterViewObserver', () => {
   let listView: HTMLDivElement;
   let entries: NodeListOf<EnterViewObserverTestEntryElement>;
 
@@ -50,7 +51,7 @@ describe('enter_view_observer', () => {
           .map(() => html`<milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>`)}
       </div>
     `);
-    entries = listView.querySelectorAll<EnterViewObserverTestEntryElement>('milo-lazy-list-test-entry');
+    entries = listView.querySelectorAll<EnterViewObserverTestEntryElement>('milo-enter-view-observer-test-entry');
   });
   after(fixtureCleanup);
 
@@ -62,23 +63,20 @@ describe('enter_view_observer', () => {
   });
 
   it('should notify new entries scrolls into the view.', async () => {
-    listView.scrollTop = 200;
-    await aTimeout(0);
+    listView.scrollBy(0, 50);
+    await aTimeout(10);
 
     entries.forEach((entry, i) => {
-      assert.equal(entry.onEnterCallCount, i <= 30 ? 1 : 0);
+      assert.equal(entry.onEnterCallCount, i <= 15 ? 1 : 0);
     });
   });
 
-  it('should not re-notify old entries when scrolling back and forth.', async () => {
-    listView.scrollTop = 0;
-    await aTimeout(0);
-
-    listView.scrollTop = 200;
-    await aTimeout(0);
+  it('should re-notify old entries when scrolling back and forth.', async () => {
+    listView.scrollBy(0, -50);
+    await aTimeout(10);
 
     entries.forEach((entry, i) => {
-      assert.equal(entry.onEnterCallCount, i <= 30 ? 1 : 0);
+      assert.equal(entry.onEnterCallCount, i <= 15 ? 1 : 0);
     });
   });
 });
