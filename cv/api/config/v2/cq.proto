@@ -561,8 +561,14 @@ message Verifiers {
       //
       // Implicitly anchored with (?i)^...$  (i.e. complete case-insensitive
       // match), so there is no need add them.
-      repeated string mode_regexp = 12;
-      repeated string mode_regexp_exclude = 13;
+      //
+      // DEPRECATED: use mode_allowlist instead.
+      repeated string mode_regexp = 12 [deprecated = true];
+      repeated string mode_regexp_exclude = 13 [deprecated = true];
+
+      // If set, require this builder only if the Run mode matches
+      // one of the modes in this list. Optional.
+      repeated string mode_allowlist = 14;
     }
 
     message EquivalentBuilder {
