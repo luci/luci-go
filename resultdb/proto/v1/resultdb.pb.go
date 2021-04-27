@@ -2244,6 +2244,10 @@ type ResultDBClient interface {
 	QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error)
 	// Retrieves test results in a given range of either time or commit position.
 	// Accepts test variant predicate to filter the results.
+	//
+	// Note, testIdRegexp and variantPredicate SHOULD be specified to get the
+	// results in a timely manner. Queries without either of the predicates will
+	// be slow.
 	GetTestResultHistory(ctx context.Context, in *GetTestResultHistoryRequest, opts ...grpc.CallOption) (*GetTestResultHistoryResponse, error)
 }
 type resultDBPRPCClient struct {
@@ -2522,6 +2526,10 @@ type ResultDBServer interface {
 	QueryArtifacts(context.Context, *QueryArtifactsRequest) (*QueryArtifactsResponse, error)
 	// Retrieves test results in a given range of either time or commit position.
 	// Accepts test variant predicate to filter the results.
+	//
+	// Note, testIdRegexp and variantPredicate SHOULD be specified to get the
+	// results in a timely manner. Queries without either of the predicates will
+	// be slow.
 	GetTestResultHistory(context.Context, *GetTestResultHistoryRequest) (*GetTestResultHistoryResponse, error)
 }
 
