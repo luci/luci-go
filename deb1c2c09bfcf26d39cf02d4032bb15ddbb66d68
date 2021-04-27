@@ -20,6 +20,63 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "48db232a_690890a4",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T05:43:28Z",
+      "side": 1,
+      "message": "nit: consier moving this to the very end of he func, so that\n\n1) we minimize the duration of / length of the code block where `cancel` exists. When I read this code, I automatically starting search for `return` with an error and without cancel\n1) `parsed` initialization and usage are closer to each other",
+      "range": {
+        "startLine": 103,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 2
+      },
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f5921d64_22298797",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T05:43:28Z",
+      "side": 1,
+      "message": "why do we need a new variable? maybe rename `parsed` to `md` and keep updating it through the func?",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c87f8af9_62c073e4",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T05:43:28Z",
+      "side": 1,
+      "message": "it took me ~5min to understand what this code is doing. I think the following would be express the intention more clearly:\n\n  if parsed !\u003d nil || host !\u003d \"\" {\n    existing :\u003d ....\n    ... join...\n    ... set host ...\n    ...NewIncomingContext\n  }",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2329e4c7_865f3a8d",
         "filename": "grpc/prpc/decoding.go",
         "patchSetId": 2
@@ -71,6 +128,24 @@
       "writtenOn": "2021-04-27T05:18:18Z",
       "side": 1,
       "message": "because this is weird",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0a5106ed_137f8604",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T05:43:28Z",
+      "side": 1,
+      "message": "+1. \nHow about guaranteeing\n \n  (err \u003d\u003d nil) \u003d\u003e (cancel !\u003d nil)",
+      "parentUuid": "cce1cce7_56868ade",
       "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
