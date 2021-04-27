@@ -96,6 +96,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0814b3a7_57d47a30",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-27T23:50:57Z",
+      "side": 1,
+      "message": "I would be inclined to just hard-code the ignore logic for now, and then add a fully-implemented ignoreerrors impl separately; I guess I\u0027m not seeing any reason to add the panic impl now?",
+      "parentUuid": "122035d9_8268b957",
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "61e808b0_63e0ac7d",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 3
