@@ -238,19 +238,22 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	if err != nil {
 		return nil, err
 	}
-	// ResultDetails is only set via v1 API. For builds only manipulated with the
-	// v2 API, this column will be missing in the datastore in Python. Python
-	// interprets this field as JSON, and a missing value is loaded as None which
-	// Python loads as the empty JSON dict. However in Go, in order to preserve
-	// the value of this field without having to interpret it, the type is set
-	// to []byte. But if the build has no result details, Go will store the empty
-	// value for this type (i.e. an empty string), which is not a valid JSON dict.
-	// For the benefit of the Python service, default the value to null in the
-	// datastore which Python will handle correctly.
+
+	// Parameters and ResultDetails are only set via v1 API which is unsupported in
+	// Go. In order to preserve the value of these fields without having to interpret
+	// them, the type is set to []byte. But if no values for these fields are set,
+	// the []byte type causes an empty-type specific value (i.e. empty string) to be
+	// written to the datastore. Since Python interprets these fields as JSON, and
+	// and an empty string is not a valid JSON object, convert empty strings to nil.
+	// TODO(crbug/1042991): Remove Properties default once v1 API is removed.
+	if len(b.LegacyProperties.Parameters) == 0 {
+		p["parameters"] = datastore.MkProperty(nil)
+	}
 	// TODO(crbug/1042991): Remove ResultDetails default once v1 API is removed.
 	if len(b.LegacyProperties.ResultDetails) == 0 {
 		p["result_details"] = datastore.MkProperty(nil)
 	}
+
 	// Writing a value for PubSubCallback confuses the Python implementation which
 	// expects PubSubCallback to be a LocalStructuredProperty. See also unused.go.
 	delete(p, "pubsub_callback")
