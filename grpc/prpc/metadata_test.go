@@ -65,7 +65,7 @@ func TestBinaryHeader(t *testing.T) {
 				"X-Prpc-Zzz":   {"zzz"},
 			})
 			So(err, ShouldBeNil)
-			So(md, ShouldResemble, metadata.MD{})
+			So(md, ShouldResemble, metadata.MD(nil))
 		})
 	})
 

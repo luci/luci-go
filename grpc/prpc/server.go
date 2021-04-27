@@ -322,11 +322,12 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 		return
 	}
 
-	methodCtx, err := parseHeader(c.Context, c.Request.Header, c.Request.Host)
+	methodCtx, cancelFunc, err := parseHeader(c.Context, c.Request.Header, c.Request.Host)
 	if err != nil {
 		r.err = withStatus(err, http.StatusBadRequest)
 		return
 	}
+	defer cancelFunc()
 
 	if r.acceptsGZip, err = acceptsGZipResponse(c.Request.Header); err != nil {
 		r.err = withStatus(err, http.StatusBadRequest)
