@@ -36,6 +36,26 @@
     const VISIT_ID = Math.random().toString();
   </script>
   <script src="/ui/cached-auth-state.js"></script>
+
+  <!-- Stack Driver Error Reporter -->
+  <script defer src="https://cdn.jsdelivr.net/npm/stackdriver-errors-js@0.8.0/dist/stackdriver-errors-concat.min.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const errorHandler = new StackdriverErrorReporter();
+      if (['luci-milo.appspot.com', 'ci.chromium.org'].includes(window.location.hostname)) {
+        errorHandler.start({
+          key: 'AIzaSyDxVV8kLK8CozsA1iKiPx6OjukSKQKmVbY',
+          projectId: 'luci-milo'
+        });
+      } else {
+        errorHandler.start({
+          key: 'AIzaSyAyY1lwrHvFsIUrxyTuUDZZF1xTF6GbY08',
+          projectId: 'luci-milo-dev'
+        });
+      }
+    });
+  </script>
+  <!-- End Stack Driver Error Reporter -->
 </head>
 <body>
   <div id="app-root"></div>
