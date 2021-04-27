@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "15ad7491_04ff7636",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T23:47:35Z",
+      "side": 1,
+      "message": "do you plan to rename this field later?\nI think we should exit on failures by default, and usually in Go boolean variables that must be true by default have an inverted name, e.g. IgnoreFailures.\n\nor do you plan to remove it later because we never want to ignore failures?\n\nin any case, the answer should be in a TODO",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 15
+      },
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e899a760_9391b0ce",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 3
@@ -50,6 +73,92 @@
       "side": 1,
       "message": "Just to be clear, the intent of this change is to ignore the artifact requests that resultdb fails to access the file of, and to unblock the roll out process of BatchCreateArtifacts()+result_adapter.\n\nIt will be as bad as the current rdb for the issue described in crbug.com/1124868, and we won\u0027t have a good way of detecting such issues, as rdb will simply ignore such artifacts.\n\nHowever, I found that it\u0027s better to roll out the BatchCreateArtifacts()+result_adapter first, and solve crbug.com/1124868 separately w/ adding a new RPC and setting up a new pipeline. Actually, this TODO (better implementation of handling cfg.ExitOnFailures can be done at a very last stage after we set the pipeline working, but before we set it to True for certain builders)\n\nWe can set it to true only after we are confident that no test harnesses are reporting the issue.\n\nI\u0027m open to other opinions. LMK",
       "parentUuid": "933cebfe_c0b47dc6",
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc1c2e61_66f72339",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T23:47:35Z",
+      "side": 1,
+      "message": "Scott, if you don\u0027t expect this to actually happen and plan to remove this code pretty soon, then it is fine to me, but otherwise, this will cause the rdb process to die, while the test process stays alive, and outlives the swarming task process (which will cause further problems)\n\nI assume this TODO will be done before the above TODO.",
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "61e808b0_63e0ac7d",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T23:47:35Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 184,
+        "startChar": 6,
+        "endLine": 184,
+        "endChar": 12
+      },
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "537b5a5f_4d65a625",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T23:47:35Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 226,
+        "startChar": 5,
+        "endLine": 226,
+        "endChar": 11
+      },
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a19bfd7_3fd08477",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-27T23:47:35Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 230,
+        "startChar": 4,
+        "endLine": 230,
+        "endChar": 10
+      },
       "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
