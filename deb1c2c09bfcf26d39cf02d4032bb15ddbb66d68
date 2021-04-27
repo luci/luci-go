@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9ac1d2e_009c19da",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:57:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48db232a_690890a4",
+      "range": {
+        "startLine": 103,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 2
+      },
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f5921d64_22298797",
@@ -93,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b623a1f_2dde90e6",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:57:03Z",
+      "side": 1,
+      "message": "Yeah, it was confusing. Rewrote it.",
+      "parentUuid": "c87f8af9_62c073e4",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2329e4c7_865f3a8d",
@@ -118,6 +160,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "9557efb7_58999fae",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:57:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2329e4c7_865f3a8d",
+      "range": {
+        "startLine": 135,
+        "startChar": 21,
+        "endLine": 135,
+        "endChar": 24
+      },
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a848a76b_9039e228",
         "filename": "grpc/prpc/metadata.go",
         "patchSetId": 2
@@ -129,6 +195,24 @@
       "writtenOn": "2021-04-27T05:18:18Z",
       "side": 1,
       "message": "if you want to be extra fancy you can name the return parameters...",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "42f31a03_6cb527f7",
+        "filename": "grpc/prpc/metadata.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:57:03Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "a848a76b_9039e228",
       "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -164,6 +248,24 @@
       "side": 1,
       "message": "+1. \nHow about guaranteeing\n \n  (err \u003d\u003d nil) \u003d\u003e (cancel !\u003d nil)",
       "parentUuid": "cce1cce7_56868ade",
+      "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97b0365f_dba2a3f3",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T20:57:03Z",
+      "side": 1,
+      "message": "My reasoning was:\n1. It is low-level RPC code which is on a hot path.\n2. It is cheaper to test for `nil` than to make a dynamic function call just to discover it does nothing. \n3. It adds only 2 extra lines of code.\n\nBut whatever, it\u0027s not like we care about efficiency.",
+      "parentUuid": "0a5106ed_137f8604",
       "revId": "deb1c2c09bfcf26d39cf02d4032bb15ddbb66d68",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
