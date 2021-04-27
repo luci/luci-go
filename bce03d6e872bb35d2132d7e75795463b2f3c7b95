@@ -43,6 +43,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e1ab6429_36ef9c31",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-27T05:14:18Z",
+      "side": 1,
+      "message": "Plus it doesn\u0027t seem obvious to me that we should leak our own callers to our callee for any reason?",
+      "parentUuid": "a5d08de5_b078fad6",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 134,
+        "endChar": 8
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a3cd76d0_58544d0f",
         "filename": "grpc/prpc/e2etest/endtoend_test.go",
         "patchSetId": 1
@@ -77,6 +101,30 @@
       "writtenOn": "2021-04-27T02:39:58Z",
       "side": 1,
       "message": "Turns out http.Server by default generates Date header and it ends up in the metadata as \"date\". I think we either need to make it a part of the pRPC protocol or stop doing that. I decided to stop doing that. Wdyt?",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 243,
+        "endChar": 26
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bb3227c3_ac85ceec",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-27T05:14:18Z",
+      "side": 1,
+      "message": "sgtm; I can\u0027t imagine anything depending on that.... but even if something did, somehow, we could always add it in to the protocol explicitly...",
+      "parentUuid": "f1084d46_2ac09c54",
       "range": {
         "startLine": 243,
         "startChar": 1,
