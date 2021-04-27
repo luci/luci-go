@@ -78,7 +78,6 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
 		relativeCwd := "farm"
-		expectedDir := filepath.Join(c.work, relativeCwd)
 
 		ctx := context.Background()
 
@@ -171,7 +170,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		cmd, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix",
-			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.work, "farm", "chicken-output.json")))
+			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.work, "chicken-output.json")))
 		expected.Dir = filepath.Join(c.work, relativeCwd)
 
 		expectedEnvMap.Remove("removeKey")
@@ -179,11 +178,11 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		expectedEnvMap.Set("replaceKey", "value2")
 
 		paths := []string{
-			filepath.Join(expectedDir, ".task_template_packages"),
-			filepath.Join(expectedDir, ".task_template_packages/zoo"),
+			filepath.Join(c.work, ".task_template_packages"),
+			filepath.Join(c.work, ".task_template_packages/zoo"),
 			"existingPathValue"}
 		expectedEnvMap.Set("PATH", strings.Join(paths, string(os.PathListSeparator)))
-		chickens := []string{filepath.Join(expectedDir, "egg"), filepath.Join(expectedDir, "rooster")}
+		chickens := []string{filepath.Join(c.work, "egg"), filepath.Join(c.work, "rooster")}
 		expectedEnvMap.Set("CHICKENS", strings.Join(chickens, string(os.PathListSeparator)))
 
 		expected.Env = expectedEnvMap.Sorted()
