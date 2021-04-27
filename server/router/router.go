@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package router provides an HTTP router with support for middleware and
-// subrouters. It wraps around julienschmidt/httprouter.
+// Package router provides an HTTP router.
+//
+// It wraps around julienschmidt/httprouter adding support for middlewares and
+// subrouters.
 package router
 
 import (
