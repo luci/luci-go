@@ -255,6 +255,8 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	if ci.GetOwner().GetEmail() == "" {
 		pcl.OwnerLacksEmail = true
 	}
+	// TODO(tandrii): switch to error-ish field in PCL and error out if mode isn't
+	// in currently known to CV modes.
 	return pcl
 }
 
