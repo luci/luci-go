@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8daa66ac_798e4ebd",
+        "filename": "milo/frontend/resultui/src/components/property_viewer.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-27T00:28:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59ac9c4f_d00ef12e",
+      "revId": "eb9ff982ef7c399b81d8368831873f91a5a5cde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3504f689_59afadbb",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-04-26T19:48:43Z",
       "side": 1,
       "message": "seems like this pattern is repeated.\n\nWDYT about a mixin where this is taken care of, and you only need to implement `protected lazyRender()` or something like this?",
+      "revId": "eb9ff982ef7c399b81d8368831873f91a5a5cde3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d89a992_2ec2ce00",
+        "filename": "milo/frontend/resultui/src/components/property_viewer.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-27T00:28:22Z",
+      "side": 1,
+      "message": "I\u0027ll investigate this approach in a later CL.",
+      "parentUuid": "3504f689_59afadbb",
       "revId": "eb9ff982ef7c399b81d8368831873f91a5a5cde3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
