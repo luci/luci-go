@@ -137,7 +137,7 @@ func TestDecoding(t *testing.T) {
 		c := context.Background()
 
 		Convey("host", func() {
-			c, err := parseHeader(c, http.Header{}, "example.com")
+			c, _, err := parseHeader(c, http.Header{}, "example.com")
 			So(err, ShouldBeNil)
 			md, ok := metadata.FromIncomingContext(c)
 			So(ok, ShouldBeTrue)
@@ -148,7 +148,8 @@ func TestDecoding(t *testing.T) {
 			return http.Header{name: []string{value}}
 		}
 		parse := func(c context.Context, name, value string) (context.Context, error) {
-			return parseHeader(c, header(name, value), "")
+			ctx, _, err := parseHeader(c, header(name, value), "")
+			return ctx, err
 		}
 
 		Convey(HeaderTimeout, func() {
@@ -168,7 +169,7 @@ func TestDecoding(t *testing.T) {
 			Convey("Fails", func() {
 				c, err := parse(c, HeaderTimeout, "blah")
 				So(c, ShouldEqual, c)
-				So(err, ShouldErrLike, HeaderTimeout+` header: unit is not recognized: "blah"`)
+				So(err, ShouldErrLike, `"`+HeaderTimeout+`" header: unit is not recognized: "blah"`)
 			})
 		})
 
@@ -188,7 +189,7 @@ func TestDecoding(t *testing.T) {
 
 		Convey("Unrecognized headers", func() {
 			test := func(c context.Context, header http.Header, expectedMetadata metadata.MD) {
-				c, err := parseHeader(c, header, "")
+				c, _, err := parseHeader(c, header, "")
 				So(err, ShouldBeNil)
 				md, ok := metadata.FromIncomingContext(c)
 				So(ok, ShouldBeTrue)
