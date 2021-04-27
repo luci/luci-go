@@ -23,7 +23,7 @@ import '../../expandable_entry';
 import '../../copy_to_clipboard';
 import './result_entry';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
-import { enterViewObserver, OnEnterView } from '../../../libs/enter_view_observer';
+import { lazyRendering, RenderPlaceHolder } from '../../../libs/enter_view_observer';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { TestVariant } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
@@ -37,8 +37,8 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
  * Renders an expandable entry of the given test variant.
  */
 @customElement('milo-test-variant-entry')
-@enterViewObserver()
-export class TestVariantEntryElement extends MobxLitElement implements OnEnterView {
+@lazyRendering()
+export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
   @observable.ref expandedCallback = () => {};
@@ -59,13 +59,8 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterVi
     }
   }
 
-  @observable.ref private prerender = true;
-
-  onEnterView() {
-    this.prerender = false;
-  }
-
   @observable.ref private shouldRenderContent = false;
+  private rendered = false;
 
   @computed
   private get shortName() {
@@ -196,11 +191,12 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterVi
     `;
   }
 
-  protected render() {
-    if (this.prerender) {
-      return html`<div id="place-holder"></div>`;
-    }
+  renderPlaceHolder() {
+    return html`<div id="place-holder"></div>`;
+  }
 
+  protected render() {
+    this.rendered = true;
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <div id="header" slot="header">
@@ -223,7 +219,7 @@ export class TestVariantEntryElement extends MobxLitElement implements OnEnterVi
   }
 
   protected updated() {
-    if (!this.prerender) {
+    if (!this.rendered) {
       this.renderedCallback();
     }
   }
