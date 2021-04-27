@@ -90,15 +90,16 @@ func headerIntoMeta(key string, values []string, md metadata.MD) error {
 
 // headersIntoMetadata returns a new metadata.MD constructed from given headers.
 //
-// All reserved headers are silently skipped.
+// All reserved headers are silently skipped. If there's nothing left, returns
+// nil.
 func headersIntoMetadata(h http.Header) (metadata.MD, error) {
-	if len(h) == 0 {
-		return nil, nil
-	}
-	md := make(metadata.MD, len(h))
+	var md metadata.MD
 	for k, v := range h {
 		if isReservedMetadataKey(http.CanonicalHeaderKey(k)) {
 			continue
+		}
+		if md == nil {
+			md = make(metadata.MD, len(h))
 		}
 		if err := headerIntoMeta(k, v, md); err != nil {
 			return nil, errors.Annotate(err, "can't decode header %q", k).Err()
