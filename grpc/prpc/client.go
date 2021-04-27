@@ -74,7 +74,7 @@ const (
 
 var (
 	// DefaultUserAgent is default User-Agent HTTP header for pRPC requests.
-	DefaultUserAgent = "pRPC Client 1.0"
+	DefaultUserAgent = "pRPC Client 1.4"
 
 	// ErrResponseTooBig is returned by Call when the Response's body size exceeds
 	// the Client's MaxContentLength limit.
@@ -447,13 +447,21 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 	}
 
 	if options.resHeaderMetadata != nil {
-		*options.resHeaderMetadata = metadataFromHeaders(res.Header)
+		md, err := headersIntoMetadata(res.Header)
+		if err != nil {
+			return "", status.Errorf(codes.Internal, "prpc: headers: %s", err)
+		}
+		*options.resHeaderMetadata = md
 	}
 	if err := c.readResponseBody(ctx, buf, res); err != nil {
 		return "", err
 	}
 	if options.resTrailerMetadata != nil {
-		*options.resTrailerMetadata = metadataFromHeaders(res.Trailer)
+		md, err := headersIntoMetadata(res.Trailer)
+		if err != nil {
+			return "", status.Errorf(codes.Internal, "prpc: trailers: %s", err)
+		}
+		*options.resTrailerMetadata = md
 	}
 
 	// Read the RPC status (perhaps with details). This is nil on success.
@@ -608,22 +616,16 @@ func (c *Client) readStatusDetails(r *http.Response) ([]*anypb.Any, error) {
 // Initializes GetBody, so that the request can be resent multiple times when
 // retrying.
 func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage []byte) (*http.Request, error) {
-	// Convert headers to HTTP canonical form (i.e. Title-Case). Extract Host
-	// header, it is special and must be passed via http.Request.Host. Preallocate
-	// 5 more slots (for 4 headers below and for the RPC deadline header).
+	// Convert metadata into HTTP headers in canonical form (i.e. Title-Case).
+	// Extract Host header, it is special and must be passed via
+	// http.Request.Host. Preallocate 5 more slots (for 4 headers below and for
+	// the RPC deadline header).
 	headers := make(http.Header, len(md)+5)
-	hostHdr := ""
-	for key, vals := range md {
-		if len(vals) == 0 {
-			continue
-		}
-		key := http.CanonicalHeaderKey(key)
-		if key == "Host" {
-			hostHdr = vals[0]
-		} else {
-			headers[key] = vals
-		}
+	if err := metaIntoHeaders(md, headers); err != nil {
+		return nil, status.Errorf(codes.Internal, "prpc: headers: %s", err)
 	}
+	hostHdr := headers.Get("Host")
+	headers.Del("Host")
 
 	// Add protocol-related headers.
 	headers.Set("Content-Type", options.inFormat.MediaType())
@@ -667,23 +669,6 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 			return ioutil.NopCloser(bytes.NewReader(body)), nil
 		},
 	}, nil
-}
-
-// metadataFromHeaders copies an http.Header object into a metadata.MD map.
-//
-// In order to conform with gRPC, which relies on HTTP/2's forced lower-case
-// headers, we convert the headers to lower-case before entering them in the
-// metadata map.
-func metadataFromHeaders(h http.Header) metadata.MD {
-	if len(h) == 0 {
-		return nil
-	}
-
-	md := make(metadata.MD, len(h))
-	for k, v := range h {
-		md[strings.ToLower(k)] = v
-	}
-	return md
 }
 
 // transientHTTPError transforms and annotates errors from http.Client.

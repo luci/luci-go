@@ -82,13 +82,13 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 }
 
 // parseHeader parses HTTP headers and derives a new context.
-// Supports HeaderTimeout.
-// Ignores "Accept" and "Content-Type" headers.
-// If host is not empty, adds "host" metadata.
 //
-// If there are unrecognized HTTP headers, with or without headerSuffixBinary,
-// they are added to a metadata.MD and a new context is derived.
-// If ctx already has metadata, the latter is copied.
+// Recognizes "X-Prpc-Grpc-Timeout" header. Other recognized reserved headers
+// are skipped. If there are unrecognized HTTP headers they are added to
+// a metadata.MD and a new context is derived. If ctx already has metadata,
+// the latter is copied.
+//
+// If host is not empty, sets "host" metadata.
 //
 // In case of an error, returns ctx unmodified.
 func parseHeader(ctx context.Context, header http.Header, host string) (context.Context, error) {
@@ -107,9 +107,9 @@ func parseHeader(ctx context.Context, header http.Header, host string) (context.
 			continue
 		}
 		name = http.CanonicalHeaderKey(name)
-		switch name {
+		switch {
 
-		case HeaderTimeout:
+		case name == HeaderTimeout:
 			// Decode only first value, ignore the rest
 			// to be consistent with http.Header.Get.
 			timeout, err := DecodeTimeout(values[0])
@@ -119,23 +119,19 @@ func parseHeader(ctx context.Context, header http.Header, host string) (context.
 			// TODO(crbug/1006920): Do not leak the cancel context.
 			ctx, _ = clock.WithTimeout(ctx, timeout)
 
-		case headerAccept, headerContentType:
-		// readMessage and writeMessage handle these headers.
+		case isReservedMetadataKey(name):
+		// do not leak details of pRPC protocol to gRPC server implementations
 
 		default:
 			addedMeta = true
-			for _, v := range values {
-				mdKey, mdValue, err := headerToMeta(name, v)
-				if err != nil {
-					return origC, fmt.Errorf("%s header: %s", name, err)
-				}
-				md.Append(mdKey, mdValue)
+			if err := headerIntoMeta(name, values, md); err != nil {
+				return origC, fmt.Errorf("can't decode header %q: %s", name, err)
 			}
 		}
 	}
 
 	if host != "" {
-		md.Append("host", host)
+		md.Set("host", host)
 		addedMeta = true
 	}
 

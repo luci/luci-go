@@ -230,7 +230,7 @@ func TestDecoding(t *testing.T) {
 				Convey("Fails", func() {
 					c, err := parse(c, "Name-Bin", "zzz")
 					So(c, ShouldEqual, c)
-					So(err, ShouldErrLike, "Name-Bin header: illegal base64 data at input byte 0")
+					So(err, ShouldErrLike, `header "Name-Bin": illegal base64 data at input byte 0`)
 				})
 			})
 		})
