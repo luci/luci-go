@@ -16,26 +16,51 @@ package e2etest
 
 import (
 	"context"
+	"strings"
+	"sync"
 	"testing"
 
-	proto "github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/grpc/prpc"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type service struct {
-	R   *HelloReply
-	err error
+	R          *HelloReply
+	err        error
+	outgoingMD metadata.MD
+
+	m          sync.Mutex
+	incomingMD metadata.MD
 }
 
 func (s *service) Greet(c context.Context, req *HelloRequest) (*HelloReply, error) {
+	md, _ := metadata.FromIncomingContext(c)
+	s.m.Lock()
+	s.incomingMD = md.Copy()
+	s.m.Unlock()
+
+	if s.outgoingMD != nil {
+		if err := prpc.SetHeader(c, s.outgoingMD); err != nil {
+			return nil, status.Errorf(codes.Internal, err.Error())
+		}
+	}
+
 	return s.R, s.err
+}
+
+func (s *service) getIncomingMD() metadata.MD {
+	s.m.Lock()
+	defer s.m.Unlock()
+	return s.incomingMD
 }
 
 func TestEndToEnd(t *testing.T) {
@@ -74,6 +99,34 @@ func TestEndToEnd(t *testing.T) {
 			_, err = client.Greet(c, &HelloRequest{Name: "round-trip"})
 			details := status.Convert(err).Details()
 			So(details, ShouldResembleProto, []proto.Message{detail})
+		})
+
+		Convey(`Can handle non-trivial metadata`, func() {
+			md := metadata.New(nil)
+			md.Append("MultiVAL-KEY", "val 1", "val 2")
+			md.Append("binary-BIN", string([]byte{0, 1, 2, 3}))
+
+			svc.R = &HelloReply{Message: "sup"}
+			svc.outgoingMD = md
+
+			var respMD metadata.MD
+
+			c = metadata.NewOutgoingContext(c, md)
+			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"}, prpc.Header(&respMD))
+			So(err, ShouldBeRPCOK)
+			So(resp, ShouldResembleProto, svc.R)
+
+			So(svc.getIncomingMD(), ShouldResemble, metadata.MD{
+				"binary-bin":   {string([]byte{0, 1, 2, 3})},
+				"host":         {strings.TrimPrefix(ts.HTTP.URL, "http://")},
+				"multival-key": {"val 1", "val 2"},
+				"user-agent":   {prpc.DefaultUserAgent},
+			})
+
+			So(respMD, ShouldResemble, metadata.MD{
+				"binary-bin":   {string([]byte{0, 1, 2, 3})},
+				"multival-key": {"val 1", "val 2"},
+			})
 		})
 	})
 }

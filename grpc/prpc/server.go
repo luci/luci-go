@@ -29,7 +29,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
@@ -241,6 +240,7 @@ func (s *Server) handlePOST(c *router.Context) {
 
 	s.setAccessControlHeaders(c, false)
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+	c.Writer.Header()["Date"] = nil // omit, not part of the protocol
 
 	res := response{}
 	switch {
@@ -285,17 +285,11 @@ type requestContext struct {
 // such that calling prpc.SetHeader works for both pRPC and gRPC.
 func SetHeader(ctx context.Context, md metadata.MD) error {
 	if rctx, ok := ctx.Value(&requestContextKey).(*requestContext); ok {
-		for k, vs := range md {
-			if strings.HasPrefix(k, "X-Prpc-") || k == headerContentType {
-				return errors.Reason("reserved header key %q", k).Err()
-			}
-			for _, v := range vs {
-				rctx.header.Add(metaToHeader(k, v))
-			}
+		if err := metaIntoHeaders(md, rctx.header); err != nil {
+			return err
 		}
 		return nil
 	}
-
 	return grpc.SetHeader(ctx, md)
 }
 
