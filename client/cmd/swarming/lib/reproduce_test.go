@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,11 +28,13 @@ import (
 
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/system/environ"
 	. "go.chromium.org/luci/common/testing/assertions"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func init() {
@@ -74,6 +77,13 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 			cipdSlicesByPath = slicesByPath
 			return nil
 		}
+		expectedRealm := "chromium:chicken"
+		var actualRealm string
+		c.createInvocation = func(_ context.Context, _ *http.Client, realm string, med metadata.MD) (*resultpb.Invocation, error) {
+			med["update-token"] = []string{"token"}
+			actualRealm = realm
+			return &resultpb.Invocation{Name: "TestName"}, nil
+		}
 		// Use TempDir, which creates a temp directory, to return a unique directory name
 		// that prepareTaskRequestEnvironment() will remove and recreate (via prepareDir()).
 		c.work = t.TempDir()
@@ -99,6 +109,8 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		service := &testService{
 			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
 				return &swarming.SwarmingRpcsTaskRequest{
+					Resultdb: &swarming.SwarmingRpcsResultDBCfg{Enable: true},
+					Realm:    expectedRealm,
 					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
 						&swarming.SwarmingRpcsTaskSlice{
 							Properties: &swarming.SwarmingRpcsTaskProperties{
@@ -169,8 +181,12 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 				return []string{}, nil
 			},
 		}
-		cmd, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
+
+		cmd, exported, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
 		So(err, ShouldBeNil)
+		So(exported, ShouldNotBeNil)
+		So(actualRealm, ShouldEqual, expectedRealm)
+
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix",
 			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.out, "chicken-output.json")))
 		expected.Dir = filepath.Join(c.work, relativeCwd)
@@ -250,8 +266,9 @@ func TestPrepareTaskRequestEnvironment_Isolate(t *testing.T) {
 				return []string{}, nil
 			},
 		}
-		cmd, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
+		cmd, exported, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
 		So(err, ShouldBeNil)
+		So(exported, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix", "chicken://chicken_chicken/")
 		expected.Dir = c.work
 
@@ -290,10 +307,35 @@ func TestPrepareTaskRequestEnvironment_IsolateAndCAS(t *testing.T) {
 				}, nil
 			},
 		}
-		_, err := c.prepareTaskRequestEnvironment(context.Background(), "task-123", service)
+		_, _, err := c.prepareTaskRequestEnvironment(context.Background(), "task-123", service)
 		So(err, ShouldBeError, "fetched TaskRequest has files from Isolate and RBE-CAS")
 	})
+}
 
+func TestPrepareTaskRequestEnvironment_NoInvocationUpdateToken(t *testing.T) {
+	t.Parallel()
+	Convey(``, t, func() {
+		c := reproduceRun{}
+		c.init(&testAuthFlags{})
+		c.createInvocation = func(_ context.Context, _ *http.Client, _ string, med metadata.MD) (*resultpb.Invocation, error) {
+			return &resultpb.Invocation{}, nil
+		}
+		service := &testService{
+			getTaskRequest: func(_ context.Context, _ string) (*swarming.SwarmingRpcsTaskRequest, error) {
+				return &swarming.SwarmingRpcsTaskRequest{
+					Resultdb: &swarming.SwarmingRpcsResultDBCfg{Enable: true},
+					Realm:    "does:not:matter",
+					TaskSlices: []*swarming.SwarmingRpcsTaskSlice{
+						&swarming.SwarmingRpcsTaskSlice{
+							Properties: &swarming.SwarmingRpcsTaskProperties{},
+						},
+					},
+				}, nil
+			},
+		}
+		_, _, err := c.prepareTaskRequestEnvironment(context.Background(), "task-123", service)
+		So(err, ShouldBeError, "Missing header: update-token")
+	})
 }
 
 func TestReproduceTaskRequestCommand(t *testing.T) {
