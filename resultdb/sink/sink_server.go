@@ -168,9 +168,23 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			updateArtifactContentType(a)
 			n := pbutil.TestResultArtifactName(s.cfg.invocationID, tr.TestId, tr.ResultId, id)
 			t, err := newUploadTask(n, a)
+
+			// newUploadTask can return an error if os.Stat() fails.
+			// Ideally, this error should be considered as an input error, and Sink should
+			// return a 4xx error instead of exiting.
+			//
+			// TODO(crbug.com/1124868) - once all test harnesses are fixed, remove this check
+			// and return 4xx on newUploadTask failures.
 			if err != nil {
-				// newUploadTask can return an error if os.Stat() fails.
-				return nil, status.Errorf(codes.FailedPrecondition, "artifact %q: %s", id, err)
+				err = status.Errorf(codes.FailedPrecondition, "artifact %q: %s", id, err)
+				if s.cfg.ExitOnFailures {
+					// TODO(crbug.com/1124868): escalate the error to Server and trigger
+					// server.Shutdown instead of panic.
+					panic(fmt.Sprintf("Terminating; failed to create a new UploadTask: %s", err))
+				} else {
+					logging.Warningf(ctx, "Dropping an artifact request; failed to create a new Uploadtask: %s", err)
+					continue
+				}
 			}
 			uts = append(uts, t)
 		}
@@ -195,22 +209,33 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
 	uts := make([]*uploadTask, 0, len(in.Artifacts))
 	for id, a := range in.Artifacts {
-		s.mu.Lock()
-		if added := s.invocationArtifactIDs.Add(id); !added {
-			s.mu.Unlock()
-			return nil, status.Errorf(codes.AlreadyExists, "artifact %q has already been uploaded", id)
-		}
-		s.mu.Unlock()
 		updateArtifactContentType(a)
 		if err := validateArtifact(a); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
 		}
 		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a)
+		// TODO(crbug.com/1124868): once all test harnesses are fixed, remove this check and
+		// return 4xx on newUploadTask failures. Find the comments on the equivalent block
+		// on ReportTestResults.
 		if err != nil {
-			// newUploadTask can return an error if os.Stat() fails.
-			return nil, status.Errorf(codes.FailedPrecondition, "artifact %q: %s", id, err)
+			err = status.Errorf(codes.FailedPrecondition, "artifact %q: %s", id, err)
+			if s.cfg.ExitOnFailures {
+				// TODO(crbug.com/1124868): escalate the error to Server and trigger
+				// server.Shutdown instead of panic.
+				panic(fmt.Sprintf("Terminating; failed to create a new UploadTask: %s", err))
+			} else {
+				logging.Warningf(ctx, "Dropping an artifact request; failed to create a new Uploadtask: %s", err)
+				continue
+			}
+		} else {
+			s.mu.Lock()
+			if added := s.invocationArtifactIDs.Add(id); !added {
+				s.mu.Unlock()
+				return nil, status.Errorf(codes.AlreadyExists, "artifact %q has already been uploaded", id)
+			}
+			s.mu.Unlock()
+			uts = append(uts, t)
 		}
-		uts = append(uts, t)
 	}
 	s.ac.schedule(uts...)
 
