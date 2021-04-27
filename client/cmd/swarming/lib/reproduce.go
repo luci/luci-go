@@ -50,6 +50,7 @@ func CmdReproduce(authFlags AuthFlags) *subcommands.Command {
 type reproduceRun struct {
 	commonFlags
 	work string
+	out  string
 	// cipdDownloader is used in testing to insert a mock CIPD downloader.
 	cipdDownloader func(context.Context, string, map[string]ensure.PackageSlice) error
 }
@@ -58,8 +59,9 @@ func (c *reproduceRun) init(authFlags AuthFlags) {
 	c.commonFlags.Init(authFlags)
 
 	c.Flags.StringVar(&c.work, "work", "work", "Directory to map the task input files into and execute the task.")
+	c.Flags.StringVar(&c.out, "out", "out", "Directory that will hold the task results.")
 	c.cipdDownloader = downloadCIPDPackages
-	// TODO(crbug.com/1188473): support cache and output directories.
+	// TODO(crbug.com/1188473): support cache directory.
 }
 
 func (c *reproduceRun) parse(args []string) error {
@@ -70,9 +72,11 @@ func (c *reproduceRun) parse(args []string) error {
 		return errors.Reason("must specify exactly one task id.").Err()
 	}
 	var err error
-	c.work, err = filepath.Abs(c.work)
-	if err != nil {
+	if c.work, err = filepath.Abs(c.work); err != nil {
 		return errors.Annotate(err, "failed to get absolute representation of work directory").Err()
+	}
+	if c.out, err = filepath.Abs(c.out); err != nil {
+		return errors.Annotate(err, "failed to get absolute representation of out directory").Err()
 	}
 	return nil
 }
@@ -131,6 +135,9 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 		execDir = filepath.Join(execDir, properties.RelativeCwd)
 	}
 	if err := prepareDir(execDir); err != nil {
+		return nil, err
+	}
+	if err := prepareDir(c.out); err != nil {
 		return nil, err
 	}
 
@@ -203,8 +210,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 	}
 
 	// Create a Comand that can run the task request.
-	// TODO(crbug.com/1188473): Use a separate c.out directory instead of c.work.
-	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, c.work, "")
+	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, c.out, "")
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to process command in properties").Err()
 	}

@@ -79,6 +79,8 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		c.work = t.TempDir()
 		relativeCwd := "farm"
 
+		c.out = t.TempDir()
+
 		ctx := context.Background()
 
 		ctxBaseEnvMap := environ.System()
@@ -170,7 +172,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		cmd, err := c.prepareTaskRequestEnvironment(ctx, "task-123", service)
 		So(err, ShouldBeNil)
 		expected := exec.CommandContext(ctx, "rbd", "stream", "-test-id-prefix",
-			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.work, "chicken-output.json")))
+			fmt.Sprintf("--isolated-output=%s", filepath.Join(c.out, "chicken-output.json")))
 		expected.Dir = filepath.Join(c.work, relativeCwd)
 
 		expectedEnvMap.Remove("removeKey")
