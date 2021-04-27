@@ -139,6 +139,10 @@ type ServerConfig struct {
 	// greater artifacts will be uploaded in a stream manner.
 	// Must be < 10MiB, and NewServer panics, otherwise.
 	MaxBatchableArtifactSize int64
+
+	// ExitOnFailures tells whether SinkServer should exit if it fails to process valid requests or
+	// upload reported artifacts/test-results to ResultDB.
+	ExitOnFailures bool
 }
 
 // Validate validates all the config fields.
