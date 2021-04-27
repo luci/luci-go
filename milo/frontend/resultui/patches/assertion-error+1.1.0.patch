@@ -1,0 +1,14 @@
+diff --git a/node_modules/assertion-error/index.js b/node_modules/assertion-error/index.js
+index 8466da8..acf2826 100644
+--- a/node_modules/assertion-error/index.js
++++ b/node_modules/assertion-error/index.js
+@@ -88,7 +88,8 @@ AssertionError.prototype = Object.create(Error.prototype);
+  * Statically set name
+  */
+ 
+-AssertionError.prototype.name = 'AssertionError';
++// Don't set the name or the stack trace won't render in the browser console.
++// AssertionError.prototype.name = 'AssertionError';
+ 
+ /*!
+  * Ensure correct constructor

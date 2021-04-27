@@ -14,7 +14,6 @@
 
 import fs from 'fs';
 import { Config } from 'karma';
-import path from 'path';
 import { DefinePlugin, ProvidePlugin } from 'webpack';
 
 import webpackConfig from './webpack.common';
@@ -56,12 +55,7 @@ module.exports = (config: Config) => {
       devtool: 'inline-source-map',
       mode: 'development',
       module: webpackConfig.module,
-      resolve: {
-        ...webpackConfig.resolve,
-        alias: {
-          'assertion-error': path.resolve(__dirname, './src/libs/test_utils/assertion_error'),
-        },
-      },
+      resolve: webpackConfig.resolve,
       externals: webpackConfig.externals,
       output: {
         // Use relative file path for cleaner stack trace with navigable source
