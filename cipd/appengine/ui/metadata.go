@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/appengine/impl"
 )
 
 // prefixMetadataBlock is passed to the templates as Metadata arg.
@@ -59,7 +58,7 @@ type metadataACL struct {
 // It recognizes PermissionDenied errors and falls back to only displaying what
 // roles the caller has instead of the full metadata.
 func fetchPrefixMetadata(c context.Context, pfx string) (*prefixMetadataBlock, error) {
-	meta, err := impl.PublicRepo.GetInheritedPrefixMetadata(c, &api.PrefixRequest{
+	meta, err := state(c).services.PublicRepo.GetInheritedPrefixMetadata(c, &api.PrefixRequest{
 		Prefix: pfx,
 	})
 	switch grpc.Code(err) {
@@ -128,7 +127,7 @@ func fetchPrefixMetadata(c context.Context, pfx string) (*prefixMetadataBlock, e
 }
 
 func fetchCallerRoles(c context.Context, pfx string) (*prefixMetadataBlock, error) {
-	roles, err := impl.PublicRepo.GetRolesInPrefix(c, &api.PrefixRequest{
+	roles, err := state(c).services.PublicRepo.GetRolesInPrefix(c, &api.PrefixRequest{
 		Prefix: pfx,
 	})
 	if err != nil {

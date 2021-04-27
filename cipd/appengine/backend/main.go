@@ -33,7 +33,7 @@ import (
 )
 
 func main() {
-	impl.Main(nil, func(srv *server.Server) error {
+	impl.Main(nil, func(srv *server.Server, svc *impl.Services) error {
 		// Needed when using manual scaling.
 		srv.Routes.GET("/_ah/start", router.MiddlewareChain{}, func(ctx *router.Context) {
 			ctx.Writer.Write([]byte("OK"))
@@ -65,7 +65,7 @@ func main() {
 				logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", pusherID, got)
 				ctx.Writer.WriteHeader(403)
 			} else {
-				err := impl.EventLogger.HandlePubSubPush(ctx.Context, ctx.Request.Body)
+				err := svc.EventLogger.HandlePubSubPush(ctx.Context, ctx.Request.Body)
 				if err != nil {
 					logging.Errorf(ctx.Context, "Failed to process the message: %s", err)
 					ctx.Writer.WriteHeader(500)

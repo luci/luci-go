@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -33,11 +34,27 @@ import (
 	"go.chromium.org/luci/server/templates"
 )
 
+var requestStateKey = "cipd/ui requestState"
+
+// requestState is stored in the context of UI requests.
+type requestState struct {
+	startTime time.Time      // when the request handler started
+	services  *impl.Services // the backend implementation to use
+}
+
+// state returns the current requestState.
+func state(ctx context.Context) *requestState {
+	return ctx.Value(&requestStateKey).(*requestState)
+}
+
 // InstallHandlers adds HTTP handlers that render HTML pages.
-func InstallHandlers(srv *server.Server, templatesPath string) {
+func InstallHandlers(srv *server.Server, svc *impl.Services, templatesPath string) {
 	m := router.NewMiddlewareChain(
 		func(c *router.Context, next router.Handler) {
-			c.Context = context.WithValue(c.Context, startTimeContextKey(0), clock.Now(c.Context))
+			c.Context = context.WithValue(c.Context, &requestStateKey, &requestState{
+				startTime: clock.Now(c.Context),
+				services:  svc,
+			})
 			next(c)
 		},
 		templates.WithTemplates(prepareTemplates(&srv.Options, templatesPath)),
@@ -81,17 +98,6 @@ func routeToPage(c *router.Context) error {
 	}
 }
 
-type startTimeContextKey int
-
-// startTime returns timestamp when we started handling the request.
-func startTime(ctx context.Context) time.Time {
-	ts, ok := ctx.Value(startTimeContextKey(0)).(time.Time)
-	if !ok {
-		panic("impossible, startTimeContextKey is not set")
-	}
-	return ts
-}
-
 // prepareTemplates configures templates.Bundle used by all UI handlers.
 //
 // In particular it includes a set of default arguments passed to all templates.
@@ -125,7 +131,7 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				"LogoutURL":   logoutURL,
 				"XsrfToken":   token,
 				"HandlerDuration": func() time.Duration {
-					return clock.Now(ctx).Sub(startTime(ctx))
+					return clock.Now(ctx).Sub(state(ctx).startTime)
 				},
 			}, nil
 		},

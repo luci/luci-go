@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -35,13 +34,15 @@ func prefixListingPage(c *router.Context, pfx string) error {
 		return status.Errorf(codes.InvalidArgument, "bad prefix - %s", err)
 	}
 
+	svc := state(c.Context).services
+
 	var listing *api.ListPrefixResponse
 	var meta *prefixMetadataBlock
 
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error {
 			var err error
-			listing, err = impl.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
+			listing, err = svc.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
 				Prefix: pfx,
 			})
 			return err

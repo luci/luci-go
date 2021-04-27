@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -42,6 +41,8 @@ func packagePage(c *router.Context, pkg string) error {
 		pfx = pkg[:i]
 	}
 
+	svc := state(c.Context).services
+
 	// Cursor used for paginating instance listing.
 	cursor := c.Request.URL.Query().Get("c")
 	prevPageURL := ""
@@ -55,7 +56,7 @@ func packagePage(c *router.Context, pkg string) error {
 	err := parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error {
 			var err error
-			instances, err = impl.PublicRepo.ListInstances(c.Context, &api.ListInstancesRequest{
+			instances, err = svc.PublicRepo.ListInstances(c.Context, &api.ListInstancesRequest{
 				Package:   pkg,
 				PageSize:  12,
 				PageToken: cursor,
@@ -74,7 +75,7 @@ func packagePage(c *router.Context, pkg string) error {
 		}
 		tasks <- func() error {
 			var err error
-			siblings, err = impl.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
+			siblings, err = svc.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
 				Prefix: pfx,
 			})
 			return err
@@ -86,7 +87,7 @@ func packagePage(c *router.Context, pkg string) error {
 		}
 		tasks <- func() error {
 			var err error
-			refs, err = impl.PublicRepo.ListRefs(c.Context, &api.ListRefsRequest{
+			refs, err = svc.PublicRepo.ListRefs(c.Context, &api.ListRefsRequest{
 				Package: pkg,
 			})
 			return err
