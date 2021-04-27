@@ -140,7 +140,7 @@ func TestCancel(t *testing.T) {
 			So(transient.Tag.In(err), ShouldBeTrue)
 		})
 
-		Convey("Remove single votes", func() {
+		Convey("Remove single vote", func() {
 			err := Cancel(ctx, input)
 			So(err, ShouldBeNil)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
@@ -206,6 +206,45 @@ func TestCancel(t *testing.T) {
 			// The triggering vote(s) must have been removed last, the order of
 			// removals for the rest doesn't matter so long as it does the job.
 			So(orderedRemovals[len(orderedRemovals)-1], ShouldEqual, 100)
+		})
+
+		Convey("Removing votes from non-CQ labels used in additional modes", func() {
+			const qLabel = "Quick-Label"
+			input.Trigger.AdditionalLabel = qLabel
+
+			quick := func(value int, timeAndUser ...interface{}) gf.CIModifier {
+				return gf.Vote(qLabel, value, timeAndUser...)
+			}
+			// Exact timestamps don't matter in this test, but in practice they affect
+			// computation of the triggerign vote.
+			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
+				// user-99 forgot to vote CQ+1.
+				quick(1, clock.Now(ctx).Add(-300*time.Second), gf.U("user-99"))(c.Info)
+
+				// user-100 actually triggered QuickDryRun.
+				gf.CQ(1, clock.Now(ctx).Add(-150*time.Second), gf.U("user-100"))(c.Info)
+				quick(1, clock.Now(ctx).Add(-150*time.Second), gf.U("user-100"))(c.Info)
+
+				// user-101 CQ+1 was a noop.
+				gf.CQ(1, clock.Now(ctx).Add(-120*time.Second), gf.U("user-101"))(c.Info)
+
+				// user-102 votes were a noop, though weird, yet still must be removed.
+				quick(2, clock.Now(ctx).Add(-110*time.Second), gf.U("user-102"))(c.Info)
+
+				// user-103 votes is 0, and doesn't need a reset.
+				quick(0, clock.Now(ctx).Add(-100*time.Second), gf.U("user-103"))(c.Info)
+			})
+			err := Cancel(ctx, input)
+			So(err, ShouldBeNil)
+
+			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
+			So(gf.NonZeroVotes(resultCI.Info, trigger.CQLabelName), ShouldBeEmpty)
+			So(gf.NonZeroVotes(resultCI.Info, qLabel), ShouldBeEmpty)
+			// The last request must be for account 100.
+			reqs := ct.GFake.Requests()
+			lastReq := reqs[len(reqs)-1].(*gerritpb.SetReviewRequest)
+			So(lastReq.GetOnBehalfOf(), ShouldEqual, 100)
+			So(lastReq.GetLabels(), ShouldResemble, map[string]int32{trigger.CQLabelName: 0, qLabel: 0})
 		})
 
 		Convey("Skips zero votes", func() {
