@@ -273,22 +273,30 @@ func (t *Test) LoadGerritCL(ctx context.Context, gHost string, gChange int64) *c
 	}
 }
 
-// MaxCQVote returns max CQ vote of a Gerrit CL loaded from Gerrit fake.
+// MaxVote returns max vote of a Gerrit CL loaded from Gerrit fake.
 //
 // Returns 0 if there are no votes.
 // Panics if CL doesn't exist.
-func (t *Test) MaxCQVote(ctx context.Context, gHost string, gChange int64) int32 {
+func (t *Test) MaxVote(ctx context.Context, gHost string, gChange int64, gLabel string) int32 {
 	c := t.GFake.GetChange(gHost, int(gChange))
 	if c == nil {
 		panic(fmt.Errorf("%s/%d doesn't exist", gHost, gChange))
 	}
 	max := int32(0)
-	for _, v := range c.Info.GetLabels()[trigger.CQLabelName].GetAll() {
+	for _, v := range c.Info.GetLabels()[gLabel].GetAll() {
 		if v.GetValue() > max {
 			max = v.GetValue()
 		}
 	}
 	return max
+}
+
+// MaxCQVote returns max CQ vote of a Gerrit CL loaded from Gerrit fake.
+//
+// Returns 0 if there are no votes.
+// Panics if CL doesn't exist.
+func (t *Test) MaxCQVote(ctx context.Context, gHost string, gChange int64) int32 {
+	return t.MaxVote(ctx, gHost, gChange, trigger.CQLabelName)
 }
 
 // LogPhase emits easy to recognize log like
