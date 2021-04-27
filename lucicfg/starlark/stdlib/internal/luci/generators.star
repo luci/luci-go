@@ -973,8 +973,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
         location_regexp = verifier.props.location_regexp,
         location_regexp_exclude = verifier.props.location_regexp_exclude,
         equivalent_to = _cq_equivalent_to(verifier, project),
-        mode_regexp = verifier.props.mode_regexp,
-        mode_regexp_exclude = verifier.props.mode_regexp_exclude,
+        mode_allowlist = verifier.props.mode_allowlist,
     )
 
 def _cq_builder_from_node(node):
@@ -1243,7 +1242,7 @@ def _tricium_config(verifiers, cq_group, project):
     ret = tricium_pb.ProjectConfig()
     whitelisted_group = None
     for verifier in verifiers:
-        if verifier.props.mode_regexp != [cq.MODE_ANALYZER_RUN]:
+        if cq.MODE_ANALYZER_RUN not in verifier.props.mode_allowlist:
             continue
         recipe = _tricium_recipe(verifier, project)
         func_name = _compute_func_name(recipe)

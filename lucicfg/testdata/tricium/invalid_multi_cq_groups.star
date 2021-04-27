@@ -12,7 +12,7 @@ luci.cq_group(
     verifiers = [
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/spell-checker",
-            mode_regexp = [cq.MODE_ANALYZER_RUN],
+            mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
     ],
 )
@@ -26,7 +26,7 @@ luci.cq_group(
     verifiers = [
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/spell-checker",
-            mode_regexp = [cq.MODE_ANALYZER_RUN],
+            mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
     ],
 )

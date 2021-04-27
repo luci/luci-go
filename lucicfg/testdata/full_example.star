@@ -441,15 +441,13 @@ luci.cq_group(
             cancel_stale = False,
             result_visibility = cq.COMMENT_LEVEL_RESTRICTED,
             location_regexp_exclude = ["https://example.com/repo/[+]/all/one.txt"],
-            mode_regexp = [cq.MODE_DRY_RUN],
-            mode_regexp_exclude = [cq.MODE_FULL_RUN],
+            mode_allowlist = [cq.MODE_DRY_RUN, cq.MODE_QUICK_DRY_RUN],
         ),
         # An experimental verifier with location_regexp_exclude.
         luci.cq_tryjob_verifier(
             builder = "linux try builder 2",
             location_regexp_exclude = ["https://example.com/repo/[+]/all/two.txt"],
             experiment_percentage = 50,
-            mode_regexp_exclude = [cq.MODE_FULL_RUN],
         ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
         {"builder": "try/generically named builder", "disable_reuse": True},
@@ -463,7 +461,7 @@ luci.cq_group(
         luci.cq_tryjob_verifier(
             builder = "spell-checker",
             owner_whitelist = ["project-contributor"],
-            mode_regexp = [cq.MODE_ANALYZER_RUN],
+            mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
     ],
     additional_modes = cq.run_mode(
@@ -506,7 +504,7 @@ luci.cq_tryjob_verifier(
     cq_group = "main-cq",
     location_regexp = [r".+\.py", r".+\.go"],
     owner_whitelist = ["project-contributor"],
-    mode_regexp = [cq.MODE_ANALYZER_RUN],
+    mode_allowlist = [cq.MODE_ANALYZER_RUN],
 )
 
 # Emitting arbitrary configs,
@@ -558,7 +556,7 @@ lucicfg.emit(
 #         location_regexp: ".+\\.py"
 #         location_regexp: ".+\\.go"
 #         owner_whitelist_group: "project-contributor"
-#         mode_regexp: "ANALYZER_RUN"
+#         mode_allowlist: "ANALYZER_RUN"
 #       }
 #       builders {
 #         name: "another-project/try/yyy"
@@ -586,16 +584,14 @@ lucicfg.emit(
 #         cancel_stale: NO
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
-#         mode_regexp: "DRY_RUN"
-#         mode_regexp_exclude: "FULL_RUN"
+#         mode_allowlist: "DRY_RUN"
+#         mode_allowlist: "QUICK_DRY_RUN"
 #       }
 #       builders {
 #         name: "infra/try/linux try builder 2"
 #         experiment_percentage: 50
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/two.txt"
-#         mode_regexp: ".+"
-#         mode_regexp_exclude: "FULL_RUN"
 #       }
 #       builders {
 #         name: "infra/try/main cq builder"
@@ -608,7 +604,7 @@ lucicfg.emit(
 #       builders {
 #         name: "infra/try/spell-checker"
 #         owner_whitelist_group: "project-contributor"
-#         mode_regexp: "ANALYZER_RUN"
+#         mode_allowlist: "ANALYZER_RUN"
 #       }
 #       retry_config {
 #         single_quota: 1
