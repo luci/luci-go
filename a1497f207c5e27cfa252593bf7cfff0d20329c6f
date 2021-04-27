@@ -34,6 +34,24 @@
       "parentUuid": "e899a760_9391b0ce",
       "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "122035d9_8268b957",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-27T23:31:48Z",
+      "side": 1,
+      "message": "Just to be clear, the intent of this change is to ignore the artifact requests that resultdb fails to access the file of, and to unblock the roll out process of BatchCreateArtifacts()+result_adapter.\n\nIt will be as bad as the current rdb for the issue described in crbug.com/1124868, and we won\u0027t have a good way of detecting such issues, as rdb will simply ignore such artifacts.\n\nHowever, I found that it\u0027s better to roll out the BatchCreateArtifacts()+result_adapter first, and solve crbug.com/1124868 separately w/ adding a new RPC and setting up a new pipeline. Actually, this TODO (better implementation of handling cfg.ExitOnFailures can be done at a very last stage after we set the pipeline working, but before we set it to True for certain builders)\n\nWe can set it to true only after we are confident that no test harnesses are reporting the issue.\n\nI\u0027m open to other opinions. LMK",
+      "parentUuid": "933cebfe_c0b47dc6",
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
