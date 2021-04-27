@@ -84,7 +84,7 @@ export function enterViewObserver<T extends OnEnterView>(getNotifier = (_ele: T)
 
     // TypeScript doesn't allow type parameter in extends or implements
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
-    class LazyRenderedElement extends (cls as Constructor<LitElement>) {
+    class EnterViewObserverElement extends (cls as Constructor<LitElement>) {
       connectedCallback() {
         notifierSymbol = getNotifier((this as LitElement) as T);
         notifierSymbol.observe((this as LitElement) as OnEnterView);
@@ -97,6 +97,6 @@ export function enterViewObserver<T extends OnEnterView>(getNotifier = (_ele: T)
       }
     }
     // Recover the type information that lost in the down-casting above.
-    return (LazyRenderedElement as Constructor<LitElement>) as C;
+    return (EnterViewObserverElement as Constructor<LitElement>) as C;
   };
 }
