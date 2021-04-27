@@ -16,6 +16,24 @@
       "message": "Hm... I see you have a TODO, but what stops us from doing this now?",
       "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "933cebfe_c0b47dc6",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-27T23:22:06Z",
+      "side": 1,
+      "message": "It is just to save time. JFYI, this requires setting up a new error channel to bubble up errors from dispatchers to sink.go.\n\nHere is the current ownership flow.\nsink.go -\u003e sink_server.go -\u003e {test_result,artifact}_channels.go -\u003e dispatcher{}.\n1) sink.go owns the HTTP server and pRPC server.\n2) sink_server.go is the pRPC server, and owns {test_result,artifact}_channel.go.\n\nIn the above structures,\n- The dispatcher goroutines have no way to shutdown the HTTP server. They can shutdown the dispatchers, but pRPC and HTTP server will continue receiving requests.\n- The pRPC server goroutines have no way to shutdown the HTTP server. It can close the channels, but the HTTP server will continue accepting requests.\n\nIt won\u0027t be a huge change, but requires a bit of interface changes between the modules, and I decided to keep this CL as simple as possible. Even if the TODO is done, the feature won\u0027t be used until we implement the full monitoring pipeline and update recipes to set ExitOnFailures\u003dtrue on certain builders.",
+      "parentUuid": "e899a760_9391b0ce",
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
