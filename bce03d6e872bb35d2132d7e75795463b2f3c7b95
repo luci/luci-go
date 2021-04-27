@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c02c21a_e5d44c6c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T02:39:58Z",
+      "side": 1,
+      "message": "PTAL. This bumps the protocol version because the spec has changed, but I believe it should not affect clients, unless they break API boundaries and check \"content-type\" metadata or something like that...",
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5d08de5_b078fad6",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T02:39:58Z",
+      "side": 1,
+      "message": "I feel like \"Append\" is wrong, since most callers will likely just use Get(...) and see \"wrong\" host.",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 134,
+        "endChar": 8
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a3cd76d0_58544d0f",
+        "filename": "grpc/prpc/e2etest/endtoend_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T02:39:58Z",
+      "side": 1,
+      "message": "In addition to just not working for -bin, this test also revealed a lot of crap in metadata, like random implementation detail headers and \"Date\" header...",
+      "range": {
+        "startLine": 104,
+        "startChar": 10,
+        "endLine": 104,
+        "endChar": 41
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1084d46_2ac09c54",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T02:39:58Z",
+      "side": 1,
+      "message": "Turns out http.Server by default generates Date header and it ends up in the metadata as \"date\". I think we either need to make it a part of the pRPC protocol or stop doing that. I decided to stop doing that. Wdyt?",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 243,
+        "endChar": 26
+      },
+      "revId": "bce03d6e872bb35d2132d7e75795463b2f3c7b95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

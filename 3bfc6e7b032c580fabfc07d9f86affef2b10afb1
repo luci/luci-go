@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4a698bb_f41809c5",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 625,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T02:39:58Z",
+      "side": 0,
+      "message": "this didn\u0027t handle \"*-bin\" outgoing metadata at all",
+      "range": {
+        "startLine": 617,
+        "startChar": 0,
+        "endLine": 625,
+        "endChar": 3
+      },
+      "revId": "3bfc6e7b032c580fabfc07d9f86affef2b10afb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1507bf74_d987afd0",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 677,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T02:39:58Z",
+      "side": 0,
+      "message": "this didn\u0027t handle incoming \"*-bin\" metadata at all",
+      "range": {
+        "startLine": 677,
+        "startChar": 5,
+        "endLine": 677,
+        "endChar": 24
+      },
+      "revId": "3bfc6e7b032c580fabfc07d9f86affef2b10afb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "733075a1_edae844f",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-27T02:39:58Z",
+      "side": 0,
+      "message": "this is the only place where -bin was handled, this is outgoing metadata on the server side",
+      "range": {
+        "startLine": 128,
+        "startChar": 27,
+        "endLine": 128,
+        "endChar": 39
+      },
+      "revId": "3bfc6e7b032c580fabfc07d9f86affef2b10afb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
