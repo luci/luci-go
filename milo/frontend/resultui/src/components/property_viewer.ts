@@ -19,14 +19,14 @@ import { computed, observable } from 'mobx';
 
 import './code_mirror_editor';
 import './connection_observer';
-import { enterViewObserver, OnEnterView } from '../libs/enter_view_observer';
+import { lazyRendering, RenderPlaceHolder } from '../libs/enter_view_observer';
 import { ConnectionEvent, ConnectionObserverElement } from './connection_observer';
 
 const LEFT_RIGHT_ARROW = '\u2194';
 
 @customElement('milo-property-viewer')
-@enterViewObserver()
-export class PropertyViewerElement extends MobxLitElement implements OnEnterView {
+@lazyRendering()
+export class PropertyViewerElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref properties!: { [key: string]: unknown };
   @observable.ref propLineFoldTime!: { [key: string]: number };
   saveFoldTime = () => {};
@@ -71,13 +71,6 @@ export class PropertyViewerElement extends MobxLitElement implements OnEnterView
     },
   };
 
-  @observable.ref private prerender = true;
-
-  onEnterView(): boolean {
-    this.prerender = false;
-    return true;
-  }
-
   private toggleFold(line: string, folded: boolean) {
     if (folded) {
       this.propLineFoldTime[line] = Date.now();
@@ -87,11 +80,11 @@ export class PropertyViewerElement extends MobxLitElement implements OnEnterView
     this.saveFoldTime();
   }
 
-  protected render() {
-    if (this.prerender) {
-      return html`<div id="placeholder"></div>`;
-    }
+  renderPlaceHolder() {
+    return html`<div id="placeholder"></div>`;
+  }
 
+  protected render() {
     return html`
       <milo-code-mirror-editor
         .value=${this.formattedValue}

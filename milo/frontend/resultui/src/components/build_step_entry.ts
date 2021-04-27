@@ -26,7 +26,7 @@ import './pin_toggle';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../libs/constants';
-import { enterViewObserver, OnEnterView } from '../libs/enter_view_observer';
+import { lazyRendering, RenderPlaceHolder } from '../libs/enter_view_observer';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { StepExt } from '../models/step_ext';
 import colorClasses from '../styles/color_classes.css';
@@ -37,9 +37,9 @@ import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
  * Renders a step.
  */
 @customElement('milo-build-step-entry')
-@enterViewObserver()
+@lazyRendering()
 @consumeConfigsStore
-export class BuildStepEntryElement extends MobxLitElement implements OnEnterView {
+export class BuildStepEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref configsStore!: UserConfigsStore;
 
   @observable.ref number = 0;
@@ -69,12 +69,6 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterView
     this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry').forEach((e) =>
       e.toggleAllSteps(expand)
     );
-  }
-
-  @observable.ref private prerender = true;
-
-  onEnterView() {
-    this.prerender = false;
   }
 
   @computed private get logs() {
@@ -194,11 +188,11 @@ export class BuildStepEntryElement extends MobxLitElement implements OnEnterView
     }
   }
 
-  protected render() {
-    if (this.prerender) {
-      return html`<div id="place-holder"></div>`;
-    }
+  renderPlaceHolder() {
+    return html`<div id="place-holder"></div>`;
+  }
 
+  protected render() {
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <span id="header" slot="header">
