@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "18436c98_1ac33f42",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-27T23:54:27Z",
+      "side": 1,
+      "message": "Btw, how do users check the test results?  \nFWIU, when a user runs \"swarming reproduce\", the task doesn\u0027t have a milo UI.",
+      "range": {
+        "startLine": 7,
+        "startChar": 44,
+        "endLine": 7,
+        "endChar": 52
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ef38b50a_c2b0ec52",
         "filename": "/COMMIT_MSG",
         "patchSetId": 11
@@ -49,6 +72,29 @@
       "side": 1,
       "message": "If we don\u0027t need to have difference, why not share the function?",
       "parentUuid": "99f5c29e_c77b195a",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74dbb06b_fc455a30",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-27T23:54:27Z",
+      "side": 1,
+      "message": "I\u0027m not confident, but this should be `User` in TaskRequest?\nhttps://pkg.go.dev/go.chromium.org/luci@v0.0.0-20210427045407-0aea20d137f8/common/api/swarming/swarming/v1#SwarmingRpcsTaskRequest",
+      "range": {
+        "startLine": 320,
+        "startChar": 0,
+        "endLine": 320,
+        "endChar": 30
+      },
       "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
