@@ -36,8 +36,7 @@ def _cq_tryjob_verifier(
         equivalent_builder = None,
         equivalent_builder_percentage = None,
         equivalent_builder_whitelist = None,
-        mode_regexp = None,
-        mode_regexp_exclude = None):
+        mode_allowlist = None):
     """A verifier in a luci.cq_group(...) that triggers tryjobs to verify CLs.
 
     When processing a CL, the CQ examines a list of registered verifiers and
@@ -227,13 +226,10 @@ def _cq_tryjob_verifier(
         equivalent builder substitution for. If set, only CLs that are owned
         by someone from this group have a chance to be verified by the
         equivalent builder. All other CLs are verified via the main builder.
-      mode_regexp: a list of regexps that define a set of CQ Run modes for
-        which CQ will trigger this verifier. CQ supports "DRY_RUN" and
-        "FULL_RUN" out of the box. Additional Run modes can be defined via
+      mode_allowlist: a list of modes that CQ will trigger this verifier for.
+        CQ supports `cq.MODE_DRY_RUN` and `cq.MODE_FULL_RUN` out of the box.
+        Additional Run modes can be defined via
         `luci.cq_group(additional_modes=[cq.run_mode(...),])`.
-      mode_regexp_exclude: a list of regexps that define a set of CQ Run modes
-        for which CQ will skip this verifier when evaluating whether this
-        verifier should be applied to this Run or not.
     """
     builder = keys.builder_ref(builder, attr = "builder", allow_external = True)
 
@@ -273,18 +269,13 @@ def _cq_tryjob_verifier(
         required = False,
     )
 
-    mode_regexp = validate.list("mode_regexp", mode_regexp)
-    for mr in mode_regexp:
-        validate.string("mode_regexp", mr)
-    mode_regexp_exclude = validate.list("mode_regexp_exclude", mode_regexp_exclude)
-    for mr in mode_regexp_exclude:
-        validate.string("mode_regexp_exclude", mr)
-    if mode_regexp_exclude and not mode_regexp:
-        mode_regexp = [".+"]
+    mode_allowlist = validate.list("mode_allowlist", mode_allowlist)
+    for m in mode_allowlist:
+        validate.string("mode_allowlist", m)
 
-    if cq.MODE_ANALYZER_RUN in mode_regexp:
-        if len(mode_regexp) > 1:
-            fail('"ANALYZER_RUN" must be the only mode in "mode_regexp"')
+    if cq.MODE_ANALYZER_RUN in mode_allowlist:
+        if len(mode_allowlist) > 1:
+            fail('"ANALYZER_RUN" must be the only mode in "mode_allowlist"')
         if location_regexp:
             prefix = r".+\."
             for r in location_regexp:
@@ -308,10 +299,8 @@ def _cq_tryjob_verifier(
             fail('"includable_only" can not be used together with "location_regexp_exclude"')
         if experiment_percentage:
             fail('"includable_only" can not be used together with "experiment_percentage"')
-        if mode_regexp:
-            fail('"includable_only" can not be used together with "mode_regexp"')
-        if mode_regexp_exclude:
-            fail('"includable_only" can not be used together with "mode_regexp_exclude"')
+        if mode_allowlist:
+            fail('"includable_only" can not be used together with "mode_allowlist"')
 
     # Note: name of this node is important only for error messages. It isn't
     # showing up in any generated files and by construction it can't accidentally
@@ -337,8 +326,7 @@ def _cq_tryjob_verifier(
         "location_regexp": location_regexp,
         "location_regexp_exclude": location_regexp_exclude,
         "owner_whitelist": owner_whitelist,
-        "mode_regexp": mode_regexp,
-        "mode_regexp_exclude": mode_regexp_exclude,
+        "mode_allowlist": mode_allowlist,
     })
     if cq_group:
         graph.add_edge(parent = keys.cq_group(cq_group), child = key)

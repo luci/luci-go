@@ -13,12 +13,12 @@ luci.cq_group(
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/spell-checker",
             owner_whitelist = ["project-contributor"],
-            mode_regexp = [cq.MODE_ANALYZER_RUN],
+            mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/format-checker",
             owner_whitelist = ["all"],
-            mode_regexp = [cq.MODE_ANALYZER_RUN],
+            mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
     ],
 )
