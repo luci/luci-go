@@ -14,7 +14,7 @@ luci.cq_group(
             builder = "infra:analyzer/spell-checker",
             owner_whitelist = ["project-contributor"],
             location_regexp = [r".+\.md", ".+/docs/.+"],
-            mode_regexp = [cq.MODE_ANALYZER_RUN],
+            mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
     ],
 )
