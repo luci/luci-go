@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "20a92fdb_48420b96",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:05:52Z",
+      "side": 1,
+      "message": "Removed, but thanks for a good point. I will add it back later with something like \"IgnoreFailures\" next time.",
+      "parentUuid": "15ad7491_04ff7636",
+      "range": {
+        "startLine": 145,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 15
+      },
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e899a760_9391b0ce",
@@ -112,6 +136,42 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "400ef7e9_e36f8d0c",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:05:52Z",
+      "side": 1,
+      "message": "Removed the panic and cfg.ExitOnFailures. PTAL.",
+      "parentUuid": "0814b3a7_57d47a30",
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "876b1a89_d0502799",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:05:52Z",
+      "side": 1,
+      "message": "Removed the flag and panic(). I will write a separate CL for a proper termination.",
+      "parentUuid": "cc1c2e61_66f72339",
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "61e808b0_63e0ac7d",
@@ -125,6 +185,30 @@
       "writtenOn": "2021-04-27T23:47:35Z",
       "side": 1,
       "message": "unnecessary",
+      "range": {
+        "startLine": 184,
+        "startChar": 6,
+        "endLine": 184,
+        "endChar": 12
+      },
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "78f29a49_f720557a",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:05:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61e808b0_63e0ac7d",
       "range": {
         "startLine": 184,
         "startChar": 6,
@@ -158,6 +242,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fadce7d5_53e643fa",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:05:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "537b5a5f_4d65a625",
+      "range": {
+        "startLine": 226,
+        "startChar": 5,
+        "endLine": 226,
+        "endChar": 11
+      },
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9a19bfd7_3fd08477",
@@ -171,6 +279,30 @@
       "writtenOn": "2021-04-27T23:47:35Z",
       "side": 1,
       "message": "unnecessary",
+      "range": {
+        "startLine": 230,
+        "startChar": 4,
+        "endLine": 230,
+        "endChar": 10
+      },
+      "revId": "a1497f207c5e27cfa252593bf7cfff0d20329c6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ebdabd4_ba386e04",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:05:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a19bfd7_3fd08477",
       "range": {
         "startLine": 230,
         "startChar": 4,

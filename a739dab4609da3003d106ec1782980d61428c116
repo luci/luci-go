@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22c0591f_aa61b709",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:05:52Z",
+      "side": 1,
+      "message": "thanks for reviews. PTAL",
+      "revId": "a739dab4609da3003d106ec1782980d61428c116",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb8fab2b_eb6878f7",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:05:52Z",
+      "side": 1,
+      "message": "this Convey() could be merged to the parent at L231, but I kept this because I believe that there will be additional Convey() when the flag is added.",
+      "range": {
+        "startLine": 235,
+        "startChar": 4,
+        "endLine": 235,
+        "endChar": 41
+      },
+      "revId": "a739dab4609da3003d106ec1782980d61428c116",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
