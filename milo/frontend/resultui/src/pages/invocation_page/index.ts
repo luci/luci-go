@@ -20,13 +20,13 @@ import { computed, observable, reaction } from 'mobx';
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import './invocation_details_tab';
-import { reportRenderError } from '../../components/error_handler';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
+import { reportRenderError } from '../../libs/error_handler';
 import { NOT_FOUND_URL, router } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
 

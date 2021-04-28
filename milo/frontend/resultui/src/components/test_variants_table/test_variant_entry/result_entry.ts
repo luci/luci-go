@@ -27,6 +27,7 @@ import './text_artifact';
 import './text_diff_artifact';
 import { AppState, consumeAppState } from '../../../context/app_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../../libs/constants';
+import { reportRenderError } from '../../../libs/error_handler';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { displayCompactDuration, parseProtoDuration } from '../../../libs/time_utils';
 import { unwrapObservable } from '../../../libs/utils';
@@ -34,7 +35,6 @@ import { router } from '../../../routes';
 import { Artifact, ListArtifactsResponse, TestResult } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
-import { reportRenderError } from '../../error_handler';
 
 /**
  * Renders an expandable entry of the given test result.

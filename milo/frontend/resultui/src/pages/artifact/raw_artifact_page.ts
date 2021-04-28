@@ -18,10 +18,10 @@ import { fromPromise } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
-import { reportError, reportRenderError } from '../../components/error_handler';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeContext } from '../../libs/context';
+import { reportError, reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
