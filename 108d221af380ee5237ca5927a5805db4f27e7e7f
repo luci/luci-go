@@ -35,6 +35,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "93f8c03b_cea9cc22",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T22:42:11Z",
+      "side": 1,
+      "message": "+1 to Robbie\u0027s comments",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5d8bb25a_c2c8d297",
@@ -48,6 +65,40 @@
       "writtenOn": "2021-04-28T22:37:15Z",
       "side": 1,
       "message": "can you name these return values? \u0027string\u0027 is too vague, I think.\n\n   (reqs []*artifactCreationRequest, realm string, err string)\n\nwould help a lot",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c47dab9_9dbda93b",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T22:42:11Z",
+      "side": 1,
+      "message": "consistency: please stick with `if err !\u003d nil`",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f575526_7f21c02d",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T22:42:11Z",
+      "side": 1,
+      "message": "same here",
       "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -82,6 +133,29 @@
       "writtenOn": "2021-04-28T22:37:15Z",
       "side": 1,
       "message": "and this would be \n\n  err \u003d appstatus...\n  return",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1c0935c0_738514e4",
+        "filename": "resultdb/internal/spanutil/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T22:42:11Z",
+      "side": 1,
+      "message": "why make it public",
+      "range": {
+        "startLine": 34,
+        "startChar": 4,
+        "endLine": 34,
+        "endChar": 14
+      },
       "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
