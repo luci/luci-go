@@ -14,6 +14,7 @@
 
 import { Workbox } from 'workbox-window';
 
+import './stackdriver_errors';
 import './routes';
 
 window.SW_PROMISE = new Promise((resolve) => {
