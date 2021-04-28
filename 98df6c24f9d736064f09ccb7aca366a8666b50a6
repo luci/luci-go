@@ -167,6 +167,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cda44bb4_7bbfc336",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-28T01:33:07Z",
+      "side": 1,
+      "message": "If people want to reproduce a swarming task like https://chromium-swarm-dev.appspot.com/task?id\u003d53296bc5b5cc6c10?",
+      "parentUuid": "07b4f985_d200db79",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2746f5cf_5a1bad3b",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 11
