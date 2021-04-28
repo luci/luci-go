@@ -20,10 +20,10 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../dot_spinner';
 import { consumeContext } from '../../../libs/context';
+import { reportRenderError } from '../../../libs/error_handler';
 import { unwrapObservable } from '../../../libs/utils';
 import { Artifact } from '../../../services/resultdb';
 import commonStyle from '../../../styles/common_style.css';
-import { reportRenderError } from '../../error_handler';
 
 /**
  * Renders a text artifact.
