@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"go.chromium.org/luci/gae/impl/memory"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
@@ -30,6 +29,8 @@ import (
 	"go.chromium.org/luci/common/proto"
 	luciconfig "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/prpc"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -115,8 +116,8 @@ func TestCreateInvocations(t *testing.T) {
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-1",
-				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
-				h, _ := opt.(grpc.HeaderCallOption)
+				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt *prpc.CallOption) (*rdbPb.Invocation, error) {
+				h, _ := opt.CallOption.(grpc.HeaderCallOption)
 				h.HeaderAddr.Set("update-token", "token for build-1")
 				return &rdbPb.Invocation{}, nil
 			})
@@ -130,8 +131,8 @@ func TestCreateInvocations(t *testing.T) {
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-2",
-				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
-				h, _ := opt.(grpc.HeaderCallOption)
+				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt *prpc.CallOption) (*rdbPb.Invocation, error) {
+				h, _ := opt.CallOption.(grpc.HeaderCallOption)
 				h.HeaderAddr.Set("update-token", "token for build-2")
 				return &rdbPb.Invocation{}, nil
 			})
@@ -175,8 +176,8 @@ func TestCreateInvocations(t *testing.T) {
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-1",
-				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
-				h, _ := opt.(grpc.HeaderCallOption)
+				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt *prpc.CallOption) (*rdbPb.Invocation, error) {
+				h, _ := opt.CallOption.(grpc.HeaderCallOption)
 				h.HeaderAddr.Set("update-token", "token for build id 1")
 				return &rdbPb.Invocation{}, nil
 			})
@@ -241,8 +242,8 @@ func TestCreateInvocations(t *testing.T) {
 						Realm:               "proj1:bucket",
 					},
 					RequestId: "build-1-123",
-				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
-				h, _ := opt.(grpc.HeaderCallOption)
+				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt *prpc.CallOption) (*rdbPb.Invocation, error) {
+				h, _ := opt.CallOption.(grpc.HeaderCallOption)
 				h.HeaderAddr.Set("update-token", "token for build number 123")
 				return &rdbPb.Invocation{}, nil
 			})

@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -85,7 +84,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 					RequestId: invID,
 				}
 				header := metadata.MD{}
-				if _, err = recorderClient.CreateInvocation(ctx, reqForBldID, grpc.Header(&header)); err != nil {
+				if _, err = recorderClient.CreateInvocation(ctx, reqForBldID, prpc.Header(&header)); err != nil {
 					return errors.Annotate(err, "failed to create the invocation for build id: %d", b.Proto.Id).Err()
 				}
 				token, ok := header["update-token"]
