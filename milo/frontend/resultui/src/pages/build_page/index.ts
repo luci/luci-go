@@ -22,7 +22,6 @@ import { autorun, computed, observable, reaction, when } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
-import { reportRenderError } from '../../components/error_handler';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -37,6 +36,7 @@ import {
   getURLPathForProject,
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { reportRenderError } from '../../libs/error_handler';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { genFeedbackUrl } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
