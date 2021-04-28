@@ -16,22 +16,36 @@ package lib
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	clientswarming "go.chromium.org/luci/client/swarming"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/lucictx"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// matchInvalidInvocationIDChars is used to find chars that are invalid for an invocation ID.
+var matchInvalidInvocationIDChars = regexp.MustCompile(`[^a-z0-9_\-:.]`)
 
 // CmdReproduce returns an object fo the `reproduce` subcommand.
 func CmdReproduce(authFlags AuthFlags) *subcommands.Command {
@@ -53,6 +67,9 @@ type reproduceRun struct {
 	out  string
 	// cipdDownloader is used in testing to insert a mock CIPD downloader.
 	cipdDownloader func(context.Context, string, map[string]ensure.PackageSlice) error
+	// createInvocation is used in testing to insert a mock method.
+	createInvocation func(context.Context, *http.Client, string, string) (*resultpb.Invocation, []string, error)
+	resultsHost      string
 }
 
 func (c *reproduceRun) init(authFlags AuthFlags) {
@@ -61,6 +78,9 @@ func (c *reproduceRun) init(authFlags AuthFlags) {
 	c.Flags.StringVar(&c.work, "work", "work", "Directory to map the task input files into and execute the task.")
 	c.Flags.StringVar(&c.out, "out", "out", "Directory that will hold the task results.")
 	c.cipdDownloader = downloadCIPDPackages
+	c.createInvocation = createInvocation
+	// TODO(crbug.com/1188381): Use a flag to fill c.resultsHost.
+	c.resultsHost = chromeinfra.ResultDBHost
 	// TODO(crbug.com/1188473): support cache directory.
 }
 
@@ -103,9 +123,14 @@ func (c *reproduceRun) main(a subcommands.Application, args []string, env subcom
 		return err
 	}
 
-	cmd, err := c.prepareTaskRequestEnvironment(ctx, args[0], service)
+	cmd, exported, err := c.prepareTaskRequestEnvironment(ctx, args[0], service)
 	if err != nil {
 		return errors.Annotate(err, "failed to create command from task request").Err()
+	}
+
+	if exported != nil {
+		exported.SetInCmd(cmd)
+		defer exported.Close()
 	}
 
 	return c.executeTaskRequestCommand(cmd)
@@ -121,24 +146,49 @@ func (c *reproduceRun) executeTaskRequestCommand(cmd *exec.Cmd) error {
 	return nil
 }
 
-func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID string, service swarmingService) (*exec.Cmd, error) {
+func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID string, service swarmingService) (*exec.Cmd, lucictx.Exported, error) {
 	tr, err := service.GetTaskRequest(ctx, taskID)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get task request: %s", taskID).Err()
+		return nil, nil, errors.Annotate(err, "failed to get task request: %s", taskID).Err()
 	}
 	// In practice, later slices are less likely to assume that there is a named cache
 	// that is not available locally.
 	properties := tr.TaskSlices[len(tr.TaskSlices)-1].Properties
+
+	// Enable resultDB if necessary
+	var exported lucictx.Exported
+	if tr.Resultdb != nil && tr.Resultdb.Enable {
+		authcli, err := c.authFlags.NewHTTPClient(ctx)
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "failed to create client").Err()
+		}
+		invocation, updateToken, err := c.createInvocation(ctx, authcli, tr.Realm, c.resultsHost)
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "failed to create Invocation").Err()
+		}
+		if len(updateToken) == 0 {
+			return nil, nil, errors.Reason("Missing header: update-token").Err()
+		}
+
+		exported, err = lucictx.Export(
+			lucictx.SetResultDB(ctx, &lucictx.ResultDB{
+				Hostname:          c.resultsHost,
+				CurrentInvocation: &lucictx.ResultDBInvocation{Name: invocation.Name, UpdateToken: updateToken[0]},
+			}))
+		if err != nil {
+			return nil, nil, err
+		}
+	}
 
 	execDir := c.work
 	if properties.RelativeCwd != "" {
 		execDir = filepath.Join(execDir, properties.RelativeCwd)
 	}
 	if err := prepareDir(execDir); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err := prepareDir(c.out); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Set environment variables.
@@ -166,13 +216,13 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 
 	// Download input files.
 	if properties.InputsRef != nil && properties.InputsRef.Isolated != "" && properties.CasInputRoot != nil {
-		return nil, errors.Reason("fetched TaskRequest has files from Isolate and RBE-CAS").Err()
+		return nil, nil, errors.Reason("fetched TaskRequest has files from Isolate and RBE-CAS").Err()
 	}
 
 	// Support isolated input in task request.
 	if properties.InputsRef != nil && properties.InputsRef.Isolated != "" {
 		if _, err := service.GetFilesFromIsolate(ctx, c.work, properties.InputsRef); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch files from isolate").Err()
+			return nil, nil, errors.Annotate(err, "failed to fetch files from isolate").Err()
 		}
 	}
 
@@ -180,10 +230,10 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 	if properties.CasInputRoot != nil {
 		cascli, err := c.authFlags.NewCASClient(ctx, properties.CasInputRoot.CasInstance)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
+			return nil, nil, errors.Annotate(err, "failed to fetch RBE-CAS client").Err()
 		}
 		if _, err := service.GetFilesFromCAS(ctx, c.work, cascli, properties.CasInputRoot); err != nil {
-			return nil, errors.Annotate(err, "failed to fetched friles from RBE-CAS").Err()
+			return nil, nil, errors.Annotate(err, "failed to fetched friles from RBE-CAS").Err()
 		}
 	}
 
@@ -205,19 +255,21 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, taskID
 		}
 
 		if err := c.cipdDownloader(ctx, c.work, slicesByPath); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	// Create a Comand that can run the task request.
 	processedCmds, err := clientswarming.ProcessCommand(ctx, properties.Command, c.out, "")
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to process command in properties").Err()
+		return nil, nil, errors.Annotate(err, "failed to process command in properties").Err()
 	}
+
 	cmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
 	cmd.Env = cmdEnvMap.Sorted()
 	cmd.Dir = execDir
-	return cmd, nil
+
+	return cmd, exported, nil
 }
 
 func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[string]ensure.PackageSlice) error {
@@ -256,4 +308,56 @@ func prepareDir(dir string) error {
 		return errors.Annotate(err, "failed to create directory: %s", dir).Err()
 	}
 	return nil
+}
+
+// genInvID generates an invocation ID, made of the username, the current timestamp
+// in a human-friendly format, and a random suffix.
+//
+// This can be used to generate a random invocation ID, but the creator and creation time
+// can be easily found.
+func genInvID(ctx context.Context) (string, error) {
+	whoami, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	bytes := make([]byte, 8)
+	if _, err := mathrand.Read(ctx, bytes); err != nil {
+		return "", err
+	}
+
+	username := strings.ToLower(whoami.Username)
+	username = matchInvalidInvocationIDChars.ReplaceAllString(username, "")
+
+	suffix := strings.ToLower(fmt.Sprintf(
+		"%s-%s", time.Now().UTC().Format("2006-01-02-15-04-00"),
+		// Note: cannot use base64 because not all of its characters are allowed
+		// in invocation IDs.
+		hex.EncodeToString(bytes)))
+
+	// An invocation ID can contain up to 100 ascii characters that conform to the regex,
+	return fmt.Sprintf("u-%.*s-%s", 100-len(suffix), username, suffix), nil
+}
+
+func createInvocation(ctx context.Context, authcli *http.Client, realm string, resultsHost string) (*resultpb.Invocation, []string, error) {
+	recorder := resultpb.NewRecorderPRPCClient(&prpc.Client{
+		C:       authcli,
+		Host:    resultsHost,
+		Options: prpc.DefaultOptions(),
+	})
+
+	invID, err := genInvID(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	med := metadata.MD{}
+	invocation, err := recorder.CreateInvocation(ctx, &resultpb.CreateInvocationRequest{
+		InvocationId: invID,
+		Invocation: &resultpb.Invocation{
+			Realm: realm,
+		},
+	}, prpc.Header(&med))
+	if err != nil {
+		return nil, nil, err
+	}
+	return invocation, med.Get("update-token"), nil
 }
