@@ -48,6 +48,7 @@ type Table string
 const (
 	TestResults Table = "TestResults"
 	Invocations Table = "Invocations"
+	Artifacts   Table = "Artifacts"
 )
 
 // IncRowCount increments the row counter.
