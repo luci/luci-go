@@ -48,13 +48,18 @@ func TestReportTestResults(t *testing.T) {
 		tr, cleanup := validTestResult()
 		defer cleanup()
 
-		var sentReq *pb.BatchCreateTestResultsRequest
+		var sentTRReq *pb.BatchCreateTestResultsRequest
 		cfg.Recorder.(*mockRecorder).batchCreateTestResults = func(c context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
-			sentReq = in
+			sentTRReq = in
+			return nil, nil
+		}
+		var sentArtReq *pb.BatchCreateArtifactsRequest
+		cfg.Recorder.(*mockRecorder).batchCreateArtifacts = func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
+			sentArtReq = in
 			return nil, nil
 		}
 
-		expected := &pb.TestResult{
+		expectedTR := &pb.TestResult{
 			TestId:       tr.TestId,
 			ResultId:     tr.ResultId,
 			Expected:     tr.Expected,
@@ -82,49 +87,49 @@ func TestReportTestResults(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			closeSinkServer(ctx, sink)
-			So(sentReq, ShouldNotBeNil)
-			So(sentReq.Requests, ShouldHaveLength, 1)
-			So(sentReq.Requests[0].TestResult, ShouldResembleProto, expected)
+			So(sentTRReq, ShouldNotBeNil)
+			So(sentTRReq.Requests, ShouldHaveLength, 1)
+			So(sentTRReq.Requests[0].TestResult, ShouldResembleProto, expectedTR)
 		}
 
 		Convey("works", func() {
 			Convey("with ServerConfig.TestIDPrefix", func() {
 				cfg.TestIDPrefix = "ninja://foo/bar/"
 				tr.TestId = "HelloWorld.TestA"
-				expected.TestId = "ninja://foo/bar/HelloWorld.TestA"
+				expectedTR.TestId = "ninja://foo/bar/HelloWorld.TestA"
 				checkResults()
 			})
 
 			Convey("with ServerConfig.BaseVariant", func() {
 				base := []string{"bucket", "try", "builder", "linux-rel"}
 				cfg.BaseVariant = pbutil.Variant(base...)
-				expected.Variant = pbutil.Variant(base...)
+				expectedTR.Variant = pbutil.Variant(base...)
 				checkResults()
 			})
 
 			Convey("with ServerConfig.BaseTags", func() {
 				t1, t2 := pbutil.StringPairs("t1", "v1"), pbutil.StringPairs("t2", "v2")
 				// (nil, nil)
-				cfg.BaseTags, tr.Tags, expected.Tags = nil, nil, nil
+				cfg.BaseTags, tr.Tags, expectedTR.Tags = nil, nil, nil
 				checkResults()
 
 				// (tag, nil)
-				cfg.BaseTags, tr.Tags, expected.Tags = t1, nil, t1
+				cfg.BaseTags, tr.Tags, expectedTR.Tags = t1, nil, t1
 				checkResults()
 
 				// (nil, tag)
-				cfg.BaseTags, tr.Tags, expected.Tags = nil, t1, t1
+				cfg.BaseTags, tr.Tags, expectedTR.Tags = nil, t1, t1
 				checkResults()
 
 				// (tag1, tag2)
-				cfg.BaseTags, tr.Tags, expected.Tags = t1, t2, append(t1, t2...)
+				cfg.BaseTags, tr.Tags, expectedTR.Tags = t1, t2, append(t1, t2...)
 				checkResults()
 			})
 		})
 
 		Convey("generates a random ResultID, if omitted", func() {
 			tr.ResultId = ""
-			expected.ResultId = "foo-00101"
+			expectedTR.ResultId = "foo-00101"
 			checkResults()
 		})
 
@@ -133,20 +138,20 @@ func TestReportTestResults(t *testing.T) {
 				cfg.CoerceNegativeDuration = true
 
 				// duration == nil
-				tr.Duration, expected.Duration = nil, nil
+				tr.Duration, expectedTR.Duration = nil, nil
 				checkResults()
 
 				// duration == 0
-				tr.Duration, expected.Duration = ptypes.DurationProto(0), ptypes.DurationProto(0)
+				tr.Duration, expectedTR.Duration = ptypes.DurationProto(0), ptypes.DurationProto(0)
 				checkResults()
 
 				// duration > 0
-				tr.Duration, expected.Duration = ptypes.DurationProto(8), ptypes.DurationProto(8)
+				tr.Duration, expectedTR.Duration = ptypes.DurationProto(8), ptypes.DurationProto(8)
 				checkResults()
 
 				// duration < 0
 				tr.Duration = ptypes.DurationProto(-8)
-				expected.Duration = ptypes.DurationProto(0)
+				expectedTR.Duration = ptypes.DurationProto(0)
 				checkResults()
 			})
 			Convey("without CoerceNegativeDuration", func() {
@@ -163,8 +168,8 @@ func TestReportTestResults(t *testing.T) {
 		Convey("with ServerConfig.TestLocationBase", func() {
 			cfg.TestLocationBase = "//base/"
 			tr.TestMetadata.Location.FileName = "artifact_dir/a_test.cc"
-			expected.TestMetadata = proto.Clone(expected.TestMetadata).(*pb.TestMetadata)
-			expected.TestMetadata.Location.FileName = "//base/artifact_dir/a_test.cc"
+			expectedTR.TestMetadata = proto.Clone(expectedTR.TestMetadata).(*pb.TestMetadata)
+			expectedTR.TestMetadata.Location.FileName = "//base/artifact_dir/a_test.cc"
 			checkResults()
 		})
 
@@ -196,18 +201,18 @@ func TestReportTestResults(t *testing.T) {
 					},
 				},
 			}
-			expected.Tags = append(expected.Tags, pbutil.StringPairs(
+			expectedTR.Tags = append(expectedTR.Tags, pbutil.StringPairs(
 				"feature", "feature2",
 				"feature", "feature3",
 				"monorail_component", "Monorail>Component>Sub",
 				"teamEmail", "team_email@chromium.org",
 				"os", "WINDOWS",
 			)...)
-			pbutil.SortStringPairs(expected.Tags)
+			pbutil.SortStringPairs(expectedTR.Tags)
 			checkResults()
 		})
 
-		Convey("returns an error if artifacts are invalid", func() {
+		Convey("ReportTestResults", func() {
 			sink, err := newSinkServer(ctx, cfg)
 			So(err, ShouldBeNil)
 			defer closeSinkServer(ctx, sink)
@@ -217,12 +222,36 @@ func TestReportTestResults(t *testing.T) {
 				return err
 			}
 
-			tr.Artifacts["art2"] = &sinkpb.Artifact{}
-			So(report(tr), ShouldHaveRPCCode, codes.InvalidArgument, "either file_path or contents must be provided")
+			Convey("returns an error if the artifact req is invalid", func() {
+				tr.Artifacts["art2"] = &sinkpb.Artifact{}
+				So(report(tr), ShouldHaveRPCCode, codes.InvalidArgument,
+					"either file_path or contents must be provided")
+			})
 
-			// "no such file or directory"
-			tr.Artifacts["art2"] = &sinkpb.Artifact{Body: &sinkpb.Artifact_FilePath{FilePath: "not_exist"}}
-			So(report(tr), ShouldHaveRPCCode, codes.FailedPrecondition, "querying file info")
+			Convey("with an inaccesible artifact file", func() {
+				tr.Artifacts["art2"] = &sinkpb.Artifact{
+					Body: &sinkpb.Artifact_FilePath{FilePath: "not_exist"}}
+
+				Convey("drops the artifact", func() {
+					So(report(tr), ShouldBeRPCOK)
+
+					// make sure that no TestResults were dropped, and the valid artifact, "art1",
+					// was not dropped, either.
+					closeSinkServer(ctx, sink)
+					So(sentTRReq, ShouldNotBeNil)
+					So(sentTRReq.Requests, ShouldHaveLength, 1)
+					So(sentTRReq.Requests[0].TestResult, ShouldResembleProto, expectedTR)
+
+					So(sentArtReq, ShouldNotBeNil)
+					So(sentArtReq.Requests, ShouldHaveLength, 1)
+					So(sentArtReq.Requests[0].Artifact, ShouldResembleProto, &pb.Artifact{
+						ArtifactId:  "art1",
+						ContentType: "text/plain",
+						Contents:    []byte("a sample artifact"),
+						SizeBytes:   int64(len("a sample artifact")),
+					})
+				})
+			})
 		})
 	})
 }
