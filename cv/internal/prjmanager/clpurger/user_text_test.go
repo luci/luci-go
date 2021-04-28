@@ -83,6 +83,10 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 			}
 			So(mustFormat(), ShouldContainSubstring, `its mode "CUSTOM_RUN" is not supported`)
 		})
+		Convey("Depends on itself", func() {
+			task.Reasons[0].Kind = &prjpb.CLError_SelfCqDepend{SelfCqDepend: true}
+			So(mustFormat(), ShouldContainSubstring, `because it depends on itself`)
+		})
 
 		Convey("Watched by many config groups", func() {
 			task.Reasons[0].Kind = &prjpb.CLError_WatchedByManyConfigGroups_{

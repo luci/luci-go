@@ -215,3 +215,45 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		So(gf.LastMessage(ci44).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
 	})
 }
+
+func TestPurgesCLCQDependingOnItself(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges CL which CQ-Depends on itself", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject  = "chromiumos"
+			gHost     = "chromium-review.example.com"
+			gRepo     = "cros/platform"
+			gRef      = "refs/heads/main"
+			gChange44 = 44
+		)
+
+		ct.LogPhase(ctx, "Set up a CL depending on itself")
+		ct.EnableCVRunManagement(ctx, lProject)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		ct.Cfg.Create(ctx, lProject, cfg)
+		tStart := ct.Now()
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange44, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
+			gf.Owner("user-1"),
+			gf.CQ(+1, tStart, gf.U("user-1")),
+			gf.Desc(fmt.Sprintf("T\n\nCq-Depend: %d", gChange44)),
+		)))
+
+		ct.LogPhase(ctx, "Run CV until CL is purged")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool {
+			return ct.MaxCQVote(ctx, gHost, gChange44) == 0
+		})
+
+		ct.LogPhase(ctx, "Ensure CL is no longer active in CV")
+		ct.RunUntil(ctx, func() bool {
+			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		})
+	})
+}

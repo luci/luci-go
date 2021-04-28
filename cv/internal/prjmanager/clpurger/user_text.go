@@ -58,6 +58,12 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *prjpb
 		}
 		return tmplUnsupportedMode.Execute(sb, v)
 
+	case *prjpb.CLError_SelfCqDepend:
+		if !v.SelfCqDepend {
+			return errors.New("self_cq_depend must be set")
+		}
+		return tmplSelfCQDepend.Execute(sb, nil)
+
 	case *prjpb.CLError_WatchedByManyConfigGroups_:
 		cgs := v.WatchedByManyConfigGroups.GetConfigGroups()
 		if len(cgs) < 2 {
@@ -147,6 +153,12 @@ You can set preferred email at https://{{.GerritHost}}/settings/#EmailAddresses
 var tmplUnsupportedMode = tmplMust(`
 {{CQ_OR_CV}} can't process the CL because its mode {{.UnsupportedMode | printf "%q"}} is not supported.
 {{CONTACT_YOUR_INFRA}}
+`)
+
+var tmplSelfCQDepend = tmplMust(`
+{{CQ_OR_CV}} can't process the CL because it depends on itself.
+
+Please check Cq-Depend: in CL description (commit message). If you think this is a mistake, {{CONTACT_YOUR_INFRA}}.
 `)
 
 var tmplWatchedByManyConfigGroups = tmplMust(`
