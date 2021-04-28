@@ -151,7 +151,7 @@ func call(c context.Context, client *prpc.Client, req *request, out io.Writer) (
 	}
 
 	// Send the request.
-	res, err := client.CallWithFormats(c, req.service, req.method, message, inf, outf, prpc.Header(&hmd))
+	res, err := client.CallWithFormats(c, req.service, req.method, message, inf, outf, grpc.Header(&hmd))
 	if err != nil {
 		return nil, &exitCode{err, int(grpc.Code(err))}
 	}

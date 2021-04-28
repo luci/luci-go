@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -40,7 +41,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/common/system/signals"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/auth/realms"
@@ -341,7 +341,7 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 		Invocation: &pb.Invocation{
 			Realm: realm,
 		},
-	}, prpc.Header(&md))
+	}, grpc.Header(&md))
 	if err != nil {
 		err = errors.Annotate(err, "failed to create an invocation").Err()
 		return

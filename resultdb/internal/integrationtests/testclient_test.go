@@ -17,9 +17,8 @@ package integrationtests
 import (
 	"context"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-
-	"go.chromium.org/luci/grpc/prpc"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -39,7 +38,7 @@ type testClient struct {
 func (c *testClient) CreateInvocation(ctx context.Context, id string) {
 	md := metadata.MD{}
 	req := &pb.CreateInvocationRequest{InvocationId: id, Invocation: &pb.Invocation{Realm: "testproject:testrealm"}}
-	inv, err := c.app.Recorder.CreateInvocation(ctx, req, prpc.Header(&md))
+	inv, err := c.app.Recorder.CreateInvocation(ctx, req, grpc.Header(&md))
 	So(err, ShouldBeNil)
 	So(md.Get(recorder.UpdateTokenMetadataKey), ShouldHaveLength, 1)
 
