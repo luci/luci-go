@@ -101,6 +101,69 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d702d806_7259b5fd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-28T01:24:19Z",
+      "side": 1,
+      "message": "Thanks for working on this!\n\nNot directly related to this change, but it seems that reproduce can create the invocation but cannot finalize it. So we need to find a way to handle the finalization.\n\nI don\u0027t have a good idea now. Worst case we need to prioritize fixing https://crbug.com/1033745. So that those invocations can be just expired and then finalized. ",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f30a66d3_9227ec69",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-28T01:24:19Z",
+      "side": 1,
+      "message": "This is the prod host of resultdb. And for dev instance you\u0027ll need to use \"staging.results.api.cr.dev\".",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2746f5cf_5a1bad3b",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-28T01:24:19Z",
+      "side": 1,
+      "message": "nit: used?",
+      "range": {
+        "startLine": 73,
+        "startChar": 24,
+        "endLine": 73,
+        "endChar": 28
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "99f5c29e_c77b195a",
@@ -168,6 +231,24 @@
       "side": 1,
       "message": "Can we have invocation package under the dir for this function?",
       "parentUuid": "a65c188a_291fd722",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05dfb2b0_be7a9a80",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-28T01:24:19Z",
+      "side": 1,
+      "message": "FWIW, ResultDB can accept any invocation id if it\n- starts with \"u-\"\n- no longer than 100 chars\n- can uniquely identify an invocation\n\nSo you can have your own way to construct the invocation ids if you want.\n\nIf you really want to share this function, I think maybe put it in http://shortn/_cDQ4xPlphD ? +Nodir for general guidelines.",
+      "parentUuid": "f8a9bdb9_3ff29bf7",
       "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -310,6 +391,23 @@
         "endLine": 339,
         "endChar": 30
       },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f5e94198_8be60f14",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-28T01:24:19Z",
+      "side": 1,
+      "message": "func (c *reproduceRun) createInvocation ?\n\nOr L165 need to be updated",
       "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
