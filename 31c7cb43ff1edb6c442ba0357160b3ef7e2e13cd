@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "39b77ac2_21166603",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:07:50Z",
+      "side": 1,
+      "message": "lgtm % my only concern is monitoring of panics.",
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "90243c52_305758e0",
@@ -43,6 +60,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1d40c165_0de0b909",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:07:50Z",
+      "side": 1,
+      "message": "btw, how about regexp-ing \"id\" to ensure it\u0027s [a-z0-0\\-_] ?",
+      "range": {
+        "startLine": 40,
+        "startChar": 16,
+        "endLine": 40,
+        "endChar": 18
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40b1fac4_bbba1212",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:07:50Z",
+      "side": 1,
+      "message": "I know panic isn\u0027t encouraged, but monitoring is exactly where we\u0027d want to know about panics. So, I think L174..L187 should be in defer()",
+      "range": {
+        "startLine": 174,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 31
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "304129b6_aa9ab5b9",
         "filename": "server/internal/auth.go",
         "patchSetId": 6
@@ -54,6 +117,30 @@
       "writtenOn": "2021-04-28T21:00:46Z",
       "side": 1,
       "message": "nit: this should remain original 2019",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6d8b78c_5ad4a1d7",
+        "filename": "server/internal/auth.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:07:50Z",
+      "side": 1,
+      "message": "err, I meant 2020.",
+      "parentUuid": "304129b6_aa9ab5b9",
       "range": {
         "startLine": 1,
         "startChar": 15,
