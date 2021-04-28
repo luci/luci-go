@@ -53,7 +53,7 @@ func (bb *BuildbucketFake) Start() {
 	r := router.New()
 
 	rpcs := &prpc.Server{Authenticator: prpc.NoAuthentication}
-	rpcs.InstallHandlers(r, router.MiddlewareChain{})
+	rpcs.InstallHandlers(r, nil)
 	bbpb.RegisterBuildsServer(rpcs, &fakeBuildsServer{fake: bb})
 
 	bb.srv = httptest.NewServer(r)

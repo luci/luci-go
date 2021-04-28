@@ -155,7 +155,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	// Enable authentication and authorization for the validation endpoint only
 	// when running in production (i.e. not on a developer workstation).
-	middleware := router.MiddlewareChain{}
+	var middleware router.MiddlewareChain
 	if opts.Prod {
 		middleware = router.NewMiddlewareChain(
 			(&auth.Authenticator{

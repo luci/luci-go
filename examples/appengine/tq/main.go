@@ -138,7 +138,7 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		srv.Routes.GET("/count-down/:From", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/count-down/:From", nil, func(c *router.Context) {
 			num, err := strconv.ParseInt(c.Params.ByName("From"), 10, 32)
 			if err != nil {
 				http.Error(c.Writer, "Not a number", http.StatusBadRequest)

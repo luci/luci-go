@@ -115,7 +115,7 @@ func (t *Testing) Iterate(c context.Context) int {
 	logging.Debugf(c, "tumble.Testing.Iterate: time(%d|%s)", timestamp(clk.Now().Unix()), clk.Now().UTC())
 
 	r := router.New()
-	t.InstallHandlers(r, router.MiddlewareChain{})
+	t.InstallHandlers(r, nil)
 
 	ret := 0
 	tsks := tq.GetTestable(c).GetScheduledTasks()[baseName]

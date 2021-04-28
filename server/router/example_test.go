@@ -73,10 +73,10 @@ func makeRequests(url string) {
 func Example_createServer() {
 	r := router.New()
 	r.Use(router.NewMiddlewareChain(Logger))
-	r.GET("/hello", router.MiddlewareChain{}, func(c *router.Context) {
+	r.GET("/hello", nil, func(c *router.Context) {
 		fmt.Fprintf(c.Writer, "Hello")
 	})
-	r.GET("/hello/:name", router.MiddlewareChain{}, func(c *router.Context) {
+	r.GET("/hello/:name", nil, func(c *router.Context) {
 		fmt.Fprintf(c.Writer, "Hello %s", c.Params.ByName("name"))
 	})
 

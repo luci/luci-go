@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/warmup"
 
@@ -206,7 +205,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	// Register it with the server guts.
 	host.RegisterCookieAuth(method)
 	warmup.Register("server/encryptedcookies", method.Warmup)
-	method.InstallHandlers(host.Routes(), router.MiddlewareChain{})
+	method.InstallHandlers(host.Routes(), nil)
 
 	return ctx, nil
 }
@@ -327,6 +326,6 @@ func (m *serverModule) loadOpenIDConfig(ctx context.Context) (*atomic.Value, err
 func (m *serverModule) initInDevMode(ctx context.Context, host module.Host) error {
 	method := &fakecookies.AuthMethod{}
 	host.RegisterCookieAuth(method)
-	method.InstallHandlers(host.Routes(), router.MiddlewareChain{})
+	method.InstallHandlers(host.Routes(), nil)
 	return nil
 }

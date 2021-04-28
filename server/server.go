@@ -69,7 +69,7 @@
 //       srv.Context = injectGlobalStuff(srv.Context)
 //
 //       // Install regular HTTP routes.
-//       srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+//       srv.Routes.GET("/", nil, func(c *router.Context) {
 //         // ...
 //       })
 //
@@ -978,14 +978,14 @@ func (s *Server) newRouter(opts PortOptions) *router.Router {
 	r.Use(mw)
 
 	// Mandatory health check/readiness probe endpoint.
-	r.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
+	r.GET(healthEndpoint, nil, func(c *router.Context) {
 		c.Writer.Write([]byte(s.healthResponse(c.Context)))
 	})
 
 	// Add NotFound handler wrapped in our middlewares so that unrecognized
 	// requests are at least logged. If we don't do that they'll be handled
 	// completely silently and this is very confusing when debugging 404s.
-	r.NotFound(router.MiddlewareChain{}, func(c *router.Context) {
+	r.NotFound(nil, func(c *router.Context) {
 		http.NotFound(c.Writer, c.Request)
 	})
 
@@ -1983,7 +1983,7 @@ func (s *Server) initMainPort() error {
 	s.Routes = s.mainPort.Routes
 
 	// Install auth info handlers (under "/auth/api/v1/server/").
-	auth.InstallHandlers(s.Routes, router.MiddlewareChain{})
+	auth.InstallHandlers(s.Routes, nil)
 
 	// Expose public pRPC endpoints (see also ListenAndServe where we put the
 	// final interceptors).
@@ -2001,7 +2001,7 @@ func (s *Server) initMainPort() error {
 		EnableCompression: !s.Options.GAE,
 	}
 	discovery.Enable(s.PRPC)
-	s.PRPC.InstallHandlers(s.Routes, router.MiddlewareChain{})
+	s.PRPC.InstallHandlers(s.Routes, nil)
 
 	// Install RPCExplorer web app at "/rpcexplorer/".
 	rpcexplorer.Install(s.Routes)
@@ -2037,7 +2037,7 @@ func (s *Server) initAdminPort() error {
 	})
 	routes := adminPort.Routes
 
-	routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+	routes.GET("/", nil, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
 	})
 	portal.InstallHandlers(routes, withAdminSecret, portal.AssumeTrustedPort)
@@ -2050,7 +2050,7 @@ func (s *Server) initAdminPort() error {
 	//
 	// See also internal/pprof.go for more profiling goodies exposed through the
 	// admin portal.
-	routes.GET("/debug/pprof/*path", router.MiddlewareChain{}, func(c *router.Context) {
+	routes.GET("/debug/pprof/*path", nil, func(c *router.Context) {
 		switch strings.TrimPrefix(c.Params.ByName("path"), "/") {
 		case "cmdline":
 			pprof.Cmdline(c.Writer, c.Request)
@@ -2096,7 +2096,7 @@ func (s *Server) initWarmup() error {
 	// All warmups should happen *before* the serving loop and /_ah/warmup should
 	// just always return OK.
 	if s.Options.GAE {
-		s.Routes.GET("/_ah/warmup", router.MiddlewareChain{}, func(*router.Context) {})
+		s.Routes.GET("/_ah/warmup", nil, func(*router.Context) {})
 	}
 	s.RegisterWarmup(func(ctx context.Context) { warmup.Warmup(ctx) })
 	return nil

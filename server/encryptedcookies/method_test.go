@@ -340,10 +340,10 @@ type openIDProviderFake struct {
 
 func (f *openIDProviderFake) Init(ctx context.Context, c C) {
 	r := router.NewWithRootContext(ctx)
-	r.GET("/discovery", router.MiddlewareChain{}, f.discoveryHandler)
-	r.GET("/jwks", router.MiddlewareChain{}, f.jwksHandler)
-	r.POST("/token", router.MiddlewareChain{}, f.tokenHandler)
-	r.POST("/revocation", router.MiddlewareChain{}, f.revocationHandler)
+	r.GET("/discovery", nil, f.discoveryHandler)
+	r.GET("/jwks", nil, f.jwksHandler)
+	r.POST("/token", nil, f.tokenHandler)
+	r.POST("/revocation", nil, f.revocationHandler)
 	f.c = c
 	f.srv = httptest.NewServer(r)
 	f.signer = signingtest.NewSigner(nil)

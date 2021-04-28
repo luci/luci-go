@@ -53,7 +53,7 @@ func main() {
 		// UI pages. When running locally, serve static files ourself as well.
 		ui.InstallHandlers(srv, svc, "templates")
 		if !srv.Options.Prod {
-			srv.Routes.Static("/static", router.MiddlewareChain{}, http.Dir("./static"))
+			srv.Routes.Static("/static", nil, http.Dir("./static"))
 		}
 
 		// All pRPC services.

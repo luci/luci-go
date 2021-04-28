@@ -68,7 +68,7 @@ func TestInstallHandlers(t *testing.T) {
 			return &resp
 		}
 
-		InstallHandlers(r, router.NewMiddlewareChain(), rules)
+		InstallHandlers(r, nil, rules)
 
 		Convey("Basic metadataHandler call", func() {
 			So(rr.Code, ShouldEqual, http.StatusOK)

@@ -93,10 +93,10 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 		adminAutologin,
 	))
 
-	rr.GET("", router.MiddlewareChain{}, indexPage)
-	rr.GET("/:PageKey", router.MiddlewareChain{}, portalPageGET)
+	rr.GET("", nil, indexPage)
+	rr.GET("/:PageKey", nil, portalPageGET)
 	rr.POST("/:PageKey", router.NewMiddlewareChain(xsrf.WithTokenCheck), portalPagePOST)
-	rr.GET("/:PageKey/:ActionID", router.MiddlewareChain{}, portalActionGETPOST)
+	rr.GET("/:PageKey/:ActionID", nil, portalActionGETPOST)
 	rr.POST("/:PageKey/:ActionID", router.NewMiddlewareChain(xsrf.WithTokenCheck), portalActionGETPOST)
 }
 
