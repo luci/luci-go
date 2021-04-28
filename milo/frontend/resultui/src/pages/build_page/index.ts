@@ -36,7 +36,7 @@ import {
   getURLPathForProject,
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { reportRenderError } from '../../libs/error_handler';
+import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { genFeedbackUrl } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
@@ -65,6 +65,39 @@ const TAB_NAME_LABEL_TUPLES = Object.freeze([
   Object.freeze(['build-blamelist', 'Blamelist']),
 ]);
 
+function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
+  if (err.error instanceof LoadTestVariantsError) {
+    // Ignore request using the old invocation ID.
+    if (!err.error.req.invocations.includes(`invocations/${ele.buildState.invocationId}`)) {
+      err.stopPropagation();
+      return false;
+    }
+
+    // Old builds don't support computed invocation ID.
+    // Disable it and try again.
+    if (ele.buildState.useComputedInvId && !err.error.req.pageToken) {
+      ele.buildState.useComputedInvId = false;
+      err.stopPropagation();
+      return false;
+    }
+  } else if (err.error instanceof QueryInvocationError) {
+    // Ignore request using the old invocation ID.
+    if (err.error.invId !== ele.buildState.invocationId) {
+      err.stopPropagation();
+      return false;
+    }
+
+    // Old builds don't support computed invocation ID.
+    // Disable it and try again.
+    if (ele.buildState.useComputedInvId) {
+      ele.buildState.useComputedInvId = false;
+      err.stopPropagation();
+      return false;
+    }
+  }
+  return forwardWithoutMsg(err, ele);
+}
+
 /**
  * Main build page.
  * Reads project, bucket, builder and build from URL params.
@@ -72,6 +105,7 @@ const TAB_NAME_LABEL_TUPLES = Object.freeze([
  * If build is not a number, shows an error.
  */
 @customElement('milo-build-page')
+@errorHandler(retryWithoutComputedInvId)
 @provideInvocationState
 @provideBuildState
 @consumeConfigsStore
@@ -149,38 +183,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     return `${statusDisplay} - ${this.builderIdParam?.builder || ''} ${this.buildNumOrId}`;
   }
 
-  private errorHandler = (e: ErrorEvent) => {
-    if (e.error instanceof LoadTestVariantsError) {
-      // Ignore request using the old invocation ID.
-      if (!e.error.req.invocations.includes(`invocations/${this.buildState.invocationId}`)) {
-        e.stopPropagation();
-        return;
-      }
-
-      // Old builds don't support computed invocation ID.
-      // Disable it and try again.
-      if (this.buildState.useComputedInvId && !e.error.req.pageToken) {
-        this.buildState.useComputedInvId = false;
-        e.stopPropagation();
-        return;
-      }
-    } else if (e.error instanceof QueryInvocationError) {
-      // Ignore request using the old invocation ID.
-      if (e.error.invId !== this.buildState.invocationId) {
-        e.stopPropagation();
-        return;
-      }
-
-      // Old builds don't support computed invocation ID.
-      // Disable it and try again.
-      if (this.buildState.useComputedInvId) {
-        this.buildState.useComputedInvId = false;
-        e.stopPropagation();
-        return;
-      }
-    }
-  };
-
   connectedCallback() {
     super.connectedCallback();
     if (!this.isShortLink) {
@@ -188,8 +190,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     }
 
     this.appState.hasSettingsDialog++;
-
-    this.addEventListener('error', this.errorHandler);
 
     this.addDisposer(
       reaction(
@@ -323,7 +323,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   disconnectedCallback() {
-    this.removeEventListener('error', this.errorHandler);
     this.appState.hasSettingsDialog--;
     super.disconnectedCallback();
   }
