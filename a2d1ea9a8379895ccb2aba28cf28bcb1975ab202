@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "66405ede_05058947",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-28T00:05:09Z",
+      "side": 1,
+      "message": "Originally, I wanted to use this more as a value to pass to other functions.\nI thought them as \"predefined error handling strategies\". Therefore they were treated as constants. But since I\u0027m also calling them as normal functions, camelcase is probably a better fit.",
+      "parentUuid": "c4eead85_e57d1f8b",
+      "range": {
+        "startLine": 49,
+        "startChar": 9,
+        "endLine": 49,
+        "endChar": 23
+      },
+      "revId": "a2d1ea9a8379895ccb2aba28cf28bcb1975ab202",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "44d78fc4_9135f971",
@@ -37,6 +61,30 @@
       "writtenOn": "2021-04-27T19:51:49Z",
       "side": 1,
       "message": "maybe \"throw an error\"\notherwise it reads like \"throw-in reportError\"\n\nor maybe \"For functions that may trow, wrap them in ...\"",
+      "range": {
+        "startLine": 20,
+        "startChar": 33,
+        "endLine": 20,
+        "endChar": 38
+      },
+      "revId": "a2d1ea9a8379895ccb2aba28cf28bcb1975ab202",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fbb5c89f_b4102930",
+        "filename": "milo/frontend/resultui/src/libs/error_handler.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-28T00:05:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44d78fc4_9135f971",
       "range": {
         "startLine": 20,
         "startChar": 33,

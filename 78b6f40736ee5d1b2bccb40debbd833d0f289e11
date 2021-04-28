@@ -16,6 +16,24 @@
       "message": "nit: is this intentional?",
       "revId": "78b6f40736ee5d1b2bccb40debbd833d0f289e11",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01ddafcd_7f4e0351",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-28T00:05:09Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "321eda4d_87511d5e",
+      "revId": "78b6f40736ee5d1b2bccb40debbd833d0f289e11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
