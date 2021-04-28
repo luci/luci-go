@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e6dcbf4_34365256",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T00:09:01Z",
+      "side": 1,
+      "message": "why do do we need status.Errorf here?",
+      "revId": "a4063e461957a10e125587f99c1330f0e9ebb5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "418f8299_8a553e1b",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T00:09:01Z",
+      "side": 1,
+      "message": "that\u0027s two status.Errorf calls, here and the line below",
+      "revId": "a4063e461957a10e125587f99c1330f0e9ebb5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
