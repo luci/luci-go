@@ -19,19 +19,18 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sync"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -48,12 +47,11 @@ func main() {
 		}
 
 		// GAE crons.
-		cronMW := router.NewMiddlewareChain(gaemiddleware.RequireCron)
-		srv.Routes.GET("/internal/cron/read-config", cronMW, func(c *router.Context) {
-			readConfigCron(c, services.Admin)
+		cron.RegisterHandler("read-config", func(ctx context.Context) error {
+			return readConfigCron(ctx, services.Admin)
 		})
-		srv.Routes.GET("/internal/cron/fetch-crl", cronMW, func(c *router.Context) {
-			fetchCRLCron(c, services.Certs)
+		cron.RegisterHandler("fetch-crl", func(ctx context.Context) error {
+			return fetchCRLCron(ctx, services.Certs)
 		})
 
 		// PubSub push handler processing messages produced by impl/utils/bq.
@@ -81,8 +79,8 @@ func main() {
 	})
 }
 
-// readConfigCron is handler for /internal/cron/read-config GAE cron task.
-func readConfigCron(c *router.Context, adminServer admin.AdminServer) {
+// readConfigCron is a handler for the "read-config" cron.
+func readConfigCron(ctx context.Context, adminServer admin.AdminServer) error {
 	// All config fetching callbacks to call in parallel.
 	fetchers := []struct {
 		name string
@@ -95,7 +93,7 @@ func readConfigCron(c *router.Context, adminServer admin.AdminServer) {
 		{"ImportProjectOwnedAccountsConfigs", adminServer.ImportProjectOwnedAccountsConfigs},
 	}
 
-	errs := make([]error, len(fetchers))
+	errs := errors.NewLazyMultiError(len(fetchers))
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(fetchers))
@@ -104,53 +102,42 @@ func readConfigCron(c *router.Context, adminServer admin.AdminServer) {
 		fetcher := fetcher
 		go func() {
 			defer wg.Done()
-			if _, errs[idx] = fetcher.cb(c.Context, nil); errs[idx] != nil {
-				logging.Errorf(c.Context, "%s failed - %s", fetcher.name, errs[idx])
+			if _, err := fetcher.cb(ctx, nil); err != nil {
+				logging.Errorf(ctx, "%s failed - %s", fetcher.name, err)
+				errs.Assign(idx, grpcutil.WrapIfTransient(err))
 			}
 		}()
 	}
 	wg.Wait()
 
-	// Retry cron job only on transient errors. On fatal errors let it rerun one
-	// minute later, as usual, to avoid spamming logs with errors.
-	c.Writer.WriteHeader(statusFromErrs(errs))
+	return errs.Get()
 }
 
-// fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
-func fetchCRLCron(c *router.Context, caServer admin.CertificateAuthoritiesServer) {
-	list, err := caServer.ListCAs(c.Context, nil)
+// fetchCRLCron is a handler for the "fetch-crl" cron.
+func fetchCRLCron(ctx context.Context, caServer admin.CertificateAuthoritiesServer) error {
+	list, err := caServer.ListCAs(ctx, nil)
 	if err != nil {
-		panic(err) // let panic catcher deal with it
+		return err
 	}
+
+	errs := errors.NewLazyMultiError(len(list.Cn))
 
 	// Fetch CRL of each active CA in parallel. In practice there are very few
 	// CAs there (~= 1), so the risk of OOM is small.
 	wg := sync.WaitGroup{}
-	errs := make([]error, len(list.Cn))
-	for i, cn := range list.Cn {
-		wg.Add(1)
-		go func(i int, cn string) {
+	wg.Add(len(list.Cn))
+	for idx, cn := range list.Cn {
+		idx := idx
+		cn := cn
+		go func() {
 			defer wg.Done()
-			_, err := caServer.FetchCRL(c.Context, &admin.FetchCRLRequest{Cn: cn})
-			if err != nil {
-				logging.Errorf(c.Context, "FetchCRL(%q) failed - %s", cn, err)
-				errs[i] = err
+			if _, err := caServer.FetchCRL(ctx, &admin.FetchCRLRequest{Cn: cn}); err != nil {
+				logging.Errorf(ctx, "FetchCRL(%q) failed - %s", cn, err)
+				errs.Assign(idx, grpcutil.WrapIfTransient(err))
 			}
-		}(i, cn)
+		}()
 	}
 	wg.Wait()
 
-	// Retry cron job only on transient errors. On fatal errors let it rerun one
-	// minute later, as usual, to avoid spamming logs with errors.
-	c.Writer.WriteHeader(statusFromErrs(errs))
-}
-
-// statusFromErrs returns 500 if any of gRPC errors is codes.Internal.
-func statusFromErrs(errs []error) int {
-	for _, err := range errs {
-		if grpc.Code(err) == codes.Internal {
-			return http.StatusInternalServerError
-		}
-	}
-	return http.StatusOK
+	return errs.Get()
 }
