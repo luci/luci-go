@@ -56,6 +56,30 @@
       },
       "revId": "2125e10b402d2287d5e267e1d83e2031a12e94c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d09ee95_878edb28",
+        "filename": "server/router/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-28T00:02:25Z",
+      "side": 1,
+      "message": "This complicats middlewares that use `defer`, like the panic catcher and tsmon. I believe it is also more standard to pass `next` as a callback, e.g. gRPC middlewares do the same: https://pkg.go.dev/google.golang.org/grpc#UnaryServerInterceptor",
+      "parentUuid": "74f1ccfe_98015102",
+      "range": {
+        "startLine": 32,
+        "startChar": 26,
+        "endLine": 32,
+        "endChar": 35
+      },
+      "revId": "2125e10b402d2287d5e267e1d83e2031a12e94c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
