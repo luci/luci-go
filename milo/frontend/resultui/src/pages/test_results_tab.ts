@@ -27,12 +27,14 @@ import { AppState, consumeAppState } from '../context/app_state';
 import { consumeInvocationState, InvocationState } from '../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../libs/analytics_utils';
+import { errorHandler, forwardWithoutMsg, reportRenderError } from '../libs/error_handler';
 import commonStyle from '../styles/common_style.css';
 
 /**
  * Display test results.
  */
 @customElement('milo-test-results-tab')
+@errorHandler(forwardWithoutMsg)
 @consumeInvocationState
 @consumeConfigsStore
 @consumeAppState
@@ -131,7 +133,7 @@ export class TestResultsTabElement extends MiloBaseElement {
     `;
   }
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     return html`
       <div id="header">
         <milo-tvt-config-widget class="filters-container"></milo-tvt-config-widget>
@@ -144,7 +146,7 @@ export class TestResultsTabElement extends MiloBaseElement {
       </div>
       ${this.renderBody()}
     `;
-  }
+  });
 
   static styles = [
     commonStyle,
