@@ -174,6 +174,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "57eb7a74_efab6743",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-28T05:19:35Z",
+      "side": 1,
+      "message": "Oops, race condition...\n\n\u003e Do you mean reproduce will also wait for task execution to finish? \n\nYes. It reproduces a task *locally*.",
+      "parentUuid": "c79db74f_4855ebcc",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f30a66d3_9227ec69",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 11
