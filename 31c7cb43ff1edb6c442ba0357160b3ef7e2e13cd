@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f92a0b1b_e0f0e13c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "sgtm @ PS2. Will check PS6 a tad later.",
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "90243c52_305758e0",
+        "filename": "server/cron/default.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "or GAE cron?",
+      "range": {
+        "startLine": 24,
+        "startChar": 13,
+        "endLine": 24,
+        "endChar": 29
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "304129b6_aa9ab5b9",
+        "filename": "server/internal/auth.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "nit: this should remain original 2019",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

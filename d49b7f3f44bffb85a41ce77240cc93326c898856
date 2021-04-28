@@ -26,6 +26,53 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e03a9cca_701ce377",
+        "filename": "server/cron/admin.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "01bba613_2fc0509e",
+      "range": {
+        "startLine": 29,
+        "startChar": 5,
+        "endLine": 29,
+        "endChar": 15
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be7f9aae_fe8eb825",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "seems to differ from GAE cron",
+      "range": {
+        "startLine": 34,
+        "startChar": 2,
+        "endLine": 34,
+        "endChar": 45
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "22f36156_106a6c58",
         "filename": "server/cron/dispatcher.go",
         "patchSetId": 2
@@ -49,6 +96,76 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0dfa9f69_eb345413",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "very lgtm.",
+      "parentUuid": "22f36156_106a6c58",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 19
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6839e7b7_a4e87f78",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "nit: DisableAuth (to avoid negation in the name, s.t. !NoAuth is more readable)",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a55c43d_e3f25cc9",
+        "filename": "server/cron/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "this sounds like the handlers themselves are doing it, yet it\u0027s exact opposite.",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 66
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "d74cc34b_7302bdc9",
         "filename": "server/internal/auth.go",
         "patchSetId": 2
@@ -60,6 +177,30 @@
       "writtenOn": "2021-04-28T04:34:41Z",
       "side": 1,
       "message": "extracted from tq/dispatcher.go",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 22
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3f7a449_0a606081",
+        "filename": "server/internal/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-28T21:00:46Z",
+      "side": 1,
+      "message": "Then it should be 2020 on the first line.",
+      "parentUuid": "d74cc34b_7302bdc9",
       "range": {
         "startLine": 30,
         "startChar": 3,
