@@ -143,6 +143,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "07b4f985_d200db79",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T01:30:08Z",
+      "side": 1,
+      "message": "In what situation will reproduce need the dev instance?",
+      "parentUuid": "f30a66d3_9227ec69",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2746f5cf_5a1bad3b",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 11
@@ -154,6 +178,30 @@
       "writtenOn": "2021-04-28T01:24:19Z",
       "side": 1,
       "message": "nit: used?",
+      "range": {
+        "startLine": 73,
+        "startChar": 24,
+        "endLine": 73,
+        "endChar": 28
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ec7579fd_35c25086",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T01:30:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2746f5cf_5a1bad3b",
       "range": {
         "startLine": 73,
         "startChar": 24,
@@ -408,6 +456,24 @@
       "writtenOn": "2021-04-28T01:24:19Z",
       "side": 1,
       "message": "func (c *reproduceRun) createInvocation ?\n\nOr L165 need to be updated",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29296eff_919d557f",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T01:30:08Z",
+      "side": 1,
+      "message": "This is intentional and done for testing\nc.createInvocation is assigned in line 83",
+      "parentUuid": "f5e94198_8be60f14",
       "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
