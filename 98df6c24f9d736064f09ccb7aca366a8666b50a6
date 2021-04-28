@@ -219,6 +219,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3988c6c0_dadc1e93",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-28T00:58:47Z",
+      "side": 1,
+      "message": "I see. nvm.",
+      "parentUuid": "92380326_d9de9c13",
+      "range": {
+        "startLine": 320,
+        "startChar": 0,
+        "endLine": 320,
+        "endChar": 30
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3e5f5c79_fd013f01",
