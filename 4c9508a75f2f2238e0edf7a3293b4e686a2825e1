@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "939aece9_ce67af13",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-28T03:07:35Z",
+      "side": 1,
+      "message": "better to make this function returns update-token instead of metadata?",
+      "range": {
+        "startLine": 165,
+        "startChar": 28,
+        "endLine": 165,
+        "endChar": 44
+      },
+      "revId": "4c9508a75f2f2238e0edf7a3293b4e686a2825e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
