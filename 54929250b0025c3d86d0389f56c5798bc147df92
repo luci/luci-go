@@ -33,6 +33,24 @@
       "message": "is this host recommended by Google documentation? \n\nnormally we don\u0027t rely on non-Google servers, to avoid having our service down because some non-google service is down.",
       "revId": "54929250b0025c3d86d0389f56c5798bc147df92",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97dd4988_02e0df97",
+        "filename": "milo/frontend/resultui/assets/index.template.ejs",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2021-04-28T01:42:46Z",
+      "side": 1,
+      "message": "removed. Bundled the script instead.",
+      "parentUuid": "1301bf81_2095fc34",
+      "revId": "54929250b0025c3d86d0389f56c5798bc147df92",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
