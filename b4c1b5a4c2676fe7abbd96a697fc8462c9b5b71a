@@ -46,6 +46,30 @@
       },
       "revId": "b4c1b5a4c2676fe7abbd96a697fc8462c9b5b71a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5448f5de_f997ba9e",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-28T03:59:27Z",
+      "side": 1,
+      "message": "I think it is fine not to take care error path coverage so much.",
+      "parentUuid": "f8c10382_b2555159",
+      "range": {
+        "startLine": 341,
+        "startChar": 122,
+        "endLine": 341,
+        "endChar": 130
+      },
+      "revId": "b4c1b5a4c2676fe7abbd96a697fc8462c9b5b71a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
