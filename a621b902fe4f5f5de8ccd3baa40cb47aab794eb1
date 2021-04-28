@@ -22,6 +22,30 @@
       },
       "revId": "a621b902fe4f5f5de8ccd3baa40cb47aab794eb1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "46385ba0_8633f6e3",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T01:59:06Z",
+      "side": 1,
+      "message": "ah, nvm. exported.Close() needs to be called outside of prepareTaskRequestEnvironment().",
+      "parentUuid": "2b487886_b4903082",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 2
+      },
+      "revId": "a621b902fe4f5f5de8ccd3baa40cb47aab794eb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
