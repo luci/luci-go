@@ -67,8 +67,7 @@ func Submit(ctx context.Context, s Submitter, payload *reminder.Payload, path Tx
 	dur := clock.Now(ctx).Sub(start)
 
 	metrics.SubmitCount.Add(ctx, 1, payload.TaskClass, string(path), code.String())
-	// TODO(crbug.com/1201436): Use dur.Milliseconds() instead.
-	metrics.SubmitDurationMS.Add(ctx, float64(int64(dur)/1e6), payload.TaskClass, string(path), code.String())
+	metrics.SubmitDurationMS.Add(ctx, float64(dur.Milliseconds()), payload.TaskClass, string(path), code.String())
 
 	switch code {
 	case codes.OK, codes.AlreadyExists:
@@ -111,8 +110,7 @@ func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.
 			metrics.RemindersDeleted.Add(ctx, 1, taskClass, string(t), db.Kind())
 			if payload != nil && !payload.Created.IsZero() {
 				lat := clock.Now(ctx).Sub(payload.Created)
-				// TODO(crbug.com/1201436): Use lat.Milliseconds() instead.
-				metrics.RemindersLatencyMS.Add(ctx, float64(int64(lat)/1e6), taskClass, string(t), db.Kind())
+				metrics.RemindersLatencyMS.Add(ctx, float64(lat.Milliseconds()), taskClass, string(t), db.Kind())
 			}
 		}
 	}

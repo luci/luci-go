@@ -128,8 +128,7 @@ func (s *inprocSweeper) sweep(ctx context.Context, sub Submitter, reminderKeySpa
 	start := clock.Now(ctx)
 	defer func() {
 		dur := clock.Now(ctx).Sub(start)
-		// TODO(crbug.com/1201436): Use dur.Milliseconds() instead.
-		metrics.InprocSweepDurationMS.Add(ctx, float64(int64(dur)/1e6))
+		metrics.InprocSweepDurationMS.Add(ctx, float64(dur.Microseconds()))
 	}()
 
 	// Seed all future work: SweepShards scans per DB kind.
