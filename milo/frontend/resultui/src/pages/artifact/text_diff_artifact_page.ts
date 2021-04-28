@@ -20,9 +20,9 @@ import { fromPromise } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
-import { reportRenderError } from '../../components/error_handler';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeContext } from '../../libs/context';
+import { reportRenderError } from '../../libs/error_handler';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { unwrapObservable } from '../../libs/utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';

@@ -21,9 +21,9 @@ import { styleMap } from 'lit-html/directives/style-map';
 
 import './signin';
 import './tooltip';
-import './error_handler';
 import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
+import { errorHandler, handleLocally } from '../libs/error_handler';
 import { genFeedbackUrl } from '../libs/utils';
 import { router } from '../routes';
 import commonStyle from '../styles/common_style.css';
@@ -35,12 +35,27 @@ const gAuthPromise = new Promise<gapi.auth2.GoogleAuth>((resolve, reject) => {
   });
 });
 
+function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
+  // TODO(weiweilin): add integration tests to ensure redirection works properly.
+  if (err.error instanceof GrpcError) {
+    const mayRequireSignin = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(
+      err.error.code
+    );
+    if (mayRequireSignin && ele.appState.userId === '') {
+      Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
+      return false;
+    }
+  }
+  return handleLocally(err, ele);
+}
+
 /**
  * Renders page header, including a sign-in widget, a settings button, and a
  * feedback button, at the top of the child nodes.
  * Refreshes the page when a new clientId is provided.
  */
 @customElement('milo-page-layout')
+@errorHandler(redirectToLogin)
 @provideConfigsStore
 @provideAppState
 export class PageLayoutElement extends MobxLitElement implements BeforeEnterObserver {
@@ -131,23 +146,7 @@ export class PageLayoutElement extends MobxLitElement implements BeforeEnterObse
             : ''}
         </div>
       </div>
-      <milo-error-handler
-        .intercept=${(e: ErrorEvent) => {
-          // TODO(weiweilin): add integration tests to ensure redirection works properly.
-          if (e.error instanceof GrpcError) {
-            const mayRequireSignin = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(
-              e.error.code
-            );
-            if (mayRequireSignin && this.appState.userId === '') {
-              Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
-              return null;
-            }
-          }
-          return e;
-        }}
-      >
-        <slot></slot>
-      </milo-error-handler>
+      <slot></slot>
     `;
   }
 

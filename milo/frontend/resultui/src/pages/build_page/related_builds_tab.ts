@@ -18,12 +18,12 @@ import { repeat } from 'lit-html/directives/repeat';
 import { observable } from 'mobx';
 
 import '../../components/dot_spinner';
-import { reportRenderError } from '../../components/error_handler';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import { reportRenderError } from '../../libs/error_handler';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { BuildExt } from '../../models/build_ext';
