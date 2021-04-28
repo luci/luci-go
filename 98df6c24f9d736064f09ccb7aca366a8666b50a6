@@ -138,6 +138,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "408e7a5f_20defcd5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-28T05:16:35Z",
+      "side": 1,
+      "message": "I though reproduce will just trigger the swarming task and then that\u0027s it. Do you mean reproduce will also wait for task execution to finish? If so yeah reproduce can finalize the invocation and that would be perfect.",
+      "parentUuid": "3f1bc892_76fc3379",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f30a66d3_9227ec69",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 11
