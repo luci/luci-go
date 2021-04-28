@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3b4a2ae5_7f471402",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-28T02:37:12Z",
+      "side": 1,
+      "message": "space after \u0027]\u0027 for better visibility?",
+      "range": {
+        "startLine": 7,
+        "startChar": 9,
+        "endLine": 7,
+        "endChar": 10
+      },
+      "revId": "bfeb54bfa1b15795b95e3d87b9f877c90dd50783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2be4bd02_edc2f47e",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-28T02:37:12Z",
+      "side": 1,
+      "message": "no need to have this temporal variable?",
+      "revId": "bfeb54bfa1b15795b95e3d87b9f877c90dd50783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8062b9ad_caa44989",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-28T02:37:12Z",
+      "side": 1,
+      "message": "use https://pkg.go.dev/google.golang.org/grpc/metadata#Pairs ?",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 42
+      },
+      "revId": "bfeb54bfa1b15795b95e3d87b9f877c90dd50783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
