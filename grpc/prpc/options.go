@@ -47,7 +47,7 @@ type Options struct {
 	// It can be overridden on per-call basis via CallAcceptContentSubtype().
 	AcceptContentSubtype string
 
-	// These can be set only using CallOption.
+	// These can be set only using *prpc.CallOption or some grpc.CallOption.
 
 	resHeaderMetadata  *metadata.MD // destination for response HTTP headers.
 	resTrailerMetadata *metadata.MD // destination for response HTTP trailers.
@@ -78,11 +78,16 @@ func DefaultOptions() *Options {
 
 func (o *Options) apply(callOptions []grpc.CallOption) {
 	for _, co := range callOptions {
-		prpcCo, ok := co.(*CallOption)
-		if !ok {
-			panic(fmt.Sprintf("non-pRPC call option %T is used with pRPC client", co))
+		switch val := co.(type) {
+		case grpc.HeaderCallOption:
+			o.resHeaderMetadata = val.HeaderAddr
+		case grpc.TrailerCallOption:
+			o.resTrailerMetadata = val.TrailerAddr
+		case *CallOption:
+			val.apply(o)
+		default:
+			panic(fmt.Sprintf("unsupported call option %T is used with pRPC client", co))
 		}
-		prpcCo.apply(o)
 	}
 }
 
@@ -100,28 +105,6 @@ type CallOption struct {
 	grpc.CallOption
 	// apply mutates options.
 	apply func(*Options)
-}
-
-// Header returns a CallOption that retrieves the header metadata.
-// Can be used instead of with grpc.Header.
-func Header(md *metadata.MD) *CallOption {
-	return &CallOption{
-		grpc.Header(md),
-		func(o *Options) {
-			o.resHeaderMetadata = md
-		},
-	}
-}
-
-// Trailer returns a CallOption that retrieves the trailer metadata.
-// Can be used instead of grpc.Trailer.
-func Trailer(md *metadata.MD) *CallOption {
-	return &CallOption{
-		grpc.Trailer(md),
-		func(o *Options) {
-			o.resTrailerMetadata = md
-		},
-	}
 }
 
 // ExpectedCode can be used to indicate that given non-OK codes may appear

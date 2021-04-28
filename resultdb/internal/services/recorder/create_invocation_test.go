@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -489,7 +488,7 @@ func TestCreateInvocation(t *testing.T) {
 					Realm: "testproject:testrealm",
 				},
 			}
-			_, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
+			_, err := recorder.CreateInvocation(ctx, req, grpc.Header(headers))
 			So(err, ShouldBeNil)
 
 			// Including invocation.
@@ -518,7 +517,7 @@ func TestCreateInvocation(t *testing.T) {
 					State:               pb.Invocation_FINALIZING,
 				},
 			}
-			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
+			inv, err := recorder.CreateInvocation(ctx, req, grpc.Header(headers))
 			So(err, ShouldBeNil)
 			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.TryFinalizeInvocation{
 				{InvocationId: "u-inv"},

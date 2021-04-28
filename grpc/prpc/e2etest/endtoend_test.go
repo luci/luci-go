@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -112,7 +113,7 @@ func TestEndToEnd(t *testing.T) {
 			var respMD metadata.MD
 
 			c = metadata.NewOutgoingContext(c, md)
-			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"}, prpc.Header(&respMD))
+			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"}, grpc.Header(&respMD))
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
 

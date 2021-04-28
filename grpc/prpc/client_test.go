@@ -189,7 +189,7 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				var hd metadata.MD
-				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.Header(&hd))
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello John")
 				So(hd["x-lower-case-header"], ShouldResemble, []string{"CamelCaseValueStays"})
@@ -203,7 +203,7 @@ func TestClient(t *testing.T) {
 
 				client.PathPrefix = "/python/prpc"
 				var hd metadata.MD
-				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.Header(&hd))
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello John from python service")
 			})
@@ -215,7 +215,7 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				var hd metadata.MD
-				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.Header(&hd))
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello ACCEPT JSONPB")
 				So(hd["x-lower-case-header"], ShouldResemble, []string{"CamelCaseValueStays"})
