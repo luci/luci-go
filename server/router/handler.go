@@ -17,67 +17,53 @@ package router
 // Handler is the type for all request handlers.
 type Handler func(*Context)
 
-// Middleware is a function that accepts a shared context and the next
-// function. Since Middleware is typically part of a chain of functions
-// that handles an HTTP request, it must obey the following rules.
+// Middleware does some pre/post processing of a request.
 //
-//     - Middleware must call next if it has not written to the Context
-//       by the end of the function.
-//     - Middleware must not call next if it has written to the Context.
-//     - Middleware must not write to the Context after next is called and
-//       the Context has been written to.
-//     - Middleware may modify the embedded context before calling next.
+// It is a function that accepts a context carrying an http.Request and
+// an http.ResponseWriter and the `next` function. `next` is either the final
+// request handler or a next link in the middleware chain.
+//
+// A middleware implementation must obey the following rules:
+//   - Middleware *must* call `next` if it has not written the response itself.
+//   - Middleware *must not* call `next` if it has written the response.
+//   - Middleware *may* modify the context in-place before calling `next`.
+//
+// Note that writing the response after `next` is called is undefined behavior.
+// It may or may not work depending on what exact happened down the chain.
 type Middleware func(c *Context, next Handler)
 
 // MiddlewareChain is an ordered collection of Middleware.
 //
-// MiddlewareChain's zero value is a middleware chain with no Middleware.
-// Allocating a MiddlewareChain with Middleware can be done with
-// NewMiddlewareChain.
-type MiddlewareChain struct {
-	middleware []Middleware
-}
+// The first middleware is the outermost, i.e. it will be called first when
+// processing a request.
+type MiddlewareChain []Middleware
 
-// RunMiddleware executes the middleware chain and handlers with the given
+// RunMiddleware executes the middleware chain and the handler with the given
 // initial context. Useful to execute a chain of functions in tests.
 func RunMiddleware(c *Context, mc MiddlewareChain, h Handler) {
-	runChains(c, mc, MiddlewareChain{}, h)
+	run(c, mc, nil, h)
 }
 
 // NewMiddlewareChain creates a new MiddlewareChain with the supplied Middleware
 // entries.
-func NewMiddlewareChain(mw ...Middleware) (mc MiddlewareChain) {
-	if len(mw) > 0 {
-		mc = mc.Extend(mw...)
+func NewMiddlewareChain(mw ...Middleware) MiddlewareChain {
+	if len(mw) == 0 {
+		return nil
 	}
-	return
+	return append(MiddlewareChain(nil), mw...)
 }
 
 // Extend returns a new MiddlewareChain with the supplied Middleware appended to
 // the end.
 func (mc MiddlewareChain) Extend(mw ...Middleware) MiddlewareChain {
-	if len(mw) == 0 {
-		return mc
-	}
-
-	ext := make([]Middleware, 0, len(mc.middleware)+len(mw))
-	return MiddlewareChain{append(append(ext, mc.middleware...), mw...)}
-}
-
-// ExtendFrom returns a new MiddlewareChain with the supplied MiddlewareChain
-// appended to the end.
-func (mc MiddlewareChain) ExtendFrom(other MiddlewareChain) MiddlewareChain {
-	return mc.Extend(other.middleware...)
-}
-
-func runChains(c *Context, mc, nc MiddlewareChain, h Handler) {
-	run(c, mc.middleware, nc.middleware, h)
+	ext := make(MiddlewareChain, 0, len(mc)+len(mw))
+	return append(append(ext, mc...), mw...)
 }
 
 // run executes the middleware chains m and n and the handler h using
 // c as the initial context. If a middleware or handler is nil, run
 // simply advances to the next middleware or handler.
-func run(c *Context, m, n []Middleware, h Handler) {
+func run(c *Context, m, n MiddlewareChain, h Handler) {
 	switch {
 	case len(m) > 0:
 		if m[0] != nil {

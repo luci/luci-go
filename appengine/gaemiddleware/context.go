@@ -244,6 +244,6 @@ func (e *Environment) Base() router.MiddlewareChain {
 	}
 
 	mw := router.NewMiddlewareChain(addServices)
-	mw = mw.ExtendFrom(e.ExtraMiddleware)
+	mw = mw.Extend(e.ExtraMiddleware...)
 	return mw
 }
