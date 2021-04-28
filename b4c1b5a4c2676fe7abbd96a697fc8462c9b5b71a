@@ -22,6 +22,30 @@
       },
       "revId": "b4c1b5a4c2676fe7abbd96a697fc8462c9b5b71a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f8c10382_b2555159",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T03:41:54Z",
+      "side": 1,
+      "message": "To increase code outside createInvocation() to increase test coverage.",
+      "parentUuid": "472c3970_a904077e",
+      "range": {
+        "startLine": 341,
+        "startChar": 122,
+        "endLine": 341,
+        "endChar": 130
+      },
+      "revId": "b4c1b5a4c2676fe7abbd96a697fc8462c9b5b71a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
