@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "73c38efc_7c7a4bd0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-28T19:32:32Z",
+      "side": 1,
+      "message": "That\u0027s a good question.\n\nRight now `rdb-stream` prints the url for the test result page if it creates an invocation, and I think we can change that to always print the url.",
+      "parentUuid": "51967d48_c7544415",
+      "range": {
+        "startLine": 7,
+        "startChar": 44,
+        "endLine": 7,
+        "endChar": 52
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ef38b50a_c2b0ec52",
