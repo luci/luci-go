@@ -247,6 +247,9 @@ func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, al *archive
 	return nil
 }
 
+func hogeg() {
+}
+
 // digests extracts the digests from the supplied IsolatedSummarys.
 func digests(summaries []tarring.IsolatedSummary) []string {
 	result := make([]string, len(summaries))
