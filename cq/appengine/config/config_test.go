@@ -647,6 +647,44 @@ func TestTryjobValidation(t *testing.T) {
 					mode_allowlist: "FULL_RUN"
 				}`), ShouldErrLike,
 				"must be one of")
+
+			Convey("contains ANALYZER_RUN", func() {
+				So(validate(`
+				builders {
+					name: "a/b/c"
+					mode_allowlist: "DRY_RUN"
+					mode_allowlist: "ANALYZER_RUN"
+				}`), ShouldErrLike,
+					"ANALYZER_RUN must be the only element in mode_allowlist")
+				So(validate(`
+					builders {
+						name: "a/b/c"
+						location_regexp: ".+"
+						mode_allowlist: "ANALYZER_RUN"
+					}`), ShouldErrLike,
+					`location_regexp must start with ".+\." for tryjob run in ANALYZER_RUN mode`)
+				So(validate(`
+					builders {
+						name: "a/b/c"
+						location_regexp_exclude: ".+\\.py"
+						mode_allowlist: "ANALYZER_RUN"
+					}`), ShouldErrLike,
+					`location_regexp_exclude is not combinable with tryjob run in ANALYZER_RUN mode`)
+				So(validate(`
+				builders {
+					name: "a/b/c"
+					mode_allowlist: "ANALYZER_RUN"
+				}`), ShouldErrLike,
+					"must have at least one non-analyzer tryjob builder")
+				So(validate(`
+				builders {
+					name: "x/y/z"
+				}
+				builders {
+					name: "a/b/c"
+					mode_allowlist: "ANALYZER_RUN"
+				}`), ShouldBeNil)
+			})
 		})
 
 		Convey("disallow mode_regexp", func() {

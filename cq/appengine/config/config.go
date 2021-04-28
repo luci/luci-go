@@ -127,7 +127,8 @@ type refKey struct {
 var (
 	configGroupNameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	modeNameRegexp        = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
-	standardModes         = stringset.NewFromSlice("DRY_RUN", "FULL_RUN")
+	analyzerRun           = "ANALYZER_RUN"
+	standardModes         = stringset.NewFromSlice(analyzerRun, "DRY_RUN", "FULL_RUN")
 )
 
 func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup, knownNames stringset.Set) {
@@ -397,6 +398,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 	triggersMap := map[string][]string{} // who triggers whom.
 	// Find config by name.
 	cfgByName := make(map[string]*v2.Verifiers_Tryjob_Builder, len(v.Builders))
+	hasNonAnalyzerBuilder := false
 
 	visitBuilders(func(b *v2.Verifiers_Tryjob_Builder) {
 		validateBuilderName(ctx, b.Name, names)
@@ -442,12 +444,34 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 				}
 			}
 		}
+
+		var isAnalyzer bool
 		if len(b.ModeAllowlist) > 0 {
 			for i, m := range b.ModeAllowlist {
-				if !supportedModes.Has(m) {
+				switch {
+				case !supportedModes.Has(m):
 					ctx.Enter("mode_allowlist #%d", i+1)
 					ctx.Errorf("must be one of %s", supportedModes.ToSortedSlice())
 					ctx.Exit()
+				case m == analyzerRun:
+					isAnalyzer = true
+				}
+			}
+			if isAnalyzer {
+				// TODO(crbug/1202952): Remove following restrictions after Tricium is
+				// folded into CV.
+				if len(b.ModeAllowlist) > 1 {
+					ctx.Errorf("%s must be the only element in mode_allowlist", analyzerRun)
+				}
+				for i, r := range b.LocationRegexp {
+					if !strings.HasPrefix(r, `.+\.`) {
+						ctx.Enter("location_regexp #%d", i+1)
+						ctx.Errorf(`location_regexp must start with ".+\." for tryjob run in %s mode`, analyzerRun)
+						ctx.Exit()
+					}
+				}
+				if len(b.LocationRegexpExclude) > 0 {
+					ctx.Errorf("location_regexp_exclude is not combinable with tryjob run in %s mode", analyzerRun)
 				}
 			}
 			// TODO(crbug/1191855): See if CV should loose the following restrictions.
@@ -458,6 +482,9 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 				ctx.Errorf("includable_only is not combinable with mode_allowlist")
 			}
 		}
+		if !isAnalyzer {
+			hasNonAnalyzerBuilder = true
+		}
 		if len(b.ModeRegexp)+len(b.ModeRegexpExclude) > 0 {
 			// TODO(crbug/1203137): Delete this check after mode_regexp* field
 			// is removed.
@@ -467,6 +494,18 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 			canStartTriggeringTree = append(canStartTriggeringTree, b.Name)
 		}
 	})
+
+	if !hasNonAnalyzerBuilder {
+		// TODO(crbug/1202952): This is for preventing users from defining new
+		// config group purely for analyzer purpose that accidentally overlaps
+		// with users' main cq config group before Tricium is merged into CV.
+		// Current known use cases (i.e. defining Tricium config in auxillary LUCI
+		// Projects) will set `lucicfg.config(tracked_files="tricium-prod.cfg")`
+		// so that no cq config will be generated. This check should be removed
+		// after Tricium is merged into CV so that ANALYZER_RUN is treated the
+		// same way as any other modes supported by CV.
+		ctx.Errorf("must have at least one non-analyzer tryjob builder")
+	}
 
 	// Between passes, do a depth-first search into triggers-whom DAG starting
 	// with only those builders which can be triggered directly by CQ.
