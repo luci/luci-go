@@ -139,6 +139,7 @@ message PCL {
   // Normally, contains exactly 1 index.
   // May have > 1 index, which means 2+ non-fallback config groups watch this
   // CL, which is not allowed and will be signalled to CV users.
+  // TODO(tandrii): move >1 index case to be tracked via `errors` field.
   repeated int32 config_group_indexes = 4;
 
   // Deps refers to CLs in PState.PCLs which are dependencies of the PCL.
@@ -163,8 +164,10 @@ message PCL {
   bool submitted = 13;
 
   // If true, CL's owner has no known email.
-  // TODO(tandrii): generalize to `CLError error`.
+  // TODO(tandrii): deprecate in favor of `errors`.
   bool owner_lacks_email = 14;
+  // If set, describes one or more problems with CL.
+  repeated CLError errors = 15;
 }
 
 // PRun is an incomplete Run on which CV is currently working.
