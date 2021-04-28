@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "51967d48_c7544415",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T00:24:02Z",
+      "side": 1,
+      "message": "+chanli, what\u0027s the expected behavior here or behavior of this in swarming.py back when it supported rdb?",
+      "parentUuid": "18436c98_1ac33f42",
+      "range": {
+        "startLine": 7,
+        "startChar": 44,
+        "endLine": 7,
+        "endChar": 52
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "ef38b50a_c2b0ec52",
         "filename": "/COMMIT_MSG",
         "patchSetId": 11
@@ -37,6 +61,24 @@
       "writtenOn": "2021-04-27T23:46:57Z",
       "side": 1,
       "message": "Is this sufficient to reproduce some chromium unittests?",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "532c6475_c89ded66",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T00:24:02Z",
+      "side": 1,
+      "message": "This code is sufficient for reproducing:\nhttps://chromium-swarm.appspot.com/task?id\u003d5242769e518c8910\n\nI don\u0027t know if that means it\u0027s sufficient to reproduce \"some chromium unittests\". I assumed yes.",
+      "parentUuid": "ef38b50a_c2b0ec52",
       "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -78,6 +120,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a65c188a_291fd722",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T00:24:02Z",
+      "side": 1,
+      "message": "Do you have a good idea of where to put it?\nsomewhere in https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/\n?",
+      "parentUuid": "03e1218a_504e1cdf",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "74dbb06b_fc455a30",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 11
@@ -101,6 +161,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "92380326_d9de9c13",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T00:24:02Z",
+      "side": 1,
+      "message": "I was under the impression that the Invocation ID just needs to be unique and random and getInvID happens to use the \u0027user.Current()`\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/v1/invocation.proto;l\u003d37\n\nWhy does \u0027username\u0027 matter?",
+      "parentUuid": "74dbb06b_fc455a30",
+      "range": {
+        "startLine": 320,
+        "startChar": 0,
+        "endLine": 320,
+        "endChar": 30
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "3e5f5c79_fd013f01",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 11
@@ -112,6 +196,30 @@
       "writtenOn": "2021-04-27T23:46:57Z",
       "side": 1,
       "message": "Does this use all 3 given args?",
+      "range": {
+        "startLine": 339,
+        "startChar": 23,
+        "endLine": 339,
+        "endChar": 30
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af99b75c_64cf4232",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T00:24:02Z",
+      "side": 1,
+      "message": "yes, afaict,\nwhy do you think it does not?",
+      "parentUuid": "3e5f5c79_fd013f01",
       "range": {
         "startLine": 339,
         "startChar": 23,
