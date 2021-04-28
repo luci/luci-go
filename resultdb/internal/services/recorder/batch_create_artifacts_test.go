@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
@@ -37,6 +38,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/tsmon"
 )
 
 // fakeRBEClient mocks BatchUpdateBlobs.
@@ -123,11 +125,16 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 }
 
 func TestBatchCreateArtifacts(t *testing.T) {
+	// metric field values for Artifact table
+	artMFVs := []interface{}{string(spanutil.Artifacts), string(spanutil.Inserted), ""}
+
 	Convey("TestBatchCreateArtifacts", t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		token, err := generateInvocationToken(ctx, "inv")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		store := tsmon.Store(ctx)
 
 		casClient := &fakeRBEClient{}
 		recorder := newTestRecorderServer()
@@ -212,6 +219,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			So(size, ShouldEqual, int64(len("c1ntent")))
 			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c1ntent")))
 			So(cType, ShouldEqual, "text/richtext")
+
+			// RowCount metric should be increaed by 2.
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 2)
 		})
 
 		Convey("BatchUpdateBlobs fails", func() {
@@ -232,6 +242,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldErrLike, "cas.BatchUpdateBlobs failed")
 			})
+
+			// RowCount metric should have no changes.
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, nil)
 		})
 
 		Convey("Token", func() {
@@ -293,6 +306,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different hash")
 			})
+
+			// In any of the above cases, RowCount metric should have no changes.
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, nil)
 		})
 
 		Convey("Too many requests", func() {
