@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "89b42c0d_722fb944",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T02:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b4a2ae5_7f471402",
+      "range": {
+        "startLine": 7,
+        "startChar": 9,
+        "endLine": 7,
+        "endChar": 10
+      },
+      "revId": "bfeb54bfa1b15795b95e3d87b9f877c90dd50783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2be4bd02_edc2f47e",
@@ -43,6 +67,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d074e6d3_6dc14cb2",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T02:45:22Z",
+      "side": 1,
+      "message": "I\u0027d prefer to keep as-is for now\nto make the follow-up CL easier,\nwhen i introduce c.resultsHost\nit\u0027s a slightly more convenient change.",
+      "parentUuid": "2be4bd02_edc2f47e",
+      "revId": "bfeb54bfa1b15795b95e3d87b9f877c90dd50783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8062b9ad_caa44989",
         "filename": "client/cmd/swarming/lib/reproduce_test.go",
         "patchSetId": 14
@@ -54,6 +96,30 @@
       "writtenOn": "2021-04-28T02:37:12Z",
       "side": 1,
       "message": "use https://pkg.go.dev/google.golang.org/grpc/metadata#Pairs ?",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 42
+      },
+      "revId": "bfeb54bfa1b15795b95e3d87b9f877c90dd50783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e55383a8_cc82150e",
+        "filename": "client/cmd/swarming/lib/reproduce_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T02:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8062b9ad_caa44989",
       "range": {
         "startLine": 83,
         "startChar": 0,

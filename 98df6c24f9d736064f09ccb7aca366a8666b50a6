@@ -255,6 +255,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8d42651_c8b954b5",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T02:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff989295_a47f5be5",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2746f5cf_5a1bad3b",
@@ -581,6 +605,24 @@
       "writtenOn": "2021-04-27T23:29:22Z",
       "side": 1,
       "message": "Based on https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cli/cmd_stream.go;l\u003d332",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24774cee_b2cfbc7d",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2021-04-28T02:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "79139695_8658ebca",
       "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
