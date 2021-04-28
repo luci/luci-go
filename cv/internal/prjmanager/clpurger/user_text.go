@@ -30,9 +30,10 @@ import (
 )
 
 func formatMessage(ctx context.Context, task *prjpb.PurgeCLTask, cl *changelist.CL) (string, error) {
-	r := task.GetReason()
-	switch v := r.GetReason().(type) {
-	case *prjpb.PurgeCLTask_Reason_OwnerLacksEmail:
+	// TODO(tandrii): support >1 reason.
+	r := task.GetReasons()[0]
+	switch v := r.GetKind().(type) {
+	case *prjpb.CLError_OwnerLacksEmail:
 		if !v.OwnerLacksEmail {
 			return "", errors.New("owner_lacks_email must be set to true")
 		}
@@ -40,7 +41,7 @@ func formatMessage(ctx context.Context, task *prjpb.PurgeCLTask, cl *changelist.
 			"GerritHost": cl.Snapshot.GetGerrit().GetHost(),
 		})
 
-	case *prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups_:
+	case *prjpb.CLError_WatchedByManyConfigGroups_:
 		cgs := v.WatchedByManyConfigGroups.GetConfigGroups()
 		if len(cgs) < 2 {
 			return "", errors.New("at least 2 config_groups required")
@@ -50,7 +51,7 @@ func formatMessage(ctx context.Context, task *prjpb.PurgeCLTask, cl *changelist.
 			"TargetRef":    cl.Snapshot.GetGerrit().GetInfo().GetRef(),
 		})
 
-	case *prjpb.PurgeCLTask_Reason_InvalidDeps_:
+	case *prjpb.CLError_InvalidDeps_:
 		// Although it's possible for a CL to have several kinds of wrong deps,
 		// it's rare in practice, so simply error out on the most important kind.
 		var bad []*changelist.Dep

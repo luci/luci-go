@@ -157,8 +157,8 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReason: &prjpb.PurgeCLTask_Reason{
-							Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
+						purgeReason: &prjpb.CLError{
+							Kind: &prjpb.CLError_OwnerLacksEmail{
 								OwnerLacksEmail: true,
 							},
 						},
@@ -205,9 +205,9 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReason: &prjpb.PurgeCLTask_Reason{
-							Reason: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups_{
-								WatchedByManyConfigGroups: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups{
+						purgeReason: &prjpb.CLError{
+							Kind: &prjpb.CLError_WatchedByManyConfigGroups_{
+								WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
 									ConfigGroups: []string{"singular", "another"},
 								},
 							},
@@ -294,9 +294,9 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReason: &prjpb.PurgeCLTask_Reason{
-							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
-								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+						purgeReason: &prjpb.CLError{
+							Kind: &prjpb.CLError_InvalidDeps_{
+								InvalidDeps: &prjpb.CLError_InvalidDeps{
 									IncompatMode: sup.PCL(3).GetDeps(),
 								},
 							},
@@ -329,9 +329,9 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReason: &prjpb.PurgeCLTask_Reason{
-							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
-								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+						purgeReason: &prjpb.CLError{
+							Kind: &prjpb.CLError_InvalidDeps_{
+								InvalidDeps: &prjpb.CLError_InvalidDeps{
 									IncompatMode: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
 								},
 							},
@@ -400,9 +400,9 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReason: &prjpb.PurgeCLTask_Reason{
-							Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
-								InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+						purgeReason: &prjpb.CLError{
+							Kind: &prjpb.CLError_InvalidDeps_{
+								InvalidDeps: &prjpb.CLError_InvalidDeps{
 									IncompatMode: sup.PCL(3).GetDeps(),
 								},
 							},
@@ -423,9 +423,9 @@ func TestCLsTriage(t *testing.T) {
 				So(a.reverseDeps, ShouldBeEmpty)
 				for _, info := range a.cls {
 					So(info.ready, ShouldBeFalse)
-					So(info.purgeReason, ShouldResembleProto, &prjpb.PurgeCLTask_Reason{
-						Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
-							InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+					So(info.purgeReason, ShouldResembleProto, &prjpb.CLError{
+						Kind: &prjpb.CLError_InvalidDeps_{
+							InvalidDeps: &prjpb.CLError_InvalidDeps{
 								WrongConfigGroup: info.triagedCL.deps.wrongConfigGroup,
 							},
 						},

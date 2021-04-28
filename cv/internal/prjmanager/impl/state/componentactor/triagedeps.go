@@ -82,13 +82,13 @@ func (t *triagedDeps) OK() bool {
 	return true
 }
 
-func (t *triagedDeps) makePurgeReason() *prjpb.PurgeCLTask_Reason {
+func (t *triagedDeps) makePurgeReason() *prjpb.CLError {
 	if t.OK() {
 		panic("makePurgeReason must be called only iff !OK")
 	}
-	return &prjpb.PurgeCLTask_Reason{
-		Reason: &prjpb.PurgeCLTask_Reason_InvalidDeps_{
-			InvalidDeps: &prjpb.PurgeCLTask_Reason_InvalidDeps{
+	return &prjpb.CLError{
+		Kind: &prjpb.CLError_InvalidDeps_{
+			InvalidDeps: &prjpb.CLError_InvalidDeps{
 				Unwatched:        t.unwatched,
 				IncompatMode:     t.incompatMode,
 				WrongConfigGroup: t.wrongConfigGroup,

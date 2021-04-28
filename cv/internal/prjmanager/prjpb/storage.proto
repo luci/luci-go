@@ -163,6 +163,7 @@ message PCL {
   bool submitted = 13;
 
   // If true, CL's owner has no known email.
+  // TODO(tandrii): generalize to `CLError error`.
   bool owner_lacks_email = 14;
 }
 
@@ -239,4 +240,25 @@ message PurgingCL {
   // period, PM will consider purge operation expired and it'll be removed from
   // PState.
   google.protobuf.Timestamp deadline = 3;
+}
+
+// CLError encapsulates all kinds of CL errors, which ultimately result in
+// purging the CL.
+message CLError {
+  oneof kind {
+    bool owner_lacks_email = 1;
+    WatchedByManyConfigGroups watched_by_many_config_groups = 2;
+    InvalidDeps invalid_deps = 3;
+  }
+
+  message WatchedByManyConfigGroups {
+    // Config group names without LUCI project prefix.
+    repeated string config_groups = 1;
+  }
+
+  message InvalidDeps {
+    repeated cv.changelist.Dep unwatched = 1;
+    repeated cv.changelist.Dep wrong_config_group = 2;
+    repeated cv.changelist.Dep incompat_mode = 3;
+  }
 }

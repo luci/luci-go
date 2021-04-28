@@ -259,12 +259,16 @@ func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask
 		id := t.GetPurgingCl().GetClid()
 		switch {
 		case id == 0:
-			panic("clid must be set")
+			panic(fmt.Errorf("clid must be set"))
 		case m.hasI64(id):
 			panic(fmt.Errorf("duplicated clid %d", id))
-		case t.GetReason().GetReason() == nil:
-			// 2nd GetReason() is deeper check to ensure oneof reason field is set.
-			panic("reason must be set")
+		case t.GetReasons() == nil:
+			panic(fmt.Errorf("at least 1 reason must be given"))
+		}
+		for i, r := range t.GetReasons() {
+			if r.GetKind() == nil {
+				panic(fmt.Errorf("Reason #%d is nil", i))
+			}
 		}
 		m.addI64(id)
 	}

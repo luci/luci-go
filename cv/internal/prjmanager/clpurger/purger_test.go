@@ -118,10 +118,8 @@ func TestPurgeCL(t *testing.T) {
 				Deadline:    timestamppb.New(ct.Clock.Now().Add(10 * time.Minute)),
 			},
 			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]),
-			Reason: &prjpb.PurgeCLTask_Reason{
-				Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
-					OwnerLacksEmail: true,
-				},
+			Reasons: []*prjpb.CLError{
+				{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 			},
 		}
 		So(task.Trigger, ShouldNotBeNil)

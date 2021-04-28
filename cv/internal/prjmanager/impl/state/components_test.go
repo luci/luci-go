@@ -384,9 +384,9 @@ func (t *testCActor) Act(context.Context, runcreator.PM, runcreator.RM) (*prjpb.
 				PurgingCl: &prjpb.PurgingCL{
 					Clid: clid,
 				},
-				Reason: &prjpb.PurgeCLTask_Reason{Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
-					OwnerLacksEmail: true,
-				}},
+				Reasons: []*prjpb.CLError{
+					{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+				},
 			}}
 			return c, ps, nil
 		}
