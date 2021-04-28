@@ -85,6 +85,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "386a15d9_e8c35298",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2021-04-28T02:52:19Z",
+      "side": 1,
+      "message": "if you are going to change this, better to have this in struct field instead of global variable?",
+      "parentUuid": "d074e6d3_6dc14cb2",
+      "revId": "bfeb54bfa1b15795b95e3d87b9f877c90dd50783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "8062b9ad_caa44989",
         "filename": "client/cmd/swarming/lib/reproduce_test.go",
         "patchSetId": 14
