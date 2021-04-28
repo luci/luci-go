@@ -330,7 +330,7 @@ func (r *streamRun) getLocationTags(ctx context.Context) (*sinkpb.LocationTags, 
 }
 
 func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret lucictx.ResultDBInvocation, err error) {
-	invID, err := genInvID(ctx)
+	invID, err := GenInvID(ctx)
 	if err != nil {
 		return
 	}
@@ -374,12 +374,12 @@ func (r *streamRun) finalizeInvocation(ctx context.Context) error {
 	return err
 }
 
-// genInvID generates an invocation ID, made of the username, the current timestamp
+// GenInvID generates an invocation ID, made of the username, the current timestamp
 // in a human-friendly format, and a random suffix.
 //
 // This can be used to generate a random invocation ID, but the creator and creation time
 // can be easily found.
-func genInvID(ctx context.Context) (string, error) {
+func GenInvID(ctx context.Context) (string, error) {
 	whoami, err := user.Current()
 	if err != nil {
 		return "", err
