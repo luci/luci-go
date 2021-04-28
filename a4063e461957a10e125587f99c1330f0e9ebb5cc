@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "85c4ba61_5b0a5b9f",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:15:37Z",
+      "side": 1,
+      "message": "Removed; we don\u0027t need it to be status.Errorf in this CL.\n\nI was thinking that this handler would still return FailedPrecondition even if cfg.ExitOnFailures was set to True. httpServer.Shutdown() gracefully shutdowns the server, and a response for the particular HTTP req will be served, even if the server is going to terminate soon.\n\nIn my very first local change, it was returning this status.Errorf(), but it\u0027s no longer the case anymore.",
+      "parentUuid": "5e6dcbf4_34365256",
+      "revId": "a4063e461957a10e125587f99c1330f0e9ebb5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "418f8299_8a553e1b",
@@ -31,6 +49,24 @@
       "writtenOn": "2021-04-28T00:09:01Z",
       "side": 1,
       "message": "that\u0027s two status.Errorf calls, here and the line below",
+      "revId": "a4063e461957a10e125587f99c1330f0e9ebb5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "afd11575_54076494",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T00:15:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "418f8299_8a553e1b",
       "revId": "a4063e461957a10e125587f99c1330f0e9ebb5cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
