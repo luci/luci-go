@@ -82,8 +82,8 @@ func (s *Server) InstallHandlers(r *router.Router) {
 	// Ideally we use a more narrow pattern, but we cannot because of
 	// https://github.com/julienschmidt/httprouter/issues/208
 	// This is triggered by URL-escaped test IDs.
-	r.GET("/invocations/*rest", router.NewMiddlewareChain(), s.handleGET)
-	r.OPTIONS("/invocations/*rest", router.NewMiddlewareChain(), s.handleOPTIONS)
+	r.GET("/invocations/*rest", nil, s.handleGET)
+	r.OPTIONS("/invocations/*rest", nil, s.handleOPTIONS)
 }
 
 func (s *Server) handleGET(c *router.Context) {

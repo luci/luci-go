@@ -35,10 +35,10 @@ import (
 func main() {
 	impl.Main(nil, func(srv *server.Server, svc *impl.Services) error {
 		// Needed when using manual scaling.
-		srv.Routes.GET("/_ah/start", router.MiddlewareChain{}, func(ctx *router.Context) {
+		srv.Routes.GET("/_ah/start", nil, func(ctx *router.Context) {
 			ctx.Writer.Write([]byte("OK"))
 		})
-		srv.Routes.GET("/_ah/stop", router.MiddlewareChain{}, func(ctx *router.Context) {
+		srv.Routes.GET("/_ah/stop", nil, func(ctx *router.Context) {
 			ctx.Writer.Write([]byte("OK"))
 		})
 

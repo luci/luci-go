@@ -54,7 +54,7 @@ func main() {
 		apipb.RegisterGreeterServer(srv.PRPC, &greeterServer{})
 
 		// Logging and tracing example.
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/", nil, func(c *router.Context) {
 			logging.Debugf(c.Context, "Hello debug world")
 
 			ctx, span := trace.StartSpan(c.Context, "Testing")
@@ -87,7 +87,7 @@ func main() {
 		// Note that it makes Redis port available on 0.0.0.0. This is a necessity
 		// when using Docker-for-Mac. Don't put any sensitive stuff there (or make
 		// sure your firewall is configured to block external connections).
-		srv.Routes.GET("/redis", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/redis", nil, func(c *router.Context) {
 			conn, err := redisconn.Get(c.Context)
 			if err != nil {
 				http.Error(c.Writer, err.Error(), 500)
@@ -102,7 +102,7 @@ func main() {
 			fmt.Fprintf(c.Writer, "%d\n", n)
 		})
 
-		srv.Routes.GET("/inc", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/inc", nil, func(c *router.Context) {
 			ctx := c.Context
 
 			ent := TestEntity{ID: "test"}
@@ -119,7 +119,7 @@ func main() {
 			fmt.Fprintf(c.Writer, "%d\n", ent.Value)
 		})
 
-		srv.Routes.GET("/sign", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/sign", nil, func(c *router.Context) {
 			key, sig, err := auth.GetSigner(c.Context).SignBytes(c.Context, []byte("test"))
 			if err != nil {
 				http.Error(c.Writer, err.Error(), 500)
@@ -135,7 +135,7 @@ func main() {
 		}
 		client := &http.Client{Transport: tr}
 
-		srv.Routes.GET("/example.com", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/example.com", nil, func(c *router.Context) {
 			var blob []byte
 			resp, err := client.Get("http://example.com")
 			if err == nil {

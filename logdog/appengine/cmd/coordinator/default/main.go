@@ -70,11 +70,11 @@ func main() {
 	r.GET("/admin/cron/stats", base, cronStatsHandler)
 
 	// Redirect "/" to "/rpcexplorer/".
-	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+	r.GET("/", nil, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 	})
 	// Redirect "/v/?s=..." to "/logs/..."
-	r.GET("/v/", router.MiddlewareChain{}, func(c *router.Context) {
+	r.GET("/v/", nil, func(c *router.Context) {
 		path := "/logs/" + c.Request.URL.Query().Get("s")
 		http.Redirect(c.Writer, c.Request, path, http.StatusFound)
 	})

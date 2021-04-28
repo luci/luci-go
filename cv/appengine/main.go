@@ -103,7 +103,7 @@ func main() {
 		)
 
 		// The service has no UI, so just redirect to the RPC Explorer.
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/", nil, func(c *router.Context) {
 			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 		})
 

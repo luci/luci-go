@@ -310,7 +310,7 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 	prpc := &prpc.Server{Authenticator: prpc.NoAuthentication}
-	prpc.InstallHandlers(routes, router.MiddlewareChain{})
+	prpc.InstallHandlers(routes, nil)
 	sinkpb.RegisterSinkServer(prpc, ss)
 
 	addr := s.cfg.Address

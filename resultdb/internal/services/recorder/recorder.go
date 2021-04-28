@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
@@ -87,6 +86,6 @@ func installArtifactCreationHandler(srv *server.Server, opt *Options, rbeConn *g
 	// Ideally we define more specific routes, but
 	// "github.com/julienschmidt/httprouter" does not support routes over
 	// unescaped paths: https://github.com/julienschmidt/httprouter/issues/208
-	srv.Routes.PUT("invocations/*rest", router.MiddlewareChain{}, ach.Handle)
+	srv.Routes.PUT("invocations/*rest", nil, ach.Handle)
 	return nil
 }
