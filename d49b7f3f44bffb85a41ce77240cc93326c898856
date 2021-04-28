@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01bba613_2fc0509e",
+        "filename": "server/cron/admin.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-28T04:34:41Z",
+      "side": 1,
+      "message": "It looks like this https://screenshot.googleplex.com/7QNMCEcu2aRjiUk.png",
+      "range": {
+        "startLine": 29,
+        "startChar": 5,
+        "endLine": 29,
+        "endChar": 15
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22f36156_106a6c58",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-28T04:34:41Z",
+      "side": 1,
+      "message": "I decided not to bother with an analogue of tq.Fatal, since it is not a big deal to lose a cron job invocation due to misuse of the API (like forgetting to tag errors as transient).",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 19
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d74cc34b_7302bdc9",
+        "filename": "server/internal/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-28T04:34:41Z",
+      "side": 1,
+      "message": "extracted from tq/dispatcher.go",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 22
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
