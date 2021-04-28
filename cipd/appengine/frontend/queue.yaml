@@ -19,10 +19,6 @@ queue:
   bucket_size: 500
   rate: 100/s
 
-# Used for buffering event logs before sending them to BigQuery.
-- name: bqlog-events
-  mode: pull
-
 # Used by server/tq sweeper.
 - name: tq-sweep
   rate: 500/s

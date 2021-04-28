@@ -40,26 +40,26 @@ func main() {
 		encryptedcookies.NewModuleFromFlags(),
 	}
 
-	impl.Main(extra, func(srv *server.Server) error {
+	impl.Main(extra, func(srv *server.Server, svc *impl.Services) error {
 		// Register non-pRPC routes, such as the client bootstrap handler and routes
 		// to support minimal subset of legacy API required to let old CIPD clients
 		// fetch packages and self-update.
-		impl.PublicRepo.InstallHandlers(srv.Routes, router.NewMiddlewareChain(
+		svc.PublicRepo.InstallHandlers(srv.Routes, router.NewMiddlewareChain(
 			auth.Authenticate(&auth.GoogleOAuth2Method{
 				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 			}),
 		))
 
 		// UI pages. When running locally, serve static files ourself as well.
-		ui.InstallHandlers(srv, "templates")
+		ui.InstallHandlers(srv, svc, "templates")
 		if !srv.Options.Prod {
 			srv.Routes.Static("/static", router.MiddlewareChain{}, http.Dir("./static"))
 		}
 
 		// All pRPC services.
-		adminapi.RegisterAdminServer(srv.PRPC, impl.AdminAPI)
-		pubapi.RegisterStorageServer(srv.PRPC, impl.PublicCAS)
-		pubapi.RegisterRepositoryServer(srv.PRPC, impl.PublicRepo)
+		adminapi.RegisterAdminServer(srv.PRPC, svc.AdminAPI)
+		pubapi.RegisterStorageServer(srv.PRPC, svc.PublicCAS)
+		pubapi.RegisterRepositoryServer(srv.PRPC, svc.PublicRepo)
 
 		return nil
 	})

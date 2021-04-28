@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
-	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/common"
@@ -66,20 +65,17 @@ type StorageServer interface {
 	GetReader(ctx context.Context, ref *api.ObjectRef) (gs.Reader, error)
 }
 
-// SettingsProvider returns current CAS settings.
-type SettingsProvider func(ctx context.Context) (*settings.Settings, error)
-
 // Internal returns non-ACLed implementation of StorageService.
 //
 // It can be used internally by the backend. Assumes ACL checks are already
 // done.
 //
 // Registers some task queue tasks in the given dispatcher.
-func Internal(d migration.TQ, settings SettingsProvider) StorageServer {
+func Internal(d *tq.Dispatcher, s *settings.Settings) StorageServer {
 	impl := &storageImpl{
 		tq:           d,
+		settings:     s,
 		getGS:        gs.Get,
-		settings:     settings,
 		getSignedURL: getSignedURL,
 	}
 	impl.registerTasks()
@@ -92,11 +88,11 @@ func Internal(d migration.TQ, settings SettingsProvider) StorageServer {
 type storageImpl struct {
 	api.UnimplementedStorageServer
 
-	tq migration.TQ
+	tq       *tq.Dispatcher
+	settings *settings.Settings
 
 	// Mocking points for tests. See Internal() for real implementations.
 	getGS        func(ctx context.Context) gs.GoogleStorage
-	settings     func(ctx context.Context) (*settings.Settings, error)
 	getSignedURL func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error)
 }
 
@@ -131,12 +127,7 @@ func (s *storageImpl) GetReader(ctx context.Context, ref *api.ObjectRef) (r gs.R
 		return nil, errors.Annotate(err, "bad ref").Err()
 	}
 
-	cfg, err := s.settings(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	r, err = s.getGS(ctx).Reader(ctx, cfg.ObjectPath(ref), 0)
+	r, err = s.getGS(ctx).Reader(ctx, s.settings.ObjectPath(ref), 0)
 	if err != nil {
 		ann := errors.Annotate(err, "can't read the object")
 		if gs.StatusCode(err) == http.StatusNotFound {
@@ -162,12 +153,7 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *api.GetObjectURLReque
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'download_filename' field, contains one of %q", "\"\r\n")
 	}
 
-	cfg, err := s.settings(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	url, size, err := s.getSignedURL(ctx, cfg.ObjectPath(r.Object), r.DownloadFilename, defaultSigner, s.getGS(ctx))
+	url, size, err := s.getSignedURL(ctx, s.settings.ObjectPath(r.Object), r.DownloadFilename, defaultSigner, s.getGS(ctx))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get signed URL").Err()
 	}
@@ -199,10 +185,6 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	}
 
 	gs := s.getGS(ctx)
-	cfg, err := s.settings(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	// If we know the name of the object being uploaded, check we don't have it
 	// in the store already to avoid wasting time uploading it. Note that it is
@@ -210,7 +192,7 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	// client is still uploading, nothing catastrophic happens, just some time
 	// gets wasted.
 	if r.Object != nil {
-		switch yes, err := gs.Exists(ctx, cfg.ObjectPath(r.Object)); {
+		switch yes, err := gs.Exists(ctx, s.settings.ObjectPath(r.Object)); {
 		case err != nil:
 			return nil, errors.Annotate(err, "failed to check the object's presence").
 				Tag(grpcutil.InternalTag).Err()
@@ -239,7 +221,7 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	// GS path to which the client will upload the data. Prefix it with the
 	// current timestamp to make bucket listing sorted by time.
 	now := clock.Now(ctx)
-	tempGSPath := fmt.Sprintf("%s/%d_%d", cfg.TempGSPath, now.Unix(), opID)
+	tempGSPath := fmt.Sprintf("%s/%d_%d", s.settings.TempGSPath, now.Unix(), opID)
 
 	// Initiate Google Storage resumable upload session to this path. The returned
 	// URL can be accessed unauthenticated. The client will use it directly to
@@ -389,15 +371,11 @@ func fetchOp(ctx context.Context, wrappedOpID string) (*upload.Operation, error)
 // It publishes the object immediately, skipping the verification.
 func (s *storageImpl) finishAndForcedHash(ctx context.Context, op *upload.Operation, hash *api.ObjectRef) (*upload.Operation, error) {
 	gs := s.getGS(ctx)
-	cfg, err := s.settings(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	// Try to move the object into the final location. This may fail
 	// transiently, in which case we ask the client to retry, or fatally, in
 	// which case we close the upload operation with an error.
-	pubErr := gs.Publish(ctx, cfg.ObjectPath(hash), op.TempGSPath, -1)
+	pubErr := gs.Publish(ctx, s.settings.ObjectPath(hash), op.TempGSPath, -1)
 	if transient.Tag.In(pubErr) {
 		return nil, errors.Annotate(pubErr, "failed to publish the object").
 			Tag(grpcutil.InternalTag).Err()
@@ -443,17 +421,13 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	}
 
 	gs := s.getGS(ctx)
-	cfg, err := s.settings(ctx)
-	if err != nil {
-		return err
-	}
 
 	// If the destination file exists already, we are done. This may happen on
 	// a task retry or if the file was uploaded concurrently by someone else.
 	// Otherwise we still need to verify the temp file, and then move it into
 	// the final location.
 	if op.HexDigest != "" {
-		exists, err := gs.Exists(ctx, cfg.ObjectPath(&api.ObjectRef{
+		exists, err := gs.Exists(ctx, s.settings.ObjectPath(&api.ObjectRef{
 			HashAlgo:  op.HashAlgo,
 			HexDigest: op.HexDigest,
 		}))
@@ -552,7 +526,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	// clients must not modify uploads after calling FinishUpload, this is
 	// sneaky behavior. Regardless of the outcome of this operation, the upload
 	// operation is closed in the defer above.
-	err = gs.Publish(ctx, cfg.ObjectPath(&api.ObjectRef{
+	err = gs.Publish(ctx, s.settings.ObjectPath(&api.ObjectRef{
 		HashAlgo:  op.HashAlgo,
 		HexDigest: verifiedHexDigest,
 	}), op.TempGSPath, r.Generation())

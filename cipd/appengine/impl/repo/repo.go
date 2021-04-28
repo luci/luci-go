@@ -48,7 +48,6 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
-	"go.chromium.org/luci/cipd/appengine/impl/migration"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
@@ -62,7 +61,7 @@ const PrefixesViewers = "cipd-prefixes-viewers"
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS cas.StorageServer, d migration.TQ) Server {
+func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) Server {
 	impl := &repoImpl{
 		tq:   d,
 		meta: metadata.GetStorage(),
@@ -87,7 +86,7 @@ type Server interface {
 type repoImpl struct {
 	api.UnimplementedRepositoryServer
 
-	tq migration.TQ
+	tq *tq.Dispatcher
 
 	meta metadata.Storage  // storage for package prefix metadata
 	cas  cas.StorageServer // non-ACLed storage for instance package files

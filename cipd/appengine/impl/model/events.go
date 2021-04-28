@@ -49,17 +49,6 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/model/tasks"
 )
 
-// EnqueueEventsCB is a signature of EnqueueEventsImpl.
-type EnqueueEventsCB func(ctx context.Context, ev []*api.Event) error
-
-// EnqueueEventsImpl transactionally submits events to the event log.
-//
-// Exists only during GAEv1 => GAEv2 migration. The default value just ignores
-// events (useful for tests that don't care about them).
-var EnqueueEventsImpl EnqueueEventsCB = func(ctx context.Context, ev []*api.Event) error {
-	return nil
-}
-
 // textContentTypes is a list of text-like content types (in addition to
 // "text/*").
 //
@@ -118,12 +107,12 @@ type Event struct {
 // Panics if the proto can't be serialized. This should never happen.
 //
 // Returns the entity itself for easier chaining.
-func (e *Event) FromProto(c context.Context, p *api.Event) *Event {
+func (e *Event) FromProto(ctx context.Context, p *api.Event) *Event {
 	blob, err := proto.Marshal(p)
 	if err != nil {
 		panic(err)
 	}
-	e.Package = PackageKey(c, p.Package)
+	e.Package = PackageKey(ctx, p.Package)
 	e.Event = blob
 	e.Kind = p.Kind
 	e.Who = p.Who
@@ -149,9 +138,9 @@ func NewEventsQuery() *datastore.Query {
 // them by timestamp (most recent first).
 //
 // Start the query with NewEventsQuery.
-func QueryEvents(c context.Context, q *datastore.Query) ([]*api.Event, error) {
+func QueryEvents(ctx context.Context, q *datastore.Query) ([]*api.Event, error) {
 	var ev []Event
-	if err := datastore.GetAll(c, q.Order("-When"), &ev); err != nil {
+	if err := datastore.GetAll(ctx, q.Order("-When"), &ev); err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
 	out := make([]*api.Event, len(ev))
@@ -180,25 +169,25 @@ func (t *Events) Emit(e *api.Event) {
 //
 // Returned errors are tagged as transient. On success, clears the pending
 // events queue.
-func (t *Events) Flush(c context.Context) error {
+func (t *Events) Flush(ctx context.Context) error {
 	if len(t.ev) == 0 {
 		return nil
 	}
 
-	when := clock.Now(c).UTC()
-	who := string(auth.CurrentIdentity(c))
+	when := clock.Now(ctx).UTC()
+	who := string(auth.CurrentIdentity(ctx))
 
 	entities := make([]*Event, len(t.ev))
 	for idx, e := range t.ev {
 		// Make events in a batch ordered by time by abusing nanoseconds precision.
 		e.When = timestamppb.New(when.Add(time.Duration(idx)))
 		e.Who = who
-		entities[idx] = (&Event{}).FromProto(c, e)
+		entities[idx] = (&Event{}).FromProto(ctx, e)
 	}
 
 	err := parallel.FanOutIn(func(tasks chan<- func() error) {
-		tasks <- func() error { return datastore.Put(c, entities) }
-		tasks <- func() error { return EnqueueEventsImpl(c, t.ev) }
+		tasks <- func() error { return datastore.Put(ctx, entities) }
+		tasks <- func() error { return flushToSink(ctx, t.ev) }
 	})
 	if err != nil {
 		return transient.Tag.Apply(err)
@@ -211,10 +200,10 @@ func (t *Events) Flush(c context.Context) error {
 // EmitEvent adds a single event to the event log.
 //
 // Prefer using Events to add multiple events at once.
-func EmitEvent(c context.Context, e *api.Event) error {
+func EmitEvent(ctx context.Context, e *api.Event) error {
 	ev := Events{}
 	ev.Emit(e)
-	return ev.Flush(c)
+	return ev.Flush(ctx)
 }
 
 // IsTextContentType checks the metadata content type against a list of
@@ -232,41 +221,22 @@ func IsTextContentType(ct string) bool {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// RegisterTasks registers TQ task classes.
-func RegisterTasks(disp *tq.Dispatcher) {
-	disp.RegisterTaskClass(tq.TaskClass{
-		ID:        "log-events",
-		Prototype: &tasks.LogEvents{},
-		Kind:      tq.Transactional,
-		Topic:     "bigquery-log",
-		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
-			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(m)
-			if err != nil {
-				return nil, err
-			}
-			return &tq.CustomPayload{Body: blob}, nil
-		},
-	})
+var sinkCtxKey = "cipd model events sink"
+
+type sink func(context.Context, []*api.Event) error
+
+func installSink(ctx context.Context, s sink) context.Context {
+	return context.WithValue(ctx, &sinkCtxKey, s)
 }
 
-// NewEnqueueEventsCallback constructs EnqueueEventsCB sending events to PubSub.
-func NewEnqueueEventsCallback(disp *tq.Dispatcher, prod bool) EnqueueEventsCB {
-	return func(ctx context.Context, ev []*api.Event) error {
-		task := &tasks.LogEvents{Events: ev}
-		if logging.IsLogging(ctx, logging.Debug) {
-			blob, err := (prototext.MarshalOptions{Indent: "\t"}).Marshal(task)
-			if err != nil {
-				logging.Errorf(ctx, "Failed to marshal events to proto text: %s", err)
-			} else {
-				logging.Debugf(ctx, "Logged events:\n%s", blob)
-			}
-		}
-		if !prod {
-			return nil
-		}
-		return disp.AddTask(ctx, &tq.Task{Payload: task})
+func flushToSink(ctx context.Context, ev []*api.Event) error {
+	if s, _ := ctx.Value(&sinkCtxKey).(sink); s != nil {
+		return s(ctx, ev)
 	}
+	return nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 // BigQueryEventLogger moves events from PubSub to BQ.
 type BigQueryEventLogger struct {
@@ -286,7 +256,41 @@ func NewBigQueryEventLogger(ctx context.Context, projectID string) (*BigQueryEve
 	return &BigQueryEventLogger{bq: bq}, nil
 }
 
-// HandlePubSubPush handles incoming PubSub push request.
+// RegisterSink registers this event logger as events sink in the context.
+//
+// It will use the given dispatcher to route messages between processes.
+func (l *BigQueryEventLogger) RegisterSink(ctx context.Context, disp *tq.Dispatcher, prod bool) context.Context {
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "log-events",
+		Prototype: &tasks.LogEvents{},
+		Kind:      tq.Transactional,
+		Topic:     "bigquery-log",
+		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(m)
+			if err != nil {
+				return nil, err
+			}
+			return &tq.CustomPayload{Body: blob}, nil
+		},
+	})
+	return installSink(ctx, func(ctx context.Context, ev []*api.Event) error {
+		task := &tasks.LogEvents{Events: ev}
+		if logging.IsLogging(ctx, logging.Debug) {
+			blob, err := (prototext.MarshalOptions{Indent: "\t"}).Marshal(task)
+			if err != nil {
+				logging.Errorf(ctx, "Failed to marshal events to proto text: %s", err)
+			} else {
+				logging.Debugf(ctx, "Logged events:\n%s", blob)
+			}
+		}
+		if !prod {
+			return nil
+		}
+		return disp.AddTask(ctx, &tq.Task{Payload: task})
+	})
+}
+
+// HandlePubSubPush handles incoming PubSub push messages produced by the sink.
 func (l *BigQueryEventLogger) HandlePubSubPush(ctx context.Context, body io.Reader) error {
 	blob, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -340,7 +344,7 @@ func init() {
 
 // EmitMetadataEvents compares two metadatum of a prefix and emits events for
 // fields that have changed.
-func EmitMetadataEvents(c context.Context, before, after *api.PrefixMetadata) error {
+func EmitMetadataEvents(ctx context.Context, before, after *api.PrefixMetadata) error {
 	if before.Prefix != after.Prefix {
 		panic(fmt.Sprintf("comparing metadata for different prefixes: %q != %q", before.Prefix, after.Prefix))
 	}
@@ -371,7 +375,7 @@ func EmitMetadataEvents(c context.Context, before, after *api.PrefixMetadata) er
 		return nil
 	}
 
-	return EmitEvent(c, &api.Event{
+	return EmitEvent(ctx, &api.Event{
 		Kind:        api.EventKind_PREFIX_ACL_CHANGED,
 		Package:     prefix,
 		GrantedRole: granted,

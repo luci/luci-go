@@ -1,5 +1,5 @@
 service: default
-runtime: go113
+runtime: go115
 
 luci_gae_vars:
   chrome-infra-packages-dev:
@@ -10,7 +10,7 @@ luci_gae_vars:
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     VPC_CONNECTOR: projects/chrome-infra-packages-dev/locations/us-central1/connectors/connector
     REDIS_ADDR: 10.248.220.35:6379
-    DS_CACHE: disable
+    DS_CACHE: redis
     OAUTH_CLIENT_ID: 415950430802-8bbceg2p7hsifq0ub80slvtc6i7kn1ec.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
     OAUTH_REDIRECT_URL: https://chrome-infra-packages-dev.appspot.com/auth/openid/callback

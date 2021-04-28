@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -41,9 +40,11 @@ func instancePage(c *router.Context, pkg, ver string) error {
 		return status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
+	svc := state(c.Context).services
+
 	// Resolve the version first (even if is already IID). This also checks ACLs
 	// and verifies the instance exists.
-	inst, err := impl.PublicRepo.ResolveVersion(c.Context, &api.ResolveVersionRequest{
+	inst, err := svc.PublicRepo.ResolveVersion(c.Context, &api.ResolveVersionRequest{
 		Package: pkg,
 		Version: ver,
 	})
@@ -58,7 +59,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 	var url *api.ObjectURL
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() (err error) {
-			desc, err = impl.PublicRepo.DescribeInstance(c.Context, &api.DescribeInstanceRequest{
+			desc, err = svc.PublicRepo.DescribeInstance(c.Context, &api.DescribeInstanceRequest{
 				Package:            inst.Package,
 				Instance:           inst.Instance,
 				DescribeRefs:       true,
@@ -68,7 +69,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			return
 		}
 		tasks <- func() (err error) {
-			md, err = impl.PublicRepo.ListMetadata(c.Context, &api.ListMetadataRequest{
+			md, err = svc.PublicRepo.ListMetadata(c.Context, &api.ListMetadataRequest{
 				Package:  inst.Package,
 				Instance: inst.Instance,
 			})
@@ -82,7 +83,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			} else {
 				name = chunks[0]
 			}
-			url, err = impl.InternalCAS.GetObjectURL(c.Context, &api.GetObjectURLRequest{
+			url, err = svc.InternalCAS.GetObjectURL(c.Context, &api.GetObjectURLRequest{
 				Object:           inst.Instance,
 				DownloadFilename: name + ".zip",
 			})
