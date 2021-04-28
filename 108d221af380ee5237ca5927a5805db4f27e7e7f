@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "91f75b0b_17ba0468",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T20:52:10Z",
+      "side": 1,
+      "message": "PTAL. This is to monitor # of artifact rows inserted in metric \u0027spanner/rows\u0027",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
