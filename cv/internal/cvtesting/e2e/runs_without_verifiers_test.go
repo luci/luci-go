@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
@@ -90,6 +91,99 @@ func TestCreatesSingularRun(t *testing.T) {
 		So(ct.LoadGerritCL(ctx, gHost, gChange).IncompleteRuns.ContainsSorted(r.ID), ShouldBeFalse)
 		So(ct.LoadProject(ctx, lProject).State.GetPcls(), ShouldBeEmpty)
 		So(ct.LoadProject(ctx, lProject).State.GetComponents(), ShouldBeEmpty)
+	})
+}
+
+func TestCreatesSingularQuickDryRun(t *testing.T) {
+	t.Parallel()
+
+	Convey("CV creates 1 CL Run, which gets canceled by the user", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+		const gHost = "g-review"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange = 33
+		const quickLabel = "Quick-Label"
+
+		// TODO(tandrii): remove this once Run creation is not conditional on CV
+		// managing Runs for a project.
+		ct.EnableCVRunManagement(ctx, lProject)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
+			Name:            string(run.QuickDryRun),
+			CqLabelValue:    1,
+			TriggeringValue: 1,
+			TriggeringLabel: quickLabel,
+		}}
+		ct.Cfg.Create(ctx, lProject, cfg)
+
+		tStart := ct.Clock.Now()
+
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Owner("user-1"),
+			gf.Updated(tStart),
+			gf.CQ(+1, tStart, gf.U("user-2")),
+			gf.Vote(quickLabel, +1, tStart, gf.U("user-2")),
+			// Spurious vote from user-3.
+			gf.Vote(quickLabel, +5, tStart.Add(-10*time.Second), gf.U("user-3")),
+		)))
+
+		/////////////////////////    Run CV   ////////////////////////////////
+		ct.LogPhase(ctx, "CV notices CL and starts the Run")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		var r *run.Run
+		ct.RunUntil(ctx, func() bool {
+			r = ct.EarliestCreatedRunOf(ctx, lProject)
+			return r != nil && r.Status == run.Status_RUNNING
+		})
+		So(r.Mode, ShouldEqual, run.QuickDryRun)
+
+		ct.LogPhase(ctx, "CQDaemon decides that QuickDryRun has passed")
+		// TODO(tandrii): implement CQDaemon fake and simulate completion of the
+		// run.
+		// ct.Clock.Add(time.Minute)
+		// cqdCtx := auth.WithState(ctx, &authtest.FakeState{
+		// 	Identity:       "user:cqd@example.com",
+		// 	IdentityGroups: []string{"luci-cv-migration-crbug-1141880"},
+		// })
+		// idParts := strings.Split(string(r.ID), "-")
+		// _, err := ct.MigrationServer.ReportVerifiedRun(cqdCtx, &migrationpb.ReportVerifiedRunRequest{
+		// 	Action: migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK,
+		// 	Run: &migrationpb.Run{
+		// 		Id: string(r.ID),
+		// 		Attempt: &bqpb.Attempt{
+		// 			Key:                  idParts[len(idParts)-1],
+		// 			Status:               bqpb.AttemptStatus_SUCCESS,
+		// 			Substatus:            bqpb.AttemptSubstatus_NO_SUBSTATUS,
+		// 			Builds:               nil,
+		// 			StartTime:            timestamppb.New(tStart),
+		// 			EndTime:              timestamppb.New(ct.Clock.Now()),
+		// 			LuciProject:          lProject,
+		// 			ConfigGroup:          cfg.GetConfigGroups()[0].GetName(),
+		// 			ClGroupKey:           "whatever",
+		// 			EquivalentClGroupKey: "whatever-group",
+		// 			GerritChanges:        nil, // irrelevant for this test, but set in practice.
+		// 		},
+		// 		Cls: nil, // irrelevant for this test, but set in practice.
+		// 	},
+		// })
+		// So(err, ShouldBeNil)
+
+		// ct.RunUntil(ctx, func() bool {
+		// 	r2 := ct.LoadRun(ctx, r.ID)
+		// 	p := ct.LoadProject(ctx, lProject)
+		// 	return r2.Status == run.Status_SUCCEEDED && len(p.State.GetComponents()) == 0
+		// })
+
+		// /////////////////////////    Verify    ////////////////////////////////
+		// So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
+		// So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
 	})
 }
 
