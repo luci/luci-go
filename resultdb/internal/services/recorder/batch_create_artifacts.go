@@ -198,14 +198,15 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 // checkArtStates checks if the states of the associated invocation and artifacts are
 // compatible with creation of the artifacts. On success, it returns a list of
 // the artifactCreationRequests of which artifact don't have states in Spanner yet.
-func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) ([]*artifactCreationRequest, error) {
+func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) ([]*artifactCreationRequest, string, error) {
+	var realm string
+	var invState pb.Invocation_State
+
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		invState, err := invocations.ReadState(ctx, invID)
-		if invState != pb.Invocation_ACTIVE {
-			return appstatus.Errorf(codes.FailedPrecondition, "%s is not active", invID.Name())
-		}
-		return err
+		return invocations.ReadColumns(ctx, invID, map[string]interface{}{
+			"State": &invState, "Realm": &realm,
+		})
 	})
 
 	var newArts []*artifactCreationRequest
@@ -213,18 +214,22 @@ func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactC
 		newArts, err = findNewArtifacts(ctx, invID, arts)
 		return err
 	})
-	if err := eg.Wait(); err != nil {
-		return nil, err
+
+	switch err := eg.Wait(); {
+	case err != nil:
+		return nil, "", err
+	case invState != pb.Invocation_ACTIVE:
+		return nil, "", appstatus.Errorf(codes.FailedPrecondition, "%s is not active", invID.Name())
 	}
-	return newArts, nil
+	return newArts, realm, nil
 }
 
 // createArtifactStates creates the states of given artifacts in Spanner.
-func createArtifactStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) error {
+func createArtifactStates(ctx context.Context, realm string, invID invocations.ID, arts []*artifactCreationRequest) error {
 	var noStateArts []*artifactCreationRequest
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) (err error) {
 		// Verify all the states again.
-		noStateArts, err = checkArtStates(ctx, invID, arts)
+		noStateArts, _, err = checkArtStates(ctx, invID, arts)
 		if err != nil {
 			return err
 		}
@@ -243,6 +248,10 @@ func createArtifactStates(ctx context.Context, invID invocations.ID, arts []*art
 		}
 		return nil
 	})
+
+	if err == nil {
+		spanutil.IncRowCount(ctx, len(noStateArts), spanutil.Artifacts, spanutil.Inserted, realm)
+	}
 	return errors.Annotate(err, "failed to write artifact to Spanner").Err()
 }
 
@@ -294,10 +303,11 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	}
 
 	var artsToCreate []*artifactCreationRequest
+	var realm string
 	func() {
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
-		artsToCreate, err = checkArtStates(ctx, invID, arts)
+		artsToCreate, realm, err = checkArtStates(ctx, invID, arts)
 	}()
 	if err != nil {
 		return nil, err
@@ -310,7 +320,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	if err := uploadArtifactBlobs(ctx, s.ArtifactRBEInstance, s.casClient, invID, artsToCreate); err != nil {
 		return nil, err
 	}
-	if err := createArtifactStates(ctx, invID, artsToCreate); err != nil {
+	if err := createArtifactStates(ctx, realm, invID, artsToCreate); err != nil {
 		return nil, err
 	}
 
