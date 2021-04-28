@@ -256,6 +256,11 @@ func TestTrigger(t *testing.T) {
 				trigger := Find(ci, cg)
 				So(trigger.GetMode(), ShouldEqual, run.QuickDryRun)
 			})
+			Convey("Custom mode", func() {
+				cg.AdditionalModes[0].Name = "CUSTOM_RUN"
+				trigger := Find(ci, cg)
+				So(trigger.GetMode(), ShouldEqual, "CUSTOM_RUN")
+			})
 			Convey("Not applicable cases", func() {
 				Convey("Additional vote must have the same timestamp", func() {
 					Convey("before", func() {
@@ -283,10 +288,6 @@ func TestTrigger(t *testing.T) {
 				Convey("CQ vote must have correct value", func() {
 					ci.Labels[CQLabelName].GetAll()[0].Value = fullRunVote
 					So(Find(ci, cg).GetMode(), ShouldEqual, run.FullRun)
-				})
-				Convey("Only QuickDryRun is *currently* supported", func() {
-					cg.GetAdditionalModes()[0].Name = "Custom-Run"
-					So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
 				})
 			})
 		})

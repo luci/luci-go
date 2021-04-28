@@ -252,6 +252,7 @@ message CLError {
     bool owner_lacks_email = 1;
     WatchedByManyConfigGroups watched_by_many_config_groups = 2;
     InvalidDeps invalid_deps = 3;
+    string unsupported_mode = 4;
   }
 
   message WatchedByManyConfigGroups {

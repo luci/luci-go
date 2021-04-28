@@ -147,9 +147,10 @@ func TestCLsTriage(t *testing.T) {
 				})
 			})
 
-			Convey("CL already with Error is not ready", func() {
+			Convey("CL already with Errors is not ready", func() {
 				sup.pb.Pcls[0].Errors = []*prjpb.CLError{
 					{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+					{Kind: &prjpb.CLError_UnsupportedMode{UnsupportedMode: "CUSTOM_RUN"}},
 				}
 				a := triageCLs(&prjpb.Component{Clids: []int64{1}})
 				So(a.cls, ShouldHaveLength, 1)

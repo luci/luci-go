@@ -138,9 +138,6 @@ func applyAdditionalMode(ci *gerritpb.ChangeInfo, mode *cfgpb.Mode, res *run.Tri
 		return false
 	case mode.GetCqLabelValue() != modeToVote[run.Mode(res.GetMode())]:
 		return false
-	case mode.GetName() != string(run.QuickDryRun):
-		// Only QUICK_DRY_RUN is supported until CQDaemon is decomissionned.
-		return false
 	}
 
 	matchesVote := func(vote *gerritpb.ApprovalInfo) bool {
