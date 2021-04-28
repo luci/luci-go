@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be366fc6_7e5e2619",
+        "filename": "common/data/embeddedkvs/kvs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2021-04-28T23:17:34Z",
+      "side": 1,
+      "message": "How much memory will be used at max?",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 22
+      },
+      "revId": "f86c54ea6324cb783d2fd9c2e64c995dada9de59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
