@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "414bc32d_a542d561",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 18
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T05:32:44Z",
+      "side": 1,
+      "message": "left some drive-by comments",
+      "revId": "b4c1b5a4c2676fe7abbd96a697fc8462c9b5b71a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "472c3970_a904077e",
@@ -67,6 +84,52 @@
         "startChar": 122,
         "endLine": 341,
         "endChar": 130
+      },
+      "revId": "b4c1b5a4c2676fe7abbd96a697fc8462c9b5b71a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "670a82f5_95dc54a8",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T05:32:44Z",
+      "side": 1,
+      "message": "nit: usually this is called \"md\"",
+      "range": {
+        "startLine": 352,
+        "startChar": 1,
+        "endLine": 352,
+        "endChar": 4
+      },
+      "revId": "b4c1b5a4c2676fe7abbd96a697fc8462c9b5b71a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d320f918_3fa2abd7",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T05:32:44Z",
+      "side": 1,
+      "message": "headsup: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2853746",
+      "range": {
+        "startLine": 358,
+        "startChar": 4,
+        "endLine": 358,
+        "endChar": 8
       },
       "revId": "b4c1b5a4c2676fe7abbd96a697fc8462c9b5b71a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"

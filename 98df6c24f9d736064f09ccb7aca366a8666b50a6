@@ -489,6 +489,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1756b661_1e797cac",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-28T05:32:44Z",
+      "side": 1,
+      "message": "I think it would be fine to make this func [1] public:\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cli/cmd_stream.go;l\u003d382\n\nI think \"cli\" package is better, since this is more specific to console applications, that to protobufs.",
+      "parentUuid": "05dfb2b0_be7a9a80",
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "74dbb06b_fc455a30",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 11
