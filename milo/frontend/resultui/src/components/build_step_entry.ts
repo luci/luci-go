@@ -189,7 +189,7 @@ export class BuildStepEntryElement extends MobxLitElement implements RenderPlace
   }
 
   renderPlaceHolder() {
-    return html`<div id="place-holder"></div>`;
+    return html`<div style="height: ${this.expanded ? 240 : 24}px;"></div>`;
   }
 
   protected render() {
@@ -235,10 +235,6 @@ export class BuildStepEntryElement extends MobxLitElement implements RenderPlace
     css`
       :host {
         display: block;
-      }
-
-      #place-holder {
-        height: 24px;
       }
 
       #header {
