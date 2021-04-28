@@ -189,7 +189,12 @@ export class BuildStepEntryElement extends MobxLitElement implements RenderPlace
   }
 
   renderPlaceHolder() {
-    return html`<div id="place-holder"></div>`;
+    // 200px is a rough estimate of the height of an expanded step entry.
+    // Setting it too high will increase the num of step entries fully rendered
+    // in the first rendering cycle.
+    // Setting it too low will cause the page to need multiple iterations
+    // to render enough step entries to fill the screen.
+    return html`<div style="height: ${this.expanded ? 200 : 24}px;"></div>`;
   }
 
   protected render() {
@@ -235,10 +240,6 @@ export class BuildStepEntryElement extends MobxLitElement implements RenderPlace
     css`
       :host {
         display: block;
-      }
-
-      #place-holder {
-        height: 24px;
       }
 
       #header {
