@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b487886_b4903082",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T01:58:09Z",
+      "side": 1,
+      "message": "Could prepareTaskRequestEnvironment call SetInCmd() at L274? then, this block is unnecessary.",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 2
+      },
+      "revId": "a621b902fe4f5f5de8ccd3baa40cb47aab794eb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

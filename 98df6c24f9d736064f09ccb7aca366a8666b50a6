@@ -215,6 +215,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ff989295_a47f5be5",
+        "filename": "client/cmd/swarming/lib/reproduce.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-28T01:58:09Z",
+      "side": 1,
+      "message": "please use https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/hardcoded/chromeinfra/chromeinfra.go;l\u003d77-81",
+      "parentUuid": "cda44bb4_7bbfc336",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "98df6c24f9d736064f09ccb7aca366a8666b50a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2746f5cf_5a1bad3b",
         "filename": "client/cmd/swarming/lib/reproduce.go",
         "patchSetId": 11
