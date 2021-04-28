@@ -16,6 +16,74 @@
       "message": "PTAL. This is to monitor # of artifact rows inserted in metric \u0027spanner/rows\u0027",
       "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce107466_113c6fe8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-28T22:37:15Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d8bb25a_c2c8d297",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-28T22:37:15Z",
+      "side": 1,
+      "message": "can you name these return values? \u0027string\u0027 is too vague, I think.\n\n   (reqs []*artifactCreationRequest, realm string, err string)\n\nwould help a lot",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34e8e55b_e088bc97",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-28T22:37:15Z",
+      "side": 1,
+      "message": "named return args are good for this sort of thing, too; you could just do `return` here",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9a7f128_16539d62",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-28T22:37:15Z",
+      "side": 1,
+      "message": "and this would be \n\n  err \u003d appstatus...\n  return",
+      "revId": "108d221af380ee5237ca5927a5805db4f27e7e7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
