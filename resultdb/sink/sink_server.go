@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -168,9 +169,14 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			updateArtifactContentType(a)
 			n := pbutil.TestResultArtifactName(s.cfg.invocationID, tr.TestId, tr.ResultId, id)
 			t, err := newUploadTask(n, a)
+
+			// newUploadTask can return an error if os.Stat() fails.
 			if err != nil {
-				// newUploadTask can return an error if os.Stat() fails.
-				return nil, status.Errorf(codes.FailedPrecondition, "artifact %q: %s", id, err)
+				// TODO(crbug.com/1124868) - once all test harnesses are fixed, return 4xx on
+				// newUploadTask failures instead of dropping the artifact silently.
+				logging.Warningf(ctx, "Dropping an artifact request; failed to create a new Uploadtask: %s",
+					errors.Annotate(err, "artifact %q: %s", id, err).Err())
+				continue
 			}
 			uts = append(uts, t)
 		}
@@ -195,21 +201,25 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*empty.Empty, error) {
 	uts := make([]*uploadTask, 0, len(in.Artifacts))
 	for id, a := range in.Artifacts {
+		updateArtifactContentType(a)
+		if err := validateArtifact(a); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
+		}
+		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a)
+		// newUploadTask can return an error if os.Stat() fails.
+		if err != nil {
+			// TODO(crbug.com/1124868) - once all test harnesses are fixed, return 4xx on
+			// newUploadTask failures instead of dropping the artifact silently.
+			logging.Warningf(ctx, "Dropping an artifact request; failed to create a new Uploadtask: %s",
+				errors.Annotate(err, "artifact %q: %s", id, err).Err())
+			continue
+		}
 		s.mu.Lock()
 		if added := s.invocationArtifactIDs.Add(id); !added {
 			s.mu.Unlock()
 			return nil, status.Errorf(codes.AlreadyExists, "artifact %q has already been uploaded", id)
 		}
 		s.mu.Unlock()
-		updateArtifactContentType(a)
-		if err := validateArtifact(a); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
-		}
-		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a)
-		if err != nil {
-			// newUploadTask can return an error if os.Stat() fails.
-			return nil, status.Errorf(codes.FailedPrecondition, "artifact %q: %s", id, err)
-		}
 		uts = append(uts, t)
 	}
 	s.ac.schedule(uts...)
