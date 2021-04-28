@@ -26,10 +26,12 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getGitilesRepoURL } from '../../libs/build_utils';
+import { errorHandler, forwardWithoutMsg, reportErrorAsync, reportRenderError } from '../../libs/error_handler';
 import { GitCommit } from '../../services/milo_internal';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-blamelist-tab')
+@errorHandler(forwardWithoutMsg)
 @consumeBuildState
 @consumeAppState
 export class BlamelistTabElement extends MiloBaseElement {
@@ -114,7 +116,7 @@ export class BlamelistTabElement extends MiloBaseElement {
     );
   }
 
-  private loadNextPage = async () => {
+  private loadNextPage = reportErrorAsync.bind(this)(async () => {
     this.isLoading = true;
     this.endOfPage = false;
     const iter = await this.queryBlamelistResIter.next();
@@ -126,7 +128,7 @@ export class BlamelistTabElement extends MiloBaseElement {
       this.endOfPage = !iter.value.nextPageToken;
     }
     this.isLoading = false;
-  };
+  });
 
   private allEntriesWereExpanded = false;
   private toggleAllEntries(expand: boolean) {
@@ -135,7 +137,7 @@ export class BlamelistTabElement extends MiloBaseElement {
   }
   private readonly toggleAllEntriesByHotkey = () => this.toggleAllEntries(!this.allEntriesWereExpanded);
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     if (this.buildState.build && !this.selectedBlamelistPin) {
       return html`
         <div id="no-blamelist">
@@ -232,7 +234,7 @@ export class BlamelistTabElement extends MiloBaseElement {
         </div>
       </div>
     `;
-  }
+  });
 
   static styles = [
     commonStyle,

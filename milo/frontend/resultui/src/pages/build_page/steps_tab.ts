@@ -26,10 +26,12 @@ import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
+import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { BuildStatus } from '../../services/buildbucket';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-steps-tab')
+@errorHandler(forwardWithoutMsg)
 @consumeBuildState
 @consumeConfigsStore
 @consumeAppState
@@ -96,7 +98,7 @@ export class StepsTabElement extends MiloBaseElement {
   }
   private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
-  protected render() {
+  protected render = reportRenderError.bind(this)(() => {
     return html`
       <div id="header">
         <div class="filters-container">
@@ -174,7 +176,7 @@ export class StepsTabElement extends MiloBaseElement {
         </div>
       </div>
     `;
-  }
+  });
 
   static styles = [
     commonStyle,

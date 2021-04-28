@@ -23,13 +23,14 @@ import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { reportRenderError } from '../../libs/error_handler';
+import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { BuildExt } from '../../models/build_ext';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-related-builds-tab')
+@errorHandler(forwardWithoutMsg)
 @consumeBuildState
 @consumeAppState
 export class RelatedBuildsTabElement extends MobxLitElement {
