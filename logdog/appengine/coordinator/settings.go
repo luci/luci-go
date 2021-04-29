@@ -35,23 +35,10 @@ import (
 )
 
 const (
-	settingDisabled = "disabled"
-	settingEnabled  = "enabled"
-	baseName        = "archivist"
+	baseName = "archivist"
 )
 
 type Settings struct {
-	// OptimisticArchivalDelay controls the delay to set for optimistic archival.
-	OptimisticArchivalDelay time.Duration
-
-	// OptimisticArchivalPercent (0-100) Controls what percent of terminated streams
-	// are tasked to the new pipeline
-	OptimisticArchivalPercent uint32
-
-	// PessimisticArchivalPercent (0-100) Controls what percent of registered
-	// streams are tasked to the new pipeline after 47 hours.
-	PessimisticArchivalPercent uint32
-
 	// ArchivistBatchSize controls the batchsize per lease cycle.
 	ArchivistBatchSize int64
 
@@ -60,9 +47,8 @@ type Settings struct {
 }
 
 var defaultSettings = Settings{
-	OptimisticArchivalDelay: 5 * time.Minute,
-	ArchivistBatchSize:      50,
-	ArchivistLeaseTime:      15 * time.Minute,
+	ArchivistBatchSize: 50,
+	ArchivistLeaseTime: 15 * time.Minute,
 }
 
 // settingsPage is a UI page to configure a static logdog configuration.
@@ -82,28 +68,6 @@ func (settingsPage) Overview(c context.Context) (template.HTML, error) {
 
 func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 	return []portal.Field{
-		{
-			ID: "OptimisticArchivalDelay",
-			Title: "The delay, of how the optimistic archival delay. " +
-				"This should be set to compensate for potential collector pipeline delays.",
-			Type:        portal.FieldText,
-			Placeholder: defaultSettings.OptimisticArchivalDelay.String(),
-			Validator:   validateDuration,
-		},
-		{
-			ID:          "OptimisticArchivalPercent",
-			Title:       "Percentage (0-100) of tasks to go to the new optimistic pipeline.",
-			Type:        portal.FieldText,
-			Placeholder: "0",
-			Validator:   validatePercent,
-		},
-		{
-			ID:          "PessimisticArchivalPercent",
-			Title:       "Percentage (0-100) of tasks to go to the new pessimistic pipeline (47hr delay from registration).",
-			Type:        portal.FieldText,
-			Placeholder: "0",
-			Validator:   validatePercent,
-		},
 		{
 			ID: "ArchivistBatchSize",
 			Title: "Number of Archive Tasks to lease in each LeaseTasks request. " +
@@ -138,15 +102,6 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	values := map[string]string{}
 
 	// Only render values if they differ from our default config.
-	if set.OptimisticArchivalDelay != defaultSettings.OptimisticArchivalDelay {
-		values["OptimisticArchivalDelay"] = set.OptimisticArchivalDelay.String()
-	}
-	if set.OptimisticArchivalPercent != defaultSettings.OptimisticArchivalPercent {
-		values["OptimisticArchivalPercent"] = fmt.Sprintf("%d", set.OptimisticArchivalPercent)
-	}
-	if set.PessimisticArchivalPercent != defaultSettings.PessimisticArchivalPercent {
-		values["PessimisticArchivalPercent"] = fmt.Sprintf("%d", set.PessimisticArchivalPercent)
-	}
 	if set.ArchivistBatchSize != defaultSettings.ArchivistBatchSize {
 		values["ArchivistBatchSize"] = fmt.Sprintf("%d", set.ArchivistBatchSize)
 	}
@@ -161,27 +116,6 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 	// Start with our default config and shape it with populated values.
 	set := defaultSettings
 
-	if v := values["OptimisticArchivalDelay"]; v != "" {
-		t, err := clockflag.ParseDuration(v)
-		if err != nil {
-			return fmt.Errorf("could not parse OptimisticArchivalDelay: %v", err)
-		}
-		set.OptimisticArchivalDelay = time.Duration(t)
-	}
-	if v := values["OptimisticArchivalPercent"]; v != "" {
-		i, err := strconv.Atoi(v)
-		if err != nil {
-			return fmt.Errorf("could not parse OptimisticArchivalPercent: %v", err)
-		}
-		set.OptimisticArchivalPercent = uint32(i)
-	}
-	if v := values["PessimisticArchivalPercent"]; v != "" {
-		i, err := strconv.Atoi(v)
-		if err != nil {
-			return fmt.Errorf("could not parse PessimisticArchivalPercent: %v", err)
-		}
-		set.PessimisticArchivalPercent = uint32(i)
-	}
 	if v := values["ArchivistBatchSize"]; v != "" {
 		i, err := strconv.Atoi(v)
 		if err != nil {

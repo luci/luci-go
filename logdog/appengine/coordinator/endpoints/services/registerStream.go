@@ -37,6 +37,11 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+// Archival task delay for archiving gracefully terminated streams.
+//
+// It is non-zero to compensate for potential collector pipeline delays.
+const optimisticArchivalDelay = 5 * time.Minute
+
 var (
 	registerStreamMetric = metric.NewCounter(
 		"logdog/endpoints/register_stream",
@@ -223,10 +228,9 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			}
 
 			// Send archival task.
-			set := coordinator.GetSettings(c)
 			delay := 48 * time.Hour
 			if preTerminated {
-				delay = set.OptimisticArchivalDelay
+				delay = optimisticArchivalDelay
 			}
 			return s.taskArchival(c, lst, delay)
 		}, nil)
