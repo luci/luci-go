@@ -31,14 +31,14 @@ export class BuildTagRowElement extends LitElement {
       const url = getSafeUrlFromBuildset(this.value);
       if (url) {
         return html`
-          <td>${this.key}</td>
+          <td>${this.key}:</td>
           <td><a href=${url} target="_blank">${this.value}</a></td>
         `;
       }
     }
 
     return html`
-      <td>${this.key}</td>
+      <td>${this.key}:</td>
       <td>${this.value}</td>
     `;
   }
