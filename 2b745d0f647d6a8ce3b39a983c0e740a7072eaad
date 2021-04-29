@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "811c739c_c7997f4c",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-29T20:38:08Z",
+      "side": 1,
+      "message": "I was gonna raise this idea, why not\n 1. keep both code path\n 2. run a map-reduce job to upgrade (I assume this is what dsmapper is for)\n 3. clean up",
+      "parentUuid": "cd7d99fb_6302597e",
+      "range": {
+        "startLine": 363,
+        "startChar": 0,
+        "endLine": 367,
+        "endChar": 2
+      },
+      "revId": "2b745d0f647d6a8ce3b39a983c0e740a7072eaad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2129bb57_85f6442a",
         "filename": "cv/internal/prjmanager/impl/state/state.go",
         "patchSetId": 1
