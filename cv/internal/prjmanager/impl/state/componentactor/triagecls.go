@@ -92,7 +92,7 @@ type triagedCL struct {
 	deps *triagedDeps
 	// purgeReasons is set if the CL ought to be purged.
 	//
-	// Not set if CL is .purgingCL is non-nil since CL is already being purged.
+	// Not set is CL is .purgingCL is non-nil since CL is already being purged.
 	purgeReasons []*prjpb.CLError
 	// ready is true if it can be used in creation of new Runs.
 	//
