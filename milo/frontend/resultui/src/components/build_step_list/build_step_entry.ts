@@ -13,11 +13,10 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement } from 'lit-element';
 import { html, render } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 import '../copy_to_clipboard';
 import '../expandable_entry';
@@ -29,8 +28,10 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP
 import { lazyRendering, RenderPlaceHolder } from '../../libs/enter_view_observer';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { StepExt } from '../../models/step_ext';
+import { BuildStatus } from '../../services/buildbucket';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
+import { MiloBaseElement } from '../milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../tooltip';
 
 /**
@@ -39,7 +40,7 @@ import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../tooltip';
 @customElement('milo-build-step-entry')
 @lazyRendering()
 @consumeConfigsStore
-export class BuildStepEntryElement extends MobxLitElement implements RenderPlaceHolder {
+export class BuildStepEntryElement extends MiloBaseElement implements RenderPlaceHolder {
   @observable.ref configsStore!: UserConfigsStore;
 
   @observable.ref number = 0;
@@ -60,6 +61,10 @@ export class BuildStepEntryElement extends MobxLitElement implements RenderPlace
 
   @computed private get isPinned() {
     return this.configsStore.stepIsPinned(this.step.name);
+  }
+
+  @computed private get isCriticalStep() {
+    return this.step.status !== BuildStatus.Success || this.isPinned;
   }
 
   private expandSubSteps = false;
@@ -168,12 +173,21 @@ export class BuildStepEntryElement extends MobxLitElement implements RenderPlace
 
   connectedCallback() {
     super.connectedCallback();
+    this.addDisposer(
+      reaction(
+        () => this.isCriticalStep,
+        () => {
+          this.style['display'] = `var(--${this.isCriticalStep ? '' : 'non-'}critical-build-step-display, block)`;
+        },
+        { fireImmediately: true }
+      )
+    );
     this.addEventListener('click', this.onMouseClick);
   }
 
   disconnectedCallback() {
-    super.disconnectedCallback();
     this.removeEventListener('click', this.onMouseClick);
+    super.disconnectedCallback();
   }
 
   firstUpdated() {
@@ -239,7 +253,7 @@ export class BuildStepEntryElement extends MobxLitElement implements RenderPlace
     colorClasses,
     css`
       :host {
-        display: block;
+        display: none;
       }
 
       #header {
@@ -295,6 +309,10 @@ export class BuildStepEntryElement extends MobxLitElement implements RenderPlace
 
       milo-build-step-entry {
         margin-bottom: 2px;
+
+        /* Always render all child steps. */
+        --non-critical-build-step-display: block;
+        --critical-build-step-display: block;
       }
     `,
   ];
