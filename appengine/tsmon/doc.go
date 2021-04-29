@@ -26,4 +26,7 @@
 // task is not installed, instances will not get IDs and will be unable to send
 // metrics. The cron task should be configured to hit:
 // "/internal/cron/ts_mon/housekeeping" every minute.
+//
+// This package is DEPRECATED. Do not depend on it directly. tsmon is being
+// correctly initialized by go.chromium.org/luci/server by default.
 package tsmon

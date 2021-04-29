@@ -19,6 +19,9 @@
 //
 // All secrets are global (live in default GAE namespace).
 //
+// This package is DEPRECATED. Use go.chromium.org/luci/server/secrets instead
+// to fetch secrets from Google Secret Manager.
+//
 // TODO(vadimsh): Merge into go.chromium.org/luci/server/gaeemulation once
 // there are no other users.
 package gaesecrets

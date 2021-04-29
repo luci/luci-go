@@ -18,6 +18,10 @@
 // environment configuration (e.g., standard, flex) should be chosen from a
 // sub-package.
 //
+// This package is DEPRECATED, it doesn't work at all on the GAE second-gen
+// runtime. Instead use go.chromium.org/luci/server in combination with
+// go.chromium.org/luci/server/gaeemulation module to get Datastore support.
+//
 // This middleware configures the request environment to use GAE-based services
 // (like datastore via luci/gae package, logging and many more).
 //

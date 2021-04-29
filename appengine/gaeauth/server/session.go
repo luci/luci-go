@@ -33,6 +33,8 @@ import (
 
 // SessionStore stores auth sessions in the datastore (always in the default
 // namespace). It implements deprecated.SessionStore.
+//
+// It is DEPRECATED.
 type SessionStore struct {
 	Prefix string // used as prefix for datastore keys
 }
