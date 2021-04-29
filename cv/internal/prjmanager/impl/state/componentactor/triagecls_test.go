@@ -147,8 +147,10 @@ func TestCLsTriage(t *testing.T) {
 				})
 			})
 
-			Convey("CL without owner's email is not ready", func() {
-				sup.pb.Pcls[0].OwnerLacksEmail = true
+			Convey("CL already with Error is not ready", func() {
+				sup.pb.Pcls[0].Errors = []*prjpb.CLError{
+					{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+				}
 				a := triageCLs(&prjpb.Component{Clids: []int64{1}})
 				So(a.cls, ShouldHaveLength, 1)
 				expected := &clInfo{
@@ -157,11 +159,7 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReason: &prjpb.CLError{
-							Kind: &prjpb.CLError_OwnerLacksEmail{
-								OwnerLacksEmail: true,
-							},
-						},
+						purgeReason: sup.pb.Pcls[0].Errors[0],
 					},
 				}
 				So(a.cls[1], shouldResembleTriagedCL, expected)
