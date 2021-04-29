@@ -15,6 +15,7 @@
 import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { css, customElement, LitElement, property } from 'lit-element';
+import * as sinon from 'sinon';
 
 import {
   EnterViewNotifier,
@@ -45,11 +46,33 @@ class EnterViewObserverTestEntryElement extends LitElement implements OnEnterVie
   `;
 }
 
+@customElement('milo-enter-view-observer-notifier-test-entry')
+@enterViewObserver((e: EnterViewObserverNotifierTestEntryElement) => e.notifier)
+class EnterViewObserverNotifierTestEntryElement extends LitElement implements OnEnterView {
+  notifier!: EnterViewNotifier;
+  @property() onEnterCallCount = 0;
+
+  onEnterView() {
+    this.onEnterCallCount++;
+  }
+
+  protected render() {
+    return html`content`;
+  }
+
+  static styles = css`
+    :host {
+      display: block;
+      height: 10px;
+    }
+  `;
+}
+
 describe('enterViewObserver', () => {
   let listView: HTMLDivElement;
   let entries: NodeListOf<EnterViewObserverTestEntryElement>;
 
-  before(async () => {
+  beforeEach(async () => {
     listView = await fixture<HTMLDivElement>(html`
       <div style="height: 100px; overflow-y: auto;">
         ${new Array(100)
@@ -59,7 +82,7 @@ describe('enterViewObserver', () => {
     `);
     entries = listView.querySelectorAll<EnterViewObserverTestEntryElement>('milo-enter-view-observer-test-entry');
   });
-  after(fixtureCleanup);
+  afterEach(fixtureCleanup);
 
   it('should notify entries in the view.', async () => {
     await aTimeout(0);
@@ -69,6 +92,7 @@ describe('enterViewObserver', () => {
   });
 
   it('should notify new entries scrolls into the view.', async () => {
+    await aTimeout(0);
     listView.scrollBy(0, 50);
     await aTimeout(20);
 
@@ -78,12 +102,46 @@ describe('enterViewObserver', () => {
   });
 
   it('should re-notify old entries when scrolling back and forth.', async () => {
+    await aTimeout(0);
+    listView.scrollBy(0, 50);
+    await aTimeout(20);
     listView.scrollBy(0, -50);
     await aTimeout(20);
 
     entries.forEach((entry, i) => {
       assert.equal(entry.onEnterCallCount, i <= 15 ? 1 : 0);
     });
+  });
+
+  it('different instances can have different notifiers', async () => {
+    const entry1 = document.createElement(
+      'milo-enter-view-observer-notifier-test-entry'
+    ) as EnterViewObserverNotifierTestEntryElement;
+    const entry2 = document.createElement(
+      'milo-enter-view-observer-notifier-test-entry'
+    ) as EnterViewObserverNotifierTestEntryElement;
+    const notifier1 = new EnterViewNotifier();
+    const notifier2 = new EnterViewNotifier();
+    const notifierStub1 = sinon.stub(notifier1);
+    const notifierStub2 = sinon.stub(notifier2);
+
+    entry1.notifier = notifier1;
+    entry2.notifier = notifier2;
+
+    entry1.connectedCallback();
+    entry2.connectedCallback();
+    entry1.disconnectedCallback();
+    entry2.disconnectedCallback();
+
+    assert.strictEqual(notifierStub1.observe.callCount, 1);
+    assert.strictEqual(notifierStub1.observe.getCall(0).args[0], entry1);
+    assert.strictEqual(notifierStub2.observe.callCount, 1);
+    assert.strictEqual(notifierStub2.observe.getCall(0).args[0], entry2);
+
+    assert.strictEqual(notifierStub1.unobserve.callCount, 1);
+    assert.strictEqual(notifierStub1.unobserve.getCall(0).args[0], entry1);
+    assert.strictEqual(notifierStub2.unobserve.callCount, 1);
+    assert.strictEqual(notifierStub2.unobserve.getCall(0).args[0], entry2);
   });
 });
 
@@ -110,7 +168,7 @@ describe('lazyRendering', () => {
   let listView: HTMLDivElement;
   let entries: NodeListOf<LazyRenderingElement>;
 
-  before(async () => {
+  beforeEach(async () => {
     listView = await fixture<HTMLDivElement>(html`
       <div style="height: 100px; overflow-y: auto;">
         ${new Array(100).fill(0).map(() => html`<milo-lazy-rendering-test-entry></milo-lazy-rendering-test-entry>`)}
@@ -118,7 +176,7 @@ describe('lazyRendering', () => {
     `);
     entries = listView.querySelectorAll<LazyRenderingElement>('milo-lazy-rendering-test-entry');
   });
-  after(fixtureCleanup);
+  afterEach(fixtureCleanup);
 
   it('should only render content for elements entered the view.', async () => {
     await aTimeout(0);
@@ -128,6 +186,7 @@ describe('lazyRendering', () => {
   });
 
   it('should work with scrolling', async () => {
+    await aTimeout(0);
     listView.scrollBy(0, 50);
     await aTimeout(20);
 
