@@ -253,7 +253,9 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	// TODO(tandrii): stop storing triggering user's email
 	s.setTrigger(ci, pcl)
 	if ci.GetOwner().GetEmail() == "" {
-		pcl.OwnerLacksEmail = true
+		pcl.Errors = append(pcl.Errors, &prjpb.CLError{
+			Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
+		})
 	}
 	// TODO(tandrii): switch to error-ish field in PCL and error out if mode isn't
 	// in currently known to CV modes.
