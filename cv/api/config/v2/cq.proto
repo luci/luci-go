@@ -552,19 +552,7 @@ message Verifiers {
       // uploaded the CL) is a member of at least one of these groups.
       repeated string owner_whitelist_group = 8;
 
-      // Optional. Require this builder only if any of mode_regexp matches the
-      // CQ Run mode and none of mode_regexp_exclude matches it.
-      //
-      // If mode_regexp is not provided, defaults to `.+`.
-      // If the Run mode is matched by both, mode_regexp_exclude takes
-      // precedence.
-      //
-      // Implicitly anchored with (?i)^...$  (i.e. complete case-insensitive
-      // match), so there is no need add them.
-      //
-      // DEPRECATED: use mode_allowlist instead.
-      repeated string mode_regexp = 12 [deprecated = true];
-      repeated string mode_regexp_exclude = 13 [deprecated = true];
+      reserved 12, 13; // mode_regexp[_exclude]
 
       // If set, require this builder only if the Run mode matches
       // one of the modes in this list. Optional.
