@@ -13,10 +13,9 @@
 // limitations under the License.
 
 import '@material/mwc-button';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 import './build_step_entry';
 import '../dot_spinner';
@@ -25,13 +24,14 @@ import { consumeConfigsStore, UserConfigsStore } from '../../context/user_config
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { BuildStatus } from '../../services/buildbucket';
 import commonStyle from '../../styles/common_style.css';
+import { MiloBaseElement } from '../milo_base';
 import { BuildStepEntryElement } from './build_step_entry';
 
 @customElement('milo-build-step-list')
 @errorHandler(forwardWithoutMsg)
 @consumeBuildState
 @consumeConfigsStore
-export class BuildStepListElement extends MobxLitElement {
+export class BuildStepListElement extends MiloBaseElement {
   @observable.ref configsStore!: UserConfigsStore;
   @observable.ref buildState!: BuildState;
 
@@ -60,23 +60,22 @@ export class BuildStepListElement extends MobxLitElement {
     );
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.addDisposer(
+      reaction(
+        () => this.stepsConfig.showSucceededSteps,
+        (showSucceededSteps) =>
+          this.style.setProperty('--non-critical-build-step-display', showSucceededSteps ? 'block' : 'none'),
+        { fireImmediately: true }
+      )
+    );
+  }
+
   protected render = reportRenderError.bind(this)(() => {
     return html`
       ${this.buildState.build?.rootSteps.map(
-        (step, i) => html`
-          <milo-build-step-entry
-            style=${styleMap({
-              display:
-                !step.succeededRecursively ||
-                this.stepsConfig.showSucceededSteps ||
-                this.configsStore.stepIsPinned(step.name)
-                  ? ''
-                  : 'none',
-            })}
-            .number=${i + 1}
-            .step=${step}
-          ></milo-build-step-entry>
-        `
+        (step, i) => html`<milo-build-step-entry .number=${i + 1} .step=${step}></milo-build-step-entry>`
       ) || ''}
       <div class="list-entry" style=${styleMap({ display: this.noStepText ? '' : 'none' })}>${this.noStepText}</div>
       <div id="load" class="list-entry" style=${styleMap({ display: this.loaded ? 'none' : '' })}>
