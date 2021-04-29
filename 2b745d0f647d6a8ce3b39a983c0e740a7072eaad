@@ -74,6 +74,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e6ee7892_07fa1103",
+        "filename": "cv/internal/prjmanager/impl/pm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-29T20:45:44Z",
+      "side": 1,
+      "message": "I expect more upgrades of PM state to be necessary in the future. Thus, I want to keep upgrade infrastructure.\nHowever, the upgrade.go functions should be noops, ie this is where i\u0027d cleanup.",
+      "parentUuid": "811c739c_c7997f4c",
+      "range": {
+        "startLine": 363,
+        "startChar": 0,
+        "endLine": 367,
+        "endChar": 2
+      },
+      "revId": "2b745d0f647d6a8ce3b39a983c0e740a7072eaad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2129bb57_85f6442a",
         "filename": "cv/internal/prjmanager/impl/state/state.go",
         "patchSetId": 1
