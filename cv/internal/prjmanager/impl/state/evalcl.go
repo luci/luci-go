@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // reevalPCLs re-evaluates PCLs after a project config change.
@@ -250,15 +251,14 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		pcl.Submitted = true
 		return pcl
 	}
-	// TODO(tandrii): stop storing triggering user's email
-	s.setTrigger(ci, pcl)
+
 	if ci.GetOwner().GetEmail() == "" {
 		pcl.Errors = append(pcl.Errors, &prjpb.CLError{
 			Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
 		})
 	}
-	// TODO(tandrii): switch to error-ish field in PCL and error out if mode isn't
-	// in currently known to CV modes.
+
+	s.setTrigger(ci, pcl)
 	return pcl
 }
 
@@ -321,6 +321,14 @@ func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 		cg = &cfgpb.ConfigGroup{}
 	}
 	pcl.Trigger = trigger.Find(ci, cg)
+	// TODO(tandrii): stop storing triggering user's email
+	switch mode := run.Mode(pcl.Trigger.GetMode()); mode {
+	case "", run.DryRun, run.FullRun, run.QuickDryRun:
+	default:
+		pcl.Errors = append(pcl.Errors, &prjpb.CLError{
+			Kind: &prjpb.CLError_UnsupportedMode{UnsupportedMode: string(mode)},
+		})
+	}
 }
 
 // loadCLsForPCLs loads CLs from Datastore corresponding to PCLs.

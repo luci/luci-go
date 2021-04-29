@@ -30,23 +30,40 @@ import (
 )
 
 func formatMessage(ctx context.Context, task *prjpb.PurgeCLTask, cl *changelist.CL) (string, error) {
-	// TODO(tandrii): support >1 reason.
-	r := task.GetReasons()[0]
-	switch v := r.GetKind().(type) {
+	sb := strings.Builder{}
+	for i, r := range task.GetReasons() {
+		if i != 0 {
+			sb.WriteString("\n")
+		}
+		if err := formatOneReason(ctx, task, r, cl, &sb); err != nil {
+			return "", err
+		}
+	}
+	return sb.String(), nil
+}
+
+func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *prjpb.CLError, cl *changelist.CL, sb *strings.Builder) error {
+	switch v := reason.GetKind().(type) {
 	case *prjpb.CLError_OwnerLacksEmail:
 		if !v.OwnerLacksEmail {
-			return "", errors.New("owner_lacks_email must be set to true")
+			return errors.New("owner_lacks_email must be set to true")
 		}
-		return tmplExec(tmplCLOwnerLacksEmails, map[string]string{
+		return tmplCLOwnerLacksEmails.Execute(sb, map[string]string{
 			"GerritHost": cl.Snapshot.GetGerrit().GetHost(),
 		})
+
+	case *prjpb.CLError_UnsupportedMode:
+		if v.UnsupportedMode == "" {
+			return errors.New("unsupported_mode must be set")
+		}
+		return tmplUnsupportedMode.Execute(sb, v)
 
 	case *prjpb.CLError_WatchedByManyConfigGroups_:
 		cgs := v.WatchedByManyConfigGroups.GetConfigGroups()
 		if len(cgs) < 2 {
-			return "", errors.New("at least 2 config_groups required")
+			return errors.New("at least 2 config_groups required")
 		}
-		return tmplExec(tmplWatchedByManyConfigGroups, map[string]interface{}{
+		return tmplWatchedByManyConfigGroups.Execute(sb, map[string]interface{}{
 			"ConfigGroups": cgs,
 			"TargetRef":    cl.Snapshot.GetGerrit().GetInfo().GetRef(),
 		})
@@ -66,18 +83,18 @@ func formatMessage(ctx context.Context, task *prjpb.PurgeCLTask, cl *changelist.
 			bad, t = d.GetIncompatMode(), tmplIncompatDepsMode
 			args["mode"] = task.GetTrigger().GetMode()
 		default:
-			return "", errors.Reason("usupported InvalidDeps reason %s", d).Err()
+			return errors.Reason("usupported InvalidDeps reason %s", d).Err()
 		}
 		urls, err := depsURLs(ctx, bad)
 		if err != nil {
-			return "", err
+			return err
 		}
 		sort.Strings(urls)
 		args["deps"] = urls
-		return tmplExec(t, args)
+		return t.Execute(sb, args)
 
 	default:
-		return "", errors.Reason("usupported purge reason %t: %s", v, r).Err()
+		return errors.Reason("unsupported purge reason %t: %s", v, reason).Err()
 	}
 }
 
@@ -99,14 +116,6 @@ func depsURLs(ctx context.Context, deps []*changelist.Dep) ([]string, error) {
 	return urls, nil
 }
 
-func tmplExec(t *template.Template, data interface{}) (string, error) {
-	sb := strings.Builder{}
-	if err := t.Execute(&sb, data); err != nil {
-		return "", err
-	}
-	return sb.String(), nil
-}
-
 func tmplMust(text string) *template.Template {
 	text = strings.TrimSpace(text)
 	return template.Must(template.New("").Funcs(tmplFuncs).Parse(text))
@@ -125,6 +134,11 @@ var tmplCLOwnerLacksEmails = tmplMust(`
 {{CQ_OR_CV}} can't process the CL because its owner doesn't have a preferred email set in Gerrit settings.
 
 You can set preferred email at https://{{.GerritHost}}/settings/#EmailAddresses
+`)
+
+var tmplUnsupportedMode = tmplMust(`
+{{CQ_OR_CV}} can't process the CL because its mode {{.UnsupportedMode | printf "%q"}} is not supported.
+{{CONTACT_YOUR_INFRA}}
 `)
 
 var tmplWatchedByManyConfigGroups = tmplMust(`
