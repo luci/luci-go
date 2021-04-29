@@ -19,12 +19,11 @@ import (
 	"net/http"
 	"time"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
@@ -52,6 +51,7 @@ import (
 func main() {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
+		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
@@ -96,11 +96,9 @@ func main() {
 
 		// Register cron.
 		pcr := configcron.New(&tq.Default, pmNotifier)
-		srv.Routes.GET(
-			"/internal/cron/refresh-config",
-			router.NewMiddlewareChain(gaemiddleware.RequireCron),
-			func(rc *router.Context) { refreshConfig(rc, pcr) },
-		)
+		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
+			return refreshConfig(ctx, pcr)
+		})
 
 		// The service has no UI, so just redirect to the RPC Explorer.
 		srv.Routes.GET("/", nil, func(c *router.Context) {
@@ -111,18 +109,12 @@ func main() {
 	})
 }
 
-func refreshConfig(rc *router.Context, pcr *configcron.ProjectConfigRefresher) {
+func refreshConfig(ctx context.Context, pcr *configcron.ProjectConfigRefresher) error {
 	// The cron job interval is 1 minute.
-	ctx, cancel := context.WithTimeout(rc.Context, 1*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error { return servicecfg.ImportConfig(ctx) })
 	eg.Go(func() error { return pcr.SubmitRefreshTasks(ctx) })
-	code := 200
-	if err := eg.Wait(); err != nil {
-		errors.Log(ctx, err)
-		code = 500
-	}
-	rc.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	rc.Writer.WriteHeader(code)
+	return eg.Wait()
 }
