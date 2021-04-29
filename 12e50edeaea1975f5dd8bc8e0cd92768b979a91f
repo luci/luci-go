@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67c72231_0be65f45",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T03:18:21Z",
+      "side": 1,
+      "message": "PTAL\n\nThis is based on my experience migrating a bunch of services (most recently CIPD). I think we no longer have any blockers for migrating all our stuff.",
+      "revId": "12e50edeaea1975f5dd8bc8e0cd92768b979a91f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
