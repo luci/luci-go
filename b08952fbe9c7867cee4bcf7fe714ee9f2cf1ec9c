@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c75610e0_a6f78060",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-29T01:57:55Z",
+      "side": 1,
+      "message": "I think it is `Not set if clinfo.purgingCL is non-nil`",
+      "range": {
+        "startLine": 95,
+        "startChar": 4,
+        "endLine": 95,
+        "endChar": 41
+      },
+      "revId": "b08952fbe9c7867cee4bcf7fe714ee9f2cf1ec9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
