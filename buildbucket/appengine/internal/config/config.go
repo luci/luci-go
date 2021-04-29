@@ -17,7 +17,6 @@ package config
 import (
 	"context"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
 
@@ -31,10 +30,9 @@ var cachedSettingsCfg = cfgcache.Register(&cfgcache.Entry{
 })
 
 // UpdateSettingsCfg is called from a cron periodically to import settings.cfg into datastore.
-func UpdateSettingsCfg(ctx context.Context) {
-	if _, err := cachedSettingsCfg.Update(ctx, nil); err != nil {
-		logging.Errorf(ctx, "failed to update settings.cfg: %s", err)
-	}
+func UpdateSettingsCfg(ctx context.Context) error {
+	_, err := cachedSettingsCfg.Update(ctx, nil)
+	return err
 }
 
 // GetSettingsCfg fetches the settings.cfg from luci-config.

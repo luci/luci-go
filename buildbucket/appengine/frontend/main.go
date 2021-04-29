@@ -23,13 +23,13 @@ import (
 	"net/url"
 	"strings"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
@@ -55,9 +55,10 @@ func isDev(req *http.Request) bool {
 
 func main() {
 	mods := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
-		cfgmodule.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
@@ -132,10 +133,7 @@ func main() {
 		// makeOverride(prod % -> Go, dev % -> Go).
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 100))
 
-		cronMW := router.NewMiddlewareChain(gaemiddleware.RequireCron)
-		srv.Routes.GET("/internal/cron/update_config", cronMW, func(c *router.Context) {
-			config.UpdateSettingsCfg(c.Context)
-		})
+		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		return nil
 	})
 }
