@@ -81,6 +81,24 @@
       "parentUuid": "87f9d2c7_698e2c11",
       "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2dcdca2_0115956d",
+        "filename": "resultdb/internal/spanutil/metrics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-29T01:09:51Z",
+      "side": 1,
+      "message": "agree that \"operation\" would be better than \"status\".\n\nare you going to rename the field too?\nimo the type should be consistent with the field name",
+      "parentUuid": "e7da28e7_d6bc0716",
+      "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
