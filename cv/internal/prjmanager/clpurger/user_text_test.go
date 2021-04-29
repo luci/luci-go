@@ -87,6 +87,10 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 			task.Reasons[0].Kind = &changelist.CLError_SelfCqDepend{SelfCqDepend: true}
 			So(mustFormat(), ShouldContainSubstring, `because it depends on itself`)
 		})
+		Convey("CorruptGerrit", func() {
+			task.Reasons[0].Kind = &changelist.CLError_CorruptGerritMetadata{CorruptGerritMetadata: "foo is not bar"}
+			So(mustFormat(), ShouldContainSubstring, `foo is not bar`)
+		})
 
 		Convey("Watched by many config groups", func() {
 			task.Reasons[0].Kind = &changelist.CLError_WatchedByManyConfigGroups_{

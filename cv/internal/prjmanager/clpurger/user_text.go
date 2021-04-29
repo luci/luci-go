@@ -64,6 +64,12 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *chang
 		}
 		return tmplSelfCQDepend.Execute(sb, nil)
 
+	case *changelist.CLError_CorruptGerritMetadata:
+		if v.CorruptGerritMetadata == "" {
+			return errors.New("corrupt_gerrit_metadata must be set")
+		}
+		return tmplCorruptGerritCLMetadata.Execute(sb, v)
+
 	case *changelist.CLError_WatchedByManyConfigGroups_:
 		cgs := v.WatchedByManyConfigGroups.GetConfigGroups()
 		if len(cgs) < 2 {
@@ -159,6 +165,15 @@ var tmplSelfCQDepend = tmplMust(`
 {{CQ_OR_CV}} can't process the CL because it depends on itself.
 
 Please check Cq-Depend: in CL description (commit message). If you think this is a mistake, {{CONTACT_YOUR_INFRA}}.
+`)
+
+var tmplCorruptGerritCLMetadata = tmplMust(`
+{{CQ_OR_CV}} can't process the CL because its Gerrit metadata looks corrupted.
+
+{{.CorruptGerritMetadata}}
+
+Consider filing a Gerrit bug or {{CONTACT_YOUR_INFRA}}.
+In the meantime, consider re-uploading your CL(s).
 `)
 
 var tmplWatchedByManyConfigGroups = tmplMust(`

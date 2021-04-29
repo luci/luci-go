@@ -246,6 +246,8 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	pcl.Status = prjpb.PCL_OK
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
 
+	pcl.Errors = append(pcl.Errors, cl.Snapshot.GetErrors()...)
+
 	pcl.Deps = cl.Snapshot.GetDeps()
 	for _, d := range pcl.GetDeps() {
 		if d.GetClid() == pcl.GetClid() {
