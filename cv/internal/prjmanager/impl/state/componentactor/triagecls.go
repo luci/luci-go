@@ -90,11 +90,10 @@ type triagedCL struct {
 	// deps are triaged deps, set only if CL is watched by exactly 1 config group.
 	// of the current project.
 	deps *triagedDeps
-	// purgeReason is set with details for purge reason if the CL ought to be purged.
+	// purgeReasons is set if the CL ought to be purged.
 	//
-	// Not set is CL is .purgingCL is non-nil since CL is already being purged.
-	// TODO(tandrii): support >1 reasons.
-	purgeReason *prjpb.CLError
+	// Not set if CL is .purgingCL is non-nil since CL is already being purged.
+	purgeReasons []*prjpb.CLError
 	// ready is true if it can be used in creation of new Runs.
 	//
 	// If true, purgeReason must be nil, and deps must be OK though they may contain
@@ -206,10 +205,8 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
 	case pcl.GetOwnerLacksEmail():
 		panic(fmt.Errorf("deprecated PCL.OwnerLacksEmail"))
-	case len(pcl.GetErrors()) > 1:
-		panic(fmt.Errorf(">1 PCL.Errors not yet supported"))
 	case len(pcl.GetErrors()) > 0:
-		info.purgeReason = pcl.GetErrors()[0]
+		info.purgeReasons = pcl.GetErrors()
 		return
 	}
 
@@ -221,19 +218,19 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 		if info.deps = a.triageDeps(pcl, cgIndexes[0]); info.deps.OK() {
 			info.ready = true
 		} else {
-			info.purgeReason = info.deps.makePurgeReason()
+			info.purgeReasons = append(info.purgeReasons, info.deps.makePurgeReason())
 		}
 	default:
 		cgNames := make([]string, len(cgIndexes))
 		for i, idx := range cgIndexes {
 			cgNames[i] = a.s.ConfigGroup(idx).ID.Name()
 		}
-		info.purgeReason = &prjpb.CLError{
+		info.purgeReasons = append(info.purgeReasons, &prjpb.CLError{
 			Kind: &prjpb.CLError_WatchedByManyConfigGroups_{
 				WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
 					ConfigGroups: cgNames,
 				},
 			},
-		}
+		})
 	}
 }
