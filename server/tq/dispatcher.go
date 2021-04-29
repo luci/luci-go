@@ -39,15 +39,13 @@ import (
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/openid"
+	srvinternal "go.chromium.org/luci/server/internal"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/server/tq/internal"
@@ -109,10 +107,10 @@ type Dispatcher struct {
 	// authenticated.
 	GAE bool
 
-	// NoAuth can be used to disable authentication on HTTP endpoints.
+	// DisableAuth can be used to disable authentication on HTTP endpoints.
 	//
 	// This is useful when running in development mode on localhost or in tests.
-	NoAuth bool
+	DisableAuth bool
 
 	// CloudProject is ID of a project to use to construct full resource names.
 	//
@@ -678,7 +676,7 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 	}
 
 	var mw router.MiddlewareChain
-	if !d.NoAuth {
+	if !d.DisableAuth {
 		// Tasks are primarily submitted as `PushAs`, but we also accept all
 		// `AuthorizedPushers`.
 		pushers := append([]string{d.PushAs}, d.AuthorizedPushers...)
@@ -689,8 +687,8 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 		if d.GAE {
 			header = "X-Appengine-Queuename"
 		}
-		mw = authMiddleware(pushers, header, func(ctx context.Context) {
-			metrics.ServerRejectedCount.Add(ctx, 1, "auth")
+		mw = srvinternal.CloudAuthMiddleware(pushers, header, func(c *router.Context) {
+			metrics.ServerRejectedCount.Add(c.Context, 1, "auth")
 		})
 	}
 
@@ -713,14 +711,14 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 // It may be called periodically (e.g. by Cloud Scheduler) to launch sweeps.
 func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
 	var mw router.MiddlewareChain
-	if !d.NoAuth {
+	if !d.DisableAuth {
 		// On GAE X-Appengine-* headers can be trusted. Check we are being called
 		// by Cloud Scheduler.
 		header := ""
 		if d.GAE {
 			header = "X-Appengine-Cron"
 		}
-		mw = authMiddleware(d.SweepInitiationLaunchers, header, nil)
+		mw = srvinternal.CloudAuthMiddleware(d.SweepInitiationLaunchers, header, nil)
 	}
 
 	r.GET(path, mw, func(c *router.Context) {
@@ -1342,67 +1340,6 @@ func parseHeaders(h http.Header) ExecutionInfo {
 		submitterTraceContext: h.Get(TraceContextHeader),
 		expectedETA:           eta,
 	}
-}
-
-// authMiddleware returns a middleware chain that authorizes requests from given
-// callers.
-//
-// Checks OpenID Connect tokens have us in the audience, and the email in them
-// is in `callers` list.
-//
-// If `header` is set, will also accept requests that have this header,
-// regardless of its value. This is used to authorize GAE tasks and cron based
-// on `X-AppEngine-*` headers.
-func authMiddleware(callers []string, header string, rejected func(context.Context)) router.MiddlewareChain {
-	oidc := auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
-		AudienceCheck: openid.AudienceMatchesHost,
-	})
-	return router.NewMiddlewareChain(oidc, func(c *router.Context, next router.Handler) {
-		if header != "" && c.Request.Header.Get(header) != "" {
-			next(c)
-			return
-		}
-
-		if ident := auth.CurrentIdentity(c.Context); ident.Kind() != identity.Anonymous {
-			if checkContainsIdent(callers, ident) {
-				next(c)
-			} else {
-				if rejected != nil {
-					rejected(c.Context)
-				}
-				httpReply(c, 403,
-					fmt.Sprintf("Caller %q is not authorized", ident),
-					errors.Reason("expecting any of %q", callers).Err(),
-				)
-			}
-			return
-		}
-
-		var err error
-		if header != "" {
-			err = errors.Reason("no OIDC token and no %s header", header).Err()
-		} else {
-			err = errors.Reason("no OIDC token").Err()
-		}
-		if rejected != nil {
-			rejected(c.Context)
-		}
-		httpReply(c, 403, "Authentication required", err)
-	})
-}
-
-// checkContainsIdent is true if `ident` emails matches some of `callers`.
-func checkContainsIdent(callers []string, ident identity.Identity) bool {
-	if ident.Kind() != identity.User {
-		return false // we want service accounts
-	}
-	email := ident.Email()
-	for _, c := range callers {
-		if email == c {
-			return true
-		}
-	}
-	return false
 }
 
 // httpReply writes and logs HTTP response.
