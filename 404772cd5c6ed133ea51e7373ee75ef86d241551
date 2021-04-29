@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f63ea031_3d2b5b5d",
+        "filename": "cv/internal/prjmanager/prjpb/storage.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-29T22:50:15Z",
+      "side": 0,
+      "message": "move to changelist/stoarge.proto.",
+      "revId": "404772cd5c6ed133ea51e7373ee75ef86d241551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
