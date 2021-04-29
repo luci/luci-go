@@ -99,6 +99,24 @@
       "parentUuid": "e7da28e7_d6bc0716",
       "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0bf0adeb_1edf2025",
+        "filename": "resultdb/internal/spanutil/metrics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-29T01:13:54Z",
+      "side": 1,
+      "message": "If I rename RowStatus to RowOperation, then yes, I will also change the metric field name. I will write separate CLs for the field name changes in this module and monitoring config.",
+      "parentUuid": "e2dcdca2_0115956d",
+      "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
