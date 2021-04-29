@@ -687,21 +687,6 @@ func TestTryjobValidation(t *testing.T) {
 			})
 		})
 
-		Convey("disallow mode_regexp", func() {
-			So(validate(`
-				builders {
-					name: "a/b/c"
-					mode_regexp: "\\w*DRY\\w+"
-				}`), ShouldErrLike,
-				"mode_regexp and mode_regexp_exclude are deprecated, please use mode_allowlist instead")
-			So(validate(`
-			builders {
-				name: "a/b/c"
-				mode_regexp_exclude: "\\w*FULL\\w+"
-			}`), ShouldErrLike,
-				"mode_regexp and mode_regexp_exclude are deprecated, please use mode_allowlist instead")
-		})
-
 		Convey("allowed combinations", func() {
 			So(validate(`
 				builders {
