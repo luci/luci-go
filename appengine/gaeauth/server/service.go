@@ -25,6 +25,9 @@ import (
 // InboundAppIDAuthMethod implements auth.Method by checking special HTTP
 // header (X-Appengine-Inbound-Appid), that is set iff one GAE app talks to
 // another.
+//
+// This method is DEPRECATED and there's no direct replacement. Switch to using
+// service accounts for authenticating calls between services.
 type InboundAppIDAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.

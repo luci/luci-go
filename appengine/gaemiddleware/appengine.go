@@ -31,6 +31,10 @@ var devAppserverBypassFn = info.IsDevAppServer
 //
 // This middleware has no effect when using 'BaseTest' or when running under
 // dev_appserver.py
+//
+// This function is DEPRECATED. There's no direct replacement. Instead expose
+// cron handlers via go.chromium.org/luci/server/cron server module or
+// check "X-AppEngine-Cron" header manually in your handlers.
 func RequireCron(c *router.Context, next router.Handler) {
 	if !devAppserverBypassFn(c.Context) {
 		if c.Request.Header.Get("X-Appengine-Cron") != "true" {
@@ -52,6 +56,10 @@ func RequireCron(c *router.Context, next router.Handler) {
 //
 // This middleware has no effect when using 'BaseTest' or when running under
 // dev_appserver.py
+//
+// This function is DEPRECATED. There's no direct replacement. Instead use
+// go.chromium.org/luci/server/tq server module for organizing task queues or
+// check "X-AppEngine-QueueName" header manually in your handlers.
 func RequireTaskQueue(queue string) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		if !devAppserverBypassFn(c.Context) {
