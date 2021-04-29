@@ -22,11 +22,13 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 import '../../components/build_tag_row';
-import '../../components/build_step_list/build_step_entry';
+import '../../components/build_step_list';
 import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
 import '../../components/timestamp';
+import '../../components/hotkey';
+import { BuildStepEntryElement } from '../../components/build_step_list/build_step_entry';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -43,7 +45,6 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/con
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
-import { StepExt } from '../../models/step_ext';
 import { router } from '../../routes';
 import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
 import commonStyle from '../../styles/common_style.css';
@@ -65,6 +66,13 @@ export class OverviewTabElement extends MobxLitElement {
     this.appState.selectedTabId = 'overview';
     trackEvent(GA_CATEGORIES.OVERVIEW_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
+
+  private allStepsWereExpanded = false;
+  private toggleAllSteps(expand: boolean) {
+    this.allStepsWereExpanded = expand;
+    this.shadowRoot!.querySelector<BuildStepEntryElement>('milo-build-step-list')!.toggleAllSteps(expand);
+  }
+  private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
   private renderActionButtons() {
     const build = this.buildState.build!;
@@ -240,18 +248,6 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderSteps() {
-    const build = this.buildState.build!;
-    const allSteps = (build.rootSteps || []).map((step, i) => [step, i + 1] as [StepExt, number]);
-    const importantSteps = allSteps.filter(
-      ([step, _stepNum]) => !step.succeededRecursively || this.configsStore.stepIsPinned(step.name)
-    );
-    const scheduledSteps = importantSteps.filter(([step, _stepNum]) => step.status === BuildStatus.Scheduled);
-    const runningSteps = importantSteps.filter(([step, _stepNum]) => step.status === BuildStatus.Started);
-    const canceledSteps = importantSteps.filter(([step, _stepNum]) => step.status === BuildStatus.Canceled);
-    const failedSteps = importantSteps.filter(([step, _stepNum]) => step.failed);
-
-    const shownSteps = importantSteps.length > 0 ? importantSteps : allSteps;
-
     return html`
       <div>
         <h3>
@@ -260,54 +256,49 @@ export class OverviewTabElement extends MobxLitElement {
               ...this.buildState.builderIdParam,
               build_num_or_id: this.buildState.buildNumOrId!,
             })}
-            >View All</a
+            >View in Steps Tab</a
           >)
+          <milo-hotkey
+            id="step-buttons"
+            key="x"
+            .handler=${this.toggleAllStepsByHotkey}
+            title="press x to expand/collapse all entries"
+          >
+            <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(true)}>
+              Expand All
+            </mwc-button>
+            <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(false)}>
+              Collapse All
+            </mwc-button>
+          </milo-hotkey>
         </h3>
-        <div class="step-summary-line">
-          ${this.renderStepSummary(
-            allSteps.length,
-            failedSteps.length,
-            canceledSteps.length,
-            scheduledSteps.length,
-            runningSteps.length
-          )}
+        <div id="step-config">
+          Show:
+          <input
+            id="succeeded"
+            type="checkbox"
+            ?checked=${this.configsStore.userConfigs.steps.showSucceededSteps}
+            @change=${(e: MouseEvent) => {
+              this.configsStore.userConfigs.steps.showSucceededSteps = (e.target as HTMLInputElement).checked;
+              this.configsStore.save();
+            }}
+          />
+          <label for="succeeded" style="color: var(--success-color);">Succeeded Steps</label>
+          <span>&nbsp;</span>
+          <input
+            id="debug-logs"
+            type="checkbox"
+            ?checked=${this.configsStore.userConfigs.steps.showDebugLogs}
+            @change=${(e: MouseEvent) => {
+              this.configsStore.userConfigs.steps.showDebugLogs = (e.target as HTMLInputElement).checked;
+              this.configsStore.save();
+            }}
+          />
+          <label for="debug-logs">Debug Logs</label>
         </div>
-        ${shownSteps.map(
-          ([step, stepNum]) => html`
-            <milo-build-step-entry .number=${stepNum} .step=${step} .showDebugLogs=${false}></milo-build-step-entry>
-          `
-        ) || ''}
+        <milo-build-step-list></milo-build-step-list>
       </div>
     `;
-  }
-
-  private renderStepSummary(
-    allSteps: number,
-    failedSteps: number,
-    canceledSteps: number,
-    scheduledSteps: number,
-    runningSteps: number
-  ) {
-    if (allSteps === 0) {
-      return 'No steps.';
-    }
-    if (failedSteps === 0 && scheduledSteps === 0 && runningSteps === 0) {
-      return 'All steps succeeded.';
-    }
-    const messageParts: string[] = [];
-    if (failedSteps > 0) {
-      messageParts.push(`${failedSteps} step${failedSteps === 1 ? '' : 's'} failed`);
-    }
-    if (canceledSteps > 0) {
-      messageParts.push(`${canceledSteps} step${canceledSteps === 1 ? '' : 's'} canceled`);
-    }
-    if (scheduledSteps > 0) {
-      messageParts.push(`${scheduledSteps} step${scheduledSteps === 1 ? '' : 's'} scheduled`);
-    }
-    if (runningSteps > 0) {
-      messageParts.push(`${runningSteps} step${runningSteps === 1 ? '' : 's'} still running`);
-    }
-    return messageParts.join(', ') + ':';
   }
 
   private renderTiming() {
@@ -546,13 +537,21 @@ export class OverviewTabElement extends MobxLitElement {
         overflow-wrap: anywhere;
       }
 
-      .step-summary-line {
+      #step-buttons {
+        float: right;
+      }
+
+      #step-config {
         margin-bottom: 10px;
       }
 
       milo-property-viewer {
         min-width: 600px;
         max-width: 1000px;
+      }
+
+      mwc-button {
+        width: 150px;
       }
     `,
   ];
