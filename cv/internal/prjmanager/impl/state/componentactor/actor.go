@@ -152,7 +152,7 @@ type supporterWrapper struct {
 	Supporter
 }
 
-// MustPCL is panics if clid doesn't exist.
+// MustPCL panics if clid doesn't exist.
 //
 // Exists primarily for readability.
 func (s supporterWrapper) MustPCL(clid int64) *prjpb.PCL {

@@ -143,3 +143,75 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 		So(p.State.GetComponents(), ShouldBeEmpty)
 	})
 }
+
+func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges CL with dep outside the project after waiting stabilization_delay", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject   = "chromiumos"
+			gHost      = "chromium-review.example.com"
+			gRepo      = "cros/platform"
+			gRef       = "refs/heads/main"
+			gChange44  = 44
+			gChange45  = 45
+			quickLabel = "Quick-Label"
+		)
+
+		ct.LogPhase(ctx, "Set up stack of 2 CLs with active combine_cls setting but differing modes")
+		ct.EnableCVRunManagement(ctx, lProject)
+
+		const stabilizationDelay = 5 * time.Minute
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg.GetConfigGroups()[0].CombineCls = &cfgpb.CombineCLs{
+			StabilizationDelay: durationpb.New(stabilizationDelay),
+		}
+		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
+			CqLabelValue:    1,
+			Name:            "QUICK_DRY_RUN",
+			TriggeringLabel: quickLabel,
+			TriggeringValue: 1,
+		}}
+		ct.Cfg.Create(ctx, lProject, cfg)
+
+		tStart := ct.Now()
+		ci44 := gf.CI(
+			gChange44, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
+			gf.Owner("user-1"),
+			gf.CQ(+1, tStart, gf.U("user-1")), // Just DRY_RUN.
+			gf.Desc(fmt.Sprintf("T\n\nCq-Depend: %d", gChange45)),
+		)
+		ci45 := gf.CI(
+			gChange45, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
+			gf.Owner("user-1"),
+			// These 2 votes trigger QUICK_DRY_RUN.
+			gf.CQ(+1, tStart, gf.U("user-1")),
+			gf.Vote(quickLabel, +1, tStart, gf.U("user-1")),
+			// Some other user triggering just the quickLabel, which is a noop.
+			gf.Vote(quickLabel, +1, tStart.Add(-time.Minute), gf.U("user-2")),
+		)
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci45, ci44))
+		// Make ci45 depend on ci44 via Git relationship (ie make it a CL stack).
+		ct.GFake.SetDependsOn(gHost, ci45, ci44)
+		// Now, ci45 and ci44 must be tested only together.
+
+		ct.LogPhase(ctx, "Run CV until CL # 45 is purged")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool {
+			return (ct.MaxCQVote(ctx, gHost, gChange44) == 0 &&
+				ct.MaxCQVote(ctx, gHost, gChange45) == 0 &&
+				ct.MaxVote(ctx, gHost, gChange45, quickLabel) == 0)
+		})
+
+		ct.LogPhase(ctx, "Ensure purging happened only after stabilizationDelay")
+		ci45 = ct.GFake.GetChange(gHost, gChange45).Info
+		So(gf.LastMessage(ci45).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
+		ci44 = ct.GFake.GetChange(gHost, gChange45).Info
+		So(gf.LastMessage(ci44).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
+	})
+}

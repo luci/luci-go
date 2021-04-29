@@ -118,7 +118,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 	if err != nil {
 		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
 	}
-	logging.Debugf(ctx, "procceding to purge CL due to\n%s", msg)
+	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
 	err = cancel.Cancel(ctx, cancel.Input{
 		LUCIProject:      task.GetLuciProject(),
 		CL:               cl,
