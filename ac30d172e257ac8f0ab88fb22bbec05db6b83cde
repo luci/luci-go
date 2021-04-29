@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "078412b8_a4380de1",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-29T01:04:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5b6d259_5ab93d63",
+      "range": {
+        "startLine": 213,
+        "startChar": 8,
+        "endLine": 213,
+        "endChar": 12
+      },
+      "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "87f9d2c7_698e2c11",
@@ -37,6 +61,24 @@
       "writtenOn": "2021-04-29T00:43:01Z",
       "side": 1,
       "message": "public symbols must have comments",
+      "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7da28e7_d6bc0716",
+        "filename": "resultdb/internal/spanutil/metrics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-29T01:04:08Z",
+      "side": 1,
+      "message": "Done.\n\nI changed the description, too. IMO, RowStatus should be renamed to RowOperation. With the original metric description, I would interpret that the value is # of rows in the table with the row status. Meaning that the value is representing the total number of rows with the given status in the table.\ni.e., It could be misunderstood that the value is the output of `select count(*) from $table where status\u003d$status`\n\nHowever, the actual value is # of row operation occurrences in a given table, but I kept the metric field name, but can change it in a separate CL. WDYT?",
+      "parentUuid": "87f9d2c7_698e2c11",
       "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
