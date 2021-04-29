@@ -95,20 +95,24 @@ const DEFAULT_NOTIFIER = new EnterViewNotifier({ rootMargin: '100px' });
  */
 export function enterViewObserver<T extends OnEnterView>(getNotifier = (_ele: T) => DEFAULT_NOTIFIER) {
   return function observeEnterViewMixin<C extends Constructor<T>>(cls: C) {
-    let notifierSymbol: EnterViewNotifier;
+    // Create a new symbol every time we apply the mixin so applying the mixin
+    // multiple times won't override the property.
+    const notifierSymbol = Symbol('notifier');
 
     // TypeScript doesn't allow type parameter in extends or implements
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
     class EnterViewObserverElement extends (cls as Constructor<LitElement>) {
+      [notifierSymbol]: EnterViewNotifier;
+
       connectedCallback() {
-        notifierSymbol = getNotifier((this as LitElement) as T);
-        notifierSymbol.observe((this as LitElement) as OnEnterView);
+        this[notifierSymbol] = getNotifier((this as LitElement) as T);
+        this[notifierSymbol].observe((this as LitElement) as OnEnterView);
         super.connectedCallback();
       }
 
       disconnectedCallback() {
         super.disconnectedCallback();
-        notifierSymbol.unobserve((this as LitElement) as OnEnterView);
+        this[notifierSymbol].unobserve((this as LitElement) as OnEnterView);
       }
     }
     // Recover the type information that lost in the down-casting above.
@@ -132,6 +136,8 @@ export interface RenderPlaceHolder extends LitElement {
  */
 export function lazyRendering<T extends RenderPlaceHolder>(getNotifier = (_ele: T) => DEFAULT_NOTIFIER) {
   return function lazyRenderingMixin<C extends Constructor<T>>(cls: C) {
+    // Create a new symbol every time we apply the mixin so applying the mixin
+    // multiple times won't override the property.
     const prerenderSymbol = Symbol('prerender');
 
     // Recover the type information that lost in the down-casting below.
