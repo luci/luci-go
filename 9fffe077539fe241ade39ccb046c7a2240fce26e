@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "59d5e68d_7b97b85a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2021-04-29T15:59:45Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "9fffe077539fe241ade39ccb046c7a2240fce26e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "3a73af46_758e5ce6",
         "filename": "cv/internal/prjmanager/impl/state/components.go",
         "patchSetId": 1
