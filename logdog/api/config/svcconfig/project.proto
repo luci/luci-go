@@ -35,14 +35,6 @@ message ProjectConfig {
   // project's log streams.
   repeated string writer_auth_groups = 3;
 
-  // The maximum lifetime of a log stream.
-  //
-  // If a stream has not terminated after this period of time, it will be
-  // forcefully archived, and additional stream data will be discarded.
-  //
-  // This is upper-bounded by the global "archive_delay_max" parameter.
-  google.protobuf.Duration max_stream_age = 4;
-
   // The maximum amount of time after a prefix has been registered when log
   // streams may also be registered under that prefix.
   //
@@ -61,9 +53,6 @@ message ProjectConfig {
   // subdirectory in the global "archive_gs_base" location.
   string archive_gs_bucket = 10;
 
-  reserved "render_all_streams";
-  reserved 11;
-
   // Project-specific archive index configuration.
   //
   // Any unspecified index configuration will default to the service archival
@@ -74,4 +63,7 @@ message ProjectConfig {
   //
   // If not specified, no Logdog logs will be exported to Cloud Logging.
   CloudLoggingConfig cloud_logging_config = 13;
+
+  reserved "max_stream_age", "render_all_streams";
+  reserved 4, 11;
 }
