@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "161b5977_26225dd7",
+        "filename": "milo/frontend/resultui/src/components/build_step_list/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1367998
+      },
+      "writtenOn": "2021-04-29T00:48:39Z",
+      "side": 1,
+      "message": "nit: dedupe with L54",
+      "range": {
+        "startLine": 52,
+        "startChar": 14,
+        "endLine": 52,
+        "endChar": 47
+      },
+      "revId": "5117c2fd7d56a7a65938e56d553dbd0cb9b9b914",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
