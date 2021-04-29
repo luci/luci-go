@@ -93,7 +93,8 @@ type triagedCL struct {
 	// purgeReason is set with details for purge reason if the CL ought to be purged.
 	//
 	// Not set is CL is .purgingCL is non-nil since CL is already being purged.
-	purgeReason *prjpb.PurgeCLTask_Reason
+	// TODO(tandrii): support >1 reasons.
+	purgeReason *prjpb.CLError
 	// ready is true if it can be used in creation of new Runs.
 	//
 	// If true, purgeReason must be nil, and deps must be OK though they may contain
@@ -204,8 +205,8 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 	case pcl.GetTrigger() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
 	case pcl.GetOwnerLacksEmail():
-		info.purgeReason = &prjpb.PurgeCLTask_Reason{
-			Reason: &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
+		info.purgeReason = &prjpb.CLError{
+			Kind: &prjpb.CLError_OwnerLacksEmail{
 				OwnerLacksEmail: true,
 			},
 		}
@@ -227,9 +228,9 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 		for i, idx := range cgIndexes {
 			cgNames[i] = a.s.ConfigGroup(idx).ID.Name()
 		}
-		info.purgeReason = &prjpb.PurgeCLTask_Reason{
-			Reason: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups_{
-				WatchedByManyConfigGroups: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups{
+		info.purgeReason = &prjpb.CLError{
+			Kind: &prjpb.CLError_WatchedByManyConfigGroups_{
+				WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
 					ConfigGroups: cgNames,
 				},
 			},

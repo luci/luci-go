@@ -20,7 +20,6 @@ option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
 import "google/protobuf/timestamp.proto";
 
-import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 import "go.chromium.org/luci/cv/internal/run/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
 
@@ -50,32 +49,14 @@ message KickManageProjectTask {
 //
 // Queue: "purge-project-cl".
 message PurgeCLTask {
+  // TODO(tandrii): delete it after deploying. This proto is never saved to
+  // datastore for long term storage -- it's stays only in DS/TQ temporarily.
+  reserved 4;
+
   string luci_project = 1;
   PurgingCL purging_cl = 2;
 
   cv.run.Trigger trigger = 3;
 
-  // Reason is a separate message despite containing just a oneof because it's
-  // passed as an argument in CV code, and oneof field's type is private and so
-  // can't be referenced.
-  message Reason {
-    oneof reason {
-      bool owner_lacks_email = 1;
-      WatchedByManyConfigGroups watched_by_many_config_groups = 2;
-      InvalidDeps invalid_deps = 3;
-    }
-
-    message WatchedByManyConfigGroups {
-      // Config group names without LUCI project prefix.
-      repeated string config_groups = 1;
-    }
-
-    message InvalidDeps {
-      repeated cv.changelist.Dep unwatched = 1;
-      repeated cv.changelist.Dep wrong_config_group = 2;
-      repeated cv.changelist.Dep incompat_mode = 3;
-    }
-  }
-
-  Reason reason = 4;
+  repeated CLError reasons = 5;
 }

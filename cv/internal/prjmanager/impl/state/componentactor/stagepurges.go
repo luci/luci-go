@@ -38,7 +38,7 @@ func (a *Actor) stagePurges(ctx context.Context, now time.Time) time.Time {
 		default:
 			earliest = now
 			a.purgeCLtasks = append(a.purgeCLtasks, &prjpb.PurgeCLTask{
-				Reason:    a.cls[clid].purgeReason,
+				Reasons:   []*prjpb.CLError{a.cls[clid].purgeReason},
 				PurgingCl: &prjpb.PurgingCL{Clid: clid},
 			})
 		}

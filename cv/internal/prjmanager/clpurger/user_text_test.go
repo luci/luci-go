@@ -59,8 +59,8 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 			LuciProject: "luci-prj",
 			PurgingCl:   nil, // not relevant to this test.
 			Trigger:     trigger.Find(ci, &cfgpb.ConfigGroup{}),
-			Reason: &prjpb.PurgeCLTask_Reason{
-				Reason: nil, // Set below.
+			Reasons: []*prjpb.CLError{
+				{Kind: nil}, // Set below.
 			},
 		}
 
@@ -72,15 +72,15 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 		}
 
 		Convey("Lacks owner email", func() {
-			task.Reason.Reason = &prjpb.PurgeCLTask_Reason_OwnerLacksEmail{
+			task.Reasons[0].Kind = &prjpb.CLError_OwnerLacksEmail{
 				OwnerLacksEmail: true,
 			}
 			So(mustFormat(), ShouldContainSubstring, "set preferred email at https://x-review.googlesource.com/settings/#EmailAddresses")
 		})
 
 		Convey("Watched by many config groups", func() {
-			task.Reason.Reason = &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups_{
-				WatchedByManyConfigGroups: &prjpb.PurgeCLTask_Reason_WatchedByManyConfigGroups{
+			task.Reasons[0].Kind = &prjpb.CLError_WatchedByManyConfigGroups_{
+				WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
 					ConfigGroups: []string{"first", "second"},
 				},
 			}
@@ -116,8 +116,8 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 				So(err, ShouldBeNil)
 				deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 			}
-			invalidDeps := &prjpb.PurgeCLTask_Reason_InvalidDeps{ /*set below*/ }
-			task.Reason.Reason = &prjpb.PurgeCLTask_Reason_InvalidDeps_{InvalidDeps: invalidDeps}
+			invalidDeps := &prjpb.CLError_InvalidDeps{ /*set below*/ }
+			task.Reasons[0].Kind = &prjpb.CLError_InvalidDeps_{InvalidDeps: invalidDeps}
 
 			Convey("Unwatched", func() {
 				invalidDeps.Unwatched = []*changelist.Dep{deps[101]}

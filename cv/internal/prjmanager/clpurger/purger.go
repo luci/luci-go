@@ -83,6 +83,9 @@ func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 		// otherwise PM will re-create purge task.
 		return p.notifyPM(ctx, task, now.Add(time.Minute))
 	}
+	if len(task.GetReasons()) == 0 {
+		return errors.Reason("no reasons given in %s", task).Err()
+	}
 
 	d := task.GetPurgingCl().GetDeadline()
 	if d == nil {
@@ -151,7 +154,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 
 func needsPurging(ctx context.Context, cl *changelist.CL, task *prjpb.PurgeCLTask) bool {
 	if cl.Snapshot == nil {
-		logging.Warningf(ctx, "CL without Snapshot can't be purged %s", task.GetReason())
+		logging.Warningf(ctx, "CL without Snapshot can't be purged\n%s", task)
 		return false
 	}
 	if p := cl.Snapshot.GetLuciProject(); p != task.GetLuciProject() {
