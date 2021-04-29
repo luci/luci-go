@@ -61,16 +61,12 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "doesn't have a preferred email")
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
 		})
-
-		ct.LogPhase(ctx, "Verify")
-		p := ct.LoadProject(ctx, lProject)
-		So(p.State.GetPcls(), ShouldBeEmpty)
-		So(p.State.GetComponents(), ShouldBeEmpty)
 	})
 }
 
@@ -126,21 +122,16 @@ func TestPurgesCLWithUnwatchedDeps(t *testing.T) {
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
+		m := ct.LastMessage(gHost, gChange)
+		So(m, ShouldNotBeNil)
+		So(m.GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
+		So(m.GetMessage(), ShouldContainSubstring, "its deps are not watched by the same LUCI project")
+		So(m.GetMessage(), ShouldContainSubstring, "https://webrtc-review.example.com/22")
 
 		ct.LogPhase(ctx, "Ensure PM had a chance to react to CLUpdated event")
 		ct.RunUntil(ctx, func() bool {
 			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
 		})
-
-		ct.LogPhase(ctx, "Verify")
-		ci := ct.GFake.GetChange(gHost, gChange).Info
-		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
-		So(ci.GetMessages(), ShouldHaveLength, 1)
-		So(gf.LastMessage(ci).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
-
-		p := ct.LoadProject(ctx, lProject)
-		So(p.State.GetPcls(), ShouldBeEmpty)
-		So(p.State.GetComponents(), ShouldBeEmpty)
 	})
 }
 
@@ -200,7 +191,7 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		ct.GFake.SetDependsOn(gHost, ci45, ci44)
 		// Now, ci45 and ci44 must be tested only together.
 
-		ct.LogPhase(ctx, "Run CV until CL # 45 is purged")
+		ct.LogPhase(ctx, "Run CV until both CLs are purged")
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {
 			return (ct.MaxCQVote(ctx, gHost, gChange44) == 0 &&
@@ -209,9 +200,55 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		})
 
 		ct.LogPhase(ctx, "Ensure purging happened only after stabilizationDelay")
-		ci45 = ct.GFake.GetChange(gHost, gChange45).Info
-		So(gf.LastMessage(ci45).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
-		ci44 = ct.GFake.GetChange(gHost, gChange45).Info
-		So(gf.LastMessage(ci44).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
+		So(ct.LastMessage(gHost, gChange44).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
+		So(ct.LastMessage(gHost, gChange45).GetDate().AsTime(), ShouldHappenAfter, tStart.Add(stabilizationDelay))
+
+		ct.LogPhase(ctx, "Ensure CL is no longer active in CV")
+		ct.RunUntil(ctx, func() bool {
+			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		})
+	})
+}
+
+func TestPurgesCLCQDependingOnItself(t *testing.T) {
+	t.Parallel()
+
+	Convey("PM purges CL which CQ-Depends on itself", t, func() {
+		/////////////////////////    Setup   ////////////////////////////////
+		ct := Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject  = "chromiumos"
+			gHost     = "chromium-review.example.com"
+			gRepo     = "cros/platform"
+			gRef      = "refs/heads/main"
+			gChange44 = 44
+		)
+
+		ct.LogPhase(ctx, "Set up a CL depending on itself")
+		ct.EnableCVRunManagement(ctx, lProject)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		ct.Cfg.Create(ctx, lProject, cfg)
+		tStart := ct.Now()
+		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+			gChange44, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),
+			gf.Owner("user-1"),
+			gf.CQ(+1, tStart, gf.U("user-1")),
+			gf.Desc(fmt.Sprintf("T\n\nCq-Depend: %d", gChange44)),
+		)))
+
+		ct.LogPhase(ctx, "Run CV until CL is purged")
+		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+		ct.RunUntil(ctx, func() bool {
+			return ct.MaxCQVote(ctx, gHost, gChange44) == 0
+		})
+		So(ct.LastMessage(gHost, gChange44).GetMessage(), ShouldContainSubstring, "because it depends on itself")
+
+		ct.LogPhase(ctx, "Ensure CL is no longer active in CV")
+		ct.RunUntil(ctx, func() bool {
+			return len(ct.LoadProject(ctx, lProject).State.GetPcls()) == 0
+		})
 	})
 }
