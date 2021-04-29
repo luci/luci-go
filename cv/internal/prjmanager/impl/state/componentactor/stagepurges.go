@@ -38,7 +38,7 @@ func (a *Actor) stagePurges(ctx context.Context, now time.Time) time.Time {
 		default:
 			earliest = now
 			a.purgeCLtasks = append(a.purgeCLtasks, &prjpb.PurgeCLTask{
-				Reasons:   []*prjpb.CLError{a.cls[clid].purgeReason},
+				Reasons:   a.cls[clid].purgeReasons,
 				PurgingCl: &prjpb.PurgingCL{Clid: clid},
 			})
 		}
@@ -49,7 +49,7 @@ func (a *Actor) stagePurges(ctx context.Context, now time.Time) time.Time {
 // purgeETA returns the earliest time a CL may be purged and Zero time if CL
 // should not be purged at all.
 func (a *Actor) purgeETA(info *clInfo, now time.Time) time.Time {
-	if info.purgeReason == nil {
+	if info.purgeReasons == nil {
 		return time.Time{}
 	}
 	if len(info.pcl.GetConfigGroupIndexes()) != 1 {
@@ -63,7 +63,7 @@ func (a *Actor) purgeETA(info *clInfo, now time.Time) time.Time {
 	}
 	t := info.lastTriggered()
 	if t.IsZero() {
-		panic(fmt.Errorf("CL %d which is not triggered can't be purged (reason: %s)", info.pcl.GetClid(), info.purgeReason))
+		panic(fmt.Errorf("CL %d which is not triggered can't be purged (reasons: %s)", info.pcl.GetClid(), info.purgeReasons))
 	}
 	when := t.Add(d.AsDuration())
 	if when.After(now) {

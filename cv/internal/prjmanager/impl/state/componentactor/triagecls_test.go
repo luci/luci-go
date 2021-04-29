@@ -65,7 +65,7 @@ func shouldResembleTriagedCL(actual interface{}, expected ...interface{}) string
 		shouldResembleTriagedDeps(a.deps, b.deps),
 		ShouldResembleProto(a.pcl, b.pcl),
 		ShouldResembleProto(a.purgingCL, b.purgingCL),
-		ShouldResembleProto(a.purgeReason, b.purgeReason),
+		ShouldResembleProto(a.purgeReasons, b.purgeReasons),
 	} {
 		if err != "" {
 			buf.WriteRune(' ')
@@ -129,9 +129,9 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReason: nil,
-						ready:       true,
-						deps:        &triagedDeps{},
+						purgeReasons: nil,
+						ready:        true,
+						deps:         &triagedDeps{},
 					},
 				}
 				So(a.cls[1], shouldResembleTriagedCL, expected)
@@ -159,7 +159,7 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReason: sup.pb.Pcls[0].Errors[0],
+						purgeReasons: sup.pb.Pcls[0].Errors,
 					},
 				}
 				So(a.cls[1], shouldResembleTriagedCL, expected)
@@ -175,9 +175,9 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  a.s.PurgingCL(1),
 
 					triagedCL: triagedCL{
-						purgeReason: nil,
-						ready:       false,
-						deps:        &triagedDeps{},
+						purgeReasons: nil,
+						ready:        false,
+						deps:         &triagedDeps{},
 					},
 				}
 				So(a.cls[1], shouldResembleTriagedCL, expected)
@@ -203,10 +203,12 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReason: &prjpb.CLError{
-							Kind: &prjpb.CLError_WatchedByManyConfigGroups_{
-								WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
-									ConfigGroups: []string{"singular", "another"},
+						purgeReasons: []*prjpb.CLError{
+							{
+								Kind: &prjpb.CLError_WatchedByManyConfigGroups_{
+									WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
+										ConfigGroups: []string{"singular", "another"},
+									},
 								},
 							},
 						},
@@ -223,7 +225,7 @@ func TestCLsTriage(t *testing.T) {
 					})
 					So(a.cls, ShouldHaveLength, 1)
 					expected.runIndexes = []int32{0}
-					expected.purgeReason = nil
+					expected.purgeReasons = nil
 					So(a.cls[1], shouldResembleTriagedCL, expected)
 				})
 			})
@@ -292,10 +294,12 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReason: &prjpb.CLError{
-							Kind: &prjpb.CLError_InvalidDeps_{
-								InvalidDeps: &prjpb.CLError_InvalidDeps{
-									IncompatMode: sup.PCL(3).GetDeps(),
+						purgeReasons: []*prjpb.CLError{
+							{
+								Kind: &prjpb.CLError_InvalidDeps_{
+									InvalidDeps: &prjpb.CLError_InvalidDeps{
+										IncompatMode: sup.PCL(3).GetDeps(),
+									},
 								},
 							},
 						},
@@ -327,10 +331,12 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReason: &prjpb.CLError{
-							Kind: &prjpb.CLError_InvalidDeps_{
-								InvalidDeps: &prjpb.CLError_InvalidDeps{
-									IncompatMode: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
+						purgeReasons: []*prjpb.CLError{
+							{
+								Kind: &prjpb.CLError_InvalidDeps_{
+									InvalidDeps: &prjpb.CLError_InvalidDeps{
+										IncompatMode: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
+									},
 								},
 							},
 						},
@@ -398,10 +404,12 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReason: &prjpb.CLError{
-							Kind: &prjpb.CLError_InvalidDeps_{
-								InvalidDeps: &prjpb.CLError_InvalidDeps{
-									IncompatMode: sup.PCL(3).GetDeps(),
+						purgeReasons: []*prjpb.CLError{
+							{
+								Kind: &prjpb.CLError_InvalidDeps_{
+									InvalidDeps: &prjpb.CLError_InvalidDeps{
+										IncompatMode: sup.PCL(3).GetDeps(),
+									},
 								},
 							},
 						},
@@ -421,10 +429,12 @@ func TestCLsTriage(t *testing.T) {
 				So(a.reverseDeps, ShouldBeEmpty)
 				for _, info := range a.cls {
 					So(info.ready, ShouldBeFalse)
-					So(info.purgeReason, ShouldResembleProto, &prjpb.CLError{
-						Kind: &prjpb.CLError_InvalidDeps_{
-							InvalidDeps: &prjpb.CLError_InvalidDeps{
-								WrongConfigGroup: info.triagedCL.deps.wrongConfigGroup,
+					So(info.purgeReasons, ShouldResembleProto, []*prjpb.CLError{
+						{
+							Kind: &prjpb.CLError_InvalidDeps_{
+								InvalidDeps: &prjpb.CLError_InvalidDeps{
+									WrongConfigGroup: info.triagedCL.deps.wrongConfigGroup,
+								},
 							},
 						},
 					})
@@ -437,7 +447,7 @@ func TestCLsTriage(t *testing.T) {
 					a := triageCLs(&prjpb.Component{Clids: []int64{1, 3}})
 					for _, info := range a.cls {
 						So(info.ready, ShouldBeTrue)
-						So(info.purgeReason, ShouldBeNil)
+						So(info.purgeReasons, ShouldBeNil)
 						So(info.deps.submitted, ShouldResembleProto, []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_SOFT}})
 					}
 				})
