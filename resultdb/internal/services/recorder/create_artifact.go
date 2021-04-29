@@ -152,9 +152,12 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 	}
 
 	// Record the artifact in Spanner.
-	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+	var realm string
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) (err error) {
 		// Verify the state again.
-		switch sameExists, err := ac.verifyState(ctx); {
+		var sameExists bool
+		realm, sameExists, err = ac.verifyState(ctx)
+		switch {
 		case err != nil:
 			return err
 		case sameExists:
@@ -171,7 +174,11 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 		}))
 		return nil
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	spanutil.IncRowCount(ctx, 1, spanutil.Artifacts, spanutil.Inserted, realm)
+	return nil
 }
 
 // writeToCAS writes contents in r to RBE-CAS.
@@ -330,12 +337,13 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 func (ac *artifactCreator) verifyStateBeforeWriting(ctx context.Context) (sameAlreadyExists bool, err error) {
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
-	return ac.verifyState(ctx)
+	_, sameAlreadyExists, err = ac.verifyState(ctx)
+	return
 }
 
 // verifyState checks if the Spanner state is compatible with creation of the
 // artifact. If an identical artifact already exists, sameAlreadyExists is true.
-func (ac *artifactCreator) verifyState(ctx context.Context) (sameAlreadyExists bool, err error) {
+func (ac *artifactCreator) verifyState(ctx context.Context) (realm string, sameAlreadyExists bool, err error) {
 	var (
 		invState       pb.Invocation_State
 		hash           spanner.NullString
@@ -346,7 +354,9 @@ func (ac *artifactCreator) verifyState(ctx context.Context) (sameAlreadyExists b
 	// Read the state concurrently.
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {
-			invState, err = invocations.ReadState(ctx, ac.invID)
+			return invocations.ReadColumns(ctx, ac.invID, map[string]interface{}{
+				"State": &invState, "Realm": &realm,
+			})
 			return
 		}
 
@@ -368,22 +378,23 @@ func (ac *artifactCreator) verifyState(ctx context.Context) (sameAlreadyExists b
 	// Interpret the state.
 	switch {
 	case err != nil:
-		return false, err
+		return
 
 	case invState != pb.Invocation_ACTIVE:
-		return false, appstatus.Errorf(codes.FailedPrecondition, "%s is not active", ac.invID.Name())
+		err = appstatus.Errorf(codes.FailedPrecondition, "%s is not active", ac.invID.Name())
+		return
 
 	case hash.Valid && hash.StringVal == ac.hash && size.Valid && size.Int64 == ac.size:
 		// The same artifact already exists.
-		return true, nil
+		sameAlreadyExists = true
+		return
 
 	case artifactExists:
 		// A different artifact already exists.
-		return false, appstatus.Errorf(codes.AlreadyExists, "artifact %q already exists", ac.artifactName)
-
-	default:
-		return false, nil
+		err = appstatus.Errorf(codes.AlreadyExists, "artifact %q already exists", ac.artifactName)
+		return
 	}
+	return
 }
 
 // digestVerifier is an io.Reader that also verifies the digest.
