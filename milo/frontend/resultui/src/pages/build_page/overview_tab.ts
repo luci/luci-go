@@ -22,7 +22,7 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 import '../../components/build_tag_row';
-import '../../components/build_step_entry';
+import '../../components/build_step_list/build_step_entry';
 import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
