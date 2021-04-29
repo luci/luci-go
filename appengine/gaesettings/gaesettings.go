@@ -20,6 +20,11 @@
 // datastore access.
 //
 // See go.chromium.org/luci/server/settings for more details.
+//
+// Deprecated: either use command line flags for infrequently changing
+// configuration or use the LUCI Config service via
+// go.chromium.org/luci/config/server/cfgmodule module to fetch configs
+// dynamically from the LUCI Config.
 package gaesettings
 
 import (

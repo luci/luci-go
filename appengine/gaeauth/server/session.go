@@ -33,6 +33,9 @@ import (
 
 // SessionStore stores auth sessions in the datastore (always in the default
 // namespace). It implements deprecated.SessionStore.
+//
+// Deprecated: it is used only by the deprecated CookiesAuth and should not be
+// used directly anywhere else.
 type SessionStore struct {
 	Prefix string // used as prefix for datastore keys
 }

@@ -40,6 +40,9 @@ const EmailScope = "https://www.googleapis.com/auth/userinfo.email"
 
 // OAuth2Method implements auth.Method on top of GAE OAuth2 API. It doesn't
 // implement auth.UsersAPI.
+//
+// Deprecated: use GoogleOAuth2Method from go.chromium.org/luci/server/auth
+// instead.
 type OAuth2Method struct {
 	// Scopes is a list of OAuth scopes to check when authenticating the token.
 	Scopes []string

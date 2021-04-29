@@ -22,4 +22,6 @@
 // By default, gaeauth must have its handlers installed into the "default"
 // AppEngine module, and must be running on an instance with read/write
 // datastore access.
+//
+// Deprecated: this package depends on deprecated GAE first-gen APIs.
 package server

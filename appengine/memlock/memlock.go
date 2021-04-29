@@ -16,6 +16,11 @@
 // mutual execution via memcache. "best-effort" here means "best-effort"...
 // memcache is not reliable. However, colliding on memcache is a lot cheaper
 // than, for example, colliding with datastore transactions.
+//
+// Deprecated: the implementation depends on the GAE Memcache API which is not
+// available outside of the GAE first-gen runtime. There's currently no direct
+// replacement, but one can be written on top of
+// go.chromium.org/luci/server/redisconn if necessary.
 package memlock
 
 import (

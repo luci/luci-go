@@ -14,6 +14,8 @@
 
 // Package client implements OAuth2 authentication for outbound connections
 // from Appengine using the application services account.
+//
+// Deprecated: use go.chromium.org/luci/server/auth APIs instead.
 package client
 
 import (

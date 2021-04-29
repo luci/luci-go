@@ -14,22 +14,10 @@
 
 // Package bqlog provides a mechanism to asynchronously log rows to BigQuery.
 //
-// It uses Pull Task Queues as a temporary buffer for rows. The main use case is
-// to log events from online RPC handlers that are supposed to be fast and
-// reliable (and not depend on BigQuery latency or availability). If you need to
-// upload a large number of events at once or you are doing some offline batch
-// processing, better use BigQuery API directly: it will be much cheaper and
-// faster.
-//
-// This is a relatively low-level library, not a complete end-to-end solution.
-// It doesn't make many assumptions about the nature of logged events, and some
-// defaults are likely need an adjustment to support a specific rate and size of
-// events.
-//
-// It also doesn't try to guess how often to flush events or how to parallelize
-// this process. Users are responsible to periodically call 'Flush' themselves
-// (preferably from a dedicated GAE module, since flushes are CPU intensive if
-// there's a large number of pending events).
+// Deprecated: this package depends on Pull Task Queues which are deprecated and
+// not available from the GAE second-gen runtime or from Kubernetes. The
+// replacement is go.chromium.org/luci/server/tq PubSub tasks, plus a PubSub
+// push subscription with a handler that simply inserts rows into BigQuery.
 package bqlog
 
 import (

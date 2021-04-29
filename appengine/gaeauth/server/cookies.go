@@ -28,6 +28,9 @@ import (
 
 // UsersAPIAuthMethod implements auth.Method and auth.UsersAPI interfaces on top
 // of GAE Users API (that uses HTTP cookies internally to track user sessions).
+//
+// Deprecated: this method depends on Users API not available outside of the GAE
+// first-gen runtime. Use go.chromium.org/luci/server/encryptedcookies instead.
 type UsersAPIAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.

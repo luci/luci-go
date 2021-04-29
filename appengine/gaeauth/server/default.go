@@ -44,6 +44,13 @@ var handlersInstalled = false
 // It is allowed to assign to CookieAuth (e.g. to install a tweaked auth method)
 // before InstallHandlers is called. In particular, use SwitchToEncryptedCookies
 // to update to a better (but incompatible) method.
+//
+// Deprecated: this method depends on Users API not available outside of the GAE
+// first-gen runtime and uses deprecated CookieAuthMethod. Use
+// go.chromium.org/luci/server/encryptedcookies instead. To facilitate the
+// migration you can switch to the encrypted cookies while still running on
+// the GAE first-gen runtime by calling SwitchToEncryptedCookies() early during
+// the server initialization.
 var CookieAuth auth.Method
 
 // SwitchToEncryptedCookies opts-in CookieAuth to use a better implementation.

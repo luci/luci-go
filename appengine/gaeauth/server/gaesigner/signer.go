@@ -30,6 +30,8 @@ import (
 )
 
 // Signer implements signing.Signer using GAE App Identity API.
+//
+// Deprecated: use GetSigner from go.chromium.org/luci/server/auth instead.
 type Signer struct{}
 
 // SignBytes signs the blob with some active private key.

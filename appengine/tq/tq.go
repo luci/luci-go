@@ -13,6 +13,8 @@
 // limitations under the License.
 
 // Package tq implements simple routing layer for task queue tasks.
+//
+// Deprecated: use go.chromium.org/luci/server/tq instead.
 package tq
 
 import (
