@@ -14,31 +14,25 @@
 
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
-import '../../components/build_step_entry';
-import '../../components/dot_spinner';
+import '../../components/build_step_list';
 import '../../components/hotkey';
-import { BuildStepEntryElement } from '../../components/build_step_entry';
+import { BuildStepEntryElement } from '../../components/build_step_list/build_step_entry';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
-import { BuildStatus } from '../../services/buildbucket';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-steps-tab')
 @errorHandler(forwardWithoutMsg)
-@consumeBuildState
 @consumeConfigsStore
 @consumeAppState
 export class StepsTabElement extends MiloBaseElement {
   @observable.ref appState!: AppState;
   @observable.ref configsStore!: UserConfigsStore;
-  @observable.ref buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();
@@ -78,23 +72,10 @@ export class StepsTabElement extends MiloBaseElement {
     return this.configsStore.userConfigs.steps;
   }
 
-  @computed private get loaded() {
-    return this.buildState.build !== null;
-  }
-
-  @computed private get noDisplayedStep() {
-    if (this.stepsConfig.showSucceededSteps) {
-      return !this.buildState.build?.rootSteps?.length;
-    }
-    return !this.buildState.build?.rootSteps?.find((s) => s.status !== BuildStatus.Success);
-  }
-
   private allStepsWereExpanded = false;
   private toggleAllSteps(expand: boolean) {
     this.allStepsWereExpanded = expand;
-    this.shadowRoot!.querySelectorAll<BuildStepEntryElement>('milo-build-step-entry').forEach((e) =>
-      e.toggleAllSteps(expand)
-    );
+    this.shadowRoot!.querySelector<BuildStepEntryElement>('milo-build-step-list')!.toggleAllSteps(expand);
   }
   private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
@@ -151,30 +132,7 @@ export class StepsTabElement extends MiloBaseElement {
         style="display: none;"
         .handler=${() => this.shadowRoot!.getElementById('main')!.focus()}
       ></milo-hotkey>
-      <div id="main">
-        ${this.buildState.build?.rootSteps.map(
-          (step, i) => html`
-            <milo-build-step-entry
-              style=${styleMap({
-                display:
-                  !step.succeededRecursively ||
-                  this.stepsConfig.showSucceededSteps ||
-                  this.configsStore.stepIsPinned(step.name)
-                    ? ''
-                    : 'none',
-              })}
-              .number=${i + 1}
-              .step=${step}
-            ></milo-build-step-entry>
-          `
-        ) || ''}
-        <div class="list-entry" style=${styleMap({ display: this.loaded && this.noDisplayedStep ? '' : 'none' })}>
-          ${this.stepsConfig.showSucceededSteps ? 'No steps.' : 'All steps succeeded.'}
-        </div>
-        <div id="load" class="list-entry" style=${styleMap({ display: this.loaded ? 'none' : '' })}>
-          Loading <milo-dot-spinner></milo-dot-spinner>
-        </div>
-      </div>
+      <milo-build-step-list></milo-build-step-list>
     `;
   });
 
@@ -221,23 +179,12 @@ export class StepsTabElement extends MiloBaseElement {
         height: 100%;
       }
 
-      #main {
+      milo-build-step-list {
         overflow-y: auto;
         padding-top: 5px;
         padding-left: 10px;
         border-top: 1px solid var(--divider-color);
         outline: none;
-      }
-      milo-build-step-entry {
-        margin-bottom: 2px;
-      }
-
-      .list-entry {
-        margin-top: 5px;
-      }
-
-      #load {
-        color: var(--active-text-color);
       }
     `,
   ];
