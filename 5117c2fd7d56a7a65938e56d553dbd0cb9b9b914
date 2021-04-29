@@ -93,6 +93,30 @@
       },
       "revId": "5117c2fd7d56a7a65938e56d553dbd0cb9b9b914",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62ae351e_acf9e2b7",
+        "filename": "milo/frontend/resultui/src/components/build_step_list/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-29T01:04:19Z",
+      "side": 1,
+      "message": "ah, I see you use a non-generic value in the next CL",
+      "parentUuid": "246ae1d1_9d476c9e",
+      "range": {
+        "startLine": 83,
+        "startChar": 58,
+        "endLine": 83,
+        "endChar": 88
+      },
+      "revId": "5117c2fd7d56a7a65938e56d553dbd0cb9b9b914",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
