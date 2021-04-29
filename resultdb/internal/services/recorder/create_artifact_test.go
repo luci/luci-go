@@ -27,11 +27,13 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"go.chromium.org/luci/server/router"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -77,8 +79,13 @@ func (w *fakeWriter) Send(req *bytestream.WriteRequest) error {
 }
 
 func TestCreateArtifact(t *testing.T) {
+	// metric field values for Artifact table
+	artMFVs := []interface{}{string(spanutil.Artifacts), string(spanutil.Inserted), ""}
+
 	Convey(`CreateArtifact`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		store := tsmon.Store(ctx)
 
 		w := &fakeWriter{}
 		writerCreated := false
@@ -177,6 +184,9 @@ func TestCreateArtifact(t *testing.T) {
 				So(rec.Code, ShouldEqual, http.StatusForbidden)
 				So(rec.Body.String(), ShouldContainSubstring, "invalid Update-Token header value")
 			})
+
+			// RowCount metric should have no changes from any of the above Convey()s.
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
 		})
 
 		Convey(`Verify state`, func() {
@@ -222,6 +232,9 @@ func TestCreateArtifact(t *testing.T) {
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
 				So(rec.Code, ShouldEqual, http.StatusConflict)
 			})
+
+			// RowCount metric should have no changes from any of the above Convey()s.
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
 		})
 
 		Convey(`Write to CAS`, func() {
@@ -249,6 +262,7 @@ func TestCreateArtifact(t *testing.T) {
 				So(w.requests, ShouldHaveLength, 2)
 				So(string(w.requests[0].Data), ShouldEqual, "hel")
 				So(string(w.requests[1].Data), ShouldEqual, "lo")
+				So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 1)
 			})
 
 			Convey(`Invalid digest`, func() {
@@ -256,6 +270,7 @@ func TestCreateArtifact(t *testing.T) {
 				rec := casSend()
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldEqual, "Content-Hash and/or Content-Length do not match the request body\n")
+				So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
 			})
 
 			Convey(`RBE-CAS stops request early`, func() {
@@ -267,7 +282,9 @@ func TestCreateArtifact(t *testing.T) {
 				// Must not continue requests after receiving io.EOF in the first
 				// request.
 				So(w.requests, ShouldHaveLength, 1)
+				So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 1)
 			})
+
 		})
 
 		Convey(`Verify digest`, func() {
@@ -293,6 +310,9 @@ func TestCreateArtifact(t *testing.T) {
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldEqual, "Content-Length header value 100 does not match the length of the request body, 5\n")
 			})
+
+			// RowCount metric should have no changes from any of the above Convey()s.
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
 		})
 
 		Convey(`e2e`, func() {
@@ -312,6 +332,7 @@ func TestCreateArtifact(t *testing.T) {
 			So(actualSize, ShouldEqual, 5)
 			So(actualHash, ShouldEqual, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
 			So(actualContentType, ShouldEqual, "text/plain")
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 1)
 		})
 	})
 }
