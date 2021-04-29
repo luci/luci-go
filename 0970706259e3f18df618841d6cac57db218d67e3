@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0bcfe5ff_0ff8b2e7",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-29T06:02:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9e084ac5_4025bca0",
+      "range": {
+        "startLine": 227,
+        "startChar": 0,
+        "endLine": 236,
+        "endChar": 83
+      },
+      "revId": "0970706259e3f18df618841d6cac57db218d67e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "12bf9fd6_98ad1a39",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-04-29T05:36:19Z",
       "side": 1,
       "message": "same. I think this annotation should be done in L223.",
+      "range": {
+        "startLine": 257,
+        "startChar": 46,
+        "endLine": 257,
+        "endChar": 62
+      },
+      "revId": "0970706259e3f18df618841d6cac57db218d67e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f3639eac_caabee36",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2021-04-29T06:02:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12bf9fd6_98ad1a39",
       "range": {
         "startLine": 257,
         "startChar": 46,
