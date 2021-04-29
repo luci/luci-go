@@ -22,6 +22,30 @@
       },
       "revId": "b08952fbe9c7867cee4bcf7fe714ee9f2cf1ec9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bdd4a90_537f73db",
+        "filename": "cv/internal/prjmanager/impl/state/componentactor/triagecls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-29T20:26:14Z",
+      "side": 1,
+      "message": "Yep!",
+      "parentUuid": "c75610e0_a6f78060",
+      "range": {
+        "startLine": 95,
+        "startChar": 4,
+        "endLine": 95,
+        "endChar": 41
+      },
+      "revId": "b08952fbe9c7867cee4bcf7fe714ee9f2cf1ec9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
