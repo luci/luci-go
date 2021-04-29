@@ -18,15 +18,11 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
-
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
 
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
@@ -41,18 +37,6 @@ func TestTerminateStream(t *testing.T) {
 
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install(true)
-
-		// Set our archival delays. The project delay is smaller than the service
-		// delay, so it should be used.
-		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
-			coord := cfg.Coordinator
-			coord.ArchiveTopic = "projects/test/topics/archive"
-			coord.ArchiveSettleDelay = durationpb.New(10 * time.Second)
-			coord.ArchiveDelayMax = durationpb.New(24 * time.Hour)
-		})
-		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-			pcfg.MaxStreamAge = durationpb.New(time.Hour)
-		})
 
 		svr := New(ServerSettings{NumQueues: 2})
 

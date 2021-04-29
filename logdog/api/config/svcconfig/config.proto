@@ -50,36 +50,8 @@ message Coordinator {
   // expiration will be applied.
   google.protobuf.Duration prefix_expiration = 21;
 
-  // The full path of the archival Pub/Sub topic.
-  //
-  // The Coordinator must have permission to publish to this topic.
-  string archive_topic = 30;
-
-  // The amount of time after an archive request has been dispatched before it
-  // should be executed.
-  //
-  // Since terminal messages can arrive out of order, the archival request may
-  // be kicked off before all of the log stream data has been loaded into
-  // intermediate storage. If this happens, the Archivist will retry archival
-  // later autometically.
-  //
-  // This parameter is an optimization to stop the archivist from wasting its
-  // time until the log stream has a reasonable expectation of being available.
-  google.protobuf.Duration archive_settle_delay = 31;
-
-  // The amount of time before a log stream is candidate for archival regardless
-  // of whether or not it's been terminated or complete.
-  //
-  // This is a failsafe designed to ensure that log streams with missing records
-  // or no terminal record (e.g., Butler crashed) are eventually archived.
-  //
-  // This should be fairly large (days) to avoid prematurely archiving
-  // long-running streams, but should be considerably smaller than the
-  // intermediate storage data retention period.
-  //
-  // If a project's "max_stream_age" is smaller than this value, it will be used
-  // on that project's streams.
-  google.protobuf.Duration archive_delay_max = 32;
+  reserved "archive_topic", "archive_settle_delay", "archive_delay_max";
+  reserved 30, 31, 32;
 }
 
 // Collector is the set of configuration parameters for Collector instances.
@@ -103,16 +75,6 @@ message Collector {
 
 // Configuration for the Archivist microservice.
 message Archivist {
-  // The name of the archival Pub/Sub subscription.
-  //
-  // This should be connected to "archive_topic", and the Archivist must have
-  // permission to consume from this subscription.
-  string subscription = 1;
-
-  // The number of tasks to run at a time. If blank, the archivist will choose a
-  // default value.
-  int32 tasks = 2;
-
   // The name of the staging storage bucket. All projects will share the same
   // staging bucket. Logs for a project will be staged under:
   //
@@ -123,6 +85,6 @@ message Archivist {
   // is not specified.
   ArchiveIndexConfig archive_index_config = 10;
 
-  reserved "render_all_streams";
-  reserved 13;
+  reserved "subscription", "tasks", "render_all_streams";
+  reserved 1, 2, 13;
 }
