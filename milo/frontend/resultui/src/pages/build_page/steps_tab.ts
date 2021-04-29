@@ -153,11 +153,6 @@ export class StepsTabElement extends MiloBaseElement {
         padding: 5px 10px 3px 10px;
       }
 
-      input[type='checkbox'] {
-        transform: translateY(1px);
-        margin-right: 3px;
-      }
-
       mwc-button {
         margin-top: 1px;
       }
