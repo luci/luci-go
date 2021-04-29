@@ -175,7 +175,7 @@ type artifact struct {
 func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocations.ID, bqExport *pb.BigQueryExport, artifactC chan *artifact) error {
 	invIDs, err := getInvocationIDSet(ctx, exportedID)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "invocation id set").Err()
 	}
 
 	contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
