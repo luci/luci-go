@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "987c85b9_75f8346e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-29T06:53:30Z",
+      "side": 1,
+      "message": "lgtm % formatting if you want godoc magic",
+      "revId": "c9b28f766ef958a9ceaf7a385b1c67a2adc5e14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a470f3ef_c8e40533",
+        "filename": "appengine/gaemiddleware/appengine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-29T06:53:30Z",
+      "side": 1,
+      "message": "fyi if you want magic godoc rendering hints, the format is:\n\n   // Deprecated: blah blah blah\n\nhttps://rakyll.org/deprecated/",
+      "revId": "c9b28f766ef958a9ceaf7a385b1c67a2adc5e14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
