@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55fd6261_17877d31",
+        "filename": "cv/internal/cvtesting/e2e/purges_cl_without_starting_runs_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-29T02:14:13Z",
+      "side": 1,
+      "message": "nit: can we also verify the posted message here?",
+      "revId": "09e7ccc0c1a998bf94b3e6d1d57d0a2db8b466bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
