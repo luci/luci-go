@@ -21,6 +21,9 @@
 //
 // TODO(vadimsh): Merge into go.chromium.org/luci/server/gaeemulation once
 // there are no other users.
+//
+// Deprecated: use go.chromium.org/luci/server/secrets instead to fetch secrets
+// from Google Secret Manager.
 package gaesecrets
 
 import (

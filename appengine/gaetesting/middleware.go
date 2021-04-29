@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package gaetesting is DEPRECATED.
+//
+// Deprecated: mock only specific dependencies your test depends on instead of
+// trying to mock everything at once.
 package gaetesting
 
 import (

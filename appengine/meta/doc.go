@@ -17,4 +17,8 @@
 // far, but should be extended to support new ones in the case that we use them.
 //
 // See metadata docs: https://cloud.google.com/appengine/docs/python/datastore/metadataentityclasses#EntityGroup
+//
+// Deprecated: this package depends on Cloud Datastore features which on are not
+// available in Firestore-in-Datastore mode (which is the default Cloud
+// Datastore mode for new project).
 package meta

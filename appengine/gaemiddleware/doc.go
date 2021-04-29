@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gaemiddleware provides a standard middleware for Appengine apps. The
-// gaemiddleware package itself provides a generic Environment class and
+// Package gaemiddleware provides a standard middleware for first-gen Appengine
+// apps.
+//
+// The gaemiddleware package itself provides a generic Environment class and
 // common implementations of methods. An Environment matching your AppEngine
 // environment configuration (e.g., standard, flex) should be chosen from a
 // sub-package.
+//
+// Deprecated: many parts of this package don't work at all on the GAE
+// second-gen runtime. Instead use go.chromium.org/luci/server in combination
+// with go.chromium.org/luci/server/gaeemulation module to get Cloud Datastore
+// support.
 //
 // This middleware configures the request environment to use GAE-based services
 // (like datastore via luci/gae package, logging and many more).
