@@ -173,11 +173,6 @@ interface ContextEventDetail<Ctx, T extends LitElement & Ctx = LitElement & Ctx>
 }
 type ContextEvent<Ctx, T extends LitElement & Ctx = LitElement & Ctx> = CustomEvent<ContextEventDetail<Ctx, T>>;
 
-interface ProviderProperties<T> {
-  consumers: Set<T>;
-  onSubscribeContext?: EventListener;
-}
-
 /**
  * Builds a contextProviderMixin, which is a mixin function that takes a
  * LitElement constructor and mixin ContextProvider's behavior.
@@ -200,10 +195,10 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
   // The mixin target class (cls) needs to implement Record<K, Ctx>.
   // i.e Ctx must be assignable to the T[K].
   return function providerMixin<T extends LitElement & Record<K, Ctx>, C extends Constructor<T>>(cls: C) {
-    // Use a weak Map to store private properties, so overriding those
-    // properties won't break the class.
-    // This can happen when applying the decorator multiple times.
-    const providerPropsWeakMap = new WeakMap<Provider, ProviderProperties<T>>();
+    // Create new symbols every time we apply the mixin so applying the mixin
+    // multiple times won't override the property.
+    const consumersSymbol = Symbol('consumers');
+    const onSubscribeContextSymbol = Symbol('onSubscribeContext');
 
     /**
      * Updates a consumer of the given context key with the new context
@@ -220,10 +215,21 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
     // TypeScript doesn't allow type parameter in extends or implements
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
     class Provider extends (cls as Constructor<LitElement>) {
-      constructor() {
-        super();
-        providerPropsWeakMap.set(this, { consumers: new Set() });
-      }
+      [consumersSymbol] = new Set<T>();
+
+      /**
+       * Adds the context consumer to the observer list and updates the
+       * consumer with the current context immediately.
+       */
+      [onSubscribeContextSymbol] = (event: ContextEvent<Record<K, Ctx>, T>) => {
+        const consumer = event.detail.element;
+        this[consumersSymbol].add(consumer);
+        event.detail.addDisconnectedEventCB(() => this[consumersSymbol].delete(consumer));
+        const newValue = ((this as LitElement) as T)[contextKey];
+        this[consumersSymbol].add(consumer);
+        updateConsumer(consumer, newValue);
+        event.stopImmediatePropagation();
+      };
 
       protected updated(changedProperties: Map<K, Ctx>) {
         super.updated(changedProperties);
@@ -231,38 +237,23 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
           return;
         }
 
-        const consumers = providerPropsWeakMap.get(this)!.consumers;
         const newValue = ((this as LitElement) as T)[contextKey];
-        for (const consumer of consumers) {
+        for (const consumer of this[consumersSymbol]) {
           updateConsumer(consumer, newValue);
         }
       }
 
       connectedCallback() {
-        const props = providerPropsWeakMap.get(this)!;
-
-        /**
-         * Adds the context consumer to the observer list and updates the
-         * consumer with the current context immediately.
-         */
-        props.onSubscribeContext = ((event: ContextEvent<Record<K, Ctx>, T>) => {
-          const consumers = props.consumers;
-          const consumer = event.detail.element;
-          consumers.add(consumer);
-          event.detail.addDisconnectedEventCB(() => consumers.delete(consumer));
-          const newValue = ((this as LitElement) as T)[contextKey];
-          consumers.add(consumer);
-          updateConsumer(consumer, newValue);
-          event.stopImmediatePropagation();
-        }) as EventListener;
-
-        this.addEventListener(`milo-subscribe-context-${contextKey}`, props.onSubscribeContext);
         super.connectedCallback();
+        this.addEventListener(`milo-subscribe-context-${contextKey}`, this[onSubscribeContextSymbol] as EventListener);
       }
 
       disconnectedCallback() {
-        const props = providerPropsWeakMap.get(this)!;
-        this.removeEventListener(`milo-subscribe-context-${contextKey}`, props.onSubscribeContext!);
+        this.removeEventListener(
+          `milo-subscribe-context-${contextKey}`,
+          this[onSubscribeContextSymbol] as EventListener
+        );
+        this[consumersSymbol] = new Set();
         super.disconnectedCallback();
       }
     }
@@ -293,11 +284,15 @@ export function consumeContext<K extends string, Ctx>(contextKey: K) {
   // The mixin target class (cls) needs to implement Record<K, Ctx>.
   // i.e Ctx must be assignable to the T[K].
   return function consumerMixin<T extends LitElement & Record<K, Ctx>, C extends Constructor<T>>(cls: C) {
-    const disconnectedEventCBs: Array<() => void> = [];
+    // Create new symbols every time we apply the mixin so applying the mixin
+    // multiple times won't override the property.
+    const disconnectedEventCBsSymbol = Symbol('disconnectedEventCBs');
 
     // TypeScript doesn't allow type parameter in extends or implements
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
     class Consumer extends (cls as Constructor<LitElement>) {
+      [disconnectedEventCBsSymbol]: Array<() => void> = [];
+
       connectedCallback() {
         this.dispatchEvent(
           new CustomEvent(`milo-subscribe-context-${contextKey}`, {
@@ -305,8 +300,8 @@ export function consumeContext<K extends string, Ctx>(contextKey: K) {
               element: (this as LitElement) as T,
               // We need to register callback via subscribe event because
               // dispatching events in disconnectedCallback is no-op.
-              addDisconnectedEventCB(cb: () => void) {
-                disconnectedEventCBs.push(cb);
+              addDisconnectedEventCB: (cb: () => void) => {
+                this[disconnectedEventCBsSymbol].push(cb);
               },
             },
             bubbles: true,
@@ -318,10 +313,11 @@ export function consumeContext<K extends string, Ctx>(contextKey: K) {
       }
 
       disconnectedCallback() {
-        for (const cb of disconnectedEventCBs) {
+        super.disconnectedCallback();
+        for (const cb of this[disconnectedEventCBsSymbol].reverse()) {
           cb();
         }
-        super.disconnectedCallback();
+        this[disconnectedEventCBsSymbol] = [];
       }
     }
     // Recover the type information that lost in the down-casting above.
