@@ -191,7 +191,7 @@ func TestRegisterStream(t *testing.T) {
 					// Registers the log stream state.
 					So(tls.State.Created, ShouldResemble, streamCreated)
 					// Tasking for archival should happen after creation.
-					So(tls.State.Updated.After(streamCreated), ShouldBeTrue)
+					So(tls.State.Updated.Before(streamCreated), ShouldBeFalse)
 					So(tls.State.Secret, ShouldResemble, req.Secret)
 					So(tls.State.TerminalIndex, ShouldEqual, 1337)
 					So(tls.State.TerminatedTime, ShouldResemble, streamCreated)
