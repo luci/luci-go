@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc0c61ca_217386f4",
+        "filename": "logdog/appengine/coordinator/endpoints/services/registerStream_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T23:01:55Z",
+      "side": 1,
+      "message": "Previously Updated.Sub(streamCreated) was 6s, now it is 0s.\n\nI was quite confused at first why, but I\u0027m beginning to suspect (based on 6 % 3 \u003d\u003d 0) that SetTimerCallback above is advancing time on 0s timers or something and removal of settings.GetSettings(...) removed 2 such noop timers.",
+      "range": {
+        "startLine": 194,
+        "startChar": 5,
+        "endLine": 194,
+        "endChar": 63
+      },
+      "revId": "87e8848e56617c4efc332ab49d54a6b50daeba56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
