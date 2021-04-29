@@ -395,11 +395,12 @@ func (s *State) ExecDeferred(ctx context.Context) (_ *State, __ SideEffect, err 
 
 // UpgradeIfNecessary upgrades old state to new format if necessary.
 //
-// Returns the new or this state if nothing needs changing.
+// Returns the new or this state if nothing was changed.
 func (s *State) UpgradeIfNecessary() *State {
-	if s.needUpgrade() {
-		s = s.cloneShallow()
-		s.upgrade()
+	if !s.needUpgrade() {
+		return s
 	}
+	s = s.cloneShallow()
+	s.upgrade()
 	return s
 }

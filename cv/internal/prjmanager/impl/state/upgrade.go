@@ -15,9 +15,8 @@
 package state
 
 import (
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"google.golang.org/protobuf/proto"
 )
 
 func (s *State) needUpgrade() bool {
