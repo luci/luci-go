@@ -230,3 +230,26 @@ message DependentMeta {
   // Maps LUCI Project to metadata.
   map<string, Meta> by_project = 1;
 }
+
+// CLError encapsulates all kinds of CL errors, which ultimately result in
+// purging the CL.
+message CLError {
+  oneof kind {
+    bool owner_lacks_email = 1;
+    WatchedByManyConfigGroups watched_by_many_config_groups = 2;
+    InvalidDeps invalid_deps = 3;
+    string unsupported_mode = 4;
+    bool self_cq_depend = 5;
+  }
+
+  message WatchedByManyConfigGroups {
+    // Config group names without LUCI project prefix.
+    repeated string config_groups = 1;
+  }
+
+  message InvalidDeps {
+    repeated Dep unwatched = 1;
+    repeated Dep wrong_config_group = 2;
+    repeated Dep incompat_mode = 3;
+  }
+}

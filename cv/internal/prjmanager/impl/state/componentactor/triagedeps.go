@@ -82,13 +82,13 @@ func (t *triagedDeps) OK() bool {
 	return true
 }
 
-func (t *triagedDeps) makePurgeReason() *prjpb.CLError {
+func (t *triagedDeps) makePurgeReason() *changelist.CLError {
 	if t.OK() {
 		panic("makePurgeReason must be called only iff !OK")
 	}
-	return &prjpb.CLError{
-		Kind: &prjpb.CLError_InvalidDeps_{
-			InvalidDeps: &prjpb.CLError_InvalidDeps{
+	return &changelist.CLError{
+		Kind: &changelist.CLError_InvalidDeps_{
+			InvalidDeps: &changelist.CLError_InvalidDeps{
 				Unwatched:        t.unwatched,
 				IncompatMode:     t.incompatMode,
 				WrongConfigGroup: t.wrongConfigGroup,

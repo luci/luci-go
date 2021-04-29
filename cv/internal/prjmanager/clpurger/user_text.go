@@ -42,9 +42,9 @@ func formatMessage(ctx context.Context, task *prjpb.PurgeCLTask, cl *changelist.
 	return sb.String(), nil
 }
 
-func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *prjpb.CLError, cl *changelist.CL, sb *strings.Builder) error {
+func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *changelist.CLError, cl *changelist.CL, sb *strings.Builder) error {
 	switch v := reason.GetKind().(type) {
-	case *prjpb.CLError_OwnerLacksEmail:
+	case *changelist.CLError_OwnerLacksEmail:
 		if !v.OwnerLacksEmail {
 			return errors.New("owner_lacks_email must be set to true")
 		}
@@ -52,19 +52,19 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *prjpb
 			"GerritHost": cl.Snapshot.GetGerrit().GetHost(),
 		})
 
-	case *prjpb.CLError_UnsupportedMode:
+	case *changelist.CLError_UnsupportedMode:
 		if v.UnsupportedMode == "" {
 			return errors.New("unsupported_mode must be set")
 		}
 		return tmplUnsupportedMode.Execute(sb, v)
 
-	case *prjpb.CLError_SelfCqDepend:
+	case *changelist.CLError_SelfCqDepend:
 		if !v.SelfCqDepend {
 			return errors.New("self_cq_depend must be set")
 		}
 		return tmplSelfCQDepend.Execute(sb, nil)
 
-	case *prjpb.CLError_WatchedByManyConfigGroups_:
+	case *changelist.CLError_WatchedByManyConfigGroups_:
 		cgs := v.WatchedByManyConfigGroups.GetConfigGroups()
 		if len(cgs) < 2 {
 			return errors.New("at least 2 config_groups required")
@@ -74,7 +74,7 @@ func formatOneReason(ctx context.Context, task *prjpb.PurgeCLTask, reason *prjpb
 			"TargetRef":    cl.Snapshot.GetGerrit().GetInfo().GetRef(),
 		})
 
-	case *prjpb.CLError_InvalidDeps_:
+	case *changelist.CLError_InvalidDeps_:
 		// Although it's possible for a CL to have several kinds of wrong deps,
 		// it's rare in practice, so simply error out on the most important kind.
 		var bad []*changelist.Dep

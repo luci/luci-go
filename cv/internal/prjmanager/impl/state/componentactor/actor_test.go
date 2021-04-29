@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/config"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -94,8 +95,8 @@ func TestActor(t *testing.T) {
 					Clid:               33,
 					ConfigGroupIndexes: nil, // modified below.
 					Trigger:            dryRun(ct.Clock.Now()),
-					Errors: []*prjpb.CLError{ // => must purge.
-						{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+					Errors: []*changelist.CLError{ // => must purge.
+						{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 					},
 				},
 			}

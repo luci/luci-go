@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/impl/state/componentactor"
@@ -384,8 +385,8 @@ func (t *testCActor) Act(context.Context, runcreator.PM, runcreator.RM) (*prjpb.
 				PurgingCl: &prjpb.PurgingCL{
 					Clid: clid,
 				},
-				Reasons: []*prjpb.CLError{
-					{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+				Reasons: []*changelist.CLError{
+					{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 				},
 			}}
 			return c, ps, nil
