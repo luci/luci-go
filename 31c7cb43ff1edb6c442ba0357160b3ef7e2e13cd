@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ddeba68_bebbe8bf",
+        "filename": "server/cron/default.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T02:09:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90243c52_305758e0",
+      "range": {
+        "startLine": 24,
+        "startChar": 13,
+        "endLine": 24,
+        "endChar": 29
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1d40c165_0de0b909",
@@ -81,6 +105,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "122c9297_87172f31",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T02:09:11Z",
+      "side": 1,
+      "message": "Reused tq\u0027s regexp because why not.",
+      "parentUuid": "1d40c165_0de0b909",
+      "range": {
+        "startLine": 40,
+        "startChar": 16,
+        "endLine": 40,
+        "endChar": 18
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "40b1fac4_bbba1212",
@@ -94,6 +142,30 @@
       "writtenOn": "2021-04-28T21:07:50Z",
       "side": 1,
       "message": "I know panic isn\u0027t encouraged, but monitoring is exactly where we\u0027d want to know about panics. So, I think L174..L187 should be in defer()",
+      "range": {
+        "startLine": 174,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 31
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d34d4d9_4fc9a472",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T02:09:11Z",
+      "side": 1,
+      "message": "Done. But still deferring to the panic catcher to actually catch and report the panic (i.e. no recover() here).",
+      "parentUuid": "40b1fac4_bbba1212",
       "range": {
         "startLine": 174,
         "startChar": 1,
@@ -141,6 +213,30 @@
       "side": 1,
       "message": "err, I meant 2020.",
       "parentUuid": "304129b6_aa9ab5b9",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "31c7cb43ff1edb6c442ba0357160b3ef7e2e13cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8eb575d_60ca06b8",
+        "filename": "server/internal/auth.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T02:09:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6d8b78c_5ad4a1d7",
       "range": {
         "startLine": 1,
         "startChar": 15,

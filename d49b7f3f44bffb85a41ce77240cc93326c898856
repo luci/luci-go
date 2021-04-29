@@ -73,6 +73,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ebaf945b_bf385407",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T02:09:11Z",
+      "side": 1,
+      "message": "Fixed.",
+      "parentUuid": "be7f9aae_fe8eb825",
+      "range": {
+        "startLine": 34,
+        "startChar": 2,
+        "endLine": 34,
+        "endChar": 45
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "22f36156_106a6c58",
         "filename": "server/cron/dispatcher.go",
         "patchSetId": 2
@@ -141,6 +165,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "585cdc6a_d9744028",
+        "filename": "server/cron/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T02:09:11Z",
+      "side": 1,
+      "message": "Changed in server/tq as well.",
+      "parentUuid": "6839e7b7_a4e87f78",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2a55c43d_e3f25cc9",
@@ -154,6 +202,30 @@
       "writtenOn": "2021-04-28T21:00:46Z",
       "side": 1,
       "message": "this sounds like the handlers themselves are doing it, yet it\u0027s exact opposite.",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 66
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4c96260_8248b45c",
+        "filename": "server/cron/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T02:09:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a55c43d_e3f25cc9",
       "range": {
         "startLine": 17,
         "startChar": 8,
@@ -201,6 +273,30 @@
       "side": 1,
       "message": "Then it should be 2020 on the first line.",
       "parentUuid": "d74cc34b_7302bdc9",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 22
+      },
+      "revId": "d49b7f3f44bffb85a41ce77240cc93326c898856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a446774c_a219b326",
+        "filename": "server/internal/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T02:09:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3f7a449_0a606081",
       "range": {
         "startLine": 30,
         "startChar": 3,
