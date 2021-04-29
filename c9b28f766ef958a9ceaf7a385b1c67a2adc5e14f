@@ -33,6 +33,24 @@
       "message": "fyi if you want magic godoc rendering hints, the format is:\n\n   // Deprecated: blah blah blah\n\nhttps://rakyll.org/deprecated/",
       "revId": "c9b28f766ef958a9ceaf7a385b1c67a2adc5e14f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06b9c4f7_c4ead1b4",
+        "filename": "appengine/gaemiddleware/appengine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T07:00:40Z",
+      "side": 1,
+      "message": "It doesn\u0027t work? https://tip.golang.org/pkg/database/sql/driver/#Execer nor https://pkg.go.dev/database/sql/driver#Execer show any special notice...",
+      "parentUuid": "a470f3ef_c8e40533",
+      "revId": "c9b28f766ef958a9ceaf7a385b1c67a2adc5e14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
