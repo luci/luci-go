@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf9c705c_02ed4f17",
+        "filename": "logdog/api/config/svcconfig/project.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T23:32:28Z",
+      "side": 0,
+      "message": "`cfggrab luci-logdog.cfg | grep \"max_stream_age\"` shows it wasn\u0027t used",
+      "range": {
+        "startLine": 44,
+        "startChar": 27,
+        "endLine": 44,
+        "endChar": 41
+      },
+      "revId": "27d36ee5da8844e69113f0b5f363b2834817f012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d85cfd7_fcdfe00b",
+        "filename": "logdog/api/config/svcconfig/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T23:32:28Z",
+      "side": 1,
+      "message": "https://chrome-internal-review.googlesource.com/c/infradata/config/+/3796194",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 22
+      },
+      "revId": "bbd83178dc362c482b0fc5d65980a168809c9e96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
