@@ -288,7 +288,7 @@ func TestPushHandler(t *testing.T) {
 		var handlerErr error
 		var handlerCb func(context.Context)
 
-		d := Dispatcher{NoAuth: true}
+		d := Dispatcher{DisableAuth: true}
 		ref := d.RegisterTaskClass(TaskClass{
 			ID:        "test-1",
 			Prototype: &emptypb.Empty{},

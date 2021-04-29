@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -67,6 +68,7 @@ type Services struct {
 func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) error) {
 	modules := append([]module.Module{
 		cfgmodule.NewModuleFromFlags(),
+		cron.NewModuleFromFlags(),
 		dsmapper.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),

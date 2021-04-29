@@ -17,15 +17,13 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/cipd/appengine/impl"
@@ -42,15 +40,8 @@ func main() {
 			ctx.Writer.Write([]byte("OK"))
 		})
 
-		srv.Routes.GET("/internal/cron/import-config",
-			router.NewMiddlewareChain(gaemiddleware.RequireCron),
-			func(ctx *router.Context) {
-				if err := monitoring.ImportConfig(ctx.Context); err != nil {
-					errors.Log(ctx.Context, err)
-				}
-				ctx.Writer.WriteHeader(http.StatusOK)
-			},
-		)
+		// Periodically refresh the global service config in the datastore.
+		cron.RegisterHandler("import-config", monitoring.ImportConfig)
 
 		// PubSub push handler processing messages produced by events.go.
 		oidcMW := router.NewMiddlewareChain(

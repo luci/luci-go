@@ -308,7 +308,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	disp := m.opts.Dispatcher
 
 	disp.GAE = opts.GAE
-	disp.NoAuth = !opts.Prod
+	disp.DisableAuth = !opts.Prod
 	disp.DefaultTargetHost = m.opts.DefaultTargetHost
 	disp.AuthorizedPushers = m.opts.AuthorizedPushers
 
@@ -360,7 +360,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 		host.RunInBackground("luci.tq", func(ctx context.Context) {
 			scheduler.Run(ctx, tqtesting.ParallelExecute())
 		})
-		Default.NoAuth = true
+		Default.DisableAuth = true
 		submitter = scheduler
 	}
 

@@ -89,6 +89,10 @@
 // • go.chromium.org/luci/config/server/cfgmodule: provides LUCI Config client,
 // exposes config validation endpoints used by LUCI Config service.
 //
+// • go.chromium.org/luci/server/cron: allows registering Cloud Scheduler (aka
+// Appengine cron.yaml) handlers, with proper authentication and monitoring
+// metrics.
+//
 // • go.chromium.org/luci/server/encryptedcookies: implements an authentication
 // scheme for HTTP routes based on encrypted cookies and user sessions in
 // some session store.

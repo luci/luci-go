@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
@@ -44,6 +45,7 @@ type Services struct {
 func Main(init func(srv *server.Server, services *Services) error) {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
+		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
