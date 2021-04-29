@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "04afcadf_403c847d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-29T01:09:49Z",
+      "side": 1,
+      "message": "Landing to trigger a build. I\u0027d like to push this change to luci-resultdb:prod asap so that the metric will have data before a new rdb binary is pushed tomorrow.",
+      "revId": "d28ddd8ca0774793fe1a5d4ec25bfdd7ad3db1e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
