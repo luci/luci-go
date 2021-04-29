@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5b6d259_5ab93d63",
+        "filename": "resultdb/internal/services/recorder/batch_create_artifacts.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-29T00:43:01Z",
+      "side": 1,
+      "message": "no longer necessary",
+      "range": {
+        "startLine": 213,
+        "startChar": 8,
+        "endLine": 213,
+        "endChar": 12
+      },
+      "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87f9d2c7_698e2c11",
+        "filename": "resultdb/internal/spanutil/metrics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-29T00:43:01Z",
+      "side": 1,
+      "message": "public symbols must have comments",
+      "revId": "ac30d172e257ac8f0ab88fb22bbec05db6b83cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
