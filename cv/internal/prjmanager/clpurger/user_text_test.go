@@ -77,6 +77,12 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 			}
 			So(mustFormat(), ShouldContainSubstring, "set preferred email at https://x-review.googlesource.com/settings/#EmailAddresses")
 		})
+		Convey("Not yet supported mode", func() {
+			task.Reasons[0].Kind = &prjpb.CLError_UnsupportedMode{
+				UnsupportedMode: "CUSTOM_RUN",
+			}
+			So(mustFormat(), ShouldContainSubstring, `its mode "CUSTOM_RUN" is not supported`)
+		})
 
 		Convey("Watched by many config groups", func() {
 			task.Reasons[0].Kind = &prjpb.CLError_WatchedByManyConfigGroups_{
@@ -147,6 +153,22 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 				  * https://x-review.googlesource.com/102
 			`))
 			})
+		})
+
+		Convey("Several reasons", func() {
+			task.Reasons = []*prjpb.CLError{
+				{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+				{
+					Kind: &prjpb.CLError_WatchedByManyConfigGroups_{
+						WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
+							ConfigGroups: []string{"first", "second"},
+						},
+					},
+				},
+			}
+			res := mustFormat()
+			So(res, ShouldContainSubstring, "set preferred email")
+			So(res, ShouldContainSubstring, "more than 1 config group")
 		})
 	})
 }
