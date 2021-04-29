@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/runtime/protoiface"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
@@ -207,12 +208,12 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	// Get the invocation set.
 	invIDs, err := getInvocationIDSet(ctx, invID)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "invocation id set").Err()
 	}
 
 	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invIDs)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "query exoneration").Err()
 	}
 
 	// Query test results and export to BigQuery.
