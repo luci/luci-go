@@ -245,7 +245,21 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 
 	pcl.Status = prjpb.PCL_OK
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
+
 	pcl.Deps = cl.Snapshot.GetDeps()
+	for _, d := range pcl.GetDeps() {
+		if d.GetClid() == pcl.GetClid() {
+			if d.GetKind() != changelist.DepKind_SOFT {
+				logging.Errorf(ctx, "BUG: self-referential %s dep: CL %d with Snapshot\n%s", d.GetKind(), cl.ID, cl.Snapshot)
+				// If this actually happens, better to proceed with bad error message to
+				// the user than crash later while processing the CL.
+			}
+			pcl.Errors = append(pcl.Errors, &prjpb.CLError{
+				Kind: &prjpb.CLError_SelfCqDepend{SelfCqDepend: true},
+			})
+		}
+	}
+
 	ci := cl.Snapshot.GetGerrit().GetInfo()
 	if ci.GetStatus() == gerritpb.ChangeStatus_MERGED {
 		pcl.Submitted = true

@@ -253,6 +253,7 @@ message CLError {
     WatchedByManyConfigGroups watched_by_many_config_groups = 2;
     InvalidDeps invalid_deps = 3;
     string unsupported_mode = 4;
+    bool self_cq_depend = 5;
   }
 
   message WatchedByManyConfigGroups {

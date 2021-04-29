@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/diagnostic"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
@@ -297,6 +299,14 @@ func (t *Test) MaxVote(ctx context.Context, gHost string, gChange int64, gLabel 
 // Panics if CL doesn't exist.
 func (t *Test) MaxCQVote(ctx context.Context, gHost string, gChange int64) int32 {
 	return t.MaxVote(ctx, gHost, gChange, trigger.CQLabelName)
+}
+
+// LastMessage returns the last message posted on a Gerrit CL from Gerrit fake.
+//
+// Returns nil if there are no messages.
+// Panics if the CL doesn't exist.
+func (t *Test) LastMessage(gHost string, gChange int64) *gerritpb.ChangeMessageInfo {
+	return gf.LastMessage(t.GFake.GetChange(gHost, int(gChange)).Info)
 }
 
 // LogPhase emits easy to recognize log like
