@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8dae6073_b1eb40d3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-29T02:10:06Z",
+      "side": 1,
+      "message": "Del",
+      "revId": "fa3ba90741089c5dc865b6d2bf510eb37bbe797b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50749652_6dbf0800",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-29T02:10:06Z",
+      "side": 1,
+      "message": "typo: unsupported",
+      "range": {
+        "startLine": 97,
+        "startChar": 24,
+        "endLine": 97,
+        "endChar": 34
+      },
+      "revId": "fa3ba90741089c5dc865b6d2bf510eb37bbe797b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "424a02a8_4549c19a",
+        "filename": "cv/internal/prjmanager/clpurger/user_text.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-29T02:10:06Z",
+      "side": 1,
+      "message": "Del. It is not used",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 0
+      },
+      "revId": "fa3ba90741089c5dc865b6d2bf510eb37bbe797b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1f026a8_0274a3ef",
+        "filename": "cv/internal/prjmanager/impl/state/evalcl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2021-04-29T02:10:06Z",
+      "side": 1,
+      "message": "will we ever have an empty mode here?",
+      "range": {
+        "startLine": 326,
+        "startChar": 6,
+        "endLine": 326,
+        "endChar": 8
+      },
+      "revId": "fa3ba90741089c5dc865b6d2bf510eb37bbe797b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
