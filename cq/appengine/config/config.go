@@ -485,11 +485,6 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob, sup
 		if !isAnalyzer {
 			hasNonAnalyzerBuilder = true
 		}
-		if len(b.ModeRegexp)+len(b.ModeRegexpExclude) > 0 {
-			// TODO(crbug/1203137): Delete this check after mode_regexp* field
-			// is removed.
-			ctx.Errorf("mode_regexp and mode_regexp_exclude are deprecated, please use mode_allowlist instead")
-		}
 		if b.ExperimentPercentage == 0 && b.TriggeredBy == "" && b.EquivalentTo == nil {
 			canStartTriggeringTree = append(canStartTriggeringTree, b.Name)
 		}
