@@ -19,7 +19,6 @@ import "go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 func (s *State) cloneShallow() *State {
 	ret := &State{}
 	*ret = *s
-	// s.PB is guaranteed not nil by NewInitial and NewExisting.
 	// Don't use proto.merge to avoid deep copy.
 	ret.PB = &prjpb.PState{
 		LuciProject:      s.PB.GetLuciProject(),

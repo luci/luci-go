@@ -94,7 +94,9 @@ func TestActor(t *testing.T) {
 					Clid:               33,
 					ConfigGroupIndexes: nil, // modified below.
 					Trigger:            dryRun(ct.Clock.Now()),
-					OwnerLacksEmail:    true, // => must purge.
+					Errors: []*prjpb.CLError{ // => must purge.
+						{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+					},
 				},
 			}
 			oldC := &prjpb.Component{Clids: []int64{33}}

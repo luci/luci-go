@@ -359,7 +359,12 @@ func (tr *triageResult) removeCLUpdateNoops() {
 func (proc *pmProcessor) mutate(ctx context.Context, tr *triageResult, s *state.State) ([]eventbox.Transition, error) {
 	var err error
 	var se state.SideEffect
-	ret := make([]eventbox.Transition, 0, 6)
+	ret := make([]eventbox.Transition, 0, 7)
+
+	if upgraded := s.UpgradeIfNecessary(); upgraded != s {
+		ret = append(ret, eventbox.Transition{TransitionTo: upgraded})
+		s = upgraded
+	}
 
 	// Visit all non-empty fields of triageResult and emit Transitions.
 	// The order of visits matters.

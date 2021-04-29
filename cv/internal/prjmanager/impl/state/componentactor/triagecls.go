@@ -205,11 +205,11 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 	case pcl.GetTrigger() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
 	case pcl.GetOwnerLacksEmail():
-		info.purgeReason = &prjpb.CLError{
-			Kind: &prjpb.CLError_OwnerLacksEmail{
-				OwnerLacksEmail: true,
-			},
-		}
+		panic(fmt.Errorf("deprecated PCL.OwnerLacksEmail"))
+	case len(pcl.GetErrors()) > 1:
+		panic(fmt.Errorf(">1 PCL.Errors not yet supported"))
+	case len(pcl.GetErrors()) > 0:
+		info.purgeReason = pcl.GetErrors()[0]
 		return
 	}
 
