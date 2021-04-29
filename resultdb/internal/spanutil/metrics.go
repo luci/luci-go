@@ -31,9 +31,10 @@ const (
 	Deleted  RowStatus = "DELETED"
 )
 
-var rowCounter = metric.NewCounter(
+// RowCounter is a metric, tracking the number of row operations in Spanner tables.
+var RowCounter = metric.NewCounter(
 	"resultdb/spanner/rows",
-	"Number of Spanner rows",
+	"Number of Spanner row operations",
 	nil,
 	field.String("table"),  // See Table type.
 	field.String("status"), // See RowStatus type.
@@ -48,9 +49,10 @@ type Table string
 const (
 	TestResults Table = "TestResults"
 	Invocations Table = "Invocations"
+	Artifacts   Table = "Artifacts"
 )
 
 // IncRowCount increments the row counter.
 func IncRowCount(ctx context.Context, count int, table Table, rowStatus RowStatus, realm string) {
-	rowCounter.Add(ctx, int64(count), string(table), string(rowStatus), realm)
+	RowCounter.Add(ctx, int64(count), string(table), string(rowStatus), realm)
 }
