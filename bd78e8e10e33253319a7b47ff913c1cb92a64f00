@@ -22,6 +22,30 @@
       },
       "revId": "bd78e8e10e33253319a7b47ff913c1cb92a64f00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18acfc5a_28a856bd",
+        "filename": "cv/appengine/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-29T18:28:26Z",
+      "side": 0,
+      "message": "Why is it a loss? cron.Dispatcher does errors.Log(c.Context, err) too.",
+      "parentUuid": "aa07cb58_52753382",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 123,
+        "endChar": 22
+      },
+      "revId": "bd78e8e10e33253319a7b47ff913c1cb92a64f00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
