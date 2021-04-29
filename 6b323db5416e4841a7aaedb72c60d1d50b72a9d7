@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "6b323db5416e4841a7aaedb72c60d1d50b72a9d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c548934a_cfd4a481",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-29T20:53:48Z",
+      "side": 1,
+      "message": "deleted code is best code! thank you!",
+      "revId": "6b323db5416e4841a7aaedb72c60d1d50b72a9d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
