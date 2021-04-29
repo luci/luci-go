@@ -17,6 +17,7 @@ package state
 import (
 	"testing"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -49,8 +50,8 @@ func TestUpgradeIfNecessary(t *testing.T) {
 
 			So(s1, ShouldNotEqual, s0)
 			pb.Pcls[0].OwnerLacksEmail = false
-			pb.Pcls[0].Errors = []*prjpb.CLError{
-				{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+			pb.Pcls[0].Errors = []*changelist.CLError{
+				{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 			}
 			So(s1.PB, ShouldResembleProto, pb)
 		})

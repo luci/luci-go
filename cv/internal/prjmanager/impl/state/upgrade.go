@@ -15,6 +15,7 @@
 package state
 
 import (
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"google.golang.org/protobuf/proto"
 )
@@ -34,8 +35,8 @@ func (s *State) upgrade() {
 		if pcl.GetOwnerLacksEmail() {
 			pcl = proto.Clone(pcl).(*prjpb.PCL)
 			pcl.OwnerLacksEmail = false
-			pcl.Errors = append(pcl.Errors, &prjpb.CLError{
-				Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
+			pcl.Errors = append(pcl.Errors, &changelist.CLError{
+				Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
 			})
 		}
 		return pcl

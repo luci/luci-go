@@ -666,6 +666,130 @@ func (x *DependentMeta) GetByProject() map[string]*DependentMeta_Meta {
 	return nil
 }
 
+// CLError encapsulates all kinds of CL errors, which ultimately result in
+// purging the CL.
+type CLError struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to Kind:
+	//	*CLError_OwnerLacksEmail
+	//	*CLError_WatchedByManyConfigGroups_
+	//	*CLError_InvalidDeps_
+	//	*CLError_UnsupportedMode
+	//	*CLError_SelfCqDepend
+	Kind isCLError_Kind `protobuf_oneof:"kind"`
+}
+
+func (x *CLError) Reset() {
+	*x = CLError{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CLError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CLError) ProtoMessage() {}
+
+func (x *CLError) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CLError.ProtoReflect.Descriptor instead.
+func (*CLError) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDescGZIP(), []int{7}
+}
+
+func (m *CLError) GetKind() isCLError_Kind {
+	if m != nil {
+		return m.Kind
+	}
+	return nil
+}
+
+func (x *CLError) GetOwnerLacksEmail() bool {
+	if x, ok := x.GetKind().(*CLError_OwnerLacksEmail); ok {
+		return x.OwnerLacksEmail
+	}
+	return false
+}
+
+func (x *CLError) GetWatchedByManyConfigGroups() *CLError_WatchedByManyConfigGroups {
+	if x, ok := x.GetKind().(*CLError_WatchedByManyConfigGroups_); ok {
+		return x.WatchedByManyConfigGroups
+	}
+	return nil
+}
+
+func (x *CLError) GetInvalidDeps() *CLError_InvalidDeps {
+	if x, ok := x.GetKind().(*CLError_InvalidDeps_); ok {
+		return x.InvalidDeps
+	}
+	return nil
+}
+
+func (x *CLError) GetUnsupportedMode() string {
+	if x, ok := x.GetKind().(*CLError_UnsupportedMode); ok {
+		return x.UnsupportedMode
+	}
+	return ""
+}
+
+func (x *CLError) GetSelfCqDepend() bool {
+	if x, ok := x.GetKind().(*CLError_SelfCqDepend); ok {
+		return x.SelfCqDepend
+	}
+	return false
+}
+
+type isCLError_Kind interface {
+	isCLError_Kind()
+}
+
+type CLError_OwnerLacksEmail struct {
+	OwnerLacksEmail bool `protobuf:"varint,1,opt,name=owner_lacks_email,json=ownerLacksEmail,proto3,oneof"`
+}
+
+type CLError_WatchedByManyConfigGroups_ struct {
+	WatchedByManyConfigGroups *CLError_WatchedByManyConfigGroups `protobuf:"bytes,2,opt,name=watched_by_many_config_groups,json=watchedByManyConfigGroups,proto3,oneof"`
+}
+
+type CLError_InvalidDeps_ struct {
+	InvalidDeps *CLError_InvalidDeps `protobuf:"bytes,3,opt,name=invalid_deps,json=invalidDeps,proto3,oneof"`
+}
+
+type CLError_UnsupportedMode struct {
+	UnsupportedMode string `protobuf:"bytes,4,opt,name=unsupported_mode,json=unsupportedMode,proto3,oneof"`
+}
+
+type CLError_SelfCqDepend struct {
+	SelfCqDepend bool `protobuf:"varint,5,opt,name=self_cq_depend,json=selfCqDepend,proto3,oneof"`
+}
+
+func (*CLError_OwnerLacksEmail) isCLError_Kind() {}
+
+func (*CLError_WatchedByManyConfigGroups_) isCLError_Kind() {}
+
+func (*CLError_InvalidDeps_) isCLError_Kind() {}
+
+func (*CLError_UnsupportedMode) isCLError_Kind() {}
+
+func (*CLError_SelfCqDepend) isCLError_Kind() {}
+
 type ApplicableConfig_Project struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -682,7 +806,7 @@ type ApplicableConfig_Project struct {
 func (x *ApplicableConfig_Project) Reset() {
 	*x = ApplicableConfig_Project{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -695,7 +819,7 @@ func (x *ApplicableConfig_Project) String() string {
 func (*ApplicableConfig_Project) ProtoMessage() {}
 
 func (x *ApplicableConfig_Project) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -740,7 +864,7 @@ type DependentMeta_Meta struct {
 func (x *DependentMeta_Meta) Reset() {
 	*x = DependentMeta_Meta{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[8]
+		mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -753,7 +877,7 @@ func (x *DependentMeta_Meta) String() string {
 func (*DependentMeta_Meta) ProtoMessage() {}
 
 func (x *DependentMeta_Meta) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,6 +903,117 @@ func (x *DependentMeta_Meta) GetNoAccess() bool {
 func (x *DependentMeta_Meta) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdateTime
+	}
+	return nil
+}
+
+type CLError_WatchedByManyConfigGroups struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Config group names without LUCI project prefix.
+	ConfigGroups []string `protobuf:"bytes,1,rep,name=config_groups,json=configGroups,proto3" json:"config_groups,omitempty"`
+}
+
+func (x *CLError_WatchedByManyConfigGroups) Reset() {
+	*x = CLError_WatchedByManyConfigGroups{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CLError_WatchedByManyConfigGroups) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CLError_WatchedByManyConfigGroups) ProtoMessage() {}
+
+func (x *CLError_WatchedByManyConfigGroups) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CLError_WatchedByManyConfigGroups.ProtoReflect.Descriptor instead.
+func (*CLError_WatchedByManyConfigGroups) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDescGZIP(), []int{7, 0}
+}
+
+func (x *CLError_WatchedByManyConfigGroups) GetConfigGroups() []string {
+	if x != nil {
+		return x.ConfigGroups
+	}
+	return nil
+}
+
+type CLError_InvalidDeps struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Unwatched        []*Dep `protobuf:"bytes,1,rep,name=unwatched,proto3" json:"unwatched,omitempty"`
+	WrongConfigGroup []*Dep `protobuf:"bytes,2,rep,name=wrong_config_group,json=wrongConfigGroup,proto3" json:"wrong_config_group,omitempty"`
+	IncompatMode     []*Dep `protobuf:"bytes,3,rep,name=incompat_mode,json=incompatMode,proto3" json:"incompat_mode,omitempty"`
+}
+
+func (x *CLError_InvalidDeps) Reset() {
+	*x = CLError_InvalidDeps{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CLError_InvalidDeps) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CLError_InvalidDeps) ProtoMessage() {}
+
+func (x *CLError_InvalidDeps) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CLError_InvalidDeps.ProtoReflect.Descriptor instead.
+func (*CLError_InvalidDeps) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDescGZIP(), []int{7, 1}
+}
+
+func (x *CLError_InvalidDeps) GetUnwatched() []*Dep {
+	if x != nil {
+		return x.Unwatched
+	}
+	return nil
+}
+
+func (x *CLError_InvalidDeps) GetWrongConfigGroup() []*Dep {
+	if x != nil {
+		return x.WrongConfigGroup
+	}
+	return nil
+}
+
+func (x *CLError_InvalidDeps) GetIncompatMode() []*Dep {
+	if x != nil {
+		return x.IncompatMode
 	}
 	return nil
 }
@@ -869,14 +1104,51 @@ var file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDesc = []b
 	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x63, 0x76, 0x2e, 0x63, 0x68, 0x61, 0x6e, 0x67,
 	0x65, 0x6c, 0x69, 0x73, 0x74, 0x2e, 0x44, 0x65, 0x70, 0x65, 0x6e, 0x64, 0x65, 0x6e, 0x74, 0x4d,
 	0x65, 0x74, 0x61, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a,
-	0x02, 0x38, 0x01, 0x2a, 0x37, 0x0a, 0x07, 0x44, 0x65, 0x70, 0x4b, 0x69, 0x6e, 0x64, 0x12, 0x18,
-	0x0a, 0x14, 0x44, 0x45, 0x50, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
-	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x48, 0x41, 0x52, 0x44,
-	0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x53, 0x4f, 0x46, 0x54, 0x10, 0x02, 0x42, 0x2d, 0x5a, 0x2b,
-	0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f,
-	0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c,
-	0x2f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x02, 0x38, 0x01, 0x22, 0xd2, 0x04, 0x0a, 0x07, 0x43, 0x4c, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12,
+	0x2c, 0x0a, 0x11, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x5f, 0x6c, 0x61, 0x63, 0x6b, 0x73, 0x5f, 0x65,
+	0x6d, 0x61, 0x69, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x48, 0x00, 0x52, 0x0f, 0x6f, 0x77,
+	0x6e, 0x65, 0x72, 0x4c, 0x61, 0x63, 0x6b, 0x73, 0x45, 0x6d, 0x61, 0x69, 0x6c, 0x12, 0x74, 0x0a,
+	0x1d, 0x77, 0x61, 0x74, 0x63, 0x68, 0x65, 0x64, 0x5f, 0x62, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x79,
+	0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x30, 0x2e, 0x63, 0x76, 0x2e, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x6c, 0x69, 0x73, 0x74, 0x2e, 0x43, 0x4c, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x2e, 0x57, 0x61, 0x74,
+	0x63, 0x68, 0x65, 0x64, 0x42, 0x79, 0x4d, 0x61, 0x6e, 0x79, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x48, 0x00, 0x52, 0x19, 0x77, 0x61, 0x74, 0x63, 0x68, 0x65,
+	0x64, 0x42, 0x79, 0x4d, 0x61, 0x6e, 0x79, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x47, 0x72, 0x6f,
+	0x75, 0x70, 0x73, 0x12, 0x47, 0x0a, 0x0c, 0x69, 0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x5f, 0x64,
+	0x65, 0x70, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x63, 0x76, 0x2e, 0x63,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x2e, 0x43, 0x4c, 0x45, 0x72, 0x72, 0x6f,
+	0x72, 0x2e, 0x49, 0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x44, 0x65, 0x70, 0x73, 0x48, 0x00, 0x52,
+	0x0b, 0x69, 0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x44, 0x65, 0x70, 0x73, 0x12, 0x2b, 0x0a, 0x10,
+	0x75, 0x6e, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x5f, 0x6d, 0x6f, 0x64, 0x65,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0f, 0x75, 0x6e, 0x73, 0x75, 0x70, 0x70,
+	0x6f, 0x72, 0x74, 0x65, 0x64, 0x4d, 0x6f, 0x64, 0x65, 0x12, 0x26, 0x0a, 0x0e, 0x73, 0x65, 0x6c,
+	0x66, 0x5f, 0x63, 0x71, 0x5f, 0x64, 0x65, 0x70, 0x65, 0x6e, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x08, 0x48, 0x00, 0x52, 0x0c, 0x73, 0x65, 0x6c, 0x66, 0x43, 0x71, 0x44, 0x65, 0x70, 0x65, 0x6e,
+	0x64, 0x1a, 0x40, 0x0a, 0x19, 0x57, 0x61, 0x74, 0x63, 0x68, 0x65, 0x64, 0x42, 0x79, 0x4d, 0x61,
+	0x6e, 0x79, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x12, 0x23,
+	0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x47, 0x72, 0x6f,
+	0x75, 0x70, 0x73, 0x1a, 0xba, 0x01, 0x0a, 0x0b, 0x49, 0x6e, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x44,
+	0x65, 0x70, 0x73, 0x12, 0x30, 0x0a, 0x09, 0x75, 0x6e, 0x77, 0x61, 0x74, 0x63, 0x68, 0x65, 0x64,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x63, 0x76, 0x2e, 0x63, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x2e, 0x44, 0x65, 0x70, 0x52, 0x09, 0x75, 0x6e, 0x77, 0x61,
+	0x74, 0x63, 0x68, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x12, 0x77, 0x72, 0x6f, 0x6e, 0x67, 0x5f, 0x63,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x18, 0x02, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x12, 0x2e, 0x63, 0x76, 0x2e, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73,
+	0x74, 0x2e, 0x44, 0x65, 0x70, 0x52, 0x10, 0x77, 0x72, 0x6f, 0x6e, 0x67, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x67, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x12, 0x37, 0x0a, 0x0d, 0x69, 0x6e, 0x63, 0x6f, 0x6d,
+	0x70, 0x61, 0x74, 0x5f, 0x6d, 0x6f, 0x64, 0x65, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x12,
+	0x2e, 0x63, 0x76, 0x2e, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x2e, 0x44,
+	0x65, 0x70, 0x52, 0x0c, 0x69, 0x6e, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x74, 0x4d, 0x6f, 0x64, 0x65,
+	0x42, 0x06, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x2a, 0x37, 0x0a, 0x07, 0x44, 0x65, 0x70, 0x4b,
+	0x69, 0x6e, 0x64, 0x12, 0x18, 0x0a, 0x14, 0x44, 0x45, 0x50, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f,
+	0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x08, 0x0a,
+	0x04, 0x48, 0x41, 0x52, 0x44, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x53, 0x4f, 0x46, 0x54, 0x10,
+	0x02, 0x42, 0x2d, 0x5a, 0x2b, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d,
+	0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74,
+	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -892,7 +1164,7 @@ func file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDescGZIP(
 }
 
 var file_go_chromium_org_luci_cv_internal_changelist_storage_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_go_chromium_org_luci_cv_internal_changelist_storage_proto_goTypes = []interface{}{
 	(DepKind)(0),                     // 0: cv.changelist.DepKind
 	(*Snapshot)(nil),                 // 1: cv.changelist.Snapshot
@@ -902,29 +1174,37 @@ var file_go_chromium_org_luci_cv_internal_changelist_storage_proto_goTypes = []i
 	(*GerritSoftDep)(nil),            // 5: cv.changelist.GerritSoftDep
 	(*ApplicableConfig)(nil),         // 6: cv.changelist.ApplicableConfig
 	(*DependentMeta)(nil),            // 7: cv.changelist.DependentMeta
-	(*ApplicableConfig_Project)(nil), // 8: cv.changelist.ApplicableConfig.Project
-	(*DependentMeta_Meta)(nil),       // 9: cv.changelist.DependentMeta.Meta
-	nil,                              // 10: cv.changelist.DependentMeta.ByProjectEntry
-	(*timestamppb.Timestamp)(nil),    // 11: google.protobuf.Timestamp
-	(*gerrit.ChangeInfo)(nil),        // 12: gerrit.ChangeInfo
+	(*CLError)(nil),                  // 8: cv.changelist.CLError
+	(*ApplicableConfig_Project)(nil), // 9: cv.changelist.ApplicableConfig.Project
+	(*DependentMeta_Meta)(nil),       // 10: cv.changelist.DependentMeta.Meta
+	nil,                              // 11: cv.changelist.DependentMeta.ByProjectEntry
+	(*CLError_WatchedByManyConfigGroups)(nil), // 12: cv.changelist.CLError.WatchedByManyConfigGroups
+	(*CLError_InvalidDeps)(nil),               // 13: cv.changelist.CLError.InvalidDeps
+	(*timestamppb.Timestamp)(nil),             // 14: google.protobuf.Timestamp
+	(*gerrit.ChangeInfo)(nil),                 // 15: gerrit.ChangeInfo
 }
 var file_go_chromium_org_luci_cv_internal_changelist_storage_proto_depIdxs = []int32{
-	11, // 0: cv.changelist.Snapshot.external_update_time:type_name -> google.protobuf.Timestamp
+	14, // 0: cv.changelist.Snapshot.external_update_time:type_name -> google.protobuf.Timestamp
 	2,  // 1: cv.changelist.Snapshot.deps:type_name -> cv.changelist.Dep
 	3,  // 2: cv.changelist.Snapshot.gerrit:type_name -> cv.changelist.Gerrit
 	0,  // 3: cv.changelist.Dep.kind:type_name -> cv.changelist.DepKind
-	12, // 4: cv.changelist.Gerrit.info:type_name -> gerrit.ChangeInfo
+	15, // 4: cv.changelist.Gerrit.info:type_name -> gerrit.ChangeInfo
 	4,  // 5: cv.changelist.Gerrit.git_deps:type_name -> cv.changelist.GerritGitDep
 	5,  // 6: cv.changelist.Gerrit.soft_deps:type_name -> cv.changelist.GerritSoftDep
-	8,  // 7: cv.changelist.ApplicableConfig.projects:type_name -> cv.changelist.ApplicableConfig.Project
-	10, // 8: cv.changelist.DependentMeta.by_project:type_name -> cv.changelist.DependentMeta.ByProjectEntry
-	11, // 9: cv.changelist.DependentMeta.Meta.update_time:type_name -> google.protobuf.Timestamp
-	9,  // 10: cv.changelist.DependentMeta.ByProjectEntry.value:type_name -> cv.changelist.DependentMeta.Meta
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	9,  // 7: cv.changelist.ApplicableConfig.projects:type_name -> cv.changelist.ApplicableConfig.Project
+	11, // 8: cv.changelist.DependentMeta.by_project:type_name -> cv.changelist.DependentMeta.ByProjectEntry
+	12, // 9: cv.changelist.CLError.watched_by_many_config_groups:type_name -> cv.changelist.CLError.WatchedByManyConfigGroups
+	13, // 10: cv.changelist.CLError.invalid_deps:type_name -> cv.changelist.CLError.InvalidDeps
+	14, // 11: cv.changelist.DependentMeta.Meta.update_time:type_name -> google.protobuf.Timestamp
+	10, // 12: cv.changelist.DependentMeta.ByProjectEntry.value:type_name -> cv.changelist.DependentMeta.Meta
+	2,  // 13: cv.changelist.CLError.InvalidDeps.unwatched:type_name -> cv.changelist.Dep
+	2,  // 14: cv.changelist.CLError.InvalidDeps.wrong_config_group:type_name -> cv.changelist.Dep
+	2,  // 15: cv.changelist.CLError.InvalidDeps.incompat_mode:type_name -> cv.changelist.Dep
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_internal_changelist_storage_proto_init() }
@@ -1018,7 +1298,7 @@ func file_go_chromium_org_luci_cv_internal_changelist_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ApplicableConfig_Project); i {
+			switch v := v.(*CLError); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1030,7 +1310,43 @@ func file_go_chromium_org_luci_cv_internal_changelist_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ApplicableConfig_Project); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DependentMeta_Meta); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CLError_WatchedByManyConfigGroups); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CLError_InvalidDeps); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1045,13 +1361,20 @@ func file_go_chromium_org_luci_cv_internal_changelist_storage_proto_init() {
 	file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*Snapshot_Gerrit)(nil),
 	}
+	file_go_chromium_org_luci_cv_internal_changelist_storage_proto_msgTypes[7].OneofWrappers = []interface{}{
+		(*CLError_OwnerLacksEmail)(nil),
+		(*CLError_WatchedByManyConfigGroups_)(nil),
+		(*CLError_InvalidDeps_)(nil),
+		(*CLError_UnsupportedMode)(nil),
+		(*CLError_SelfCqDepend)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

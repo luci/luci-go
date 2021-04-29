@@ -93,7 +93,7 @@ type triagedCL struct {
 	// purgeReasons is set if the CL ought to be purged.
 	//
 	// Not set is CL is .purgingCL is non-nil since CL is already being purged.
-	purgeReasons []*prjpb.CLError
+	purgeReasons []*changelist.CLError
 	// ready is true if it can be used in creation of new Runs.
 	//
 	// If true, purgeReason must be nil, and deps must be OK though they may contain
@@ -225,9 +225,9 @@ func (a *Actor) triageCLNew(clid int64, info *clInfo) {
 		for i, idx := range cgIndexes {
 			cgNames[i] = a.s.ConfigGroup(idx).ID.Name()
 		}
-		info.purgeReasons = append(info.purgeReasons, &prjpb.CLError{
-			Kind: &prjpb.CLError_WatchedByManyConfigGroups_{
-				WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
+		info.purgeReasons = append(info.purgeReasons, &changelist.CLError{
+			Kind: &changelist.CLError_WatchedByManyConfigGroups_{
+				WatchedByManyConfigGroups: &changelist.CLError_WatchedByManyConfigGroups{
 					ConfigGroups: cgNames,
 				},
 			},

@@ -59,7 +59,7 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 			LuciProject: "luci-prj",
 			PurgingCl:   nil, // not relevant to this test.
 			Trigger:     trigger.Find(ci, &cfgpb.ConfigGroup{}),
-			Reasons: []*prjpb.CLError{
+			Reasons: []*changelist.CLError{
 				{Kind: nil}, // Set below.
 			},
 		}
@@ -72,25 +72,25 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 		}
 
 		Convey("Lacks owner email", func() {
-			task.Reasons[0].Kind = &prjpb.CLError_OwnerLacksEmail{
+			task.Reasons[0].Kind = &changelist.CLError_OwnerLacksEmail{
 				OwnerLacksEmail: true,
 			}
 			So(mustFormat(), ShouldContainSubstring, "set preferred email at https://x-review.googlesource.com/settings/#EmailAddresses")
 		})
 		Convey("Not yet supported mode", func() {
-			task.Reasons[0].Kind = &prjpb.CLError_UnsupportedMode{
+			task.Reasons[0].Kind = &changelist.CLError_UnsupportedMode{
 				UnsupportedMode: "CUSTOM_RUN",
 			}
 			So(mustFormat(), ShouldContainSubstring, `its mode "CUSTOM_RUN" is not supported`)
 		})
 		Convey("Depends on itself", func() {
-			task.Reasons[0].Kind = &prjpb.CLError_SelfCqDepend{SelfCqDepend: true}
+			task.Reasons[0].Kind = &changelist.CLError_SelfCqDepend{SelfCqDepend: true}
 			So(mustFormat(), ShouldContainSubstring, `because it depends on itself`)
 		})
 
 		Convey("Watched by many config groups", func() {
-			task.Reasons[0].Kind = &prjpb.CLError_WatchedByManyConfigGroups_{
-				WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
+			task.Reasons[0].Kind = &changelist.CLError_WatchedByManyConfigGroups_{
+				WatchedByManyConfigGroups: &changelist.CLError_WatchedByManyConfigGroups{
 					ConfigGroups: []string{"first", "second"},
 				},
 			}
@@ -126,8 +126,8 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 				So(err, ShouldBeNil)
 				deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 			}
-			invalidDeps := &prjpb.CLError_InvalidDeps{ /*set below*/ }
-			task.Reasons[0].Kind = &prjpb.CLError_InvalidDeps_{InvalidDeps: invalidDeps}
+			invalidDeps := &changelist.CLError_InvalidDeps{ /*set below*/ }
+			task.Reasons[0].Kind = &changelist.CLError_InvalidDeps_{InvalidDeps: invalidDeps}
 
 			Convey("Unwatched", func() {
 				invalidDeps.Unwatched = []*changelist.Dep{deps[101]}
@@ -160,11 +160,11 @@ func TestPurgeCLFormatMessage(t *testing.T) {
 		})
 
 		Convey("Several reasons", func() {
-			task.Reasons = []*prjpb.CLError{
-				{Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+			task.Reasons = []*changelist.CLError{
+				{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 				{
-					Kind: &prjpb.CLError_WatchedByManyConfigGroups_{
-						WatchedByManyConfigGroups: &prjpb.CLError_WatchedByManyConfigGroups{
+					Kind: &changelist.CLError_WatchedByManyConfigGroups_{
+						WatchedByManyConfigGroups: &changelist.CLError_WatchedByManyConfigGroups{
 							ConfigGroups: []string{"first", "second"},
 						},
 					},

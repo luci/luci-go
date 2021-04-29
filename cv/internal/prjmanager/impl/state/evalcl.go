@@ -254,8 +254,8 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 				// If this actually happens, better to proceed with bad error message to
 				// the user than crash later while processing the CL.
 			}
-			pcl.Errors = append(pcl.Errors, &prjpb.CLError{
-				Kind: &prjpb.CLError_SelfCqDepend{SelfCqDepend: true},
+			pcl.Errors = append(pcl.Errors, &changelist.CLError{
+				Kind: &changelist.CLError_SelfCqDepend{SelfCqDepend: true},
 			})
 		}
 	}
@@ -267,8 +267,8 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	}
 
 	if ci.GetOwner().GetEmail() == "" {
-		pcl.Errors = append(pcl.Errors, &prjpb.CLError{
-			Kind: &prjpb.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
+		pcl.Errors = append(pcl.Errors, &changelist.CLError{
+			Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
 		})
 	}
 
@@ -339,8 +339,8 @@ func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 	switch mode := run.Mode(pcl.Trigger.GetMode()); mode {
 	case "", run.DryRun, run.FullRun, run.QuickDryRun:
 	default:
-		pcl.Errors = append(pcl.Errors, &prjpb.CLError{
-			Kind: &prjpb.CLError_UnsupportedMode{UnsupportedMode: string(mode)},
+		pcl.Errors = append(pcl.Errors, &changelist.CLError{
+			Kind: &changelist.CLError_UnsupportedMode{UnsupportedMode: string(mode)},
 		})
 	}
 }
