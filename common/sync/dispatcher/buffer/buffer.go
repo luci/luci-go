@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 )
 
-// These errors can be panic'd from AddNoBlock.
+// These errors can be returned from AddNoBlock.
 var (
 	ErrBufferFull   = errors.New("buffer is full")
 	ErrItemTooLarge = errors.New("item exceeds buffer's BatchSizeMax")
@@ -152,21 +152,22 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 //
 // Possibly drops a batch according to FullBehavior.
 //
-// If FullBehavior.ComputeState returns okToInsert=false, panics with
-// ErrBufferFull.
+// Returns an error under the following conditions:
 //
-// If this buffer has a BatchSizeMax configured and `itemSize` is larger than
-// this, panics with ErrItemTooLarge.
-//
-// If this buffer has a BatchSizeMax configured and `itemSize` is zero,
-// panics with ErrZeroSizeItem.
-func (buf *Buffer) AddNoBlock(now time.Time, item interface{}, itemSize int) (dropped *Batch) {
-	buf.opts.checkItemSize(itemSize)
+//  - ErrBufferFull - If FullBehavior.ComputeState returns okToInsert=false.
+//  - ErrItemTooLarge - If this buffer has a BatchSizeMax configured and
+//    `itemSize` is larger than this.
+//  - ErrZeroSizeItem - If this buffer has a BatchSizeMax configured and
+//    `itemSize` is zero.
+func (buf *Buffer) AddNoBlock(now time.Time, item interface{}, itemSize int) (dropped *Batch, err error) {
+	if err = buf.opts.checkItemSize(itemSize); err != nil {
+		return
+	}
 	okToInsert, dropBatch := buf.opts.FullBehavior.ComputeState(buf.stats)
 	if !okToInsert {
-		panic(ErrBufferFull)
+		return nil, ErrBufferFull
 	}
-	// All panics done above before we modify any state in buf.
+	// All error checks done above before we modify any state in buf.
 
 	if dropBatch {
 		dropped = buf.dropOldest()
@@ -245,7 +246,7 @@ func (buf *Buffer) Stats() Stats {
 }
 
 // CanAddItem returns true iff the Buffer will accept an item from AddNoBlock
-// without panicing.
+// without returning ErrBufferFull.
 func (buf *Buffer) CanAddItem() bool {
 	okToInsert, _ := buf.opts.FullBehavior.ComputeState(buf.stats)
 	return okToInsert

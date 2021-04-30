@@ -46,7 +46,7 @@ type Options struct {
 	//
 	// Size is explicitly provided to AddNoBlock by the caller.
 	//
-	// Inserting an item which exceeds BatchSizeMax will result in a panic;
+	// Inserting an item which exceeds BatchSizeMax will result in ErrItemTooLarge.
 	// It's up to the caller to ensure that this doesn't happen.
 	//
 	// Special value -1: unlimited
@@ -173,12 +173,13 @@ func (o *Options) batchItemsGuess() int {
 	return 10
 }
 
-func (o *Options) checkItemSize(itemSize int) {
+func (o *Options) checkItemSize(itemSize int) error {
 	switch {
 	case o.BatchSizeMax == -1:
 	case itemSize == 0:
-		panic(ErrZeroSizeItem)
+		return ErrZeroSizeItem
 	case itemSize > o.BatchSizeMax:
-		panic(ErrItemTooLarge)
+		return ErrItemTooLarge
 	}
+	return nil
 }

@@ -30,10 +30,14 @@ import (
 )
 
 func TestBuffer(t *testing.T) {
-	addNoBlockZero := func(b *Buffer, now time.Time, item interface{}) *Batch {
+	must := func(b *Batch, err error) *Batch {
+		So(err, ShouldBeNil)
+		return b
+	}
+	addNoBlockZero := func(b *Buffer, now time.Time, item interface{}) (*Batch, error) {
 		return b.AddNoBlock(now, item, 0)
 	}
-	addNoBlockStr := func(b *Buffer, now time.Time, item string) *Batch {
+	addNoBlockStr := func(b *Buffer, now time.Time, item string) (*Batch, error) {
 		return b.AddNoBlock(now, item, len(item))
 	}
 
@@ -74,7 +78,7 @@ func TestBuffer(t *testing.T) {
 							// forcibly cut due to BatchAgeMax.
 							So(b.NextSendTime(), ShouldResemble, start.Add(nextSendTimeOffset))
 						}
-						So(addNoBlockZero(b, clock.Now(ctx), i), ShouldBeNil)
+						So(must(addNoBlockZero(b, clock.Now(ctx), i)), ShouldBeNil)
 					}
 
 					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 20})
@@ -149,9 +153,9 @@ func TestBuffer(t *testing.T) {
 
 					Convey(`Max leases limits LeaseOne`, func() {
 						now := clock.Now(ctx)
-						So(addNoBlockZero(b, now, 10), ShouldBeNil)
+						So(must(addNoBlockZero(b, now, 10)), ShouldBeNil)
 						b.Flush(now)
-						So(addNoBlockZero(b, now, 20), ShouldBeNil)
+						So(must(addNoBlockZero(b, now, 20)), ShouldBeNil)
 						b.Flush(now)
 
 						So(b.LeaseOne(clock.Now(ctx)), ShouldNotBeNil)
@@ -165,15 +169,15 @@ func TestBuffer(t *testing.T) {
 				})
 
 				Convey(`batch cut by time`, func() {
-					So(addNoBlockZero(b, clock.Now(ctx), "bobbie"), ShouldBeNil)
+					So(must(addNoBlockZero(b, clock.Now(ctx), "bobbie")), ShouldBeNil)
 
 					// should be equal to timeout of first batch, plus 1ms
 					nextSend := b.NextSendTime()
 					So(nextSend, ShouldResemble, start.Add(nextSendTimeOffset))
 					tclock.Set(nextSend)
 
-					So(addNoBlockZero(b, clock.Now(ctx), "charlie"), ShouldBeNil)
-					So(addNoBlockZero(b, clock.Now(ctx), "dakota"), ShouldBeNil)
+					So(must(addNoBlockZero(b, clock.Now(ctx), "charlie")), ShouldBeNil)
+					So(must(addNoBlockZero(b, clock.Now(ctx), "dakota")), ShouldBeNil)
 
 					// We haven't leased one yet, so NextSendTime should stay the same.
 					nextSend = b.NextSendTime()
@@ -194,7 +198,7 @@ func TestBuffer(t *testing.T) {
 				})
 
 				Convey(`batch cut by flush`, func() {
-					So(addNoBlockZero(b, clock.Now(ctx), "bobbie"), ShouldBeNil)
+					So(must(addNoBlockZero(b, clock.Now(ctx), "bobbie")), ShouldBeNil)
 					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 
 					So(b.LeaseOne(clock.Now(ctx)), ShouldBeNil)
@@ -230,7 +234,7 @@ func TestBuffer(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 
-				So(addNoBlockZero(b, clock.Now(ctx), 1), ShouldBeNil)
+				So(must(addNoBlockZero(b, clock.Now(ctx), 1)), ShouldBeNil)
 
 				b.NACK(ctx, nil, b.LeaseOne(clock.Now(ctx)))
 				So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
@@ -254,7 +258,7 @@ func TestBuffer(t *testing.T) {
 				expect := make([]int, 20)
 				for i := 0; i < 20; i++ {
 					expect[i] = i
-					So(addNoBlockZero(b, clock.Now(ctx), i), ShouldBeNil)
+					So(must(addNoBlockZero(b, clock.Now(ctx), i)), ShouldBeNil)
 					tclock.Add(time.Millisecond)
 				}
 
@@ -289,17 +293,17 @@ func TestBuffer(t *testing.T) {
 				t0 := tclock.Now()
 
 				Convey(`cuts previous batch when adding another item`, func() {
-					addNoBlockStr(b, t0, "hello, this is a string which is 47 bytes long.")
-					addNoBlockStr(b, t0, "hello, this is a string which is 47 bytes long.")
+					must(addNoBlockStr(b, t0, "hello, this is a string which is 47 bytes long."))
+					must(addNoBlockStr(b, t0, "hello, this is a string which is 47 bytes long."))
 
 					// Cuts previous batch when adding a new item
-					addNoBlockStr(b, t0, "hello, this is a string which is 47 bytes long.")
+					must(addNoBlockStr(b, t0, "hello, this is a string which is 47 bytes long."))
 
 					Convey(`and cannot exceed FullBehavior`, func() {
-						addNoBlockStr(b, t0, "this is a kind of long string") // buffer is now past capacity.
-						So(func() {
-							addNoBlockStr(b, t0, "boom time")
-						}, ShouldPanicLike, ErrBufferFull)
+						must(addNoBlockStr(b, t0, "this is a kind of long string")) // buffer is now past capacity.
+
+						_, err := addNoBlockStr(b, t0, "boom time")
+						So(err, ShouldErrLike, ErrBufferFull)
 					})
 
 					Convey(`we should see only two items when leasing a batch`, func() {
@@ -313,8 +317,8 @@ func TestBuffer(t *testing.T) {
 
 				Convey(`cuts batch if it exactly equals size limit`, func() {
 					// Batch is cut if it equals BatchSizeMax after insertion.
-					addNoBlockStr(b, t0, "hello, this is a string which is 47 bytes long.")
-					addNoBlockStr(b, t0, "hello, this is a longer string which is 53 bytes long")
+					must(addNoBlockStr(b, t0, "hello, this is a string which is 47 bytes long."))
+					must(addNoBlockStr(b, t0, "hello, this is a longer string which is 53 bytes long"))
 
 					batch := b.LeaseOne(t0)
 					So(batch, ShouldNotBeNil)
@@ -323,23 +327,21 @@ func TestBuffer(t *testing.T) {
 					b.ACK(batch)
 				})
 
-				Convey(`too-large items panic`, func() {
-					So(func() {
-						addNoBlockStr(b, t0, strings.Repeat("this is 21 chars long", 5))
-					}, ShouldPanicLike, ErrItemTooLarge)
+				Convey(`too-large items error`, func() {
+					_, err := addNoBlockStr(b, t0, strings.Repeat("this is 21 chars long", 5))
+					So(err, ShouldErrLike, ErrItemTooLarge)
 				})
 
-				Convey(`too-small items panic`, func() {
-					So(func() {
-						// note; it's up to the users to ensure they don't put zero-size
-						// items in here. If they really wanted 'empty' items in here, they
-						// should still assign them some arbitrary non-zero size (like 1).
-						addNoBlockStr(b, t0, "")
-					}, ShouldPanicLike, ErrZeroSizeItem)
+				Convey(`too-small items error`, func() {
+					// note; it's up to the users to ensure they don't put zero-size
+					// items in here. If they really wanted 'empty' items in here, they
+					// should still assign them some arbitrary non-zero size (like 1).
+					_, err := addNoBlockStr(b, t0, "")
+					So(err, ShouldErrLike, ErrZeroSizeItem)
 				})
 
 				Convey(`exactly-BatchSizeMax items do a double flush`, func() {
-					addNoBlockStr(b, t0, "short stuff")
+					must(addNoBlockStr(b, t0, "short stuff"))
 
 					b.AddNoBlock(t0, "I'm lazy and lying about the size.", b.opts.BatchSizeMax)
 					batch := b.LeaseOne(t0)
@@ -357,7 +359,7 @@ func TestBuffer(t *testing.T) {
 
 				Convey(`NACK`, func() {
 					Convey(`adds size back`, func() {
-						addNoBlockStr(b, t0, "stuff")
+						must(addNoBlockStr(b, t0, "stuff"))
 
 						b.Flush(t0)
 						batch := b.LeaseOne(t0)
@@ -380,15 +382,15 @@ func TestBuffer(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 
-					So(addNoBlockZero(b, clock.Now(ctx), 0), ShouldBeNil)
-					So(addNoBlockZero(b, clock.Now(ctx), 1), ShouldNotBeNil) // drops 0
+					So(must(addNoBlockZero(b, clock.Now(ctx), 0)), ShouldBeNil)
+					So(must(addNoBlockZero(b, clock.Now(ctx), 1)), ShouldNotBeNil) // drops 0
 
 					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1}) // full!
 					So(b.CanAddItem(), ShouldBeTrue)
 
 					Convey(`via new data`, func() {
-						So(addNoBlockZero(b, clock.Now(ctx), 100), ShouldNotBeNil) // drops 1
-						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})   // still full
+						So(must(addNoBlockZero(b, clock.Now(ctx), 100)), ShouldNotBeNil) // drops 1
+						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})         // still full
 
 						tclock.Set(b.NextSendTime())
 
@@ -404,14 +406,14 @@ func TestBuffer(t *testing.T) {
 						So(leased, ShouldNotBeNil)
 						So(b.stats, ShouldResemble, Stats{LeasedItemCount: 1})
 
-						dropped := addNoBlockZero(b, clock.Now(ctx), 100)
+						dropped := must(addNoBlockZero(b, clock.Now(ctx), 100))
 						So(dropped, ShouldResemble, leased)
 						So(b.stats, ShouldResemble, Stats{
 							UnleasedItemCount:      1,
 							DroppedLeasedItemCount: 1,
 						})
 
-						dropped = addNoBlockZero(b, clock.Now(ctx), 200)
+						dropped = must(addNoBlockZero(b, clock.Now(ctx), 200))
 						So(dropped.Data[0].Item, ShouldResemble, 100)
 						So(b.stats, ShouldResemble, Stats{
 							UnleasedItemCount:      1,
@@ -431,9 +433,9 @@ func TestBuffer(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 
-					So(addNoBlockZero(b, clock.Now(ctx), 0), ShouldBeNil)
+					So(must(addNoBlockZero(b, clock.Now(ctx), 0)), ShouldBeNil)
 					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
-					So(addNoBlockZero(b, clock.Now(ctx), 1), ShouldNotBeNil)
+					So(must(addNoBlockZero(b, clock.Now(ctx), 1)), ShouldNotBeNil)
 					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
 				})
 
@@ -445,14 +447,15 @@ func TestBuffer(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					for i := 0; i < int(b.opts.BatchItemsMax)+1; i++ {
-						So(addNoBlockZero(b, clock.Now(ctx), i), ShouldBeNil)
+						So(must(addNoBlockZero(b, clock.Now(ctx), i)), ShouldBeNil)
 					}
 
 					So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 21})
 					So(b.CanAddItem(), ShouldBeFalse)
 
-					Convey(`Adding more panics`, func() {
-						So(func() { addNoBlockZero(b, clock.Now(ctx), 100) }, ShouldPanicLike, "buffer is full")
+					Convey(`Adding more errors`, func() {
+						_, err := addNoBlockZero(b, clock.Now(ctx), 100)
+						So(err, ShouldErrLike, ErrBufferFull)
 					})
 
 					Convey(`Leasing a batch still rejects Adds`, func() {
@@ -460,13 +463,14 @@ func TestBuffer(t *testing.T) {
 						So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1, LeasedItemCount: 20})
 
 						So(b.CanAddItem(), ShouldBeFalse)
-						So(func() { addNoBlockZero(b, clock.Now(ctx), 100) }, ShouldPanic)
+						_, err := addNoBlockZero(b, clock.Now(ctx), 100)
+						So(err, ShouldErrLike, ErrBufferFull)
 
 						Convey(`ACK`, func() {
 							b.ACK(batch)
 							So(b.CanAddItem(), ShouldBeTrue)
 							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 1})
-							So(addNoBlockZero(b, clock.Now(ctx), 100), ShouldBeNil)
+							So(must(addNoBlockZero(b, clock.Now(ctx), 100)), ShouldBeNil)
 							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 2})
 						})
 
@@ -478,7 +482,7 @@ func TestBuffer(t *testing.T) {
 							So(b.stats, ShouldResemble, Stats{UnleasedItemCount: 11})
 
 							for i := 0; i < 10; i++ {
-								So(addNoBlockZero(b, clock.Now(ctx), 100+i), ShouldBeNil)
+								So(must(addNoBlockZero(b, clock.Now(ctx), 100+i)), ShouldBeNil)
 							}
 
 							So(b.CanAddItem(), ShouldBeFalse)
