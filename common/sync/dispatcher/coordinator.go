@@ -228,15 +228,39 @@ loop:
 				state.buf.Flush(now)
 				continue
 			}
+
+			var itemSize int
+			if state.opts.ItemSizerFunc != nil {
+				itemSize = state.opts.ItemSizerFunc(itm)
+			}
 			state.dbg("  GOT NEW DATA")
 			if state.canceled {
-				state.dbg("    dropped batch (canceled)")
+				state.dbg("    dropped item (canceled)")
 				state.opts.DropFn(&buffer.Batch{
-					Data: []interface{}{itm},
+					Data: []buffer.BatchItem{{Item: itm, Size: itemSize}},
 				}, false)
 				continue
 			}
-			if dropped := state.buf.AddNoBlock(now, itm); dropped != nil {
+			if state.opts.Buffer.BatchSizeMax > -1 {
+				var err error
+				switch {
+				case itemSize > state.opts.Buffer.BatchSizeMax :
+					state.dbg("    dropped item (too large)")
+					err = buffer.ErrItemTooLarge
+				case itemSize == 0:
+					state.dbg("    dropped item (zero size)")
+					err = buffer.ErrZeroSizeItem
+				}
+
+				if err != nil {
+					state.opts.ErrorFn(&buffer.Batch{
+						Data: []buffer.BatchItem{{Item: itm, Size: itemSize}},
+					}, err)
+					continue
+				}
+			}
+
+			if dropped := state.buf.AddNoBlock(now, itm, itemSize); dropped != nil {
 				state.dbg("    dropped batch")
 				state.opts.DropFn(dropped, false)
 			}
