@@ -67,10 +67,16 @@ var (
 // application is the Collector application state.
 type application struct {
 	service.Service
+	flags CommandLineFlags
 }
 
 // run is the main execution function.
 func (a *application) runCollector(c context.Context) error {
+	if err := a.flags.Validate(); err != nil {
+		log.WithError(err).Errorf(c, "Bad flags")
+		return err
+	}
+
 	ccfg := a.ServiceConfig.GetCollector()
 	if ccfg == nil {
 		return errors.New("no collector configuration")
@@ -122,7 +128,7 @@ func (a *application) runCollector(c context.Context) error {
 		"subscription": sub,
 	}.Infof(c, "Successfully validated Pub/Sub subscription.")
 
-	st, err := a.IntermediateStorage(c, true)
+	st, err := service.IntermediateStorage(c, &a.flags.Storage)
 	if err != nil {
 		return err
 	}
@@ -246,5 +252,6 @@ func main() {
 			DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
 		},
 	}
+	a.flags.Register(&a.Flags)
 	a.Run(context.Background(), a.runCollector)
 }
