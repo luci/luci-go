@@ -3,6 +3,47 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "2ff5d6c1_40b6a800",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T06:33:35Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "987e693a11deb7d6faa2bafac58bffb4fc569c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "407f2244_e16bca74",
+        "filename": "logdog/server/cmd/logdog_collector/flags.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T06:33:35Z",
+      "side": 1,
+      "message": "\u003e `DefaultCommandLineFlags` is unused\n\nIs this true?",
+      "parentUuid": "910bdf1c_4871b2ae",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 0
+      },
+      "revId": "987e693a11deb7d6faa2bafac58bffb4fc569c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "3c820ba2_53857e16",
         "filename": "logdog/server/service/service.go",
         "patchSetId": 1
@@ -20,6 +61,23 @@
         "endLine": 83,
         "endChar": 12
       },
+      "revId": "987e693a11deb7d6faa2bafac58bffb4fc569c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91cd3c8a_32c63636",
+        "filename": "logdog/server/service/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2021-04-30T06:33:35Z",
+      "side": 1,
+      "message": "BTStorageFlags?",
       "revId": "987e693a11deb7d6faa2bafac58bffb4fc569c32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
