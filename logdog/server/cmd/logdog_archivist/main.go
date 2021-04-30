@@ -18,7 +18,8 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/appengine/gaesettings"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
@@ -34,7 +35,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	montypes "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
-	"go.chromium.org/luci/server/settings"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/archivist"
@@ -129,12 +129,11 @@ var (
 // application is the Archivist application state.
 type application struct {
 	service.Service
-
-	maxConcurrentTasks int
+	flags CommandLineFlags
 }
 
 // runForever runs the archivist loop forever.
-func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist) {
+func runForever(ctx context.Context, ar archivist.Archivist, flags *CommandLineFlags) {
 	type archiveJob struct {
 		deadline time.Time
 		task     *logdog.ArchiveTask
@@ -168,7 +167,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 		logging.Infof(ctx, "ACK channel drained")
 	}()
 
-	jobChanOpts := mkJobChannelOptions(taskConcurrency)
+	jobChanOpts := mkJobChannelOptions(flags.MaxConcurrentTasks)
 	jobChan, err := dispatcher.NewChannel(ctx, jobChanOpts, func(data *buffer.Batch) error {
 		job := data.Data[0].(*archiveJob)
 
@@ -210,12 +209,12 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 		var deadline time.Time
 
 		err := retry.Retry(ctx, leaseRetryParams, func() (err error) {
-			// we grab here to avoid getting stuck with some bad loopParams.
-			loopParams := grabLoopParams()
-			req := loopParams.mkRequest(ctx)
-			logging.Infof(ctx, "Leasing max %d tasks for %s", loopParams.batchSize, loopParams.deadline)
-			deadline = clock.Now(ctx).Add(loop.deadline)
-			tasks, err = ar.Service.LeaseArchiveTasks(ctx, req)
+			logging.Infof(ctx, "Leasing max %d tasks for %s", flags.LeaseBatchSize, flags.LeaseTime)
+			deadline = clock.Now(ctx).Add(flags.LeaseTime)
+			tasks, err = ar.Service.LeaseArchiveTasks(ctx, &logdog.LeaseRequest{
+				MaxTasks:  int64(flags.LeaseBatchSize),
+				LeaseTime: durationpb.New(flags.LeaseTime),
+			})
 			return
 		}, retry.LogCallback(ctx, "LeaseArchiveTasks"))
 		if ctx.Err() != nil {
@@ -260,18 +259,12 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
-	// Archivist loads its loop parameters from gaesettings, see loop_params.go.
-	c = settings.Use(c, settings.New(gaesettings.Storage{}))
-
-	acfg := a.ServiceConfig.GetArchivist()
-	switch {
-	case acfg == nil:
-		return errors.New("missing required config: archivist")
-	case acfg.GsStagingBucket == "":
-		return errors.New("missing required config: archivist.gs_staging_bucket")
+	if err := a.flags.Validate(); err != nil {
+		return err
 	}
 
 	// Initialize our Storage.
+	// TODO(crbug.com/1204268): Read the storage config from flags.
 	st, err := a.IntermediateStorage(c, true)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get storage instance.")
@@ -309,7 +302,7 @@ func (a *application) runArchivist(c context.Context) error {
 
 	ar := archivist.Archivist{
 		Service:         coordClient,
-		SettingsLoader:  GetSettingsLoader(a.ServiceID, acfg),
+		SettingsLoader:  GetSettingsLoader(a.ServiceID, &a.flags),
 		Storage:         st,
 		GSClientFactory: gsClientFactory,
 		CLClientFactory: clClientFactory,
@@ -323,11 +316,7 @@ func (a *application) runArchivist(c context.Context) error {
 	// shutdown Context.
 	a.SetShutdownFunc(cancelFunc)
 
-	// Load our settings and update them periodically.
-	fetchLoopParams(c)
-	go loopParamsUpdater(c)
-
-	runForever(c, a.maxConcurrentTasks, ar)
+	runForever(c, ar, &a.flags)
 
 	return nil
 }
@@ -340,9 +329,8 @@ func main() {
 			Name:               "archivist",
 			DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
 		},
+		flags: DefaultCommandLineFlags(),
 	}
-	a.Flags.IntVar(&a.maxConcurrentTasks, "max-concurrent-tasks", 1,
-		"Maximum number of archive tasks to process concurrently. "+
-			"Pass 0 to set infinite limit.")
+	a.flags.Register(&a.Flags)
 	a.Run(context.Background(), a.runArchivist)
 }
