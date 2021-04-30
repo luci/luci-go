@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3978d819_318022b3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:31:27Z",
+      "side": 1,
+      "message": "i suspect it was possible to do changes in dispatcher itself  in a later CL, but they are small and probably not worth doing it now.",
+      "parentUuid": "fdb7aa44_772fd0ab",
+      "revId": "882733793e43122f3ba40ea0117ac3cc3386c3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5221904_14886b80",
