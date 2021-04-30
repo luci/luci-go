@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d7672479_640edfe9",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-30T15:09:26Z",
+      "side": 1,
+      "message": "I\u0027m curious what\u0027s wrong with zero sized items. For example, it\u0027s possible to upload a zero-sized artifact in reuslt-sink?",
+      "range": {
+        "startLine": 179,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 24
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "401046de_e44ab840",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-30T15:09:26Z",
+      "side": 1,
+      "message": "Should this panic() negative values, like -10? Or, we need to document that negative sizes are acceptable?",
+      "range": {
+        "startLine": 177,
+        "startChar": 1,
+        "endLine": 183,
+        "endChar": 2
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "803878a2_8d8fcee0",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-30T15:09:26Z",
+      "side": 1,
+      "message": "unnecessary space",
+      "range": {
+        "startLine": 247,
+        "startChar": 50,
+        "endLine": 247,
+        "endChar": 52
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a54eda21_3d7e778c",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-30T15:09:26Z",
+      "side": 1,
+      "message": "nit; I wouldn\u0027t necessarily limit the unit of size to bytes only. It could be duration, age, MiB, KiB, or anything else. User defines the size unit, as users are required to implement ItemSizerFunc().",
+      "range": {
+        "startLine": 119,
+        "startChar": 15,
+        "endLine": 119,
+        "endChar": 23
+      },
+      "revId": "a95ef30252c3b0bf18f1dc9f5cd0f9bee148e5e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -85,6 +85,24 @@
       "message": "lmk if there\u0027s a better way to document this; It\u0027s only required if you\u0027ve configured the buffer to enforce size stuff.",
       "revId": "8f2636b640303e2c897c96554869336d5530cd95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b48d9fb0_ef54ee23",
+        "filename": "common/sync/dispatcher/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2021-04-30T15:09:26Z",
+      "side": 1,
+      "message": "nit; I am not sure if it\u0027s necessary to call it -er, I think ItemSizeFunc() is intuitive enough.",
+      "parentUuid": "eaef7fc9_4510f704",
+      "revId": "8f2636b640303e2c897c96554869336d5530cd95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
