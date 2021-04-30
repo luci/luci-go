@@ -50,7 +50,6 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/settings"
 
 	gaeMemory "go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -176,11 +175,9 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		config: make(map[config.Set]memory.Files),
 	}
 
-	// Get our starting context. This installs, among other things, in-memory
-	// gae, settings, and logger.
+	// Get our starting context.
 	c := gaeMemory.UseWithAppID(memlogger.Use(context.Background()), e.ServiceID)
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC.Round(time.Millisecond))
-	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 	c = cryptorand.MockForTest(c, 765589025) // as chosen by fair dice roll
 	ds.GetTestable(c).Consistent(true)
 
@@ -211,9 +208,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// Setup clock.
 	e.Clock = clock.Get(c).(testclock.TestClock)
-
-	// Install GAE config service settings.
-	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 
 	// Setup luci-config configuration.
 	varz := vars.VarSet{}

@@ -18,7 +18,6 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/appengine/gaesettings"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
@@ -34,8 +33,9 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	montypes "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
-	"go.chromium.org/luci/server/settings"
+	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/archivist"
 	"go.chromium.org/luci/logdog/server/bundleServicesClient"
@@ -129,12 +129,10 @@ var (
 // application is the Archivist application state.
 type application struct {
 	service.Service
-
-	maxConcurrentTasks int
 }
 
 // runForever runs the archivist loop forever.
-func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist) {
+func runForever(ctx context.Context, ar archivist.Archivist, cfg *svcconfig.Archivist) {
 	type archiveJob struct {
 		deadline time.Time
 		task     *logdog.ArchiveTask
@@ -168,7 +166,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 		logging.Infof(ctx, "ACK channel drained")
 	}()
 
-	jobChanOpts := mkJobChannelOptions(taskConcurrency)
+	jobChanOpts := mkJobChannelOptions(int(cfg.MaxConcurrentTasks))
 	jobChan, err := dispatcher.NewChannel(ctx, jobChanOpts, func(data *buffer.Batch) error {
 		job := data.Data[0].(*archiveJob)
 
@@ -210,11 +208,18 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 		var deadline time.Time
 
 		err := retry.Retry(ctx, leaseRetryParams, func() (err error) {
-			// we grab here to avoid getting stuck with some bad loopParams.
-			loopParams := grabLoopParams()
-			req := loopParams.mkRequest(ctx)
-			logging.Infof(ctx, "Leasing max %d tasks for %s", loopParams.batchSize, loopParams.deadline)
-			deadline = clock.Now(ctx).Add(loop.deadline)
+			req := &logdog.LeaseRequest{
+				MaxTasks:  int64(cfg.LeaseBatchSize),
+				LeaseTime: cfg.LeaseTime,
+			}
+			if req.MaxTasks == 0 {
+				req.MaxTasks = 500
+			}
+			if req.LeaseTime == nil {
+				req.LeaseTime = durationpb.New(40 * time.Minute)
+			}
+			logging.Infof(ctx, "Leasing max %d tasks for %s", req.MaxTasks, req.LeaseTime.AsDuration())
+			deadline = clock.Now(ctx).Add(req.LeaseTime.AsDuration())
 			tasks, err = ar.Service.LeaseArchiveTasks(ctx, req)
 			return
 		}, retry.LogCallback(ctx, "LeaseArchiveTasks"))
@@ -260,9 +265,6 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
-	// Archivist loads its loop parameters from gaesettings, see loop_params.go.
-	c = settings.Use(c, settings.New(gaesettings.Storage{}))
-
 	acfg := a.ServiceConfig.GetArchivist()
 	switch {
 	case acfg == nil:
@@ -323,11 +325,7 @@ func (a *application) runArchivist(c context.Context) error {
 	// shutdown Context.
 	a.SetShutdownFunc(cancelFunc)
 
-	// Load our settings and update them periodically.
-	fetchLoopParams(c)
-	go loopParamsUpdater(c)
-
-	runForever(c, a.maxConcurrentTasks, ar)
+	runForever(c, ar, acfg)
 
 	return nil
 }
@@ -341,8 +339,8 @@ func main() {
 			DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
 		},
 	}
-	a.Flags.IntVar(&a.maxConcurrentTasks, "max-concurrent-tasks", 1,
-		"Maximum number of archive tasks to process concurrently. "+
-			"Pass 0 to set infinite limit.")
+	// TODO(crbug.com/1204268): Remove once production configs no longer refer to
+	// this flag.
+	_ = a.Flags.Int("max-concurrent-tasks", 1, "Unused and ignored")
 	a.Run(context.Background(), a.runArchivist)
 }
