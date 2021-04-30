@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "80dffa95_349264c6",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:38:04Z",
+      "side": 1,
+      "message": "re prior CL: perhaps this can be just ErrInvalidSizeItem to cover \u003c\u003d0 cases.",
+      "range": {
+        "startLine": 160,
+        "startChar": 6,
+        "endLine": 160,
+        "endChar": 21
+      },
+      "revId": "069968aff3a642d300078aa189e233fe735721a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8ef6af9_baa61d53",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T21:38:04Z",
+      "side": 1,
+      "message": "oh, I forgot to leave a comment in prior CL -- the panic bothered me, because readers of this doc are likely intending to use dispatcher.Channel, which won\u0027t panic on channel send.\n\nBut this CL makes this doc, while still 100% correct for Buffer, also leave the right idea in the mind of the user of the dispatcher.Channel!\n\nSo, thanks!",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 3
+      },
+      "revId": "069968aff3a642d300078aa189e233fe735721a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
