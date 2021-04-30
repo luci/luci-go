@@ -81,16 +81,18 @@ type Buffer struct {
 // NewBuffer returns a new Buffer configured with the given Options.
 //
 // If there's an issue with the provided Options, this returns an error.
+//
+// This modifies `o` to the normalized state as a side-effect and then makes
+// a copy of it (modifying `o` after NewBuffer will have no effect on the
+// returned Buffer).
 func NewBuffer(o *Options) (*Buffer, error) {
 	if o == nil {
 		o = &Options{}
 	}
-	ret := &Buffer{opts: *o} // copy o before normalizing it
-
-	if err := ret.opts.normalize(); err != nil {
+	if err := o.normalize(); err != nil {
 		return nil, errors.Annotate(err, "normalizing buffer.Options").Err()
 	}
-
+	ret := &Buffer{opts: *o} // copy o before returning
 	ret.unleased.onlyID = o.FIFO
 	ret.batchItemsGuess = newMovingAverage(10, ret.opts.batchItemsGuess())
 	ret.liveLeases = map[*Batch]struct{}{}
