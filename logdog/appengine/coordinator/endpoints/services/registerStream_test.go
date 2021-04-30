@@ -21,14 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/types/known/durationpb"
-
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -45,17 +42,6 @@ func TestRegisterStream(t *testing.T) {
 
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install(true)
-
-		// Set our archival delays. The project delay is smaller than the service
-		// delay, so it should be used.
-		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
-			cfg.Coordinator.ArchiveSettleDelay = durationpb.New(10 * time.Minute)
-			cfg.Coordinator.ArchiveDelayMax = durationpb.New(24 * time.Hour)
-		})
-
-		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-			pcfg.MaxStreamAge = durationpb.New(time.Hour)
-		})
 
 		// By default, the testing user is a service.
 		env.JoinGroup("services")
@@ -212,9 +198,6 @@ func TestRegisterStream(t *testing.T) {
 						env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
 							env.Clock.Add(3 * time.Second)
 						})
-						env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-							pcfg.MaxStreamAge = nil
-						})
 
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
@@ -225,12 +208,6 @@ func TestRegisterStream(t *testing.T) {
 						// Make it so that any 2s sleep timers progress.
 						env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
 							env.Clock.Add(3 * time.Second)
-						})
-						env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
-							cfg.Coordinator.ArchiveDelayMax = nil
-						})
-						env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-							pcfg.MaxStreamAge = nil
 						})
 
 						_, err := svr.RegisterStream(c, &req)
@@ -298,16 +275,6 @@ func TestRegisterStream(t *testing.T) {
 
 func BenchmarkRegisterStream(b *testing.B) {
 	c, env := ct.Install(true)
-
-	// Set our archival delays. The project delay is smaller than the service
-	// delay, so it should be used.
-	env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
-		cfg.Coordinator.ArchiveSettleDelay = durationpb.New(10 * time.Minute)
-		cfg.Coordinator.ArchiveDelayMax = durationpb.New(24 * time.Hour)
-	})
-	env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-		pcfg.MaxStreamAge = durationpb.New(time.Hour)
-	})
 
 	// By default, the testing user is a service.
 	env.JoinGroup("services")

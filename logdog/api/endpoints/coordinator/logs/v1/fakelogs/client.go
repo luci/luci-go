@@ -18,12 +18,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/gae/service/taskqueue"
 
@@ -31,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logs_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	reg_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	services_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -251,9 +248,6 @@ func NewClient() *Client {
 	env.LogIn()
 	env.AuthState.IdentityGroups = []string{"admin", "all", "auth", "services"}
 
-	env.ModProjectConfig(ctx, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-		pcfg.MaxStreamAge = durationpb.New(time.Hour)
-	})
 	ts := taskqueue.GetTestable(ctx)
 	ts.CreatePullQueue(services_impl.RawArchiveQueueName(0))
 
