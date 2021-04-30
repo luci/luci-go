@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e54a96e1_5ec33ef8",
+        "filename": "resultdb/internal/proto/ui/ui.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2021-04-30T18:52:40Z",
+      "side": 1,
+      "message": "nit: could it be placed before page_size? paging is less interesting / more common. This way, the most interesting fields of this message in the top part of the message declaration",
+      "revId": "4380b9d566f9019d1c313e68fedf9065dba18369",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
