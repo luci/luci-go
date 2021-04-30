@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c820ba2_53857e16",
+        "filename": "logdog/server/service/service.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T06:27:44Z",
+      "side": 1,
+      "message": "Note that I plan to remove this whole thing and replace it with server.Server which does roughly the same (initializes the root context).",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 12
+      },
+      "revId": "987e693a11deb7d6faa2bafac58bffb4fc569c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
