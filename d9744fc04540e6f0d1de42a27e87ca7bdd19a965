@@ -129,6 +129,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "01952478_6e293a91",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2021-04-30T01:57:43Z",
+      "side": 1,
+      "message": "Here\u0027s an alternative which I like more now: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2861721",
+      "revId": "d9744fc04540e6f0d1de42a27e87ca7bdd19a965",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1343a9f3_c10996fd",
