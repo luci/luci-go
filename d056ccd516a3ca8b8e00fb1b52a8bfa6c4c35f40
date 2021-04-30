@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "10553cf3_5b1ade67",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T12:08:47Z",
+      "side": 1,
+      "message": "lgtm if it\u0027s a must, but consider a suggestion.",
+      "revId": "d056ccd516a3ca8b8e00fb1b52a8bfa6c4c35f40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ccd6c0ae_dbb0156f",
+        "filename": "common/sync/dispatcher/buffer/buffer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2021-04-30T12:08:47Z",
+      "side": 1,
+      "message": "why not offer a read-only getter instead of this surprising behavior:\n\n  func (b *Buffer) Options() Options { return b.opts }\n\n?",
+      "range": {
+        "startLine": 84,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 20
+      },
+      "revId": "d056ccd516a3ca8b8e00fb1b52a8bfa6c4c35f40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
