@@ -16,6 +16,7 @@ package testvariants
 
 import (
 	"context"
+	"text/template"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
@@ -38,9 +39,11 @@ const testResultLimit = 10
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
+	Predicate     *uipb.TestVariantPredicate
 	PageSize      int // must be positive
 	// Consists of test variant status, test id and variant hash.
-	PageToken     string
+	PageToken string
+
 	decompressBuf []byte                 // buffer for decompressing blobs
 	params        map[string]interface{} // query parameters
 }
@@ -105,7 +108,14 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		panic("PageSize < 0")
 	}
 
-	st := spanner.Statement{SQL: testVariantsWithUnexpectedResultsSQL, Params: q.params}
+	var st spanner.Statement
+	st, err = spanutil.GenerateSpannerStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]interface{}{
+		"StatusFilter": q.Predicate.GetStatus() != 0,
+	})
+	if err != nil {
+		return
+	}
+	st.Params = q.params
 	st.Params["limit"] = q.PageSize
 	st.Params["testResultLimit"] = testResultLimit
 
@@ -287,7 +297,9 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		"flaky":               int(uipb.TestVariantStatus_FLAKY),
 		"exonerated":          int(uipb.TestVariantStatus_EXONERATED),
 		"expected":            int(uipb.TestVariantStatus_EXPECTED),
+		"status":              int(q.Predicate.GetStatus()),
 	}
+
 	var expected bool
 	switch parts, err := pagination.ParseToken(q.PageToken); {
 	case err != nil:
@@ -310,6 +322,10 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 		q.params["afterVariantHash"] = parts[2]
 	}
 
+	if q.Predicate.GetStatus() == uipb.TestVariantStatus_EXPECTED {
+		expected = true
+	}
+
 	if expected {
 		return q.fetchTestVariantsWithOnlyExpectedResults(ctx)
 	}
@@ -323,8 +339,12 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 	switch {
 	case err != nil:
 		tvs = nil
+	case len(tvs) < q.PageSize && q.Predicate.GetStatus() != 0:
+		// The query is for test variants with specific status, so the query reaches
+		// to its last results already.
 	case len(tvs) < q.PageSize:
 		// If we got less than one page of test variants with unexpected results,
+		// and the query is not for test variants with specific status,
 		// compute the nextPageToken for test variants with only expected results.
 		nextPageToken = pagination.Token(uipb.TestVariantStatus_EXPECTED.String(), "", "")
 	default:
@@ -335,7 +355,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*uipb.TestVariant, nextPageTok
 	return
 }
 
-var testVariantsWithUnexpectedResultsSQL = `
+var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testVariantsWithUnexpectedResultsSQL").Parse(`
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
 	WITH unexpectedTestVariants AS (
 		SELECT DISTINCT TestId, VariantHash
@@ -413,14 +433,21 @@ var testVariantsWithUnexpectedResultsSQL = `
 		results,
 		exonerationExplanations,
 	FROM testVariantsWithUnexpectedResults
-	WHERE (
-		(TvStatus > @afterTvStatus) OR
-		(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
-		(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
-	)
+	{{if .StatusFilter}}
+		WHERE (
+			(TvStatus = @status AND TestId > @afterTestId) OR
+			(TvStatus = @status AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+		)
+	{{else}}
+		WHERE (
+			(TvStatus > @afterTvStatus) OR
+			(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
+			(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+		)
+	{{end}}
 	ORDER BY TvStatus, TestId, VariantHash
 	LIMIT @limit
-`
+`))
 
 var allTestResultsSQL = `
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}

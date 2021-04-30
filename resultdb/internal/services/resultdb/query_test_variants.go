@@ -52,6 +52,7 @@ func (s *uiServer) QueryTestVariants(ctx context.Context, in *uipb.QueryTestVari
 	// Query test variants.
 	q := testvariants.Query{
 		InvocationIDs: invs,
+		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 	}

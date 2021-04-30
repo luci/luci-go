@@ -253,5 +253,31 @@ func TestQueryTestVariants(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 			})
 		})
+
+		Convey(`status filter works`, func() {
+			Convey(`only unexpected`, func() {
+				q.Predicate = &uipb.TestVariantPredicate{Status: uipb.TestVariantStatus_UNEXPECTED}
+				tvs, token := mustFetch(q)
+				tvStrings := getTVStrings(tvs)
+				So(tvStrings, ShouldResemble, []string{
+					"10/T4/c467ccce5a16dc72",
+					"10/T5/e3b0c44298fc1c14",
+					"10/Ty/e3b0c44298fc1c14",
+				})
+				So(token, ShouldEqual, "")
+			})
+
+			Convey(`only expected`, func() {
+				q.Predicate = &uipb.TestVariantPredicate{Status: uipb.TestVariantStatus_EXPECTED}
+				tvs, _ := mustFetch(q)
+				So(getTVStrings(tvs), ShouldResemble, []string{
+					"50/T3/e3b0c44298fc1c14",
+					"50/T6/e3b0c44298fc1c14",
+					"50/T7/e3b0c44298fc1c14",
+					"50/T9/e3b0c44298fc1c14",
+				})
+				So(len(tvs[0].Results), ShouldEqual, 2)
+			})
+		})
 	})
 }
