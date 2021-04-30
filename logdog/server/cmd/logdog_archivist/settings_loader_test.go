@@ -25,7 +25,6 @@ import (
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
 
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/archivist"
 	srvcfg "go.chromium.org/luci/logdog/server/config"
 
@@ -50,7 +49,7 @@ func TestGetSettingsLoader(t *testing.T) {
 			ctx = cfgclient.Use(ctx, cfgmem.New(lucicfg))
 			So(srvcfg.Sync(ctx), ShouldBeNil)
 
-			f := GetSettingsLoader("", &svcconfig.Archivist{})
+			f := GetSettingsLoader("", &CommandLineFlags{})
 			settings, err := f(ctx, project)
 			So(err, ShouldBeNil)
 			return settings

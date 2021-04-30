@@ -25,10 +25,15 @@ import (
 )
 
 // GetSettingsLoader is an archivist.SettingsLoader implementation that merges
-// global and project-specific settings.
+// archivist daemon settings taken from CLI flags and project-specific settings.
 //
 // The resulting settings object will be verified by the Archivist.
-func GetSettingsLoader(serviceID string, acfg *svcconfig.Archivist) archivist.SettingsLoader {
+func GetSettingsLoader(serviceID string, flags *CommandLineFlags) archivist.SettingsLoader {
+	defaultIC := svcconfig.ArchiveIndexConfig{
+		StreamRange: int32(flags.ArchiveIndexStreamRange),
+		PrefixRange: int32(flags.ArchiveIndexPrefixRange),
+		ByteRange:   int32(flags.ArchiveIndexByteRange),
+	}
 	return func(c context.Context, project string) (*archivist.Settings, error) {
 		// If the project config of a task no longer exists, this function is expected
 		// to return config.ErrNoConfig. Then, the archivist task handler will discard
@@ -51,13 +56,9 @@ func GetSettingsLoader(serviceID string, acfg *svcconfig.Archivist) archivist.Se
 					return int(v)
 				}
 			}
-
-			if ic := acfg.ArchiveIndexConfig; ic != nil {
-				if v := get(ic); v > 0 {
-					return int(v)
-				}
+			if v := get(&defaultIC); v > 0 {
+				return int(v)
 			}
-
 			return 0
 		}
 
@@ -68,7 +69,7 @@ func GetSettingsLoader(serviceID string, acfg *svcconfig.Archivist) archivist.Se
 		// Archive: gs://<project:archive_gs_bucket>/<project-id>/...
 		st := archivist.Settings{
 			GSBase:        gs.MakePath(pcfg.ArchiveGsBucket, "").Concat(serviceID),
-			GSStagingBase: gs.MakePath(acfg.GsStagingBucket, "").Concat(serviceID),
+			GSStagingBase: gs.MakePath(flags.StagingBucket, "").Concat(serviceID),
 
 			IndexStreamRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.StreamRange }),
 			IndexPrefixRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.PrefixRange }),
