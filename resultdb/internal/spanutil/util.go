@@ -15,8 +15,10 @@
 package spanutil
 
 import (
+	"bytes"
 	"context"
 	"reflect"
+	"text/template"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
@@ -76,4 +78,14 @@ func Query(ctx context.Context, st spanner.Statement, fn func(row *spanner.Row) 
 
 func isMessageNil(m proto.Message) bool {
 	return reflect.ValueOf(m).IsNil()
+}
+
+// GenerateSpannerStatement generates a spanner statement from a text template.
+func GenerateSpannerStatement(tmpl *template.Template, input map[string]interface{}) (spanner.Statement, error) {
+	sql := &bytes.Buffer{}
+	err := tmpl.Execute(sql, input)
+	if err != nil {
+		return spanner.Statement{}, err
+	}
+	return spanner.NewStatement(sql.String()), nil
 }
